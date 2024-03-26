@@ -1,0 +1,32 @@
+version: '3.0'
+
+services:
+  grafana:
+    container_name: 'grafana-logsapp'
+    platform: 'linux/amd64'
+    build:
+      context: ./.config
+      args:
+        grafana_image: ${GRAFANA_IMAGE:-grafana-dev}
+        grafana_version: ${GRAFANA_VERSION:-11.0.0-164675}
+    ports:
+      - 3000:3000/tcp
+    volumes:
+      - ./dist:/var/lib/grafana/plugins/grafana-logsapp
+      - ./provisioning:/etc/grafana/provisioning
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+  loki:
+    image: kolesnikovae/loki:main-2826dfb-WIP
+    environment:
+      LOG_CLUSTER_DEPTH: '8'
+      LOG_SIM_TH: '0.3'
+    ports:
+      - '3100:3100'
+    volumes:
+      - ./config/loki-config.yaml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+  generator:
+    build:
+      context: ./generator
+    command: -url http://loki:3100/loki/api/v1/push
