@@ -73,7 +73,6 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
         new SceneControlsSpacer(),
         new SceneTimePicker({}),
         new SceneRefreshPicker({}),
-        new LiveTailControl({}),
       ],
       body: buildSplitLayout(),
       detailsScene: new DetailsScene({}),
@@ -86,6 +85,14 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
   public _onActivate() {
     if (!this.state.topScene) {
       this.setState({ topScene: getTopScene(this.state.mode) });
+    }
+    if (this.state.mode !== 'start') {
+      this.setState({
+        controls: [
+          ...this.state.controls,
+          new LiveTailControl({}),
+        ]
+      });
     }
 
     // Some scene elements publish this
@@ -122,6 +129,12 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
   }
 
   private _handleStartingPointSelected(evt: StartingPointSelectedEvent) {
+    this.setState({
+      controls: [
+        ...this.state.controls,
+        new LiveTailControl({}),
+      ]
+    });
     locationService.partial({ mode: 'logs' });
   }
 
