@@ -106,7 +106,7 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
                 if (f < minValue) {
                   minValue = f;
                 }
-                return parseFloat(sample[1]);
+                return f;
               }),
               config: {},
             },
