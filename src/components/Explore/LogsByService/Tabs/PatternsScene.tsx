@@ -77,6 +77,9 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
       return;
     }
 
+    let maxValue = -Infinity;
+    let minValue = 0;
+
     patterns
       .sort((a, b) => b.matches - a.matches)
       .slice(0, 40)
@@ -95,7 +98,16 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
             {
               name: pat.pattern,
               type: FieldType.number,
-              values: pat.volumeTimeSeries.map((sample) => parseFloat(sample[1])),
+              values: pat.volumeTimeSeries.map((sample) => {
+                const f = parseFloat(sample[1]);
+                if (f > maxValue) {
+                  maxValue = f;
+                }
+                if (f < minValue) {
+                  minValue = f;
+                }
+                return parseFloat(sample[1]);
+              }),
               config: {},
             },
           ],
@@ -128,6 +140,8 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
               .setCustomFieldConfig('lineWidth', 0)
               .setCustomFieldConfig('pointSize', 0)
               .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+              .setCustomFieldConfig('axisSoftMax', maxValue)
+              .setCustomFieldConfig('axisSoftMin', minValue)
               .setHeaderActions([
                 new AddToPatternsGraphAction({ pattern: pat.pattern, type: 'exclude' }),
                 new AddToPatternsGraphAction({ pattern: pat.pattern, type: 'include' }),
