@@ -23,7 +23,7 @@ To learn more about @grafana/scenes usage please refer to the [documentation](ht
 1. Install dependencies
 
    ```bash
-   npm install
+   yarn install
    ```
 
 2. Build plugin in development mode and run in watch mode
