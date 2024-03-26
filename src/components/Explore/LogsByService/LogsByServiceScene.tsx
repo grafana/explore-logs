@@ -262,7 +262,7 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
 const actionViewsDefinitions: ActionViewDefinition[] = [
   { displayName: 'Logs', value: 'logs', getScene: buildLogsListScene },
   { displayName: 'Labels', value: 'labels', getScene: buildLabelBreakdownActionScene },
-  { displayName: 'Detected Fields', value: 'fields', getScene: buildFieldsBreakdownActionScene },
+  { displayName: 'Detected fields', value: 'fields', getScene: buildFieldsBreakdownActionScene },
   { displayName: 'Patterns', value: 'patterns', getScene: buildPatternsScene },
 ];
 
