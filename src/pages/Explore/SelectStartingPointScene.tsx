@@ -22,7 +22,7 @@ import {
   VariableValue,
   VizPanel,
 } from '@grafana/scenes';
-import { DrawStyle, Field, Icon, Input, LoadingPlaceholder, StackingMode, Tab, TabsBar, useStyles2 } from '@grafana/ui';
+import { DrawStyle, Field, Icon, Input, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 
 import { SelectAttributeWithValueAction } from './SelectAttributeWithValueAction';
 import { explorationDS, VAR_FILTERS } from '../../utils/shared';
@@ -258,20 +258,6 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
 
     return (
       <div className={styles.container}>
-        {/*<div className={styles.header}>
-          <Select
-            options={metricFnOptions}
-            value={metricFnValue}
-            onChange={(value) => model.onChangeMetricsFn(value.value)}
-            width={20}
-            placeholder={'Select function'}
-          />
-    </div>*/}
-        <TabsBar>
-          {groupByOptions.map(({ label, value }, index) => {
-            return <Tab key={index} label={label} active={value === 'service'} onChangeTab={() => {}} />;
-          })}
-        </TabsBar>
         <div className={styles.bodyWrapper}>
           <Field className={styles.searchField}>
             <Input
@@ -287,24 +273,6 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
     );
   };
 }
-
-const groupByOptions = [{ label: 'Service', value: 'service' }];
-
-/*const metricFnOptions = [
-  { label: 'records', value: 'records' },
-  { label: 'bytes', value: 'bytes' },
-];
-
-function getVariableSet() {
-  return new SceneVariableSet({
-    variables: [
-      new CustomVariable({
-        name: VAR_METRIC_FN,
-        value: 'records',
-      }),
-    ],
-  });
-}*/
 
 function buildBaseExpr(service?: string) {
   return `{service${service ? `="${service}"` : '=~".+"'}}`;
