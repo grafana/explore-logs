@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
   "type": "app",
-  "name": "Logs-App",
+  "name": "Logs",
   "id": "grafana-lokiexplore-app",
   "info": {
     "keywords": ["app"],
@@ -20,7 +20,7 @@
   "includes": [
     {
       "type": "page",
-      "name": "Explore",
+      "name": "Logs",
       "path": "/a/%PLUGIN_ID%/",
       "role": "Viewer",
       "addToNav": true,
