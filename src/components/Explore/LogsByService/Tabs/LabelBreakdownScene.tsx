@@ -271,6 +271,16 @@ const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 function buildNormalLayout(variable: CustomVariable) {
   const query = buildQuery(variable.getValueText());
 
+  let bodyOpts  = PanelBuilders.timeseries()
+  bodyOpts = bodyOpts.setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
+      .setCustomFieldConfig('fillOpacity', 100)
+      .setCustomFieldConfig('lineWidth', 0)
+      .setCustomFieldConfig('pointSize', 0)
+      .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+      .setTitle('$metric')
+
+  const body = bodyOpts.build()
+
   return new LayoutSwitcher({
     $data: new SceneQueryRunner({
       datasource: explorationDS,
@@ -289,7 +299,7 @@ function buildNormalLayout(variable: CustomVariable) {
         children: [
           new SceneFlexItem({
             minHeight: 300,
-            body: PanelBuilders.timeseries().setTitle('$metric').build(),
+            body,
           }),
         ],
       }),
