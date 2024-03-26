@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
   "type": "app",
   "name": "Logs-App",
-  "id": "grafana-loki-app",
+  "id": "grafana-loki-explore-app",
   "info": {
     "keywords": ["app"],
     "description": "Query less exploration of log data stored in loki",

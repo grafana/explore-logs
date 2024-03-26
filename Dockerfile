@@ -13,7 +13,7 @@ EOF
 RUN <<EOF cat >> /etc/grafana/provisioning/plugins/loki.yaml
 apiVersion: 1
 apps:
-  - type: grafana-loki-app
+  - type: grafana-loki-explore-app
     org_id: 1
     org_name: Grafana
     disabled: false

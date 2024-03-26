@@ -1,4 +1,4 @@
-# Grafana Loki app
+# Grafana Loki Explore app
 
 Grafana app plugin that allows for a query-less way to navigate and visualize log data stored in Loki.
 
