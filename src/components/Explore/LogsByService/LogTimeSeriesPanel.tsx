@@ -40,7 +40,7 @@ export class LogTimeSeriesPanel extends SceneObjectBase<LogTimeSeriesPanelState>
       children: [
         new SceneFlexItem({
           body: PanelBuilders.timeseries() //
-            .setTitle('Log Volume')
+            .setTitle('Log volume')
             .setOption('legend', { showLegend: false })
             .setData(
               new SceneDataTransformer({
