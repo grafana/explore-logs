@@ -1,8 +1,8 @@
-import { css } from '@emotion/css';
+import {css} from '@emotion/css';
 import React from 'react';
 
-import { AdHocVariableFilter, GrafanaTheme2 } from '@grafana/data';
-import { locationService } from '@grafana/runtime';
+import {AdHocVariableFilter, GrafanaTheme2} from '@grafana/data';
+import {locationService} from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
   CustomVariable,
@@ -24,11 +24,10 @@ import {
   SplitLayout,
   VariableValueSelectors,
 } from '@grafana/scenes';
-import { Stack, Tag, useStyles2 } from '@grafana/ui';
+import {Tag, useStyles2} from '@grafana/ui';
 
-import { ExplorationHistory, ExplorationHistoryStep } from './ExplorationHistory';
-import { LogsByServiceScene } from '../../components/Explore/LogsByService/LogsByServiceScene';
-import { SelectStartingPointScene } from './SelectStartingPointScene';
+import {LogsByServiceScene} from '../../components/Explore/LogsByService/LogsByServiceScene';
+import {SelectStartingPointScene} from './SelectStartingPointScene';
 import {
   DetailsSceneUpdated,
   explorationDS,
@@ -38,18 +37,17 @@ import {
   VAR_FILTERS,
   VAR_PATTERNS,
 } from '../../utils/shared';
-import { getUrlForExploration } from '../../utils/utils';
-import { DetailsScene } from '../../components/Explore/LogsByService/DetailsScene';
-import { AppliedPattern } from '../../components/Explore/types';
-import { VariableHide } from '@grafana/schema';
-import { LiveTailControl } from 'components/Explore/LiveTailControl';
+import {DetailsScene} from '../../components/Explore/LogsByService/DetailsScene';
+import {AppliedPattern} from '../../components/Explore/types';
+import {VariableHide} from '@grafana/schema';
+import {LiveTailControl} from 'components/Explore/LiveTailControl';
 
 type LogExplorationMode = 'start' | 'logs';
 
 export interface LogExplorationState extends SceneObjectState {
   topScene?: SceneObject;
   controls: SceneObject[];
-  history: ExplorationHistory;
+  // history: ExplorationHistory;
   body: SplitLayout;
 
   mode?: LogExplorationMode;
@@ -77,7 +75,6 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
         new SceneRefreshPicker({}),
         new LiveTailControl({}),
       ],
-      history: state.history ?? new ExplorationHistory({}),
       body: buildSplitLayout(),
       detailsScene: new DetailsScene({}),
       ...state,
@@ -119,42 +116,9 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
       }
     });
 
-    // Pay attention to changes in history (i.e., changing the step)
-    this.state.history.subscribeToState((newState, oldState) => {
-      const oldNumberOfSteps = oldState.steps.length;
-      const newNumberOfSteps = newState.steps.length;
-
-      const newStepWasAppended = newNumberOfSteps > oldNumberOfSteps;
-
-      if (newStepWasAppended) {
-        // Do nothing because the state is already up to date -- it created a new step!
-        return;
-      }
-
-      if (oldState.currentStep === newState.currentStep) {
-        // The same step was clicked on -- no need to change anything.
-        return;
-      }
-
-      // History changed because a different node was selected
-      const step = newState.steps[newState.currentStep];
-
-      this.goBackToStep(step);
-    });
-
     return () => {
       getUrlSyncManager().cleanUp(this);
     };
-  }
-
-  private goBackToStep(step: ExplorationHistoryStep) {
-    getUrlSyncManager().cleanUp(this);
-
-    this.setState(step.explorationState);
-
-    locationService.replace(getUrlForExploration(this));
-
-    getUrlSyncManager().initSync(this);
   }
 
   private _handleStartingPointSelected(evt: StartingPointSelectedEvent) {
@@ -196,14 +160,11 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
 export class LogExplorationScene extends SceneObjectBase {
   static Component = ({ model }: SceneComponentProps<LogExplorationScene>) => {
     const logExploration = sceneGraph.getAncestor(model, LogExploration);
-    const { history, controls, topScene, mode, patterns } = logExploration.useState();
+    const { controls, topScene, mode, patterns } = logExploration.useState();
     const styles = useStyles2(getStyles);
 
     return (
       <div className={styles.container}>
-        <Stack gap={2} justifyContent={'space-between'}>
-          <history.Component model={history} />
-        </Stack>
         {controls && (
           <div className={styles.controls}>
             {controls.map((control) => (
