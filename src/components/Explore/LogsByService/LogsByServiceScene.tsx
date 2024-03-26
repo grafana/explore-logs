@@ -43,8 +43,6 @@ import { buildFieldsBreakdownActionScene } from './Tabs/FieldsBreakdownScene';
 import { Unsubscribable } from 'rxjs';
 import { getLiveTailControl } from 'utils/scenes';
 import { extractFields } from '../../../utils/fields';
-import { buildRelatedMetricsScene } from './Tabs/RelatedMetricsScene';
-import { buildTracesScenes } from './Tabs/TracesScene';
 
 interface LokiPattern {
   matches: number;
@@ -266,8 +264,6 @@ const actionViewsDefinitions: ActionViewDefinition[] = [
   { displayName: 'Labels', value: 'labels', getScene: buildLabelBreakdownActionScene },
   { displayName: 'Detected Fields', value: 'fields', getScene: buildFieldsBreakdownActionScene },
   { displayName: 'Patterns', value: 'patterns', getScene: buildPatternsScene },
-  { displayName: 'Traces', value: 'traces', getScene: buildTracesScenes },
-  { displayName: 'Related Metrics', value: 'relatedMetrics', getScene: buildRelatedMetricsScene },
 ];
 
 export interface LogsActionBarState extends SceneObjectState {}
