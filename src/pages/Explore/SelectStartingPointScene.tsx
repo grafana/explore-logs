@@ -131,7 +131,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
             children: [
               new SceneFlexItem({
                 body: new SceneReactObject({
-                  reactNode: <LoadingPlaceholder text="fetching services..." />,
+                  reactNode: <LoadingPlaceholder text="Fetching services..." />,
                 }),
               }),
             ],
