@@ -276,7 +276,8 @@ function buildNormalLayout(variable: CustomVariable) {
       .setCustomFieldConfig('fillOpacity', 100)
       .setCustomFieldConfig('lineWidth', 0)
       .setCustomFieldConfig('pointSize', 0)
-      .setCustomFieldConfig('drawStyle', DrawStyle.Bars);
+      .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+      .setTitle('$metric')
 
   const body = bodyOpts.build()
 
