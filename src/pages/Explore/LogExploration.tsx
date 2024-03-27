@@ -24,7 +24,7 @@ import {
   SplitLayout,
   VariableValueSelectors,
 } from '@grafana/scenes';
-import {Tag, useStyles2} from '@grafana/ui';
+import { Text, useStyles2 } from '@grafana/ui';
 
 import {LogsByServiceScene} from '../../components/Explore/LogsByService/LogsByServiceScene';
 import {SelectStartingPointScene} from './SelectStartingPointScene';
@@ -41,6 +41,7 @@ import {DetailsScene} from '../../components/Explore/LogsByService/DetailsScene'
 import {AppliedPattern} from '../../components/Explore/types';
 import {VariableHide} from '@grafana/schema';
 import {LiveTailControl} from 'components/Explore/LiveTailControl';
+import { Pattern } from 'components/Explore/LogsByService/Pattern';
 
 type LogExplorationMode = 'start' | 'logs';
 
@@ -175,6 +176,8 @@ export class LogExplorationScene extends SceneObjectBase {
     const logExploration = sceneGraph.getAncestor(model, LogExploration);
     const { controls, topScene, mode, patterns } = logExploration.useState();
     const styles = useStyles2(getStyles);
+    const includePatterns = patterns ? patterns.filter(pattern => pattern.type === 'include') : [];
+    const excludePatterns = patterns ? patterns.filter(pattern => pattern.type !== 'include') : [];
 
     return (
       <div className={styles.container}>
@@ -192,20 +195,27 @@ export class LogExplorationScene extends SceneObjectBase {
             </div>
           </div>
         )}
-        {mode === 'logs' && (
-          <div className={styles.patterns}>
-            <span>Patterns:</span>
-            {patterns?.length ? (
-              patterns.map((p) => (
-                <Tag
-                  key={p.pattern}
-                  name={p.pattern}
-                  colorIndex={p.type === 'include' ? 6 : 8}
-                  onClick={() => logExploration.setState({ patterns: patterns?.filter((pat) => pat !== p) || [] })}
-                />
-              ))
-            ) : (
-              <i>No patterns applied</i>
+        {mode === 'logs' && patterns && patterns.length > 0 && (
+          <div>
+            {includePatterns.length > 0 && (
+              <div className={styles.patternsContainer}>
+                <Text variant='bodySmall' weight='bold'>{excludePatterns.length > 0 ? 'Include patterns' : 'Patterns'}:</Text>
+                <div className={styles.patterns}>
+                  {includePatterns.map((p) => (
+                    <Pattern key={p.pattern} pattern={p.pattern} type={p.type} onRemove={() => logExploration.setState({ patterns: patterns?.filter((pat) => pat !== p) || [] })} />
+                  ))}
+                </div>
+              </div>
+            )}
+            {excludePatterns.length > 0 && (
+              <div className={styles.patternsContainer}>
+                <Text variant='bodySmall' weight='bold'>Exclude patterns:</Text>
+                <div className={styles.patterns}>
+                  {excludePatterns.map((p) => (
+                    <Pattern key={p.pattern} pattern={p.pattern} type={p.type} onRemove={() => logExploration.setState({ patterns: patterns?.filter((pat) => pat !== p) || [] })} />
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         )}
@@ -322,10 +332,14 @@ function getStyles(theme: GrafanaTheme2) {
     rotateIcon: css({
       svg: { transform: 'rotate(180deg)' },
     }),
+    patternsContainer: css({
+      paddingBottom: theme.spacing(1),
+    }),
     patterns: css({
       display: 'flex',
       gap: theme.spacing(1),
       alignItems: 'center',
+      flexWrap: 'wrap'
     }),
   };
 }
