@@ -286,6 +286,7 @@ function buildLogsQuery(service?: string) {
     expr: buildBaseExpr(service),
     queryType: 'range',
     legendFormat: '{{level}}',
+    maxLines: 100,
   };
 }
 
