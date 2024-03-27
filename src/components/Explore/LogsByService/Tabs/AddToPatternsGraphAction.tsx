@@ -32,8 +32,8 @@ export class AddToPatternsGraphAction extends SceneObjectBase<AddToPatternsGraph
   public static Component = ({ model }: SceneComponentProps<AddToPatternsGraphAction>) => {
     const { type } = model.useState();
     return (
-      <Button variant="primary" size="sm" fill="text" onClick={model.onClick}>
-        {type === 'include' ? 'Add to search' : 'Exclude from search'}
+      <Button variant="secondary" size="sm" onClick={model.onClick}>
+        {type === 'include' ? 'Add to filters' : 'Exclude from filters'}
       </Button>
     );
   };

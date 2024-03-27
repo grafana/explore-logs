@@ -41,7 +41,7 @@ export class SelectAttributeWithValueAction extends SceneObjectBase<SelectAttrib
 
   public static Component = ({ model }: SceneComponentProps<SelectAttributeWithValueAction>) => {
     return (
-      <Button variant="primary" size="sm" fill="text" onClick={model.onClick}>
+      <Button variant="secondary" size="sm" onClick={model.onClick}>
         Select
       </Button>
     );
