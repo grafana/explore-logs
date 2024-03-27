@@ -257,7 +257,7 @@ export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
 
   public static Component = ({ model }: SceneComponentProps<AddToFiltersGraphAction>) => {
     return (
-      <Button variant="primary" size="sm" fill="text" onClick={model.onClick}>
+      <Button variant="secondary" size="sm" fill="text" onClick={model.onClick}>
         Select
       </Button>
     );

@@ -43,8 +43,8 @@ export class AddToFiltersGraphAction extends SceneObjectBase<AddToFiltersGraphAc
 
   public static Component = ({ model }: SceneComponentProps<AddToFiltersGraphAction>) => {
     return (
-      <Button variant="primary" size="sm" fill="text" onClick={model.onClick}>
-        Add to search
+      <Button variant="secondary" size="sm" onClick={model.onClick}>
+        Add to filters
       </Button>
     );
   };
