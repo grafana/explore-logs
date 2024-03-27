@@ -43,6 +43,7 @@ import { buildFieldsBreakdownActionScene } from './Tabs/FieldsBreakdownScene';
 import { Unsubscribable } from 'rxjs';
 import { getLiveTailControl } from 'utils/scenes';
 import { extractFields } from '../../../utils/fields';
+import { GoToExploreButton } from './GoToExploreButton';
 
 interface LokiPattern {
   matches: number;
@@ -293,6 +294,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
         <div className={styles.actions}>
           <Stack gap={2}>
             <ShareExplorationButton exploration={exploration} />
+            <GoToExploreButton exploration={exploration} />
           </Stack>
         </div>
 
