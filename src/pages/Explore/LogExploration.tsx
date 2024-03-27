@@ -199,7 +199,7 @@ export class LogExplorationScene extends SceneObjectBase {
           <div>
             {includePatterns.length > 0 && (
               <div className={styles.patternsContainer}>
-                <Text variant='bodySmall' weight='bold'>{excludePatterns.length > 0 ? 'Include patterns' : 'Patterns'}:</Text>
+                <Text variant='bodySmall' weight='bold'>{excludePatterns.length > 0 ? 'Include patterns' : 'Patterns'}</Text>
                 <div className={styles.patterns}>
                   {includePatterns.map((p) => (
                     <Pattern key={p.pattern} pattern={p.pattern} type={p.type} onRemove={() => logExploration.setState({ patterns: patterns?.filter((pat) => pat !== p) || [] })} />
@@ -255,13 +255,13 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
         name: VAR_FILTERS,
         datasource: explorationDS,
         layout: 'horizontal',
-        label: 'Labels',
+        label: 'Service',
         filters: initialFilters ?? [],
         expressionBuilder: renderLogQLLabelFilters,
       }),
       new AdHocFiltersVariable({
         name: VAR_FIELDS,
-        label: 'Fields',
+        label: 'Filters',
         applyMode: 'manual',
         getTagKeysProvider: () => Promise.resolve({ values: [] }),
         getTagValuesProvider: () => Promise.resolve({ values: [] }),
