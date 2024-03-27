@@ -185,7 +185,7 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
       return;
     }
 
-    const service = variable.state.filters.find((filter) => filter.key === 'service')?.value || 'payment';
+    const service = variable.state.filters.find((filter) => filter.key === 'service_name')?.value || 'payment';
     if (!service) {
       return;
     }
@@ -193,7 +193,7 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
 
     // @ts-ignore
     ds.getResource!('patterns', {
-      query: `{service="${service}"}`,
+      query: `{service_name="${service}"}`,
       from: timeRange.from.utc().toISOString(),
       to: timeRange.to.utc().toISOString(),
       minMatches: 50,
