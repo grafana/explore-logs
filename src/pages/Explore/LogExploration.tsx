@@ -24,7 +24,7 @@ import {
   SplitLayout,
   VariableValueSelectors,
 } from '@grafana/scenes';
-import { Tag, Text, useStyles2 } from '@grafana/ui';
+import { Text, useStyles2 } from '@grafana/ui';
 
 import {LogsByServiceScene} from '../../components/Explore/LogsByService/LogsByServiceScene';
 import {SelectStartingPointScene} from './SelectStartingPointScene';
