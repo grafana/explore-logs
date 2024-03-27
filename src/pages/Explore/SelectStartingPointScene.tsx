@@ -72,9 +72,9 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
   private _onActivate() {
     // terribad hack - remove single service filter if it's there
     const variable = sceneGraph.lookupVariable(VAR_FILTERS, this);
-    if (variable instanceof AdHocFiltersVariable && variable.state.filters.find((f) => f.key === 'service')) {
+    if (variable instanceof AdHocFiltersVariable && variable.state.filters.find((f) => f.key === 'service_name')) {
       variable.setState({
-        filters: variable.state.filters.filter((f) => f.key !== 'service'),
+        filters: variable.state.filters.filter((f) => f.key !== 'service_name'),
       });
     }
 
@@ -136,7 +136,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
               }),
             ],
           }),
-          repeatByLabel: 'service',
+          repeatByLabel: 'service_name',
           getLayoutChild: this.getLayoutChild.bind(this),
         }),
       ],
@@ -275,7 +275,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
 }
 
 function buildBaseExpr(service?: string) {
-  return `{service${service ? `="${service}"` : '=~".+"'}}`;
+  return `{service_name${service ? `="${service}"` : '=~".+"'}}`;
 }
 
 function buildLogsQuery(service?: string) {
@@ -290,7 +290,7 @@ function buildLogsQuery(service?: string) {
 function buildVolumeQuery() {
   return {
     refId: 'A',
-    expr: `sum by(service, level) (count_over_time(${buildBaseExpr()} [$__interval]))`,
+    expr: `sum by(service_name, level) (count_over_time(${buildBaseExpr()} [$__interval]))`,
     queryType: 'range',
     legendFormat: '{{level}}',
     maxLines: 100,

@@ -30,7 +30,7 @@ export class SelectAttributeWithValueAction extends SceneObjectBase<SelectAttrib
       filters: [
         ...variable.state.filters,
         {
-          key: 'service',
+          key: 'service_name',
           operator: '=',
           value: this.state.value,
         },

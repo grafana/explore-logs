@@ -211,10 +211,10 @@ var mimirPod = func(ctx context.Context, logger *AppLogger) {
 
 func startFailingMimirPod(ctx context.Context, logger Logger) {
 	appLogger := NewAppLogger(model.LabelSet{
-		"cluster":   model.LabelValue(clusters[0]),
-		"namespace": model.LabelValue("mimir"),
-		"service":   "mimir-ingester",
-		"pod":       "mimir-ingester" + "-" + model.LabelValue(randSeq(5)),
+		"cluster":      model.LabelValue(clusters[0]),
+		"namespace":    model.LabelValue("mimir"),
+		"service_name": "mimir-ingester",
+		"pod":          "mimir-ingester" + "-" + model.LabelValue(randSeq(5)),
 	}, logger)
 
 	go func() {
