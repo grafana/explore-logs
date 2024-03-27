@@ -179,10 +179,17 @@ export class LogExplorationScene extends SceneObjectBase {
     return (
       <div className={styles.container}>
         {controls && (
-          <div className={styles.controls}>
-            {controls.map((control) => (
-              <control.Component key={control.state.key} model={control} />
-            ))}
+          <div className={styles.controlsContainer}>
+            <div className={styles.filters}>
+              {controls.map((control) => (
+                control instanceof VariableValueSelectors ? <control.Component key={control.state.key} model={control} /> : null
+              ))}
+            </div>
+            <div className={styles.controls}>
+              {controls.map((control) => (
+                control instanceof VariableValueSelectors === false ? <control.Component key={control.state.key} model={control} /> : null
+              ))}
+            </div>
           </div>
         )}
         {mode === 'logs' && (
@@ -293,11 +300,24 @@ function getStyles(theme: GrafanaTheme2) {
       flexDirection: 'column',
       gap: theme.spacing(1),
     }),
-    controls: css({
+    controlsContainer: css({
       display: 'flex',
       gap: theme.spacing(2),
-      alignItems: 'flex-end',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+    }),
+    filters: css({
+      display: 'flex',
+      gap: theme.spacing(2),
+      width: 'calc(100% - 400)',
       flexWrap: 'wrap',
+      alignItems: 'flex-end',
+    }),
+    controls: css({
+      display: 'flex',
+      maxWidth: 400,
+      paddingTop: theme.spacing(3),
+      gap: theme.spacing(2),
     }),
     rotateIcon: css({
       svg: { transform: 'rotate(180deg)' },
