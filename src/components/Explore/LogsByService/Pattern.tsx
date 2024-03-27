@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import { Button, Icon, Tag, useStyles2 } from '@grafana/ui';
 import { GrafanaTheme2 } from '@grafana/data';
-import React from 'react';
+import React, { useState } from 'react';
 
 interface Props {
   type: 'include' | 'exclude';
@@ -11,10 +11,11 @@ interface Props {
 
 export const Pattern = ({ type, onRemove, pattern }: Props) => {
   const styles = useStyles2(getStyles);
-  return (<div className={styles.pattern}>
+  const [expanded, setExpanded] = useState(false);
+  return (<div className={styles.pattern} onClick={() => setExpanded(!expanded)} onMouseLeave={() => setExpanded(false)}>
     <Tag
       key={pattern}
-      name={getPatternPreview(pattern)}
+      name={expanded ? pattern : getPatternPreview(pattern)}
       className={styles.tag}
     />
     <Button variant='secondary' size='sm' className={styles.removeButton} onClick={onRemove}>
@@ -42,6 +43,7 @@ const getStyles = (theme: GrafanaTheme2) => {
       display: 'flex',
       fontFamily: 'monospace',
       gap: theme.spacing(0.25),
+      cursor: 'pointer',
     }),
     tag: css({
       borderTopRightRadius: 0,
