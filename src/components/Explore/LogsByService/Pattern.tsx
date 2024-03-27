@@ -14,13 +14,26 @@ export const Pattern = ({ type, onRemove, pattern }: Props) => {
   return (<div className={styles.pattern}>
     <Tag
       key={pattern}
-      name={pattern}
+      name={getPatternPreview(pattern)}
       className={styles.tag}
     />
     <Button variant='secondary' size='sm' className={styles.removeButton} onClick={onRemove}>
       <Icon name="times" />
     </Button>
   </div>)
+}
+
+const MAX_PATTERN_WIDTH = 25;
+
+function getPatternPreview(pattern: string) {
+  const length = pattern.length;
+  if (length < MAX_PATTERN_WIDTH) {
+    return pattern;
+  }
+
+  const substringLength = Math.round(length * 0.20);
+
+  return `${pattern.substring(0, substringLength)} … ${pattern.substring(length - substringLength)}`
 }
 
 const getStyles = (theme: GrafanaTheme2) => {
