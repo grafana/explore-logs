@@ -199,7 +199,7 @@ export class LogExplorationScene extends SceneObjectBase {
           <div>
             {includePatterns.length > 0 && (
               <div className={styles.patternsContainer}>
-                <Text variant='bodySmall' weight='bold'>{excludePatterns.length > 0 ? 'Include patterns' : 'Patterns'}:</Text>
+                <Text variant='bodySmall' weight='bold'>{excludePatterns.length > 0 ? 'Include patterns' : 'Patterns'}</Text>
                 <div className={styles.patterns}>
                   {includePatterns.map((p) => (
                     <Pattern key={p.pattern} pattern={p.pattern} type={p.type} onRemove={() => logExploration.setState({ patterns: patterns?.filter((pat) => pat !== p) || [] })} />
