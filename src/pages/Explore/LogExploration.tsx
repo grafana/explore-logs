@@ -86,7 +86,7 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
     if (!this.state.topScene) {
       this.setState({ topScene: getTopScene(this.state.mode) });
     }
-    if (this.state.mode !== 'start') {
+    if (this.state.mode !== undefined && this.state.mode !== 'start') {
       this.setState({
         controls: [
           ...this.state.controls,
