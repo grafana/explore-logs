@@ -90,10 +90,10 @@ func ForAllClusters(namespace, svc model.LabelValue, cb func(model.LabelSet)) {
 	for _, cluster := range clusters {
 		for i := 0; i < podCount; i++ {
 			cb(model.LabelSet{
-				"cluster":   model.LabelValue(cluster),
-				"namespace": model.LabelValue(namespace),
-				"service":   svc,
-				"pod":       svc + "-" + model.LabelValue(randSeq(5)),
+				"cluster":      model.LabelValue(cluster),
+				"namespace":    model.LabelValue(namespace),
+				"service_name": svc,
+				"pod":          svc + "-" + model.LabelValue(randSeq(5)),
 			})
 		}
 	}
