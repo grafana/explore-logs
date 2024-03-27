@@ -290,7 +290,7 @@ function buildLogsQuery(service?: string) {
 function buildVolumeQuery() {
   return {
     refId: 'A',
-    expr: `sum by(service_name, level) (count_over_time(${buildBaseExpr()} [$__interval]))`,
+    expr: `sum by(service_name, level) (count_over_time(${buildBaseExpr()} | __error__="" [$__auto]))`,
     queryType: 'range',
     legendFormat: '{{level}}',
     maxLines: 100,
