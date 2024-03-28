@@ -18,7 +18,7 @@ interface ByLabelRepeaterState extends SceneObjectState {
 }
 
 export class ByLabelRepeater extends SceneObjectBase<ByLabelRepeaterState> {
-  public constructor(state: ByLabelRepeaterState) {
+  public constructor(state: ByLabelRepeaterState, limit?: number) {
     super(state);
 
     this.addActivationHandler(() => {
@@ -27,7 +27,7 @@ export class ByLabelRepeater extends SceneObjectBase<ByLabelRepeaterState> {
       this._subs.add(
         data.subscribeToState((data) => {
           if (data.data?.state === LoadingState.Done) {
-            this.performRepeat(data.data);
+            this.performRepeat(data.data, limit);
           }
         })
       );
@@ -36,19 +36,19 @@ export class ByLabelRepeater extends SceneObjectBase<ByLabelRepeaterState> {
         this.subscribeToState((state, prevState) => {
           const data = sceneGraph.getData(this).state.data;
           if (state.filter !== prevState.filter && data?.state === LoadingState.Done) {
-            this.performRepeat(sceneGraph.getData(this).state.data!);
+            this.performRepeat(sceneGraph.getData(this).state.data!, limit);
           }
         })
       );
 
       if (data.state.data) {
-        this.performRepeat(data.state.data);
+        this.performRepeat(data.state.data, limit);
       }
     });
   }
 
-  private performRepeat(data: PanelData) {
-    const newChildren: SceneFlexItem[] = [];
+  private performRepeat(data: PanelData, limit?: number) {
+    let newChildren: SceneFlexItem[] = [];
 
     const labelValue2series: Record<string, DataFrame[]> = {};
 
@@ -70,6 +70,10 @@ export class ByLabelRepeater extends SceneObjectBase<ByLabelRepeaterState> {
       const layoutChild = this.state.getLayoutChild(data, frames, value, index);
       newChildren.push(layoutChild);
     });
+
+    if(limit && limit > 0){
+      newChildren = newChildren.slice(0, limit)
+    }
 
     this.state.body.setState({ children: newChildren });
   }

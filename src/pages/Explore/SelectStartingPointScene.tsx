@@ -128,7 +128,6 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
 
       const topServices = Object.entries(serviceMetrics)
         .sort((a, b) => b[1] - a[1]) // Sort by value in descending order
-        .slice(0, LIMIT_SERVICES) // Keep only the top N services
         .map(([serviceName]) => serviceName); // Extract service names
       
         this.setState({
@@ -190,7 +189,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
           }),
           repeatByLabel: SERVICE_NAME,
           getLayoutChild: this.getLayoutChild.bind(this),
-        }),
+        }, LIMIT_SERVICES),
       ],
     });
     }
@@ -302,6 +301,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
         const value = e.currentTarget.value;
         setSearchQuery(value);
         clearTimeout(timeout.current);
+
         timeout.current = setTimeout(() => {
           model.getRepeater().setState({ filter: value });
         }, 500);
