@@ -34,8 +34,5 @@ e2e-results/
 
 .eslintcache
 
-volume_enabled
-
-
 # Ignore OSX indexing
 .DS_Store
