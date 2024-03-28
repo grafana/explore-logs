@@ -112,7 +112,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
       }
 
       if (newState.searchServicesString !== oldState.searchServicesString) {
-        const services = this.state.topServices?.filter((service) => service.toLowerCase().includes(newState.searchServicesString.toLowerCase() ?? ''))
+        const services = this.state.topServices?.filter((service) => service.toLowerCase().includes(newState.searchServicesString?.toLowerCase() ?? ''))
         this.setState({
           topServicesToBeUsed: services?.slice(0, LIMIT_SERVICES),
         })
