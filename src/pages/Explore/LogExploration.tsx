@@ -1,8 +1,8 @@
-import {css} from '@emotion/css';
+import { css } from '@emotion/css';
 import React from 'react';
 
-import {AdHocVariableFilter, GrafanaTheme2} from '@grafana/data';
-import {locationService} from '@grafana/runtime';
+import { AdHocVariableFilter, GrafanaTheme2, SelectableValue } from '@grafana/data';
+import { locationService } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
   CustomVariable,
@@ -26,8 +26,8 @@ import {
 } from '@grafana/scenes';
 import { Text, useStyles2 } from '@grafana/ui';
 
-import {LogsByServiceScene} from '../../components/Explore/LogsByService/LogsByServiceScene';
-import {SelectStartingPointScene} from './SelectStartingPointScene';
+import { LogsByServiceScene } from '../../components/Explore/LogsByService/LogsByServiceScene';
+import { SelectStartingPointScene } from './SelectStartingPointScene';
 import {
   DetailsSceneUpdated,
   explorationDS,
@@ -37,11 +37,12 @@ import {
   VAR_FILTERS,
   VAR_PATTERNS,
 } from '../../utils/shared';
-import {DetailsScene} from '../../components/Explore/LogsByService/DetailsScene';
-import {AppliedPattern} from '../../components/Explore/types';
-import {VariableHide} from '@grafana/schema';
-import {LiveTailControl} from 'components/Explore/LiveTailControl';
+import { DetailsScene } from '../../components/Explore/LogsByService/DetailsScene';
+import { AppliedPattern } from '../../components/Explore/types';
+import { VariableHide } from '@grafana/schema';
+import { LiveTailControl } from 'components/Explore/LiveTailControl';
 import { Pattern } from 'components/Explore/LogsByService/Pattern';
+import pluginJson from '../../plugin.json';
 
 type LogExplorationMode = 'start' | 'logs';
 
@@ -62,13 +63,16 @@ export interface LogExplorationState extends SceneObjectState {
   patterns?: AppliedPattern[];
 }
 
+const DS_LOCALSTORAGE_KEY = `${pluginJson.id}.datasource`;
 export class LogExploration extends SceneObjectBase<LogExplorationState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['mode', 'patterns'] });
 
   public constructor(state: Partial<LogExplorationState>) {
     super({
       $timeRange: state.$timeRange ?? new SceneTimeRange({}),
-      $variables: state.$variables ?? getVariableSet(state.initialDS, state.initialFilters),
+      $variables:
+        state.$variables ??
+        getVariableSet(state.initialDS ?? localStorage.getItem(DS_LOCALSTORAGE_KEY) ?? undefined, state.initialFilters),
       controls: state.controls ?? [
         new VariableValueSelectors({ layout: 'vertical' }),
         new SceneControlsSpacer(),
@@ -89,10 +93,7 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
     }
     if (this.state.mode !== undefined && this.state.mode !== 'start') {
       this.setState({
-        controls: [
-          ...this.state.controls,
-          new LiveTailControl({}),
-        ]
+        controls: [...this.state.controls, new LiveTailControl({})],
       });
     }
 
@@ -131,10 +132,7 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
 
   private _handleStartingPointSelected(evt: StartingPointSelectedEvent) {
     this.setState({
-      controls: [
-        ...this.state.controls,
-        new LiveTailControl({}),
-      ]
+      controls: [...this.state.controls, new LiveTailControl({})],
     });
     locationService.partial({ mode: 'logs' });
   }
@@ -176,22 +174,26 @@ export class LogExplorationScene extends SceneObjectBase {
     const logExploration = sceneGraph.getAncestor(model, LogExploration);
     const { controls, topScene, mode, patterns } = logExploration.useState();
     const styles = useStyles2(getStyles);
-    const includePatterns = patterns ? patterns.filter(pattern => pattern.type === 'include') : [];
-    const excludePatterns = patterns ? patterns.filter(pattern => pattern.type !== 'include') : [];
+    const includePatterns = patterns ? patterns.filter((pattern) => pattern.type === 'include') : [];
+    const excludePatterns = patterns ? patterns.filter((pattern) => pattern.type !== 'include') : [];
 
     return (
       <div className={styles.container}>
         {controls && (
           <div className={styles.controlsContainer}>
             <div className={styles.filters}>
-              {controls.map((control) => (
-                control instanceof VariableValueSelectors ? <control.Component key={control.state.key} model={control} /> : null
-              ))}
+              {controls.map((control) =>
+                control instanceof VariableValueSelectors ? (
+                  <control.Component key={control.state.key} model={control} />
+                ) : null
+              )}
             </div>
             <div className={styles.controls}>
-              {controls.map((control) => (
-                control instanceof VariableValueSelectors === false ? <control.Component key={control.state.key} model={control} /> : null
-              ))}
+              {controls.map((control) =>
+                control instanceof VariableValueSelectors === false ? (
+                  <control.Component key={control.state.key} model={control} />
+                ) : null
+              )}
             </div>
           </div>
         )}
@@ -199,20 +201,34 @@ export class LogExplorationScene extends SceneObjectBase {
           <div>
             {includePatterns.length > 0 && (
               <div className={styles.patternsContainer}>
-                <Text variant='bodySmall' weight='bold'>{excludePatterns.length > 0 ? 'Include patterns' : 'Patterns'}</Text>
+                <Text variant="bodySmall" weight="bold">
+                  {excludePatterns.length > 0 ? 'Include patterns' : 'Patterns'}
+                </Text>
                 <div className={styles.patterns}>
                   {includePatterns.map((p) => (
-                    <Pattern key={p.pattern} pattern={p.pattern} type={p.type} onRemove={() => logExploration.setState({ patterns: patterns?.filter((pat) => pat !== p) || [] })} />
+                    <Pattern
+                      key={p.pattern}
+                      pattern={p.pattern}
+                      type={p.type}
+                      onRemove={() => logExploration.setState({ patterns: patterns?.filter((pat) => pat !== p) || [] })}
+                    />
                   ))}
                 </div>
               </div>
             )}
             {excludePatterns.length > 0 && (
               <div className={styles.patternsContainer}>
-                <Text variant='bodySmall' weight='bold'>Exclude patterns:</Text>
+                <Text variant="bodySmall" weight="bold">
+                  Exclude patterns:
+                </Text>
                 <div className={styles.patterns}>
                   {excludePatterns.map((p) => (
-                    <Pattern key={p.pattern} pattern={p.pattern} type={p.type} onRemove={() => logExploration.setState({ patterns: patterns?.filter((pat) => pat !== p) || [] })} />
+                    <Pattern
+                      key={p.pattern}
+                      pattern={p.pattern}
+                      type={p.type}
+                      onRemove={() => logExploration.setState({ patterns: patterns?.filter((pat) => pat !== p) || [] })}
+                    />
                   ))}
                 </div>
               </div>
@@ -243,30 +259,52 @@ function getTopScene(mode?: LogExplorationMode) {
 }
 
 function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter[]) {
+  const operators = ['=', '!='].map<SelectableValue<string>>((value) => ({
+    label: value,
+    value,
+  }));
+
+  const filterVariable = new AdHocFiltersVariable({
+    name: VAR_FILTERS,
+    datasource: explorationDS,
+    layout: 'horizontal',
+    label: 'Service',
+    filters: initialFilters ?? [],
+    expressionBuilder: renderLogQLLabelFilters,
+  });
+
+  filterVariable._getOperators = () => {
+    return operators;
+  };
+
+  const fieldsVariable = new AdHocFiltersVariable({
+    name: VAR_FIELDS,
+    label: 'Filters',
+    applyMode: 'manual',
+    getTagKeysProvider: () => Promise.resolve({ values: [] }),
+    getTagValuesProvider: () => Promise.resolve({ values: [] }),
+    expressionBuilder: renderLogQLFieldFilters,
+  });
+
+  fieldsVariable._getOperators = () => {
+    return operators;
+  };
+
+  const dsVariable = new DataSourceVariable({
+    name: VAR_DATASOURCE,
+    label: 'Data source',
+    value: initialDS,
+    pluginId: 'loki',
+  });
+  dsVariable.subscribeToState((newState) => {
+    const dsValue = `${newState.value}`;
+    newState.value && localStorage.setItem(DS_LOCALSTORAGE_KEY, dsValue);
+  });
   return new SceneVariableSet({
     variables: [
-      new DataSourceVariable({
-        name: VAR_DATASOURCE,
-        label: 'Data source',
-        value: initialDS,
-        pluginId: 'loki',
-      }),
-      new AdHocFiltersVariable({
-        name: VAR_FILTERS,
-        datasource: explorationDS,
-        layout: 'horizontal',
-        label: 'Service',
-        filters: initialFilters ?? [],
-        expressionBuilder: renderLogQLLabelFilters,
-      }),
-      new AdHocFiltersVariable({
-        name: VAR_FIELDS,
-        label: 'Filters',
-        applyMode: 'manual',
-        getTagKeysProvider: () => Promise.resolve({ values: [] }),
-        getTagValuesProvider: () => Promise.resolve({ values: [] }),
-        expressionBuilder: renderLogQLFieldFilters,
-      }),
+      dsVariable,
+      filterVariable,
+      fieldsVariable,
       new CustomVariable({
         name: VAR_PATTERNS,
         value: '|= ``',
@@ -339,7 +377,7 @@ function getStyles(theme: GrafanaTheme2) {
       display: 'flex',
       gap: theme.spacing(1),
       alignItems: 'center',
-      flexWrap: 'wrap'
+      flexWrap: 'wrap',
     }),
   };
 }
