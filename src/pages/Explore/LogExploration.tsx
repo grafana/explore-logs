@@ -122,10 +122,7 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
         hide: VariableHide.hideVariable
       })
     }
-
-
-    // this.state.$variables?.state.variables.find()
-
+    
     // Some scene elements publish this
     this.subscribeToEvent(StartingPointSelectedEvent, this._handleStartingPointSelected.bind(this));
     this.subscribeToEvent(DetailsSceneUpdated, this._handleDetailsSceneUpdated.bind(this));
@@ -153,7 +150,7 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
         patternsVariable.changeValueTo(patternsLine);
       }
     });
-    
+
     return () => {
       getUrlSyncManager().cleanUp(this);
     };
