@@ -24,7 +24,7 @@ import {
   SplitLayout,
   VariableValueSelectors,
 } from '@grafana/scenes';
-import { Text, useStyles2 } from '@grafana/ui';
+import {Text, useStyles2} from '@grafana/ui';
 
 import {LogsByServiceScene} from '../../components/Explore/LogsByService/LogsByServiceScene';
 import {SelectStartingPointScene} from './SelectStartingPointScene';
@@ -41,7 +41,7 @@ import {DetailsScene} from '../../components/Explore/LogsByService/DetailsScene'
 import {AppliedPattern} from '../../components/Explore/types';
 import {VariableHide} from '@grafana/schema';
 import {LiveTailControl} from 'components/Explore/LiveTailControl';
-import { Pattern } from 'components/Explore/LogsByService/Pattern';
+import {Pattern} from 'components/Explore/LogsByService/Pattern';
 
 type LogExplorationMode = 'start' | 'logs';
 
@@ -96,6 +96,35 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
       });
     }
 
+    // Services
+    const serviceVarState = this.state.$variables?.getByName(VAR_FIELDS) as AdHocFiltersVariable
+
+    if(serviceVarState?.state?.filters?.length) {
+      this.state.$variables?.getByName(VAR_FIELDS)?.setState({
+        hide: VariableHide.dontHide
+      })
+    }else{
+      this.state.$variables?.getByName(VAR_FIELDS)?.setState({
+        hide: VariableHide.hideVariable
+      })
+    }
+
+    const filtersVarState = this.state.$variables?.getByName(VAR_FILTERS) as AdHocFiltersVariable
+
+    // Labels
+    if(filtersVarState?.state?.filters?.length){
+      this.state.$variables?.getByName(VAR_FILTERS)?.setState({
+        hide: VariableHide.dontHide
+      })
+    }else{
+      this.state.$variables?.getByName(VAR_FILTERS)?.setState({
+        hide: VariableHide.hideVariable
+      })
+    }
+
+
+    // this.state.$variables?.state.variables.find()
+
     // Some scene elements publish this
     this.subscribeToEvent(StartingPointSelectedEvent, this._handleStartingPointSelected.bind(this));
     this.subscribeToEvent(DetailsSceneUpdated, this._handleDetailsSceneUpdated.bind(this));
@@ -123,6 +152,9 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
         patternsVariable.changeValueTo(patternsLine);
       }
     });
+    this.state.$variables?.subscribeToState((state, prevState) => {
+      console.log('variable state', state)
+    })
 
     return () => {
       getUrlSyncManager().cleanUp(this);
@@ -130,11 +162,20 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
   }
 
   private _handleStartingPointSelected(evt: StartingPointSelectedEvent) {
+
+    this.state.$variables?.getByName(VAR_FIELDS)?.setState({
+      hide: VariableHide.dontHide
+    })
+
+    this.state.$variables?.getByName(VAR_FILTERS)?.setState({
+      hide: VariableHide.dontHide
+    })
+
     this.setState({
       controls: [
         ...this.state.controls,
         new LiveTailControl({}),
-      ]
+      ],
     });
     locationService.partial({ mode: 'logs' });
   }
@@ -142,6 +183,7 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
   private _handleDetailsSceneUpdated(evt: DetailsSceneUpdated) {
     this.setState({ showDetails: true });
   }
+
 
   getUrlState() {
     return { mode: this.state.mode, patterns: JSON.stringify(this.state.patterns) };
@@ -258,6 +300,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
         label: 'Labels',
         filters: initialFilters ?? [],
         expressionBuilder: renderLogQLLabelFilters,
+        hide: VariableHide.hideVariable,
       }),
       new AdHocFiltersVariable({
         name: VAR_FIELDS,
@@ -266,6 +309,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
         getTagKeysProvider: () => Promise.resolve({ values: [] }),
         getTagValuesProvider: () => Promise.resolve({ values: [] }),
         expressionBuilder: renderLogQLFieldFilters,
+        hide: VariableHide.hideVariable,
       }),
       new CustomVariable({
         name: VAR_PATTERNS,
