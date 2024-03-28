@@ -319,7 +319,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
         clearTimeout(timeout.current);
         timeout.current = setTimeout(() => {
           model.setState({ searchServicesString: value });
-        }, 500);
+        }, 700);
       },
       [model]
     );
