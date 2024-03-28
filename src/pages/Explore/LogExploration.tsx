@@ -42,6 +42,7 @@ import { AppliedPattern } from '../../components/Explore/types';
 import { VariableHide } from '@grafana/schema';
 import { LiveTailControl } from 'components/Explore/LiveTailControl';
 import { Pattern } from 'components/Explore/LogsByService/Pattern';
+import pluginJson from '../../plugin.json';
 
 type LogExplorationMode = 'start' | 'logs';
 
@@ -62,13 +63,16 @@ export interface LogExplorationState extends SceneObjectState {
   patterns?: AppliedPattern[];
 }
 
+const DS_LOCALSTORAGE_KEY = `${pluginJson.id}.datasource`;
 export class LogExploration extends SceneObjectBase<LogExplorationState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['mode', 'patterns'] });
 
   public constructor(state: Partial<LogExplorationState>) {
     super({
       $timeRange: state.$timeRange ?? new SceneTimeRange({}),
-      $variables: state.$variables ?? getVariableSet(state.initialDS, state.initialFilters),
+      $variables:
+        state.$variables ??
+        getVariableSet(state.initialDS ?? localStorage.getItem(DS_LOCALSTORAGE_KEY) ?? undefined, state.initialFilters),
       controls: state.controls ?? [
         new VariableValueSelectors({ layout: 'vertical' }),
         new SceneControlsSpacer(),
@@ -286,14 +290,19 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
     return operators;
   };
 
+  const dsVariable = new DataSourceVariable({
+    name: VAR_DATASOURCE,
+    label: 'Data source',
+    value: initialDS,
+    pluginId: 'loki',
+  });
+  dsVariable.subscribeToState((newState) => {
+    const dsValue = `${newState.value}`;
+    newState.value && localStorage.setItem(DS_LOCALSTORAGE_KEY, dsValue);
+  });
   return new SceneVariableSet({
     variables: [
-      new DataSourceVariable({
-        name: VAR_DATASOURCE,
-        label: 'Data source',
-        value: initialDS,
-        pluginId: 'loki',
-      }),
+      dsVariable,
       filterVariable,
       fieldsVariable,
       new CustomVariable({
