@@ -267,7 +267,9 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
               onChange={onSearchChange}
             />
           </Field>
-          <body.Component model={body} />
+          <div className={styles.body}>
+            <body.Component model={body} />
+          </div>
         </div>
       </div>
     );
@@ -284,6 +286,7 @@ function buildLogsQuery(service?: string) {
     expr: buildBaseExpr(service),
     queryType: 'range',
     legendFormat: '{{level}}',
+    maxLines: 100,
   };
 }
 
@@ -318,10 +321,12 @@ function getStyles(theme: GrafanaTheme2) {
       flexGrow: 1,
       display: 'flex',
       flexDirection: 'column',
-
-      '& > div': {
-        overflow: 'scroll',
-      },
+    }),
+    body: css({
+      overflowY: 'scroll',
+      flexGrow: 1,
+      display: 'flex',
+      flexDirection: 'column',
     }),
     searchField: css({
       marginTop: theme.spacing(1),
