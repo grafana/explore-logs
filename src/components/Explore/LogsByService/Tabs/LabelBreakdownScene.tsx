@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DataFrame, GrafanaTheme2, MetricFindValue, SelectableValue } from '@grafana/data';
+import { DataFrame, GrafanaTheme2, SelectableValue } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   CustomVariable,
@@ -36,7 +36,7 @@ import {
 import { AddToFiltersGraphAction } from '../../AddToFiltersGraphAction';
 import { ByFrameRepeater } from '../../ByFrameRepeater';
 import { LayoutSwitcher } from '../../LayoutSwitcher';
-import { getLabelOptions, getSeriesOptions } from '../../../../utils/utils';
+import { getSeriesOptions } from '../../../../utils/utils';
 import { getDataSourceSrv } from '@grafana/runtime';
 import { getLayoutChild } from '../../../../utils/fields';
 

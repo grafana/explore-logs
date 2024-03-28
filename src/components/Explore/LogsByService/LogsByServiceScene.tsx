@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DashboardCursorSync, GrafanaTheme2, LoadingState, MetricFindValue } from '@grafana/data';
+import { DashboardCursorSync, GrafanaTheme2, LoadingState } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   behaviors,
@@ -34,7 +34,7 @@ import {
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE_EXPR,
 } from '../../../utils/shared';
-import { getExplorationFor, getLabelOptions, getSeriesOptions } from '../../../utils/utils';
+import { getExplorationFor, getSeriesOptions } from '../../../utils/utils';
 import { ShareExplorationButton } from './ShareExplorationButton';
 import { buildLabelBreakdownActionScene } from './Tabs/LabelBreakdownScene';
 import { getDataSourceSrv, locationService } from '@grafana/runtime';

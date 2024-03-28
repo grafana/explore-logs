@@ -57,26 +57,6 @@ export function getColorByIndex(index: number) {
   return visTheme.getColorByName(visTheme.palette[index % 8]);
 }
 
-export function getLabelOptions(scenObject: SceneObject, allOptions: MetricFindValue[]) {
-  const labelFilters = sceneGraph.lookupVariable(VAR_FILTERS, scenObject);
-  const labelOptions: Array<SelectableValue<string>> = [];
-
-  if (!(labelFilters instanceof AdHocFiltersVariable)) {
-    return [];
-  }
-
-  const filters = labelFilters.state.filters;
-
-  for (const option of allOptions) {
-    const filterExists = filters.find((f) => f.key === option.text);
-    if (!filterExists) {
-      labelOptions.push({ label: option.text, value: String(option.text) });
-    }
-  }
-
-  return [{ label: 'All', value: ALL_VARIABLE_VALUE }, ...labelOptions];
-}
-
 export function getSeriesOptions(scenObject: SceneObject, allOptions: Record<string, string[]>) {
   const labelFilters = sceneGraph.lookupVariable(VAR_FILTERS, scenObject);
   const labelOptions: Array<SelectableValue<string>> = [];
