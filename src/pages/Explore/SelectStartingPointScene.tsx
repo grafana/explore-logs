@@ -348,7 +348,7 @@ function buildVolumeQuery(services: string[]) {
   const stream = `${SERVICE_NAME}=~"${services.join('|')}"`;
   return {
     refId: 'A',
-    expr: `sum by(${SERVICE_NAME}, level) (count_over_time({${stream}} | __error__="" [$__auto]))`,
+    expr: `sum by(${SERVICE_NAME}, level) (count_over_time({${stream}} | drop __error__ [$__auto]))`,
     queryType: 'range',
     legendFormat: '{{level}}',
     maxLines: 100,
