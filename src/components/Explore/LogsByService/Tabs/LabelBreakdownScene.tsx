@@ -257,7 +257,7 @@ export function buildAllLayout(options: Array<SelectableValue<string>>) {
 }
 
 function getExpr(tagKey: string) {
-  return `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR} [$__auto])) by (${tagKey})`;
+  return `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ [$__auto])) by (${tagKey})`;
 }
 
 function buildQuery(tagKey: string) {
