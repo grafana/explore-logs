@@ -398,7 +398,7 @@ export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
 
   public static Component = ({ model }: SceneComponentProps<AddToFiltersGraphAction>) => {
     return (
-      <Button variant="primary" size="sm" onClick={model.onClick}>
+      <Button variant="secondary" size="sm" onClick={model.onClick}>
         Select
       </Button>
     );
@@ -416,3 +416,7 @@ function getFieldsBreakdownSceneFor(model: SceneObject): FieldsBreakdownScene {
 
   throw new Error('Unable to find breakdown scene');
 }
+
+1711643736536
+1711642830000
+1711642836536
