@@ -416,7 +416,3 @@ function getFieldsBreakdownSceneFor(model: SceneObject): FieldsBreakdownScene {
 
   throw new Error('Unable to find breakdown scene');
 }
-
-1711643736536
-1711642830000
-1711642836536
