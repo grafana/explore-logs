@@ -3,6 +3,7 @@ import React from 'react';
 
 import { DataFrame, GrafanaTheme2, MetricFindValue, SelectableValue } from '@grafana/data';
 import {
+  AdHocFiltersVariable,
   CustomVariable,
   PanelBuilders,
   SceneComponentProps,
@@ -35,7 +36,7 @@ import {
 import { AddToFiltersGraphAction } from '../../AddToFiltersGraphAction';
 import { ByFrameRepeater } from '../../ByFrameRepeater';
 import { LayoutSwitcher } from '../../LayoutSwitcher';
-import { getLabelOptions } from '../../../../utils/utils';
+import { getLabelOptions, getSeriesOptions } from '../../../../utils/utils';
 import { getDataSourceSrv } from '@grafana/runtime';
 import { getLayoutChild } from '../../../../utils/fields';
 
@@ -106,8 +107,12 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       return;
     }
 
-    ds.getTagKeys?.().then((tagKeys: MetricFindValue[]) => {
-      const options = getLabelOptions(this, tagKeys);
+    const lokiLanguageProvider = ds.languageProvider as any;
+    const timeRange = sceneGraph.getTimeRange(this).state.value;
+    const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
+
+    lokiLanguageProvider.fetchSeriesLabels(filters.state.filterExpression, {timeRange}).then((tagKeys: Record<string, string[]>) => {
+      const options = getSeriesOptions(this, tagKeys);
       const stateUpdate: Partial<LabelBreakdownSceneState> = {
         loading: false,
         value: String(variable.state.value),
