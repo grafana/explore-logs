@@ -246,6 +246,8 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
       // reduce max height for main panel to reduce height flicker
       body.state.children[0].setState({ maxHeight: MAIN_PANEL_MIN_HEIGHT });
       body.setState({ children: [...body.state.children.slice(0, 2), actionViewDef.getScene()] });
+      // this is mainly to fix the logs panels height and set it to 2x the height of the log volume
+      body.state.children[body.state.children.length - 1].setState({ minHeight: MAIN_PANEL_MIN_HEIGHT * 2 });
       this.setState({ actionView: actionViewDef.value });
     } else {
       // restore max height
