@@ -44,6 +44,7 @@ export interface LogSelectSceneState extends SceneObjectState {
   searchQuery?: string;
   showPreviews?: boolean;
   topServices?: string[];
+  isTopSeriesLoading: boolean;
 }
 
 //const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
@@ -65,6 +66,8 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
       groupBy: state.groupBy ?? 'resource.service.name',
       metricFn: state.metricFn ?? 'rate()',
       body: new SceneCSSGridLayout({ children: [] }),
+      isTopSeriesLoading: false,
+      topServices: undefined,
       ...state,
     });
 
@@ -111,7 +114,9 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
   private _onTopServiceChange() {
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue()
-
+    this.setState({
+      isTopSeriesLoading: true,
+    })
     getDataSourceSrv().get(ds as string).then((ds) => {
       // @ts-ignore
       ds.getResource!('index/volume', {
@@ -132,7 +137,14 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
         .map(([serviceName]) => serviceName); // Extract service names
       
         this.setState({
-          topServices: topServices,
+          topServices,
+          isTopSeriesLoading: false,
+      })
+    }).catch((err: any) => {
+      console.error('Could not fetch volume', err)
+      this.setState({
+        topServices: [],
+        isTopSeriesLoading: false,
       })
     })
   })
@@ -144,16 +156,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
 
   private updateBody() {
     if (!this.state.topServices || this.state.topServices.length === 0) {
-      this.state.body!.setState({
-        children: [
-          new SceneFlexItem({
-            body: new SceneReactObject({
-              reactNode: <LoadingPlaceholder text="Fetching services..." />,
-            }),
-          }),
-        ],
-
-      })
+      this.state.body.setState({ children: [] });
     } else {
     this.state.body.setState({
       children: [
@@ -290,6 +293,8 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
     const styles = useStyles2(getStyles);
     //const metricFnVariable = model.getMetricFnVariable();
     // const { value: metricFnValue } = metricFnVariable.useState();
+    const { isTopSeriesLoading, topServices } = model.useState();
+  
 
     const body = model.state.body;
 
@@ -308,7 +313,6 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
       },
       [model]
     );
-
     return (
       <div className={styles.container}>
         <div className={styles.bodyWrapper}>
@@ -320,9 +324,13 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
               onChange={onSearchChange}
             />
           </Field>
+          {isTopSeriesLoading && <LoadingPlaceholder text="Fetching services..." />}
+          {!isTopSeriesLoading && (!topServices || topServices.length === 0) && <div>No services found</div>}
+          {!isTopSeriesLoading && topServices!.length > 0 && 
           <div className={styles.body}>
             <body.Component model={body} />
           </div>
+          }
         </div>
       </div>
     );
