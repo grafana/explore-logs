@@ -153,10 +153,7 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
         patternsVariable.changeValueTo(patternsLine);
       }
     });
-    this.state.$variables?.subscribeToState((state, prevState) => {
-      console.log('variable state', state)
-    })
-
+    
     return () => {
       getUrlSyncManager().cleanUp(this);
     };
