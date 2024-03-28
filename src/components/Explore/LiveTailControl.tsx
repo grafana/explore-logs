@@ -21,8 +21,7 @@ function LiveTailControlRenderer({ model }: SceneComponentProps<LiveTailControl>
   const { liveStreaming } = model.useState();
   const logExploration = sceneGraph.getAncestor(model, LogExploration);
   const { controls } = logExploration.useState();
-  const refreshPicker = controls.find((c) => c instanceof SceneRefreshPicker);
-  // @ts-ignore Property 'refresh' does not exist on type 'SceneObjectState', no idea how it lost SceneRefreshPickerState it's in the typedef
+  const refreshPicker = controls.find((c) => c instanceof SceneRefreshPicker) as SceneRefreshPicker;
   const refresh = refreshPicker?.useState().refresh || '';
 
   useEffect(() => {
