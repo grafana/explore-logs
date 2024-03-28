@@ -1,4 +1,4 @@
-import { MetricFindValue, SelectableValue, urlUtil } from '@grafana/data';
+import { SelectableValue, urlUtil } from '@grafana/data';
 import { config, getDataSourceSrv } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
