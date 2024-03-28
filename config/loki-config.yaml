@@ -21,6 +21,7 @@ limits_config:
   max_global_streams_per_user: 0
   ingestion_rate_mb: 50000
   ingestion_burst_size_mb: 50000
+  volume_enabled: true
 query_range:
   results_cache:
     cache:
