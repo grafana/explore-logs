@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DashboardCursorSync, GrafanaTheme2, LoadingState, MetricFindValue } from '@grafana/data';
+import { DashboardCursorSync, GrafanaTheme2, LoadingState } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   behaviors,
@@ -34,7 +34,7 @@ import {
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE_EXPR,
 } from '../../../utils/shared';
-import { getExplorationFor, getLabelOptions } from '../../../utils/utils';
+import { getExplorationFor, getSeriesOptions } from '../../../utils/utils';
 import { ShareExplorationButton } from './ShareExplorationButton';
 import { buildLabelBreakdownActionScene } from './Tabs/LabelBreakdownScene';
 import { getDataSourceSrv, locationService } from '@grafana/runtime';
@@ -44,6 +44,7 @@ import { Unsubscribable } from 'rxjs';
 import { getLiveTailControl } from 'utils/scenes';
 import { extractFields } from '../../../utils/fields';
 import { GoToExploreButton } from './GoToExploreButton';
+import { GiveFeedback } from './GiveFeedback';
 
 interface LokiPattern {
   matches: number;
@@ -60,6 +61,8 @@ export interface LogSceneState extends SceneObjectState {
   detectedFields?: string[];
   labels?: string[];
   patterns?: LokiPattern[];
+
+  detectedFieldsCount?: number;
 }
 
 export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
@@ -209,15 +212,20 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
     if (!ds) {
       return;
     }
+    const lokiLanguageProvider = ds.languageProvider as any;
+    const timeRange = sceneGraph.getTimeRange(this).state.value;
+    const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
 
-    ds.getTagKeys?.().then((tagKeys: MetricFindValue[]) => {
-      const labels = getLabelOptions(this, tagKeys)
-        .filter((l) => l.label !== 'All')
-        .map((l) => l.value!);
-      if (labels !== this.state.labels) {
-        this.setState({ labels });
-      }
-    });
+    lokiLanguageProvider
+      .fetchSeriesLabels(filters.state.filterExpression, { timeRange })
+      .then((tagKeys: Record<string, string[]>) => {
+        const labels = getSeriesOptions(this, tagKeys)
+          .filter((l) => l.label !== 'All')
+          .map((l) => l.value!);
+        if (labels !== this.state.labels) {
+          this.setState({ labels });
+        }
+      });
   }
 
   getUrlState() {
@@ -244,7 +252,18 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
     if (actionViewDef && actionViewDef.value !== this.state.actionView) {
       // reduce max height for main panel to reduce height flicker
       body.state.children[0].setState({ maxHeight: MAIN_PANEL_MIN_HEIGHT });
-      body.setState({ children: [...body.state.children.slice(0, 2), actionViewDef.getScene()] });
+      body.setState({
+        children: [
+          ...body.state.children.slice(0, 2),
+          actionViewDef.getScene((vals) => {
+            if (actionViewDef.value === 'fields') {
+              this.setState({ detectedFieldsCount: vals.length });
+            }
+          }),
+        ],
+      });
+      // this is mainly to fix the logs panels height and set it to 2x the height of the log volume
+      body.state.children[body.state.children.length - 1].setState({ minHeight: MAIN_PANEL_MIN_HEIGHT * 2 });
       this.setState({ actionView: actionViewDef.value });
     } else {
       // restore max height
@@ -279,7 +298,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
     const getCounter = (tab: ActionViewDefinition) => {
       switch (tab.value) {
         case 'fields':
-          return logsScene.state.detectedFields?.length;
+          return logsScene.state.detectedFieldsCount ?? logsScene.state.detectedFields?.length;
         case 'patterns':
           return logsScene.state.patterns?.length;
         case 'labels':
@@ -293,6 +312,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
       <Box paddingY={1}>
         <div className={styles.actions}>
           <Stack gap={2}>
+            <GiveFeedback />
             <ShareExplorationButton exploration={exploration} />
             <GoToExploreButton exploration={exploration} />
           </Stack>

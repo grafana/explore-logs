@@ -5,7 +5,7 @@ export type ActionViewType = 'logs' | 'labels' | 'patterns' | 'fields' | 'traces
 export interface ActionViewDefinition {
   displayName: string;
   value: ActionViewType;
-  getScene: () => SceneObject;
+  getScene: (changeFields: (f: string[]) => void) => SceneObject;
 }
 
 export const EXPLORATIONS_ROUTE = '/a/grafana-lokiexplore-app/explore';

@@ -2,6 +2,7 @@ import { css } from '@emotion/css';
 import React, { useCallback, useRef, useState } from 'react';
 
 import { DataFrame, GrafanaTheme2, reduceField, ReducerID, PanelData } from '@grafana/data';
+import { getDataSourceSrv } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
   CustomVariable,
@@ -25,13 +26,16 @@ import {
 import { DrawStyle, Field, Icon, Input, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 
 import { SelectAttributeWithValueAction } from './SelectAttributeWithValueAction';
-import { explorationDS, VAR_FILTERS } from '../../utils/shared';
+import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from '../../utils/shared';
 import { map, Observable, Unsubscribable } from 'rxjs';
 import { ByLabelRepeater } from 'components/Explore/ByLabelRepeater';
 import { getLiveTailControl } from 'utils/scenes';
 
+const LIMIT_SERVICES = 20;
+const SERVICE_NAME = 'service_name';
+
 export interface LogSelectSceneState extends SceneObjectState {
-  body?: SceneCSSGridLayout;
+  body: SceneCSSGridLayout;
   repeater?: ByLabelRepeater;
   groupBy: string;
   metricFn: string;
@@ -39,6 +43,7 @@ export interface LogSelectSceneState extends SceneObjectState {
   showHeading?: boolean;
   searchQuery?: string;
   showPreviews?: boolean;
+  topServices?: string[];
 }
 
 //const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
@@ -59,11 +64,8 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
       showPreviews: true,
       groupBy: state.groupBy ?? 'resource.service.name',
       metricFn: state.metricFn ?? 'rate()',
+      body: new SceneCSSGridLayout({ children: [] }),
       ...state,
-    });
-
-    this.setState({
-      body: this.buildBody(),
     });
 
     this.addActivationHandler(this._onActivate.bind(this));
@@ -72,9 +74,9 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
   private _onActivate() {
     // terribad hack - remove single service filter if it's there
     const variable = sceneGraph.lookupVariable(VAR_FILTERS, this);
-    if (variable instanceof AdHocFiltersVariable && variable.state.filters.find((f) => f.key === 'service_name')) {
+    if (variable instanceof AdHocFiltersVariable && variable.state.filters.find((f) => f.key === SERVICE_NAME)) {
       variable.setState({
-        filters: variable.state.filters.filter((f) => f.key !== 'service_name'),
+        filters: variable.state.filters.filter((f) => f.key !== SERVICE_NAME),
       });
     }
 
@@ -95,21 +97,71 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
       );
     }
 
+    this._onTopServiceChange()
+
+    this.subscribeToState((newState, oldState) => {
+      if (newState.topServices !== oldState.topServices) {
+        this.updateBody();
+      }
+    })
+
     return () => unsubs.forEach((u) => u.unsubscribe());
   }
+
+  private _onTopServiceChange() {
+    const timeRange = sceneGraph.getTimeRange(this).state.value;
+    const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue()
+
+    getDataSourceSrv().get(ds as string).then((ds) => {
+      // @ts-ignore
+      ds.getResource!('index/volume', {
+      query: `{${SERVICE_NAME}=~".+"}`,
+      from: timeRange.from.utc().toISOString(),
+      to: timeRange.to.utc().toISOString(),
+    }).then((res: any) => {
+      const serviceMetrics: {[key: string]: number} = {}
+      res.data.result.forEach((item: any) => {
+        const serviceName = item['metric'][SERVICE_NAME];
+        const value = Number(item['value'][1]);
+        serviceMetrics[serviceName] = value;
+      })
+
+      const topServices = Object.entries(serviceMetrics)
+        .sort((a, b) => b[1] - a[1]) // Sort by value in descending order
+        .slice(0, LIMIT_SERVICES) // Keep only the top N services
+        .map(([serviceName]) => serviceName); // Extract service names
+      
+        this.setState({
+          topServices: topServices,
+      })
+    })
+  })
+}
 
   public getRepeater(): ByLabelRepeater {
     return this.state.body!.state.children[0] as ByLabelRepeater;
   }
 
-  private buildBody() {
-    return new SceneCSSGridLayout({
+  private updateBody() {
+    if (!this.state.topServices || this.state.topServices.length === 0) {
+      this.state.body!.setState({
+        children: [
+          new SceneFlexItem({
+            body: new SceneReactObject({
+              reactNode: <LoadingPlaceholder text="Fetching services..." />,
+            }),
+          }),
+        ],
+
+      })
+    } else {
+    this.state.body.setState({
       children: [
         new ByLabelRepeater({
           $data: new SceneDataTransformer({
             $data: new SceneQueryRunner({
               datasource: explorationDS,
-              queries: [buildVolumeQuery()],
+              queries: [buildVolumeQuery(this.state.topServices)],
               maxDataPoints: 80,
             }),
             transformations: [
@@ -136,11 +188,12 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
               }),
             ],
           }),
-          repeatByLabel: 'service_name',
+          repeatByLabel: SERVICE_NAME,
           getLayoutChild: this.getLayoutChild.bind(this),
         }),
       ],
     });
+    }
   }
 
   private getLayoutChild(data: PanelData, frames: DataFrame[], service: string, frameIndex: number): SceneFlexItem {
@@ -182,7 +235,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
 
     const logsQueryRunner = new SceneQueryRunner({
       datasource: explorationDS,
-      queries: [buildLogsQuery(service)],
+      queries: [buildLogsQuery(service, this.state.topServices)],
       maxDataPoints: 80,
       liveStreaming: getLiveTailControl(this)?.state.liveStreaming,
     });
@@ -238,9 +291,9 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
     //const metricFnVariable = model.getMetricFnVariable();
     // const { value: metricFnValue } = metricFnVariable.useState();
 
-    const body = model.state.body!;
+    const body = model.state.body;
 
-    const [searchQuery, setSearchQuery] = useState(model.getRepeater().state.filter);
+    const [searchQuery, setSearchQuery] = useState(model.getRepeater()?.state?.filter)
 
     const timeout = useRef<NodeJS.Timeout>();
 
@@ -267,30 +320,35 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
               onChange={onSearchChange}
             />
           </Field>
-          <body.Component model={body} />
+          <div className={styles.body}>
+            <body.Component model={body} />
+          </div>
         </div>
       </div>
     );
   };
 }
 
-function buildBaseExpr(service?: string) {
-  return `{service_name${service ? `="${service}"` : '=~".+"'}}`;
+function buildBaseExpr(service: string| undefined, topServices: string[] | undefined) {
+  const servicesLogQl = topServices && topServices.length > 0 ? topServices.join('|') : '.+';
+  return `{${SERVICE_NAME}${service ? `="${service}"` : `=~"${servicesLogQl}"`}}`;
 }
 
-function buildLogsQuery(service?: string) {
+function buildLogsQuery(service: string | undefined, topServices: string[] | undefined) {
   return {
     refId: 'A',
-    expr: buildBaseExpr(service),
+    expr: buildBaseExpr(service, topServices),
     queryType: 'range',
     legendFormat: '{{level}}',
+    maxLines: 100,
   };
 }
 
-function buildVolumeQuery() {
+function buildVolumeQuery(services: string[]) {
+  const stream = `${SERVICE_NAME}=~"${services.join('|')}"`;
   return {
     refId: 'A',
-    expr: `sum by(service_name, level) (count_over_time(${buildBaseExpr()} | __error__="" [$__auto]))`,
+    expr: `sum by(${SERVICE_NAME}, level) (count_over_time({${stream}} | drop __error__ [$__auto]))`,
     queryType: 'range',
     legendFormat: '{{level}}',
     maxLines: 100,
@@ -318,10 +376,12 @@ function getStyles(theme: GrafanaTheme2) {
       flexGrow: 1,
       display: 'flex',
       flexDirection: 'column',
-
-      '& > div': {
-        overflow: 'scroll',
-      },
+    }),
+    body: css({
+      overflowY: 'scroll',
+      flexGrow: 1,
+      display: 'flex',
+      flexDirection: 'column',
     }),
     searchField: css({
       marginTop: theme.spacing(1),

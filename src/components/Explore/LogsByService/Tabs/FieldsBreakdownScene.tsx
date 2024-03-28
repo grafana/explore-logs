@@ -45,6 +45,8 @@ export interface FieldsBreakdownSceneState extends SceneObjectState {
   loading?: boolean;
   error?: string;
   blockingMessage?: string;
+
+  changeFields?: (n: string[]) => void;
 }
 
 export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneState> {
@@ -122,6 +124,14 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this.updateBody(variable);
   }
 
+  private hideField(field: string) {
+    // TODO: store in localstorage that this field was hidden?
+    const fields = this.state.fields.filter((f) => f.value !== field);
+    this.setState({ fields });
+
+    this.state.changeFields?.(fields.filter(f=>f.value !== ALL_VARIABLE_VALUE).map((f) => f.value!));
+  }
+
   private async updateBody(variable: CustomVariable) {
     const stateUpdate: Partial<FieldsBreakdownSceneState> = {
       loading: false,
@@ -129,9 +139,77 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       blockingMessage: undefined,
     };
 
-    stateUpdate.body = variable.hasAllValue() ? buildAllLayout(this.state.fields) : buildNormalLayout(variable);
+    stateUpdate.body = variable.hasAllValue() ? this.buildAllLayout(this.state.fields) : buildNormalLayout(variable);
 
     this.setState(stateUpdate);
+  }
+
+  private buildAllLayout(options: Array<SelectableValue<string>>) {
+    const children: SceneFlexItemLike[] = [];
+    
+    for (const option of options) {
+      if (option.value === ALL_VARIABLE_VALUE) {
+        continue;
+      }
+
+      const expr = getExpr(option.value!);
+      const queryRunner = new SceneQueryRunner({
+        maxDataPoints: 300,
+        datasource: explorationDS,
+        queries: [
+          {
+            refId: option.value!,
+            expr,
+            legendFormat: `{{${option.label}}}`,
+          },
+        ],
+      });
+      let body = PanelBuilders.timeseries().setTitle(option.label!).setData(queryRunner);
+
+      if (!isAvgField(option.label ?? '')) {
+        // TODO hack
+        body = body
+          .setHeaderActions(new SelectLabelAction({ labelName: String(option.value) }))
+          .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
+          .setCustomFieldConfig('fillOpacity', 100)
+          .setCustomFieldConfig('lineWidth', 0)
+          .setCustomFieldConfig('pointSize', 0)
+          .setCustomFieldConfig('drawStyle', DrawStyle.Bars);
+      }
+      const gridItem = new SceneCSSGridItem({
+        body: body.build(),
+      });
+
+      queryRunner.getResultsStream().subscribe((result) => {
+        if (result.data.errors && result.data.errors.length > 0) {
+          const val = result.data.errors[0].refId!;
+          this.hideField(val);
+          gridItem.setState({ isHidden: true });
+        }
+      });
+
+      children.push(gridItem);
+    }
+
+    return new LayoutSwitcher({
+      options: [
+        { value: 'grid', label: 'Grid' },
+        { value: 'rows', label: 'Rows' },
+      ],
+      active: 'grid',
+      layouts: [
+        new SceneCSSGridLayout({
+          templateColumns: GRID_TEMPLATE_COLUMNS,
+          autoRows: '200px',
+          children: children,
+        }),
+        new SceneCSSGridLayout({
+          templateColumns: '1fr',
+          autoRows: '200px',
+          children: children,
+        }),
+      ],
+    });
   }
 
   public onChange = (value?: string) => {
@@ -206,69 +284,6 @@ function getStyles(theme: GrafanaTheme2) {
   };
 }
 
-export function buildAllLayout(options: Array<SelectableValue<string>>) {
-  const children: SceneFlexItemLike[] = [];
-
-  for (const option of options) {
-    if (option.value === ALL_VARIABLE_VALUE) {
-      continue;
-    }
-
-    const expr = getExpr(option.value!);
-    let body = PanelBuilders.timeseries()
-      .setTitle(option.label!)
-      .setData(
-        new SceneQueryRunner({
-          maxDataPoints: 300,
-          datasource: explorationDS,
-          queries: [
-            {
-              refId: 'A',
-              expr,
-              legendFormat: `{{${option.label}}}`,
-            },
-          ],
-        })
-      );
-
-    if (!isAvgField(option.label ?? '')) {
-      // TODO hack
-      body = body
-        .setHeaderActions(new SelectLabelAction({ labelName: String(option.value) }))
-        .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
-        .setCustomFieldConfig('fillOpacity', 100)
-        .setCustomFieldConfig('lineWidth', 0)
-        .setCustomFieldConfig('pointSize', 0)
-        .setCustomFieldConfig('drawStyle', DrawStyle.Bars);
-    }
-    children.push(
-      new SceneCSSGridItem({
-        body: body.build(),
-      })
-    );
-  }
-
-  return new LayoutSwitcher({
-    options: [
-      { value: 'grid', label: 'Grid' },
-      { value: 'rows', label: 'Rows' },
-    ],
-    active: 'grid',
-    layouts: [
-      new SceneCSSGridLayout({
-        templateColumns: GRID_TEMPLATE_COLUMNS,
-        autoRows: '200px',
-        children: children,
-      }),
-      new SceneCSSGridLayout({
-        templateColumns: '1fr',
-        autoRows: '200px',
-        children: children,
-      }),
-    ],
-  });
-}
-
 const avgFields = ['duration', 'count', 'total', 'bytes'];
 
 function isAvgField(field: string) {
@@ -283,7 +298,7 @@ function getExpr(field: string) {
       `(${field}) [$__auto]) by ()`
     );
   }
-  return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} [$__auto]))`;
+  return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__  [$__auto]))`;
 }
 
 function buildQuery(tagKey: string) {
@@ -367,9 +382,9 @@ function getLabelValue(frame: DataFrame) {
   return labels[keys[0]];
 }
 
-export function buildFieldsBreakdownActionScene() {
+export function buildFieldsBreakdownActionScene(changeFieldNumber: (n: string[]) => void) {
   return new SceneFlexItem({
-    body: new FieldsBreakdownScene({}),
+    body: new FieldsBreakdownScene({ changeFields: changeFieldNumber }),
   });
 }
 

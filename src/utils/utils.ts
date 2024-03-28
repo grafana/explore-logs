@@ -1,4 +1,4 @@
-import { MetricFindValue, SelectableValue, urlUtil } from '@grafana/data';
+import { SelectableValue, urlUtil } from '@grafana/data';
 import { config, getDataSourceSrv } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
@@ -57,7 +57,7 @@ export function getColorByIndex(index: number) {
   return visTheme.getColorByName(visTheme.palette[index % 8]);
 }
 
-export function getLabelOptions(scenObject: SceneObject, allOptions: MetricFindValue[]) {
+export function getSeriesOptions(scenObject: SceneObject, allOptions: Record<string, string[]>) {
   const labelFilters = sceneGraph.lookupVariable(VAR_FILTERS, scenObject);
   const labelOptions: Array<SelectableValue<string>> = [];
 
@@ -67,12 +67,13 @@ export function getLabelOptions(scenObject: SceneObject, allOptions: MetricFindV
 
   const filters = labelFilters.state.filters;
 
-  for (const option of allOptions) {
-    const filterExists = filters.find((f) => f.key === option.text);
+  for (const option of Object.keys(allOptions)) {
+    const filterExists = filters.find((f) => f.key === option);
     if (!filterExists) {
-      labelOptions.push({ label: option.text, value: String(option.text) });
+      labelOptions.push({ label: option, value: String(option) });
     }
   }
 
   return [{ label: 'All', value: ALL_VARIABLE_VALUE }, ...labelOptions];
 }
+
