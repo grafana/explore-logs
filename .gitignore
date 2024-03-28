@@ -33,3 +33,6 @@ e2e-results/
 .idea
 
 .eslintcache
+
+# Ignore OSX indexing
+.DS_Store
