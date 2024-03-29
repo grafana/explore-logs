@@ -81,7 +81,6 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
     let minValue = 0;
 
     patterns
-      // .sort((a, b) => b.matches - a.matches)
       .slice(0, 40)
       .forEach((pat, frameIndex) => {
         const start = pat.samples[0][0] * 1000;
