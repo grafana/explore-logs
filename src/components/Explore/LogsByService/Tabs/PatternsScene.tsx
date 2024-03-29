@@ -81,24 +81,23 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
     let minValue = 0;
 
     patterns
-      .sort((a, b) => b.matches - a.matches)
       .slice(0, 40)
       .forEach((pat, frameIndex) => {
-        const start = pat.volumeTimeSeries[0][0] * 1000;
-        const end = pat.volumeTimeSeries[pat.volumeTimeSeries.length - 1][0] * 1000;
+        const start = pat.samples[0][0] * 1000;
+        const end = pat.samples[pat.samples.length - 1][0] * 1000;
         const dataFrame: DataFrame = {
           refId: pat.pattern,
           fields: [
             {
               name: 'time',
               type: FieldType.time,
-              values: pat.volumeTimeSeries.map((sample) => sample[0] * 1000),
+              values: pat.samples.map((sample) => sample[0] * 1000),
               config: {},
             },
             {
               name: pat.pattern,
               type: FieldType.number,
-              values: pat.volumeTimeSeries.map((sample) => {
+              values: pat.samples.map((sample) => {
                 const f = parseFloat(sample[1]);
                 if (f > maxValue) {
                   maxValue = f;
@@ -111,7 +110,7 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
               config: {},
             },
           ],
-          length: pat.volumeTimeSeries.length,
+          length: pat.samples.length,
           meta: {
             preferredVisualisationType: 'graph',
           },
