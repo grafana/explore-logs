@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DataFrame, FieldType, GrafanaTheme2, LoadingState, dateTime } from '@grafana/data';
+import { DataFrame, dateTime, FieldType, GrafanaTheme2, LoadingState } from '@grafana/data';
 import {
   CustomVariable,
   PanelBuilders,
@@ -16,10 +16,9 @@ import {
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
-  SceneReactObject,
   SceneVariableSet,
 } from '@grafana/scenes';
-import { Button, DrawStyle, StackingMode, useStyles2, Text } from '@grafana/ui';
+import { Button, DrawStyle, StackingMode, Text, useStyles2 } from '@grafana/ui';
 
 import { StatusWrapper } from '../../StatusWrapper';
 import { VAR_LABEL_GROUP_BY } from '../../../../utils/shared';
@@ -28,9 +27,8 @@ import { AddToFiltersGraphAction } from '../../AddToFiltersGraphAction';
 import { LayoutSwitcher } from '../../LayoutSwitcher';
 import { getColorByIndex } from '../../../../utils/utils';
 import { AddToPatternsGraphAction } from './AddToPatternsGraphAction';
-import { LogsByServiceScene, LokiPattern } from '../LogsByServiceScene';
+import { LogsByServiceScene } from '../LogsByServiceScene';
 import { GrotError } from '../../../GrotError';
-import { Pattern } from '../Pattern';
 
 export interface PatternsSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -53,6 +51,55 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
 
     this.addActivationHandler(this._onActivate.bind(this));
   }
+
+  public static Component = ({ model }: SceneComponentProps<PatternsScene>) => {
+    const { body, loading, blockingMessage } = model.useState();
+    const logsByServiceScene = sceneGraph.getAncestor(model, LogsByServiceScene);
+    const { patterns } = logsByServiceScene.useState();
+    const styles = useStyles2(getStyles);
+    return (
+      <div className={styles.container}>
+        <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
+          {!loading && !patterns && (
+            <div className={styles.patternMissingText}>
+              <Text textAlignment="center" color="primary">
+                <p>There are no pattern matches.</p>
+                <p>Pattern matching had not been configured.</p>
+                <p>Patterns let you detect similar log lines and add or exclude them from your search.</p>
+                <p>To see them in action, add the folloing to your configuration</p>
+                <p>
+                  <code>--pattern-ingester.enabled=true</code>
+                </p>
+              </Text>
+            </div>
+          )}
+          {!loading && patterns?.length === 0 && <GrotError />}
+          {!loading && patterns && patterns.length > 0 && (
+            <>
+              <div className={styles.controls}>
+                {body instanceof LayoutSwitcher && (
+                  <div className={styles.controlsRight}>
+                    <body.Selector model={body} />
+                  </div>
+                )}
+              </div>
+              <div className={styles.content}>{body && <body.Component model={body} />}</div>
+            </>
+          )}
+        </StatusWrapper>
+      </div>
+    );
+  };
+
+  public onChange = (value?: string) => {
+    if (!value) {
+      return;
+    }
+
+    const variable = this.getVariable();
+
+    variable.changeValueTo(value);
+  };
 
   private _onActivate() {
     this.updateBody();
@@ -203,9 +250,6 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
               body: undefined,
               $data: undefined,
             }),
-        // new SinglePatternsView({
-        //   patterns: patterns,
-        // }),
       ],
     });
 
@@ -233,55 +277,6 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
       }),
     });
   }
-
-  public onChange = (value?: string) => {
-    if (!value) {
-      return;
-    }
-
-    const variable = this.getVariable();
-
-    variable.changeValueTo(value);
-  };
-
-  public static Component = ({ model }: SceneComponentProps<PatternsScene>) => {
-    const { body, loading, blockingMessage } = model.useState();
-    const logsByServiceScene = sceneGraph.getAncestor(model, LogsByServiceScene);
-    const { patterns } = logsByServiceScene.useState();
-    const styles = useStyles2(getStyles);
-    return (
-      <div className={styles.container}>
-        <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
-          {!loading && !patterns && (
-            <div className={styles.patternMissingText}>
-              <Text textAlignment="center" color="primary">
-                <p>There are no pattern matches.</p>
-                <p>Pattern matching had not been configured.</p>
-                <p>Patterns let you detect similar log lines and add or exclude them from your search.</p>
-                <p>To see them in action, add the folloing to your configuration</p>
-                <p>
-                  <code>--pattern-ingester.enabled=true</code>
-                </p>
-              </Text>
-            </div>
-          )}
-          {!loading && patterns?.length === 0 && <GrotError />}
-          {!loading && patterns && patterns.length > 0 && (
-            <>
-              <div className={styles.controls}>
-                {body instanceof LayoutSwitcher && (
-                  <div className={styles.controlsRight}>
-                    <body.Selector model={body} />
-                  </div>
-                )}
-              </div>
-              <div className={styles.content}>{body && <body.Component model={body} />}</div>
-            </>
-          )}
-        </StatusWrapper>
-      </div>
-    );
-  };
 }
 
 function getStyles(theme: GrafanaTheme2) {
@@ -332,17 +327,18 @@ export function buildPatternsScene() {
 interface SelectLabelActionState extends SceneObjectState {
   labelName: string;
 }
-export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
-  public onClick = () => {
-    getPatternsSceneFor(this).onChange(this.state.labelName);
-  };
 
+export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
   public static Component = ({ model }: SceneComponentProps<AddToFiltersGraphAction>) => {
     return (
       <Button variant="secondary" size="sm" fill="text" onClick={model.onClick}>
         Select
       </Button>
     );
+  };
+
+  public onClick = () => {
+    getPatternsSceneFor(this).onChange(this.state.labelName);
   };
 }
 
@@ -356,32 +352,4 @@ function getPatternsSceneFor(model: SceneObject): PatternsScene {
   }
 
   throw new Error('Unable to find breakdown scene');
-}
-
-interface SinglePatternsViewType extends SceneObjectState {
-  patterns: LokiPattern[] | undefined;
-}
-export class SinglePatternsView extends SceneObjectBase<SinglePatternsViewType> {
-  public static Component = ({ model }: SceneComponentProps<SinglePatternsView>) => {
-    const { patterns } = model.useState();
-    return patterns?.map((pattern) => {
-      const exclude = new AddToPatternsGraphAction({ pattern: pattern.pattern, type: 'exclude' });
-      const include = new AddToPatternsGraphAction({ pattern: pattern.pattern, type: 'include' });
-
-      if (!exclude || !include) {
-        return null;
-      }
-
-      return (
-        <div>
-          <>
-            {/*@todo need non-functional Pattern component*/}
-            <Pattern type={'include'} onRemove={() => {}} pattern={pattern.pattern} />
-            <include.Component model={include} />
-            <exclude.Component model={exclude} />
-          </>
-        </div>
-      );
-    });
-  };
 }
