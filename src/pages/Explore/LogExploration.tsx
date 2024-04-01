@@ -154,7 +154,7 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
               (p) =>
                 `${p.type === 'include' ? '|~ ' : '!~ '} \`${p.pattern.replace(/<\*>/g, '.*').replace(/\+/g, '\\+')}\``
             )
-            ?.join(' ') || '|= ``';
+            ?.join(' ') || '';
         patternsVariable.changeValueTo(patternsLine);
       }
     });
