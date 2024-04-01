@@ -46,7 +46,7 @@ import { extractFields } from '../../../utils/fields';
 import { GoToExploreButton } from './GoToExploreButton';
 import { GiveFeedback } from './GiveFeedback';
 
-interface LokiPattern {
+export interface LokiPattern {
   pattern: string;
   samples: Array<[number, string]>;
 }
@@ -185,7 +185,7 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
     const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
 
     // TODO: also use "fields" label filters
-    // @ts-ignore 
+    // @ts-ignore
     ds.getResource!('patterns', {
       query: filters.state.filterExpression,
       from: timeRange.from.utc().toISOString(),

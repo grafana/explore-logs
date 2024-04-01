@@ -11,10 +11,12 @@ import {
   SceneDataNode,
   SceneFlexItem,
   SceneFlexItemLike,
+  SceneFlexLayout,
   sceneGraph,
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
+  SceneReactObject,
   SceneVariableSet,
 } from '@grafana/scenes';
 import { Button, DrawStyle, StackingMode, useStyles2, Text } from '@grafana/ui';
@@ -26,8 +28,9 @@ import { AddToFiltersGraphAction } from '../../AddToFiltersGraphAction';
 import { LayoutSwitcher } from '../../LayoutSwitcher';
 import { getColorByIndex } from '../../../../utils/utils';
 import { AddToPatternsGraphAction } from './AddToPatternsGraphAction';
-import { LogsByServiceScene } from '../LogsByServiceScene';
+import { LogsByServiceScene, LokiPattern } from '../LogsByServiceScene';
 import { GrotError } from '../../../GrotError';
+import { Pattern } from '../Pattern';
 
 export interface PatternsSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -72,6 +75,8 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
 
   private async updateBody() {
     const children: SceneFlexItemLike[] = [];
+    let combinedFrame: DataFrame | undefined;
+    let start, end;
 
     const patterns = sceneGraph.getAncestor(this, LogsByServiceScene).state.patterns;
     if (!patterns) {
@@ -82,8 +87,43 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
     let minValue = 0;
 
     patterns.slice(0, 40).forEach((pat, frameIndex) => {
-      const start = pat.samples[0][0] * 1000;
-      const end = pat.samples[pat.samples.length - 1][0] * 1000;
+      start = pat.samples[0][0] * 1000;
+      end = pat.samples[pat.samples.length - 1][0] * 1000;
+
+      const valueField = {
+        name: pat.pattern,
+        type: FieldType.number,
+        values: pat.samples.map((sample) => {
+          const f = parseFloat(sample[1]);
+          if (f > maxValue) {
+            maxValue = f;
+          }
+          if (f < minValue) {
+            minValue = f;
+          }
+          return f;
+        }),
+        config: {},
+      };
+
+      const timeSamples = pat.samples.map((sample) => sample[0] * 1000);
+
+      if (!combinedFrame?.fields[0].name) {
+        combinedFrame = {
+          fields: [
+            {
+              name: 'time',
+              type: FieldType.time,
+              values: timeSamples,
+              config: {},
+            },
+          ],
+          length: timeSamples.length,
+        };
+      }
+
+      combinedFrame.fields.push(valueField);
+
       const dataFrame: DataFrame = {
         refId: pat.pattern,
         fields: [
@@ -93,21 +133,7 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
             values: pat.samples.map((sample) => sample[0] * 1000),
             config: {},
           },
-          {
-            name: pat.pattern,
-            type: FieldType.number,
-            values: pat.samples.map((sample) => {
-              const f = parseFloat(sample[1]);
-              if (f > maxValue) {
-                maxValue = f;
-              }
-              if (f < minValue) {
-                minValue = f;
-              }
-              return f;
-            }),
-            config: {},
-          },
+          { ...valueField },
         ],
         length: pat.samples.length,
         meta: {
@@ -149,11 +175,46 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
       );
     });
 
+    const singleView = new SceneFlexLayout({
+      direction: 'column',
+      children: [
+        combinedFrame
+          ? new SceneFlexItem({
+              minHeight: 300,
+              body: PanelBuilders.timeseries()
+                .setData(
+                  new SceneDataNode({
+                    data: {
+                      series: [combinedFrame],
+                      state: LoadingState.Done,
+                      timeRange: {
+                        from: dateTime(start),
+                        to: dateTime(end),
+                        raw: { from: dateTime(start), to: dateTime(end) },
+                      },
+                    },
+                  })
+                )
+                .setTitle('$metric')
+                .build(),
+            })
+          : //@todo undefined dataframe state
+            new SceneFlexItem({
+              body: undefined,
+              $data: undefined,
+            }),
+        // new SinglePatternsView({
+        //   patterns: patterns,
+        // }),
+      ],
+    });
+
     this.setState({
       body: new LayoutSwitcher({
         options: [
           { value: 'grid', label: 'Grid' },
           { value: 'rows', label: 'Rows' },
+          { value: 'single', label: 'Single' },
         ],
         active: 'grid',
         layouts: [
@@ -167,6 +228,7 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
             autoRows: '200px',
             children: children,
           }),
+          singleView,
         ],
       }),
     });
@@ -294,4 +356,32 @@ function getPatternsSceneFor(model: SceneObject): PatternsScene {
   }
 
   throw new Error('Unable to find breakdown scene');
+}
+
+interface SinglePatternsViewType extends SceneObjectState {
+  patterns: LokiPattern[] | undefined;
+}
+export class SinglePatternsView extends SceneObjectBase<SinglePatternsViewType> {
+  public static Component = ({ model }: SceneComponentProps<SinglePatternsView>) => {
+    const { patterns } = model.useState();
+    return patterns?.map((pattern) => {
+      const exclude = new AddToPatternsGraphAction({ pattern: pattern.pattern, type: 'exclude' });
+      const include = new AddToPatternsGraphAction({ pattern: pattern.pattern, type: 'include' });
+
+      if (!exclude || !include) {
+        return null;
+      }
+
+      return (
+        <div>
+          <>
+            {/*@todo need non-functional Pattern component*/}
+            <Pattern type={'include'} onRemove={() => {}} pattern={pattern.pattern} />
+            <include.Component model={include} />
+            <exclude.Component model={exclude} />
+          </>
+        </div>
+      );
+    });
+  };
 }
