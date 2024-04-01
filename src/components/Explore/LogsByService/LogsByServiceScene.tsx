@@ -181,20 +181,13 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
       return;
     }
 
-    const variable = sceneGraph.lookupVariable('filters', this);
-    if (!(variable instanceof AdHocFiltersVariable)) {
-      return;
-    }
-
-    const service = variable.state.filters.find((filter) => filter.key === 'service_name')?.value || 'payment';
-    if (!service) {
-      return;
-    }
     const timeRange = sceneGraph.getTimeRange(this).state.value;
+    const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
 
-    // @ts-ignore // TODO: hacky, need to fix this
-    ds.getResource!('..%2fexperimental/patterns', {
-      query: `{service_name="${service}"}`,
+    // TODO: also use "fields" label filters
+    // @ts-ignore 
+    ds.getResource!('patterns', {
+      query: filters.state.filterExpression,
       from: timeRange.from.utc().toISOString(),
       to: timeRange.to.utc().toISOString(),
     }).then(({ data }: { data: LokiPattern[] }) => {
