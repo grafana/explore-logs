@@ -183,11 +183,12 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
 
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
+    const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
 
     // TODO: also use "fields" label filters
     // @ts-ignore 
     ds.getResource!('patterns', {
-      query: filters.state.filterExpression,
+      query: `${filters.state.filterExpression} ${fields.state.filterExpression}`.trim(),
       from: timeRange.from.utc().toISOString(),
       to: timeRange.to.utc().toISOString(),
     }).then(({ data }: { data: LokiPattern[] }) => {
