@@ -194,9 +194,9 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
             <div className={styles.patternMissingText}>
               <Text textAlignment="center" color="primary">
                 <p>There are no pattern matches.</p>
-                <p>Pattern matching had not been configured.</p>
+                <p>Pattern matching has not been configured.</p>
                 <p>Patterns let you detect similar log lines and add or exclude them from your search.</p>
-                <p>To see them in action, add the folloing to your configuration</p>
+                <p>To see them in action, add the following to your configuration</p>
                 <p>
                   <code>--pattern-ingester.enabled=true</code>
                 </p>
