@@ -34,7 +34,7 @@ import {
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE_EXPR,
 } from '../../../utils/shared';
-import { getExplorationFor, getFilters, getSeriesOptions } from '../../../utils/utils';
+import { getExplorationFor, getSeriesOptions } from '../../../utils/utils';
 import { ShareExplorationButton } from './ShareExplorationButton';
 import { buildLabelBreakdownActionScene } from './Tabs/LabelBreakdownScene';
 import { getDataSourceSrv, locationService } from '@grafana/runtime';
