@@ -64,6 +64,7 @@ export interface LogExplorationState extends SceneObjectState {
 }
 
 const DS_LOCALSTORAGE_KEY = `${pluginJson.id}.datasource`;
+
 export class LogExploration extends SceneObjectBase<LogExplorationState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['mode', 'patterns'] });
 
@@ -87,6 +88,13 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
     this.addActivationHandler(this._onActivate.bind(this));
   }
 
+  static Component = ({ model }: SceneComponentProps<LogExploration>) => {
+    const { body } = model.useState();
+    const styles = useStyles2(getStyles);
+
+    return <div className={styles.bodyContainer}> {body && <body.Component model={body} />} </div>;
+  };
+
   public _onActivate() {
     if (!this.state.topScene) {
       this.setState({ topScene: getTopScene(this.state.mode) });
@@ -94,6 +102,32 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
     if (this.state.mode !== undefined && this.state.mode !== 'start') {
       this.setState({
         controls: [...this.state.controls, new LiveTailControl({})],
+      });
+    }
+
+    // Services
+    const serviceVarState = this.state.$variables?.getByName(VAR_FIELDS) as AdHocFiltersVariable;
+
+    if (serviceVarState?.state?.filters?.length) {
+      this.state.$variables?.getByName(VAR_FIELDS)?.setState({
+        hide: VariableHide.dontHide,
+      });
+    } else {
+      this.state.$variables?.getByName(VAR_FIELDS)?.setState({
+        hide: VariableHide.hideVariable,
+      });
+    }
+
+    const filtersVarState = this.state.$variables?.getByName(VAR_FILTERS) as AdHocFiltersVariable;
+
+    // Labels
+    if (filtersVarState?.state?.filters?.length) {
+      this.state.$variables?.getByName(VAR_FILTERS)?.setState({
+        hide: VariableHide.dontHide,
+      });
+    } else {
+      this.state.$variables?.getByName(VAR_FILTERS)?.setState({
+        hide: VariableHide.hideVariable,
       });
     }
 
@@ -130,17 +164,6 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
     };
   }
 
-  private _handleStartingPointSelected(evt: StartingPointSelectedEvent) {
-    this.setState({
-      controls: [...this.state.controls, new LiveTailControl({})],
-    });
-    locationService.partial({ mode: 'logs' });
-  }
-
-  private _handleDetailsSceneUpdated(evt: DetailsSceneUpdated) {
-    this.setState({ showDetails: true });
-  }
-
   getUrlState() {
     return { mode: this.state.mode, patterns: JSON.stringify(this.state.patterns) };
   }
@@ -161,12 +184,24 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
     this.setState(stateUpdate);
   }
 
-  static Component = ({ model }: SceneComponentProps<LogExploration>) => {
-    const { body } = model.useState();
-    const styles = useStyles2(getStyles);
+  private _handleStartingPointSelected(evt: StartingPointSelectedEvent) {
+    this.state.$variables?.getByName(VAR_FIELDS)?.setState({
+      hide: VariableHide.dontHide,
+    });
 
-    return <div className={styles.bodyContainer}> {body && <body.Component model={body} />} </div>;
-  };
+    this.state.$variables?.getByName(VAR_FILTERS)?.setState({
+      hide: VariableHide.dontHide,
+    });
+
+    this.setState({
+      controls: [...this.state.controls, new LiveTailControl({})],
+    });
+    locationService.partial({ mode: 'logs' });
+  }
+
+  private _handleDetailsSceneUpdated(evt: DetailsSceneUpdated) {
+    this.setState({ showDetails: true });
+  }
 }
 
 export class LogExplorationScene extends SceneObjectBase {
@@ -271,6 +306,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
     label: 'Service',
     filters: initialFilters ?? [],
     expressionBuilder: renderLogQLLabelFilters,
+    hide: VariableHide.hideVariable,
   });
 
   filterVariable._getOperators = () => {
@@ -284,6 +320,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
     getTagKeysProvider: () => Promise.resolve({ values: [] }),
     getTagValuesProvider: () => Promise.resolve({ values: [] }),
     expressionBuilder: renderLogQLFieldFilters,
+    hide: VariableHide.hideVariable,
   });
 
   fieldsVariable._getOperators = () => {
