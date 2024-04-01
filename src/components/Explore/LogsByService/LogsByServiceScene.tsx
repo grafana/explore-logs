@@ -47,11 +47,8 @@ import { GoToExploreButton } from './GoToExploreButton';
 import { GiveFeedback } from './GiveFeedback';
 
 interface LokiPattern {
-  matches: number;
-  name: string;
   pattern: string;
-  sampleLogLines: string[];
-  volumeTimeSeries: Array<[number, string]>;
+  samples: Array<[number, string]>;
 }
 
 export interface LogSceneState extends SceneObjectState {
@@ -195,14 +192,13 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
     }
     const timeRange = sceneGraph.getTimeRange(this).state.value;
 
-    // @ts-ignore
-    ds.getResource!('patterns', {
+    // @ts-ignore // TODO: hacky, need to fix this
+    ds.getResource!('..%2fexperimental/patterns', {
       query: `{service_name="${service}"}`,
       from: timeRange.from.utc().toISOString(),
       to: timeRange.to.utc().toISOString(),
-      minMatches: 50,
-    }).then(({ patterns }: { patterns: LokiPattern[] }) => {
-      this.setState({ patterns });
+    }).then(({ data }: { data: LokiPattern[] }) => {
+      this.setState({ patterns: data });
     });
   }
 

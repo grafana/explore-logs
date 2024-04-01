@@ -394,13 +394,13 @@ function getStyles(theme: GrafanaTheme2) {
     filters: css({
       display: 'flex',
       gap: theme.spacing(2),
-      width: 'calc(100% - 400)',
+      width: 'calc(100% - 450)',
       flexWrap: 'wrap',
       alignItems: 'flex-end',
     }),
     controls: css({
       display: 'flex',
-      maxWidth: 400,
+      maxWidth: 450,
       paddingTop: theme.spacing(3),
       gap: theme.spacing(2),
     }),

@@ -17,7 +17,7 @@ services:
     extra_hosts:
       - 'host.docker.internal:host-gateway'
   loki:
-    image: svennergr/loki:main-d5144ae
+    image: svennergr/loki:main-db029ea
     environment:
       LOG_CLUSTER_DEPTH: '8'
       LOG_SIM_TH: '0.3'
@@ -25,7 +25,7 @@ services:
       - '3100:3100'
     volumes:
       - ./config/loki-config.yaml:/etc/loki/local-config.yaml
-    command: -config.file=/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml --pattern-ingester.enabled=true
     restart: on-failure
   generator:
     build:
