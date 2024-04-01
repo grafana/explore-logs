@@ -17,7 +17,7 @@ import {
   SceneObjectState,
   SceneVariableSet,
 } from '@grafana/scenes';
-import { Button, DrawStyle, StackingMode, useStyles2 } from '@grafana/ui';
+import { Button, DrawStyle, StackingMode, useStyles2, Text } from '@grafana/ui';
 
 import { StatusWrapper } from '../../StatusWrapper';
 import { VAR_LABEL_GROUP_BY } from '../../../../utils/shared';
@@ -27,6 +27,7 @@ import { LayoutSwitcher } from '../../LayoutSwitcher';
 import { getColorByIndex } from '../../../../utils/utils';
 import { AddToPatternsGraphAction } from './AddToPatternsGraphAction';
 import { LogsByServiceScene } from '../LogsByServiceScene';
+import { GrotError } from '../../../GrotError';
 
 export interface PatternsSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -80,75 +81,73 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
     let maxValue = -Infinity;
     let minValue = 0;
 
-    patterns
-      .slice(0, 40)
-      .forEach((pat, frameIndex) => {
-        const start = pat.samples[0][0] * 1000;
-        const end = pat.samples[pat.samples.length - 1][0] * 1000;
-        const dataFrame: DataFrame = {
-          refId: pat.pattern,
-          fields: [
-            {
-              name: 'time',
-              type: FieldType.time,
-              values: pat.samples.map((sample) => sample[0] * 1000),
-              config: {},
-            },
-            {
-              name: pat.pattern,
-              type: FieldType.number,
-              values: pat.samples.map((sample) => {
-                const f = parseFloat(sample[1]);
-                if (f > maxValue) {
-                  maxValue = f;
-                }
-                if (f < minValue) {
-                  minValue = f;
-                }
-                return f;
-              }),
-              config: {},
-            },
-          ],
-          length: pat.samples.length,
-          meta: {
-            preferredVisualisationType: 'graph',
+    patterns.slice(0, 40).forEach((pat, frameIndex) => {
+      const start = pat.samples[0][0] * 1000;
+      const end = pat.samples[pat.samples.length - 1][0] * 1000;
+      const dataFrame: DataFrame = {
+        refId: pat.pattern,
+        fields: [
+          {
+            name: 'time',
+            type: FieldType.time,
+            values: pat.samples.map((sample) => sample[0] * 1000),
+            config: {},
           },
-        };
-        children.push(
-          new SceneCSSGridItem({
-            body: PanelBuilders.timeseries()
-              .setTitle(pat.pattern)
-              .setOption('legend', { showLegend: false })
-              .setData(
-                new SceneDataNode({
-                  data: {
-                    series: [dataFrame],
-                    state: LoadingState.Done,
-                    timeRange: {
-                      from: dateTime(start),
-                      to: dateTime(end),
-                      raw: { from: dateTime(start), to: dateTime(end) },
-                    },
+          {
+            name: pat.pattern,
+            type: FieldType.number,
+            values: pat.samples.map((sample) => {
+              const f = parseFloat(sample[1]);
+              if (f > maxValue) {
+                maxValue = f;
+              }
+              if (f < minValue) {
+                minValue = f;
+              }
+              return f;
+            }),
+            config: {},
+          },
+        ],
+        length: pat.samples.length,
+        meta: {
+          preferredVisualisationType: 'graph',
+        },
+      };
+      children.push(
+        new SceneCSSGridItem({
+          body: PanelBuilders.timeseries()
+            .setTitle(pat.pattern)
+            .setOption('legend', { showLegend: false })
+            .setData(
+              new SceneDataNode({
+                data: {
+                  series: [dataFrame],
+                  state: LoadingState.Done,
+                  timeRange: {
+                    from: dateTime(start),
+                    to: dateTime(end),
+                    raw: { from: dateTime(start), to: dateTime(end) },
                   },
-                })
-              )
-              .setColor({ mode: 'fixed', fixedColor: getColorByIndex(frameIndex) })
-              .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
-              .setCustomFieldConfig('fillOpacity', 100)
-              .setCustomFieldConfig('lineWidth', 0)
-              .setCustomFieldConfig('pointSize', 0)
-              .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-              .setCustomFieldConfig('axisSoftMax', maxValue)
-              .setCustomFieldConfig('axisSoftMin', minValue)
-              .setHeaderActions([
-                new AddToPatternsGraphAction({ pattern: pat.pattern, type: 'exclude' }),
-                new AddToPatternsGraphAction({ pattern: pat.pattern, type: 'include' }),
-              ])
-              .build(),
-          })
-        );
-      });
+                },
+              })
+            )
+            .setColor({ mode: 'fixed', fixedColor: getColorByIndex(frameIndex) })
+            .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
+            .setCustomFieldConfig('fillOpacity', 100)
+            .setCustomFieldConfig('lineWidth', 0)
+            .setCustomFieldConfig('pointSize', 0)
+            .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+            .setCustomFieldConfig('axisSoftMax', maxValue)
+            .setCustomFieldConfig('axisSoftMin', minValue)
+            .setHeaderActions([
+              new AddToPatternsGraphAction({ pattern: pat.pattern, type: 'exclude' }),
+              new AddToPatternsGraphAction({ pattern: pat.pattern, type: 'include' }),
+            ])
+            .build(),
+        })
+      );
+    });
 
     this.setState({
       body: new LayoutSwitcher({
@@ -185,19 +184,38 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
 
   public static Component = ({ model }: SceneComponentProps<PatternsScene>) => {
     const { body, loading, blockingMessage } = model.useState();
+    const logsByServiceScene = sceneGraph.getAncestor(model, LogsByServiceScene);
+    const { patterns } = logsByServiceScene.useState();
     const styles = useStyles2(getStyles);
-
     return (
       <div className={styles.container}>
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
-          <div className={styles.controls}>
-            {body instanceof LayoutSwitcher && (
-              <div className={styles.controlsRight}>
-                <body.Selector model={body} />
+          {!loading && !patterns && (
+            <div className={styles.patternMissingText}>
+              <Text textAlignment="center" color="primary">
+                <p>There are no pattern matches.</p>
+                <p>Pattern matching had not been configured.</p>
+                <p>Patterns let you detect similar log lines and add or exclude them from your search.</p>
+                <p>To see them in action, add the folloing to your configuration</p>
+                <p>
+                  <code>--pattern-ingester.enabled=true</code>
+                </p>
+              </Text>
+            </div>
+          )}
+          {!loading && patterns?.length === 0 && <GrotError />}
+          {!loading && patterns && patterns.length > 0 && (
+            <>
+              <div className={styles.controls}>
+                {body instanceof LayoutSwitcher && (
+                  <div className={styles.controlsRight}>
+                    <body.Selector model={body} />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          <div className={styles.content}>{body && <body.Component model={body} />}</div>
+              <div className={styles.content}>{body && <body.Component model={body} />}</div>
+            </>
+          )}
         </StatusWrapper>
       </div>
     );
@@ -234,6 +252,9 @@ function getStyles(theme: GrafanaTheme2) {
       justifyItems: 'left',
       width: '100%',
       flexDirection: 'column',
+    }),
+    patternMissingText: css({
+      padding: theme.spacing(2),
     }),
   };
 }
