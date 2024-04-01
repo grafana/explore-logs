@@ -17,7 +17,8 @@ common:
       store: inmemory
 frontend:
   max_outstanding_per_tenant: 2048
-  experimental_apis_enabled: true
+pattern_ingester:
+  enabled: true
 limits_config:
   max_global_streams_per_user: 0
   ingestion_rate_mb: 50000
