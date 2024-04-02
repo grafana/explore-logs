@@ -103,7 +103,7 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
 
       const timeSamples = pat.samples.map((sample) => sample[0] * 1000);
 
-      if (!combinedFrame?.fields[0].name) {
+      if (!combinedFrame) {
         combinedFrame = {
           fields: [
             {
@@ -125,7 +125,7 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
           {
             name: 'time',
             type: FieldType.time,
-            values: pat.samples.map((sample) => sample[0] * 1000),
+            values: timeSamples,
             config: {},
           },
           { ...valueField },
