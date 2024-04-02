@@ -48,7 +48,7 @@ import { GoToExploreButton } from './GoToExploreButton';
 import { GiveFeedback } from './GiveFeedback';
 import { renderLogQLLabelFilters } from 'pages/Explore';
 
-export interface LokiPattern {
+interface LokiPattern {
   pattern: string;
   samples: Array<[number, string]>;
 }
@@ -210,7 +210,6 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
     const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
-
 
     ds.getResource('patterns', {
       query: renderLogQLLabelFilters([
