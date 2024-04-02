@@ -30,9 +30,13 @@ import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from '../../utils/shared';
 import { map, Observable, Unsubscribable } from 'rxjs';
 import { ByLabelRepeater } from 'components/Explore/ByLabelRepeater';
 import { getLiveTailControl } from 'utils/scenes';
+import pluginJson from '../../plugin.json';
+import { getFavoriteServicesFromStorage } from 'utils/store';
+
 
 const LIMIT_SERVICES = 20;
 const SERVICE_NAME = 'service_name';
+export const SERVICES_LOCALSTORAGE_KEY = `${pluginJson.id}.services.favorite`;
 
 export interface LogSelectSceneState extends SceneObjectState {
   body: SceneCSSGridLayout;
@@ -45,9 +49,9 @@ export interface LogSelectSceneState extends SceneObjectState {
   showPreviews?: boolean;
   topServices?: string[];
   isTopSeriesLoading: boolean;
-  searchServicesString?: string;
+  searchServicesString: string;
   topServicesToBeUsed?: string[];
-}
+};
 
 //const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
@@ -70,7 +74,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
       body: new SceneCSSGridLayout({ children: [] }),
       isTopSeriesLoading: false,
       topServices: undefined,
-      searchServicesString: undefined,
+      searchServicesString: "",
       topServicesToBeUsed: undefined,
       ...state,
     });
@@ -113,8 +117,13 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
 
       if (newState.searchServicesString !== oldState.searchServicesString) {
         const services = this.state.topServices?.filter((service) => service.toLowerCase().includes(newState.searchServicesString?.toLowerCase() ?? ''))
+        let topServicesToBeUsed = services?.slice(0, LIMIT_SERVICES) ?? []
+        // If user is not searching for anything, add favorite services to the top
+        if (newState.searchServicesString === '') {
+          topServicesToBeUsed = addFavoriteServices(topServicesToBeUsed, getFavoriteServicesFromStorage())
+        }
         this.setState({
-          topServicesToBeUsed: services?.slice(0, LIMIT_SERVICES),
+          topServicesToBeUsed,
         })
       }
     })
@@ -128,6 +137,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
     this.setState({
       isTopSeriesLoading: true,
     })
+
     getDataSourceSrv().get(ds as string).then((ds) => {
       // @ts-ignore
       ds.getResource!('index/volume', {
@@ -145,10 +155,11 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
       const topServices = Object.entries(serviceMetrics)
         .sort((a, b) => b[1] - a[1]) // Sort by value in descending order
         .map(([serviceName]) => serviceName); // Extract service names
-      
+
+      let topServicesToBeUsed = addFavoriteServices(topServices.slice(0, LIMIT_SERVICES), getFavoriteServicesFromStorage())
         this.setState({
           topServices,
-          topServicesToBeUsed: topServices.slice(0, LIMIT_SERVICES),
+          topServicesToBeUsed,
           isTopSeriesLoading: false,
       })
     }).catch((err: any) => {
@@ -180,10 +191,14 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
             }),
             transformations: [
               () => (source: Observable<DataFrame[]>) => {
+                const favoriteServices = getFavoriteServicesFromStorage();
                 return source.pipe(
                   map((data: DataFrame[]) => {
-                    data.forEach((a) => reduceField({ field: a.fields[1], reducers: [ReducerID.max] }));
+                    data.forEach((a) => reduceField({ field: a.fields[1], reducers: [ReducerID.max] }))
                     return data.sort((a, b) => {
+                      if(favoriteServices.includes(a.fields?.[1]?.labels?.[SERVICE_NAME] ?? '')) {
+                        return -1;
+                      }
                       return (b.fields[1].state?.calcs?.max || 0) - (a.fields[1].state?.calcs?.max || 0);
                     });
                   })
@@ -371,6 +386,11 @@ function buildVolumeQuery(services: string[]) {
     legendFormat: '{{level}}',
     maxLines: 100,
   };
+}
+
+function addFavoriteServices(services: string[], favoriteServices: string[]) {
+  const set = new Set([...favoriteServices, ...services])
+  return Array.from(set)
 }
 
 function getStyles(theme: GrafanaTheme2) {

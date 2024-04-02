@@ -10,6 +10,7 @@ import {
 import { Button } from '@grafana/ui';
 
 import { StartingPointSelectedEvent } from '../../utils/shared';
+import { addToFavoriteServicesInStorage } from 'utils/store';
 
 export interface SelectAttributeWithValueActionState extends SceneObjectState {
   value: string;
@@ -36,6 +37,8 @@ export class SelectAttributeWithValueAction extends SceneObjectBase<SelectAttrib
         },
       ],
     });
+
+    addToFavoriteServicesInStorage(this.state.value);
     this.publishEvent(new StartingPointSelectedEvent(), true);
   };
 
