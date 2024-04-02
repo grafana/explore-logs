@@ -160,22 +160,25 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
   }
 
   getUrlState() {
-    return { mode: this.state.mode, patterns: JSON.stringify(this.state.patterns) };
+    return {
+      mode: this.state.mode,
+      patterns: this.state.mode === 'start' ? '' : JSON.stringify(this.state.patterns),
+    };
   }
 
   updateFromUrl(values: SceneObjectUrlValues) {
     const stateUpdate: Partial<LogExplorationState> = {};
-
     if (values.mode !== this.state.mode) {
       const mode: LogExplorationMode = (values.mode as LogExplorationMode) ?? 'start';
       stateUpdate.mode = mode;
       stateUpdate.topScene = getTopScene(mode);
     }
-
-    if (values.patterns && typeof values.patterns === 'string') {
+    if (this.state.mode === 'start') {
+      // Clear patterns on start
+      stateUpdate.patterns = undefined;
+    } else if (values.patterns && typeof values.patterns === 'string') {
       stateUpdate.patterns = JSON.parse(values.patterns) as AppliedPattern[];
     }
-
     this.setState(stateUpdate);
   }
 
@@ -206,7 +209,6 @@ export class LogExplorationScene extends SceneObjectBase {
     const styles = useStyles2(getStyles);
     const includePatterns = patterns ? patterns.filter((pattern) => pattern.type === 'include') : [];
     const excludePatterns = patterns ? patterns.filter((pattern) => pattern.type !== 'include') : [];
-
     return (
       <div className={styles.container}>
         {controls && (
