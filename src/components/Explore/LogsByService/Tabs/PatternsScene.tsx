@@ -318,16 +318,16 @@ interface SelectLabelActionState extends SceneObjectState {
 }
 
 export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
+  public onClick = () => {
+    getPatternsSceneFor(this).onChange(this.state.labelName);
+  };
+
   public static Component = ({ model }: SceneComponentProps<AddToFiltersGraphAction>) => {
     return (
       <Button variant="secondary" size="sm" fill="text" onClick={model.onClick}>
         Select
       </Button>
     );
-  };
-
-  public onClick = () => {
-    getPatternsSceneFor(this).onChange(this.state.labelName);
   };
 }
 
