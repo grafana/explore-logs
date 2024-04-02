@@ -33,6 +33,7 @@ import {
   VAR_LOGS_FORMAT,
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE_EXPR,
+  EXPLORATIONS_ROUTE,
 } from '../../../utils/shared';
 import { getExplorationFor, getSeriesOptions } from '../../../utils/utils';
 import { ShareExplorationButton } from './ShareExplorationButton';
@@ -86,6 +87,28 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
     this.addActivationHandler(this._onActivate.bind(this));
   }
 
+  private getFiltersVariable(): AdHocFiltersVariable {
+    const variable = sceneGraph.lookupVariable(VAR_FILTERS, this)!;
+    if (!(variable instanceof AdHocFiltersVariable)) {
+      throw new Error('Filters variable not found');
+    }
+
+    return variable;
+  }
+
+  private setEmptyFiltersRedirection() {
+    const variable = this.getFiltersVariable();
+    if (variable.state.filters.length === 0) {
+      locationService.push(EXPLORATIONS_ROUTE);
+      return;
+    }
+    variable.subscribeToState((newState) => {
+      if (newState.filters.length === 0) {
+        locationService.push(EXPLORATIONS_ROUTE);
+      }
+    });
+  }
+
   private _onActivate() {
     if (this.state.actionView === undefined) {
       this.setActionView('logs');
@@ -104,6 +127,8 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
         })
       );
     }
+
+    this.setEmptyFiltersRedirection();
 
     const dataUnsub = this.state.$data?.subscribeToState(() => {
       this.updateFields();
