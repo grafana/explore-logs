@@ -37,7 +37,7 @@ import {
 import { getExplorationFor, getSeriesOptions } from '../../../utils/utils';
 import { ShareExplorationButton } from './ShareExplorationButton';
 import { buildLabelBreakdownActionScene } from './Tabs/LabelBreakdownScene';
-import { getDataSourceSrv, locationService } from '@grafana/runtime';
+import { DataSourceWithBackend, getDataSourceSrv, locationService } from '@grafana/runtime';
 import { buildPatternsScene } from './Tabs/PatternsScene';
 import { buildFieldsBreakdownActionScene } from './Tabs/FieldsBreakdownScene';
 import { Unsubscribable } from 'rxjs';
@@ -45,6 +45,7 @@ import { getLiveTailControl } from 'utils/scenes';
 import { extractFields } from '../../../utils/fields';
 import { GoToExploreButton } from './GoToExploreButton';
 import { GiveFeedback } from './GiveFeedback';
+import { renderLogQLLabelFilters } from 'pages/Explore';
 
 interface LokiPattern {
   pattern: string;
@@ -175,9 +176,9 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
   }
 
   private async updatePatterns() {
-    const ds = await getDataSourceSrv().get(VAR_DATASOURCE_EXPR, { __sceneObject: { value: this } });
+    const ds = await getDataSourceSrv().get(VAR_DATASOURCE_EXPR, { __sceneObject: { value: this } }) as DataSourceWithBackend | undefined;
 
-    if (!ds) {
+    if (!ds || !ds.getResource) {
       return;
     }
 
@@ -185,6 +186,7 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
     const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
     const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
 
+    ds.getResource('patterns', {
       query: renderLogQLLabelFilters([
         // this will only be the service name for now
         ...filters.state.filters,
