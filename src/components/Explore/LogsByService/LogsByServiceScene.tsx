@@ -185,10 +185,12 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
     const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
     const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
 
-    // TODO: also use "fields" label filters
-    // @ts-ignore 
-    ds.getResource!('patterns', {
-      query: `${filters.state.filterExpression} ${fields.state.filterExpression}`.trim(),
+      query: renderLogQLLabelFilters([
+        // this will only be the service name for now
+        ...filters.state.filters,
+        // only include fields that are an indexed label
+        ...fields.state.filters.filter((field) => this.state.labels?.includes(field.key)),
+      ]),
       from: timeRange.from.utc().toISOString(),
       to: timeRange.to.utc().toISOString(),
     }).then(({ data }: { data: LokiPattern[] }) => {
