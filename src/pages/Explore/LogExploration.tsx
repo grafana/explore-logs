@@ -149,12 +149,7 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
       const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
       if (patternsVariable instanceof CustomVariable) {
         const patternsLine =
-          newState.patterns
-            ?.map(
-              (p) =>
-                `${p.type === 'include' ? '|~ ' : '!~ '} \`${p.pattern.replace(/<\*>/g, '.*').replace(/\+/g, '\\+')}\``
-            )
-            ?.join(' ') || '';
+          newState.patterns?.map((p) => `${p.type === 'include' ? '|> ' : '!> '} \`${p.pattern}\``)?.join(' ') || '';
         patternsVariable.changeValueTo(patternsLine);
       }
     });
