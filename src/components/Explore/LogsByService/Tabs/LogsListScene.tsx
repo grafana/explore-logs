@@ -7,7 +7,7 @@ import {
   SceneObjectBase,
   SceneObjectState,
 } from '@grafana/scenes';
-import { getLogsPanel } from '../../panels/logsPanel';
+import { TablePanel } from '../../panels/TablePanel';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -36,7 +36,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       direction: 'row',
       children: [
         new SceneFlexItem({
-          body: getLogsPanel(),
+          body: new TablePanel({}),
         }),
       ],
     });
