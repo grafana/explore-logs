@@ -302,6 +302,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
     filters: initialFilters ?? [],
     expressionBuilder: renderLogQLLabelFilters,
     hide: VariableHide.hideVariable,
+    key: 'adhoc_service_filter',
   });
 
   filterVariable._getOperators = () => {
@@ -392,6 +393,10 @@ function getStyles(theme: GrafanaTheme2) {
       width: 'calc(100% - 450)',
       flexWrap: 'wrap',
       alignItems: 'flex-end',
+      
+      ['label[for="var-adhoc_service_filter"] + div >[title="Add filter"]']: {
+        display: "none"
+      }
     }),
     controls: css({
       display: 'flex',
