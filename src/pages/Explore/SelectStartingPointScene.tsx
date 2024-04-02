@@ -18,6 +18,7 @@ import {
   SceneObjectState,
   SceneQueryRunner,
   SceneReactObject,
+  SceneVariable,
   //SceneVariableSet,
   VariableDependencyConfig,
   VariableValue,
@@ -60,9 +61,14 @@ const VAR_METRIC_FN = 'fn';
 
 export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
-    variableNames: [VAR_FILTERS],
+    variableNames: [VAR_FILTERS,VAR_DATASOURCE],
+    onReferencedVariableValueChanged: async (variable: SceneVariable) => {
+      const { name } = variable.state;
+      if (name === VAR_DATASOURCE) {
+        this._onTopServiceChange()
+      }
+    },
   });
-
   private _services: Record<string, ServiceItem> = {};
 
   constructor(state: Partial<LogSelectSceneState>) {
