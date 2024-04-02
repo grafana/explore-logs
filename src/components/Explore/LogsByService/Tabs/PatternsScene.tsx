@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DataFrame, dateTime, FieldType, GrafanaTheme2, LoadingState } from '@grafana/data';
+import { DataFrame, FieldType, GrafanaTheme2, LoadingState } from '@grafana/data';
 import {
   CustomVariable,
   PanelBuilders,
@@ -51,56 +51,6 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
 
     this.addActivationHandler(this._onActivate.bind(this));
   }
-
-  public static Component = ({ model }: SceneComponentProps<PatternsScene>) => {
-    const { body, loading, blockingMessage } = model.useState();
-    const logsByServiceScene = sceneGraph.getAncestor(model, LogsByServiceScene);
-    const { patterns } = logsByServiceScene.useState();
-    const styles = useStyles2(getStyles);
-    return (
-      <div className={styles.container}>
-        <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
-          {!loading && !patterns && (
-            <div className={styles.patternMissingText}>
-              <Text textAlignment="center" color="primary">
-                <p>There are no pattern matches.</p>
-                <p>Pattern matching had not been configured.</p>
-                <p>Patterns let you detect similar log lines and add or exclude them from your search.</p>
-                <p>To see them in action, add the folloing to your configuration</p>
-                <p>
-                  <code>--pattern-ingester.enabled=true</code>
-                </p>
-              </Text>
-            </div>
-          )}
-          {!loading && patterns?.length === 0 && <GrotError />}
-          {!loading && patterns && patterns.length > 0 && (
-            <>
-              <div className={styles.controls}>
-                {body instanceof LayoutSwitcher && (
-                  <div className={styles.controlsRight}>
-                    <body.Selector model={body} />
-                  </div>
-                )}
-              </div>
-              <div className={styles.content}>{body && <body.Component model={body} />}</div>
-            </>
-          )}
-        </StatusWrapper>
-      </div>
-    );
-  };
-
-  public onChange = (value?: string) => {
-    if (!value) {
-      return;
-    }
-
-    const variable = this.getVariable();
-
-    variable.changeValueTo(value);
-  };
-
   private _onActivate() {
     this.updateBody();
     const unsub = sceneGraph.getAncestor(this, LogsByServiceScene).subscribeToState((newState, prevState) => {
@@ -123,7 +73,6 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
   private async updateBody() {
     const children: SceneFlexItemLike[] = [];
     let combinedFrame: DataFrame | undefined;
-    let start, end;
 
     const patterns = sceneGraph.getAncestor(this, LogsByServiceScene).state.patterns;
     if (!patterns) {
@@ -133,10 +82,9 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
     let maxValue = -Infinity;
     let minValue = 0;
 
-    patterns.slice(0, 40).forEach((pat, frameIndex) => {
-      start = pat.samples[0][0] * 1000;
-      end = pat.samples[pat.samples.length - 1][0] * 1000;
+    const timeRange = sceneGraph.getTimeRange(this).state.value;
 
+    patterns.slice(0, 40).forEach((pat, frameIndex) => {
       const valueField = {
         name: pat.pattern,
         type: FieldType.number,
@@ -197,11 +145,7 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
                 data: {
                   series: [dataFrame],
                   state: LoadingState.Done,
-                  timeRange: {
-                    from: dateTime(start),
-                    to: dateTime(end),
-                    raw: { from: dateTime(start), to: dateTime(end) },
-                  },
+                  timeRange,
                 },
               })
             )
@@ -234,11 +178,7 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
                     data: {
                       series: [combinedFrame],
                       state: LoadingState.Done,
-                      timeRange: {
-                        from: dateTime(start),
-                        to: dateTime(end),
-                        raw: { from: dateTime(start), to: dateTime(end) },
-                      },
+                      timeRange: timeRange,
                     },
                   })
                 )
@@ -277,6 +217,55 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
       }),
     });
   }
+
+  public onChange = (value?: string) => {
+    if (!value) {
+      return;
+    }
+
+    const variable = this.getVariable();
+
+    variable.changeValueTo(value);
+  };
+
+  public static Component = ({ model }: SceneComponentProps<PatternsScene>) => {
+    const { body, loading, blockingMessage } = model.useState();
+    const logsByServiceScene = sceneGraph.getAncestor(model, LogsByServiceScene);
+    const { patterns } = logsByServiceScene.useState();
+    const styles = useStyles2(getStyles);
+    return (
+      <div className={styles.container}>
+        <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
+          {!loading && !patterns && (
+            <div className={styles.patternMissingText}>
+              <Text textAlignment="center" color="primary">
+                <p>There are no pattern matches.</p>
+                <p>Pattern matching has not been configured.</p>
+                <p>Patterns let you detect similar log lines and add or exclude them from your search.</p>
+                <p>To see them in action, add the following to your configuration</p>
+                <p>
+                  <code>--pattern-ingester.enabled=true</code>
+                </p>
+              </Text>
+            </div>
+          )}
+          {!loading && patterns?.length === 0 && <GrotError />}
+          {!loading && patterns && patterns.length > 0 && (
+            <>
+              <div className={styles.controls}>
+                {body instanceof LayoutSwitcher && (
+                  <div className={styles.controlsRight}>
+                    <body.Selector model={body} />
+                  </div>
+                )}
+              </div>
+              <div className={styles.content}>{body && <body.Component model={body} />}</div>
+            </>
+          )}
+        </StatusWrapper>
+      </div>
+    );
+  };
 }
 
 function getStyles(theme: GrafanaTheme2) {

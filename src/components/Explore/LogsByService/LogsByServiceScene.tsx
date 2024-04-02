@@ -33,11 +33,12 @@ import {
   VAR_LOGS_FORMAT,
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE_EXPR,
+  EXPLORATIONS_ROUTE,
 } from '../../../utils/shared';
 import { getExplorationFor, getSeriesOptions } from '../../../utils/utils';
 import { ShareExplorationButton } from './ShareExplorationButton';
 import { buildLabelBreakdownActionScene } from './Tabs/LabelBreakdownScene';
-import { getDataSourceSrv, locationService } from '@grafana/runtime';
+import { DataSourceWithBackend, getDataSourceSrv, locationService } from '@grafana/runtime';
 import { buildPatternsScene } from './Tabs/PatternsScene';
 import { buildFieldsBreakdownActionScene } from './Tabs/FieldsBreakdownScene';
 import { Unsubscribable } from 'rxjs';
@@ -45,6 +46,7 @@ import { getLiveTailControl } from 'utils/scenes';
 import { extractFields } from '../../../utils/fields';
 import { GoToExploreButton } from './GoToExploreButton';
 import { GiveFeedback } from './GiveFeedback';
+import { renderLogQLLabelFilters } from 'pages/Explore';
 
 export interface LokiPattern {
   pattern: string;
@@ -85,6 +87,28 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
     this.addActivationHandler(this._onActivate.bind(this));
   }
 
+  private getFiltersVariable(): AdHocFiltersVariable {
+    const variable = sceneGraph.lookupVariable(VAR_FILTERS, this)!;
+    if (!(variable instanceof AdHocFiltersVariable)) {
+      throw new Error('Filters variable not found');
+    }
+
+    return variable;
+  }
+
+  private setEmptyFiltersRedirection() {
+    const variable = this.getFiltersVariable();
+    if (variable.state.filters.length === 0) {
+      locationService.push(EXPLORATIONS_ROUTE);
+      return;
+    }
+    variable.subscribeToState((newState) => {
+      if (newState.filters.length === 0) {
+        locationService.push(EXPLORATIONS_ROUTE);
+      }
+    });
+  }
+
   private _onActivate() {
     if (this.state.actionView === undefined) {
       this.setActionView('logs');
@@ -103,6 +127,8 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
         })
       );
     }
+
+    this.setEmptyFiltersRedirection();
 
     const dataUnsub = this.state.$data?.subscribeToState(() => {
       this.updateFields();
@@ -175,19 +201,24 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
   }
 
   private async updatePatterns() {
-    const ds = await getDataSourceSrv().get(VAR_DATASOURCE_EXPR, { __sceneObject: { value: this } });
+    const ds = await getDataSourceSrv().get(VAR_DATASOURCE_EXPR, { __sceneObject: { value: this } }) as DataSourceWithBackend | undefined;
 
-    if (!ds) {
+    if (!ds || !ds.getResource) {
       return;
     }
 
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
+    const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
 
-    // TODO: also use "fields" label filters
-    // @ts-ignore
-    ds.getResource!('patterns', {
-      query: filters.state.filterExpression,
+
+    ds.getResource('patterns', {
+      query: renderLogQLLabelFilters([
+        // this will only be the service name for now
+        ...filters.state.filters,
+        // only include fields that are an indexed label
+        ...fields.state.filters.filter((field) => this.state.labels?.includes(field.key)),
+      ]),
       from: timeRange.from.utc().toISOString(),
       to: timeRange.to.utc().toISOString(),
     }).then(({ data }: { data: LokiPattern[] }) => {
