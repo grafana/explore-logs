@@ -22,7 +22,7 @@ export const VAR_DATASOURCE = 'ds';
 export const VAR_DATASOURCE_EXPR = '${ds}';
 export const VAR_LOGS_FORMAT = 'logsFormat';
 
-export const LOG_STREAM_SELECTOR_EXPR = `${VAR_FILTERS_EXPR} ${VAR_PATTERNS_EXPR}${VAR_FIELDS_EXPR}`;
+export const LOG_STREAM_SELECTOR_EXPR = `${VAR_FILTERS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_FIELDS_EXPR}`;
 export const explorationDS = { uid: VAR_DATASOURCE_EXPR };
 
 export const ALL_VARIABLE_VALUE = '$__all';
