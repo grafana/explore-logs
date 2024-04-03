@@ -402,6 +402,7 @@ function getStyles(theme: GrafanaTheme2) {
       minHeight: '100%',
       flexDirection: 'column',
       padding: theme.spacing(2),
+      maxWidth: '100vw',
     }),
     body: css({
       flexGrow: 1,
@@ -442,6 +443,7 @@ function getStyles(theme: GrafanaTheme2) {
     }),
     patternsContainer: css({
       paddingBottom: theme.spacing(1),
+      overflow: 'hidden'
     }),
     patterns: css({
       display: 'flex',
