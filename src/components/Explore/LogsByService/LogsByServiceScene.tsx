@@ -46,20 +46,12 @@ import { extractFields } from '../../../utils/fields';
 import { GoToExploreButton } from './GoToExploreButton';
 import { GiveFeedback } from './GiveFeedback';
 import {LogExploration, renderLogQLLabelFilters} from 'pages/Explore';
+import { DetectedLabelsResponse } from '../types';
 
 interface LokiPattern {
   pattern: string;
   samples: Array<[number, string]>;
 }
-
-type DetectedLabel = {
-  label: string;
-  cardinality: number;
-};
-
-type DetectedLabelsResponse = {
-  detectedLabels: DetectedLabel[];
-};
 
 export interface LogSceneState extends SceneObjectState {
   body: SceneFlexLayout;
@@ -355,7 +347,11 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                 label={tab.displayName}
                 active={actionView === tab.value}
                 counter={getCounter(tab)}
-                onChangeTab={() => logsScene.setActionView(tab.value)}
+                onChangeTab={() => {
+                  if (tab.value !== logsScene.state.actionView) {
+                    logsScene.setActionView(tab.value);
+                  }
+                }}
               />
             );
           })}

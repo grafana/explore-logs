@@ -28,7 +28,6 @@ import {
   ALL_VARIABLE_VALUE,
   explorationDS,
   LOG_STREAM_SELECTOR_EXPR,
-  VAR_DATASOURCE_EXPR,
   VAR_FILTERS,
   VAR_LABEL_GROUP_BY,
 } from '../../../../utils/shared';
@@ -36,9 +35,9 @@ import {
 import { AddToFiltersGraphAction } from '../../AddToFiltersGraphAction';
 import { ByFrameRepeater } from '../../ByFrameRepeater';
 import { LayoutSwitcher } from '../../LayoutSwitcher';
-import { getSeriesOptions } from '../../../../utils/utils';
-import { getDataSourceSrv } from '@grafana/runtime';
+import { getDatasource, getLabelOptions } from '../../../../utils/utils';
 import { getLayoutChild } from '../../../../utils/fields';
+import { DetectedLabelsResponse } from 'components/Explore/types';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -101,29 +100,34 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   }
 
   private async updateBody(variable: CustomVariable) {
-    const ds = await getDataSourceSrv().get(VAR_DATASOURCE_EXPR, { __sceneObject: { value: this } });
+    const ds = await getDatasource(this);
 
     if (!ds) {
       return;
     }
 
-    const lokiLanguageProvider = ds.languageProvider as any;
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
 
-    lokiLanguageProvider.fetchSeriesLabels(filters.state.filterExpression, {timeRange}).then((tagKeys: Record<string, string[]>) => {
-      const options = getSeriesOptions(this, tagKeys);
-      const stateUpdate: Partial<LabelBreakdownSceneState> = {
-        loading: false,
-        value: String(variable.state.value),
-        labels: options,
-        blockingMessage: undefined,
-      };
-
-      stateUpdate.body = variable.hasAllValue() ? buildAllLayout(options) : buildNormalLayout(variable);
-
-      this.setState(stateUpdate);
+    const { detectedLabels } = await ds.getResource<DetectedLabelsResponse>('detected_labels', {
+      query: filters.state.filterExpression,
+      from: timeRange.from.utc().toISOString(),
+      to: timeRange.to.utc().toISOString(),
     });
+
+    const labels = detectedLabels.map((l) => l.label);
+    const options = getLabelOptions(this, labels);
+
+    const stateUpdate: Partial<LabelBreakdownSceneState> = {
+      loading: false,
+      value: String(variable.state.value),
+      labels: options,
+      blockingMessage: undefined,
+    };
+
+    stateUpdate.body = variable.hasAllValue() ? buildAllLayout(options) : buildNormalLayout(variable);
+
+    this.setState(stateUpdate);
   }
 
   public onChange = (value?: string) => {
@@ -277,15 +281,16 @@ const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 function buildNormalLayout(variable: CustomVariable) {
   const query = buildQuery(variable.getValueText());
 
-  let bodyOpts  = PanelBuilders.timeseries()
-  bodyOpts = bodyOpts.setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
-      .setCustomFieldConfig('fillOpacity', 100)
-      .setCustomFieldConfig('lineWidth', 0)
-      .setCustomFieldConfig('pointSize', 0)
-      .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-      .setTitle('$metric')
+  let bodyOpts = PanelBuilders.timeseries();
+  bodyOpts = bodyOpts
+    .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
+    .setCustomFieldConfig('fillOpacity', 100)
+    .setCustomFieldConfig('lineWidth', 0)
+    .setCustomFieldConfig('pointSize', 0)
+    .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+    .setTitle('$metric');
 
-  const body = bodyOpts.build()
+  const body = bodyOpts.build();
 
   return new LayoutSwitcher({
     $data: new SceneQueryRunner({

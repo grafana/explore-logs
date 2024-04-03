@@ -8,6 +8,7 @@ import {
   SceneObjectState,
 } from '@grafana/scenes';
 import { getLogsPanel } from '../../panels/logsPanel';
+import { LineFilter } from '../LineFilter';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -33,8 +34,12 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
 
   private getVizPanel() {
     return new SceneFlexLayout({
-      direction: 'row',
+      direction: 'column',
       children: [
+        new SceneFlexItem({
+          body: new LineFilter(),
+          ySizing: 'content'
+        }),
         new SceneFlexItem({
           body: getLogsPanel(),
         }),

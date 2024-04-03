@@ -34,6 +34,7 @@ import {
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_FILTERS,
+  VAR_LINE_FILTER,
   VAR_PATTERNS,
 } from '../../utils/shared';
 import { DetailsScene } from '../../components/Explore/LogsByService/DetailsScene';
@@ -327,7 +328,12 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
   });
 
   filterVariable._getOperators = () => {
-    return operators;
+    return [
+      {
+        label: '=',
+        value: '=',
+      },
+    ];
   };
 
   const fieldsVariable = new AdHocFiltersVariable({
@@ -364,6 +370,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
         value: '|= ``',
         hide: VariableHide.hideVariable,
       }),
+      new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable, })
     ],
   });
 }
@@ -414,10 +421,15 @@ function getStyles(theme: GrafanaTheme2) {
       width: 'calc(100% - 450)',
       flexWrap: 'wrap',
       alignItems: 'flex-end',
-
-      ['label[for="var-adhoc_service_filter"] + div >[title="Add filter"]']: {
-        display: "none"
-      }
+      '& + div[data-testid="data-testid Dashboard template variables submenu Label Filters"]:empty': {
+        visibility: 'hidden',
+      },
+      ['div >[title="Add filter"]']: {
+        visibility: 'hidden',
+        width: 0,
+        padding: 0,
+        margin: 0,
+      },
     }),
     controls: css({
       display: 'flex',
