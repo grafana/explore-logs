@@ -33,7 +33,6 @@ import {
   VAR_LOGS_FORMAT,
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE_EXPR,
-  EXPLORATIONS_ROUTE,
 } from '../../../utils/shared';
 import { getDatasource, getExplorationFor } from '../../../utils/utils';
 import { ShareExplorationButton } from './ShareExplorationButton';
@@ -46,21 +45,13 @@ import { getLiveTailControl } from 'utils/scenes';
 import { extractFields } from '../../../utils/fields';
 import { GoToExploreButton } from './GoToExploreButton';
 import { GiveFeedback } from './GiveFeedback';
-import { renderLogQLLabelFilters } from 'pages/Explore';
+import { LogExploration, renderLogQLLabelFilters } from 'pages/Explore';
+import { DetectedLabelsResponse } from '../types';
 
 interface LokiPattern {
   pattern: string;
   samples: Array<[number, string]>;
 }
-
-type DetectedLabel = {
-  label: string;
-  cardinality: number;
-};
-
-type DetectedLabelsResponse = {
-  detectedLabels: DetectedLabel[];
-};
 
 export interface LogSceneState extends SceneObjectState {
   body: SceneFlexLayout;
@@ -107,13 +98,14 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
 
   private setEmptyFiltersRedirection() {
     const variable = this.getFiltersVariable();
+    const logExplorer = sceneGraph.getAncestor(this, LogExploration);
     if (variable.state.filters.length === 0) {
-      locationService.push(EXPLORATIONS_ROUTE);
+      logExplorer.setState({mode: 'start'});
       return;
     }
     variable.subscribeToState((newState) => {
       if (newState.filters.length === 0) {
-        locationService.push(EXPLORATIONS_ROUTE);
+        logExplorer.setState({mode: 'start'});
       }
     });
   }
@@ -355,7 +347,11 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                 label={tab.displayName}
                 active={actionView === tab.value}
                 counter={getCounter(tab)}
-                onChangeTab={() => logsScene.setActionView(tab.value)}
+                onChangeTab={() => {
+                  if (tab.value !== logsScene.state.actionView) {
+                    logsScene.setActionView(tab.value);
+                  }
+                }}
               />
             );
           })}
