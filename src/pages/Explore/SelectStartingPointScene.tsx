@@ -34,7 +34,6 @@ import { getLiveTailControl } from 'utils/scenes';
 import pluginJson from '../../plugin.json';
 import { getFavoriteServicesFromStorage } from 'utils/store';
 
-
 const LIMIT_SERVICES = 20;
 const SERVICE_NAME = 'service_name';
 export const SERVICES_LOCALSTORAGE_KEY = `${pluginJson.id}.services.favorite`;
@@ -52,7 +51,7 @@ export interface LogSelectSceneState extends SceneObjectState {
   isTopSeriesLoading: boolean;
   searchServicesString: string;
   topServicesToBeUsed?: string[];
-};
+}
 
 //const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
@@ -61,11 +60,11 @@ const VAR_METRIC_FN = 'fn';
 
 export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
-    variableNames: [VAR_FILTERS,VAR_DATASOURCE],
+    variableNames: [VAR_FILTERS, VAR_DATASOURCE],
     onReferencedVariableValueChanged: async (variable: SceneVariable) => {
       const { name } = variable.state;
       if (name === VAR_DATASOURCE) {
-        this._onTopServiceChange()
+        this._onTopServiceChange();
       }
     },
   });
@@ -80,7 +79,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
       body: new SceneCSSGridLayout({ children: [] }),
       isTopSeriesLoading: false,
       topServices: undefined,
-      searchServicesString: "",
+      searchServicesString: '',
       topServicesToBeUsed: undefined,
       ...state,
     });
@@ -114,7 +113,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
       );
     }
 
-    this._onTopServiceChange()
+    this._onTopServiceChange();
 
     this.subscribeToState((newState, oldState) => {
       if (newState.topServicesToBeUsed !== oldState.topServicesToBeUsed) {
@@ -122,18 +121,20 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
       }
 
       if (newState.searchServicesString !== oldState.searchServicesString) {
-        const services = this.state.topServices?.filter((service) => service.toLowerCase().includes(newState.searchServicesString?.toLowerCase() ?? ''))
-        let topServicesToBeUsed = services?.slice(0, LIMIT_SERVICES) ?? []
+        const services = this.state.topServices?.filter((service) =>
+          service.toLowerCase().includes(newState.searchServicesString?.toLowerCase() ?? '')
+        );
+        let topServicesToBeUsed = services?.slice(0, LIMIT_SERVICES) ?? [];
         // If user is not searching for anything, add favorite services to the top
         if (newState.searchServicesString === '') {
           const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
-          topServicesToBeUsed = addFavoriteServices(topServicesToBeUsed, getFavoriteServicesFromStorage(ds))
+          topServicesToBeUsed = addFavoriteServices(topServicesToBeUsed, getFavoriteServicesFromStorage(ds));
         }
         this.setState({
           topServicesToBeUsed,
-        })
+        });
       }
-    })
+    });
 
     return () => unsubs.forEach((u) => u.unsubscribe());
   }
@@ -143,41 +144,48 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
     const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
     this.setState({
       isTopSeriesLoading: true,
-    })
+    });
 
-    getDataSourceSrv().get(ds as string).then((datasourceInstance) => {
-      // @ts-ignore
-      datasourceInstance.getResource!('index/volume', {
-      query: `{${SERVICE_NAME}=~".+"}`,
-      from: timeRange.from.utc().toISOString(),
-      to: timeRange.to.utc().toISOString(),
-    }).then((res: any) => {
-      const serviceMetrics: {[key: string]: number} = {}
-      res.data.result.forEach((item: any) => {
-        const serviceName = item['metric'][SERVICE_NAME];
-        const value = Number(item['value'][1]);
-        serviceMetrics[serviceName] = value;
-      })
+    getDataSourceSrv()
+      .get(ds as string)
+      .then((datasourceInstance) => {
+        // @ts-ignore
+        datasourceInstance.getResource!('index/volume', {
+          query: `{${SERVICE_NAME}=~".+"}`,
+          from: timeRange.from.utc().toISOString(),
+          to: timeRange.to.utc().toISOString(),
+        })
+          .then((res: any) => {
+            const serviceMetrics: { [key: string]: number } = {};
+            res.data.result.forEach((item: any) => {
+              const serviceName = item['metric'][SERVICE_NAME];
+              const value = Number(item['value'][1]);
+              serviceMetrics[serviceName] = value;
+            });
 
-      const topServices = Object.entries(serviceMetrics)
-        .sort((a, b) => b[1] - a[1]) // Sort by value in descending order
-        .map(([serviceName]) => serviceName); // Extract service names
+            const topServices = Object.entries(serviceMetrics)
+              .sort((a, b) => b[1] - a[1]) // Sort by value in descending order
+              .map(([serviceName]) => serviceName); // Extract service names
 
-      let topServicesToBeUsed = addFavoriteServices(topServices.slice(0, LIMIT_SERVICES), getFavoriteServicesFromStorage(ds))
-        this.setState({
-          topServices,
-          topServicesToBeUsed,
-          isTopSeriesLoading: false,
-      })
-    }).catch((err: any) => {
-      console.error('Could not fetch volume', err)
-      this.setState({
-        topServices: [],
-        isTopSeriesLoading: false,
-      })
-    })
-  })
-}
+            let topServicesToBeUsed = addFavoriteServices(
+              topServices.slice(0, LIMIT_SERVICES),
+              getFavoriteServicesFromStorage(ds)
+            );
+            this.setState({
+              topServices,
+              topServicesToBeUsed,
+              isTopSeriesLoading: false,
+            });
+          })
+          .catch((err: any) => {
+            console.error('Could not fetch volume', err);
+            this.setState({
+              topServices: [],
+              isTopSeriesLoading: false,
+            });
+          });
+      });
+  }
 
   public getRepeater(): ByLabelRepeater {
     return this.state.body!.state.children[0] as ByLabelRepeater;
@@ -188,53 +196,53 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
     if (!this.state.topServicesToBeUsed || this.state.topServicesToBeUsed.length === 0) {
       this.state.body.setState({ children: [] });
     } else {
-    this.state.body.setState({
-      children: [
-        new ByLabelRepeater({
-          $data: new SceneDataTransformer({
-            $data: new SceneQueryRunner({
-              datasource: explorationDS,
-              queries: [buildVolumeQuery(this.state.topServicesToBeUsed)],
-              maxDataPoints: 80,
-            }),
-            transformations: [
-              () => (source: Observable<DataFrame[]>) => {
-                const favoriteServices = getFavoriteServicesFromStorage(ds);
-                return source.pipe(
-                  map((data: DataFrame[]) => {
-                    data.forEach((a) => reduceField({ field: a.fields[1], reducers: [ReducerID.max] }))
-                    return data.sort((a, b) => {
-                      const aIsFavorite = favoriteServices.includes(a.fields?.[1]?.labels?.[SERVICE_NAME] ?? '');
-                      const bIsFavorite = favoriteServices.includes(b.fields?.[1]?.labels?.[SERVICE_NAME] ?? '');
-                      if (aIsFavorite && !bIsFavorite) {
-                        return -1;
-                      } else if (!aIsFavorite && bIsFavorite) {
-                        return 1;
-                      } else {
-                        return (b.fields[1].state?.calcs?.max || 0) - (a.fields[1].state?.calcs?.max || 0);
-                      }
-                    });
-                  })
-                );
-              },
-            ],
-          }),
-          body: new SceneFlexLayout({
-            height: '200px',
-            direction: 'column',
-            children: [
-              new SceneFlexItem({
-                body: new SceneReactObject({
-                  reactNode: <LoadingPlaceholder text="Fetching services..." />,
-                }),
+      this.state.body.setState({
+        children: [
+          new ByLabelRepeater({
+            $data: new SceneDataTransformer({
+              $data: new SceneQueryRunner({
+                datasource: explorationDS,
+                queries: [buildVolumeQuery(this.state.topServicesToBeUsed)],
+                maxDataPoints: 80,
               }),
-            ],
+              transformations: [
+                () => (source: Observable<DataFrame[]>) => {
+                  const favoriteServices = getFavoriteServicesFromStorage(ds);
+                  return source.pipe(
+                    map((data: DataFrame[]) => {
+                      data.forEach((a) => reduceField({ field: a.fields[1], reducers: [ReducerID.max] }));
+                      return data.sort((a, b) => {
+                        const aIsFavorite = favoriteServices.includes(a.fields?.[1]?.labels?.[SERVICE_NAME] ?? '');
+                        const bIsFavorite = favoriteServices.includes(b.fields?.[1]?.labels?.[SERVICE_NAME] ?? '');
+                        if (aIsFavorite && !bIsFavorite) {
+                          return -1;
+                        } else if (!aIsFavorite && bIsFavorite) {
+                          return 1;
+                        } else {
+                          return (b.fields[1].state?.calcs?.max || 0) - (a.fields[1].state?.calcs?.max || 0);
+                        }
+                      });
+                    })
+                  );
+                },
+              ],
+            }),
+            body: new SceneFlexLayout({
+              height: '200px',
+              direction: 'column',
+              children: [
+                new SceneFlexItem({
+                  body: new SceneReactObject({
+                    reactNode: <LoadingPlaceholder text="Fetching services..." />,
+                  }),
+                }),
+              ],
+            }),
+            repeatByLabel: SERVICE_NAME,
+            getLayoutChild: this.getLayoutChild.bind(this),
           }),
-          repeatByLabel: SERVICE_NAME,
-          getLayoutChild: this.getLayoutChild.bind(this),
-        }),
-      ],
-    });
+        ],
+      });
     }
   }
 
@@ -332,11 +340,11 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
     const styles = useStyles2(getStyles);
     //const metricFnVariable = model.getMetricFnVariable();
     // const { value: metricFnValue } = metricFnVariable.useState();
-    const { isTopSeriesLoading, topServicesToBeUsed } = model.useState();
+    const { isTopSeriesLoading, topServicesToBeUsed, topServices } = model.useState();
 
     const body = model.state.body;
 
-    const [searchQuery, setSearchQuery] = useState('')
+    const [searchQuery, setSearchQuery] = useState('');
 
     const timeout = useRef<NodeJS.Timeout>();
 
@@ -354,6 +362,14 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
     return (
       <div className={styles.container}>
         <div className={styles.bodyWrapper}>
+          <div>
+            {isTopSeriesLoading && <LoadingPlaceholder text={'loading'} className={styles.loadingText} />}
+            {!isTopSeriesLoading && (
+              <>
+                Showing: {topServicesToBeUsed?.length} of {topServices?.length} services
+              </>
+            )}
+          </div>
           <Field className={styles.searchField}>
             <Input
               value={searchQuery}
@@ -363,19 +379,21 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
             />
           </Field>
           {isTopSeriesLoading && <LoadingPlaceholder text="Fetching services..." />}
-          {!isTopSeriesLoading && (!topServicesToBeUsed || topServicesToBeUsed.length === 0) && <div>No services found</div>}
-          {!isTopSeriesLoading && topServicesToBeUsed && topServicesToBeUsed.length > 0 && 
-          <div className={styles.body}>
-            <body.Component model={body} />
-          </div>
-          }
+          {!isTopSeriesLoading && (!topServicesToBeUsed || topServicesToBeUsed.length === 0) && (
+            <div>No services found</div>
+          )}
+          {!isTopSeriesLoading && topServicesToBeUsed && topServicesToBeUsed.length > 0 && (
+            <div className={styles.body}>
+              <body.Component model={body} />
+            </div>
+          )}
         </div>
       </div>
     );
   };
 }
 
-function buildBaseExpr(service: string| undefined, topServices: string[] | undefined) {
+function buildBaseExpr(service: string | undefined, topServices: string[] | undefined) {
   const servicesLogQl = topServices && topServices.length > 0 ? topServices.join('|') : '.+';
   return `{${SERVICE_NAME}${service ? `="${service}"` : `=~"${servicesLogQl}"`}}`;
 }
@@ -402,8 +420,8 @@ function buildVolumeQuery(services: string[]) {
 }
 
 function addFavoriteServices(services: string[], favoriteServices: string[]) {
-  const set = new Set([...favoriteServices, ...services])
-  return Array.from(set)
+  const set = new Set([...favoriteServices, ...services]);
+  return Array.from(set);
 }
 
 function getStyles(theme: GrafanaTheme2) {
@@ -416,6 +434,9 @@ function getStyles(theme: GrafanaTheme2) {
     }),
     headingWrapper: css({
       marginTop: theme.spacing(1),
+    }),
+    loadingText: css({
+      margin: 0,
     }),
     header: css({
       position: 'absolute',
