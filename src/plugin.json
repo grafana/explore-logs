@@ -21,10 +21,20 @@
     {
       "type": "page",
       "name": "Logs",
-      "path": "/a/%PLUGIN_ID%/",
-      "role": "Viewer",
+      "path": "/a/%PLUGIN_ID%/explore",
+      "action": "grafana-lokiexplore-app:read",
       "addToNav": true,
       "defaultNav": true
+    }
+  ],
+  "roles": [
+    {
+      "role": {
+        "name": "Explore Logs Viewer",
+        "description": "Can view logs in the explore logs view",
+        "permissions": [{ "action": "grafana-lokiexplore-app:read" }]
+      },
+      "grants": ["Editor"]
     }
   ],
   "dependencies": {

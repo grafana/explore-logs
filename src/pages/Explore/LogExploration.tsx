@@ -149,12 +149,7 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
       const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
       if (patternsVariable instanceof CustomVariable) {
         const patternsLine =
-          newState.patterns
-            ?.map(
-              (p) =>
-                `${p.type === 'include' ? '|~ ' : '!~ '} \`${p.pattern.replace(/<\*>/g, '.*').replace(/\+/g, '\\+')}\``
-            )
-            ?.join(' ') || '';
+          newState.patterns?.map((p) => `${p.type === 'include' ? '|> ' : '!> '} \`${p.pattern}\``)?.join(' ') || '';
         patternsVariable.changeValueTo(patternsLine);
       }
     });
@@ -165,22 +160,25 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
   }
 
   getUrlState() {
-    return { mode: this.state.mode, patterns: JSON.stringify(this.state.patterns) };
+    return {
+      mode: this.state.mode,
+      patterns: this.state.mode === 'start' ? '' : JSON.stringify(this.state.patterns),
+    };
   }
 
   updateFromUrl(values: SceneObjectUrlValues) {
     const stateUpdate: Partial<LogExplorationState> = {};
-
     if (values.mode !== this.state.mode) {
       const mode: LogExplorationMode = (values.mode as LogExplorationMode) ?? 'start';
       stateUpdate.mode = mode;
       stateUpdate.topScene = getTopScene(mode);
     }
-
-    if (values.patterns && typeof values.patterns === 'string') {
+    if (this.state.mode === 'start') {
+      // Clear patterns on start
+      stateUpdate.patterns = undefined;
+    } else if (values.patterns && typeof values.patterns === 'string') {
       stateUpdate.patterns = JSON.parse(values.patterns) as AppliedPattern[];
     }
-
     this.setState(stateUpdate);
   }
 
@@ -211,7 +209,6 @@ export class LogExplorationScene extends SceneObjectBase {
     const styles = useStyles2(getStyles);
     const includePatterns = patterns ? patterns.filter((pattern) => pattern.type === 'include') : [];
     const excludePatterns = patterns ? patterns.filter((pattern) => pattern.type !== 'include') : [];
-
     return (
       <div className={styles.container}>
         {controls && (
@@ -307,6 +304,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
     filters: initialFilters ?? [],
     expressionBuilder: renderLogQLLabelFilters,
     hide: VariableHide.hideVariable,
+    key: 'adhoc_service_filter',
   });
 
   filterVariable._getOperators = () => {
@@ -397,6 +395,10 @@ function getStyles(theme: GrafanaTheme2) {
       width: 'calc(100% - 450)',
       flexWrap: 'wrap',
       alignItems: 'flex-end',
+      
+      ['label[for="var-adhoc_service_filter"] + div >[title="Add filter"]']: {
+        display: "none"
+      }
     }),
     controls: css({
       display: 'flex',
