@@ -14,6 +14,7 @@ export const Pattern = ({ type, onRemove, pattern }: Props) => {
   const [expanded, setExpanded] = useState(false);
   return (<div className={styles.pattern} onClick={() => setExpanded(!expanded)} onMouseLeave={() => setExpanded(false)}>
     <Tag
+      title={pattern}
       key={pattern}
       name={expanded ? pattern : getPatternPreview(pattern)}
       className={styles.tag}
@@ -54,7 +55,8 @@ const getStyles = (theme: GrafanaTheme2) => {
       color: theme.colors.secondary.text,
       boxSizing: 'border-box',
       padding: theme.spacing(0.25, 0.75),
-      overflow: 'hidden'
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
     }),
     removeButton: css({
       paddingLeft: 2.5,
