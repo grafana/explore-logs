@@ -24,9 +24,11 @@ export const VAR_LOGS_FORMAT = 'logsFormat';
 export const VAR_LOGS_FORMAT_EXPR = '${logsFormat}';
 export const VAR_LINE_FILTER = 'lineFilter';
 export const VAR_LINE_FILTER_EXPR = '${lineFilter}'
+export const VAR_ERROR_FILTER = 'errorFilter';
+export const VAR_ERROR_FILTER_EXPR = '${errorFilter}';
 
 export const LOG_STREAM_SELECTOR_EXPR = `${VAR_FILTERS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_FIELDS_EXPR} ${VAR_LINE_FILTER_EXPR}`;
-export const LOG_STREAM_SELECTOR_EXPR_VOLUME = `${VAR_FILTERS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_FIELDS_EXPR} ${VAR_LINE_FILTER_EXPR}`;
+export const LOG_STREAM_SELECTOR_EXPR_VOLUME = `${VAR_FILTERS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_FIELDS_EXPR} ${VAR_LINE_FILTER_EXPR} ${VAR_ERROR_FILTER_EXPR}`.replace(/\s+/g, ' ').trimEnd();
 
 export const explorationDS = { uid: VAR_DATASOURCE_EXPR };
 

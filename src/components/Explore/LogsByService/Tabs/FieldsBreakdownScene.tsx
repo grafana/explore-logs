@@ -300,7 +300,7 @@ function getExpr(field: string) {
       `(${field}) [$__auto]) by ()`
     );
   }
-  return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR_VOLUME} | __error__=""  [$__auto]))`;
+  return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR_VOLUME}  [$__auto]))`;
 }
 
 function buildQuery(tagKey: string) {

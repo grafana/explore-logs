@@ -32,6 +32,7 @@ import {
   explorationDS,
   StartingPointSelectedEvent,
   VAR_DATASOURCE,
+  VAR_ERROR_FILTER,
   VAR_FIELDS,
   VAR_FILTERS,
   VAR_LINE_FILTER,
@@ -360,11 +361,18 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
     const dsValue = `${newState.value}`;
     newState.value && localStorage.setItem(DS_LOCALSTORAGE_KEY, dsValue);
   });
+
+  const errorFilterVariable = new CustomVariable({
+    name: VAR_ERROR_FILTER,
+    value: '| __error__=""',
+    hide: VariableHide.hideVariable,
+  });
   return new SceneVariableSet({
     variables: [
       dsVariable,
       filterVariable,
       fieldsVariable,
+      errorFilterVariable,
       new CustomVariable({
         name: VAR_PATTERNS,
         value: '|= ``',
