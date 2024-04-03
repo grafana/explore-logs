@@ -45,7 +45,7 @@ import { getLiveTailControl } from 'utils/scenes';
 import { extractFields } from '../../../utils/fields';
 import { GoToExploreButton } from './GoToExploreButton';
 import { GiveFeedback } from './GiveFeedback';
-import {LogExploration, renderLogQLLabelFilters} from 'pages/Explore';
+import { LogExploration, renderLogQLLabelFilters } from 'pages/Explore';
 import { DetectedLabelsResponse } from '../types';
 
 interface LokiPattern {
