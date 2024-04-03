@@ -48,7 +48,6 @@ import { GoToExploreButton } from './GoToExploreButton';
 import { GiveFeedback } from './GiveFeedback';
 import { renderLogQLLabelFilters } from 'pages/Explore';
 import { DetectedLabelsResponse } from '../types';
-import { isArray } from 'lodash';
 
 interface LokiPattern {
   pattern: string;
@@ -257,7 +256,7 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
     if (!detectedLabels || !Array.isArray(detectedLabels)) {
       return;
     }
-    
+
     const labels = detectedLabels.filter((a) => a.cardinality > 1).sort((a, b) => b.cardinality - a.cardinality).map((l) => l.label);
     if (JSON.stringify(labels) !== JSON.stringify(this.state.labels)) {
       this.setState({ labels });
