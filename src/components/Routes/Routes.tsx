@@ -8,15 +8,14 @@ import { config } from '@grafana/runtime';
 export const Routes = () => {
   const userPermissions = config.bootData.user.permissions;
   const canUseApp = userPermissions?.['grafana-lokiexplore-app:read'] === true;
-  const routes = [];
-  if (canUseApp) {
-    routes.push(<Route path={prefixRoute(ROUTES.Explore)} component={LogExplorationPage} />);
-    routes.push(<Redirect to={prefixRoute(ROUTES.Explore)} />);
+  if (!canUseApp) {
+    return null;
   }
 
   return (
     <Switch>
-      {routes}
+      <Route path={prefixRoute(ROUTES.Explore)} component={LogExplorationPage} />
+      <Redirect to={prefixRoute(ROUTES.Explore)} />
     </Switch>
   );
 };
