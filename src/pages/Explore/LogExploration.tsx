@@ -409,6 +409,27 @@ function getStyles(theme: GrafanaTheme2) {
       '& + div[data-testid="data-testid Dashboard template variables submenu Label Filters"]:empty': {
         visibility: 'hidden',
       },
+
+      //@todo not this
+      // The filter variables container: i.e. services, filters
+      '&:first-child': {
+        // The wrapper of each filter
+        '& > div': {
+          // The actual inputs container
+          '& > div': {
+            maxWidth: '380px',
+            // wrapper around all inputs
+            '& > div': {
+              // Wrapper around each input: i.e. label name, binary operator, value
+              '& > div': {
+                // These inputs need to flex, otherwise the value takes all of available space and they look broken
+                flex: '1 0 auto',
+              }
+            }
+          }
+        }
+      },
+
       ['div >[title="Add filter"]']: {
         visibility: 'hidden',
         width: 0,
