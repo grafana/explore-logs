@@ -120,7 +120,7 @@ export class LogTimeSeriesPanel extends SceneObjectBase<LogTimeSeriesPanelState>
 function buildQuery() {
   return {
     refId: 'A',
-    expr: `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR_VOLUME} | drop __error__ [$__auto])) by (level)`,
+    expr: `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR_VOLUME} | __error__="" [$__auto])) by (level)`,
     queryType: 'range',
     editorMode: 'code',
   };
