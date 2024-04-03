@@ -160,7 +160,8 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
           new SceneCSSGridLayout({
             templateColumns: GRID_TEMPLATE_COLUMNS,
             autoRows: '200px',
-            children: children,
+            // Scene objects can only have one parent so we must clone
+            children: children.map(c => c.clone()),
           }),
           new SceneCSSGridLayout({
             templateColumns: '1fr',
