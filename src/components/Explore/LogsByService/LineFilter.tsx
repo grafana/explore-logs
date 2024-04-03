@@ -1,5 +1,5 @@
 import { css } from "@emotion/css";
-import { CustomVariable, SceneComponentProps, SceneObjectBase, SceneObjectState, SceneObjectUrlSyncConfig, SceneObjectUrlValues, sceneGraph } from "@grafana/scenes";
+import { CustomVariable, SceneComponentProps, SceneObjectBase, SceneObjectState, sceneGraph } from "@grafana/scenes";
 import { Field, Input } from "@grafana/ui";
 import { debounce } from "lodash";
 import React, { ChangeEvent } from "react";
