@@ -351,7 +351,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
       fieldsVariable,
       new CustomVariable({
         name: VAR_PATTERNS,
-        value: '|= ``',
+        value: '',
         hide: VariableHide.hideVariable,
       }),
       new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable, })
