@@ -47,20 +47,12 @@ import { extractFields } from '../../../utils/fields';
 import { GoToExploreButton } from './GoToExploreButton';
 import { GiveFeedback } from './GiveFeedback';
 import { renderLogQLLabelFilters } from 'pages/Explore';
+import { DetectedLabelsResponse } from '../types';
 
 interface LokiPattern {
   pattern: string;
   samples: Array<[number, string]>;
 }
-
-type DetectedLabel = {
-  label: string;
-  cardinality: number;
-};
-
-type DetectedLabelsResponse = {
-  detectedLabels: DetectedLabel[];
-};
 
 export interface LogSceneState extends SceneObjectState {
   body: SceneFlexLayout;
