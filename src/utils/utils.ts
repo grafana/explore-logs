@@ -1,5 +1,5 @@
 import { SelectableValue, urlUtil } from '@grafana/data';
-import { config, getDataSourceSrv } from '@grafana/runtime';
+import { DataSourceWithBackend, config, getDataSourceSrv } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
   getUrlSyncManager,
@@ -77,3 +77,7 @@ export function getSeriesOptions(scenObject: SceneObject, allOptions: Record<str
   return [{ label: 'All', value: ALL_VARIABLE_VALUE }, ...labelOptions];
 }
 
+export async function getDatasource(sceneObject: SceneObject) {
+  const ds = await getDataSourceSrv().get(VAR_DATASOURCE_EXPR, { __sceneObject: { value: sceneObject } }) as DataSourceWithBackend | undefined;
+  return ds;
+}
