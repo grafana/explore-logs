@@ -41,7 +41,6 @@ import {
 import { DetailsScene } from '../../components/Explore/LogsByService/DetailsScene';
 import { AppliedPattern } from '../../components/Explore/types';
 import { VariableHide } from '@grafana/schema';
-import { LiveTailControl } from 'components/Explore/LiveTailControl';
 import { Pattern } from 'components/Explore/LogsByService/Pattern';
 import pluginJson from '../../plugin.json';
 
@@ -102,7 +101,7 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
     }
     if (this.state.mode !== undefined && this.state.mode !== 'start') {
       this.setState({
-        controls: [...this.state.controls, new LiveTailControl({})],
+        controls: [...this.state.controls],
       });
     }
 
@@ -192,12 +191,6 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
       hide: VariableHide.dontHide,
     });
 
-    const isLiveTailEnabled = this.state.controls.some((control) => control instanceof LiveTailControl === true);
-    if (!isLiveTailEnabled) {
-      this.setState({
-        controls: [...this.state.controls, new LiveTailControl({})],
-      });
-    }
     locationService.partial({ mode: 'logs' });
   }
 
