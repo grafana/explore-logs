@@ -33,6 +33,7 @@ import {
   VAR_LOGS_FORMAT,
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE_EXPR,
+  EXPLORATIONS_ROUTE,
 } from '../../../utils/shared';
 import { getDatasource, getExplorationFor } from '../../../utils/utils';
 import { ShareExplorationButton } from './ShareExplorationButton';
@@ -45,7 +46,7 @@ import { getLiveTailControl } from 'utils/scenes';
 import { extractFields } from '../../../utils/fields';
 import { GoToExploreButton } from './GoToExploreButton';
 import { GiveFeedback } from './GiveFeedback';
-import { LogExploration, renderLogQLLabelFilters } from 'pages/Explore';
+import { renderLogQLLabelFilters } from 'pages/Explore';
 import { DetectedLabelsResponse } from '../types';
 
 interface LokiPattern {
@@ -98,14 +99,13 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
 
   private setEmptyFiltersRedirection() {
     const variable = this.getFiltersVariable();
-    const logExplorer = sceneGraph.getAncestor(this, LogExploration);
     if (variable.state.filters.length === 0) {
-      logExplorer.setState({mode: 'start'});
+      locationService.push(EXPLORATIONS_ROUTE);
       return;
     }
     variable.subscribeToState((newState) => {
       if (newState.filters.length === 0) {
-        logExplorer.setState({mode: 'start'});
+        locationService.push(EXPLORATIONS_ROUTE);
       }
     });
   }
