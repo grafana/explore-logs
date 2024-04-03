@@ -126,7 +126,8 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
         let topServicesToBeUsed = services?.slice(0, LIMIT_SERVICES) ?? []
         // If user is not searching for anything, add favorite services to the top
         if (newState.searchServicesString === '') {
-          topServicesToBeUsed = addFavoriteServices(topServicesToBeUsed, getFavoriteServicesFromStorage())
+          const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
+          topServicesToBeUsed = addFavoriteServices(topServicesToBeUsed, getFavoriteServicesFromStorage(ds))
         }
         this.setState({
           topServicesToBeUsed,
@@ -139,14 +140,14 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
 
   private _onTopServiceChange() {
     const timeRange = sceneGraph.getTimeRange(this).state.value;
-    const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue()
+    const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
     this.setState({
       isTopSeriesLoading: true,
     })
 
-    getDataSourceSrv().get(ds as string).then((ds) => {
+    getDataSourceSrv().get(ds as string).then((datasourceInstance) => {
       // @ts-ignore
-      ds.getResource!('index/volume', {
+      datasourceInstance.getResource!('index/volume', {
       query: `{${SERVICE_NAME}=~".+"}`,
       from: timeRange.from.utc().toISOString(),
       to: timeRange.to.utc().toISOString(),
@@ -162,7 +163,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
         .sort((a, b) => b[1] - a[1]) // Sort by value in descending order
         .map(([serviceName]) => serviceName); // Extract service names
 
-      let topServicesToBeUsed = addFavoriteServices(topServices.slice(0, LIMIT_SERVICES), getFavoriteServicesFromStorage())
+      let topServicesToBeUsed = addFavoriteServices(topServices.slice(0, LIMIT_SERVICES), getFavoriteServicesFromStorage(ds))
         this.setState({
           topServices,
           topServicesToBeUsed,
@@ -183,6 +184,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
   }
 
   private updateBody() {
+    const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue() as string;
     if (!this.state.topServicesToBeUsed || this.state.topServicesToBeUsed.length === 0) {
       this.state.body.setState({ children: [] });
     } else {
@@ -197,15 +199,20 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
             }),
             transformations: [
               () => (source: Observable<DataFrame[]>) => {
-                const favoriteServices = getFavoriteServicesFromStorage();
+                const favoriteServices = getFavoriteServicesFromStorage(ds);
                 return source.pipe(
                   map((data: DataFrame[]) => {
                     data.forEach((a) => reduceField({ field: a.fields[1], reducers: [ReducerID.max] }))
                     return data.sort((a, b) => {
-                      if(favoriteServices.includes(a.fields?.[1]?.labels?.[SERVICE_NAME] ?? '')) {
+                      const aIsFavorite = favoriteServices.includes(a.fields?.[1]?.labels?.[SERVICE_NAME] ?? '');
+                      const bIsFavorite = favoriteServices.includes(b.fields?.[1]?.labels?.[SERVICE_NAME] ?? '');
+                      if (aIsFavorite && !bIsFavorite) {
                         return -1;
+                      } else if (!aIsFavorite && bIsFavorite) {
+                        return 1;
+                      } else {
+                        return (b.fields[1].state?.calcs?.max || 0) - (a.fields[1].state?.calcs?.max || 0);
                       }
-                      return (b.fields[1].state?.calcs?.max || 0) - (a.fields[1].state?.calcs?.max || 0);
                     });
                   })
                 );

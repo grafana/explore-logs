@@ -1,20 +1,43 @@
 import { SERVICES_LOCALSTORAGE_KEY } from "pages/Explore/SelectStartingPointScene";
 
-export function getFavoriteServicesFromStorage(): string[] {
-  let services = JSON.parse(localStorage.getItem(SERVICES_LOCALSTORAGE_KEY) || '{}');
-  if (typeof services !== 'object') {
-    services = {};
+export function getFavoriteServicesFromStorage(ds: any): string[] {
+  if (!ds || typeof ds !== 'string') {
+    return [];
   }
-  const serviceNames = Object.keys(services).filter((key) => services[key]);
-  console.log('serviceNames', serviceNames);
-  return serviceNames;
+  const key = createServicesLocalStorageKey(ds)
+  let services = []
+  try {
+    services = JSON.parse(localStorage.getItem(key) || '[]')
+  } catch (e) {
+    console.error('Error parsing favorite services from local storage', e)
+  }
+
+  if (!Array.isArray(services)) {
+    services = [];
+  }
+  return services;
 }
 
-export function addToFavoriteServicesInStorage(serviceName: string) {
-  let services = JSON.parse(localStorage.getItem(SERVICES_LOCALSTORAGE_KEY) || '{}');
-  if (typeof services !== 'object') {
-    services = {};
+export function addToFavoriteServicesInStorage(ds: any, serviceName: string) {
+  if (!ds || typeof ds !== 'string') {
+    return;
   }
-  services[serviceName] = true;
-  localStorage.setItem(SERVICES_LOCALSTORAGE_KEY, JSON.stringify(services));
+  const key = createServicesLocalStorageKey(ds)
+  let services = []
+  try {
+    services = JSON.parse(localStorage.getItem(key) || '[]')
+  } catch (e) {
+    console.error('Error parsing favorite services from local storage', e)
+  }
+
+  if (!Array.isArray(services)) {
+    services = [];
+  }
+  services.push(serviceName);
+  localStorage.setItem(key, JSON.stringify(services));
+}
+
+
+function createServicesLocalStorageKey(ds: string) {
+  return `${SERVICES_LOCALSTORAGE_KEY}_${ds}`;
 }
