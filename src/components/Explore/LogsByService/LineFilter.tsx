@@ -6,17 +6,17 @@ import React, { ChangeEvent } from "react";
 import { VAR_LINE_FILTER } from "utils/shared";
 
 interface LineFilterState extends SceneObjectState {
-	search: string;
+  search: string;
 }
 
 export class LineFilter extends SceneObjectBase<LineFilterState> {
-	static Component = LineFilterRenderer;
+  static Component = LineFilterRenderer;
 
-	constructor(state?: Partial<LineFilterState>) {
-		super({ search: '', ...state });
-	}
+  constructor(state?: Partial<LineFilterState>) {
+    super({ search: '', ...state });
+  }
 
-	private getVariable() {
+  private getVariable() {
     const variable = sceneGraph.lookupVariable(VAR_LINE_FILTER, this);
     if (!(variable instanceof CustomVariable)) {
       throw new Error('Logs format variable not found');
@@ -24,17 +24,17 @@ export class LineFilter extends SceneObjectBase<LineFilterState> {
     return variable;
   }
 
-	handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-		this.setState({
-			search: e.target.value,
-		});
-		this.updateVariable(e.target.value);
-	}
+  handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    this.setState({
+      search: e.target.value,
+    });
+    this.updateVariable(e.target.value);
+  }
 
-	updateVariable = debounce((search: string) => {
-		const variable = this.getVariable();
-		variable.changeValueTo(`|= \`${search}\``);
-	}, 350);
+  updateVariable = debounce((search: string) => {
+    const variable = this.getVariable();
+    variable.changeValueTo(`|= \`${search}\``);
+  }, 350);
 }
 
 function LineFilterRenderer({ model }: SceneComponentProps<LineFilter>) {
@@ -42,13 +42,14 @@ function LineFilterRenderer({ model }: SceneComponentProps<LineFilter>) {
 
   return (
     <Field>
-			<Input value={search} className={styles.input} onChange={model.handleChange} placeholder="Search" />
-		</Field>
+      <Input value={search} className={styles.input} onChange={model.handleChange} placeholder="Search" />
+    </Field>
   );
 }
 
 const styles = {
-	input: css({
-		width: '100%',
-	})
+  input: css({
+    width: '100%',
+  })
 }
+
