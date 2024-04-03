@@ -1,19 +1,21 @@
 import { css } from "@emotion/css";
-import { CustomVariable, SceneComponentProps, SceneObjectBase, SceneObjectState, sceneGraph } from "@grafana/scenes";
+import { CustomVariable, SceneComponentProps, SceneObjectBase, SceneObjectState, SceneObjectUrlSyncConfig, SceneObjectUrlValues, sceneGraph } from "@grafana/scenes";
 import { Field, Input } from "@grafana/ui";
 import { debounce } from "lodash";
 import React, { ChangeEvent } from "react";
 import { VAR_LINE_FILTER } from "utils/shared";
 
 interface LineFilterState extends SceneObjectState {
-  search: string;
+  lineFilter: string;
 }
 
 export class LineFilter extends SceneObjectBase<LineFilterState> {
+  protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['lineFilter'] });
+  
   static Component = LineFilterRenderer;
 
   constructor(state?: Partial<LineFilterState>) {
-    super({ search: '', ...state });
+    super({ lineFilter: state?.lineFilter || '', ...state });
   }
 
   private getVariable() {
@@ -24,9 +26,20 @@ export class LineFilter extends SceneObjectBase<LineFilterState> {
     return variable;
   }
 
+  getUrlState() {
+    return { lineFilter: this.state.lineFilter };
+  }
+
+  updateFromUrl(values: SceneObjectUrlValues) {
+    console.log('This is never called', values)
+    if (typeof values.lineFilter === 'string' && values.lineFilter !== this.state.lineFilter) {
+      this.setState({ lineFilter: values.lineFilter });
+    }
+  }
+
   handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     this.setState({
-      search: e.target.value,
+      lineFilter: e.target.value,
     });
     this.updateVariable(e.target.value);
   }
@@ -38,11 +51,11 @@ export class LineFilter extends SceneObjectBase<LineFilterState> {
 }
 
 function LineFilterRenderer({ model }: SceneComponentProps<LineFilter>) {
-  const { search } = model.useState();
+  const { lineFilter } = model.useState();
 
   return (
     <Field>
-      <Input value={search} className={styles.input} onChange={model.handleChange} placeholder="Search" />
+      <Input value={lineFilter} className={styles.input} onChange={model.handleChange} placeholder="Search" />
     </Field>
   );
 }
