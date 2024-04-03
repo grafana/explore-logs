@@ -7,7 +7,7 @@ import { config } from '@grafana/runtime';
 
 export const Routes = () => {
   const userPermissions = config.bootData.user.permissions;
-  const canUseApp = userPermissions?.['grafana-lokiexplore-app:read'] === true;
+  const canUseApp = userPermissions?.['grafana-lokiexplore-app:read'] || userPermissions?.['datasources:explore'];
   if (!canUseApp) {
     return null;
   }
