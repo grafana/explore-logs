@@ -9,7 +9,8 @@ import {
 } from '@grafana/scenes';
 import { Button } from '@grafana/ui';
 
-import { StartingPointSelectedEvent } from '../../utils/shared';
+import { StartingPointSelectedEvent, VAR_DATASOURCE } from '../../utils/shared';
+import { addToFavoriteServicesInStorage } from 'utils/store';
 
 export interface SelectAttributeWithValueActionState extends SceneObjectState {
   value: string;
@@ -36,6 +37,9 @@ export class SelectAttributeWithValueAction extends SceneObjectBase<SelectAttrib
         },
       ],
     });
+
+    const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
+    addToFavoriteServicesInStorage(ds, this.state.value);
     this.publishEvent(new StartingPointSelectedEvent(), true);
   };
 
