@@ -100,14 +100,20 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
   private setEmptyFiltersRedirection() {
     const variable = this.getFiltersVariable();
     if (variable.state.filters.length === 0) {
-      locationService.push(EXPLORATIONS_ROUTE);
+      this.redirectToStart();
       return;
     }
     variable.subscribeToState((newState) => {
       if (newState.filters.length === 0) {
-        locationService.push(EXPLORATIONS_ROUTE);
+        this.redirectToStart();
       }
     });
+  }
+
+  private redirectToStart() {
+    const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
+    fields.setState({ filters: [] });
+    locationService.push(EXPLORATIONS_ROUTE);
   }
 
   private _onActivate() {
@@ -152,6 +158,10 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
   }
 
   private onReferencedVariableValueChanged() {
+    const variable = this.getFiltersVariable();
+    if (variable.state.filters.length === 0) {
+      return;
+    }
     this.updatePatterns();
     this.updateLabels();
     locationService.partial({ actionView: 'logs' });
