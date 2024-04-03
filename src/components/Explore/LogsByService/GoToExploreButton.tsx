@@ -16,7 +16,7 @@ interface ShareExplorationButtonState {
 export const GoToExploreButton = ({ exploration }: ShareExplorationButtonState) => {
   const onClick = () => {
     const datasource = getDataSource(exploration);
-    const expr = getQueryExpr(exploration).replace(VAR_LOGS_FORMAT_EXPR, '').trimEnd();
+    const expr = getQueryExpr(exploration).replace(VAR_LOGS_FORMAT_EXPR, '').replace(/\s+/g, ' ').trimEnd();
     const timeRange = sceneGraph.getTimeRange(exploration).state.value;
     const exploreState = JSON.stringify({
       ['loki-explore']: {

@@ -37,7 +37,7 @@ export function getDataSource(exploration: LogExploration) {
 }
 
 export function getQueryExpr(exploration: LogExploration) {
-  return sceneGraph.interpolate(exploration, LOG_STREAM_SELECTOR_EXPR).replace(/\s+/, ' ');
+  return sceneGraph.interpolate(exploration, LOG_STREAM_SELECTOR_EXPR).replace(/\s+/g, ' ');
 }
 
 export function getDataSourceName(dataSourceUid: string) {
