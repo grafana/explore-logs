@@ -165,7 +165,7 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
           new SceneCSSGridLayout({
             templateColumns: '1fr',
             autoRows: '200px',
-            children: children,
+            children: children.map(child => child.clone()),
           }),
         ],
       }),
