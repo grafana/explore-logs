@@ -201,8 +201,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         new SceneCSSGridLayout({
           templateColumns: GRID_TEMPLATE_COLUMNS,
           autoRows: '200px',
-          // Scene objects can only have one parent so we must clone
-          children: children.map(c => c.clone()),
+          children: children,
         }),
         new SceneCSSGridLayout({
           templateColumns: '1fr',

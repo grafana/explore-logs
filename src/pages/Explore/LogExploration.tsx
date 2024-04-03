@@ -2,6 +2,7 @@ import { css } from '@emotion/css';
 import React from 'react';
 
 import { AdHocVariableFilter, GrafanaTheme2, SelectableValue } from '@grafana/data';
+import { locationService } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
   CustomVariable,
@@ -106,14 +107,30 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
     }
 
     // Services
-    const serviceVar = this.state.$variables?.getByName(VAR_FIELDS) as AdHocFiltersVariable;
-    this.setupAutoHideVariable(serviceVar);
-    this.updateVariableHide(serviceVar);
+    const serviceVarState = this.state.$variables?.getByName(VAR_FIELDS) as AdHocFiltersVariable;
+
+    if (serviceVarState?.state?.filters?.length) {
+      this.state.$variables?.getByName(VAR_FIELDS)?.setState({
+        hide: VariableHide.dontHide,
+      });
+    } else {
+      this.state.$variables?.getByName(VAR_FIELDS)?.setState({
+        hide: VariableHide.hideVariable,
+      });
+    }
+
+    const filtersVarState = this.state.$variables?.getByName(VAR_FILTERS) as AdHocFiltersVariable;
 
     // Labels
-    const filtersVar = this.state.$variables?.getByName(VAR_FILTERS) as AdHocFiltersVariable;
-    this.setupAutoHideVariable(filtersVar);
-    this.updateVariableHide(filtersVar);
+    if (filtersVarState?.state?.filters?.length) {
+      this.state.$variables?.getByName(VAR_FILTERS)?.setState({
+        hide: VariableHide.dontHide,
+      });
+    } else {
+      this.state.$variables?.getByName(VAR_FILTERS)?.setState({
+        hide: VariableHide.hideVariable,
+      });
+    }
 
     // Some scene elements publish this
     this.subscribeToEvent(StartingPointSelectedEvent, this._handleStartingPointSelected.bind(this));
@@ -127,21 +144,6 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
         } else {
           this.state.body.setState({ secondary: undefined });
           this.setState({ detailsScene: new DetailsScene({}) });
-        }
-      }
-
-      if(newState.mode !== oldState.mode){
-        this.setState({ topScene: getTopScene(this.state.mode) });
-
-        if(newState.mode === 'start'){
-          this.setState({
-            controls: this.state.controls.filter(control => !(control instanceof LiveTailControl)),
-          });
-        }
-        if(newState.mode === 'logs' && newState.controls.find(control => control instanceof LiveTailControl) === undefined){
-          this.setState({
-            controls: [...newState.controls, new LiveTailControl({})],
-          });
         }
       }
 
@@ -190,35 +192,17 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
       hide: VariableHide.dontHide,
     });
 
-    this.setState({
-      mode: 'logs',
-    });
+    const isLiveTailEnabled = this.state.controls.some((control) => control instanceof LiveTailControl === true);
+    if (!isLiveTailEnabled) {
+      this.setState({
+        controls: [...this.state.controls, new LiveTailControl({})],
+      });
+    }
+    locationService.partial({ mode: 'logs' });
   }
 
   private _handleDetailsSceneUpdated(evt: DetailsSceneUpdated) {
     this.setState({ showDetails: true });
-  }
-
-  private setupAutoHideVariable(variable: AdHocFiltersVariable) {
-    variable.subscribeToState(() => {
-      this.updateVariableHide(variable);
-    });
-  }
-
-  private updateVariableHide(variable: AdHocFiltersVariable) {
-    if(variable.state.filters.length === 0 ) {
-      if(variable.state.hide !== VariableHide.hideVariable){
-        variable.setState({
-          hide: VariableHide.hideVariable,
-        });
-      }
-    }else{
-      if(variable.state.hide !== VariableHide.dontHide){
-        variable.setState({
-          hide: VariableHide.dontHide,
-        });
-      }
-    }
   }
 }
 
