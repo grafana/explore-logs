@@ -355,7 +355,11 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                 label={tab.displayName}
                 active={actionView === tab.value}
                 counter={getCounter(tab)}
-                onChangeTab={() => logsScene.setActionView(tab.value)}
+                onChangeTab={() => {
+                  if (tab.value !== logsScene.state.actionView) {
+                    logsScene.setActionView(tab.value);
+                  }
+                }}
               />
             );
           })}
