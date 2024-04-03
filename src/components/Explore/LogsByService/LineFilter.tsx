@@ -10,8 +10,6 @@ interface LineFilterState extends SceneObjectState {
 }
 
 export class LineFilter extends SceneObjectBase<LineFilterState> {
-  protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['lineFilter'] });
-  
   static Component = LineFilterRenderer;
 
   constructor(state?: Partial<LineFilterState>) {
@@ -24,16 +22,6 @@ export class LineFilter extends SceneObjectBase<LineFilterState> {
       throw new Error('Logs format variable not found');
     }
     return variable;
-  }
-
-  getUrlState() {
-    return { lineFilter: this.state.lineFilter };
-  }
-
-  updateFromUrl(values: SceneObjectUrlValues) {
-    if (typeof values.lineFilter === 'string' && values.lineFilter !== this.state.lineFilter) {
-      this.setState({ lineFilter: values.lineFilter });
-    }
   }
 
   handleChange = (e: ChangeEvent<HTMLInputElement>) => {
