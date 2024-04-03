@@ -1,18 +1,16 @@
 import React from 'react';
 
 import {
-  AdHocFiltersVariable,
+  SceneObjectState,
+  SceneObjectBase,
   SceneComponentProps,
   sceneGraph,
-  SceneObjectBase,
-  SceneObjectState, VariableValueSelectors,
+  AdHocFiltersVariable,
 } from '@grafana/scenes';
-import {Button} from '@grafana/ui';
+import { Button } from '@grafana/ui';
 
-import {StartingPointSelectedEvent, VAR_DATASOURCE} from '../../utils/shared';
-import {addToFavoriteServicesInStorage} from 'utils/store';
-import {LogExploration} from "./LogExploration";
-import {VariableHide} from "@grafana/schema";
+import { StartingPointSelectedEvent, VAR_DATASOURCE } from '../../utils/shared';
+import { addToFavoriteServicesInStorage } from 'utils/store';
 
 export interface SelectAttributeWithValueActionState extends SceneObjectState {
   value: string;
@@ -20,7 +18,6 @@ export interface SelectAttributeWithValueActionState extends SceneObjectState {
 
 export class SelectAttributeWithValueAction extends SceneObjectBase<SelectAttributeWithValueActionState> {
   public onClick = () => {
-    const logExploration = sceneGraph.getAncestor(this, LogExploration);
     const variable = sceneGraph.lookupVariable('filters', this);
     if (!(variable instanceof AdHocFiltersVariable)) {
       return;
@@ -39,14 +36,7 @@ export class SelectAttributeWithValueAction extends SceneObjectBase<SelectAttrib
           value: this.state.value,
         },
       ],
-      hide: VariableHide.dontHide,
     });
-
-    // Hacky? When we hide the variable it renders as null so it won't react to state changes anymore, thus we re-creat the variable renderer
-    // TODO update scenes to listen to state changes when variable is hidden
-    const newControls = logExploration.state.controls;
-    newControls[0] = new VariableValueSelectors({ layout: 'vertical' });
-    logExploration.setState({controls: newControls})
 
     const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
     addToFavoriteServicesInStorage(ds, this.state.value);

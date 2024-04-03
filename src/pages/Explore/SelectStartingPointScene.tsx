@@ -332,7 +332,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
     const styles = useStyles2(getStyles);
     //const metricFnVariable = model.getMetricFnVariable();
     // const { value: metricFnValue } = metricFnVariable.useState();
-    const { isTopSeriesLoading, topServicesToBeUsed } = model.useState();
+    const { isTopSeriesLoading, topServicesToBeUsed, topServices } = model.useState();
 
     const body = model.state.body;
 
@@ -354,6 +354,14 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
     return (
       <div className={styles.container}>
         <div className={styles.bodyWrapper}>
+          <div>
+            {isTopSeriesLoading && <LoadingPlaceholder text={'loading'} className={styles.loadingText} />}
+            {!isTopSeriesLoading && (
+              <>
+                Showing: {topServicesToBeUsed?.length} of {topServices?.length} services
+              </>
+            )}
+          </div>
           <Field className={styles.searchField}>
             <Input
               value={searchQuery}
@@ -364,7 +372,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
           </Field>
           {isTopSeriesLoading && <LoadingPlaceholder text="Fetching services..." />}
           {!isTopSeriesLoading && (!topServicesToBeUsed || topServicesToBeUsed.length === 0) && <div>No services found</div>}
-          {!isTopSeriesLoading && topServicesToBeUsed && topServicesToBeUsed.length > 0 && 
+          {!isTopSeriesLoading && topServicesToBeUsed && topServicesToBeUsed.length > 0 &&
           <div className={styles.body}>
             <body.Component model={body} />
           </div>
@@ -416,6 +424,9 @@ function getStyles(theme: GrafanaTheme2) {
     }),
     headingWrapper: css({
       marginTop: theme.spacing(1),
+    }),
+    loadingText: css({
+      margin: 0,
     }),
     header: css({
       position: 'absolute',

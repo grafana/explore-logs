@@ -1,16 +1,14 @@
 import React from 'react';
 
-import {DataFrame} from '@grafana/data';
+import { DataFrame } from '@grafana/data';
 import {
-  AdHocFiltersVariable,
+  SceneObjectState,
+  SceneObjectBase,
   SceneComponentProps,
   sceneGraph,
-  SceneObjectBase,
-  SceneObjectState, VariableValueSelectors,
+  AdHocFiltersVariable,
 } from '@grafana/scenes';
-import {Button} from '@grafana/ui';
-import {VariableHide} from "@grafana/schema";
-import {LogExploration} from "../../pages/Explore";
+import { Button } from '@grafana/ui';
 
 export interface AddToFiltersGraphActionState extends SceneObjectState {
   frame: DataFrame;
@@ -19,7 +17,6 @@ export interface AddToFiltersGraphActionState extends SceneObjectState {
 
 export class AddToFiltersGraphAction extends SceneObjectBase<AddToFiltersGraphActionState> {
   public onClick = () => {
-    const logExploration = sceneGraph.getAncestor(this, LogExploration);
     const variable = sceneGraph.lookupVariable(this.state.variableName, this);
     if (!(variable instanceof AdHocFiltersVariable)) {
       return;
@@ -41,16 +38,8 @@ export class AddToFiltersGraphAction extends SceneObjectBase<AddToFiltersGraphAc
           value: labels[labelName],
         },
       ],
-      hide: VariableHide.dontHide,
     });
-
-    // Hacky? When we hide the variable it renders as null so it won't react to state changes anymore, thus we re-creat the variable renderer
-    // TODO update scenes to listen to state changes when variable is hidden
-    const newControls = logExploration.state.controls;
-    newControls[0] = new VariableValueSelectors({ layout: 'vertical' });
-    logExploration.setState({controls: newControls})
   };
-
 
   public static Component = ({ model }: SceneComponentProps<AddToFiltersGraphAction>) => {
     return (
