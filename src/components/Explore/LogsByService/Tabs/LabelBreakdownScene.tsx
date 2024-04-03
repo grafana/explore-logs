@@ -254,7 +254,7 @@ export function buildAllLayout(options: Array<SelectableValue<string>>) {
       new SceneCSSGridLayout({
         templateColumns: '1fr',
         autoRows: '200px',
-        children: children,
+        children: children.map(child => child.clone()),
       }),
     ],
   });
