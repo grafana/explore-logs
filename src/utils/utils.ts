@@ -10,7 +10,7 @@ import {
 } from '@grafana/scenes';
 
 import { LogExploration } from '../pages/Explore';
-import { ALL_VARIABLE_VALUE, EXPLORATIONS_ROUTE, LOG_STREAM_SELECTOR_EXPR, VAR_DATASOURCE_EXPR, VAR_FILTERS } from './shared';
+import { ALL_VARIABLE_VALUE, EXPLORATIONS_ROUTE, LOG_STREAM_SELECTOR_EXPR_VOLUME, VAR_DATASOURCE_EXPR, VAR_FILTERS } from './shared';
 
 export function getExplorationFor(model: SceneObject): LogExploration {
   return sceneGraph.getAncestor(model, LogExploration);
@@ -37,7 +37,7 @@ export function getDataSource(exploration: LogExploration) {
 }
 
 export function getQueryExpr(exploration: LogExploration) {
-  return sceneGraph.interpolate(exploration, LOG_STREAM_SELECTOR_EXPR).replace(/\s+/g, ' ');
+  return sceneGraph.interpolate(exploration, LOG_STREAM_SELECTOR_EXPR_VOLUME).replace(/\s+/g, ' ');
 }
 
 export function getDataSourceName(dataSourceUid: string) {

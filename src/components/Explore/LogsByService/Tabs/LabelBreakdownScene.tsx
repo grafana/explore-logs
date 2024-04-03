@@ -27,7 +27,7 @@ import { StatusWrapper } from '../../StatusWrapper';
 import {
   ALL_VARIABLE_VALUE,
   explorationDS,
-  LOG_STREAM_SELECTOR_EXPR,
+  LOG_STREAM_SELECTOR_EXPR_VOLUME,
   VAR_DATASOURCE_EXPR,
   VAR_FILTERS,
   VAR_LABEL_GROUP_BY,
@@ -257,7 +257,7 @@ export function buildAllLayout(options: Array<SelectableValue<string>>) {
 }
 
 function getExpr(tagKey: string) {
-  return `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ [$__auto])) by (${tagKey})`;
+  return `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR_VOLUME} | drop __error__ [$__auto])) by (${tagKey})`;
 }
 
 function buildQuery(tagKey: string) {

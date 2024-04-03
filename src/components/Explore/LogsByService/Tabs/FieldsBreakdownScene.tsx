@@ -27,6 +27,7 @@ import {
   ALL_VARIABLE_VALUE,
   explorationDS,
   LOG_STREAM_SELECTOR_EXPR,
+  LOG_STREAM_SELECTOR_EXPR_VOLUME,
   VAR_FIELD_GROUP_BY,
   VAR_FILTERS,
 } from '../../../../utils/shared';
@@ -298,7 +299,7 @@ function getExpr(field: string) {
       `(${field}) [$__auto]) by ()`
     );
   }
-  return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__  [$__auto]))`;
+  return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR_VOLUME} | drop __error__  [$__auto]))`;
 }
 
 function buildQuery(tagKey: string) {

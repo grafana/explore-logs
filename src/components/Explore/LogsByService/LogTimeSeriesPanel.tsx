@@ -10,7 +10,7 @@ import {
   SceneQueryRunner,
   SceneDataTransformer,
 } from '@grafana/scenes';
-import { explorationDS, LOG_STREAM_SELECTOR_EXPR } from '../../../utils/shared';
+import { explorationDS, LOG_STREAM_SELECTOR_EXPR_VOLUME } from '../../../utils/shared';
 import { DrawStyle, StackingMode } from '@grafana/ui';
 import { DataFrame } from '@grafana/data';
 import { map, Observable } from 'rxjs';
@@ -120,7 +120,7 @@ export class LogTimeSeriesPanel extends SceneObjectBase<LogTimeSeriesPanelState>
 function buildQuery() {
   return {
     refId: 'A',
-    expr: `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ [$__auto])) by (level)`,
+    expr: `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR_VOLUME} | drop __error__ [$__auto])) by (level)`,
     queryType: 'range',
     editorMode: 'code',
   };
