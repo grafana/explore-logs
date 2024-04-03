@@ -35,7 +35,7 @@ import {
   VAR_DATASOURCE_EXPR,
   EXPLORATIONS_ROUTE,
 } from '../../../utils/shared';
-import { getExplorationFor, getSeriesOptions } from '../../../utils/utils';
+import { getDatasource, getExplorationFor } from '../../../utils/utils';
 import { ShareExplorationButton } from './ShareExplorationButton';
 import { buildLabelBreakdownActionScene } from './Tabs/LabelBreakdownScene';
 import { DataSourceWithBackend, getDataSourceSrv, locationService } from '@grafana/runtime';
@@ -52,6 +52,15 @@ interface LokiPattern {
   pattern: string;
   samples: Array<[number, string]>;
 }
+
+type DetectedLabel = {
+  label: string;
+  cardinality: number;
+};
+
+type DetectedLabelsResponse = {
+  detectedLabels: DetectedLabel[];
+};
 
 export interface LogSceneState extends SceneObjectState {
   body: SceneFlexLayout;
@@ -142,6 +151,7 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
 
     unsubs.push(
       sceneGraph.getTimeRange(this).subscribeToState(() => {
+        this.updateLabels();
         this.updatePatterns();
       })
     );
@@ -187,7 +197,7 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
       if (frame) {
         const res = extractFields(frame);
         const detectedFields = res.fields.filter((f) => !disabledFields.includes(f)).sort((a, b) => a.localeCompare(b));
-        if (detectedFields !== this.state.detectedFields) {
+        if (JSON.stringify(detectedFields) !== JSON.stringify(this.state.detectedFields)) {
           this.setState({
             detectedFields,
           });
@@ -201,7 +211,9 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
   }
 
   private async updatePatterns() {
-    const ds = await getDataSourceSrv().get(VAR_DATASOURCE_EXPR, { __sceneObject: { value: this } }) as DataSourceWithBackend | undefined;
+    const ds = (await getDataSourceSrv().get(VAR_DATASOURCE_EXPR, { __sceneObject: { value: this } })) as
+      | DataSourceWithBackend
+      | undefined;
 
     if (!ds || !ds.getResource) {
       return;
@@ -226,25 +238,23 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
   }
 
   private async updateLabels() {
-    const ds = await getDataSourceSrv().get(VAR_DATASOURCE_EXPR, { __sceneObject: { value: this } });
+    const ds = await getDatasource(this);
 
     if (!ds) {
       return;
     }
-    const lokiLanguageProvider = ds.languageProvider as any;
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
+    const { detectedLabels } = await ds.getResource<DetectedLabelsResponse>('detected_labels', {
+      query: filters.state.filterExpression,
+      from: timeRange.from.utc().toISOString(),
+      to: timeRange.to.utc().toISOString(),
+    });
 
-    lokiLanguageProvider
-      .fetchSeriesLabels(filters.state.filterExpression, { timeRange })
-      .then((tagKeys: Record<string, string[]>) => {
-        const labels = getSeriesOptions(this, tagKeys)
-          .filter((l) => l.label !== 'All')
-          .map((l) => l.value!);
-        if (labels !== this.state.labels) {
-          this.setState({ labels });
-        }
-      });
+    const labels = detectedLabels.map((l) => l.label);
+    if (JSON.stringify(labels) !== JSON.stringify(this.state.labels)) {
+      this.setState({ labels });
+    }
   }
 
   getUrlState() {
