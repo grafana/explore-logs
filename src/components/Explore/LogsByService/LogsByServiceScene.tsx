@@ -34,7 +34,6 @@ import {
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE_EXPR,
   EXPLORATIONS_ROUTE,
-  VAR_LINE_FILTER,
 } from '../../../utils/shared';
 import { getDatasource, getExplorationFor } from '../../../utils/utils';
 import { ShareExplorationButton } from './ShareExplorationButton';
@@ -86,7 +85,7 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
       body: state.body ?? buildGraphScene(),
       $variables:
         state.$variables ??
-        new SceneVariableSet({ variables: [new CustomVariable({ name: VAR_LOGS_FORMAT, value: '' }), new CustomVariable({ name: VAR_LINE_FILTER, value: '' })] }),
+        new SceneVariableSet({ variables: [new CustomVariable({ name: VAR_LOGS_FORMAT, value: '' })] }),
       $data: new SceneQueryRunner({
         datasource: explorationDS,
         queries: [buildQuery()],

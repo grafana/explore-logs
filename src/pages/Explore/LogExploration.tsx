@@ -35,6 +35,7 @@ import {
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_FILTERS,
+  VAR_LINE_FILTER,
   VAR_PATTERNS,
 } from '../../utils/shared';
 import { DetailsScene } from '../../components/Explore/LogsByService/DetailsScene';
@@ -350,6 +351,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
         value: '|= ``',
         hide: VariableHide.hideVariable,
       }),
+      new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable, })
     ],
   });
 }
