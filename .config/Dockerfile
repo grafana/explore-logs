@@ -10,6 +10,7 @@ ENV GF_AUTH_ANONYMOUS_ENABLED "true"
 ENV GF_AUTH_BASIC_ENABLED "false"
 # Set development mode so plugins can be loaded without the need to sign
 ENV GF_DEFAULT_APP_MODE "development"
+ENV GF_FEATURE_TOGGLES_ENABLE "accessControlOnCall"
 
 # Inject livereload script into grafana index.html
 USER root
