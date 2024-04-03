@@ -31,7 +31,6 @@ export class LineFilter extends SceneObjectBase<LineFilterState> {
   }
 
   updateFromUrl(values: SceneObjectUrlValues) {
-    console.log('This is never called', values)
     if (typeof values.lineFilter === 'string' && values.lineFilter !== this.state.lineFilter) {
       this.setState({ lineFilter: values.lineFilter });
     }
