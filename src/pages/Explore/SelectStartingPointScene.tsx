@@ -34,6 +34,7 @@ import { getLiveTailControl } from 'utils/scenes';
 import pluginJson from '../../plugin.json';
 import { getFavoriteServicesFromStorage } from 'utils/store';
 
+
 const LIMIT_SERVICES = 20;
 const SERVICE_NAME = 'service_name';
 export const SERVICES_LOCALSTORAGE_KEY = `${pluginJson.id}.services.favorite`;
@@ -60,7 +61,7 @@ const VAR_METRIC_FN = 'fn';
 
 export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
-    variableNames: [VAR_FILTERS, VAR_DATASOURCE],
+    variableNames: [VAR_FILTERS,VAR_DATASOURCE],
     onReferencedVariableValueChanged: async (variable: SceneVariable) => {
       const { name } = variable.state;
       if (name === VAR_DATASOURCE) {
@@ -144,42 +145,39 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
       isTopSeriesLoading: true,
     })
 
-    getDataSourceSrv()
-      .get(ds as string)
-      .then((datasourceInstance) => {
-        // @ts-ignore
-        datasourceInstance.getResource!('index/volume', {
-          query: `{${SERVICE_NAME}=~".+"}`,
-          from: timeRange.from.utc().toISOString(),
-          to: timeRange.to.utc().toISOString(),
-        })
-          .then((res: any) => {
+    getDataSourceSrv().get(ds as string).then((datasourceInstance) => {
+      // @ts-ignore
+      datasourceInstance.getResource!('index/volume', {
+      query: `{${SERVICE_NAME}=~".+"}`,
+      from: timeRange.from.utc().toISOString(),
+      to: timeRange.to.utc().toISOString(),
+    }).then((res: any) => {
       const serviceMetrics: {[key: string]: number} = {}
-            res.data.result.forEach((item: any) => {
-              const serviceName = item['metric'][SERVICE_NAME];
-              const value = Number(item['value'][1]);
-              serviceMetrics[serviceName] = value;
+      res.data.result.forEach((item: any) => {
+        const serviceName = item['metric'][SERVICE_NAME];
+        const value = Number(item['value'][1]);
+        serviceMetrics[serviceName] = value;
       })
 
-            const topServices = Object.entries(serviceMetrics)
-              .sort((a, b) => b[1] - a[1]) // Sort by value in descending order
-              .map(([serviceName]) => serviceName); // Extract service names
+      const topServices = Object.entries(serviceMetrics)
+        .sort((a, b) => b[1] - a[1]) // Sort by value in descending order
+        .map(([serviceName]) => serviceName); // Extract service names
 
       let topServicesToBeUsed = addFavoriteServices(topServices.slice(0, LIMIT_SERVICES), getFavoriteServicesFromStorage(ds))
-            this.setState({
-              topServices,
-              topServicesToBeUsed,
-              isTopSeriesLoading: false,
-          })
+        this.setState({
+          topServices,
+          topServicesToBeUsed,
+          isTopSeriesLoading: false,
+      })
     }).catch((err: any) => {
       console.error('Could not fetch volume', err)
-            this.setState({
-              topServices: [],
-              isTopSeriesLoading: false,
+      this.setState({
+        topServices: [],
+        isTopSeriesLoading: false,
       })
     })
   })
-  }
+}
 
   public getRepeater(): ByLabelRepeater {
     return this.state.body!.state.children[0] as ByLabelRepeater;
@@ -190,53 +188,53 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
     if (!this.state.topServicesToBeUsed || this.state.topServicesToBeUsed.length === 0) {
       this.state.body.setState({ children: [] });
     } else {
-      this.state.body.setState({
-        children: [
-          new ByLabelRepeater({
-            $data: new SceneDataTransformer({
-              $data: new SceneQueryRunner({
-                datasource: explorationDS,
-                queries: [buildVolumeQuery(this.state.topServicesToBeUsed)],
-                maxDataPoints: 80,
-              }),
-              transformations: [
-                () => (source: Observable<DataFrame[]>) => {
-                  const favoriteServices = getFavoriteServicesFromStorage(ds);
-                  return source.pipe(
-                    map((data: DataFrame[]) => {
+    this.state.body.setState({
+      children: [
+        new ByLabelRepeater({
+          $data: new SceneDataTransformer({
+            $data: new SceneQueryRunner({
+              datasource: explorationDS,
+              queries: [buildVolumeQuery(this.state.topServicesToBeUsed)],
+              maxDataPoints: 80,
+            }),
+            transformations: [
+              () => (source: Observable<DataFrame[]>) => {
+                const favoriteServices = getFavoriteServicesFromStorage(ds);
+                return source.pipe(
+                  map((data: DataFrame[]) => {
                     data.forEach((a) => reduceField({ field: a.fields[1], reducers: [ReducerID.max] }))
-                      return data.sort((a, b) => {
-                        const aIsFavorite = favoriteServices.includes(a.fields?.[1]?.labels?.[SERVICE_NAME] ?? '');
-                        const bIsFavorite = favoriteServices.includes(b.fields?.[1]?.labels?.[SERVICE_NAME] ?? '');
-                        if (aIsFavorite && !bIsFavorite) {
-                          return -1;
-                        } else if (!aIsFavorite && bIsFavorite) {
-                          return 1;
-                        } else {
-                          return (b.fields[1].state?.calcs?.max || 0) - (a.fields[1].state?.calcs?.max || 0);
-                        }
-                      });
-                    })
-                  );
-                },
-              ],
-            }),
-            body: new SceneFlexLayout({
-              height: '200px',
-              direction: 'column',
-              children: [
-                new SceneFlexItem({
-                  body: new SceneReactObject({
-                    reactNode: <LoadingPlaceholder text="Fetching services..." />,
-                  }),
-                }),
-              ],
-            }),
-            repeatByLabel: SERVICE_NAME,
-            getLayoutChild: this.getLayoutChild.bind(this),
+                    return data.sort((a, b) => {
+                      const aIsFavorite = favoriteServices.includes(a.fields?.[1]?.labels?.[SERVICE_NAME] ?? '');
+                      const bIsFavorite = favoriteServices.includes(b.fields?.[1]?.labels?.[SERVICE_NAME] ?? '');
+                      if (aIsFavorite && !bIsFavorite) {
+                        return -1;
+                      } else if (!aIsFavorite && bIsFavorite) {
+                        return 1;
+                      } else {
+                        return (b.fields[1].state?.calcs?.max || 0) - (a.fields[1].state?.calcs?.max || 0);
+                      }
+                    });
+                  })
+                );
+              },
+            ],
           }),
-        ],
-      });
+          body: new SceneFlexLayout({
+            height: '200px',
+            direction: 'column',
+            children: [
+              new SceneFlexItem({
+                body: new SceneReactObject({
+                  reactNode: <LoadingPlaceholder text="Fetching services..." />,
+                }),
+              }),
+            ],
+          }),
+          repeatByLabel: SERVICE_NAME,
+          getLayoutChild: this.getLayoutChild.bind(this),
+        }),
+      ],
+    });
     }
   }
 
@@ -375,9 +373,9 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
           {isTopSeriesLoading && <LoadingPlaceholder text="Fetching services..." />}
           {!isTopSeriesLoading && (!topServicesToBeUsed || topServicesToBeUsed.length === 0) && <div>No services found</div>}
           {!isTopSeriesLoading && topServicesToBeUsed && topServicesToBeUsed.length > 0 &&
-            <div className={styles.body}>
-              <body.Component model={body} />
-            </div>
+          <div className={styles.body}>
+            <body.Component model={body} />
+          </div>
           }
         </div>
       </div>
@@ -385,7 +383,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
   };
 }
 
-function buildBaseExpr(service: string | undefined, topServices: string[] | undefined) {
+function buildBaseExpr(service: string| undefined, topServices: string[] | undefined) {
   const servicesLogQl = topServices && topServices.length > 0 ? topServices.join('|') : '.+';
   return `{${SERVICE_NAME}${service ? `="${service}"` : `=~"${servicesLogQl}"`}}`;
 }
