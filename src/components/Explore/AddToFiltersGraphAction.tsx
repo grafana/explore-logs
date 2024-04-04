@@ -26,19 +26,26 @@ export class AddToFiltersGraphAction extends SceneObjectBase<AddToFiltersGraphAc
     if (Object.keys(labels).length !== 1) {
       return;
     }
-
     const labelName = Object.keys(labels)[0];
 
-    variable.setState({
-      filters: [
-        ...variable.state.filters,
-        {
-          key: labelName,
-          operator: '=',
-          value: labels[labelName],
-        },
-      ],
+    // Check if the filter is already there
+    const isFilterDuplicate = variable.state.filters.some((f) => {
+      return f.key === labelName && f.value === labels[labelName];
     });
+
+    // Only add the unique filters
+    if (!isFilterDuplicate) {
+      variable.setState({
+        filters: [
+          ...variable.state.filters,
+          {
+            key: labelName,
+            operator: '=',
+            value: labels[labelName],
+          },
+        ],
+      });
+    }
   };
 
   public static Component = ({ model }: SceneComponentProps<AddToFiltersGraphAction>) => {
