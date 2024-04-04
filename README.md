@@ -10,7 +10,7 @@ Logs Explore offers a query-less experience for browsing Loki logs without the n
 
 ...all without crafting a single query!
 
-Access to Logs Explore is available both as a standalone feature and integrated within Dashboards.
+Access to Logs Explore is available both as a standalone feature or integrated within Dashboards.
 
 <img src="imgs/service_index.png" alt="app"/>
 
