@@ -37,7 +37,7 @@ Test out the app using the following command to spin up Grafana, Loki, and the L
 3. You can change your data source with the drop-down on the top left.
 4. You can modify your time range in two ways:
    - With the standard time range picker on the top right.
-   - By dragging and dropping the time range you want to see on any time series visualization.
+   - By clicking and dragging the time range you want to see on any time series visualization.
 5. Services are shown based on the volume of logs, and you can search for the service you want through the Search service input.
 6. Select the service you would like to explore. This takes you to the Service page.
 7. Filter logs based on strings, labels, detected fields, or detected patterns.
