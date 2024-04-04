@@ -9,6 +9,7 @@ import {
   AdHocFiltersVariable,
 } from '@grafana/scenes';
 import { Button } from '@grafana/ui';
+import {VariableHide} from "@grafana/schema";
 
 export interface AddToFiltersGraphActionState extends SceneObjectState {
   frame: DataFrame;
@@ -44,6 +45,7 @@ export class AddToFiltersGraphAction extends SceneObjectBase<AddToFiltersGraphAc
             value: labels[labelName],
           },
         ],
+        hide: VariableHide.dontHide
       });
     }
   };
