@@ -2,7 +2,6 @@ import { css } from '@emotion/css';
 import React from 'react';
 
 import { AdHocVariableFilter, GrafanaTheme2, SelectableValue } from '@grafana/data';
-import { locationService } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
   CustomVariable,
@@ -106,30 +105,14 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
     }
 
     // Services
-    const serviceVarState = this.state.$variables?.getByName(VAR_FIELDS) as AdHocFiltersVariable;
-
-    if (serviceVarState?.state?.filters?.length) {
-      this.state.$variables?.getByName(VAR_FIELDS)?.setState({
-        hide: VariableHide.dontHide,
-      });
-    } else {
-      this.state.$variables?.getByName(VAR_FIELDS)?.setState({
-        hide: VariableHide.hideVariable,
-      });
-    }
-
-    const filtersVarState = this.state.$variables?.getByName(VAR_FILTERS) as AdHocFiltersVariable;
+    const serviceVar = this.state.$variables?.getByName(VAR_FIELDS) as AdHocFiltersVariable;
+    this.setupAutoHideVariable(serviceVar);
+    this.updateVariableHide(serviceVar);
 
     // Labels
-    if (filtersVarState?.state?.filters?.length) {
-      this.state.$variables?.getByName(VAR_FILTERS)?.setState({
-        hide: VariableHide.dontHide,
-      });
-    } else {
-      this.state.$variables?.getByName(VAR_FILTERS)?.setState({
-        hide: VariableHide.hideVariable,
-      });
-    }
+    const filtersVar = this.state.$variables?.getByName(VAR_FILTERS) as AdHocFiltersVariable;
+    this.setupAutoHideVariable(filtersVar);
+    this.updateVariableHide(filtersVar);
 
     // Some scene elements publish this
     this.subscribeToEvent(StartingPointSelectedEvent, this._handleStartingPointSelected.bind(this));
@@ -144,6 +127,10 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
           this.state.body.setState({ secondary: undefined });
           this.setState({ detailsScene: new DetailsScene({}) });
         }
+      }
+
+      if(newState.mode !== oldState.mode){
+        this.setState({ topScene: getTopScene(this.state.mode) });
       }
 
       const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
@@ -183,19 +170,35 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
   }
 
   private _handleStartingPointSelected(evt: StartingPointSelectedEvent) {
-    this.state.$variables?.getByName(VAR_FIELDS)?.setState({
-      hide: VariableHide.dontHide,
+    this.setState({
+      mode: 'logs',
     });
-
-    this.state.$variables?.getByName(VAR_FILTERS)?.setState({
-      hide: VariableHide.dontHide,
-    });
-
-    locationService.partial({ mode: 'logs' });
   }
 
   private _handleDetailsSceneUpdated(evt: DetailsSceneUpdated) {
     this.setState({ showDetails: true });
+  }
+
+  private setupAutoHideVariable(variable: AdHocFiltersVariable) {
+    variable.subscribeToState(() => {
+      this.updateVariableHide(variable);
+    });
+  }
+
+  private updateVariableHide(variable: AdHocFiltersVariable) {
+    if(variable.state.filters.length === 0 ) {
+      if(variable.state.hide !== VariableHide.hideVariable){
+        variable.setState({
+          hide: VariableHide.hideVariable,
+        });
+      }
+    } else {
+      if(variable.state.hide !== VariableHide.dontHide){
+        variable.setState({
+          hide: VariableHide.dontHide,
+        });
+      }
+    }
   }
 }
 
