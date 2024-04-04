@@ -36,6 +36,7 @@ import {
   VAR_DATASOURCE_EXPR,
   EXPLORATIONS_ROUTE,
   VAR_DATASOURCE,
+  ALL_VARIABLE_VALUE,
 } from '../../../utils/shared';
 import { getDatasource, getExplorationFor } from '../../../utils/utils';
 import { ShareExplorationButton } from './ShareExplorationButton';
@@ -281,7 +282,7 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
       return;
     }
 
-    const labels = detectedLabels.filter((a) => a.cardinality > 1).sort((a, b) => b.cardinality - a.cardinality).map((l) => l.label);
+    const labels = detectedLabels.filter((a) => a.cardinality > 1).sort((a, b) => a.cardinality - b.cardinality).map((l) => l.label);
     if (JSON.stringify(labels) !== JSON.stringify(this.state.labels)) {
       this.setState({ labels });
     }
@@ -361,7 +362,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
         case 'patterns':
           return logsScene.state.patterns?.length;
         case 'labels':
-          return logsScene.state.labels?.length;
+          return (logsScene.state.labels?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []).length;
         default:
           return undefined;
       }

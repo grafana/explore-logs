@@ -119,13 +119,13 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       return;
     }
 
-    const labels = detectedLabels.filter((a) => a.cardinality > 1).sort((a, b) => b.cardinality - a.cardinality).map((l) => l.label);
+    const labels = detectedLabels.filter((a) => a.cardinality > 1).sort((a, b) => a.cardinality - b.cardinality).map((l) => l.label);
     const options = getLabelOptions(this, labels);
 
     const stateUpdate: Partial<LabelBreakdownSceneState> = {
       loading: false,
       value: String(variable.state.value),
-      labels: options,
+      labels: options, // this now includes "all"
       blockingMessage: undefined,
     };
 
