@@ -8,6 +8,7 @@ import {
   AdHocFiltersVariable,
 } from '@grafana/scenes';
 import { Button } from '@grafana/ui';
+import {StartingPointSelectedEvent} from "../../utils/shared";
 
 export interface SelectAttributeWithValueActionState extends SceneObjectState {
   value: string;
@@ -34,6 +35,8 @@ export class SelectAttributeWithValueAction extends SceneObjectBase<SelectAttrib
         },
       ],
     });
+
+    this.publishEvent(new StartingPointSelectedEvent(), true);
   };
 
   public static Component = ({ model }: SceneComponentProps<SelectAttributeWithValueAction>) => {
