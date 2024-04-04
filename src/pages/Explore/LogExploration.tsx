@@ -42,6 +42,7 @@ import { AppliedPattern } from '../../components/Explore/types';
 import { VariableHide } from '@grafana/schema';
 import { Pattern } from 'components/Explore/LogsByService/Pattern';
 import pluginJson from '../../plugin.json';
+import { LiveTailControl } from 'components/Explore/LiveTailControl';
 
 type LogExplorationMode = 'start' | 'logs';
 
