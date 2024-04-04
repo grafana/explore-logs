@@ -256,8 +256,8 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
         // only include fields that are an indexed label
         ...fields.state.filters.filter((field) => this.state.labels?.includes(field.key)),
       ]),
-      from: timeRange.from.utc().toISOString(),
-      to: timeRange.to.utc().toISOString(),
+      start: timeRange.from.utc().toDate().getTime() * 1000,
+      end: timeRange.to.utc().toDate().getTime() * 1000,
     }).then(({ data }: { data: LokiPattern[] }) => {
       this.setState({ patterns: data });
     });
