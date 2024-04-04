@@ -4,8 +4,8 @@
   "name": "Logs",
   "id": "grafana-lokiexplore-app",
   "info": {
-    "keywords": ["app"],
-    "description": "Query less exploration of log data stored in loki",
+    "keywords": ["app", "loki", "explore", "logs"],
+    "description": "Query-less exploration of log data stored in Loki",
     "author": {
       "name": "Grafana"
     },
@@ -13,9 +13,28 @@
       "small": "img/logo.svg",
       "large": "img/logo.svg"
     },
-    "screenshots": [],
+    "screenshots": [
+    {
+      "name": "service-index",
+      "path": "img/service_index.png"
+    },
+    {
+      "name": "service-logs",
+      "path": "img/service_logs.png"
+    }
+  ],
     "version": "%VERSION%",
-    "updated": "%TODAY%"
+    "updated": "%TODAY%",
+    "links": [
+      {
+        "name": "Github",
+        "url": "https://github.com/grafana/loki-explore"
+      },
+      {
+        "name": "Report bug",
+        "url": "https://github.com/grafana/loki-explore/issues/new"
+      }
+    ]
   },
   "includes": [
     {
