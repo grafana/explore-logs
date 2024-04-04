@@ -129,7 +129,7 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
         }
       }
 
-      if(newState.mode !== oldState.mode){
+      if (newState.mode !== oldState.mode) {
         this.setState({ topScene: getTopScene(newState.mode) });
       }
 
