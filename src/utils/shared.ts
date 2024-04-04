@@ -8,7 +8,7 @@ export interface ActionViewDefinition {
   getScene: (changeFields: (f: string[]) => void) => SceneObject;
 }
 
-export const EXPLORATIONS_ROUTE = '/a/grafana-lokiexplore-app/explore';
+export const EXPLORATIONS_ROUTE = '/a/grafana-explorelogs-app/explore';
 
 export const VAR_FILTERS = 'filters';
 export const VAR_FILTERS_EXPR = '${filters}';

@@ -80,7 +80,7 @@ jobs:
       #   run: npm run test:ci
 
       - name: bump package version
-        run: npm version --no-git-tag-version `npm version --json | jq -r '."grafana-lokiexplore-app"'`-`git rev-parse --short HEAD`
+        run: npm version --no-git-tag-version `npm version --json | jq -r '."grafana-explorelogs-app"'`-`git rev-parse --short HEAD`
 
       - name: Build frontend
         run: npm run build

@@ -1,5 +1,5 @@
 {
-  "name": "grafana-lokiexplore-app",
+  "name": "grafana-explorelogs-app",
   "version": "0.0.2",
   "description": "Query less exploration of log data stored in Loki",
   "scripts": {

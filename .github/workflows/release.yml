@@ -50,6 +50,6 @@ jobs:
         uses: 'google-github-actions/upload-cloud-storage@v1'
         with:
           path: ./
-          destination: 'integration-artifacts/grafana-lokiexplore-app/'
+          destination: 'integration-artifacts/grafana-explorelogs-app/'
           glob: '*.zip'
           parent: false

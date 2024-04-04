@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
   "type": "app",
   "name": "Logs",
-  "id": "grafana-lokiexplore-app",
+  "id": "grafana-explorelogs-app",
   "info": {
     "keywords": ["app", "loki", "explore", "logs"],
     "description": "Query-less exploration of log data stored in Loki",
@@ -41,7 +41,7 @@
       "type": "page",
       "name": "Logs",
       "path": "/a/%PLUGIN_ID%/explore",
-      "action": "grafana-lokiexplore-app:read",
+      "action": "grafana-explorelogs-app:read",
       "addToNav": true,
       "defaultNav": true
     }
@@ -51,7 +51,7 @@
       "role": {
         "name": "Explore Logs Viewer",
         "description": "Can view logs in the explore logs view",
-        "permissions": [{ "action": "grafana-lokiexplore-app:read" }]
+        "permissions": [{ "action": "grafana-explorelogs-app:read" }]
       },
       "grants": ["Editor"]
     }

@@ -31,8 +31,8 @@ export const GrotError = () => {
           className={styles.graphic}
           src={
             theme.isDark
-              ? `/public/plugins/grafana-lokiexplore-app/img/grot_err.svg`
-              : `/public/plugins/grafana-lokiexplore-app/img/grot_err_light.svg`
+              ? `/public/plugins/grafana-explorelogs-app/img/grot_err.svg`
+              : `/public/plugins/grafana-explorelogs-app/img/grot_err_light.svg`
           }
         />
       </div>
