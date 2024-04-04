@@ -62,6 +62,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
           variables: [new CustomVariable({ name: VAR_LABEL_GROUP_BY, defaultToAll: true, includeAll: true })],
         }),
       labels: state.labels ?? [],
+      loading: true,
       ...state,
     });
 

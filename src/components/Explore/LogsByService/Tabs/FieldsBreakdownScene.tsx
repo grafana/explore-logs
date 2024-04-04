@@ -63,6 +63,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
           variables: [new CustomVariable({ name: VAR_FIELD_GROUP_BY, defaultToAll: true, includeAll: true })],
         }),
       fields: state.fields ?? [],
+      loading: true,
       ...state,
     });
 
