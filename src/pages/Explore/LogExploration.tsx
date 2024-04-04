@@ -406,7 +406,7 @@ function getStyles(theme: GrafanaTheme2) {
         visibility: 'hidden',
       },
 
-      //@todo not this
+      //@todo not like this
       // The filter variables container: i.e. services, filters
       '&:first-child': {
         // The wrapper of each filter
@@ -414,7 +414,6 @@ function getStyles(theme: GrafanaTheme2) {
           // The actual inputs container
           '& > div': {
             // wrapper around all inputs
-
             '& > div': {
               maxWidth: '380px',
               flex: '1 0 auto',
@@ -422,8 +421,13 @@ function getStyles(theme: GrafanaTheme2) {
               '& > div': {
                 // These inputs need to flex, otherwise the value takes all of available space and they look broken
                 flex: '1 0 auto',
+
+                // The value input needs to shrink when the parent component is at max width
+                '&:nth-child(3)': {
+                  flex: '0 1 auto',
+                },
               }
-            }
+            },
           }
         }
       },
