@@ -121,14 +121,17 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
     // variables, etc.,  without having to do a full reload.
     const params = locationService.getSearch();
     const newParams = new URLSearchParams();
-    if (params.get('from')) {
-      newParams.set('from', params.get('from') || 'now-15m'); // TS doesn't understand is not null
+    const from = params.get('from');
+    const to = params.get('to');
+    const ds = params.get('var-ds');
+    if (from) {
+      newParams.set('from', from);
     }
-    if (params.get('to')) {
-      newParams.set('to', params.get('to') || 'now'); // TS doesn't understand is not null
+    if (to) {
+      newParams.set('to', to);
     }
-    if (params.get('var-ds')) {
-      newParams.set('var-ds', params.get('var-ds') || ''); // TS doesn't understand is not null
+    if (ds) {
+      newParams.set('var-ds', ds);
     }
     locationService.push(`${EXPLORATIONS_ROUTE}?${newParams}`);
   }
