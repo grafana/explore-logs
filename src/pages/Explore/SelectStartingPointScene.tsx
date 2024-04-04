@@ -356,7 +356,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
       <div className={styles.container}>
         <div className={styles.bodyWrapper}>
           <div>
-            {isTopSeriesLoading && <LoadingPlaceholder text={'loading'} className={styles.loadingText} />}
+            {isTopSeriesLoading && <LoadingPlaceholder text={'Loading'} className={styles.loadingText} />}
             {!isTopSeriesLoading && (
               <>
                 Showing: {topServicesToBeUsed?.length} of {topServices?.length} services
