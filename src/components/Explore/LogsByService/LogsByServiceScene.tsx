@@ -15,6 +15,7 @@ import {
   SceneObjectUrlSyncConfig,
   SceneObjectUrlValues,
   SceneQueryRunner,
+  SceneVariable,
   SceneVariableSet,
   VariableDependencyConfig,
 } from '@grafana/scenes';
@@ -34,6 +35,7 @@ import {
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE_EXPR,
   EXPLORATIONS_ROUTE,
+  VAR_DATASOURCE,
 } from '../../../utils/shared';
 import { getDatasource, getExplorationFor } from '../../../utils/utils';
 import { ShareExplorationButton } from './ShareExplorationButton';
@@ -68,7 +70,7 @@ export interface LogSceneState extends SceneObjectState {
 export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['actionView'] });
   protected _variableDependency = new VariableDependencyConfig(this, {
-    variableNames: [VAR_FILTERS, VAR_FIELDS, VAR_PATTERNS],
+    variableNames: [VAR_DATASOURCE, VAR_FILTERS, VAR_FIELDS, VAR_PATTERNS],
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
   });
 
@@ -157,9 +159,13 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
     return () => unsubs.forEach((u) => u.unsubscribe());
   }
 
-  private onReferencedVariableValueChanged() {
-    const variable = this.getFiltersVariable();
-    if (variable.state.filters.length === 0) {
+  private onReferencedVariableValueChanged(variable: SceneVariable) {
+    if (variable.state.name === VAR_DATASOURCE) {
+      this.redirectToStart()
+      return;
+    } 
+    const filterVariable = this.getFiltersVariable();
+    if (filterVariable.state.filters.length === 0) {
       return;
     }
     this.updatePatterns();
