@@ -16,7 +16,7 @@ Access to Logs Explore is available both as a standalone feature or integrated w
 
 ## Installation in Your Own Grafana Instance
 
-You can install the app in your own Grafana instance using `grafana-cli`:
+You can install Logs Explore in your own Grafana instance using `grafana-cli`:
 
 ```sh
 grafana-cli --pluginUrl=https://storage.googleapis.com/grafana-lokiexplore-app/grafana-lokiexplore-app-latest.zip plugins install grafana-lokiexplore-app
