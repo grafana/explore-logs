@@ -117,8 +117,8 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
     const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
     fields.setState({ filters: [] });
 
-    // Use locationService to do the redirect and allow the users to start afresh, 
-    // potentially getting them unstuck of any leakage produced by subscribers, listeners, 
+    // Use locationService to do the redirect and allow the users to start afresh,
+    // potentially getting them unstuck of any leakage produced by subscribers, listeners,
     // variables, etc.,  without having to do a full reload.
     const params = locationService.getSearch();
     const newParams = new URLSearchParams();
@@ -180,9 +180,9 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
 
   private onReferencedVariableValueChanged(variable: SceneVariable) {
     if (variable.state.name === VAR_DATASOURCE) {
-      this.redirectToStart()
+      this.redirectToStart();
       return;
-    } 
+    }
     const filterVariable = this.getFiltersVariable();
     if (filterVariable.state.filters.length === 0) {
       return;
@@ -282,7 +282,13 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
       return;
     }
 
-    const labels = detectedLabels.filter((a) => a.cardinality > 1).sort((a, b) => a.cardinality - b.cardinality).map((l) => l.label);
+    const labels = detectedLabels
+    .filter((a) => a.cardinality > 1)
+    .sort((a, b) => a.cardinality - b.cardinality)
+    .map((l) => l.label);
+    if (!labels.includes('level')) {
+      labels.unshift('level');
+    }
     if (JSON.stringify(labels) !== JSON.stringify(this.state.labels)) {
       this.setState({ labels });
     }
