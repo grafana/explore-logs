@@ -45,7 +45,7 @@ export class AddToFiltersGraphAction extends SceneObjectBase<AddToFiltersGraphAc
             value: labels[labelName],
           },
         ],
-          hide: VariableHide.dontHide
+        hide: VariableHide.dontHide
       });
     }
   };

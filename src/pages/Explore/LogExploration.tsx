@@ -42,7 +42,6 @@ import { AppliedPattern } from '../../components/Explore/types';
 import { VariableHide } from '@grafana/schema';
 import { Pattern } from 'components/Explore/LogsByService/Pattern';
 import pluginJson from '../../plugin.json';
-import { LiveTailControl } from 'components/Explore/LiveTailControl';
 
 type LogExplorationMode = 'start' | 'logs';
 
@@ -132,17 +131,6 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
 
       if(newState.mode !== oldState.mode){
         this.setState({ topScene: getTopScene(this.state.mode) });
-
-        if(newState.mode === 'start'){
-          this.setState({
-            controls: this.state.controls.filter(control => !(control instanceof LiveTailControl)),
-          });
-        }
-        if(newState.mode === 'logs' && newState.controls.find(control => control instanceof LiveTailControl) === undefined){
-          this.setState({
-            controls: [...newState.controls, new LiveTailControl({})],
-          });
-        }
       }
 
       const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
