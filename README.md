@@ -4,15 +4,15 @@
 
 Logs Explore offers a query-less experience for browsing Loki logs without the need for writing complex queries. Discover or narrow down your search to find logs for your service, uncover related logs, and understand patterns—all with just a few clicks. No LogQL required! With Explore Logs, you can:
 
-- Easily find logs for all of your services.
-- Effortlessly filter service logs based on their labels, fields, or patterns.
+- Easily find logs and log volumes for all of your services
+- Effortlessly filter service logs based on their log volumes, labels, fields, or patterns.
 - Automatically choose the best visualization for your log data based on its characteristics, without any manual setup.
 
 ...all without crafting a single query!
 
 Access to Logs Explore is available both as a standalone feature or integrated within Dashboards.
 
-<img src="imgs/service_index.png" alt="app"/>
+<img src="src/img/service_index.png" alt="app"/>
 
 ## Installation in Your Own Grafana Instance
 
@@ -42,7 +42,7 @@ Test out the app using the following command to spin up Grafana, Loki, and the L
 6. Select the service you would like to explore. This takes you to the Service page.
 7. Filter logs based on strings, labels, detected fields, or detected patterns.
 
-<img src="imgs/service_logs.png" alt="app"/>
+<img src="src/img/service_logs.png" alt="app"/>
 
 ## Community Resources, Feedback, and Support
 
