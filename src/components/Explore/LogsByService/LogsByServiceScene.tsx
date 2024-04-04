@@ -122,14 +122,14 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
     const params = locationService.getSearch();
     const newParams = new URLSearchParams();
     const from = params.get('from');
-    const to = params.get('to');
-    const ds = params.get('var-ds');
     if (from) {
       newParams.set('from', from);
     }
+    const to = params.get('to');
     if (to) {
       newParams.set('to', to);
     }
+    const ds = params.get('var-ds');
     if (ds) {
       newParams.set('var-ds', ds);
     }
