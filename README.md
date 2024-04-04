@@ -19,12 +19,10 @@ Access to Explore Logs is available both as a standalone feature or integrated w
 You can install Explore Logs in your own Grafana instance using `grafana-cli`:
 > [!IMPORTANT]  
 > For an optimal experience, the following Loki and Grafana version and configuration are required:
-> - Loki
->   - version v3.0+
+> - Loki v 3.0+
 >   - `--validation.discover-log-levels=true` for automatic log level discovery
 >   - `--pattern-ingester.enabled=true` for pattern ingestion
-> - Grafana
->   - version 11.0+
+> - Grafana v11.0+
 
 ```sh
 grafana-cli --pluginUrl=https://storage.googleapis.com/grafana-lokiexplore-app/grafana-lokiexplore-app-latest.zip plugins install grafana-lokiexplore-app
