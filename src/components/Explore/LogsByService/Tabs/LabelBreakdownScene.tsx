@@ -111,11 +111,15 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
 
     const { detectedLabels } = await ds.getResource<DetectedLabelsResponse>('detected_labels', {
       query: filters.state.filterExpression,
-      from: timeRange.from.utc().toISOString(),
-      to: timeRange.to.utc().toISOString(),
+      start: timeRange.from.utc().toISOString(),
+      end: timeRange.to.utc().toISOString(),
     });
 
-    const labels = detectedLabels.sort((a,b)=>a.cardinality - b.cardinality).map((l) => l.label);
+    if (!detectedLabels || !Array.isArray(detectedLabels)) {
+      return;
+    }
+
+    const labels = detectedLabels.filter((a) => a.cardinality > 1).sort((a, b) => a.cardinality - b.cardinality).map((l) => l.label);
     const options = getLabelOptions(this, labels);
 
     const stateUpdate: Partial<LabelBreakdownSceneState> = {
