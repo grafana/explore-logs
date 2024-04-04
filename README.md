@@ -47,5 +47,5 @@ Test out the app using the following command to spin up Grafana, Loki, and the L
 ## Community Resources, Feedback, and Support
 
 - Found a bug? Want a new feature? Feel free to open an [issue](https://github.com/grafana/loki-explore/issues/new).
-- Have a question? You can also open an issue, but for questions, it would be better to use the [Grafana Community](https://community.grafana.com/) portal.
+- Have a question? You can also open an issue, but for questions, it is recommended to use the [Grafana Community](https://community.grafana.com/) portal.
 - Have feedback? Please contact us through the [Grafana Logs Feedback](https://docs.google.com/forms/d/e/1FAIpQLSdcnzb0QYBqzp3RkrXIxqYKzDdw8gf0feZkOu4eZSIPyTUY1w/viewform) form.
