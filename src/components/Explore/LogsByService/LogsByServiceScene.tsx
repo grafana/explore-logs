@@ -15,6 +15,7 @@ import {
   SceneObjectUrlSyncConfig,
   SceneObjectUrlValues,
   SceneQueryRunner,
+  SceneVariable,
   SceneVariableSet,
   VariableDependencyConfig,
 } from '@grafana/scenes';
@@ -34,6 +35,8 @@ import {
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE_EXPR,
   EXPLORATIONS_ROUTE,
+  VAR_DATASOURCE,
+  ALL_VARIABLE_VALUE,
 } from '../../../utils/shared';
 import { getDatasource, getExplorationFor } from '../../../utils/utils';
 import { ShareExplorationButton } from './ShareExplorationButton';
@@ -68,7 +71,7 @@ export interface LogSceneState extends SceneObjectState {
 export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['actionView'] });
   protected _variableDependency = new VariableDependencyConfig(this, {
-    variableNames: [VAR_FILTERS, VAR_FIELDS, VAR_PATTERNS],
+    variableNames: [VAR_DATASOURCE, VAR_FILTERS, VAR_FIELDS, VAR_PATTERNS],
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
   });
 
@@ -113,7 +116,25 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
   private redirectToStart() {
     const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
     fields.setState({ filters: [] });
-    locationService.push(EXPLORATIONS_ROUTE);
+
+    // Use locationService to do the redirect and allow the users to start afresh, 
+    // potentially getting them unstuck of any leakage produced by subscribers, listeners, 
+    // variables, etc.,  without having to do a full reload.
+    const params = locationService.getSearch();
+    const newParams = new URLSearchParams();
+    const from = params.get('from');
+    if (from) {
+      newParams.set('from', from);
+    }
+    const to = params.get('to');
+    if (to) {
+      newParams.set('to', to);
+    }
+    const ds = params.get('var-ds');
+    if (ds) {
+      newParams.set('var-ds', ds);
+    }
+    locationService.push(`${EXPLORATIONS_ROUTE}?${newParams}`);
   }
 
   private _onActivate() {
@@ -157,9 +178,13 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
     return () => unsubs.forEach((u) => u.unsubscribe());
   }
 
-  private onReferencedVariableValueChanged() {
-    const variable = this.getFiltersVariable();
-    if (variable.state.filters.length === 0) {
+  private onReferencedVariableValueChanged(variable: SceneVariable) {
+    if (variable.state.name === VAR_DATASOURCE) {
+      this.redirectToStart()
+      return;
+    } 
+    const filterVariable = this.getFiltersVariable();
+    if (filterVariable.state.filters.length === 0) {
       return;
     }
     this.updatePatterns();
@@ -232,8 +257,8 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
         // only include fields that are an indexed label
         ...fields.state.filters.filter((field) => this.state.labels?.includes(field.key)),
       ]),
-      from: timeRange.from.utc().toISOString(),
-      to: timeRange.to.utc().toISOString(),
+      start: timeRange.from.utc().toISOString(),
+      end: timeRange.to.utc().toISOString(),
     }).then(({ data }: { data: LokiPattern[] }) => {
       this.setState({ patterns: data });
     });
@@ -249,11 +274,15 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
     const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
     const { detectedLabels } = await ds.getResource<DetectedLabelsResponse>('detected_labels', {
       query: filters.state.filterExpression,
-      from: timeRange.from.utc().toISOString(),
-      to: timeRange.to.utc().toISOString(),
+      start: timeRange.from.utc().toISOString(),
+      end: timeRange.to.utc().toISOString(),
     });
 
-    const labels = detectedLabels.map((l) => l.label);
+    if (!detectedLabels || !Array.isArray(detectedLabels)) {
+      return;
+    }
+
+    const labels = detectedLabels.filter((a) => a.cardinality > 1).sort((a, b) => a.cardinality - b.cardinality).map((l) => l.label);
     if (JSON.stringify(labels) !== JSON.stringify(this.state.labels)) {
       this.setState({ labels });
     }
@@ -333,7 +362,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
         case 'patterns':
           return logsScene.state.patterns?.length;
         case 'labels':
-          return logsScene.state.labels?.length;
+          return (logsScene.state.labels?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []).length;
         default:
           return undefined;
       }
