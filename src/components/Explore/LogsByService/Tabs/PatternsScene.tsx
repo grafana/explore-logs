@@ -51,6 +51,7 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
         new SceneVariableSet({
           variables: [new CustomVariable({ name: VAR_LABEL_GROUP_BY, defaultToAll: true, includeAll: true })],
         }),
+        loading: true,
       ...state,
     });
 
@@ -187,6 +188,7 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
           }),
         ],
       }),
+      loading: false,
     });
   }
 
