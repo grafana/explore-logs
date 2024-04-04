@@ -1,4 +1,4 @@
-# Logs Explore App
+# Explore Logs
 
 > **__NOTE:__** The Logs Explore App is actively being developed and is currently available as a preview.
 
@@ -10,13 +10,17 @@ Logs Explore offers a query-less experience for browsing Loki logs without the n
 
 ...all without crafting a single query!
 
-Access to Logs Explore is available both as a standalone feature or integrated within Dashboards.
+Access to Explore Logs is available both as a standalone feature or integrated within Dashboards.
 
 <img src="src/img/service_index.png" alt="app"/>
 
 ## Installation in Your Own Grafana Instance
 
-You can install Logs Explore in your own Grafana instance using `grafana-cli`:
+You can install Explore Logs in your own Grafana instance using `grafana-cli`:
+>Note: For an optimal experience, the following Loki version and configuration are required:
+> - Loki 3.0
+> - `--validation.discover-log-levels=true` for automatic log level discovery
+> - `--pattern-ingester.enabled=true` for pattern ingestion
 
 ```sh
 grafana-cli --pluginUrl=https://storage.googleapis.com/grafana-lokiexplore-app/grafana-lokiexplore-app-latest.zip plugins install grafana-lokiexplore-app
