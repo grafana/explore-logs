@@ -115,7 +115,22 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
   private redirectToStart() {
     const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
     fields.setState({ filters: [] });
-    locationService.push(EXPLORATIONS_ROUTE);
+
+    // Use locationService to do the redirect and allow the users to start afresh, 
+    // potentially getting them unstuck of any leakage produced by subscribers, listeners, 
+    // variables, etc.,  without having to do a full reload.
+    const params = locationService.getSearch();
+    const newParams = new URLSearchParams();
+    if (params.get('from')) {
+      newParams.set('from', params.get('from') || 'now-15m'); // TS doesn't understand is not null
+    }
+    if (params.get('to')) {
+      newParams.set('to', params.get('to') || 'now'); // TS doesn't understand is not null
+    }
+    if (params.get('var-ds')) {
+      newParams.set('var-ds', params.get('var-ds') || ''); // TS doesn't understand is not null
+    }
+    locationService.push(`${EXPLORATIONS_ROUTE}?${newParams}`);
   }
 
   private _onActivate() {
