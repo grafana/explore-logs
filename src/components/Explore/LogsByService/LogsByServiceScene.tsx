@@ -277,7 +277,7 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
       to: timeRange.to.utc().toISOString(),
     });
 
-    const labels = detectedLabels.map((l) => l.label);
+    const labels = detectedLabels.sort((a,b)=>a.cardinality - b.cardinality).map((l) => l.label);
     if (JSON.stringify(labels) !== JSON.stringify(this.state.labels)) {
       this.setState({ labels });
     }
@@ -357,7 +357,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
         case 'patterns':
           return logsScene.state.patterns?.length;
         case 'labels':
-          return logsScene.state.labels?.length;
+          return (logsScene.state.labels?.length || 1) - 1; // -1 to account for "all"
         default:
           return undefined;
       }

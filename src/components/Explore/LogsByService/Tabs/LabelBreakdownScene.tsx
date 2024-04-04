@@ -115,13 +115,13 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       to: timeRange.to.utc().toISOString(),
     });
 
-    const labels = detectedLabels.map((l) => l.label);
+    const labels = detectedLabels.sort((a,b)=>a.cardinality - b.cardinality).map((l) => l.label);
     const options = getLabelOptions(this, labels);
 
     const stateUpdate: Partial<LabelBreakdownSceneState> = {
       loading: false,
       value: String(variable.state.value),
-      labels: options,
+      labels: options, // this now includes "all"
       blockingMessage: undefined,
     };
 
