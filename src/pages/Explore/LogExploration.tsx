@@ -130,7 +130,7 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
       }
 
       if(newState.mode !== oldState.mode){
-        this.setState({ topScene: getTopScene(this.state.mode) });
+        this.setState({ topScene: getTopScene(newState.mode) });
       }
 
       const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
