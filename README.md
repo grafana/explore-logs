@@ -1,6 +1,6 @@
 # Explore Logs
 
-> **__NOTE:__** The Explore Logs is actively being developed and is currently available as a preview.
+> **__NOTE:__** Explore Logs is actively being developed and is currently available as a preview.
 
 Explore Logs offers a query-less experience for browsing Loki logs without the need for writing complex queries. Discover or narrow down your search to find logs for your service, uncover related logs, and understand patterns—all with just a few clicks. No LogQL required! With Explore Logs, you can:
 
