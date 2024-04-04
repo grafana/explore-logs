@@ -1,14 +1,15 @@
 import React from 'react';
 
 import {
-  SceneObjectState,
-  SceneObjectBase,
+  AdHocFiltersVariable,
   SceneComponentProps,
   sceneGraph,
-  AdHocFiltersVariable,
+  SceneObjectBase,
+  SceneObjectState,
 } from '@grafana/scenes';
-import { Button } from '@grafana/ui';
+import {Button} from '@grafana/ui';
 import {StartingPointSelectedEvent} from "../../utils/shared";
+import {VariableHide} from "@grafana/schema";
 
 export interface SelectAttributeWithValueActionState extends SceneObjectState {
   value: string;
@@ -34,6 +35,7 @@ export class SelectAttributeWithValueAction extends SceneObjectBase<SelectAttrib
           value: this.state.value,
         },
       ],
+      hide: VariableHide.dontHide
     });
 
     this.publishEvent(new StartingPointSelectedEvent(), true);
