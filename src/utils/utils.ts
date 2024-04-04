@@ -10,7 +10,13 @@ import {
 } from '@grafana/scenes';
 
 import { LogExploration } from '../pages/Explore';
-import { ALL_VARIABLE_VALUE, EXPLORATIONS_ROUTE, LOG_STREAM_SELECTOR_EXPR, VAR_DATASOURCE_EXPR, VAR_FILTERS } from './shared';
+import {
+  ALL_VARIABLE_VALUE,
+  EXPLORATIONS_ROUTE,
+  LOG_STREAM_SELECTOR_EXPR,
+  VAR_DATASOURCE_EXPR,
+  VAR_FILTERS,
+} from './shared';
 
 export function getExplorationFor(model: SceneObject): LogExploration {
   return sceneGraph.getAncestor(model, LogExploration);
@@ -74,10 +80,17 @@ export function getLabelOptions(scenObject: SceneObject, allOptions: string[]) {
     }
   }
 
-  return [{ label: 'All', value: ALL_VARIABLE_VALUE }, ...labelOptions];
+  const levelOption = [];
+  if (!allOptions.includes('level')) {
+    levelOption.push({ label: 'level', value: 'level' });
+  }
+
+  return [{ label: 'All', value: ALL_VARIABLE_VALUE }, ...levelOption, ...labelOptions];
 }
 
 export async function getDatasource(sceneObject: SceneObject) {
-  const ds = await getDataSourceSrv().get(VAR_DATASOURCE_EXPR, { __sceneObject: { value: sceneObject } }) as DataSourceWithBackend | undefined;
+  const ds = (await getDataSourceSrv().get(VAR_DATASOURCE_EXPR, { __sceneObject: { value: sceneObject } })) as
+    | DataSourceWithBackend
+    | undefined;
   return ds;
 }
