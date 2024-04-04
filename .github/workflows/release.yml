@@ -3,12 +3,14 @@
 name: Release
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v*' # Run workflow on version tags, e.g. v1.0.0.
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   release:

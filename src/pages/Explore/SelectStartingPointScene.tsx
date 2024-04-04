@@ -173,6 +173,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
       console.error('Could not fetch volume', err)
       this.setState({
         topServices: [],
+        topServicesToBeUsed: [],
         isTopSeriesLoading: false,
       })
     })
