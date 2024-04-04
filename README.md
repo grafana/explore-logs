@@ -2,7 +2,7 @@
 
 > **__NOTE:__** The Logs Explore App is actively being developed and is currently available as a preview.
 
-Logs Explore offers a query-less experience for browsing Loki logs without the need for writing complex queries. Discover or narrow down to find logs for your service, uncover related logs, and understand patterns—all with just a few clicks. No LogQL required! With Explore Logs, you can:
+Logs Explore offers a query-less experience for browsing Loki logs without the need for writing complex queries. Discover or narrow down your search to find logs for your service, uncover related logs, and understand patterns—all with just a few clicks. No LogQL required! With Explore Logs, you can:
 
 - Easily find logs for all of your services.
 - Effortlessly filter service logs based on their labels, fields, or patterns.
