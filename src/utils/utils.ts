@@ -57,7 +57,7 @@ export function getColorByIndex(index: number) {
   return visTheme.getColorByName(visTheme.palette[index % 8]);
 }
 
-export function getSeriesOptions(scenObject: SceneObject, allOptions: Record<string, string[]>) {
+export function getLabelOptions(scenObject: SceneObject, allOptions: string[]) {
   const labelFilters = sceneGraph.lookupVariable(VAR_FILTERS, scenObject);
   const labelOptions: Array<SelectableValue<string>> = [];
 
@@ -67,7 +67,7 @@ export function getSeriesOptions(scenObject: SceneObject, allOptions: Record<str
 
   const filters = labelFilters.state.filters;
 
-  for (const option of Object.keys(allOptions)) {
+  for (const option of allOptions) {
     const filterExists = filters.find((f) => f.key === option);
     if (!filterExists) {
       labelOptions.push({ label: option, value: String(option) });
