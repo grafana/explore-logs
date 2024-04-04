@@ -410,9 +410,11 @@ function getStyles(theme: GrafanaTheme2) {
         '& > div': {
           // The actual inputs container
           '& > div': {
-            maxWidth: '380px',
             // wrapper around all inputs
+
             '& > div': {
+              maxWidth: '380px',
+              flex: '1 0 auto',
               // Wrapper around each input: i.e. label name, binary operator, value
               '& > div': {
                 // These inputs need to flex, otherwise the value takes all of available space and they look broken
