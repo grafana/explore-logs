@@ -24,7 +24,7 @@ grafana-cli --pluginUrl=https://storage.googleapis.com/grafana-lokiexplore-app/g
 
 ## Test Out with Docker Compose
 
-You can test out the app using the following command to spin up Grafana, Loki, and the Logs Explore App:
+Test out the app using the following command to spin up Grafana, Loki, and the Logs Explore App:
 
 ```sh
   docker-compose up
