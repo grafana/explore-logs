@@ -92,17 +92,17 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
       const timeValues: number[] = [];
       const sampleValues: number[] = [];
       let sum = 0;
-      pat.samples.forEach((sample) => {
-        timeValues.push(sample[0] * 1000);
-        const f = parseFloat(sample[1]);
-        sampleValues.push(f);
-        if (f > maxValue) {
-          maxValue = f;
+      pat.samples.forEach(([time, value]) => {
+        timeValues.push(time * 1000);
+        const sample = parseFloat(value);
+        sampleValues.push(sample);
+        if (sample > maxValue) {
+          maxValue = sample;
         }
-        if (f < minValue) {
-          minValue = f;
+        if (sample < minValue) {
+          minValue = sample;
         }
-        sum += f;
+        sum += sample;
       });
       const dataFrame: DataFrame = {
         refId: pat.pattern,
