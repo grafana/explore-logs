@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DataFrame, FieldType, GrafanaTheme2, LoadingState, dateTime } from '@grafana/data';
+import { DataFrame, FieldType, GrafanaTheme2, LoadingState } from '@grafana/data';
 import {
   CustomVariable,
   PanelBuilders,
@@ -35,6 +35,12 @@ export interface PatternsSceneState extends SceneObjectState {
   loading?: boolean;
   error?: string;
   blockingMessage?: string;
+}
+
+type PatternFrame = {
+  dataFrame: DataFrame;
+  pattern: string;
+  sum: number;
 }
 
 export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
@@ -77,35 +83,40 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
     if (!patterns) {
       return;
     }
+    const timeRange = sceneGraph.getTimeRange(this).state.value;
 
     let maxValue = -Infinity;
     let minValue = 0;
 
-    patterns.slice(0, 40).forEach((pat, frameIndex) => {
-      const start = pat.samples[0][0] * 1000;
-      const end = pat.samples[pat.samples.length - 1][0] * 1000;
+    const frames: PatternFrame[] = patterns.map((pat, frameIndex) => {
+      const timeValues: number[] = [];
+      const sampleValues: number[] = [];
+      let sum = 0;
+      pat.samples.forEach((sample) => {
+        timeValues.push(sample[0] * 1000);
+        const f = parseFloat(sample[1]);
+        sampleValues.push(f);
+        if (f > maxValue) {
+          maxValue = f;
+        }
+        if (f < minValue) {
+          minValue = f;
+        }
+        sum += f;
+      });
       const dataFrame: DataFrame = {
         refId: pat.pattern,
         fields: [
           {
             name: 'time',
             type: FieldType.time,
-            values: pat.samples.map((sample) => sample[0] * 1000),
+            values: timeValues,
             config: {},
           },
           {
             name: pat.pattern,
             type: FieldType.number,
-            values: pat.samples.map((sample) => {
-              const f = parseFloat(sample[1]);
-              if (f > maxValue) {
-                maxValue = f;
-              }
-              if (f < minValue) {
-                minValue = f;
-              }
-              return f;
-            }),
+            values: sampleValues,
             config: {},
           },
         ],
@@ -114,25 +125,32 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
           preferredVisualisationType: 'graph',
         },
       };
+
+      return {
+        dataFrame,
+        pattern: pat.pattern,
+        sum,
+      };
+    }).sort((a, b) => b.sum - a.sum).slice(0, 20);
+
+    for(let i = 0; i < frames.length; i++) {
+      const {dataFrame, pattern, sum} = frames[i];
       children.push(
         new SceneCSSGridItem({
           body: PanelBuilders.timeseries()
-            .setTitle(pat.pattern)
+            .setTitle(`${pattern}`)
+            .setDescription(`The pattern \`${pattern}\` has been matched \`${sum}\` times in the given timerange.`)
             .setOption('legend', { showLegend: false })
             .setData(
               new SceneDataNode({
                 data: {
                   series: [dataFrame],
                   state: LoadingState.Done,
-                  timeRange: {
-                    from: dateTime(start),
-                    to: dateTime(end),
-                    raw: { from: dateTime(start), to: dateTime(end) },
-                  },
+                  timeRange,
                 },
               })
             )
-            .setColor({ mode: 'fixed', fixedColor: getColorByIndex(frameIndex) })
+            .setColor({ mode: 'fixed', fixedColor: getColorByIndex(i) })
             .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
             .setCustomFieldConfig('fillOpacity', 100)
             .setCustomFieldConfig('lineWidth', 0)
@@ -141,13 +159,13 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
             .setCustomFieldConfig('axisSoftMax', maxValue)
             .setCustomFieldConfig('axisSoftMin', minValue)
             .setHeaderActions([
-              new AddToPatternsGraphAction({ pattern: pat.pattern, type: 'exclude' }),
-              new AddToPatternsGraphAction({ pattern: pat.pattern, type: 'include' }),
+              new AddToPatternsGraphAction({ pattern: pattern, type: 'exclude' }),
+              new AddToPatternsGraphAction({ pattern: pattern, type: 'include' }),
             ])
             .build(),
         })
       );
-    });
+    }
 
     this.setState({
       body: new LayoutSwitcher({
