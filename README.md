@@ -34,7 +34,7 @@ Test out the app using the following command to spin up Grafana, Loki, and the L
 
 1. In the main navigation bar click on Explore > Logs
 2. You’ll land in the service overview page that shows time series and log visualizations for all the services in your selected Loki instance.
-3. You can change your data source with the drop-down on the top left.
+3. Change your data source with the drop-down on the top left.
 4. Modify your time range in two ways:
    - With the standard time range picker on the top right.
    - By clicking and dragging the time range you want to see on any time series visualization.
