@@ -16,10 +16,11 @@ import {
   SceneObjectBase,
   SceneObjectState,
   SceneQueryRunner,
+  SceneReactObject,
   SceneVariableSet,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import { Button, DrawStyle, Field, StackingMode, useStyles2 } from '@grafana/ui';
+import { Button, DrawStyle, Field, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 
 import { BreakdownLabelSelector } from './BreakdownLabelSelector';
 import { StatusWrapper } from '../../StatusWrapper';
@@ -207,7 +208,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         new SceneCSSGridLayout({
           templateColumns: '1fr',
           autoRows: '200px',
-          children: children.map((child) => child.clone()),
+          children: children.map(child => child.clone()),
         }),
       ],
     });
@@ -238,6 +239,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
                 </Field>
               </div>
             )}
+            {loading && <div>Loading...</div>}
             {body instanceof LayoutSwitcher && (
               <div className={styles.controlsRight}>
                 <body.Selector model={body} />
@@ -310,6 +312,7 @@ function buildQuery(tagKey: string) {
     editorMode: 'code',
     maxLines: 1000,
     intervalMs: 2000,
+    legendFormat: `{{${tagKey}}}`
   };
 }
 
@@ -336,7 +339,7 @@ function buildNormalLayout(variable: CustomVariable) {
         children: [
           new SceneFlexItem({
             minHeight: 300,
-            body: PanelBuilders.timeseries().setTitle('$metric').build(),
+            body: PanelBuilders.timeseries().setTitle(variable.getValueText()).build(),
           }),
         ],
       }),
@@ -344,7 +347,13 @@ function buildNormalLayout(variable: CustomVariable) {
         body: new SceneCSSGridLayout({
           templateColumns: GRID_TEMPLATE_COLUMNS,
           autoRows: '200px',
-          children: [],
+          children: [
+            new SceneFlexItem({
+              body: new SceneReactObject({
+                reactNode: <LoadingPlaceholder text="Loading..." />,
+              }),
+            })
+          ],
           isLazy: true,
         }),
         getLayoutChild: getLayoutChild(
@@ -356,7 +365,13 @@ function buildNormalLayout(variable: CustomVariable) {
         body: new SceneCSSGridLayout({
           templateColumns: '1fr',
           autoRows: '200px',
-          children: [],
+          children: [
+            new SceneFlexItem({
+              body: new SceneReactObject({
+                reactNode: <LoadingPlaceholder text="Loading..." />,
+              }),
+            })            
+          ],
           isLazy: true,
         }),
         getLayoutChild: getLayoutChild(

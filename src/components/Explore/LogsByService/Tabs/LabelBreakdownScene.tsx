@@ -17,10 +17,11 @@ import {
   SceneObjectBase,
   SceneObjectState,
   SceneQueryRunner,
+  SceneReactObject,
   SceneVariableSet,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import { Button, DrawStyle, Field, StackingMode, useStyles2 } from '@grafana/ui';
+import { Button, DrawStyle, Field, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 
 import { BreakdownLabelSelector } from './BreakdownLabelSelector';
 import { StatusWrapper } from '../../StatusWrapper';
@@ -280,6 +281,7 @@ function buildQuery(tagKey: string) {
     editorMode: 'code',
     maxLines: 1000,
     intervalMs: 2000,
+    legendFormat: `{{${tagKey}}}`,
   };
 }
 
@@ -295,7 +297,7 @@ function buildNormalLayout(variable: CustomVariable) {
     .setCustomFieldConfig('lineWidth', 0)
     .setCustomFieldConfig('pointSize', 0)
     .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-    .setTitle('$metric');
+    .setTitle(variable.getValueText())
 
   const body = bodyOpts.build();
 
@@ -325,7 +327,13 @@ function buildNormalLayout(variable: CustomVariable) {
         body: new SceneCSSGridLayout({
           templateColumns: GRID_TEMPLATE_COLUMNS,
           autoRows: '200px',
-          children: [],
+          children: [
+            new SceneFlexItem({
+              body: new SceneReactObject({
+                reactNode: <LoadingPlaceholder text="Loading..." />,
+              }),
+            })
+          ]
         }),
         getLayoutChild: getLayoutChild(
           getLabelValue,
@@ -336,7 +344,13 @@ function buildNormalLayout(variable: CustomVariable) {
         body: new SceneCSSGridLayout({
           templateColumns: '1fr',
           autoRows: '200px',
-          children: [],
+          children: [
+            new SceneFlexItem({
+              body: new SceneReactObject({
+                reactNode: <LoadingPlaceholder text="Loading..." />,
+              }),
+            })
+          ],
         }),
         getLayoutChild: getLayoutChild(
           getLabelValue,
