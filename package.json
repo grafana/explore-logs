@@ -14,7 +14,7 @@
     "sign": "npx --yes @grafana/sign-plugin@latest"
   },
   "author": "Grafana",
-  "license": "Apache-2.0",
+  "license": "AGPL-3.0-only",
   "devDependencies": {
     "@babel/core": "^7.21.4",
     "@grafana/eslint-config": "^6.0.0",
