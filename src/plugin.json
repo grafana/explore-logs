@@ -14,15 +14,15 @@
       "large": "img/logo.svg"
     },
     "screenshots": [
-    {
-      "name": "service-index",
-      "path": "img/service_index.png"
-    },
-    {
-      "name": "service-logs",
-      "path": "img/service_logs.png"
-    }
-  ],
+      {
+        "name": "service-index",
+        "path": "img/service_index.png"
+      },
+      {
+        "name": "service-logs",
+        "path": "img/service_logs.png"
+      }
+    ],
     "version": "%VERSION%",
     "updated": "%TODAY%",
     "links": [

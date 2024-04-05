@@ -1,7 +1,7 @@
-import React from "react";
-import { Icon, useStyles2 } from "@grafana/ui"
-import { GrafanaTheme2 } from "@grafana/data"
-import { css } from "@emotion/css";
+import React from 'react';
+import { Icon, useStyles2 } from '@grafana/ui';
+import { GrafanaTheme2 } from '@grafana/data';
+import { css } from '@emotion/css';
 
 export const GiveFeedback = () => {
   const styles = useStyles2(getStyles);
@@ -13,10 +13,10 @@ export const GiveFeedback = () => {
       target="_blank"
       rel="noreferrer noopener"
     >
-    <Icon name="comment-alt-message" /> Give feedback
-  </a>
-  )
-}
+      <Icon name="comment-alt-message" /> Give feedback
+    </a>
+  );
+};
 
 const getStyles = (theme: GrafanaTheme2) => {
   return {

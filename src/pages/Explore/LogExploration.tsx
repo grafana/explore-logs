@@ -186,14 +186,14 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
   }
 
   private updateVariableHide(variable: AdHocFiltersVariable) {
-    if(variable.state.filters.length === 0 ) {
-      if(variable.state.hide !== VariableHide.hideVariable){
+    if (variable.state.filters.length === 0) {
+      if (variable.state.hide !== VariableHide.hideVariable) {
         variable.setState({
           hide: VariableHide.hideVariable,
         });
       }
     } else {
-      if(variable.state.hide !== VariableHide.dontHide){
+      if (variable.state.hide !== VariableHide.dontHide) {
         variable.setState({
           hide: VariableHide.dontHide,
         });
@@ -350,7 +350,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
         value: '',
         hide: VariableHide.hideVariable,
       }),
-      new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable, })
+      new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable }),
     ],
   });
 }
@@ -417,7 +417,7 @@ function getStyles(theme: GrafanaTheme2) {
             // wrapper around all inputs
             '& > div': {
               maxWidth: '380px',
-              
+
               // Wrapper around each input: i.e. label name, binary operator, value
               '& > div': {
                 // These inputs need to flex, otherwise the value takes all of available space and they look broken
@@ -427,10 +427,10 @@ function getStyles(theme: GrafanaTheme2) {
                 '&:nth-child(3)': {
                   flex: '0 1 auto',
                 },
-              }
+              },
             },
-          }
-        }
+          },
+        },
       },
 
       ['div >[title="Add filter"]']: {
@@ -451,7 +451,7 @@ function getStyles(theme: GrafanaTheme2) {
     }),
     patternsContainer: css({
       paddingBottom: theme.spacing(1),
-      overflow: 'hidden'
+      overflow: 'hidden',
     }),
     patterns: css({
       display: 'flex',

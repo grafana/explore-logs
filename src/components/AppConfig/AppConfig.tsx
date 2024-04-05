@@ -1,12 +1,11 @@
 import React from 'react';
 
 import { AppPluginMeta, PluginConfigPageProps, PluginMeta } from '@grafana/data';
-import {FetchResponse, getBackendSrv, locationService} from '@grafana/runtime';
+import { FetchResponse, getBackendSrv, locationService } from '@grafana/runtime';
 import { Button, FieldSet } from '@grafana/ui';
 import { Observable, lastValueFrom } from 'rxjs';
 
-export type JsonData = {
-};
+export type JsonData = {};
 
 interface Props extends PluginConfigPageProps<AppPluginMeta<JsonData>> {}
 

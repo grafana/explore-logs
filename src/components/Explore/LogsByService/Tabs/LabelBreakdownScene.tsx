@@ -120,7 +120,10 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       return;
     }
 
-    const labels = detectedLabels.filter((a) => a.cardinality > 1).sort((a, b) => a.cardinality - b.cardinality).map((l) => l.label);
+    const labels = detectedLabels
+      .filter((a) => a.cardinality > 1)
+      .sort((a, b) => a.cardinality - b.cardinality)
+      .map((l) => l.label);
     const options = getLabelOptions(this, labels);
 
     const stateUpdate: Partial<LabelBreakdownSceneState> = {
@@ -259,7 +262,7 @@ export function buildAllLayout(options: Array<SelectableValue<string>>) {
       new SceneCSSGridLayout({
         templateColumns: '1fr',
         autoRows: '200px',
-        children: children.map(child => child.clone()),
+        children: children.map((child) => child.clone()),
       }),
     ],
   });

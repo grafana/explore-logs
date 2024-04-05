@@ -130,7 +130,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     const fields = this.state.fields.filter((f) => f.value !== field);
     this.setState({ fields });
 
-    this.state.changeFields?.(fields.filter(f=>f.value !== ALL_VARIABLE_VALUE).map((f) => f.value!));
+    this.state.changeFields?.(fields.filter((f) => f.value !== ALL_VARIABLE_VALUE).map((f) => f.value!));
   }
 
   private async updateBody(variable: CustomVariable) {
@@ -147,7 +147,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   private buildAllLayout(options: Array<SelectableValue<string>>) {
     const children: SceneFlexItemLike[] = [];
-    
+
     for (const option of options) {
       if (option.value === ALL_VARIABLE_VALUE) {
         continue;
@@ -207,7 +207,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         new SceneCSSGridLayout({
           templateColumns: '1fr',
           autoRows: '200px',
-          children: children.map(child => child.clone()),
+          children: children.map((child) => child.clone()),
         }),
       ],
     });
