@@ -291,7 +291,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
       liveStreaming: getLiveTailControl(this)?.state.liveStreaming,
     });
 
-    const logsPanel = PanelBuilders.logs().setData(logsQueryRunner).build();
+    const logsPanel = PanelBuilders.logs().setData(logsQueryRunner).setOption('showTime', true).build();
 
     const layout = new SceneFlexItem({
       body: new SceneFlexLayout({
