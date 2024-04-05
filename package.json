@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint --cache --ignore-path ./.gitignore --ext .js,.jsx,.ts,.tsx .",
     "lint:fix": "npm run lint -- --fix",
-    "server": "docker-compose -f docker-compose.dev.yaml up --build ",
+    "server": "docker-compose -f docker-compose.dev.yaml up --build",
     "sign": "npx --yes @grafana/sign-plugin@latest"
   },
   "author": "Grafana",
