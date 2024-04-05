@@ -14,8 +14,23 @@ export class LineFilter extends SceneObjectBase<LineFilterState> {
 
   constructor(state?: Partial<LineFilterState>) {
     super({ lineFilter: state?.lineFilter || '', ...state });
+    this.addActivationHandler(this._onActivate);
   }
 
+  private _onActivate = () => {
+    const lineFilterValue = this.getVariable().getValue();
+    if (!lineFilterValue) {
+      return;
+    }
+    const matches = lineFilterValue.toString().match(/`(.+)`/);
+    if (!matches || matches.length !== 2) {
+      return;
+    }
+    this.setState({
+      lineFilter: matches[1],
+    });
+  }
+  
   private getVariable() {
     const variable = sceneGraph.lookupVariable(VAR_LINE_FILTER, this);
     if (!(variable instanceof CustomVariable)) {
