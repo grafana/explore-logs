@@ -10,7 +10,6 @@ Explore Logs offers a query-less experience for browsing Loki logs without the n
 
 ...all without crafting a single query!
 
-
 <img src="src/img/service_index.png" alt="app"/>
 
 ## Installation in Your Own Grafana Instance
