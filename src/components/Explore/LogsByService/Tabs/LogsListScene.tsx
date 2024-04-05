@@ -24,6 +24,16 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     this.addActivationHandler(this._onActivate.bind(this));
   }
 
+  public static Component = ({ model }: SceneComponentProps<LogsListScene>) => {
+    const { panel } = model.useState();
+
+    if (!panel) {
+      return;
+    }
+
+    return <panel.Component model={panel} />;
+  };
+
   public _onActivate() {
     if (!this.state.panel) {
       this.setState({
@@ -41,21 +51,12 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
           ySizing: 'content',
         }),
         new SceneFlexItem({
+          height: 'calc(100vh - 220px)',
           body: getLogsPanel(),
         }),
       ],
     });
   }
-
-  public static Component = ({ model }: SceneComponentProps<LogsListScene>) => {
-    const { panel } = model.useState();
-
-    if (!panel) {
-      return;
-    }
-
-    return <panel.Component model={panel} />;
-  };
 }
 
 export function buildLogsListScene() {
