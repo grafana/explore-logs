@@ -41,7 +41,7 @@ type PatternFrame = {
   dataFrame: DataFrame;
   pattern: string;
   sum: number;
-}
+};
 
 export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
   constructor(state: Partial<PatternsSceneState>) {
@@ -51,7 +51,7 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
         new SceneVariableSet({
           variables: [new CustomVariable({ name: VAR_LABEL_GROUP_BY, defaultToAll: true, includeAll: true })],
         }),
-        loading: true,
+      loading: true,
       ...state,
     });
 
@@ -89,53 +89,56 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
     let maxValue = -Infinity;
     let minValue = 0;
 
-    const frames: PatternFrame[] = patterns.map((pat, frameIndex) => {
-      const timeValues: number[] = [];
-      const sampleValues: number[] = [];
-      let sum = 0;
-      pat.samples.forEach(([time, value]) => {
-        timeValues.push(time * 1000);
-        const sample = parseFloat(value);
-        sampleValues.push(sample);
-        if (sample > maxValue) {
-          maxValue = sample;
-        }
-        if (sample < minValue) {
-          minValue = sample;
-        }
-        sum += sample;
-      });
-      const dataFrame: DataFrame = {
-        refId: pat.pattern,
-        fields: [
-          {
-            name: 'time',
-            type: FieldType.time,
-            values: timeValues,
-            config: {},
+    const frames: PatternFrame[] = patterns
+      .map((pat, frameIndex) => {
+        const timeValues: number[] = [];
+        const sampleValues: number[] = [];
+        let sum = 0;
+        pat.samples.forEach(([time, value]) => {
+          timeValues.push(time * 1000);
+          const sample = parseFloat(value);
+          sampleValues.push(sample);
+          if (sample > maxValue) {
+            maxValue = sample;
+          }
+          if (sample < minValue) {
+            minValue = sample;
+          }
+          sum += sample;
+        });
+        const dataFrame: DataFrame = {
+          refId: pat.pattern,
+          fields: [
+            {
+              name: 'time',
+              type: FieldType.time,
+              values: timeValues,
+              config: {},
+            },
+            {
+              name: pat.pattern,
+              type: FieldType.number,
+              values: sampleValues,
+              config: {},
+            },
+          ],
+          length: pat.samples.length,
+          meta: {
+            preferredVisualisationType: 'graph',
           },
-          {
-            name: pat.pattern,
-            type: FieldType.number,
-            values: sampleValues,
-            config: {},
-          },
-        ],
-        length: pat.samples.length,
-        meta: {
-          preferredVisualisationType: 'graph',
-        },
-      };
+        };
 
-      return {
-        dataFrame,
-        pattern: pat.pattern,
-        sum,
-      };
-    }).sort((a, b) => b.sum - a.sum).slice(0, 20);
+        return {
+          dataFrame,
+          pattern: pat.pattern,
+          sum,
+        };
+      })
+      .sort((a, b) => b.sum - a.sum)
+      .slice(0, 20);
 
-    for(let i = 0; i < frames.length; i++) {
-      const {dataFrame, pattern, sum} = frames[i];
+    for (let i = 0; i < frames.length; i++) {
+      const { dataFrame, pattern, sum } = frames[i];
       children.push(
         new SceneCSSGridItem({
           body: PanelBuilders.timeseries()
@@ -184,7 +187,7 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
           new SceneCSSGridLayout({
             templateColumns: '1fr',
             autoRows: '200px',
-            children: children.map(child => child.clone()),
+            children: children.map((child) => child.clone()),
           }),
         ],
       }),

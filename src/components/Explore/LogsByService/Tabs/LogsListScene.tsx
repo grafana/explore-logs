@@ -38,7 +38,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       children: [
         new SceneFlexItem({
           body: new LineFilter(),
-          ySizing: 'content'
+          ySizing: 'content',
         }),
         new SceneFlexItem({
           minHeight: 'calc(100vh - 220px)',

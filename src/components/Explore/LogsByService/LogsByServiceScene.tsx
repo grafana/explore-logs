@@ -283,9 +283,9 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
     }
 
     const labels = detectedLabels
-    .filter((a) => a.cardinality > 1)
-    .sort((a, b) => a.cardinality - b.cardinality)
-    .map((l) => l.label);
+      .filter((a) => a.cardinality > 1)
+      .sort((a, b) => a.cardinality - b.cardinality)
+      .map((l) => l.label);
     if (!labels.includes('level')) {
       labels.unshift('level');
     }

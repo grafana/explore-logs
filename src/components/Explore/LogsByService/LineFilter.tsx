@@ -1,9 +1,9 @@
-import { css } from "@emotion/css";
-import { CustomVariable, SceneComponentProps, SceneObjectBase, SceneObjectState, sceneGraph } from "@grafana/scenes";
-import { Field, Input } from "@grafana/ui";
-import { debounce } from "lodash";
-import React, { ChangeEvent } from "react";
-import { VAR_LINE_FILTER } from "utils/shared";
+import { css } from '@emotion/css';
+import { CustomVariable, SceneComponentProps, SceneObjectBase, SceneObjectState, sceneGraph } from '@grafana/scenes';
+import { Field, Input } from '@grafana/ui';
+import { debounce } from 'lodash';
+import React, { ChangeEvent } from 'react';
+import { VAR_LINE_FILTER } from 'utils/shared';
 
 interface LineFilterState extends SceneObjectState {
   lineFilter: string;
@@ -29,7 +29,7 @@ export class LineFilter extends SceneObjectBase<LineFilterState> {
       lineFilter: e.target.value,
     });
     this.updateVariable(e.target.value);
-  }
+  };
 
   updateVariable = debounce((search: string) => {
     const variable = this.getVariable();
@@ -50,6 +50,5 @@ function LineFilterRenderer({ model }: SceneComponentProps<LineFilter>) {
 const styles = {
   input: css({
     width: '100%',
-  })
-}
-
+  }),
+};
