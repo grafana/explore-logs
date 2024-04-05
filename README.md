@@ -38,7 +38,7 @@ GF_INSTALL_PLUGINS=https://storage.googleapis.com/integration-artifacts/grafana-
 Test out the app using the following command to spin up Grafana, Loki, and the Logs Explore App:
 
 ```sh
-docker compose up
+curl https://github.com/grafana/explore-logs/raw/main/docker-compose.yaml | docker compose -f - up
 ```
 
 Once the docker container started, navigate to http://localhost:3000/a/grafana-lokiexplore-app/explore in order to use Explore Logs.
@@ -62,3 +62,11 @@ Once the docker container started, navigate to http://localhost:3000/a/grafana-l
 - Found a bug? Want a new feature? Feel free to open an [issue](https://github.com/grafana/loki-explore/issues/new).
 - Have a question? You can also open an issue, but for questions, it is recommended to use the [Grafana Community](https://community.grafana.com/) portal.
 - Have feedback? Please contact us through the [Grafana Logs Feedback](https://docs.google.com/forms/d/e/1FAIpQLSdcnzb0QYBqzp3RkrXIxqYKzDdw8gf0feZkOu4eZSIPyTUY1w/viewform) form.
+
+## Development
+
+In order to run the setup locally and build the plugin by your own, follow these steps:
+
+1. `yarn install` 
+2. `yarn dev` this builds the plugin continously
+3. `yarn server` this spins up the docker setup, including a Loki instance and the fake data generator
