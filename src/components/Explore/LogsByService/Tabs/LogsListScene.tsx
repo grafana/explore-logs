@@ -41,6 +41,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
           ySizing: 'content',
         }),
         new SceneFlexItem({
+          height: 'calc(100vh - 220px)',
           body: getLogsPanel(),
         }),
       ],
