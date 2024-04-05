@@ -110,6 +110,7 @@ export const copyText = async (text: string, buttonRef: React.MutableRefObject<H
     textarea.value = text;
     textarea.focus();
     textarea.select();
+    // eslint-disable-next-line deprecation/deprecation
     document.execCommand('copy');
     textarea.remove();
   }
