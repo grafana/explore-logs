@@ -113,4 +113,4 @@ export const copyText = async (text: string, buttonRef: React.MutableRefObject<H
     document.execCommand('copy');
     textarea.remove();
   }
-}
+};
