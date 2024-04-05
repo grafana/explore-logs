@@ -36,7 +36,7 @@ import { getFavoriteServicesFromStorage } from 'utils/store';
 
 
 const LIMIT_SERVICES = 20;
-const SERVICE_NAME = 'service_name';
+export const SERVICE_NAME = 'service_name';
 export const SERVICES_LOCALSTORAGE_KEY = `${pluginJson.id}.services.favorite`;
 
 export interface LogSelectSceneState extends SceneObjectState {
