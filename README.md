@@ -25,7 +25,7 @@ You can install Explore Logs in your own Grafana instance using `grafana-cli`:
 > - Grafana v11.0+
 
 ```sh
-grafana-cli --pluginUrl=https://storage.googleapis.com/grafana-explorelogs-app/grafana-explorelogs-app-latest.zip plugins install grafana-explorelogs-app
+grafana-cli --pluginUrl=https://storage.googleapis.com/integration-artifacts/grafana-explorelogs-app/grafana-explorelogs-app-latest.zip plugins install grafana-explorelogs-app
 ```
 
 ## Test Out with Docker Compose
@@ -33,7 +33,7 @@ grafana-cli --pluginUrl=https://storage.googleapis.com/grafana-explorelogs-app/g
 Test out the app using the following command to spin up Grafana, Loki, and the Logs Explore App:
 
 ```sh
-  docker-compose up
+docker-compose up
 ```
 
 ## Getting Started

@@ -10,7 +10,7 @@ on:
       - 'docs/**'
 
 jobs:
-  build-latest-version:
+  build-main-version:
     runs-on: ubuntu-latest
 
     env:
@@ -102,7 +102,7 @@ jobs:
           export GRAFANA_PLUGIN_VERSION=$(cat dist/plugin.json | jq -r .info.version)
           export GRAFANA_PLUGIN_TYPE=$(cat dist/plugin.json | jq -r .type)
 
-          export GRAFANA_PLUGIN_ARTIFACT_LATEST=${GRAFANA_PLUGIN_ID}-latest.zip
+          export GRAFANA_PLUGIN_ARTIFACT_LATEST=${GRAFANA_PLUGIN_ID}-main.zip
 
           echo "plugin-id=${GRAFANA_PLUGIN_ID}" >> $GITHUB_OUTPUT
           echo "plugin-version=${GRAFANA_PLUGIN_VERSION}" >> $GITHUB_OUTPUT
@@ -136,7 +136,7 @@ jobs:
 
   release-and-upload:
     runs-on: ubuntu-latest
-    needs: ['build-latest-version']
+    needs: ['build-main-version']
     steps:
       - uses: tibdex/github-app-token@v1
         id: get_installation_token
@@ -153,18 +153,24 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: upload-dir
-          path: ${{ needs.build-latest-version.outputs.upload-folder }}
+          path: ${{ needs.build-main-version.outputs.upload-folder }}
+
+      - id: get-secrets
+        uses: grafana/shared-workflows/actions/get-vault-secrets@main
+        with:
+          common_secrets: |
+            GCP_UPLOAD_ARTIFACTS_KEY=grafana/integration-artifacts-uploader-service-account:'credentials.json'
 
       - id: 'auth'
-        name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v1'
+        uses: 'google-github-actions/auth@v2'
         with:
-          credentials_json: '${{ secrets.GCP_DB_FE_CI_PRIVATE_KEY }}'
+          credentials_json: ${{ env.GCP_UPLOAD_ARTIFACTS_KEY }}
 
       - id: 'upload-to-gcs'
         name: 'Upload assets'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         with:
-          path: ./${{ needs.build-latest-version.outputs.upload-folder }}
-          destination: 'grafana-lokiexplore-app'
+          path: ./
+          destination: 'integration-artifacts/grafana-explorelogs-app/'
+          glob: '*.zip'
           parent: false
