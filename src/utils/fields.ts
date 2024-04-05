@@ -26,7 +26,7 @@ export function extractFields(data: DataFrame) {
 export function getLayoutChild(getTitle: (df: DataFrame) => string, style: DrawStyle) {
   return (data: PanelData, frame: DataFrame, frameIndex: number) => {
     const panel = PanelBuilders.timeseries() //
-      .setOption('legend', { showLegend: true })
+      .setOption('legend', { showLegend: false })
       .setCustomFieldConfig('fillOpacity', 9)
       .setTitle(getTitle(frame))
       .setData(new SceneDataNode({ data: { ...data, series: [frame] } }))
