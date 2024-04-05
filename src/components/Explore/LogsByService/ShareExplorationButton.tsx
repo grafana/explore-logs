@@ -22,7 +22,7 @@ export const ShareExplorationButton = ({ exploration }: ShareExplorationButtonSt
       return;
     }
     const subUrl = config.appSubUrl ?? '';
-    copyText(`${subUrl}${origin}${getUrlForExploration(exploration)}`, buttonRef);
+    copyText(`${origin}${subUrl}${getUrlForExploration(exploration)}`, buttonRef);
     setTooltip('Copied!');
     setTimeout(() => {
       setTooltip('Copy url');
