@@ -239,7 +239,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
                 </Field>
               </div>
             )}
-            {loading && <div>Loading...</div>}
             {body instanceof LayoutSwitcher && (
               <div className={styles.controlsRight}>
                 <body.Selector model={body} />
