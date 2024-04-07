@@ -35,7 +35,7 @@ export class SelectAttributeWithValueAction extends SceneObjectBase<SelectAttrib
           value: this.state.value,
         },
       ],
-      hide: VariableHide.dontHide,
+      hide: VariableHide.hideLabel,
     });
 
     this.publishEvent(new StartingPointSelectedEvent(), true);
