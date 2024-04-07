@@ -193,9 +193,9 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
         });
       }
     } else {
-      if (variable.state.hide !== VariableHide.dontHide) {
+      if (variable.state.hide !== VariableHide.hideLabel) {
         variable.setState({
-          hide: VariableHide.dontHide,
+          hide: VariableHide.hideLabel,
         });
       }
     }
@@ -299,11 +299,11 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
   const filterVariable = new AdHocFiltersVariable({
     name: VAR_FILTERS,
     datasource: explorationDS,
-    layout: 'horizontal',
+    layout: 'vertical',
     label: 'Service',
     filters: initialFilters ?? [],
     expressionBuilder: renderLogQLLabelFilters,
-    hide: VariableHide.hideVariable,
+    hide: VariableHide.hideLabel,
     key: 'adhoc_service_filter',
   });
 
@@ -320,10 +320,11 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
     name: VAR_FIELDS,
     label: 'Filters',
     applyMode: 'manual',
+    layout: 'vertical',
     getTagKeysProvider: () => Promise.resolve({ values: [] }),
     getTagValuesProvider: () => Promise.resolve({ values: [] }),
     expressionBuilder: renderLogQLFieldFilters,
-    hide: VariableHide.hideVariable,
+    hide: VariableHide.hideLabel,
   });
 
   fieldsVariable._getOperators = () => {
