@@ -439,6 +439,7 @@ function getStyles(theme: GrafanaTheme2) {
       },
 
       ['div >[title="Add filter"]']: {
+        border: 0,
         visibility: 'hidden',
         width: 0,
         padding: 0,
