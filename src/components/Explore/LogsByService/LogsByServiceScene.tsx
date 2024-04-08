@@ -255,7 +255,10 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
         // this will only be the service name for now
         ...filters.state.filters,
         // only include fields that are an indexed label
-        ...fields.state.filters.filter((field) => this.state.labels?.includes(field.key)),
+        ...fields.state.filters.filter(
+          // we manually add level as a label, but it'll be structured metadata mostly, so we skip it here
+          (field) => this.state.labels?.includes(field.key) && field.key !== ALL_VARIABLE_VALUE && field.key !== 'level'
+        ),
       ]),
       start: timeRange.from.utc().toISOString(),
       end: timeRange.to.utc().toISOString(),
