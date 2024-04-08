@@ -249,6 +249,7 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
     const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
+    const excludeLabels = [ALL_VARIABLE_VALUE, 'level'];
 
     ds.getResource('patterns', {
       query: renderLogQLLabelFilters([
@@ -257,7 +258,7 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
         // only include fields that are an indexed label
         ...fields.state.filters.filter(
           // we manually add level as a label, but it'll be structured metadata mostly, so we skip it here
-          (field) => this.state.labels?.includes(field.key) && field.key !== ALL_VARIABLE_VALUE && field.key !== 'level'
+          (field) => this.state.labels?.includes(field.key) && !excludeLabels.includes(field.key)
         ),
       ]),
       start: timeRange.from.utc().toISOString(),
