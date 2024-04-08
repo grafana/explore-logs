@@ -22,7 +22,7 @@ import {
 import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
 
 import { LogTimeSeriesPanel } from './LogTimeSeriesPanel';
-import { buildLogsListScene } from './Tabs/LogsListScene';
+import { buildLogsListScene, LogsCellFilterIn } from './Tabs/LogsListScene';
 import {
   ActionViewDefinition,
   ActionViewType,
@@ -174,6 +174,12 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
         this.updatePatterns();
       })
     );
+
+    this.subscribeToEvent(LogsCellFilterIn, (event) => {
+      console.log('HIGHER UP', event);
+      console.log('this.state', this.state);
+      console.log('this', this);
+    });
 
     return () => unsubs.forEach((u) => u.unsubscribe());
   }

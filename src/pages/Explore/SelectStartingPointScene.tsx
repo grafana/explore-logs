@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React, { useCallback, useRef, useState } from 'react';
 
-import { DataFrame, GrafanaTheme2, reduceField, ReducerID, PanelData } from '@grafana/data';
+import { DataFrame, GrafanaTheme2, PanelData, reduceField, ReducerID } from '@grafana/data';
 import { getDataSourceSrv } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
@@ -19,7 +19,6 @@ import {
   SceneQueryRunner,
   SceneReactObject,
   SceneVariable,
-  //SceneVariableSet,
   VariableDependencyConfig,
   VariableValue,
   VizPanel,

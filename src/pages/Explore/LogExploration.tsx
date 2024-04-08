@@ -42,6 +42,7 @@ import { AppliedPattern } from '../../components/Explore/types';
 import { VariableHide } from '@grafana/schema';
 import { Pattern } from 'components/Explore/LogsByService/Pattern';
 import pluginJson from '../../plugin.json';
+import { CustomObject } from '../../components/Explore/LogsByService/CustomComponent';
 
 type LogExplorationMode = 'start' | 'logs';
 
@@ -211,6 +212,7 @@ export class LogExplorationScene extends SceneObjectBase {
     const excludePatterns = patterns ? patterns.filter((pattern) => pattern.type !== 'include') : [];
     return (
       <div className={styles.container}>
+        <CustomObject.Component model={model} />
         {controls && (
           <div className={styles.controlsContainer}>
             <div className={styles.filters}>
