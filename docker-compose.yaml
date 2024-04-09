@@ -28,6 +28,5 @@ services:
     command: -config.file=/etc/loki/local-config.yaml --pattern-ingester.enabled=true
     restart: on-failure
   generator:
-    build:
-      context: ./generator
+    image: svennergr/fake-logs-generator:main-c8d21cc
     command: -url http://loki:3100/loki/api/v1/push
