@@ -5,4 +5,8 @@ process.env.TZ = 'UTC';
 module.exports = {
   // Jest configuration provided by Grafana scaffolding
   ...require('./.config/jest.config'),
+  moduleNameMapper: {
+    'react-inlinesvg': '<rootDir>/src/tests/react-inlinesvg.tsx',
+    '^@/(.*)$': '<rootDir>/src/$1',
+  },
 };

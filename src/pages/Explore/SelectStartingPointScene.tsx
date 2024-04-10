@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React, { useCallback, useRef, useState } from 'react';
 
-import { DataFrame, GrafanaTheme2, reduceField, ReducerID, PanelData } from '@grafana/data';
+import { DataFrame, GrafanaTheme2, PanelData, reduceField, ReducerID } from '@grafana/data';
 import { getDataSourceSrv } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
@@ -19,7 +19,6 @@ import {
   SceneQueryRunner,
   SceneReactObject,
   SceneVariable,
-  //SceneVariableSet,
   VariableDependencyConfig,
   VariableValue,
   VizPanel,
@@ -27,12 +26,12 @@ import {
 import { DrawStyle, Field, Icon, Input, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 
 import { SelectAttributeWithValueAction } from './SelectAttributeWithValueAction';
-import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from '../../utils/shared';
+import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from '@/utils/shared';
 import { map, Observable, Unsubscribable } from 'rxjs';
-import { ByLabelRepeater } from 'components/Explore/ByLabelRepeater';
-import { getLiveTailControl } from 'utils/scenes';
+import { ByLabelRepeater } from '@/components/Explore/ByLabelRepeater';
+import { getLiveTailControl } from '@/utils/scenes';
 import pluginJson from '../../plugin.json';
-import { getFavoriteServicesFromStorage } from 'utils/store';
+import { getFavoriteServicesFromStorage } from '@/utils/store';
 
 const LIMIT_SERVICES = 20;
 const SERVICE_NAME = 'service_name';
@@ -56,6 +55,7 @@ export interface LogSelectSceneState extends SceneObjectState {
 //const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
 const VAR_METRIC_FN = 'fn';
+
 //const VAR_METRIC_FN_EXPR = '${fn}';
 
 export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneState> {
@@ -86,6 +86,83 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
 
     this.addActivationHandler(this._onActivate.bind(this));
   }
+
+  public static Component = ({ model }: SceneComponentProps<SelectStartingPointScene>) => {
+    const styles = useStyles2(getStyles);
+    //const metricFnVariable = model.getMetricFnVariable();
+    // const { value: metricFnValue } = metricFnVariable.useState();
+    const { isTopSeriesLoading, topServicesToBeUsed, topServices } = model.useState();
+
+    const body = model.state.body;
+
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const timeout = useRef<NodeJS.Timeout>();
+
+    const onSearchChange = useCallback(
+      (e: React.FormEvent<HTMLInputElement>) => {
+        const value = e.currentTarget.value;
+        setSearchQuery(value);
+        clearTimeout(timeout.current);
+        timeout.current = setTimeout(() => {
+          model.setState({ searchServicesString: value });
+        }, 700);
+      },
+      [model]
+    );
+    return (
+      <div className={styles.container}>
+        <div className={styles.bodyWrapper}>
+          <div>
+            {isTopSeriesLoading && <LoadingPlaceholder text={'Loading'} className={styles.loadingText} />}
+            {!isTopSeriesLoading && (
+              <>
+                Showing: {topServicesToBeUsed?.length} of {topServices?.length} services
+              </>
+            )}
+          </div>
+          <Field className={styles.searchField}>
+            <Input
+              value={searchQuery}
+              prefix={<Icon name="search" />}
+              placeholder="Search services"
+              onChange={onSearchChange}
+            />
+          </Field>
+          {isTopSeriesLoading && <LoadingPlaceholder text="Fetching services..." />}
+          {!isTopSeriesLoading && (!topServicesToBeUsed || topServicesToBeUsed.length === 0) && (
+            <div>No services found</div>
+          )}
+          {!isTopSeriesLoading && topServicesToBeUsed && topServicesToBeUsed.length > 0 && (
+            <div className={styles.body}>
+              <body.Component model={body} />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  public getRepeater(): ByLabelRepeater {
+    return this.state.body!.state.children[0] as ByLabelRepeater;
+  }
+
+  public getMetricFnVariable() {
+    const variable = sceneGraph.lookupVariable(VAR_METRIC_FN, this);
+    if (!(variable instanceof CustomVariable)) {
+      throw new Error('Metric function variable not found');
+    }
+
+    return variable;
+  }
+
+  public onChangeMetricsFn = (value?: VariableValue) => {
+    if (!value) {
+      return;
+    }
+    const metricFnVariable = this.getMetricFnVariable();
+    metricFnVariable.changeValueTo(value);
+  };
 
   private _onActivate() {
     // terribad hack - remove single service filter if it's there
@@ -188,10 +265,6 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
       });
   }
 
-  public getRepeater(): ByLabelRepeater {
-    return this.state.body!.state.children[0] as ByLabelRepeater;
-  }
-
   private updateBody() {
     const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue() as string;
     if (!this.state.topServicesToBeUsed || this.state.topServicesToBeUsed.length === 0) {
@@ -211,7 +284,12 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
                   const favoriteServices = getFavoriteServicesFromStorage(ds);
                   return source.pipe(
                     map((data: DataFrame[]) => {
-                      data.forEach((a) => reduceField({ field: a.fields[1], reducers: [ReducerID.max] }));
+                      data.forEach((a) =>
+                        reduceField({
+                          field: a.fields[1],
+                          reducers: [ReducerID.max],
+                        })
+                      );
                       return data.sort((a, b) => {
                         const aIsFavorite = favoriteServices.includes(a.fields?.[1]?.labels?.[SERVICE_NAME] ?? '');
                         const bIsFavorite = favoriteServices.includes(b.fields?.[1]?.labels?.[SERVICE_NAME] ?? '');
@@ -319,79 +397,6 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
 
     return layout;
   }
-
-  public getMetricFnVariable() {
-    const variable = sceneGraph.lookupVariable(VAR_METRIC_FN, this);
-    if (!(variable instanceof CustomVariable)) {
-      throw new Error('Metric function variable not found');
-    }
-
-    return variable;
-  }
-
-  public onChangeMetricsFn = (value?: VariableValue) => {
-    if (!value) {
-      return;
-    }
-    const metricFnVariable = this.getMetricFnVariable();
-    metricFnVariable.changeValueTo(value);
-  };
-
-  public static Component = ({ model }: SceneComponentProps<SelectStartingPointScene>) => {
-    const styles = useStyles2(getStyles);
-    //const metricFnVariable = model.getMetricFnVariable();
-    // const { value: metricFnValue } = metricFnVariable.useState();
-    const { isTopSeriesLoading, topServicesToBeUsed, topServices } = model.useState();
-
-    const body = model.state.body;
-
-    const [searchQuery, setSearchQuery] = useState('');
-
-    const timeout = useRef<NodeJS.Timeout>();
-
-    const onSearchChange = useCallback(
-      (e: React.FormEvent<HTMLInputElement>) => {
-        const value = e.currentTarget.value;
-        setSearchQuery(value);
-        clearTimeout(timeout.current);
-        timeout.current = setTimeout(() => {
-          model.setState({ searchServicesString: value });
-        }, 700);
-      },
-      [model]
-    );
-    return (
-      <div className={styles.container}>
-        <div className={styles.bodyWrapper}>
-          <div>
-            {isTopSeriesLoading && <LoadingPlaceholder text={'Loading'} className={styles.loadingText} />}
-            {!isTopSeriesLoading && (
-              <>
-                Showing: {topServicesToBeUsed?.length} of {topServices?.length} services
-              </>
-            )}
-          </div>
-          <Field className={styles.searchField}>
-            <Input
-              value={searchQuery}
-              prefix={<Icon name="search" />}
-              placeholder="Search services"
-              onChange={onSearchChange}
-            />
-          </Field>
-          {isTopSeriesLoading && <LoadingPlaceholder text="Fetching services..." />}
-          {!isTopSeriesLoading && (!topServicesToBeUsed || topServicesToBeUsed.length === 0) && (
-            <div>No services found</div>
-          )}
-          {!isTopSeriesLoading && topServicesToBeUsed && topServicesToBeUsed.length > 0 && (
-            <div className={styles.body}>
-              <body.Component model={body} />
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
 }
 
 function buildBaseExpr(service: string | undefined, topServices: string[] | undefined) {

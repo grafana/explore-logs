@@ -25,7 +25,7 @@ import {
 } from '@grafana/scenes';
 import { Text, useStyles2 } from '@grafana/ui';
 
-import { LogsByServiceScene } from '../../components/Explore/LogsByService/LogsByServiceScene';
+import { LogsByServiceScene } from '@/components/Explore/LogsByService/LogsByServiceScene';
 import { SelectStartingPointScene } from './SelectStartingPointScene';
 import {
   DetailsSceneUpdated,
@@ -36,11 +36,11 @@ import {
   VAR_FILTERS,
   VAR_LINE_FILTER,
   VAR_PATTERNS,
-} from '../../utils/shared';
-import { DetailsScene } from '../../components/Explore/LogsByService/DetailsScene';
-import { AppliedPattern } from '../../components/Explore/types';
+} from '@/utils/shared';
+import { DetailsScene } from '@/components/Explore/LogsByService/DetailsScene';
+import { AppliedPattern } from '@/components/Explore/types';
 import { VariableHide } from '@grafana/schema';
-import { Pattern } from 'components/Explore/LogsByService/Pattern';
+import { Pattern } from '@/components/Explore/LogsByService/Pattern';
 import pluginJson from '../../plugin.json';
 
 type LogExplorationMode = 'start' | 'logs';
@@ -413,7 +413,7 @@ function getStyles(theme: GrafanaTheme2) {
         // The wrapper of each filter
         '& > div': {
           // the 'service_name' filter wrapper
-          '&:nth-child(2) > div':{
+          '&:nth-child(2) > div': {
             gap: 0,
           },
           // The actual inputs container

@@ -31,14 +31,14 @@ import {
   LOG_STREAM_SELECTOR_EXPR,
   VAR_FILTERS,
   VAR_LABEL_GROUP_BY,
-} from '../../../../utils/shared';
+} from '@/utils/shared';
 
 import { AddToFiltersGraphAction } from '../../AddToFiltersGraphAction';
 import { ByFrameRepeater } from '../../ByFrameRepeater';
 import { LayoutSwitcher } from '../../LayoutSwitcher';
-import { getDatasource, getLabelOptions } from '../../../../utils/utils';
-import { getLayoutChild } from '../../../../utils/fields';
-import { DetectedLabelsResponse } from 'components/Explore/types';
+import { getDatasource, getLabelOptions } from '@/utils/utils';
+import { getLayoutChild } from '@/utils/fields';
+import { DetectedLabelsResponse } from '@/components/Explore/types';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -297,7 +297,7 @@ function buildNormalLayout(variable: CustomVariable) {
     .setCustomFieldConfig('lineWidth', 0)
     .setCustomFieldConfig('pointSize', 0)
     .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-    .setTitle(variable.getValueText())
+    .setTitle(variable.getValueText());
 
   const body = bodyOpts.build();
 
@@ -332,8 +332,8 @@ function buildNormalLayout(variable: CustomVariable) {
               body: new SceneReactObject({
                 reactNode: <LoadingPlaceholder text="Loading..." />,
               }),
-            })
-          ]
+            }),
+          ],
         }),
         getLayoutChild: getLayoutChild(
           getLabelValue,
@@ -349,7 +349,7 @@ function buildNormalLayout(variable: CustomVariable) {
               body: new SceneReactObject({
                 reactNode: <LoadingPlaceholder text="Loading..." />,
               }),
-            })
+            }),
           ],
         }),
         getLayoutChild: getLayoutChild(

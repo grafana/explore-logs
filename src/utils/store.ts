@@ -1,4 +1,4 @@
-import { SERVICES_LOCALSTORAGE_KEY } from 'pages/Explore/SelectStartingPointScene';
+import { SERVICES_LOCALSTORAGE_KEY } from '@/pages/Explore/SelectStartingPointScene';
 
 export function getFavoriteServicesFromStorage(ds: any): string[] {
   if (!ds || typeof ds !== 'string') {

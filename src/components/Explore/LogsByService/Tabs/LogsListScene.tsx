@@ -7,8 +7,8 @@ import {
   SceneObjectBase,
   SceneObjectState,
 } from '@grafana/scenes';
-import { getLogsPanel } from '../../panels/logsPanel';
 import { LineFilter } from '../LineFilter';
+import { getTablePanel } from '@/components/Explore/panels/tablePanel';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -42,7 +42,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         }),
         new SceneFlexItem({
           height: 'calc(100vh - 220px)',
-          body: getLogsPanel(),
+          body: getTablePanel(),
         }),
       ],
     });

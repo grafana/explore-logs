@@ -3,7 +3,7 @@ import { CustomVariable, SceneComponentProps, SceneObjectBase, SceneObjectState,
 import { Field, Input } from '@grafana/ui';
 import { debounce } from 'lodash';
 import React, { ChangeEvent } from 'react';
-import { VAR_LINE_FILTER } from 'utils/shared';
+import { VAR_LINE_FILTER } from '@/utils/shared';
 
 interface LineFilterState extends SceneObjectState {
   lineFilter: string;
@@ -29,8 +29,8 @@ export class LineFilter extends SceneObjectBase<LineFilterState> {
     this.setState({
       lineFilter: matches[1],
     });
-  }
-  
+  };
+
   private getVariable() {
     const variable = sceneGraph.lookupVariable(VAR_LINE_FILTER, this);
     if (!(variable instanceof CustomVariable)) {

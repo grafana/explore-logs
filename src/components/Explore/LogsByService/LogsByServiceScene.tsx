@@ -37,19 +37,19 @@ import {
   EXPLORATIONS_ROUTE,
   VAR_DATASOURCE,
   ALL_VARIABLE_VALUE,
-} from '../../../utils/shared';
-import { getDatasource, getExplorationFor } from '../../../utils/utils';
+} from '@/utils/shared';
+import { getDatasource, getExplorationFor } from '@/utils/utils';
 import { ShareExplorationButton } from './ShareExplorationButton';
 import { buildLabelBreakdownActionScene } from './Tabs/LabelBreakdownScene';
 import { DataSourceWithBackend, getDataSourceSrv, locationService } from '@grafana/runtime';
 import { buildPatternsScene } from './Tabs/PatternsScene';
 import { buildFieldsBreakdownActionScene } from './Tabs/FieldsBreakdownScene';
 import { Unsubscribable } from 'rxjs';
-import { getLiveTailControl } from 'utils/scenes';
-import { extractFields } from '../../../utils/fields';
+import { getLiveTailControl } from '@/utils/scenes';
+import { extractFields } from '@/utils/fields';
 import { GoToExploreButton } from './GoToExploreButton';
 import { GiveFeedback } from './GiveFeedback';
-import { renderLogQLLabelFilters } from 'pages/Explore';
+import { renderLogQLLabelFilters } from '@/pages/Explore';
 import { DetectedLabelsResponse } from '../types';
 
 interface LokiPattern {
