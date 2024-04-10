@@ -5,7 +5,7 @@ import { GrafanaTheme2, LinkModel } from '@grafana/data';
 import { Icon, useTheme2 } from '@grafana/ui';
 
 import { FilterOp } from '@/components/Context/QueryContext';
-import { useLabelFilters } from '@/hooks/useLabels';
+import { useScenesTableContext } from '@/components/Context/ScenesTableContext';
 
 interface Props {
   fieldType?: 'derived';
@@ -34,7 +34,8 @@ const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
 export const CellContextMenu = (props: Props) => {
   const theme = useTheme2();
   const styles = getStyles(theme);
-  const { addLabelFilter } = useLabelFilters();
+  // const { addLabelFilter } = useLabelFilters();
+  const { addFilter } = useScenesTableContext();
 
   return (
     <span className={styles.menu}>
@@ -43,7 +44,11 @@ export const CellContextMenu = (props: Props) => {
           <div
             className={styles.menuItem}
             onClick={() => {
-              addLabelFilter(props.label, props.value);
+              addFilter({
+                key: props.label,
+                value: props.value,
+                operator: FilterOp.Equal,
+              });
             }}
           >
             <Icon title={'Add to search'} size={'lg'} name={'search-plus'} />
@@ -51,7 +56,11 @@ export const CellContextMenu = (props: Props) => {
           <div
             className={styles.menuItem}
             onClick={() => {
-              addLabelFilter(props.label, props.value, FilterOp.NotEqual);
+              addFilter({
+                key: props.label,
+                value: props.value,
+                operator: FilterOp.NotEqual,
+              });
             }}
           >
             <Icon title={'Exclude from search'} size={'lg'} name={'search-minus'} />

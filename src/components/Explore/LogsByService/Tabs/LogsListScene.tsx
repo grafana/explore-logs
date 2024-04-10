@@ -1,14 +1,18 @@
 import React from 'react';
 
 import {
+  AdHocFiltersVariable,
   SceneComponentProps,
   SceneFlexItem,
   SceneFlexLayout,
+  sceneGraph,
   SceneObjectBase,
   SceneObjectState,
 } from '@grafana/scenes';
 import { LineFilter } from '../LineFilter';
 import { getTablePanel } from '@/components/Explore/panels/tablePanel';
+import { VAR_FIELDS } from '@/utils/shared';
+import { AdHocVariableFilter } from '@grafana/data';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -25,14 +29,21 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   }
 
   public _onActivate() {
+    const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
+    const filters = fields.state.filters;
+    const addFilter = (filter: AdHocVariableFilter) => {
+      fields.setState({
+        filters: [...filters, filter],
+      });
+    };
     if (!this.state.panel) {
       this.setState({
-        panel: this.getVizPanel(),
+        panel: this.getVizPanel(filters, addFilter),
       });
     }
   }
 
-  private getVizPanel() {
+  private getVizPanel(filters: AdHocVariableFilter[], addFilter: (filter: AdHocVariableFilter) => void) {
     return new SceneFlexLayout({
       direction: 'column',
       children: [
@@ -42,7 +53,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         }),
         new SceneFlexItem({
           height: 'calc(100vh - 220px)',
-          body: getTablePanel(),
+          body: getTablePanel(filters, addFilter),
         }),
       ],
     });

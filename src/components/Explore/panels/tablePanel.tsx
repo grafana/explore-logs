@@ -1,12 +1,14 @@
-import { PanelProps } from '@grafana/data';
+import { AdHocVariableFilter, PanelProps } from '@grafana/data';
 import React from 'react';
 import { TableProvider } from '@/components/Table/TableProvider';
 import { VizPanel } from '@grafana/scenes';
-import { QueryContextProvider } from '@/components/Context/QueryContext';
-import { LabelsContextProvider } from '@/components/Context/LabelsContext';
+import { LokiDatasource } from '@/services/lokiTypes';
+import { ScenesTableContextProvider } from '@/components/Context/ScenesTableContext';
 
 export interface CustomTableOptions {
-  mode: string;
+  filters: AdHocVariableFilter[];
+  datasource: LokiDatasource | undefined;
+  addFilter: (filter: AdHocVariableFilter) => void;
 }
 
 export interface CustomTableFieldOptions {
@@ -16,19 +18,26 @@ export interface CustomTableFieldOptions {
 interface Props extends PanelProps<CustomTableOptions> {}
 
 export function CustomTablePanel(props: Props) {
-  const { data } = props;
+  const { data, options } = props;
+
+  // need labels, datasource,
 
   return (
-    <QueryContextProvider>
-      <LabelsContextProvider>
-        <TableProvider dataFrame={data.series[0]} />
-      </LabelsContextProvider>
-    </QueryContextProvider>
+    <ScenesTableContextProvider addFilter={options.addFilter} filters={options.filters} dataSource={options.datasource}>
+      <TableProvider dataFrame={data.series[0]} />
+    </ScenesTableContextProvider>
   );
 }
 
-export const getTablePanel = () => {
+export const getTablePanel = (filters: AdHocVariableFilter[], addFilter: (filter: AdHocVariableFilter) => void) => {
+  const options: CustomTableOptions = {
+    datasource: undefined,
+    filters: filters,
+    addFilter,
+  };
+
   return new VizPanel({
     pluginId: 'custom-table-viz',
+    options: options,
   });
 };
