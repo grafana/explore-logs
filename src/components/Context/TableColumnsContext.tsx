@@ -1,12 +1,7 @@
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
-
-import { DataFrame } from '@grafana/data';
-
-import { useUrlParamsContext } from '@/components/Context/UrlParamsContext';
 import { FieldNameMetaStore } from '@/components/Table/TableTypes';
-import { TableUrlState } from '@/components/Table/TableWrap';
-import { useDataFrame } from '@/hooks/useQuery';
-import { DATAPLANE_BODY_NAME, DATAPLANE_TIMESTAMP_NAME } from '@/services/logsFrame';
+import { LogsFrame } from '@/services/logsFrame';
+import { useScenesTableContext } from '@/components/Context/ScenesTableContext';
 
 type TableColumnsContextType = {
   // the current list of labels from the dataframe combined with UI metadata
@@ -34,24 +29,26 @@ const TableColumnsContext = createContext<TableColumnsContextType>({
 export const TableColumnContextProvider = ({
   children,
   initialColumns,
+  logsFrame,
 }: {
   children: ReactNode;
   initialColumns: FieldNameMetaStore;
+  logsFrame: LogsFrame;
 }) => {
   const [columns, setColumns] = useState<FieldNameMetaStore>(initialColumns);
   const [filteredColumns, setFilteredColumns] = useState<FieldNameMetaStore | undefined>(undefined);
   const [visible, setVisible] = useState(false);
-  const { setUrlParameter } = useUrlParamsContext();
-  const dataFrame = useDataFrame();
+  const { setSelectedColumns } = useScenesTableContext();
+  //@todo fix
 
   const handleSetColumns = useCallback(
     (newColumns: FieldNameMetaStore) => {
       setColumns(newColumns);
-      if (dataFrame) {
-        updateUrlState(newColumns, dataFrame, setUrlParameter);
+      if (logsFrame) {
+        updateUrlState(newColumns, logsFrame, setSelectedColumns);
       }
     },
-    [dataFrame, setUrlParameter]
+    [logsFrame, setSelectedColumns]
   );
 
   const handleSetVisible = useCallback((isVisible: boolean) => {
@@ -61,6 +58,7 @@ export const TableColumnContextProvider = ({
   // When the parent component recalculates new columns on dataframe change, we need to update or the column UI will be stale!
   useEffect(() => {
     setColumns(initialColumns);
+    console.log('TableColumnsContext set columns', initialColumns);
   }, [initialColumns]);
 
   return (
@@ -81,10 +79,10 @@ export const TableColumnContextProvider = ({
 
 function updateUrlState(
   pendingLabelState: FieldNameMetaStore,
-  dataFrame: DataFrame,
-  setUrlState: (key: string, value: TableUrlState) => void
+  logsFrame: LogsFrame,
+  setSelectedColumns: (cols: string[]) => void
 ) {
-  if (!dataFrame) {
+  if (!logsFrame) {
     console.warn('missing dataframe, cannot set url state');
     return;
   }
@@ -101,26 +99,23 @@ function updateUrlState(
       return 0;
     });
 
-  const newColumns: Record<number, string> = Object.assign(
-    {},
-    // Get the keys of the object as an array
-    newColumnsArray
-  );
+  const timeField = logsFrame.timeField;
+  const bodyField = logsFrame.bodyField;
 
-  const timeField = dataFrame.fields.find((f) => f.name === DATAPLANE_TIMESTAMP_NAME);
-  const bodyField = dataFrame.fields.find((f) => f.name === DATAPLANE_BODY_NAME);
+  if ((timeField && bodyField) || Object.keys(newColumnsArray).length) {
+    // const defaultColumns = { 0: timeField?.name ?? '', 1: bodyField?.name ?? '' };
+    const defaultColumns = [];
+    if (timeField?.name) {
+      defaultColumns.push(timeField.name);
+    }
+    if (bodyField?.name) {
+      defaultColumns.push(bodyField.name);
+    }
 
-  if ((timeField && bodyField) || Object.keys(newColumns).length) {
-    const defaultColumns = { 0: timeField?.name ?? '', 1: bodyField?.name ?? '' };
-
-    const newPanelState: TableUrlState = {
-      // URL format requires our array of values be an object, so we convert it using object.assign
-      visibleColumns: Object.keys(newColumns).length ? newColumns : defaultColumns,
-      labelFieldName: 'labels',
-    };
+    const columns = Object.keys(newColumnsArray).length ? newColumnsArray : defaultColumns;
 
     // Update url state
-    setUrlState('table', newPanelState);
+    setSelectedColumns(columns);
   }
 }
 

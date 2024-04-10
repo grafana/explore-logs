@@ -34,7 +34,6 @@ const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
 export const CellContextMenu = (props: Props) => {
   const theme = useTheme2();
   const styles = getStyles(theme);
-  // const { addLabelFilter } = useLabelFilters();
   const { addFilter } = useScenesTableContext();
 
   return (

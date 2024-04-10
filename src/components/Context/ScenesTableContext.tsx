@@ -1,32 +1,31 @@
 import React, { createContext, ReactNode, useContext } from 'react';
-import { LokiDatasource } from '@/services/lokiTypes';
 import { AdHocVariableFilter } from '@grafana/data';
+import { TablePanelProps } from '@/components/Explore/LogsByService/Tabs/LogsListScene';
 
-type ScenesTableContextType = {
-  dataSource: LokiDatasource | undefined;
-  filters: AdHocVariableFilter[];
-  addFilter: (filter: AdHocVariableFilter) => void;
-};
+type ScenesTableContextType = TablePanelProps & {};
 
 const ScenesTableContext = createContext<ScenesTableContextType>({
-  dataSource: undefined,
   filters: [],
   addFilter: (filter: AdHocVariableFilter) => {},
+  setSelectedColumns: (cols: string[]) => {
+    console.log('innit innit?');
+  },
+  selectedColumns: [],
 });
 
 export const ScenesTableContextProvider = ({
   children,
-  dataSource,
   filters,
   addFilter,
+  selectedColumns,
+  setSelectedColumns,
 }: {
   children: ReactNode;
-  dataSource: LokiDatasource | undefined;
-  filters: AdHocVariableFilter[];
-  addFilter: (filter: AdHocVariableFilter) => void;
-}) => {
+} & ScenesTableContextType) => {
   return (
-    <ScenesTableContext.Provider value={{ dataSource, filters, addFilter }}>{children}</ScenesTableContext.Provider>
+    <ScenesTableContext.Provider value={{ filters, addFilter, selectedColumns, setSelectedColumns }}>
+      {children}
+    </ScenesTableContext.Provider>
   );
 };
 

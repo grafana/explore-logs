@@ -13,5 +13,5 @@ export const customTablePanel = new PanelPlugin<CustomTableOptions, CustomTableF
     });
   },
 });
-
+// @todo where is a good place to register stuff?
 // sceneUtils.registerRuntimePanelPlugin({ pluginId: 'custom-table-viz', plugin: customTablePanel });

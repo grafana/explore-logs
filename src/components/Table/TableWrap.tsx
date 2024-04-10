@@ -13,10 +13,10 @@ import {
 import { useTheme2 } from '@grafana/ui';
 
 import { TableColumnContextProvider } from '@/components/Context/TableColumnsContext';
-import { useUrlParamsContext } from '@/components/Context/UrlParamsContext';
 import { Table } from '@/components/Table/Table';
 import { FieldNameMeta, FieldNameMetaStore } from '@/components/Table/TableTypes';
 import { LogsFrame } from '@/services/logsFrame';
+import { useScenesTableContext } from '@/components/Context/ScenesTableContext';
 
 export type LogFrameLabels = Record<string, unknown>;
 
@@ -52,12 +52,11 @@ export const TableWrap = (props: TableWrapProps) => {
   const styles = getStyles(theme);
 
   const timeZone = getTimeZone();
-  const { setUrlParameter, getUrlParameter } = useUrlParamsContext();
-  const tableUrlState = getUrlParameter<TableUrlState>('table');
+  const { selectedColumns, setSelectedColumns } = useScenesTableContext();
 
   const getColumnsFromProps = useCallback(
     (fieldNames: FieldNameMetaStore) => {
-      const previouslySelected = tableUrlState?.visibleColumns;
+      const previouslySelected = selectedColumns;
       if (previouslySelected) {
         Object.values(previouslySelected).forEach((key, index) => {
           if (fieldNames[key]) {
@@ -69,19 +68,15 @@ export const TableWrap = (props: TableWrapProps) => {
 
       return fieldNames;
     },
-    [tableUrlState]
+    [selectedColumns]
   );
 
   useEffect(() => {
-    if (!tableUrlState?.visibleColumns && logsFrame.timeField.name && logsFrame.bodyField.name) {
+    if (!selectedColumns && logsFrame.timeField.name && logsFrame.bodyField.name) {
       const defaultColumns = { 0: logsFrame.timeField.name ?? '', 1: logsFrame.bodyField.name ?? '' };
-      setUrlParameter('table', {
-        columns: Object.values(defaultColumns),
-        visualisationType: 'table',
-        labelFieldName: 'labels',
-      });
+      setSelectedColumns(Object.values(defaultColumns));
     }
-  }, [logsFrame.timeField.name, logsFrame.bodyField.name, setUrlParameter, tableUrlState?.visibleColumns]);
+  }, [logsFrame.timeField.name, logsFrame.bodyField.name, selectedColumns, setSelectedColumns]);
 
   // If the data frame is empty, there's nothing to viz, it could mean the user has unselected all columns
   if (!logsFrame || !logsFrame.raw.length) {
@@ -118,7 +113,7 @@ export const TableWrap = (props: TableWrapProps) => {
 
   return (
     <section className={styles.section}>
-      <TableColumnContextProvider initialColumns={pendingLabelState}>
+      <TableColumnContextProvider logsFrame={logsFrame} initialColumns={pendingLabelState}>
         <Table logsFrame={logsFrame} timeZone={timeZone} height={height - 220} width={width - 50} labels={labels} />
       </TableColumnContextProvider>
     </section>
