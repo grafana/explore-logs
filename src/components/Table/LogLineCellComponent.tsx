@@ -20,6 +20,14 @@ export type SelectedTableRow = {
 };
 
 const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
+  rawLogLine: css({
+    fontFamily: theme.typography.fontFamilyMonospace,
+    height: '35px',
+    lineHeight: '35px',
+    paddingRight: theme.spacing(1.5),
+    paddingLeft: theme.spacing(1),
+    fontSize: theme.typography.bodySmall.fontSize,
+  }),
   clipboardButton: css({
     padding: 0,
     height: '100%',
@@ -125,10 +133,11 @@ export const LogLineCellComponent = (props: Props) => {
   /**
    * What if we never even rendered the log line as written, and always re-created it using labels.
    * Assuming we're always parsing our log line with logfmt, this should work? And give the UI more control in visualization and interaction?
-   * @param labels
+   * @param labels Label[]
    * @param onClick
+   * @param value raw log line
    */
-  const renderLabels = (labels: Labels, onClick: (label: string) => void) => {
+  const renderLabels = (labels: Labels, onClick: (label: string) => void, value: unknown) => {
     const columnLabelNames = Object.keys(columns);
     const labelNames = columnLabelNames.sort((a, b) => {
       // Sort level first
@@ -150,62 +159,72 @@ export const LogLineCellComponent = (props: Props) => {
       return columns[a].cardinality > columns[b].cardinality ? -1 : 1;
     });
 
-    // Don't render pills for columns that are already viz?
-    return labelNames
-      .filter(
-        (label) =>
-          // Not already visible in another column
-          !columns[label].active &&
-          // And the cardinality is greater than 1
-          columns[label].cardinality > 1
-      )
-      .map((label) => {
-        const labelValue = labels[label];
-        const untransformedField = logsFrame?.raw?.fields.find((field) => field.name === label);
-        const rawValue = field?.values[props.rowIndex];
-        const isDerived = !labelValue && !!rawValue;
+    const filteredLabels = labelNames.filter(
+      (label) =>
+        // Not already visible in another column
+        !columns[label].active &&
+        // And the cardinality is greater than 1
+        columns[label].cardinality > 1
+    );
 
-        if (labelValue) {
+    console.log('filteredLabels', filteredLabels);
+
+    if (!filteredLabels.length) {
+      return (
+        <div className={styles.rawLogLine}>
+          <>{value}</>
+        </div>
+      );
+    }
+
+    return filteredLabels.map((label) => {
+      const labelValue = labels[label];
+      const untransformedField = logsFrame?.raw?.fields.find((field) => field.name === label);
+      const rawValue = field?.values[props.rowIndex];
+      const isDerived = !labelValue && !!rawValue;
+
+      if (labelValue) {
+        return (
+          <LogLinePill
+            originalFrame={undefined}
+            field={field}
+            columns={columns}
+            rowIndex={props.rowIndex}
+            frame={props.frame}
+            showColumns={() => setVisible(true)}
+            key={label}
+            label={label}
+            isDerivedField={false}
+            value={labelValue}
+            showColumn={onClick}
+          />
+        );
+      }
+      if (isDerived && untransformedField?.name) {
+        const untransformedValue = untransformedField?.values[props.rowIndex];
+        // are derived fields always strings?
+        if (untransformedField?.type === FieldType.string && untransformedValue) {
           return (
             <LogLinePill
-              originalFrame={undefined}
+              originalFrame={logsFrame?.raw}
+              originalField={untransformedField}
               field={field}
+              value={untransformedValue}
               columns={columns}
               rowIndex={props.rowIndex}
               frame={props.frame}
               showColumns={() => setVisible(true)}
-              key={label}
-              label={label}
-              isDerivedField={false}
-              value={labelValue}
+              key={untransformedField.name}
+              label={untransformedField.name}
+              isDerivedField={true}
               showColumn={onClick}
             />
           );
         }
-        if (isDerived && untransformedField?.name) {
-          const untransformedValue = untransformedField?.values[props.rowIndex];
-          // are derived fields always strings?
-          if (untransformedField?.type === FieldType.string && untransformedValue) {
-            return (
-              <LogLinePill
-                originalFrame={logsFrame?.raw}
-                originalField={untransformedField}
-                field={field}
-                value={untransformedValue}
-                columns={columns}
-                rowIndex={props.rowIndex}
-                frame={props.frame}
-                showColumns={() => setVisible(true)}
-                key={untransformedField.name}
-                label={untransformedField.name}
-                isDerivedField={true}
-                showColumn={onClick}
-              />
-            );
-          }
-        }
-        return null;
-      });
+      }
+
+      return null;
+    });
   };
 
   return (
@@ -267,7 +286,7 @@ export const LogLineCellComponent = (props: Props) => {
             </div>
           </div>
           {/* @todo component*/}
-          <>{renderLabels(props.labels, onClick)}</>
+          <>{renderLabels(props.labels, onClick, props.value)}</>
 
           {isHover && <Scroller scrollerRef={ref} />}
         </div>
