@@ -7,7 +7,7 @@ import { useTheme2 } from '@grafana/ui';
 import { LogsTableActiveFields } from '@/components/Table/ColumnSelection/LogsTableActiveFields';
 import { LogsTableAvailableFields } from '@/components/Table/ColumnSelection/LogsTableAvailableFields';
 
-import { FieldNameMeta } from '../TableTypes';
+import { FieldNameMeta, FieldNameMetaStore } from '../TableTypes';
 
 function getStyles(theme: GrafanaTheme2) {
   return {
@@ -50,7 +50,7 @@ export const LogsTableMultiSelect = (props: {
   filteredColumnsWithMeta: Record<string, FieldNameMeta> | undefined;
   columnsWithMeta: Record<string, FieldNameMeta>;
   clear: () => void;
-  reorderColumn: (oldIndex: number, newIndex: number) => void;
+  reorderColumn: (cols: FieldNameMetaStore, oldIndex: number, newIndex: number) => void;
 }) => {
   const theme = useTheme2();
   const styles = getStyles(theme);

@@ -5,10 +5,11 @@ import { css, cx } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data/';
 import { useTheme2 } from '@grafana/ui/';
 
-import { FieldNameMeta } from '../TableTypes';
+import { FieldNameMeta, FieldNameMetaStore } from '../TableTypes';
 
 import { LogsTableEmptyFields } from './LogsTableEmptyFields';
 import { LogsTableNavField } from './LogsTableNavField';
+import { useTableColumnContext } from '@/components/Context/TableColumnsContext';
 
 export function getLogsFieldsStyles(theme: GrafanaTheme2) {
   return {
@@ -48,11 +49,12 @@ export const LogsTableActiveFields = (props: {
   labels: Record<string, FieldNameMeta>;
   valueFilter: (value: string) => boolean;
   toggleColumn: (columnName: string) => void;
-  reorderColumn: (sourceIndex: number, destinationIndex: number) => void;
+  reorderColumn: (cols: FieldNameMetaStore, sourceIndex: number, destinationIndex: number) => void;
   id: string;
 }): ReactElement => {
   const { reorderColumn, labels, valueFilter, toggleColumn } = props;
   const theme = useTheme2();
+  const { columns } = useTableColumnContext();
   const styles = getLogsFieldsStyles(theme);
   const labelKeys = Object.keys(labels).filter((labelName) => valueFilter(labelName));
 
@@ -60,7 +62,7 @@ export const LogsTableActiveFields = (props: {
     if (!result.destination) {
       return;
     }
-    reorderColumn(result.source.index, result.destination.index);
+    reorderColumn(columns, result.source.index, result.destination.index);
   };
 
   const renderTitle = (labelName: string) => {

@@ -8,10 +8,8 @@ import { LogsTableMultiSelect } from '@/components/Table/ColumnSelection/LogsTab
 
 import { FieldNameMetaStore } from '../TableTypes';
 
-export function useReorderColumn() {
-  const { columns, setColumns } = useTableColumnContext();
-
-  return (sourceIndex: number, destinationIndex: number) => {
+export function getReorderColumn(setColumns: (cols: FieldNameMetaStore) => void) {
+  return (columns: FieldNameMetaStore, sourceIndex: number, destinationIndex: number) => {
     if (sourceIndex === destinationIndex) {
       return;
     }
@@ -29,9 +27,11 @@ export function useReorderColumn() {
     const [source] = keys.splice(sourceIndex, 1);
     keys.splice(destinationIndex, 0, source);
 
-    keys.forEach((key, index) => {
-      pendingLabelState[key.fieldName].index = index;
-    });
+    keys
+      .filter((key) => key !== undefined)
+      .forEach((key, index) => {
+        pendingLabelState[key.fieldName].index = index;
+      });
 
     // Set local state
     setColumns(pendingLabelState);
@@ -103,7 +103,8 @@ export function ColumnSelectionDrawerWrap() {
       setFilteredColumns(pendingFilteredLabelState);
     }
   };
-  const reorderColumn = useReorderColumn();
+
+  const reorderColumn = getReorderColumn(setColumns);
 
   const clearSelection = () => {
     const pendingLabelState = { ...columns };
@@ -116,6 +117,7 @@ export function ColumnSelectionDrawerWrap() {
       // reset the index
       pendingLabelState[key].index = isDefaultField ? index++ : undefined;
     });
+
     setColumns(pendingLabelState);
   };
 

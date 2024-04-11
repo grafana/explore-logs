@@ -167,8 +167,6 @@ export const LogLineCellComponent = (props: Props) => {
         columns[label].cardinality > 1
     );
 
-    console.log('filteredLabels', filteredLabels);
-
     if (!filteredLabels.length) {
       return (
         <div className={styles.rawLogLine}>

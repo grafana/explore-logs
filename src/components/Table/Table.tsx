@@ -34,7 +34,7 @@ import { useTableColumnContext } from '@/components/Context/TableColumnsContext'
 import { TableHeaderContextProvider, useTableHeaderContext } from '@/components/Context/TableHeaderContext';
 import {
   ColumnSelectionDrawerWrap,
-  useReorderColumn,
+  getReorderColumn,
 } from '@/components/Table/ColumnSelection/ColumnSelectionDrawerWrap';
 import { DefaultCellComponent } from '@/components/Table/DefaultCellComponent';
 import { LogLineCellComponent } from '@/components/Table/LogLineCellComponent';
@@ -70,10 +70,11 @@ function LogsTableHeaderWrap(props: {
   openColumnManagementDrawer: () => void;
 
   // Moves the current column forward or backward one index
-  slideLeft: () => void;
-  slideRight: () => void;
+  slideLeft: (cols: FieldNameMetaStore) => void;
+  slideRight: (cols: FieldNameMetaStore) => void;
 }) {
   const { setHeaderMenuActive } = useTableHeaderContext();
+  const { columns } = useTableColumnContext();
 
   return (
     <LogsTableHeader {...props.props} myProp={'hallo'}>
@@ -95,13 +96,13 @@ function LogsTableHeaderWrap(props: {
         </a>
       </div>
       <div>
-        <a onClick={props.slideLeft}>
+        <a onClick={() => props.slideLeft(columns)}>
           <Icon name={'forward'} size={'xl'} />
           Move forward
         </a>
       </div>
       <div>
-        <a onClick={props.slideRight}>
+        <a onClick={() => props.slideRight(columns)}>
           <Icon name={'backward'} size={'xl'} />
           Move backward
         </a>
@@ -130,8 +131,9 @@ export const Table = (props: Props) => {
 
   const [tableFrame, setTableFrame] = useState<DataFrame | undefined>(undefined);
   const { columns, visible, setVisible, setFilteredColumns, setColumns } = useTableColumnContext();
-  const reorderColumn = useReorderColumn();
   const { selectedLine } = useScenesTableContext();
+
+  const reorderColumn = getReorderColumn(setColumns);
 
   const templateSrv = getTemplateSrv();
   const replace = useMemo(() => templateSrv.replace.bind(templateSrv), [templateSrv]);
@@ -139,6 +141,7 @@ export const Table = (props: Props) => {
   const hideColumn = (field: Field) => {
     const pendingColumnState = { ...columns };
     pendingColumnState[field.name].active = false;
+
     setColumns(pendingColumnState);
   };
 
@@ -180,12 +183,12 @@ export const Table = (props: Props) => {
                     hideColumn(props.field);
                   }}
                   openColumnManagementDrawer={() => setVisible(true)}
-                  slideLeft={() => reorderColumn(index, index + 1)}
-                  slideRight={() => reorderColumn(index, index - 1)}
+                  slideLeft={(cols) => reorderColumn(cols, index, index + 1)}
+                  slideRight={(cols) => reorderColumn(cols, index, index - 1)}
                 />
               </TableHeaderContextProvider>
             ),
-            width: getInitialFieldWidth(field, columns),
+            width: getInitialFieldWidth(field, columns, width, frameWithOverrides.fields.length),
             cellOptions: getTableCellOptions(field, labels),
             ...field.config.custom,
           },
@@ -448,9 +451,17 @@ function getTableCellOptions(
   };
 }
 
-function getInitialFieldWidth(field: Field, columns: FieldNameMetaStore): number | undefined {
+function getInitialFieldWidth(
+  field: Field,
+  columns: FieldNameMetaStore,
+  tableWidth: number,
+  numberOfFields: number
+): number | undefined {
   const minWidth = 90;
-  const maxWidth = 220;
+
+  // Columns shouldn't take more than half the available space, unless there are only 2 columns
+  const maxWidth = numberOfFields <= 2 ? tableWidth : Math.min(tableWidth / 2);
+
   // Time fields have consistent widths
   if (field.type === FieldType.time) {
     return 200;
@@ -464,9 +475,9 @@ function getInitialFieldWidth(field: Field, columns: FieldNameMetaStore): number
 
   const maxLength = Math.max(columnMeta.maxLength ?? 0, field.name.length);
   if (columnMeta.maxLength) {
-    // Super rough estimate, about 8px per char, and 50px for some padding and space for the header icons.
+    // Super rough estimate, about 6.5px per char, and 50px for some padding and space for the header icons.
     // I guess to be a little tighter we could only add the extra padding IF the field name is longer then the longest value
-    return Math.min(Math.max(maxLength * 8 + 50, minWidth), maxWidth);
+    return Math.min(Math.max(maxLength * 6.5 + 50, minWidth), maxWidth);
   }
 
   return undefined;
