@@ -255,10 +255,6 @@ export const Table = (props: Props) => {
   const idField = logsFrame.raw.fields.find((field) => field.name === DATAPLANE_ID_NAME);
   const lineIndex = idField?.values.findIndex((v) => v === selectedLine?.id);
 
-  console.log('selectedLine', selectedLine);
-  console.log('idField', idField);
-  console.log('lineIndex', lineIndex);
-
   return (
     <div className={styles.section}>
       {visible && (

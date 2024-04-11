@@ -22,7 +22,6 @@ export function CustomTablePanel(props: Props) {
 }
 
 export const getTablePanel = (props: TablePanelProps) => {
-  console.log('getTablePanel', props);
   const search = new URLSearchParams(window.location.search);
   const columnsFromUrl = search.get('tableColumns');
 

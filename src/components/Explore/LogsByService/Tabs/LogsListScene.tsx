@@ -60,7 +60,6 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   }
 
   updateFromUrl(values: SceneObjectUrlValues) {
-    console.log('updateFromUrl', values);
     const stateUpdate: Partial<LogsListSceneState> = {};
     // Selected table columns
     if (typeof values.tableColumns === 'string') {
