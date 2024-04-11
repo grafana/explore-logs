@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useState } from 'react';
 import { css } from '@emotion/css';
 
 import {
@@ -15,8 +15,8 @@ import { useTheme2 } from '@grafana/ui';
 import { TableColumnContextProvider } from '@/components/Context/TableColumnsContext';
 import { Table } from '@/components/Table/Table';
 import { FieldNameMeta, FieldNameMetaStore } from '@/components/Table/TableTypes';
-import { LogsFrame } from '@/services/logsFrame';
 import { useScenesTableContext } from '@/components/Context/ScenesTableContext';
+import { useQueryContext } from '@/components/Context/QueryContext';
 
 export type LogFrameLabels = Record<string, unknown>;
 
@@ -29,9 +29,7 @@ export type SpecialFieldsType = {
 // matches common ISO 8601
 const iso8601Regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3,})?(?:Z|[-+]\d{2}:?\d{2})$/;
 
-interface TableWrapProps {
-  frame: LogsFrame;
-}
+interface TableWrapProps {}
 
 const getStyles = (theme: GrafanaTheme2) => ({
   section: css({
@@ -41,23 +39,22 @@ const getStyles = (theme: GrafanaTheme2) => ({
 
 export interface TableUrlState {
   visibleColumns?: Record<number, string>;
-  labelFieldName?: string;
 }
 
 export const TableWrap = (props: TableWrapProps) => {
-  const logsFrame = props.frame;
+  const { logsFrame } = useQueryContext();
   const [width, height] = useWindowSize();
 
   const theme = useTheme2();
   const styles = getStyles(theme);
 
   const timeZone = getTimeZone();
-  const { selectedColumns, setSelectedColumns } = useScenesTableContext();
+  const { selectedColumns } = useScenesTableContext();
 
   const getColumnsFromProps = useCallback(
     (fieldNames: FieldNameMetaStore) => {
       const previouslySelected = selectedColumns;
-      if (previouslySelected) {
+      if (previouslySelected?.length) {
         Object.values(previouslySelected).forEach((key, index) => {
           if (fieldNames[key]) {
             fieldNames[key].active = true;
@@ -70,13 +67,6 @@ export const TableWrap = (props: TableWrapProps) => {
     },
     [selectedColumns]
   );
-
-  useEffect(() => {
-    if (!selectedColumns && logsFrame.timeField.name && logsFrame.bodyField.name) {
-      const defaultColumns = { 0: logsFrame.timeField.name ?? '', 1: logsFrame.bodyField.name ?? '' };
-      setSelectedColumns(Object.values(defaultColumns));
-    }
-  }, [logsFrame.timeField.name, logsFrame.bodyField.name, selectedColumns, setSelectedColumns]);
 
   // If the data frame is empty, there's nothing to viz, it could mean the user has unselected all columns
   if (!logsFrame || !logsFrame.raw.length) {

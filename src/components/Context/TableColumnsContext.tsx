@@ -39,13 +39,15 @@ export const TableColumnContextProvider = ({
   const [filteredColumns, setFilteredColumns] = useState<FieldNameMetaStore | undefined>(undefined);
   const [visible, setVisible] = useState(false);
   const { setSelectedColumns } = useScenesTableContext();
-  //@todo fix
 
+  //@todo fix
   const handleSetColumns = useCallback(
     (newColumns: FieldNameMetaStore) => {
-      setColumns(newColumns);
-      if (logsFrame) {
-        updateUrlState(newColumns, logsFrame, setSelectedColumns);
+      if (newColumns) {
+        setColumns(newColumns);
+        if (logsFrame) {
+          updateUrlState(newColumns, logsFrame, setSelectedColumns);
+        }
       }
     },
     [logsFrame, setSelectedColumns]
@@ -57,8 +59,9 @@ export const TableColumnContextProvider = ({
 
   // When the parent component recalculates new columns on dataframe change, we need to update or the column UI will be stale!
   useEffect(() => {
-    setColumns(initialColumns);
-    console.log('TableColumnsContext set columns', initialColumns);
+    if (initialColumns) {
+      setColumns(initialColumns);
+    }
   }, [initialColumns]);
 
   return (

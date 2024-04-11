@@ -14,17 +14,18 @@ import {
 import { LineFilter } from '../LineFilter';
 import { getTablePanel } from '@/components/Explore/panels/tablePanel';
 import { VAR_FIELDS } from '@/utils/shared';
-import { AdHocVariableFilter } from '@grafana/data';
-import { isArray } from 'lodash';
+import { AdHocVariableFilter, TimeRange } from '@grafana/data';
+import { SelectedTableRow } from '@/components/Table/LogLineCellComponent';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
   panel?: SceneFlexLayout;
   tableColumns?: string[];
+  selectedLine?: SelectedTableRow;
 }
 
 export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
-  protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['tableColumns'] });
+  protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['tableColumns', 'selectedLine'] });
 
   constructor(state: Partial<LogsListSceneState>) {
     super({
@@ -45,23 +46,41 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   };
 
   getUrlState() {
-    return { tableColumns: this.state.tableColumns };
+    let stateUpdate: Partial<{
+      tableColumns?: string;
+      selectedLine?: string;
+    }> = {};
+    if (this.state.tableColumns?.length) {
+      stateUpdate.tableColumns = JSON.stringify(this.state.tableColumns);
+    }
+    if (this.state.selectedLine) {
+      stateUpdate.selectedLine = JSON.stringify(this.state.selectedLine);
+    }
+    return stateUpdate;
   }
 
   updateFromUrl(values: SceneObjectUrlValues) {
-    const stateUpdate: Partial<LogsListSceneState> = {
-      tableColumns: [],
-    };
-
-    if (
-      isArray(values.tableColumns) &&
-      values.tableColumns?.length &&
-      values.tableColumns !== this.state.tableColumns
-    ) {
-      stateUpdate.tableColumns = values.tableColumns;
+    console.log('updateFromUrl', values);
+    const stateUpdate: Partial<LogsListSceneState> = {};
+    // Selected table columns
+    if (typeof values.tableColumns === 'string') {
+      const tableColumns = JSON.parse(values.tableColumns);
+      if (tableColumns !== this.state.tableColumns) {
+        stateUpdate.tableColumns = tableColumns;
+      }
     }
 
-    this.setState(stateUpdate);
+    // Selected line
+    if (typeof values.selectedLine === 'string') {
+      const selectedLine = JSON.parse(values.selectedLine);
+      if (selectedLine !== this.state.selectedLine) {
+        stateUpdate.selectedLine = selectedLine;
+      }
+    }
+
+    if (stateUpdate) {
+      this.setState(stateUpdate);
+    }
   }
 
   public _onActivate() {
@@ -76,18 +95,22 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     if (!this.state.panel) {
       const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
       const filters = fields.state.filters;
+
+      const range = sceneGraph.getTimeRange(this).state.value;
+      // const selectedLine = this.state.selectedLine ??
+
       this.setState({
         panel: this.getVizPanel({
           filters,
           addFilter,
-          selectedColumns: this.state.tableColumns ?? [],
+          selectedColumns: this.state.tableColumns ?? null,
           setSelectedColumns: (cols) => {
-            console.log('incoming cols', cols);
-            console.log(this.state.tableColumns);
             this.setState({
               tableColumns: cols,
             });
           },
+          selectedLine: this.state.selectedLine,
+          timeRange: range,
         }),
       });
     }
@@ -114,16 +137,15 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
 export interface TablePanelProps {
   filters: AdHocVariableFilter[];
   addFilter: (filter: AdHocVariableFilter) => void;
-  selectedColumns: string[];
+  selectedColumns: string[] | null;
   setSelectedColumns: (cols: string[]) => void;
   //@todo need to get and set timerange in url
-  //@todo need to add selected line
+  selectedLine?: SelectedTableRow;
+  timeRange?: TimeRange;
 }
 
 export function buildLogsListScene() {
   return new SceneFlexItem({
-    body: new LogsListScene({
-      tableColumns: [],
-    }),
+    body: new LogsListScene({}),
   });
 }

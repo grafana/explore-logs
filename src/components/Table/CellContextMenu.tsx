@@ -4,7 +4,6 @@ import { css } from '@emotion/css';
 import { GrafanaTheme2, LinkModel } from '@grafana/data';
 import { Icon, useTheme2 } from '@grafana/ui';
 
-import { FilterOp } from '@/components/Context/QueryContext';
 import { useScenesTableContext } from '@/components/Context/ScenesTableContext';
 
 interface Props {
@@ -30,6 +29,11 @@ const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
     cursor: 'pointer',
   }),
 });
+
+export enum FilterOp {
+  Equal = '=',
+  NotEqual = '!=',
+}
 
 export const CellContextMenu = (props: Props) => {
   const theme = useTheme2();

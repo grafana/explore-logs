@@ -32,20 +32,17 @@ import {
 import { TableCellContextProvider } from '@/components/Context/TableCellContext';
 import { useTableColumnContext } from '@/components/Context/TableColumnsContext';
 import { TableHeaderContextProvider, useTableHeaderContext } from '@/components/Context/TableHeaderContext';
-import { useUrlParamsContext } from '@/components/Context/UrlParamsContext';
 import {
   ColumnSelectionDrawerWrap,
   useReorderColumn,
 } from '@/components/Table/ColumnSelection/ColumnSelectionDrawerWrap';
 import { DefaultCellComponent } from '@/components/Table/DefaultCellComponent';
-import { LogLineCellComponent, SelectedTableRow } from '@/components/Table/LogLineCellComponent';
+import { LogLineCellComponent } from '@/components/Table/LogLineCellComponent';
 import { LogsTableHeader, LogsTableHeaderProps } from '@/components/Table/LogsTableHeader';
 import { FieldName, FieldNameMeta, FieldNameMetaStore } from '@/components/Table/TableTypes';
 import { guessLogsFieldTypeForValue } from '@/components/Table/TableWrap';
-import { useDataSource } from '@/hooks/useDataSource';
 import { DATAPLANE_BODY_NAME, DATAPLANE_ID_NAME, LogsFrame } from '@/services/logsFrame';
-import { DerivedFieldConfig } from '@/services/lokiTypes';
-import { UrlParameterType } from '@/services/routing';
+import { useScenesTableContext } from '@/components/Context/ScenesTableContext';
 
 interface Props {
   height: number;
@@ -134,9 +131,7 @@ export const Table = (props: Props) => {
   const [tableFrame, setTableFrame] = useState<DataFrame | undefined>(undefined);
   const { columns, visible, setVisible, setFilteredColumns, setColumns } = useTableColumnContext();
   const reorderColumn = useReorderColumn();
-  const datasource = useDataSource();
-  const { getUrlParameter } = useUrlParamsContext();
-  const derivedFields: DerivedFieldConfig[] | undefined = datasource?.instanceSettings.jsonData.derivedFields;
+  const { selectedLine } = useScenesTableContext();
 
   const templateSrv = getTemplateSrv();
   const replace = useMemo(() => templateSrv.replace.bind(templateSrv), [templateSrv]);
@@ -191,7 +186,7 @@ export const Table = (props: Props) => {
               </TableHeaderContextProvider>
             ),
             width: getInitialFieldWidth(field, columns),
-            cellOptions: getTableCellOptions(field, labels, derivedFields),
+            cellOptions: getTableCellOptions(field, labels),
             ...field.config.custom,
           },
           // This sets the individual field value as filterable
@@ -257,9 +252,12 @@ export const Table = (props: Props) => {
     return <></>;
   }
 
-  const selectedLine: SelectedTableRow | null = getUrlParameter(UrlParameterType.SelectedLine);
   const idField = logsFrame.raw.fields.find((field) => field.name === DATAPLANE_ID_NAME);
   const lineIndex = idField?.values.findIndex((v) => v === selectedLine?.id);
+
+  console.log('selectedLine', selectedLine);
+  console.log('idField', idField);
+  console.log('lineIndex', lineIndex);
 
   return (
     <div className={styles.section}>
@@ -439,14 +437,11 @@ export function getExtractFieldsTransform(dataFrame: DataFrame) {
 
 function getTableCellOptions(
   field: Field,
-  labels: Labels[],
-  derivedFields: DerivedFieldConfig[] | undefined
+  labels: Labels[]
 ): TableCustomCellOptions | TableColoredBackgroundCellOptions {
   if (field.name === DATAPLANE_BODY_NAME) {
     return {
-      cellComponent: (props) => (
-        <LogLineCellComponent {...props} labels={labels[props.rowIndex]} derivedFields={derivedFields} />
-      ),
+      cellComponent: (props) => <LogLineCellComponent {...props} labels={labels[props.rowIndex]} />,
       type: TableCellDisplayMode.Custom,
     };
   }

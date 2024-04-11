@@ -19,7 +19,7 @@ interface LogLinePillProps {
   showColumns: () => void;
   rowIndex: number;
   frame: DataFrame;
-  originalFrame: DataFrame | null;
+  originalFrame: DataFrame | undefined;
   isDerivedField: boolean;
   value: string;
 }

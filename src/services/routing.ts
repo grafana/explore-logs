@@ -6,10 +6,11 @@ export function createAppUrl(urlParams?: URLSearchParams): string {
 
 export enum UrlParameterType {
   DatasourceId = 'dsUid',
-  TimeRange = 'range',
   Labels = 'selectedLabels',
   LogsVolumeLabel = 'logsVolumeLabel',
   SelectedLine = 'selectedLine',
+  From = 'from',
+  To = 'to',
 }
 
 export function setUrlParameter<T>(key: UrlParameterType, value: T, initalParams?: URLSearchParams): URLSearchParams {

@@ -7,13 +7,11 @@ import { ClipboardButton, CustomCellRendererProps, Icon, IconButton, Modal, useT
 
 import { useQueryContext } from '@/components/Context/QueryContext';
 import { useTableColumnContext } from '@/components/Context/TableColumnsContext';
-import { useTimeRangeContext } from '@/components/Context/TimeRangeContext';
-import { useUrlParamsContext } from '@/components/Context/UrlParamsContext';
 import { getBgColorForCell } from '@/components/Table/DefaultCellComponent';
 import { DefaultCellWrapComponent } from '@/components/Table/DefaultCellWrapComponent';
 import { LogLinePill } from '@/components/Table/LogLinePill';
-import { DerivedFieldConfig } from '@/services/lokiTypes';
-import { setUrlParameter, UrlParameterType } from '@/services/routing';
+import { UrlParameterType } from '@/services/routing';
+import { useScenesTableContext } from '@/components/Context/ScenesTableContext';
 
 export type SelectedTableRow = {
   row: number;
@@ -104,7 +102,6 @@ const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
 
 interface Props extends CustomCellRendererProps {
   labels: Labels;
-  derivedFields: DerivedFieldConfig[] | undefined;
 }
 
 const stopScroll = (id: React.MutableRefObject<HTMLDivElement | null>) => {
@@ -137,11 +134,9 @@ export const LogLineCellComponent = (props: Props) => {
   const bgColor = getBgColorForCell(props);
   const styles = getStyles(theme, bgColor);
   const { setColumns, columns, setVisible } = useTableColumnContext();
-  const { dataFrame: rawFrame, logsFrame } = useQueryContext();
-
+  const { logsFrame } = useQueryContext();
   const [isInspecting, setIsInspecting] = useState(false);
-  const { timeRange } = useTimeRangeContext();
-  const { searchParams } = useUrlParamsContext();
+  const { timeRange } = useScenesTableContext();
   const [isHover, setIsHover] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -206,14 +201,14 @@ export const LogLineCellComponent = (props: Props) => {
       )
       .map((label) => {
         const labelValue = labels[label];
-        const untransformedField = rawFrame?.fields.find((field) => field.name === label);
+        const untransformedField = logsFrame?.raw?.fields.find((field) => field.name === label);
         const rawValue = field?.values[props.rowIndex];
         const isDerived = !labelValue && !!rawValue;
 
         if (labelValue) {
           return (
             <LogLinePill
-              originalFrame={null}
+              originalFrame={undefined}
               field={field}
               columns={columns}
               rowIndex={props.rowIndex}
@@ -233,7 +228,7 @@ export const LogLineCellComponent = (props: Props) => {
           if (untransformedField?.type === FieldType.string && untransformedValue) {
             return (
               <LogLinePill
-                originalFrame={rawFrame}
+                originalFrame={logsFrame?.raw}
                 originalField={untransformedField}
                 field={field}
                 value={untransformedValue}
@@ -291,16 +286,19 @@ export const LogLineCellComponent = (props: Props) => {
               tabIndex={0}
               getText={() => {
                 // Does this force absolute?
+                const searchParams = new URLSearchParams(window.location.search);
                 if (searchParams) {
                   const selectedLine: SelectedTableRow = {
                     row: props.rowIndex,
                     id: logsFrame?.idField?.values[props.rowIndex],
                   };
 
-                  const urlSearchParams = setUrlParameter(UrlParameterType.TimeRange, timeRange, searchParams);
-                  const allParams = setUrlParameter(UrlParameterType.SelectedLine, selectedLine, urlSearchParams);
+                  // Stringifying the time range wraps in quotes, which breaks url
+                  searchParams.set(UrlParameterType.From, JSON.stringify(timeRange?.from).slice(1, -1));
+                  searchParams.set(UrlParameterType.To, JSON.stringify(timeRange?.to).slice(1, -1));
+                  searchParams.set(UrlParameterType.SelectedLine, JSON.stringify(selectedLine));
 
-                  return window.location.origin + window.location.pathname + '?' + allParams.toString();
+                  return window.location.origin + window.location.pathname + '?' + searchParams.toString();
                 }
                 return '';
               }}

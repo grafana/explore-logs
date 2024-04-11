@@ -1,7 +1,8 @@
-import { CustomTableFieldOptions, CustomTableOptions, CustomTablePanel } from '../panels/tablePanel';
+import { CustomTableFieldOptions, CustomTablePanel } from '../panels/tablePanel';
 import { PanelPlugin } from '@grafana/data';
+import { TablePanelProps } from '@/components/Explore/LogsByService/Tabs/LogsListScene';
 
-export const customTablePanel = new PanelPlugin<CustomTableOptions, CustomTableFieldOptions>(
+export const customTablePanel = new PanelPlugin<TablePanelProps, CustomTableFieldOptions>(
   CustomTablePanel
 ).useFieldConfig({
   useCustomConfig: (builder) => {
