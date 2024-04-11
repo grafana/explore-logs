@@ -33,7 +33,6 @@ const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
     padding-right: 30px;
     display: flex;
     align-items: flex-start;
-    position: relative;
     height: 100%;
     &::-webkit-scrollbar {
       display: none; /* Chrome, Safari and Opera */
