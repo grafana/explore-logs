@@ -61,7 +61,7 @@ const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
     borderRadius: '5px',
   }),
   iconWrapper: css({
-    height: '100%',
+    height: '35px',
     position: 'sticky',
     left: 0,
     display: 'flex',
