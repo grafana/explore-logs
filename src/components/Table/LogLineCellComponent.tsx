@@ -3,7 +3,7 @@ import { ScrollSyncPane } from 'react-scroll-sync';
 import { css } from '@emotion/css';
 
 import { FieldType, formattedValueToString, GrafanaTheme2, Labels } from '@grafana/data';
-import { ClipboardButton, CustomCellRendererProps, Icon, IconButton, Modal, useTheme2 } from '@grafana/ui';
+import { ClipboardButton, CustomCellRendererProps, IconButton, Modal, useTheme2 } from '@grafana/ui';
 
 import { useQueryContext } from '@/components/Context/QueryContext';
 import { useTableColumnContext } from '@/components/Context/TableColumnsContext';
@@ -12,6 +12,7 @@ import { DefaultCellWrapComponent } from '@/components/Table/DefaultCellWrapComp
 import { LogLinePill } from '@/components/Table/LogLinePill';
 import { UrlParameterType } from '@/services/routing';
 import { useScenesTableContext } from '@/components/Context/ScenesTableContext';
+import { Scroller } from '@/components/Table/Scroller';
 
 export type SelectedTableRow = {
   row: number;
@@ -46,6 +47,7 @@ const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
       position: absolute;
       left: 0;
       top: 0;
+      // Fade out text in last 10px to background color to add affordance to horiziontal scroll
       background: linear-gradient(
         to right,
         transparent calc(100% - 10px),
@@ -78,62 +80,11 @@ const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
       cursor: 'pointer',
     },
   }),
-  scroller: css`
-    position: absolute;
-    right: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 20px;
-    top: 32px;
-    margin-top: -24px;
-    // For some reason clicking on this button causes text to be selected in the following row
-    user-select: none;
-  `,
-  scrollLeft: css`
-    cursor: pointer;
-    background: ${theme.colors.background.primary};
-
-    &:hover {
-      background: ${theme.colors.background.secondary};
-    }
-  `,
-  scrollRight: css`
-    cursor: pointer;
-    background: ${theme.colors.background.primary};
-
-    &:hover {
-      background: ${theme.colors.background.secondary};
-    }
-  `,
 });
 
 interface Props extends CustomCellRendererProps {
   labels: Labels;
 }
-
-const stopScroll = (id: React.MutableRefObject<HTMLDivElement | null>) => {
-  id?.current?.scrollTo({
-    left: id.current?.scrollLeft,
-  });
-};
-
-const goLeft = (id: React.MutableRefObject<HTMLDivElement | null>) => {
-  id?.current?.scrollTo({
-    top: 0,
-    left: 0,
-    behavior: 'smooth',
-  });
-};
-
-const goRight = (id: React.MutableRefObject<HTMLDivElement | null>) => {
-  id?.current?.scrollTo({
-    top: 0,
-    left: id.current.scrollWidth,
-    behavior: 'smooth',
-  });
-};
 
 export const LogLineCellComponent = (props: Props) => {
   let value = props.value;
@@ -318,20 +269,7 @@ export const LogLineCellComponent = (props: Props) => {
           {/* @todo component*/}
           <>{renderLabels(props.labels, onClick)}</>
 
-          {isHover && (
-            <div className={styles.scroller}>
-              <span onPointerDown={() => goLeft(ref)} onPointerUp={() => stopScroll(ref)} className={styles.scrollLeft}>
-                <Icon name={'arrow-left'} />
-              </span>
-              <span
-                onPointerDown={() => goRight(ref)}
-                onPointerUp={() => stopScroll(ref)}
-                className={styles.scrollRight}
-              >
-                <Icon name={'arrow-right'} />
-              </span>
-            </div>
-          )}
+          {isHover && <Scroller scrollerRef={ref} />}
         </div>
       </ScrollSyncPane>
       {isInspecting && (
