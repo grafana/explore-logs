@@ -26,7 +26,6 @@ const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
     width: '20px',
   }),
   content: css`
-    margin-left: 7px;
     white-space: nowrap;
     overflow-x: auto;
     -ms-overflow-style: none; /* IE and Edge */
@@ -34,7 +33,8 @@ const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
     padding-right: 30px;
     display: flex;
     align-items: flex-start;
-
+    position: relative;
+    height: 100%;
     &::-webkit-scrollbar {
       display: none; /* Chrome, Safari and Opera */
     }
@@ -60,6 +60,16 @@ const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
     margin: 0,
     overflow: 'hidden',
     borderRadius: '5px',
+  }),
+  iconWrapper: css({
+    height: '100%',
+    position: 'sticky',
+    left: 0,
+    display: 'flex',
+    background: theme.colors.background.secondary,
+    padding: `0 ${theme.spacing(0.5)}`,
+    zIndex: 1,
+    boxShadow: theme.shadows.z2,
   }),
   inspect: css({
     padding: '5px 3px',
@@ -261,48 +271,50 @@ export const LogLineCellComponent = (props: Props) => {
     >
       <ScrollSyncPane innerRef={ref} group="horizontal">
         <div className={styles.content}>
-          <div className={styles.inspect}>
-            <IconButton
-              className={styles.inspectButton}
-              tooltip="View log line"
-              variant="secondary"
-              aria-label="View log line"
-              tooltipPlacement="top"
-              size="md"
-              name="eye"
-              onClick={() => setIsInspecting(true)}
-              tabIndex={0}
-            />
-          </div>
-          <div className={styles.inspect}>
-            <ClipboardButton
-              className={styles.clipboardButton}
-              icon="share-alt"
-              variant="secondary"
-              fill="text"
-              size="md"
-              tooltip="Copy link to logline"
-              tooltipPlacement="top"
-              tabIndex={0}
-              getText={() => {
-                // Does this force absolute?
-                const searchParams = new URLSearchParams(window.location.search);
-                if (searchParams) {
-                  const selectedLine: SelectedTableRow = {
-                    row: props.rowIndex,
-                    id: logsFrame?.idField?.values[props.rowIndex],
-                  };
+          <div className={styles.iconWrapper}>
+            <div className={styles.inspect}>
+              <IconButton
+                className={styles.inspectButton}
+                tooltip="View log line"
+                variant="secondary"
+                aria-label="View log line"
+                tooltipPlacement="top"
+                size="md"
+                name="eye"
+                onClick={() => setIsInspecting(true)}
+                tabIndex={0}
+              />
+            </div>
+            <div className={styles.inspect}>
+              <ClipboardButton
+                className={styles.clipboardButton}
+                icon="share-alt"
+                variant="secondary"
+                fill="text"
+                size="md"
+                tooltip="Copy link to logline"
+                tooltipPlacement="top"
+                tabIndex={0}
+                getText={() => {
+                  // Does this force absolute?
+                  const searchParams = new URLSearchParams(window.location.search);
+                  if (searchParams) {
+                    const selectedLine: SelectedTableRow = {
+                      row: props.rowIndex,
+                      id: logsFrame?.idField?.values[props.rowIndex],
+                    };
 
-                  // Stringifying the time range wraps in quotes, which breaks url
-                  searchParams.set(UrlParameterType.From, JSON.stringify(timeRange?.from).slice(1, -1));
-                  searchParams.set(UrlParameterType.To, JSON.stringify(timeRange?.to).slice(1, -1));
-                  searchParams.set(UrlParameterType.SelectedLine, JSON.stringify(selectedLine));
+                    // Stringifying the time range wraps in quotes, which breaks url
+                    searchParams.set(UrlParameterType.From, JSON.stringify(timeRange?.from).slice(1, -1));
+                    searchParams.set(UrlParameterType.To, JSON.stringify(timeRange?.to).slice(1, -1));
+                    searchParams.set(UrlParameterType.SelectedLine, JSON.stringify(selectedLine));
 
-                  return window.location.origin + window.location.pathname + '?' + searchParams.toString();
-                }
-                return '';
-              }}
-            />
+                    return window.location.origin + window.location.pathname + '?' + searchParams.toString();
+                  }
+                  return '';
+                }}
+              />
+            </div>
           </div>
           {/* @todo component*/}
           <>{renderLabels(props.labels, onClick)}</>
