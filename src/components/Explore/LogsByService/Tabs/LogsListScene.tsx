@@ -16,12 +16,17 @@ import { getTablePanel } from '@/components/Explore/panels/tablePanel';
 import { VAR_FIELDS } from '@/utils/shared';
 import { AdHocVariableFilter, TimeRange } from '@grafana/data';
 import { SelectedTableRow } from '@/components/Table/LogLineCellComponent';
+import { getLogsPanel } from '@/components/Explore/panels/logsPanel';
 
+export type LogsVisualizationType = 'logs' | 'table';
+// If we use the local storage key from explore the user will get more consistent UX
+const VISUALIZATION_TYPE_LOCALSTORAGE_KEY = 'grafana.explore.logs.visualisationType';
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
   panel?: SceneFlexLayout;
   tableColumns?: string[];
   selectedLine?: SelectedTableRow;
+  visualizationType: LogsVisualizationType;
 }
 
 export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
@@ -30,6 +35,8 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   constructor(state: Partial<LogsListSceneState>) {
     super({
       ...state,
+      visualizationType:
+        (localStorage.getItem(VISUALIZATION_TYPE_LOCALSTORAGE_KEY) as LogsVisualizationType) ?? 'table',
     });
 
     this.addActivationHandler(this._onActivate.bind(this));
@@ -94,25 +101,46 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     if (!this.state.panel) {
       const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
       const filters = fields.state.filters;
-
       const range = sceneGraph.getTimeRange(this).state.value;
-      // const selectedLine = this.state.selectedLine ??
-
-      this.setState({
-        panel: this.getVizPanel({
-          filters,
-          addFilter,
-          selectedColumns: this.state.tableColumns ?? null,
-          setSelectedColumns: (cols) => {
-            this.setState({
-              tableColumns: cols,
-            });
-          },
-          selectedLine: this.state.selectedLine,
-          timeRange: range,
-        }),
-      });
+      this.setPanelState(filters, addFilter, range);
     }
+
+    this.subscribeToState((newState, prevState) => {
+      if (newState.visualizationType !== prevState.visualizationType) {
+        const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
+        const range = sceneGraph.getTimeRange(this).state.value;
+        const filters = fields.state.filters;
+        this.setPanelState(filters, addFilter, range);
+      }
+    });
+  }
+
+  private setPanelState(
+    filters: AdHocVariableFilter[],
+    addFilter: (filter: AdHocVariableFilter) => void,
+    range: TimeRange
+  ) {
+    this.setState({
+      panel: this.getVizPanel({
+        filters,
+        addFilter,
+        selectedColumns: this.state.tableColumns ?? null,
+        setSelectedColumns: (cols) => {
+          this.setState({
+            tableColumns: cols,
+          });
+        },
+        selectedLine: this.state.selectedLine,
+        timeRange: range,
+      }),
+    });
+  }
+
+  private setVisualizationType(type: LogsVisualizationType) {
+    this.setState({
+      visualizationType: type,
+    });
+    localStorage.setItem(VISUALIZATION_TYPE_LOCALSTORAGE_KEY, type);
   }
 
   private getVizPanel(props: TablePanelProps) {
@@ -125,7 +153,16 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         }),
         new SceneFlexItem({
           height: 'calc(100vh - 220px)',
-          body: getTablePanel(props),
+          body:
+            this.state.visualizationType === 'table'
+              ? getTablePanel(props, {
+                  vizType: this.state.visualizationType,
+                  setVizType: this.setVisualizationType.bind(this),
+                })
+              : getLogsPanel({
+                  vizType: this.state.visualizationType,
+                  setVizType: this.setVisualizationType.bind(this),
+                }),
         }),
       ],
     });

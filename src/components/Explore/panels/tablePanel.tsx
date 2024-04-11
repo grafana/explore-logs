@@ -3,7 +3,9 @@ import React from 'react';
 import { TableProvider } from '@/components/Table/TableProvider';
 import { VizPanel } from '@grafana/scenes';
 import { ScenesTableContextProvider } from '@/components/Context/ScenesTableContext';
-import { TablePanelProps } from '@/components/Explore/LogsByService/Tabs/LogsListScene';
+import { LogsVisualizationType, TablePanelProps } from '@/components/Explore/LogsByService/Tabs/LogsListScene';
+import { RadioButtonGroup } from '@grafana/ui';
+import { css } from '@emotion/css';
 
 export interface CustomTableFieldOptions {}
 
@@ -21,17 +23,67 @@ export function CustomTablePanel(props: Props) {
   );
 }
 
-export const getTablePanel = (props: TablePanelProps) => {
+export function LogsPanelHeaderActions(props: {
+  vizType: LogsVisualizationType;
+  onChange: (type: LogsVisualizationType) => void;
+}) {
+  //@todo how to get theme?
+  const styles = getStyles();
+
+  return (
+    <div className={styles.visualisationType}>
+      <RadioButtonGroup
+        className={styles.visualisationTypeRadio}
+        options={[
+          {
+            label: 'Logs',
+            value: 'logs',
+            description: 'Show results in logs visualisation',
+          },
+          {
+            label: 'Table',
+            value: 'table',
+            description: 'Show results in table visualisation',
+          },
+        ]}
+        size="sm"
+        value={props.vizType}
+        onChange={props.onChange}
+      />
+    </div>
+  );
+}
+
+export interface VizTypeProps {
+  vizType: LogsVisualizationType;
+  setVizType: (type: LogsVisualizationType) => void;
+}
+
+export const getTablePanel = (tableProps: TablePanelProps, vizTypeProps: VizTypeProps) => {
   const search = new URLSearchParams(window.location.search);
   const columnsFromUrl = search.get('tableColumns');
-
   // Hack
-  if (columnsFromUrl && !props.selectedColumns?.length) {
-    props.selectedColumns = JSON.parse(columnsFromUrl);
+  if (columnsFromUrl && !tableProps.selectedColumns?.length) {
+    tableProps.selectedColumns = JSON.parse(columnsFromUrl);
   }
 
   return new VizPanel({
     pluginId: LOGS_TABLE_PLUGIN_ID,
-    options: props,
+    options: tableProps,
+    title: 'Logs',
+    headerActions: <LogsPanelHeaderActions vizType={vizTypeProps.vizType} onChange={vizTypeProps.setVizType} />,
   });
+};
+
+const getStyles = () => {
+  return {
+    visualisationType: css({
+      display: 'flex',
+      flex: '1',
+      justifyContent: 'space-between',
+    }),
+    visualisationTypeRadio: css({
+      margin: `0 0 0 8px`,
+    }),
+  };
 };
