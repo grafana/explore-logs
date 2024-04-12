@@ -183,10 +183,21 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       });
 
       queryRunner.getResultsStream().subscribe((result) => {
+        // Hide panels with errors
         if (result.data.errors && result.data.errors.length > 0) {
           const val = result.data.errors[0].refId!;
           this.hideField(val);
           gridItem.setState({ isHidden: true });
+        } else {
+          // Hide panels with single cardinality
+          if (result.data.series.length < 2) {
+            const val = result.data.series?.[0].refId;
+
+            if (val) {
+              this.hideField(val);
+              gridItem.setState({ isHidden: true });
+            }
+          }
         }
       });
 
@@ -208,7 +219,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         new SceneCSSGridLayout({
           templateColumns: '1fr',
           autoRows: '200px',
-          children: children.map(child => child.clone()),
+          children: children.map((child) => child.clone()),
         }),
       ],
     });
@@ -311,7 +322,7 @@ function buildQuery(tagKey: string) {
     editorMode: 'code',
     maxLines: 1000,
     intervalMs: 2000,
-    legendFormat: `{{${tagKey}}}`
+    legendFormat: `{{${tagKey}}}`,
   };
 }
 
@@ -351,7 +362,7 @@ function buildNormalLayout(variable: CustomVariable) {
               body: new SceneReactObject({
                 reactNode: <LoadingPlaceholder text="Loading..." />,
               }),
-            })
+            }),
           ],
           isLazy: true,
         }),
@@ -369,7 +380,7 @@ function buildNormalLayout(variable: CustomVariable) {
               body: new SceneReactObject({
                 reactNode: <LoadingPlaceholder text="Loading..." />,
               }),
-            })            
+            }),
           ],
           isLazy: true,
         }),
