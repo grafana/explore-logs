@@ -2,14 +2,14 @@ import { SceneCSSGridItem, SceneObjectBase, SceneObjectState, SceneQueryRunner }
 import { ALL_VARIABLE_VALUE } from '../../../../utils/shared';
 import { LoadingState, SelectableValue } from '@grafana/data';
 
-export interface AbstractBreakdownSceneState extends SceneObjectState {
+export interface GenericBreakdownSceneState extends SceneObjectState {
   labels: Array<SelectableValue<string>>;
   changeLabels?: (n: string[]) => void;
 }
 
-export abstract class AbstractBreakdownScene<
+export class GenericBreakdownScene<
   TState extends SceneObjectState = SceneObjectState
-> extends SceneObjectBase<AbstractBreakdownSceneState> {
+> extends SceneObjectBase<GenericBreakdownSceneState> {
   protected removeErrorsAndSingleCardinality(queryRunner: SceneQueryRunner, gridItem: SceneCSSGridItem) {
     queryRunner.getResultsStream().subscribe((result) => {
       if (result.data.errors && result.data.errors.length > 0) {

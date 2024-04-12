@@ -37,9 +37,9 @@ import { ByFrameRepeater } from '../../ByFrameRepeater';
 import { LayoutSwitcher } from '../../LayoutSwitcher';
 import { LogsByServiceScene } from '../LogsByServiceScene';
 import { getLayoutChild } from '../../../../utils/fields';
-import { AbstractBreakdownScene, AbstractBreakdownSceneState } from './AbstractBreakdownScene';
+import { GenericBreakdownScene, GenericBreakdownSceneState } from './GenericBreakdownScene';
 
-export interface FieldsBreakdownSceneState extends AbstractBreakdownSceneState {
+export interface FieldsBreakdownSceneState extends GenericBreakdownSceneState {
   body?: SceneObject;
   labels: Array<SelectableValue<string>>;
 
@@ -51,7 +51,7 @@ export interface FieldsBreakdownSceneState extends AbstractBreakdownSceneState {
   changeLabels?: (n: string[]) => void;
 }
 
-export class FieldsBreakdownScene extends AbstractBreakdownScene<FieldsBreakdownSceneState> {
+export class FieldsBreakdownScene extends GenericBreakdownScene<FieldsBreakdownSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
     variableNames: [VAR_FILTERS],
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),

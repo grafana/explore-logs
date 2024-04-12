@@ -39,9 +39,9 @@ import { LayoutSwitcher } from '../../LayoutSwitcher';
 import { getDatasource, getLabelOptions } from '../../../../utils/utils';
 import { getLayoutChild } from '../../../../utils/fields';
 import { DetectedLabelsResponse } from 'components/Explore/types';
-import { AbstractBreakdownScene, AbstractBreakdownSceneState } from './AbstractBreakdownScene';
+import { GenericBreakdownScene, GenericBreakdownSceneState } from './GenericBreakdownScene';
 
-export interface LabelBreakdownSceneState extends AbstractBreakdownSceneState {
+export interface LabelBreakdownSceneState extends GenericBreakdownSceneState {
   body?: SceneObject;
   labels: Array<SelectableValue<string>>;
   value?: string;
@@ -51,8 +51,7 @@ export interface LabelBreakdownSceneState extends AbstractBreakdownSceneState {
   changeLabels?: (n: string[]) => void;
 }
 
-//export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneState> {
-export class LabelBreakdownScene extends AbstractBreakdownScene<LabelBreakdownSceneState> {
+export class LabelBreakdownScene extends GenericBreakdownScene<LabelBreakdownSceneState> {
   labels: Array<SelectableValue<string>> = [];
   key?: string | undefined;
   protected _variableDependency = new VariableDependencyConfig(this, {
