@@ -66,6 +66,7 @@ export interface LogSceneState extends SceneObjectState {
   patterns?: LokiPattern[];
 
   detectedFieldsCount?: number;
+  labelsCount?: number;
 }
 
 export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
@@ -326,6 +327,7 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
         children: [
           ...body.state.children.slice(0, 2),
           actionViewDef.getScene((vals) => {
+            console.log('actionViewDef', actionViewDef, vals);
             if (actionViewDef.value === 'fields') {
               this.setState({ detectedFieldsCount: vals.length });
             }

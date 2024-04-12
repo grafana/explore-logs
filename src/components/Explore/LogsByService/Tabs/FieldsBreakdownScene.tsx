@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DataFrame, GrafanaTheme2, LoadingState, SelectableValue } from '@grafana/data';
+import { DataFrame, GrafanaTheme2, SelectableValue } from '@grafana/data';
 import {
   CustomVariable,
   PanelBuilders,
@@ -37,20 +37,21 @@ import { ByFrameRepeater } from '../../ByFrameRepeater';
 import { LayoutSwitcher } from '../../LayoutSwitcher';
 import { LogsByServiceScene } from '../LogsByServiceScene';
 import { getLayoutChild } from '../../../../utils/fields';
+import { AbstractBreakdownScene, AbstractBreakdownSceneState } from './AbstractBreakdownScene';
 
-export interface FieldsBreakdownSceneState extends SceneObjectState {
+export interface FieldsBreakdownSceneState extends AbstractBreakdownSceneState {
   body?: SceneObject;
-  fields: Array<SelectableValue<string>>;
+  labels: Array<SelectableValue<string>>;
 
   value?: string;
   loading?: boolean;
   error?: string;
   blockingMessage?: string;
 
-  changeFields?: (n: string[]) => void;
+  changeLabels?: (n: string[]) => void;
 }
 
-export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneState> {
+export class FieldsBreakdownScene extends AbstractBreakdownScene<FieldsBreakdownSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
     variableNames: [VAR_FILTERS],
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
@@ -63,13 +64,50 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         new SceneVariableSet({
           variables: [new CustomVariable({ name: VAR_FIELD_GROUP_BY, defaultToAll: true, includeAll: true })],
         }),
-      fields: state.fields ?? [],
+      labels: state.labels ?? [],
       loading: true,
       ...state,
     });
 
     this.addActivationHandler(this._onActivate.bind(this));
   }
+
+  public static Component = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
+    const { labels, body, loading, value, blockingMessage }: FieldsBreakdownSceneState = model.useState();
+    const styles = useStyles2(getStyles);
+
+    return (
+      <div className={styles.container}>
+        <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
+          <div className={styles.controls}>
+            {!loading && labels.length > 0 && (
+              <div className={styles.controlsLeft}>
+                <Field label="By field">
+                  <BreakdownLabelSelector options={labels} value={value} onChange={model.onChange} />
+                </Field>
+              </div>
+            )}
+            {body instanceof LayoutSwitcher && (
+              <div className={styles.controlsRight}>
+                <body.Selector model={body} />
+              </div>
+            )}
+          </div>
+          <div className={styles.content}>{body && <body.Component model={body} />}</div>
+        </StatusWrapper>
+      </div>
+    );
+  };
+
+  public onChange = (value?: string) => {
+    if (!value) {
+      return;
+    }
+
+    const variable = this.getVariable();
+
+    variable.changeValueTo(value);
+  };
 
   private _onActivate() {
     const variable = this.getVariable();
@@ -99,7 +137,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     const logsScene = sceneGraph.getAncestor(this, LogsByServiceScene);
 
     this.setState({
-      fields: [
+      labels: [
         { label: 'All', value: ALL_VARIABLE_VALUE },
         ...(logsScene.state.detectedFields?.map((f) => ({
           label: f,
@@ -126,14 +164,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this.updateBody(variable);
   }
 
-  private hideField(field: string) {
-    // TODO: store in localstorage that this field was hidden?
-    const fields = this.state.fields.filter((f) => f.value !== field);
-    this.setState({ fields });
-
-    this.state.changeFields?.(fields.filter((f) => f.value !== ALL_VARIABLE_VALUE).map((f) => f.value!));
-  }
-
   private async updateBody(variable: CustomVariable) {
     const stateUpdate: Partial<FieldsBreakdownSceneState> = {
       loading: false,
@@ -141,7 +171,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       blockingMessage: undefined,
     };
 
-    stateUpdate.body = variable.hasAllValue() ? this.buildAllLayout(this.state.fields) : buildNormalLayout(variable);
+    stateUpdate.body = variable.hasAllValue() ? this.buildAllLayout(this.state.labels) : buildNormalLayout(variable);
 
     this.setState(stateUpdate);
   }
@@ -182,24 +212,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         body: body.build(),
       });
 
-      queryRunner.getResultsStream().subscribe((result) => {
-        // Hide panels with errors
-        if (result.data.errors && result.data.errors.length > 0) {
-          const val = result.data.errors[0].refId!;
-          this.hideField(val);
-          gridItem.setState({ isHidden: true });
-        } else if (result.data.state === LoadingState.Done) {
-          // Hide panels with single cardinality
-          if (result.data.series.length < 2) {
-            const val = result.data.series?.[0]?.refId;
-            gridItem.setState({ isHidden: true });
-
-            if (val) {
-              this.hideField(val);
-            }
-          }
-        }
-      });
+      this.removeErrorsAndSingleCardinality(queryRunner, gridItem);
 
       children.push(gridItem);
     }
@@ -224,43 +237,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       ],
     });
   }
-
-  public onChange = (value?: string) => {
-    if (!value) {
-      return;
-    }
-
-    const variable = this.getVariable();
-
-    variable.changeValueTo(value);
-  };
-
-  public static Component = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
-    const { fields, body, loading, value, blockingMessage } = model.useState();
-    const styles = useStyles2(getStyles);
-
-    return (
-      <div className={styles.container}>
-        <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
-          <div className={styles.controls}>
-            {!loading && fields.length > 0 && (
-              <div className={styles.controlsLeft}>
-                <Field label="By field">
-                  <BreakdownLabelSelector options={fields} value={value} onChange={model.onChange} />
-                </Field>
-              </div>
-            )}
-            {body instanceof LayoutSwitcher && (
-              <div className={styles.controlsRight}>
-                <body.Selector model={body} />
-              </div>
-            )}
-          </div>
-          <div className={styles.content}>{body && <body.Component model={body} />}</div>
-        </StatusWrapper>
-      </div>
-    );
-  };
 }
 
 function getStyles(theme: GrafanaTheme2) {
@@ -410,24 +386,25 @@ function getLabelValue(frame: DataFrame) {
 
 export function buildFieldsBreakdownActionScene(changeFieldNumber: (n: string[]) => void) {
   return new SceneFlexItem({
-    body: new FieldsBreakdownScene({ changeFields: changeFieldNumber }),
+    body: new FieldsBreakdownScene({ changeLabels: changeFieldNumber }),
   });
 }
 
 interface SelectLabelActionState extends SceneObjectState {
   labelName: string;
 }
-export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
-  public onClick = () => {
-    getFieldsBreakdownSceneFor(this).onChange(this.state.labelName);
-  };
 
+export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
   public static Component = ({ model }: SceneComponentProps<AddToFiltersGraphAction>) => {
     return (
       <Button variant="secondary" size="sm" onClick={model.onClick}>
         Select
       </Button>
     );
+  };
+
+  public onClick = () => {
+    getFieldsBreakdownSceneFor(this).onChange(this.state.labelName);
   };
 }
 

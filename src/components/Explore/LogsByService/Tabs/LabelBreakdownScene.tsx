@@ -39,17 +39,22 @@ import { LayoutSwitcher } from '../../LayoutSwitcher';
 import { getDatasource, getLabelOptions } from '../../../../utils/utils';
 import { getLayoutChild } from '../../../../utils/fields';
 import { DetectedLabelsResponse } from 'components/Explore/types';
+import { AbstractBreakdownScene, AbstractBreakdownSceneState } from './AbstractBreakdownScene';
 
-export interface LabelBreakdownSceneState extends SceneObjectState {
+export interface LabelBreakdownSceneState extends AbstractBreakdownSceneState {
   body?: SceneObject;
   labels: Array<SelectableValue<string>>;
   value?: string;
   loading?: boolean;
   error?: string;
   blockingMessage?: string;
+  changeLabels?: (n: string[]) => void;
 }
 
-export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneState> {
+//export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneState> {
+export class LabelBreakdownScene extends AbstractBreakdownScene<LabelBreakdownSceneState> {
+  labels: Array<SelectableValue<string>> = [];
+  key?: string | undefined;
   protected _variableDependency = new VariableDependencyConfig(this, {
     variableNames: [VAR_FILTERS],
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
@@ -69,6 +74,43 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
 
     this.addActivationHandler(this._onActivate.bind(this));
   }
+
+  public static Component = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
+    const { labels, body, loading, value, blockingMessage }: LabelBreakdownSceneState = model.useState();
+    const styles = useStyles2(getStyles);
+
+    return (
+      <div className={styles.container}>
+        <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
+          <div className={styles.controls}>
+            {!loading && labels.length > 0 && (
+              <div className={styles.controlsLeft}>
+                <Field label="By label">
+                  <BreakdownLabelSelector options={labels} value={value} onChange={model.onChange} />
+                </Field>
+              </div>
+            )}
+            {body instanceof LayoutSwitcher && (
+              <div className={styles.controlsRight}>
+                <body.Selector model={body} />
+              </div>
+            )}
+          </div>
+          <div className={styles.content}>{body && <body.Component model={body} />}</div>
+        </StatusWrapper>
+      </div>
+    );
+  };
+
+  public onChange = (value?: string) => {
+    if (!value) {
+      return;
+    }
+
+    const variable = this.getVariable();
+
+    variable.changeValueTo(value);
+  };
 
   private _onActivate() {
     const variable = this.getVariable();
@@ -134,47 +176,71 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       blockingMessage: undefined,
     };
 
-    stateUpdate.body = variable.hasAllValue() ? buildAllLayout(options) : buildNormalLayout(variable);
+    stateUpdate.body = variable.hasAllValue() ? this.buildAllLayout(options) : buildNormalLayout(variable);
 
     this.setState(stateUpdate);
   }
 
-  public onChange = (value?: string) => {
-    if (!value) {
-      return;
+  private buildAllLayout(options: Array<SelectableValue<string>>) {
+    const children: SceneFlexItemLike[] = [];
+
+    for (const option of options) {
+      if (option.value === ALL_VARIABLE_VALUE) {
+        continue;
+      }
+
+      const queryRunner = new SceneQueryRunner({
+        maxDataPoints: 300,
+        datasource: explorationDS,
+        queries: [
+          {
+            refId: 'A',
+            expr: getExpr(option.value!),
+            legendFormat: `{{${option.label}}}`,
+          },
+        ],
+      });
+
+      const body = PanelBuilders.timeseries()
+        .setTitle(option.label!)
+        .setData(queryRunner)
+        .setHeaderActions(new SelectLabelAction({ labelName: String(option.value) }))
+        .setHeaderActions(new SelectLabelAction({ labelName: String(option.value) }))
+        .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
+        .setCustomFieldConfig('fillOpacity', 100)
+        .setCustomFieldConfig('lineWidth', 0)
+        .setCustomFieldConfig('pointSize', 0)
+        .setCustomFieldConfig('drawStyle', DrawStyle.Bars);
+
+      const gridItem = new SceneCSSGridItem({
+        body: body.build(),
+      });
+
+      this.removeErrorsAndSingleCardinality(queryRunner, gridItem);
+
+      children.push(gridItem);
     }
 
-    const variable = this.getVariable();
-
-    variable.changeValueTo(value);
-  };
-
-  public static Component = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
-    const { labels, body, loading, value, blockingMessage } = model.useState();
-    const styles = useStyles2(getStyles);
-
-    return (
-      <div className={styles.container}>
-        <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
-          <div className={styles.controls}>
-            {!loading && labels.length > 0 && (
-              <div className={styles.controlsLeft}>
-                <Field label="By label">
-                  <BreakdownLabelSelector options={labels} value={value} onChange={model.onChange} />
-                </Field>
-              </div>
-            )}
-            {body instanceof LayoutSwitcher && (
-              <div className={styles.controlsRight}>
-                <body.Selector model={body} />
-              </div>
-            )}
-          </div>
-          <div className={styles.content}>{body && <body.Component model={body} />}</div>
-        </StatusWrapper>
-      </div>
-    );
-  };
+    return new LayoutSwitcher({
+      options: [
+        { value: 'grid', label: 'Grid' },
+        { value: 'rows', label: 'Rows' },
+      ],
+      active: 'grid',
+      layouts: [
+        new SceneCSSGridLayout({
+          templateColumns: GRID_TEMPLATE_COLUMNS,
+          autoRows: '200px',
+          children: children,
+        }),
+        new SceneCSSGridLayout({
+          templateColumns: '1fr',
+          autoRows: '200px',
+          children: children.map((child) => child.clone()),
+        }),
+      ],
+    });
+  }
 }
 
 function getStyles(theme: GrafanaTheme2) {
@@ -211,64 +277,6 @@ function getStyles(theme: GrafanaTheme2) {
   };
 }
 
-export function buildAllLayout(options: Array<SelectableValue<string>>) {
-  const children: SceneFlexItemLike[] = [];
-
-  for (const option of options) {
-    if (option.value === ALL_VARIABLE_VALUE) {
-      continue;
-    }
-
-    children.push(
-      new SceneCSSGridItem({
-        body: PanelBuilders.timeseries()
-          .setTitle(option.label!)
-          .setData(
-            new SceneQueryRunner({
-              maxDataPoints: 300,
-              datasource: explorationDS,
-              queries: [
-                {
-                  refId: 'A',
-                  expr: getExpr(option.value!),
-                  legendFormat: `{{${option.label}}}`,
-                },
-              ],
-            })
-          )
-          .setHeaderActions(new SelectLabelAction({ labelName: String(option.value) }))
-          .setHeaderActions(new SelectLabelAction({ labelName: String(option.value) }))
-          .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
-          .setCustomFieldConfig('fillOpacity', 100)
-          .setCustomFieldConfig('lineWidth', 0)
-          .setCustomFieldConfig('pointSize', 0)
-          .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-          .build(),
-      })
-    );
-  }
-
-  return new LayoutSwitcher({
-    options: [
-      { value: 'grid', label: 'Grid' },
-      { value: 'rows', label: 'Rows' },
-    ],
-    active: 'grid',
-    layouts: [
-      new SceneCSSGridLayout({
-        templateColumns: GRID_TEMPLATE_COLUMNS,
-        autoRows: '200px',
-        children: children,
-      }),
-      new SceneCSSGridLayout({
-        templateColumns: '1fr',
-        autoRows: '200px',
-        children: children.map((child) => child.clone()),
-      }),
-    ],
-  });
-}
-
 function getExpr(tagKey: string) {
   return `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ [$__auto])) by (${tagKey})`;
 }
@@ -297,7 +305,7 @@ function buildNormalLayout(variable: CustomVariable) {
     .setCustomFieldConfig('lineWidth', 0)
     .setCustomFieldConfig('pointSize', 0)
     .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-    .setTitle(variable.getValueText())
+    .setTitle(variable.getValueText());
 
   const body = bodyOpts.build();
 
@@ -332,8 +340,8 @@ function buildNormalLayout(variable: CustomVariable) {
               body: new SceneReactObject({
                 reactNode: <LoadingPlaceholder text="Loading..." />,
               }),
-            })
-          ]
+            }),
+          ],
         }),
         getLayoutChild: getLayoutChild(
           getLabelValue,
@@ -349,7 +357,7 @@ function buildNormalLayout(variable: CustomVariable) {
               body: new SceneReactObject({
                 reactNode: <LoadingPlaceholder text="Loading..." />,
               }),
-            })
+            }),
           ],
         }),
         getLayoutChild: getLayoutChild(
@@ -376,26 +384,27 @@ function getLabelValue(frame: DataFrame) {
   return labels[keys[0]];
 }
 
-export function buildLabelBreakdownActionScene() {
+export function buildLabelBreakdownActionScene(changeLabelsNumber: (n: string[]) => void) {
   return new SceneFlexItem({
-    body: new LabelBreakdownScene({}),
+    body: new LabelBreakdownScene({ changeLabels: changeLabelsNumber }),
   });
 }
 
 interface SelectLabelActionState extends SceneObjectState {
   labelName: string;
 }
-export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
-  public onClick = () => {
-    getBreakdownSceneFor(this).onChange(this.state.labelName);
-  };
 
+export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
   public static Component = ({ model }: SceneComponentProps<AddToFiltersGraphAction>) => {
     return (
       <Button variant="secondary" size="sm" onClick={model.onClick}>
         Select
       </Button>
     );
+  };
+
+  public onClick = () => {
+    getBreakdownSceneFor(this).onChange(this.state.labelName);
   };
 }
 
