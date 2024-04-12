@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DataFrame, GrafanaTheme2, SelectableValue } from '@grafana/data';
+import { DataFrame, GrafanaTheme2, LoadingState, SelectableValue } from '@grafana/data';
 import {
   CustomVariable,
   PanelBuilders,
@@ -188,14 +188,14 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
           const val = result.data.errors[0].refId!;
           this.hideField(val);
           gridItem.setState({ isHidden: true });
-        } else {
+        } else if (result.data.state === LoadingState.Done) {
           // Hide panels with single cardinality
           if (result.data.series.length < 2) {
-            const val = result.data.series?.[0].refId;
+            const val = result.data.series?.[0]?.refId;
+            gridItem.setState({ isHidden: true });
 
             if (val) {
               this.hideField(val);
-              gridItem.setState({ isHidden: true });
             }
           }
         }
