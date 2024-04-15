@@ -46,7 +46,7 @@ import { buildPatternsScene } from './Tabs/PatternsScene';
 import { buildFieldsBreakdownActionScene } from './Tabs/FieldsBreakdownScene';
 import { Unsubscribable } from 'rxjs';
 import { getLiveTailControl } from 'utils/scenes';
-import { extractFields } from '../../../utils/fields';
+import { extractFields, getCardinalityMapFromLabels } from '../../../utils/fields';
 import { GoToExploreButton } from './GoToExploreButton';
 import { GiveFeedback } from './GiveFeedback';
 import { renderLogQLLabelFilters } from 'pages/Explore';
@@ -222,8 +222,16 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
     if (newState.data?.state === LoadingState.Done) {
       const frame = newState.data?.series[0];
       if (frame) {
+        const cardinalityMap = getCardinalityMapFromLabels(frame);
         const res = extractFields(frame);
-        const detectedFields = res.fields.filter((f) => !disabledFields.includes(f)).sort((a, b) => a.localeCompare(b));
+        const detectedFields = res.fields
+          .filter((f) => {
+            const labelCardinality = cardinalityMap.get(f);
+            return (
+              !disabledFields.includes(f) && labelCardinality?.valueSet.size && labelCardinality?.valueSet.size > 1
+            );
+          })
+          .sort((a, b) => a.localeCompare(b));
         if (JSON.stringify(detectedFields) !== JSON.stringify(this.state.detectedFields)) {
           this.setState({
             detectedFields,
