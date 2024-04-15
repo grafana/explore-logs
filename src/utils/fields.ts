@@ -26,7 +26,7 @@ export function extractFields(data: DataFrame) {
 type labelName = string;
 type labelValue = string;
 
-export function getCardinalityMapFromLabels(frame: DataFrame) {
+export function getCardinalityMapFromFrame(frame: DataFrame) {
   const labels = frame.fields.find((f) => f.name === 'labels')?.values as Labels[];
 
   const cardinalityMap = new Map<labelName, { valueSet: Set<labelValue>; maxLength: number }>();
