@@ -26,26 +26,34 @@ export function extractFields(data: DataFrame) {
 type labelName = string;
 type labelValue = string;
 
-export function getCardinalityMapFromFrame(frame: DataFrame) {
-  const labels = frame.fields.find((f) => f.name === 'labels')?.values as Labels[];
-
+/**
+ * Calculates the cardinality of labels on dataframe
+ * This function iterates through every label/value pair and organizes them into a map indexed by label name containing sets of values
+ * This can be a relatively expensive calculation, depending on the label set; especially if there are many unique labels
+ * Instantiating a new set on every iteration (else in inner loop) is the worst case behavior
+ * @param labels
+ */
+export function getLabelCardinalityMap(labels: Labels[] | undefined) {
   const cardinalityMap = new Map<labelName, { valueSet: Set<labelValue> }>();
-  for (let i = 0; i < labels.length; i++) {
-    const fieldLabels = labels[i];
-    const labelNames = Object.keys(fieldLabels);
-    for (let j = 0; j < labelNames.length; j++) {
-      const labelName = labelNames[j];
-      if (cardinalityMap.has(labelName)) {
-        const setObj = cardinalityMap.get(labelName);
-        const values = setObj?.valueSet;
 
-        if (values && !values?.has(fieldLabels[labelName])) {
-          values?.add(fieldLabels[labelName]);
+  if (labels) {
+    for (let i = 0; i < labels.length; i++) {
+      const fieldLabels = labels?.[i];
+      const labelNames = Object.keys(fieldLabels);
+      for (let j = 0; j < labelNames.length; j++) {
+        const labelName = labelNames[j];
+        if (cardinalityMap.has(labelName)) {
+          const setObj = cardinalityMap.get(labelName);
+          const values = setObj?.valueSet;
+
+          if (values && !values?.has(fieldLabels[labelName])) {
+            values?.add(fieldLabels[labelName]);
+          }
+        } else {
+          cardinalityMap.set(labelName, {
+            valueSet: new Set([fieldLabels[labelName]]),
+          });
         }
-      } else {
-        cardinalityMap.set(labelName, {
-          valueSet: new Set([fieldLabels[labelName]]),
-        });
       }
     }
   }
