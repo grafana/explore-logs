@@ -73,17 +73,17 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   private _onActivate() {
     const variable = this.getVariable();
 
-    // this._subs.add(
-    variable.subscribeToState((newState, oldState) => {
-      if (
-        newState.options !== oldState.options ||
-        newState.value !== oldState.value ||
-        newState.loading !== oldState.loading
-      ) {
-        this.updateBody(variable);
-      }
-    });
-    // );
+    this._subs.add(
+      variable.subscribeToState((newState, oldState) => {
+        if (
+          newState.options !== oldState.options ||
+          newState.value !== oldState.value ||
+          newState.loading !== oldState.loading
+        ) {
+          this.updateBody(variable);
+        }
+      })
+    );
 
     this.updateBody(variable);
 
