@@ -120,6 +120,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
         this.updateBody();
       }
 
+      // Updates topServicesToBeUsed when searchServicesString is changed
       if (newState.searchServicesString !== oldState.searchServicesString) {
         const services = this.state.topServices?.filter((service) =>
           service.toLowerCase().includes(newState.searchServicesString?.toLowerCase() ?? '')
@@ -167,6 +168,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
               .sort((a, b) => b[1] - a[1]) // Sort by value in descending order
               .map(([serviceName]) => serviceName); // Extract service names
 
+            // this is run to get initial services + and we are adding favorite services
             let topServicesToBeUsed = addFavoriteServices(
               topServices.slice(0, LIMIT_SERVICES),
               getFavoriteServicesFromStorage(ds)
