@@ -44,8 +44,6 @@ export class ByLabelRepeater extends SceneObjectBase<ByLabelRepeaterState> {
       if (data.state.data) {
         this.performRepeat(data.state.data);
       }
-
-      return () => this._subs.unsubscribe();
     });
   }
 

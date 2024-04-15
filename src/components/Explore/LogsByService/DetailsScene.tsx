@@ -42,8 +42,6 @@ export class DetailsScene extends SceneObjectBase<DetailsSceneState> {
     );
 
     this.updateBody();
-
-    return () => this._subs.unsubscribe();
   }
 
   getUrlState() {

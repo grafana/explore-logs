@@ -86,8 +86,6 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     );
 
     this.updateBody(variable);
-
-    return () => this._subs.unsubscribe();
   }
 
   private getVariable(): CustomVariable {
