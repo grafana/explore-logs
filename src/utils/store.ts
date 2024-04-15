@@ -33,7 +33,10 @@ export function addToFavoriteServicesInStorage(ds: any, serviceName: string) {
   if (!Array.isArray(services)) {
     services = [];
   }
-  services.push(serviceName);
+
+  if (!services.includes(serviceName)) {
+    services.push(serviceName);
+  }
   localStorage.setItem(key, JSON.stringify(services));
 }
 
