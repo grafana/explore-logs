@@ -29,16 +29,21 @@ export class DetailsScene extends SceneObjectBase<DetailsSceneState> {
     });
 
     this.addActivationHandler(this._onActivate.bind(this));
-    this.subscribeToState((newState, prevState) => {
-      if (newState.logId !== prevState.logId) {
-        this.updateBody();
-        this.publishEvent(new DetailsSceneUpdated(), true);
-      }
-    });
   }
 
   private _onActivate() {
+    this._subs.add(
+      this.subscribeToState((newState, prevState) => {
+        if (newState.logId !== prevState.logId) {
+          this.updateBody();
+          this.publishEvent(new DetailsSceneUpdated(), true);
+        }
+      })
+    );
+
     this.updateBody();
+
+    return () => this._subs.unsubscribe();
   }
 
   getUrlState() {

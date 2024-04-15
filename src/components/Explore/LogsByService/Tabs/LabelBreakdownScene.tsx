@@ -73,6 +73,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   private _onActivate() {
     const variable = this.getVariable();
 
+    // this._subs.add(
     variable.subscribeToState((newState, oldState) => {
       if (
         newState.options !== oldState.options ||
@@ -82,8 +83,11 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
         this.updateBody(variable);
       }
     });
+    // );
 
     this.updateBody(variable);
+
+    return () => this._subs.unsubscribe();
   }
 
   private getVariable(): CustomVariable {
@@ -297,7 +301,7 @@ function buildNormalLayout(variable: CustomVariable) {
     .setCustomFieldConfig('lineWidth', 0)
     .setCustomFieldConfig('pointSize', 0)
     .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-    .setTitle(variable.getValueText())
+    .setTitle(variable.getValueText());
 
   const body = bodyOpts.build();
 
@@ -332,8 +336,8 @@ function buildNormalLayout(variable: CustomVariable) {
               body: new SceneReactObject({
                 reactNode: <LoadingPlaceholder text="Loading..." />,
               }),
-            })
-          ]
+            }),
+          ],
         }),
         getLayoutChild: getLayoutChild(
           getLabelValue,
@@ -349,7 +353,7 @@ function buildNormalLayout(variable: CustomVariable) {
               body: new SceneReactObject({
                 reactNode: <LoadingPlaceholder text="Loading..." />,
               }),
-            })
+            }),
           ],
         }),
         getLayoutChild: getLayoutChild(

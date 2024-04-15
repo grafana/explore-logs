@@ -115,33 +115,36 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
     this.updateVariableHide(filtersVar);
 
     // Some scene elements publish this
-    this.subscribeToEvent(StartingPointSelectedEvent, this._handleStartingPointSelected.bind(this));
-    this.subscribeToEvent(DetailsSceneUpdated, this._handleDetailsSceneUpdated.bind(this));
+    this._subs.add(this.subscribeToEvent(StartingPointSelectedEvent, this._handleStartingPointSelected.bind(this)));
+    this._subs.add(this.subscribeToEvent(DetailsSceneUpdated, this._handleDetailsSceneUpdated.bind(this)));
 
-    this.subscribeToState((newState, oldState) => {
-      if (newState.showDetails !== oldState.showDetails) {
-        if (newState.showDetails) {
-          this.state.body.setState({ secondary: new DetailsScene(this.state.detailsScene?.state || {}) });
-          this.setState({ detailsScene: undefined });
-        } else {
-          this.state.body.setState({ secondary: undefined });
-          this.setState({ detailsScene: new DetailsScene({}) });
+    this._subs.add(
+      this.subscribeToState((newState, oldState) => {
+        if (newState.showDetails !== oldState.showDetails) {
+          if (newState.showDetails) {
+            this.state.body.setState({ secondary: new DetailsScene(this.state.detailsScene?.state || {}) });
+            this.setState({ detailsScene: undefined });
+          } else {
+            this.state.body.setState({ secondary: undefined });
+            this.setState({ detailsScene: new DetailsScene({}) });
+          }
         }
-      }
 
-      if (newState.mode !== oldState.mode) {
-        this.setState({ topScene: getTopScene(newState.mode) });
-      }
+        if (newState.mode !== oldState.mode) {
+          this.setState({ topScene: getTopScene(newState.mode) });
+        }
 
-      const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
-      if (patternsVariable instanceof CustomVariable) {
-        const patternsLine =
-          newState.patterns?.map((p) => `${p.type === 'include' ? '|> ' : '!> '} \`${p.pattern}\``)?.join(' ') || '';
-        patternsVariable.changeValueTo(patternsLine);
-      }
-    });
+        const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
+        if (patternsVariable instanceof CustomVariable) {
+          const patternsLine =
+            newState.patterns?.map((p) => `${p.type === 'include' ? '|> ' : '!> '} \`${p.pattern}\``)?.join(' ') || '';
+          patternsVariable.changeValueTo(patternsLine);
+        }
+      })
+    );
 
     return () => {
+      // this._subs.unsubscribe();
       getUrlSyncManager().cleanUp(this);
     };
   }
@@ -180,9 +183,11 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
   }
 
   private setupAutoHideVariable(variable: AdHocFiltersVariable) {
-    variable.subscribeToState(() => {
-      this.updateVariableHide(variable);
-    });
+    this._subs.add(
+      variable.subscribeToState(() => {
+        this.updateVariableHide(variable);
+      })
+    );
   }
 
   private updateVariableHide(variable: AdHocFiltersVariable) {
@@ -337,6 +342,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
     value: initialDS,
     pluginId: 'loki',
   });
+  // @todo unsub?
   dsVariable.subscribeToState((newState) => {
     const dsValue = `${newState.value}`;
     newState.value && localStorage.setItem(DS_LOCALSTORAGE_KEY, dsValue);
@@ -413,7 +419,7 @@ function getStyles(theme: GrafanaTheme2) {
         // The wrapper of each filter
         '& > div': {
           // the 'service_name' filter wrapper
-          '&:nth-child(2) > div':{
+          '&:nth-child(2) > div': {
             gap: 0,
           },
           // The actual inputs container
