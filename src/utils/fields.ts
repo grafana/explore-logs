@@ -29,29 +29,26 @@ type labelValue = string;
 export function getCardinalityMapFromFrame(frame: DataFrame) {
   const labels = frame.fields.find((f) => f.name === 'labels')?.values as Labels[];
 
-  const cardinalityMap = new Map<labelName, { valueSet: Set<labelValue>; maxLength: number }>();
-  labels.forEach((fieldLabels) => {
+  const cardinalityMap = new Map<labelName, { valueSet: Set<labelValue> }>();
+  for (let i = 0; i < labels.length; i++) {
+    const fieldLabels = labels[i];
     const labelNames = Object.keys(fieldLabels);
-    labelNames.forEach((labelName) => {
+    for (let j = 0; j < labelNames.length; j++) {
+      const labelName = labelNames[j];
       if (cardinalityMap.has(labelName)) {
         const setObj = cardinalityMap.get(labelName);
         const values = setObj?.valueSet;
-        const maxLength = setObj?.maxLength;
 
         if (values && !values?.has(fieldLabels[labelName])) {
           values?.add(fieldLabels[labelName]);
-          if (maxLength && fieldLabels[labelName].length > maxLength) {
-            cardinalityMap.set(labelName, { maxLength: fieldLabels[labelName].length, valueSet: values });
-          }
         }
       } else {
         cardinalityMap.set(labelName, {
-          maxLength: fieldLabels[labelName].length,
           valueSet: new Set([fieldLabels[labelName]]),
         });
       }
-    });
-  });
+    }
+  }
 
   return cardinalityMap;
 }
