@@ -33,8 +33,12 @@ export function addToFavoriteServicesInStorage(ds: any, serviceName: string) {
   if (!Array.isArray(services)) {
     services = [];
   }
-  services.push(serviceName);
-  localStorage.setItem(key, JSON.stringify(services));
+
+  // We want to put this service at the top of the list and remove any duplicates
+  const servicesToStore = services.filter((service: string) => service !== serviceName)
+  servicesToStore.unshift(serviceName);
+
+  localStorage.setItem(key, JSON.stringify(servicesToStore));
 }
 
 function createServicesLocalStorageKey(ds: string) {
