@@ -144,7 +144,7 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
     );
 
     return () => {
-      // this._subs.unsubscribe();
+      this._subs.unsubscribe();
       getUrlSyncManager().cleanUp(this);
     };
   }
