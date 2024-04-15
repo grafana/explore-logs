@@ -120,6 +120,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
         this.updateBody();
       }
 
+      // Updates topServicesToBeUsed when searchServicesString is changed
       if (newState.searchServicesString !== oldState.searchServicesString) {
         const services = this.state.topServices?.filter((service) =>
           service.toLowerCase().includes(newState.searchServicesString?.toLowerCase() ?? '')
@@ -167,6 +168,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
               .sort((a, b) => b[1] - a[1]) // Sort by value in descending order
               .map(([serviceName]) => serviceName); // Extract service names
 
+            // this is run to get initial services + and we are adding favorite services
             let topServicesToBeUsed = addFavoriteServices(
               topServices.slice(0, LIMIT_SERVICES),
               getFavoriteServicesFromStorage(ds)
@@ -209,15 +211,23 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
               transformations: [
                 () => (source: Observable<DataFrame[]>) => {
                   const favoriteServices = getFavoriteServicesFromStorage(ds);
+
                   return source.pipe(
                     map((data: DataFrame[]) => {
                       data.forEach((a) => reduceField({ field: a.fields[1], reducers: [ReducerID.max] }));
                       return data.sort((a, b) => {
-                        const aIsFavorite = favoriteServices.includes(a.fields?.[1]?.labels?.[SERVICE_NAME] ?? '');
-                        const bIsFavorite = favoriteServices.includes(b.fields?.[1]?.labels?.[SERVICE_NAME] ?? '');
+                        const aService = a.fields?.[1]?.labels?.[SERVICE_NAME] ?? '';
+                        const bService = b.fields?.[1]?.labels?.[SERVICE_NAME] ?? '';
+                        const aIsFavorite = favoriteServices.includes(aService);
+                        const bIsFavorite = favoriteServices.includes(bService);
                         if (aIsFavorite && !bIsFavorite) {
                           return -1;
                         } else if (!aIsFavorite && bIsFavorite) {
+                          return 1;
+                        } else if (aIsFavorite && bIsFavorite) {
+                          if(favoriteServices.indexOf(aService) < favoriteServices.indexOf(bService)) {
+                            return -1;
+                          } 
                           return 1;
                         } else {
                           return (b.fields[1].state?.calcs?.max || 0) - (a.fields[1].state?.calcs?.max || 0);
