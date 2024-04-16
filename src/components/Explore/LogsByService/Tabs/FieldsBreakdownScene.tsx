@@ -208,7 +208,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         new SceneCSSGridLayout({
           templateColumns: '1fr',
           autoRows: '200px',
-          children: children.map(child => child.clone()),
+          children: children.map((child) => child.clone()),
         }),
       ],
     });
@@ -300,7 +300,7 @@ function getExpr(field: string) {
       `(${field}) [$__auto]) by ()`
     );
   }
-  return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__  [$__auto]))`;
+  return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${field}!=""   [$__auto]))`;
 }
 
 function buildQuery(tagKey: string) {
@@ -311,7 +311,7 @@ function buildQuery(tagKey: string) {
     editorMode: 'code',
     maxLines: 1000,
     intervalMs: 2000,
-    legendFormat: `{{${tagKey}}}`
+    legendFormat: `{{${tagKey}}}`,
   };
 }
 
@@ -351,7 +351,7 @@ function buildNormalLayout(variable: CustomVariable) {
               body: new SceneReactObject({
                 reactNode: <LoadingPlaceholder text="Loading..." />,
               }),
-            })
+            }),
           ],
           isLazy: true,
         }),
@@ -369,7 +369,7 @@ function buildNormalLayout(variable: CustomVariable) {
               body: new SceneReactObject({
                 reactNode: <LoadingPlaceholder text="Loading..." />,
               }),
-            })            
+            }),
           ],
           isLazy: true,
         }),

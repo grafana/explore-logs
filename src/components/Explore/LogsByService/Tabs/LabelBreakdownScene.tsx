@@ -297,7 +297,7 @@ function buildNormalLayout(variable: CustomVariable) {
     .setCustomFieldConfig('lineWidth', 0)
     .setCustomFieldConfig('pointSize', 0)
     .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-    .setTitle(variable.getValueText())
+    .setTitle(variable.getValueText());
 
   const body = bodyOpts.build();
 
@@ -332,8 +332,8 @@ function buildNormalLayout(variable: CustomVariable) {
               body: new SceneReactObject({
                 reactNode: <LoadingPlaceholder text="Loading..." />,
               }),
-            })
-          ]
+            }),
+          ],
         }),
         getLayoutChild: getLayoutChild(
           getLabelValue,
@@ -349,7 +349,7 @@ function buildNormalLayout(variable: CustomVariable) {
               body: new SceneReactObject({
                 reactNode: <LoadingPlaceholder text="Loading..." />,
               }),
-            })
+            }),
           ],
         }),
         getLayoutChild: getLayoutChild(
