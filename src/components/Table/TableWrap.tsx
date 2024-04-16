@@ -45,6 +45,9 @@ export const TableWrap = (props: TableWrapProps) => {
 
   const timeZone = getTimeZone();
 
+  // This function is called when we want to grab the column names that are currently stored in the URL.
+  // If we rely on the state being passed in from scenes we have to force a re-render of the entire table, which reverts any state not stored in scenes (modals, menus, column widths, etc)
+  // So instead we have to grab the current columns directly from the URL. This could lead to bugs,
   const getColumnsFromProps = useCallback((fieldNames: FieldNameMetaStore) => {
     const searchParams = new URLSearchParams(location.search);
     const tableColumnsRaw = searchParams.get('tableColumns');
