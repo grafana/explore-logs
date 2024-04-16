@@ -175,6 +175,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
 export interface TablePanelProps {
   filters: AdHocVariableFilter[];
   addFilter: (filter: AdHocVariableFilter) => void;
+  //@todo need to rip out
   selectedColumns: string[] | null;
   setSelectedColumns: (cols: string[]) => void;
   //@todo need to get and set timerange in url

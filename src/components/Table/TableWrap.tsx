@@ -101,7 +101,7 @@ export const TableWrap = (props: TableWrapProps) => {
   return (
     <section className={styles.section}>
       <TableColumnContextProvider logsFrame={logsFrame} initialColumns={pendingLabelState}>
-        <Table logsFrame={logsFrame} timeZone={timeZone} height={height - 220} width={width - 50} labels={labels} />
+        <Table logsFrame={logsFrame} timeZone={timeZone} height={height - 270} width={width - 50} labels={labels} />
       </TableColumnContextProvider>
     </section>
   );
