@@ -430,9 +430,9 @@ function getInitialFieldWidth(
   const maxLength = Math.max(columnMeta.maxLength ?? 0, field.name.length);
 
   if (columnMeta.maxLength) {
-    // Super rough estimate, about 6.5px per char, and 80px for some padding and space for the header icons (remember when sorted a new icon is added to the table header).
+    // Super rough estimate, about 6.5px per char, and 95px for some space for the header icons (remember when sorted a new icon is added to the table header).
     // I guess to be a little tighter we could only add the extra padding IF the field name is longer then the longest value
-    return Math.min(Math.max(maxLength * 6.5 + 80, minWidth + extraPadding), maxWidth);
+    return Math.min(Math.max(maxLength * 6.5 + 95 + extraPadding, minWidth + extraPadding), maxWidth);
   }
 
   return undefined;
