@@ -130,8 +130,8 @@ export const Table = (props: Props) => {
                     hideColumn(props.field);
                   }}
                   openColumnManagementDrawer={() => setVisible(true)}
-                  slideLeft={(cols) => reorderColumn(cols, index, index + 1)}
-                  slideRight={(cols) => reorderColumn(cols, index, index - 1)}
+                  slideLeft={(cols: FieldNameMetaStore) => reorderColumn(cols, index, index + 1)}
+                  slideRight={(cols: FieldNameMetaStore) => reorderColumn(cols, index, index - 1)}
                 />
               </TableHeaderContextProvider>
             ),

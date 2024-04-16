@@ -15,7 +15,6 @@ import { useTheme2 } from '@grafana/ui';
 import { TableColumnContextProvider } from '@/components/Context/TableColumnsContext';
 import { Table } from '@/components/Table/Table';
 import { FieldNameMeta, FieldNameMetaStore } from '@/components/Table/TableTypes';
-import { useScenesTableContext } from '@/components/Context/ScenesTableContext';
 import { useQueryContext } from '@/components/Context/QueryContext';
 
 export type LogFrameLabels = Record<string, unknown>;
@@ -37,10 +36,6 @@ const getStyles = (theme: GrafanaTheme2) => ({
   }),
 });
 
-export interface TableUrlState {
-  visibleColumns?: Record<number, string>;
-}
-
 export const TableWrap = (props: TableWrapProps) => {
   const { logsFrame } = useQueryContext();
   const [width, height] = useWindowSize();
@@ -49,24 +44,23 @@ export const TableWrap = (props: TableWrapProps) => {
   const styles = getStyles(theme);
 
   const timeZone = getTimeZone();
-  const { selectedColumns } = useScenesTableContext();
 
-  const getColumnsFromProps = useCallback(
-    (fieldNames: FieldNameMetaStore) => {
-      const previouslySelected = selectedColumns;
-      if (previouslySelected?.length) {
-        Object.values(previouslySelected).forEach((key, index) => {
-          if (fieldNames[key]) {
-            fieldNames[key].active = true;
-            fieldNames[key].index = index;
-          }
-        });
-      }
+  const getColumnsFromProps = useCallback((fieldNames: FieldNameMetaStore) => {
+    const searchParams = new URLSearchParams(location.search);
+    const tableColumnsRaw = searchParams.get('tableColumns');
+    const tableColumnsFromUrl: string[] = tableColumnsRaw ? JSON.parse(tableColumnsRaw) : [];
+    const previouslySelected = tableColumnsFromUrl;
+    if (previouslySelected?.length) {
+      Object.values(previouslySelected).forEach((key, index) => {
+        if (fieldNames[key]) {
+          fieldNames[key].active = true;
+          fieldNames[key].index = index;
+        }
+      });
+    }
 
-      return fieldNames;
-    },
-    [selectedColumns]
-  );
+    return fieldNames;
+  }, []);
 
   // If the data frame is empty, there's nothing to viz, it could mean the user has unselected all columns
   if (!logsFrame || !logsFrame.raw.length) {
