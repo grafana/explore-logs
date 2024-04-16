@@ -9,9 +9,6 @@ import { DATAPLANE_BODY_NAME } from '@/services/logsFrame';
 
 export interface LogsTableHeaderProps extends PropsWithChildren<CustomHeaderRendererProps> {
   fieldIndex: number;
-  // setShowPopover: (show: boolean) => void
-  // showPopover: boolean
-  // onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
 }
 //@todo delete in g11
 export interface CustomHeaderRendererProps {
