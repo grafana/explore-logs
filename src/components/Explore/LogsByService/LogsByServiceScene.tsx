@@ -229,7 +229,7 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
             detectedFields,
           });
         }
-        const newType = res.type ? ` | ${res.type}` : '';
+        const newType = (res.type ? ` | ${res.type}` : '') + ` | err!=""`;
         if (variable.getValue() !== newType) {
           variable.changeValueTo(newType);
         }
