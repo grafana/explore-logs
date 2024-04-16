@@ -38,7 +38,7 @@ import {
 } from '@/components/Table/ColumnSelection/ColumnSelectionDrawerWrap';
 import { DefaultCellComponent } from '@/components/Table/DefaultCellComponent';
 import { LogLineCellComponent } from '@/components/Table/LogLineCellComponent';
-import { LogsTableHeader, LogsTableHeaderProps } from '@/components/Table/LogsTableHeader';
+import { CustomHeaderRendererProps, LogsTableHeader, LogsTableHeaderProps } from '@/components/Table/LogsTableHeader';
 import { FieldName, FieldNameMeta, FieldNameMetaStore } from '@/components/Table/TableTypes';
 import { guessLogsFieldTypeForValue } from '@/components/Table/TableWrap';
 import { DATAPLANE_BODY_NAME, DATAPLANE_ID_NAME, LogsFrame } from '@/services/logsFrame';
@@ -65,7 +65,7 @@ const getStyles = (theme: GrafanaTheme2) => ({
 });
 
 function LogsTableHeaderWrap(props: {
-  props: LogsTableHeaderProps;
+  headerProps: LogsTableHeaderProps;
   removeColumn: () => void;
   openColumnManagementDrawer: () => void;
 
@@ -77,7 +77,7 @@ function LogsTableHeaderWrap(props: {
   const { columns } = useTableColumnContext();
 
   return (
-    <LogsTableHeader {...props.props} myProp={'hallo'}>
+    <LogsTableHeader {...props.headerProps}>
       <div>
         <a onClick={props.removeColumn}>
           <Icon name={'minus'} size={'xl'} />
@@ -175,10 +175,10 @@ export const Table = (props: Props) => {
           custom: {
             inspect: true,
             filterable: true, // This sets the columns to be filterable
-            headerComponent: (props: LogsTableHeaderProps) => (
+            headerComponent: (props: CustomHeaderRendererProps) => (
               <TableHeaderContextProvider>
                 <LogsTableHeaderWrap
-                  props={props}
+                  headerProps={{ ...props, fieldIndex: index }}
                   removeColumn={() => {
                     hideColumn(props.field);
                   }}

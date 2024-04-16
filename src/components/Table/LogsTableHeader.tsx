@@ -5,18 +5,21 @@ import { Field, GrafanaTheme2 } from '@grafana/data';
 import { ClickOutsideWrapper, Icon, Popover, useTheme2 } from '@grafana/ui';
 
 import { useTableHeaderContext } from '@/components/Context/TableHeaderContext';
+import { DATAPLANE_BODY_NAME } from '@/services/logsFrame';
 
-//@ts-ignore defined in g11
 export interface LogsTableHeaderProps extends PropsWithChildren<CustomHeaderRendererProps> {
-  myProp: string;
-  field: Field;
-  defaultContent: React.ReactNode;
+  fieldIndex: number;
   // setShowPopover: (show: boolean) => void
   // showPopover: boolean
   // onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
 }
+//@todo delete in g11
+export interface CustomHeaderRendererProps {
+  field: Field;
+  defaultContent: React.ReactNode;
+}
 
-const getStyles = (theme: GrafanaTheme2) => ({
+const getStyles = (theme: GrafanaTheme2, isFirstColumn: boolean, isLine: boolean) => ({
   tableHeaderMenu: css({
     label: 'tableHeaderMenu',
     width: '100%',
@@ -37,17 +40,32 @@ const getStyles = (theme: GrafanaTheme2) => ({
     border: 'none',
     padding: 0,
   }),
+  wrapper: css({
+    display: 'flex',
+    marginLeft: isFirstColumn ? '50px' : 0,
+    // Body has extra padding then other columns
+    width: isLine ? 'calc(100% + 6px)' : '100%',
+
+    // Hack to show a visible resize indicator, despite 6px of padding on the header in grafana/table
+    borderRight: `1px solid ${theme.colors.border.weak}`,
+    marginRight: '-6px',
+  }),
+  defaultContentWrapper: css({
+    borderLeft: isFirstColumn ? `1px solid ${theme.colors.border.weak}` : 'none',
+    paddingLeft: isFirstColumn ? '6px' : 0,
+    display: 'flex',
+  }),
 });
 
 export const LogsTableHeader = (props: LogsTableHeaderProps) => {
   const { setHeaderMenuActive, isHeaderMenuActive } = useTableHeaderContext();
   const referenceElement = useRef<HTMLButtonElement | null>(null);
   const theme = useTheme2();
-  const styles = getStyles(theme);
+  const styles = getStyles(theme, props.fieldIndex === 0, props.field.name === DATAPLANE_BODY_NAME);
 
   return (
-    <span style={{ display: 'flex' }}>
-      {props.defaultContent}
+    <span className={styles.wrapper}>
+      <span className={styles.defaultContentWrapper}>{props.defaultContent}</span>
       <button
         className={styles.button}
         ref={referenceElement}
