@@ -42,7 +42,7 @@ const getStyles = (theme: GrafanaTheme2, isFirstColumn: boolean, isLine: boolean
   }),
   wrapper: css({
     display: 'flex',
-    marginLeft: isFirstColumn ? '50px' : 0,
+    marginLeft: isFirstColumn ? '56px' : '6px',
     // Body has extra padding then other columns
     width: isLine ? 'calc(100% + 6px)' : '100%',
 
@@ -52,7 +52,8 @@ const getStyles = (theme: GrafanaTheme2, isFirstColumn: boolean, isLine: boolean
   }),
   defaultContentWrapper: css({
     borderLeft: isFirstColumn ? `1px solid ${theme.colors.border.weak}` : 'none',
-    paddingLeft: isFirstColumn ? '6px' : 0,
+    marginLeft: isFirstColumn ? '-6px' : 0,
+    paddingLeft: isFirstColumn ? '12px' : 0,
     display: 'flex',
   }),
 });

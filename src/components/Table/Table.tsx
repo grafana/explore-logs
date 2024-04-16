@@ -20,29 +20,23 @@ import {
 } from '@grafana/data';
 import { getTemplateSrv } from '@grafana/runtime';
 import { TableCellHeight, TableColoredBackgroundCellOptions } from '@grafana/schema';
-import {
-  Drawer,
-  Icon,
-  Table as GrafanaTable,
-  TableCellDisplayMode,
-  TableCustomCellOptions,
-  useTheme2,
-} from '@grafana/ui';
+import { Drawer, Table as GrafanaTable, TableCellDisplayMode, TableCustomCellOptions, useTheme2 } from '@grafana/ui';
 
 import { TableCellContextProvider } from '@/components/Context/TableCellContext';
 import { useTableColumnContext } from '@/components/Context/TableColumnsContext';
-import { TableHeaderContextProvider, useTableHeaderContext } from '@/components/Context/TableHeaderContext';
+import { TableHeaderContextProvider } from '@/components/Context/TableHeaderContext';
 import {
   ColumnSelectionDrawerWrap,
   getReorderColumn,
 } from '@/components/Table/ColumnSelection/ColumnSelectionDrawerWrap';
 import { DefaultCellComponent } from '@/components/Table/DefaultCellComponent';
 import { LogLineCellComponent } from '@/components/Table/LogLineCellComponent';
-import { CustomHeaderRendererProps, LogsTableHeader, LogsTableHeaderProps } from '@/components/Table/LogsTableHeader';
+import { CustomHeaderRendererProps } from '@/components/Table/LogsTableHeader';
 import { FieldName, FieldNameMeta, FieldNameMetaStore } from '@/components/Table/TableTypes';
 import { guessLogsFieldTypeForValue } from '@/components/Table/TableWrap';
 import { DATAPLANE_BODY_NAME, DATAPLANE_ID_NAME, LogsFrame } from '@/services/logsFrame';
 import { useScenesTableContext } from '@/components/Context/ScenesTableContext';
+import { LogsTableHeaderWrap } from '@/components/Table/LogsTableHeaderWrap';
 
 interface Props {
   height: number;
@@ -63,53 +57,6 @@ const getStyles = (theme: GrafanaTheme2) => ({
     },
   }),
 });
-
-function LogsTableHeaderWrap(props: {
-  headerProps: LogsTableHeaderProps;
-  removeColumn: () => void;
-  openColumnManagementDrawer: () => void;
-
-  // Moves the current column forward or backward one index
-  slideLeft: (cols: FieldNameMetaStore) => void;
-  slideRight: (cols: FieldNameMetaStore) => void;
-}) {
-  const { setHeaderMenuActive } = useTableHeaderContext();
-  const { columns } = useTableColumnContext();
-
-  return (
-    <LogsTableHeader {...props.headerProps}>
-      <div>
-        <a onClick={props.removeColumn}>
-          <Icon name={'minus'} size={'xl'} />
-          Remove column
-        </a>
-      </div>
-      <div>
-        <a
-          onClick={() => {
-            props.openColumnManagementDrawer();
-            setHeaderMenuActive(false);
-          }}
-        >
-          <Icon name={'columns'} size={'xl'} />
-          Manage columns
-        </a>
-      </div>
-      <div>
-        <a onClick={() => props.slideLeft(columns)}>
-          <Icon name={'forward'} size={'xl'} />
-          Move forward
-        </a>
-      </div>
-      <div>
-        <a onClick={() => props.slideRight(columns)}>
-          <Icon name={'backward'} size={'xl'} />
-          Move backward
-        </a>
-      </div>
-    </LogsTableHeader>
-  );
-}
 
 function TableAndContext(props: { data: DataFrame; height: number; width: number; selectedLine?: number }) {
   return (
