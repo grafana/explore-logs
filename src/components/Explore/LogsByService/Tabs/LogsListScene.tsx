@@ -105,14 +105,16 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       this.setPanelState(filters, addFilter, range);
     }
 
-    this.subscribeToState((newState, prevState) => {
-      if (newState.visualizationType !== prevState.visualizationType) {
-        const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
-        const range = sceneGraph.getTimeRange(this).state.value;
-        const filters = fields.state.filters;
-        this.setPanelState(filters, addFilter, range);
-      }
-    });
+    this._subs.add(
+      this.subscribeToState((newState, prevState) => {
+        if (newState.visualizationType !== prevState.visualizationType) {
+          const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
+          const range = sceneGraph.getTimeRange(this).state.value;
+          const filters = fields.state.filters;
+          this.setPanelState(filters, addFilter, range);
+        }
+      })
+    );
   }
 
   private setPanelState(

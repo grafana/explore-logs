@@ -77,16 +77,14 @@ export function LineActionIcons(props: { rowIndex: number; value: unknown }) {
             getText={() => {
               // Does this force absolute?
               const searchParams = new URLSearchParams(window.location.search);
-              if (searchParams) {
+              if (searchParams && timeRange) {
                 const selectedLine: SelectedTableRow = {
                   row: props.rowIndex,
                   id: logId,
                 };
 
-                // @todo clean this up
-                // Stringifying the time range wraps in quotes, which breaks url
-                searchParams.set(UrlParameterType.From, JSON.stringify(timeRange?.from).slice(1, -1));
-                searchParams.set(UrlParameterType.To, JSON.stringify(timeRange?.to).slice(1, -1));
+                searchParams.set(UrlParameterType.From, timeRange.from.toISOString());
+                searchParams.set(UrlParameterType.To, timeRange.to.toISOString());
                 searchParams.set(UrlParameterType.SelectedLine, JSON.stringify(selectedLine));
 
                 return window.location.origin + window.location.pathname + '?' + searchParams.toString();
