@@ -188,8 +188,8 @@ export const Table = (props: Props) => {
                 />
               </TableHeaderContextProvider>
             ),
-            width: getInitialFieldWidth(field, columns, width, frameWithOverrides.fields.length),
-            cellOptions: getTableCellOptions(field, labels),
+            width: getInitialFieldWidth(field, index, columns, width, frameWithOverrides.fields.length),
+            cellOptions: getTableCellOptions(field, index, labels),
             ...field.config.custom,
           },
           // This sets the individual field value as filterable
@@ -436,23 +436,27 @@ export function getExtractFieldsTransform(dataFrame: DataFrame) {
 
 function getTableCellOptions(
   field: Field,
+  fieldIndex: number,
   labels: Labels[]
 ): TableCustomCellOptions | TableColoredBackgroundCellOptions {
   if (field.name === DATAPLANE_BODY_NAME) {
     return {
-      cellComponent: (props) => <LogLineCellComponent {...props} labels={labels[props.rowIndex]} />,
+      cellComponent: (props) => (
+        <LogLineCellComponent {...props} fieldIndex={fieldIndex} labels={labels[props.rowIndex]} />
+      ),
       type: TableCellDisplayMode.Custom,
     };
   }
 
   return {
-    cellComponent: DefaultCellComponent,
+    cellComponent: (props) => <DefaultCellComponent {...props} fieldIndex={fieldIndex} />,
     type: TableCellDisplayMode.Custom,
   };
 }
 
 function getInitialFieldWidth(
   field: Field,
+  fieldIndex: number,
   columns: FieldNameMetaStore,
   tableWidth: number,
   numberOfFields: number
@@ -462,9 +466,12 @@ function getInitialFieldWidth(
   // Columns shouldn't take more than half the available space, unless there are only 2 columns
   const maxWidth = numberOfFields <= 2 ? tableWidth : Math.min(tableWidth / 2);
 
+  // First field gets icons, and a little extra width
+  const extraPadding = fieldIndex === 0 ? 50 : 0;
+
   // Time fields have consistent widths
   if (field.type === FieldType.time) {
-    return 200;
+    return 200 + extraPadding;
   }
 
   const columnMeta = columns[field.name];
@@ -474,10 +481,11 @@ function getInitialFieldWidth(
   }
 
   const maxLength = Math.max(columnMeta.maxLength ?? 0, field.name.length);
+
   if (columnMeta.maxLength) {
-    // Super rough estimate, about 6.5px per char, and 50px for some padding and space for the header icons.
+    // Super rough estimate, about 6.5px per char, and 80px for some padding and space for the header icons (remember when sorted a new icon is added to the table header).
     // I guess to be a little tighter we could only add the extra padding IF the field name is longer then the longest value
-    return Math.min(Math.max(maxLength * 6.5 + 50, minWidth), maxWidth);
+    return Math.min(Math.max(maxLength * 6.5 + 80, minWidth + extraPadding), maxWidth);
   }
 
   return undefined;

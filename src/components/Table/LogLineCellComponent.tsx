@@ -1,97 +1,26 @@
 import React, { useRef, useState } from 'react';
 import { ScrollSyncPane } from 'react-scroll-sync';
-import { css } from '@emotion/css';
 
 import { FieldType, formattedValueToString, GrafanaTheme2, Labels } from '@grafana/data';
-import { ClipboardButton, CustomCellRendererProps, IconButton, Modal, useTheme2 } from '@grafana/ui';
+import { CustomCellRendererProps, useTheme2 } from '@grafana/ui';
 
 import { useQueryContext } from '@/components/Context/QueryContext';
 import { useTableColumnContext } from '@/components/Context/TableColumnsContext';
 import { getBgColorForCell } from '@/components/Table/DefaultCellComponent';
 import { DefaultCellWrapComponent } from '@/components/Table/DefaultCellWrapComponent';
 import { LogLinePill } from '@/components/Table/LogLinePill';
-import { UrlParameterType } from '@/services/routing';
-import { useScenesTableContext } from '@/components/Context/ScenesTableContext';
 import { Scroller } from '@/components/Table/Scroller';
+import { LineActionIcons } from '@/components/Table/LineActionIcons';
+import { css } from '@emotion/css';
 
 export type SelectedTableRow = {
   row: number;
   id: string;
 };
 
-const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
-  rawLogLine: css({
-    fontFamily: theme.typography.fontFamilyMonospace,
-    height: '35px',
-    lineHeight: '35px',
-    paddingRight: theme.spacing(1.5),
-    paddingLeft: theme.spacing(1),
-    fontSize: theme.typography.bodySmall.fontSize,
-  }),
-  clipboardButton: css({
-    padding: 0,
-    height: '100%',
-    lineHeight: '1',
-    width: '20px',
-  }),
-  content: css`
-    white-space: nowrap;
-    overflow-x: auto;
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
-    padding-right: 30px;
-    display: flex;
-    align-items: flex-start;
-    height: 100%;
-    &::-webkit-scrollbar {
-      display: none; /* Chrome, Safari and Opera */
-    }
-
-    &:after {
-      pointer-events: none;
-      content: '';
-      width: 100%;
-      height: 100%;
-      position: absolute;
-      left: 0;
-      top: 0;
-      // Fade out text in last 10px to background color to add affordance to horiziontal scroll
-      background: linear-gradient(
-        to right,
-        transparent calc(100% - 10px),
-        ${bgColor ?? theme.colors.background.primary}
-      );
-    }
-  `,
-  inspectButton: css({
-    display: 'inline-flex',
-    verticalAlign: 'middle',
-    margin: 0,
-    overflow: 'hidden',
-    borderRadius: '5px',
-  }),
-  iconWrapper: css({
-    height: '35px',
-    position: 'sticky',
-    left: 0,
-    display: 'flex',
-    background: theme.colors.background.secondary,
-    padding: `0 ${theme.spacing(0.5)}`,
-    zIndex: 1,
-    boxShadow: theme.shadows.z2,
-  }),
-  inspect: css({
-    padding: '5px 3px',
-
-    '&:hover': {
-      color: theme.colors.text.link,
-      cursor: 'pointer',
-    },
-  }),
-});
-
 interface Props extends CustomCellRendererProps {
   labels: Labels;
+  fieldIndex: number;
 }
 
 export const LogLineCellComponent = (props: Props) => {
@@ -103,8 +32,6 @@ export const LogLineCellComponent = (props: Props) => {
   const styles = getStyles(theme, bgColor);
   const { setColumns, columns, setVisible } = useTableColumnContext();
   const { logsFrame } = useQueryContext();
-  const [isInspecting, setIsInspecting] = useState(false);
-  const { timeRange } = useScenesTableContext();
   const [isHover, setIsHover] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -238,67 +165,54 @@ export const LogLineCellComponent = (props: Props) => {
     >
       <ScrollSyncPane innerRef={ref} group="horizontal">
         <div className={styles.content}>
-          <div className={styles.iconWrapper}>
-            <div className={styles.inspect}>
-              <IconButton
-                className={styles.inspectButton}
-                tooltip="View log line"
-                variant="secondary"
-                aria-label="View log line"
-                tooltipPlacement="top"
-                size="md"
-                name="eye"
-                onClick={() => setIsInspecting(true)}
-                tabIndex={0}
-              />
-            </div>
-            <div className={styles.inspect}>
-              <ClipboardButton
-                className={styles.clipboardButton}
-                icon="share-alt"
-                variant="secondary"
-                fill="text"
-                size="md"
-                tooltip="Copy link to logline"
-                tooltipPlacement="top"
-                tabIndex={0}
-                getText={() => {
-                  // Does this force absolute?
-                  const searchParams = new URLSearchParams(window.location.search);
-                  if (searchParams) {
-                    const selectedLine: SelectedTableRow = {
-                      row: props.rowIndex,
-                      id: logsFrame?.idField?.values[props.rowIndex],
-                    };
-
-                    // Stringifying the time range wraps in quotes, which breaks url
-                    searchParams.set(UrlParameterType.From, JSON.stringify(timeRange?.from).slice(1, -1));
-                    searchParams.set(UrlParameterType.To, JSON.stringify(timeRange?.to).slice(1, -1));
-                    searchParams.set(UrlParameterType.SelectedLine, JSON.stringify(selectedLine));
-
-                    return window.location.origin + window.location.pathname + '?' + searchParams.toString();
-                  }
-                  return '';
-                }}
-              />
-            </div>
-          </div>
+          {/* First Field gets the icons */}
+          {props.fieldIndex === 0 && <LineActionIcons rowIndex={props.rowIndex} value={value} />}
           {/* @todo component*/}
           <>{renderLabels(props.labels, onClick, props.value)}</>
 
           {isHover && <Scroller scrollerRef={ref} />}
         </div>
       </ScrollSyncPane>
-      {isInspecting && (
-        <Modal onDismiss={() => setIsInspecting(false)} isOpen={true} title="Inspect value">
-          <pre>{value as string}</pre>
-          <Modal.ButtonRow>
-            <ClipboardButton icon="copy" getText={() => value as string}>
-              Copy to Clipboard
-            </ClipboardButton>
-          </Modal.ButtonRow>
-        </Modal>
-      )}
     </DefaultCellWrapComponent>
   );
 };
+
+export const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
+  rawLogLine: css({
+    fontFamily: theme.typography.fontFamilyMonospace,
+    height: '35px',
+    lineHeight: '35px',
+    paddingRight: theme.spacing(1.5),
+    paddingLeft: theme.spacing(1),
+    fontSize: theme.typography.bodySmall.fontSize,
+  }),
+  content: css`
+    white-space: nowrap;
+    overflow-x: auto;
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+    padding-right: 30px;
+    display: flex;
+    align-items: flex-start;
+    height: 100%;
+    &::-webkit-scrollbar {
+      display: none; /* Chrome, Safari and Opera */
+    }
+
+    &:after {
+      pointer-events: none;
+      content: '';
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      left: 0;
+      top: 0;
+      // Fade out text in last 10px to background color to add affordance to horiziontal scroll
+      background: linear-gradient(
+        to right,
+        transparent calc(100% - 10px),
+        ${bgColor ?? theme.colors.background.primary}
+      );
+    }
+  `,
+});

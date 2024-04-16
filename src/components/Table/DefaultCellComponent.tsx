@@ -10,17 +10,20 @@ import { useTableColumnContext } from '@/components/Context/TableColumnsContext'
 import { DefaultCellWrapComponent } from '@/components/Table/DefaultCellWrapComponent';
 import { DefaultPill } from '@/components/Table/DefaultPill';
 import { getFieldMappings } from '@/components/Table/Table';
+import { LineActionIcons } from '@/components/Table/LineActionIcons';
 
 const getStyles = (theme: GrafanaTheme2, fieldType?: FieldType) => ({
+  flexWrap: css({
+    display: 'flex',
+    alignItems: 'flex-start',
+    flexDirection: fieldType === FieldType.number ? 'row-reverse' : 'row',
+    textAlign: fieldType === FieldType.number ? 'right' : 'left',
+  }),
   content: css({
     position: 'relative',
     overflow: 'hidden',
     display: 'flex',
-    flexDirection: fieldType === FieldType.number ? 'row-reverse' : 'row',
-    textAlign: fieldType === FieldType.number ? 'right' : 'left',
-    alignItems: 'flex-start',
     height: '100%',
-    marginLeft: '5px',
   }),
   linkWrapper: css({
     color: theme.colors.text.link,
@@ -43,7 +46,10 @@ export function getBgColorForCell(props: CustomCellRendererProps): string | unde
   return undefined;
 }
 
-export const DefaultCellComponent = (props: CustomCellRendererProps) => {
+interface DefaultCellComponentCustomProps {
+  fieldIndex: number;
+}
+export const DefaultCellComponent = (props: CustomCellRendererProps & DefaultCellComponentCustomProps) => {
   let value = props.value;
   const field = props.field;
   const displayValue = field.display!(value);
@@ -93,6 +99,9 @@ export const DefaultCellComponent = (props: CustomCellRendererProps) => {
       rowIndex={props.rowIndex}
     >
       <div className={styles.content}>
+        {props.fieldIndex === 0 && <LineActionIcons value={value} rowIndex={props.rowIndex} />}
+        <div className={styles.flexWrap}></div>
+
         {!hasLinks && renderValue(value, field.name)}
 
         {hasLinks && field.getLinks && (
