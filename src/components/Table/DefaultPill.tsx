@@ -28,6 +28,7 @@ const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
     },
     marginRight: '5px',
     marginTop: '5px',
+    marginLeft: '5px',
     padding: '2px 5px',
     position: 'relative',
     display: 'inline-flex',
