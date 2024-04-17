@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Row } from 'react-table';
 import { css, cx } from '@emotion/css';
 
@@ -10,6 +10,7 @@ import { CellContextMenu } from '@/components/Table/CellContextMenu';
 import { getFieldMappings } from '@/components/Table/Table';
 import { FieldNameMetaStore } from '@/components/Table/TableTypes';
 import { useTableColumnContext } from '@/components/Context/TableColumnsContext';
+import { getTemplateSrv } from '@grafana/runtime';
 
 interface LogLinePillProps {
   originalField?: Field;
@@ -93,6 +94,8 @@ export const LogLinePill = (props: LogLinePillProps) => {
   const { cellIndex, setActiveCellIndex } = useTableCellContext();
   const { columns, setColumns } = useTableColumnContext();
   const value = props.value;
+  const templateSrv = getTemplateSrv();
+  const replace = useMemo(() => templateSrv.replace.bind(templateSrv), [templateSrv]);
 
   // Need untransformed frame for links?
   const field = props.field;
@@ -103,20 +106,7 @@ export const LogLinePill = (props: LogLinePillProps) => {
   const row = { index: props.rowIndex } as Row;
 
   if (props.originalField && props.isDerivedField && props.originalFrame) {
-    //@todo investigate how this should be done
-    props.originalField.getLinks = getLinksSupplier(
-      props.originalFrame,
-      props.originalField,
-      {
-        __value: {
-          value: {
-            raw: value,
-          },
-          text: 'Raw value',
-        },
-      },
-      interpolateDerivedField
-    );
+    props.originalField.getLinks = getLinksSupplier(props.originalFrame, props.originalField, {}, replace);
   }
 
   const links = props.originalField && getCellLinks(props.originalField, row);
@@ -170,12 +160,3 @@ export const LogLinePill = (props: LogLinePillProps) => {
     />
   );
 };
-
-function interpolateDerivedField(value: string, scopedVars?: ScopedVars, format?: string | Function): string {
-  // @todo this is a hack!
-  // I cannot seem to figure out how to properly get the link without calling DataLinksContextMenu
-  if (value === '${__value.raw}') {
-    return scopedVars?.__value?.value?.raw;
-  }
-  return value;
-}
