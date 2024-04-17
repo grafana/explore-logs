@@ -9,12 +9,12 @@ import { useTableCellContext } from '@/components/Context/TableCellContext';
 import { CellContextMenu } from '@/components/Table/CellContextMenu';
 import { getFieldMappings } from '@/components/Table/Table';
 import { FieldNameMetaStore } from '@/components/Table/TableTypes';
+import { useTableColumnContext } from '@/components/Context/TableColumnsContext';
 
 interface LogLinePillProps {
   originalField?: Field;
   field?: Field;
   columns: FieldNameMetaStore;
-  showColumn: (label: string) => void;
   label: string;
   showColumns: () => void;
   rowIndex: number;
@@ -89,8 +89,9 @@ function LogLinePillValue(props: {
 }
 
 export const LogLinePill = (props: LogLinePillProps) => {
-  const { showColumn, label } = props;
+  const { label } = props;
   const { cellIndex, setActiveCellIndex } = useTableCellContext();
+  const { columns, setColumns } = useTableColumnContext();
   const value = props.value;
 
   // Need untransformed frame for links?
@@ -102,6 +103,7 @@ export const LogLinePill = (props: LogLinePillProps) => {
   const row = { index: props.rowIndex } as Row;
 
   if (props.originalField && props.isDerivedField && props.originalFrame) {
+    //@todo investigate how this should be done
     props.originalField.getLinks = getLinksSupplier(
       props.originalFrame,
       props.originalField,
@@ -118,6 +120,26 @@ export const LogLinePill = (props: LogLinePillProps) => {
   }
 
   const links = props.originalField && getCellLinks(props.originalField, row);
+
+  /**
+   * This Could be moved?
+   * Callback called by the pill context menu
+   * @param fieldName
+   */
+  const addFieldToColumns = (fieldName: string) => {
+    const pendingColumns = { ...columns };
+
+    const length = Object.keys(columns).filter((c) => columns[c].active).length;
+    if (pendingColumns[fieldName].active) {
+      pendingColumns[fieldName].active = false;
+      pendingColumns[fieldName].index = undefined;
+    } else {
+      pendingColumns[fieldName].active = true;
+      pendingColumns[fieldName].index = length;
+    }
+
+    setColumns(pendingColumns);
+  };
 
   return (
     <LogLinePillValue
@@ -143,7 +165,7 @@ export const LogLinePill = (props: LogLinePillProps) => {
       fieldType={props.isDerivedField ? 'derived' : undefined}
       label={label}
       value={value}
-      onClickAdd={() => showColumn(label)}
+      onClickAdd={() => addFieldToColumns(label)}
       links={links}
     />
   );

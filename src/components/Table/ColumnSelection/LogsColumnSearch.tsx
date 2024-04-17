@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { css } from '@emotion/css';
 
 import { GrafanaTheme2 } from '@grafana/data';
@@ -15,9 +15,13 @@ function getStyles(theme: GrafanaTheme2) {
     }),
   };
 }
-export function LogsColumnSearch() {
+
+interface LogsColumnSearchProps {
+  searchValue: string;
+  setSearchValue: (value: string) => void;
+}
+export function LogsColumnSearch({ searchValue, setSearchValue }: LogsColumnSearchProps) {
   const { columns, setFilteredColumns } = useTableColumnContext();
-  const [searchValue, setSearchValue] = useState<string>('');
 
   // uFuzzy search dispatcher, adds any matches to the local state
   const dispatcher = (data: string[][]) => {

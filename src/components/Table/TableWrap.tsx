@@ -28,6 +28,8 @@ export type SpecialFieldsType = {
 // matches common ISO 8601
 const iso8601Regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3,})?(?:Z|[-+]\d{2}:?\d{2})$/;
 
+export const TABLE_COLUMNS_URL_PARAM = 'tableColumns';
+
 interface TableWrapProps {}
 
 const getStyles = (theme: GrafanaTheme2) => ({
@@ -46,11 +48,10 @@ export const TableWrap = (props: TableWrapProps) => {
   const timeZone = getTimeZone();
 
   // This function is called when we want to grab the column names that are currently stored in the URL.
-  // If we rely on the state being passed in from scenes we have to force a re-render of the entire table, which reverts any state not stored in scenes (modals, menus, column widths, etc)
-  // So instead we have to grab the current columns directly from the URL. This could lead to bugs,
+  // So instead we have to grab the current columns directly from the URL.
   const getColumnsFromProps = useCallback((fieldNames: FieldNameMetaStore) => {
     const searchParams = new URLSearchParams(location.search);
-    const tableColumnsRaw = searchParams.get('tableColumns');
+    const tableColumnsRaw = searchParams.get(TABLE_COLUMNS_URL_PARAM);
     const tableColumnsFromUrl: string[] = tableColumnsRaw ? JSON.parse(tableColumnsRaw) : [];
     const previouslySelected = tableColumnsFromUrl;
     if (previouslySelected?.length) {
@@ -101,7 +102,7 @@ export const TableWrap = (props: TableWrapProps) => {
   return (
     <section className={styles.section}>
       <TableColumnContextProvider logsFrame={logsFrame} initialColumns={pendingLabelState}>
-        <Table logsFrame={logsFrame} timeZone={timeZone} height={height - 220} width={width - 50} labels={labels} />
+        <Table logsFrame={logsFrame} timeZone={timeZone} height={height - 270} width={width - 50} labels={labels} />
       </TableColumnContextProvider>
     </section>
   );
