@@ -85,13 +85,6 @@ export const Table = (props: Props) => {
   const templateSrv = getTemplateSrv();
   const replace = useMemo(() => templateSrv.replace.bind(templateSrv), [templateSrv]);
 
-  const hideColumn = (field: Field) => {
-    const pendingColumnState = { ...columns };
-    pendingColumnState[field.name].active = false;
-
-    setColumns(pendingColumnState);
-  };
-
   const prepareTableFrame = useCallback(
     (frame: DataFrame): DataFrame => {
       if (!frame.length) {
@@ -126,9 +119,6 @@ export const Table = (props: Props) => {
               <TableHeaderContextProvider>
                 <LogsTableHeaderWrap
                   headerProps={{ ...props, fieldIndex: index }}
-                  removeColumn={() => {
-                    hideColumn(props.field);
-                  }}
                   openColumnManagementDrawer={() => setVisible(true)}
                   slideLeft={(cols: FieldNameMetaStore) => reorderColumn(cols, index, index + 1)}
                   slideRight={(cols: FieldNameMetaStore) => reorderColumn(cols, index, index - 1)}
@@ -149,7 +139,6 @@ export const Table = (props: Props) => {
     },
     // This function is building the table dataframe that will be transformed, even though the components within the dataframe (cells, headers) can mutate the dataframe!
     // If we try to update the dataframe whenever the columns are changed (which are rebuilt using this dataframe after being transformed), react will infinitely update frame -> columns -> frame -> ...
-    // Maybe
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [timeZone, theme, labels]
   );

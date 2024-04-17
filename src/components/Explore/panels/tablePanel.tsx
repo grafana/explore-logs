@@ -60,13 +60,9 @@ export interface VizTypeProps {
 }
 
 export const getTablePanel = (tableProps: TablePanelProps, vizTypeProps: VizTypeProps) => {
-  const search = new URLSearchParams(window.location.search);
-  const columnsFromUrl = search.get('tableColumns');
-  // Hack
-  if (columnsFromUrl && !tableProps.selectedColumns?.length) {
-    tableProps.selectedColumns = JSON.parse(columnsFromUrl);
-  }
-
+  // const search = new URLSearchParams(window.location.search);
+  // const columnsFromUrl = search.get('tableColumns');
+  //
   return new VizPanel({
     pluginId: LOGS_TABLE_PLUGIN_ID,
     options: tableProps,

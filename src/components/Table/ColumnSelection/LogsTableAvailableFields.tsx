@@ -54,7 +54,7 @@ export const LogsTableAvailableFields = (props: {
   labels: Record<string, FieldNameMeta>;
   valueFilter: (value: string) => boolean;
   toggleColumn: (columnName: string) => void;
-}): JSX.Element => {
+}): React.ReactElement => {
   const { labels, valueFilter, toggleColumn } = props;
   const theme = useTheme2();
   const styles = getLogsFieldsStyles(theme);
@@ -63,7 +63,7 @@ export const LogsTableAvailableFields = (props: {
     // Otherwise show list with a hardcoded order
     return (
       <div className={styles.columnWrapper}>
-        {labelKeys.sort(sortLabels(labels)).map((labelName, index) => (
+        {labelKeys.sort(sortLabels(labels)).map((labelName) => (
           <div
             key={labelName}
             className={styles.wrap}

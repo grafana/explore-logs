@@ -24,13 +24,12 @@ const VISUALIZATION_TYPE_LOCALSTORAGE_KEY = 'grafana.explore.logs.visualisationT
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
   panel?: SceneFlexLayout;
-  tableColumns?: string[];
   selectedLine?: SelectedTableRow;
   visualizationType: LogsVisualizationType;
 }
 
 export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
-  protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['tableColumns', 'selectedLine'] });
+  protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['selectedLine'] });
 
   constructor(state: Partial<LogsListSceneState>) {
     super({
@@ -54,12 +53,8 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
 
   getUrlState() {
     let stateUpdate: Partial<{
-      tableColumns?: string;
       selectedLine?: string;
     }> = {};
-    if (this.state.tableColumns?.length) {
-      stateUpdate.tableColumns = JSON.stringify(this.state.tableColumns);
-    }
     if (this.state.selectedLine) {
       stateUpdate.selectedLine = JSON.stringify(this.state.selectedLine);
     }
@@ -68,14 +63,6 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
 
   updateFromUrl(values: SceneObjectUrlValues) {
     const stateUpdate: Partial<LogsListSceneState> = {};
-    // Selected table columns
-    if (typeof values.tableColumns === 'string') {
-      const tableColumns = JSON.parse(values.tableColumns);
-      if (tableColumns !== this.state.tableColumns) {
-        stateUpdate.tableColumns = tableColumns;
-      }
-    }
-
     // Selected line
     if (typeof values.selectedLine === 'string') {
       const selectedLine = JSON.parse(values.selectedLine);
@@ -126,12 +113,6 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       panel: this.getVizPanel({
         filters,
         addFilter,
-        selectedColumns: this.state.tableColumns ?? null,
-        setSelectedColumns: (cols) => {
-          this.setState({
-            tableColumns: cols,
-          });
-        },
         selectedLine: this.state.selectedLine,
         timeRange: range,
       }),
@@ -175,10 +156,6 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
 export interface TablePanelProps {
   filters: AdHocVariableFilter[];
   addFilter: (filter: AdHocVariableFilter) => void;
-  //@todo need to rip out
-  selectedColumns: string[] | null;
-  setSelectedColumns: (cols: string[]) => void;
-  //@todo need to get and set timerange in url
   selectedLine?: SelectedTableRow;
   timeRange?: TimeRange;
 }

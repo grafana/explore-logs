@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import { ClickOutsideWrapper } from '@grafana/ui';
 
@@ -40,6 +40,7 @@ export function getReorderColumn(setColumns: (cols: FieldNameMetaStore) => void)
 
 export function ColumnSelectionDrawerWrap() {
   const { columns, setColumns, setVisible, filteredColumns, setFilteredColumns } = useTableColumnContext();
+  const [searchValue, setSearchValue] = useState<string>('');
   const toggleColumn = (columnName: string) => {
     if (!columns || !(columnName in columns)) {
       console.warn('failed to get column', columns);
@@ -101,6 +102,7 @@ export function ColumnSelectionDrawerWrap() {
       }
 
       setFilteredColumns(pendingFilteredLabelState);
+      setSearchValue('');
     }
   };
 
@@ -119,6 +121,8 @@ export function ColumnSelectionDrawerWrap() {
     });
 
     setColumns(pendingLabelState);
+    setFilteredColumns(pendingLabelState);
+    setSearchValue('');
   };
 
   return (
@@ -126,10 +130,11 @@ export function ColumnSelectionDrawerWrap() {
       onClick={() => {
         setVisible(false);
         setFilteredColumns(columns);
+        setSearchValue('');
       }}
       useCapture={true}
     >
-      <LogsColumnSearch />
+      <LogsColumnSearch searchValue={searchValue} setSearchValue={setSearchValue} />
       <LogsTableMultiSelect
         toggleColumn={toggleColumn}
         filteredColumnsWithMeta={filteredColumns}

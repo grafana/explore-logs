@@ -3,11 +3,12 @@ import { FieldNameMetaStore } from '@/components/Table/TableTypes';
 import { useTableHeaderContext } from '@/components/Context/TableHeaderContext';
 import { useTableColumnContext } from '@/components/Context/TableColumnsContext';
 import { Icon } from '@grafana/ui';
-import React from 'react';
+import React, { useCallback } from 'react';
+import { Field } from '@grafana/data';
 
 export function LogsTableHeaderWrap(props: {
   headerProps: LogsTableHeaderProps;
-  removeColumn: () => void;
+  // removeColumn: () => void;
   openColumnManagementDrawer: () => void;
 
   // Moves the current column forward or backward one index
@@ -15,12 +16,21 @@ export function LogsTableHeaderWrap(props: {
   slideRight: (cols: FieldNameMetaStore) => void;
 }) {
   const { setHeaderMenuActive } = useTableHeaderContext();
-  const { columns } = useTableColumnContext();
+  const { columns, setColumns } = useTableColumnContext();
+
+  const hideColumn = useCallback(
+    (field: Field) => {
+      const pendingColumnState = { ...columns };
+      pendingColumnState[field.name].active = false;
+      setColumns(pendingColumnState);
+    },
+    [columns, setColumns]
+  );
 
   return (
     <LogsTableHeader {...props.headerProps}>
       <div>
-        <a onClick={props.removeColumn}>
+        <a onClick={() => hideColumn(props.headerProps.field)}>
           <Icon name={'minus'} size={'xl'} />
           Remove column
         </a>

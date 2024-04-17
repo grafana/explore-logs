@@ -1,7 +1,7 @@
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import { FieldNameMetaStore } from '@/components/Table/TableTypes';
 import { LogsFrame } from '@/services/logsFrame';
-import { useScenesTableContext } from '@/components/Context/ScenesTableContext';
+import { useHistory } from 'react-router-dom';
 
 type TableColumnsContextType = {
   // the current list of labels from the dataframe combined with UI metadata
@@ -38,20 +38,13 @@ export const TableColumnContextProvider = ({
   const [columns, setColumns] = useState<FieldNameMetaStore>(initialColumns);
   const [filteredColumns, setFilteredColumns] = useState<FieldNameMetaStore | undefined>(undefined);
   const [visible, setVisible] = useState(false);
-  const { setSelectedColumns } = useScenesTableContext();
+  const history = useHistory();
 
-  //@todo fix
-  const handleSetColumns = useCallback(
-    (newColumns: FieldNameMetaStore) => {
-      if (newColumns) {
-        setColumns(newColumns);
-        if (logsFrame) {
-          updateUrlState(newColumns, logsFrame, setSelectedColumns);
-        }
-      }
-    },
-    [logsFrame, setSelectedColumns]
-  );
+  const handleSetColumns = useCallback((newColumns: FieldNameMetaStore) => {
+    if (newColumns) {
+      setColumns(newColumns);
+    }
+  }, []);
 
   const handleSetVisible = useCallback((isVisible: boolean) => {
     setVisible(isVisible);
@@ -63,6 +56,17 @@ export const TableColumnContextProvider = ({
       setColumns(initialColumns);
     }
   }, [initialColumns]);
+
+  // Handle url updates with react router or we'll get state sync errors with scenes
+  useEffect(() => {
+    const search = new URLSearchParams(location.search);
+    const activeColumns = getColumnsForUrl(columns, logsFrame);
+    if (activeColumns?.length) {
+      search.set('tableColumns', JSON.stringify(activeColumns));
+      history.push({ search: search.toString() });
+      setFilteredColumns(columns);
+    }
+  }, [columns, history, logsFrame, setFilteredColumns]);
 
   return (
     <TableColumnsContext.Provider
@@ -80,11 +84,7 @@ export const TableColumnContextProvider = ({
   );
 };
 
-function updateUrlState(
-  pendingLabelState: FieldNameMetaStore,
-  logsFrame: LogsFrame,
-  setSelectedColumns: (cols: string[]) => void
-) {
+function getColumnsForUrl(pendingLabelState: FieldNameMetaStore, logsFrame: LogsFrame) {
   if (!logsFrame) {
     console.warn('missing dataframe, cannot set url state');
     return;
@@ -118,8 +118,10 @@ function updateUrlState(
     const columns = Object.keys(newColumnsArray).length ? newColumnsArray : defaultColumns;
 
     // Update url state
-    setSelectedColumns(columns);
+    return columns;
   }
+
+  return [];
 }
 
 export const useTableColumnContext = () => {

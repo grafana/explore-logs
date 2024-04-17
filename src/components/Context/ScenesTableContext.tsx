@@ -7,9 +7,9 @@ type ScenesTableContextType = TablePanelProps;
 const ScenesTableContext = createContext<ScenesTableContextType>({
   filters: [],
   addFilter: (filter: AdHocVariableFilter) => {},
-  setSelectedColumns: (cols: string[]) => {},
+  // setSelectedColumns: (cols: string[]) => {},
   timeRange: undefined,
-  selectedColumns: [],
+  // selectedColumns: [],
   selectedLine: undefined,
 });
 
@@ -17,17 +17,15 @@ export const ScenesTableContextProvider = ({
   children,
   filters,
   addFilter,
-  selectedColumns,
-  setSelectedColumns,
+  // selectedColumns,
+  // setSelectedColumns,
   selectedLine,
   timeRange,
 }: {
   children: ReactNode;
 } & ScenesTableContextType) => {
   return (
-    <ScenesTableContext.Provider
-      value={{ filters, addFilter, selectedColumns, setSelectedColumns, selectedLine, timeRange }}
-    >
+    <ScenesTableContext.Provider value={{ filters, addFilter, selectedLine, timeRange }}>
       {children}
     </ScenesTableContext.Provider>
   );
