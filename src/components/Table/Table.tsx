@@ -211,12 +211,7 @@ export const Table = (props: Props) => {
       <div className={styles.tableWrap}>
         <TableCellContextProvider>
           <ScrollSync horizontal={true} vertical={false} proportional={false}>
-            <TableAndContext
-              selectedLine={lineIndex ?? selectedLine?.row}
-              data={tableFrame}
-              height={height}
-              width={width}
-            />
+            <TableAndContext selectedLine={lineIndex} data={tableFrame} height={height} width={width} />
           </ScrollSync>
         </TableCellContextProvider>
       </div>

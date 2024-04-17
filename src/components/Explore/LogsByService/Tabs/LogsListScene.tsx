@@ -26,6 +26,7 @@ export interface LogsListSceneState extends SceneObjectState {
   panel?: SceneFlexLayout;
   selectedLine?: SelectedTableRow;
   visualizationType: LogsVisualizationType;
+  timeRange?: TimeRange;
 }
 
 export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
@@ -85,16 +86,27 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       });
     };
 
+    this._subs.add(
+      sceneGraph.getTimeRange(this).subscribeToState((newState, prevState) => {
+        this.setState({
+          timeRange: newState.value,
+        });
+      })
+    );
+
     if (!this.state.panel) {
       const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
-      const filters = fields.state.filters;
       const range = sceneGraph.getTimeRange(this).state.value;
-      this.setPanelState(filters, addFilter, range);
+      this.setPanelState(fields.state.filters, addFilter, range);
     }
 
     this._subs.add(
       this.subscribeToState((newState, prevState) => {
-        if (newState.visualizationType !== prevState.visualizationType) {
+        if (
+          newState.visualizationType !== prevState.visualizationType ||
+          newState.timeRange !== prevState.timeRange ||
+          newState.selectedLine !== prevState.selectedLine
+        ) {
           const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
           const range = sceneGraph.getTimeRange(this).state.value;
           const filters = fields.state.filters;

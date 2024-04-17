@@ -16,7 +16,6 @@ import { DATAPLANE_BODY_NAME } from '@/services/logsFrame';
 import { RawLogLineText } from '@/components/Table/RawLogLineText';
 
 export type SelectedTableRow = {
-  row: number;
   id: string;
 };
 

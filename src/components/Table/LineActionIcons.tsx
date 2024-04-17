@@ -79,7 +79,6 @@ export function LineActionIcons(props: { rowIndex: number; value: unknown }) {
               const searchParams = new URLSearchParams(window.location.search);
               if (searchParams && timeRange) {
                 const selectedLine: SelectedTableRow = {
-                  row: props.rowIndex,
                   id: logId,
                 };
 
