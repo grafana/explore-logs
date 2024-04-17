@@ -12,6 +12,7 @@ import { LogLinePill } from '@/components/Table/LogLinePill';
 import { Scroller } from '@/components/Table/Scroller';
 import { css } from '@emotion/css';
 import { LineActionIcons } from '@/components/Table/LineActionIcons';
+import { DATAPLANE_BODY_NAME } from '@/services/logsFrame';
 
 export type SelectedTableRow = {
   row: number;
@@ -73,25 +74,27 @@ export const LogLineCellComponent = (props: Props) => {
    */
   const renderLabels = (labels: Labels, onClick: (label: string) => void, value: unknown) => {
     const columnLabelNames = Object.keys(columns);
-    const labelNames = columnLabelNames.sort((a, b) => {
-      // Sort level first
-      if (a === 'level') {
-        return -1;
-      }
-      if (b === 'level') {
-        return 1;
-      }
-      // Then sort links
-      if (columns[a].type === 'LINK_FIELD') {
-        return -1;
-      }
-      if (columns[b].type === 'LINK_FIELD') {
-        return 1;
-      }
+    const labelNames = columnLabelNames
+      .filter((name) => name !== DATAPLANE_BODY_NAME)
+      .sort((a, b) => {
+        // Sort level first
+        if (a === 'level') {
+          return -1;
+        }
+        if (b === 'level') {
+          return 1;
+        }
+        // Then sort links
+        if (columns[a].type === 'LINK_FIELD') {
+          return -1;
+        }
+        if (columns[b].type === 'LINK_FIELD') {
+          return 1;
+        }
 
-      // Finally sort fields by cardinality descending
-      return columns[a].cardinality > columns[b].cardinality ? -1 : 1;
-    });
+        // Finally sort fields by cardinality descending
+        return columns[a].cardinality > columns[b].cardinality ? -1 : 1;
+      });
 
     const filteredLabels = labelNames.filter(
       (label) =>

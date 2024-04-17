@@ -1,6 +1,6 @@
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import { FieldNameMetaStore } from '@/components/Table/TableTypes';
-import { LogsFrame } from '@/services/logsFrame';
+import { DATAPLANE_BODY_NAME, DATAPLANE_TIMESTAMP_NAME, LogsFrame } from '@/services/logsFrame';
 import { useHistory } from 'react-router-dom';
 import { TABLE_COLUMNS_URL_PARAM } from '@/components/Table/TableWrap';
 
@@ -76,9 +76,33 @@ export const TableColumnContextProvider = ({
     if (activeColumns?.length) {
       search.set(TABLE_COLUMNS_URL_PARAM, JSON.stringify(activeColumns));
       history.push({ search: search.toString() });
-      setFilteredColumns(columns);
+
+      const activeFields = Object.keys(columns).filter((col) => columns[col].active);
+
+      // If we're missing all fields, the user must have removed the last column, let's revert back to the default state
+      if (activeFields.length === 0) {
+        const pendingColumns = { ...columns };
+
+        pendingColumns[DATAPLANE_TIMESTAMP_NAME] = {
+          index: 0,
+          active: true,
+          type: 'TIME_FIELD',
+          percentOfLinesWithLabel: 100,
+          cardinality: Infinity,
+        };
+        pendingColumns[DATAPLANE_BODY_NAME] = {
+          index: 1,
+          active: true,
+          type: 'BODY_FIELD',
+          percentOfLinesWithLabel: 100,
+          cardinality: Infinity,
+        };
+        handleSetColumns(pendingColumns);
+      }
+
+      setFilteredColumns(undefined);
     }
-  }, [columns, history, logsFrame, setFilteredColumns]);
+  }, [columns, history, logsFrame, setFilteredColumns, handleSetColumns]);
 
   return (
     <TableColumnsContext.Provider
@@ -133,7 +157,7 @@ function getColumnsForUrl(pendingLabelState: FieldNameMetaStore, logsFrame: Logs
   const timeField = logsFrame.timeField;
   const bodyField = logsFrame.bodyField;
 
-  if ((timeField && bodyField) || Object.keys(newColumnsArray).length) {
+  if ((timeField && bodyField) || newColumnsArray.length) {
     const defaultColumns = [];
     if (timeField?.name) {
       defaultColumns.push(timeField.name);
@@ -143,7 +167,7 @@ function getColumnsForUrl(pendingLabelState: FieldNameMetaStore, logsFrame: Logs
     }
 
     // Update url state
-    return Object.keys(newColumnsArray).length ? newColumnsArray : defaultColumns;
+    return newColumnsArray.length ? newColumnsArray : defaultColumns;
   }
 
   return [];
