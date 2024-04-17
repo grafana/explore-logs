@@ -13,6 +13,7 @@ import { Scroller } from '@/components/Table/Scroller';
 import { css } from '@emotion/css';
 import { LineActionIcons } from '@/components/Table/LineActionIcons';
 import { DATAPLANE_BODY_NAME } from '@/services/logsFrame';
+import { RawLogLineText } from '@/components/Table/RawLogLineText';
 
 export type SelectedTableRow = {
   row: number;
@@ -22,14 +23,6 @@ export type SelectedTableRow = {
 interface Props extends CustomCellRendererProps {
   labels: Labels;
   fieldIndex: number;
-}
-
-function RawLogLineText(props: { styles: { rawLogLine: string; content: string }; value: unknown }) {
-  return (
-    <div className={props.styles.rawLogLine}>
-      <>{props.value}</>
-    </div>
-  );
 }
 export const LogLineCellComponent = (props: Props) => {
   let value = props.value;
@@ -161,11 +154,11 @@ export const LogLineCellComponent = (props: Props) => {
           {/* Labels */}
           {isAuto && hasLabels && <>{labels}</>}
           {bodyState === LogLineState.labels && hasLabels && <>{labels}</>}
-          {bodyState === LogLineState.labels && !hasLabels && <div className={styles.rawLogLine}>No unique labels</div>}
+          {bodyState === LogLineState.labels && !hasLabels && <RawLogLineText value={'No unique labels'} />}
 
           {/* Raw log line*/}
-          {isAuto && !hasLabels && <RawLogLineText styles={styles} value={value} />}
-          {bodyState === LogLineState.text && <RawLogLineText styles={styles} value={value} />}
+          {isAuto && !hasLabels && <RawLogLineText value={value} />}
+          {bodyState === LogLineState.text && <RawLogLineText value={value} />}
 
           {isHover && <Scroller scrollerRef={ref} />}
         </div>
@@ -175,14 +168,6 @@ export const LogLineCellComponent = (props: Props) => {
 };
 
 export const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
-  rawLogLine: css({
-    fontFamily: theme.typography.fontFamilyMonospace,
-    height: '35px',
-    lineHeight: '35px',
-    paddingRight: theme.spacing(1.5),
-    paddingLeft: theme.spacing(1),
-    fontSize: theme.typography.bodySmall.fontSize,
-  }),
   content: css`
     white-space: nowrap;
     overflow-x: auto;
