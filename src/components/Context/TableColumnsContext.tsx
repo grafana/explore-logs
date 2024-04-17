@@ -37,6 +37,25 @@ const TableColumnsContext = createContext<TableColumnsContextType>({
   setBodyState: () => {},
 });
 
+function setDefaultColumns(columns: FieldNameMetaStore, handleSetColumns: (newColumns: FieldNameMetaStore) => void) {
+  const pendingColumns = { ...columns };
+
+  pendingColumns[DATAPLANE_TIMESTAMP_NAME] = {
+    index: 0,
+    active: true,
+    type: 'TIME_FIELD',
+    percentOfLinesWithLabel: 100,
+    cardinality: Infinity,
+  };
+  pendingColumns[DATAPLANE_BODY_NAME] = {
+    index: 1,
+    active: true,
+    type: 'BODY_FIELD',
+    percentOfLinesWithLabel: 100,
+    cardinality: Infinity,
+  };
+  handleSetColumns(pendingColumns);
+}
 export const TableColumnContextProvider = ({
   children,
   initialColumns,
@@ -81,25 +100,10 @@ export const TableColumnContextProvider = ({
 
       // If we're missing all fields, the user must have removed the last column, let's revert back to the default state
       if (activeFields.length === 0) {
-        const pendingColumns = { ...columns };
-
-        pendingColumns[DATAPLANE_TIMESTAMP_NAME] = {
-          index: 0,
-          active: true,
-          type: 'TIME_FIELD',
-          percentOfLinesWithLabel: 100,
-          cardinality: Infinity,
-        };
-        pendingColumns[DATAPLANE_BODY_NAME] = {
-          index: 1,
-          active: true,
-          type: 'BODY_FIELD',
-          percentOfLinesWithLabel: 100,
-          cardinality: Infinity,
-        };
-        handleSetColumns(pendingColumns);
+        setDefaultColumns(columns, handleSetColumns);
       }
 
+      // Reset any local search state
       setFilteredColumns(undefined);
     }
   }, [columns, history, logsFrame, setFilteredColumns, handleSetColumns]);
