@@ -5,13 +5,13 @@ import { FieldType, formattedValueToString, GrafanaTheme2, Labels } from '@grafa
 import { CustomCellRendererProps, useTheme2 } from '@grafana/ui';
 
 import { useQueryContext } from '@/components/Context/QueryContext';
-import { useTableColumnContext } from '@/components/Context/TableColumnsContext';
+import { LogLineState, useTableColumnContext } from '@/components/Context/TableColumnsContext';
 import { getBgColorForCell } from '@/components/Table/DefaultCellComponent';
 import { DefaultCellWrapComponent } from '@/components/Table/DefaultCellWrapComponent';
 import { LogLinePill } from '@/components/Table/LogLinePill';
 import { Scroller } from '@/components/Table/Scroller';
-import { LineActionIcons } from '@/components/Table/LineActionIcons';
 import { css } from '@emotion/css';
+import { LineActionIcons } from '@/components/Table/LineActionIcons';
 
 export type SelectedTableRow = {
   row: number;
@@ -23,6 +23,13 @@ interface Props extends CustomCellRendererProps {
   fieldIndex: number;
 }
 
+function RawLogLineText(props: { styles: { rawLogLine: string; content: string }; value: unknown }) {
+  return (
+    <div className={props.styles.rawLogLine}>
+      <>{props.value}</>
+    </div>
+  );
+}
 export const LogLineCellComponent = (props: Props) => {
   let value = props.value;
   const field = props.field;
@@ -30,7 +37,7 @@ export const LogLineCellComponent = (props: Props) => {
   const theme = useTheme2();
   const bgColor = getBgColorForCell(props);
   const styles = getStyles(theme, bgColor);
-  const { setColumns, columns, setVisible } = useTableColumnContext();
+  const { setColumns, columns, setVisible, bodyState } = useTableColumnContext();
   const { logsFrame } = useQueryContext();
   const [isHover, setIsHover] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
@@ -45,6 +52,7 @@ export const LogLineCellComponent = (props: Props) => {
 
   const onClick = (label: string) => {
     const pendingColumns = { ...columns };
+
     const length = Object.keys(columns).filter((c) => columns[c].active).length;
     if (pendingColumns[label].active) {
       pendingColumns[label].active = false;
@@ -58,8 +66,7 @@ export const LogLineCellComponent = (props: Props) => {
   };
 
   /**
-   * What if we never even rendered the log line as written, and always re-created it using labels.
-   * Assuming we're always parsing our log line with logfmt, this should work? And give the UI more control in visualization and interaction?
+   * Render labels as log line pills
    * @param labels Label[]
    * @param onClick
    * @param value raw log line
@@ -94,63 +101,61 @@ export const LogLineCellComponent = (props: Props) => {
         columns[label].cardinality > 1
     );
 
-    if (!filteredLabels.length) {
-      return (
-        <div className={styles.rawLogLine}>
-          <>{value}</>
-        </div>
-      );
-    }
+    return filteredLabels
+      .map((label) => {
+        const labelValue = labels[label];
+        const untransformedField = logsFrame?.raw?.fields.find((field) => field.name === label);
+        const rawValue = field?.values[props.rowIndex];
+        const isDerived = !labelValue && !!rawValue;
 
-    return filteredLabels.map((label) => {
-      const labelValue = labels[label];
-      const untransformedField = logsFrame?.raw?.fields.find((field) => field.name === label);
-      const rawValue = field?.values[props.rowIndex];
-      const isDerived = !labelValue && !!rawValue;
-
-      if (labelValue) {
-        return (
-          <LogLinePill
-            originalFrame={undefined}
-            field={field}
-            columns={columns}
-            rowIndex={props.rowIndex}
-            frame={props.frame}
-            showColumns={() => setVisible(true)}
-            key={label}
-            label={label}
-            isDerivedField={false}
-            value={labelValue}
-            showColumn={onClick}
-          />
-        );
-      }
-      if (isDerived && untransformedField?.name) {
-        const untransformedValue = untransformedField?.values[props.rowIndex];
-        // are derived fields always strings?
-        if (untransformedField?.type === FieldType.string && untransformedValue) {
+        if (labelValue) {
           return (
             <LogLinePill
-              originalFrame={logsFrame?.raw}
-              originalField={untransformedField}
+              originalFrame={undefined}
               field={field}
-              value={untransformedValue}
               columns={columns}
               rowIndex={props.rowIndex}
               frame={props.frame}
               showColumns={() => setVisible(true)}
-              key={untransformedField.name}
-              label={untransformedField.name}
-              isDerivedField={true}
+              key={label}
+              label={label}
+              isDerivedField={false}
+              value={labelValue}
               showColumn={onClick}
             />
           );
         }
-      }
+        if (isDerived && untransformedField?.name) {
+          const untransformedValue = untransformedField?.values[props.rowIndex];
+          // are derived fields always strings?
+          if (untransformedField?.type === FieldType.string && untransformedValue) {
+            return (
+              <LogLinePill
+                originalFrame={logsFrame?.raw}
+                originalField={untransformedField}
+                field={field}
+                value={untransformedValue}
+                columns={columns}
+                rowIndex={props.rowIndex}
+                frame={props.frame}
+                showColumns={() => setVisible(true)}
+                key={untransformedField.name}
+                label={untransformedField.name}
+                isDerivedField={true}
+                showColumn={onClick}
+              />
+            );
+          }
+        }
 
-      return null;
-    });
+        return null;
+      })
+      .filter((v) => v);
   };
+
+  const labels = renderLabels(props.labels, onClick, props.value);
+  const isAuto = bodyState === LogLineState.auto;
+  const hasLabels = labels.length > 0;
 
   return (
     <DefaultCellWrapComponent
@@ -167,8 +172,14 @@ export const LogLineCellComponent = (props: Props) => {
         <div className={styles.content}>
           {/* First Field gets the icons */}
           {props.fieldIndex === 0 && <LineActionIcons rowIndex={props.rowIndex} value={value} />}
-          {/* @todo component*/}
-          <>{renderLabels(props.labels, onClick, props.value)}</>
+          {/* Labels */}
+          {isAuto && hasLabels && <>{labels}</>}
+          {bodyState === LogLineState.labels && hasLabels && <>{labels}</>}
+          {bodyState === LogLineState.labels && !hasLabels && <div className={styles.rawLogLine}>No unique labels</div>}
+
+          {/* Raw log line*/}
+          {isAuto && !hasLabels && <RawLogLineText styles={styles} value={value} />}
+          {bodyState === LogLineState.text && <RawLogLineText styles={styles} value={value} />}
 
           {isHover && <Scroller scrollerRef={ref} />}
         </div>

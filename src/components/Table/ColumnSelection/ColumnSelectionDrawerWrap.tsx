@@ -15,7 +15,6 @@ export function getReorderColumn(setColumns: (cols: FieldNameMetaStore) => void)
     }
 
     const pendingLabelState = { ...columns };
-
     const keys = Object.keys(pendingLabelState)
       .filter((key) => pendingLabelState[key].active)
       .map((key) => ({

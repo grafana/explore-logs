@@ -2,6 +2,7 @@ import React, { createContext, ReactNode, useCallback, useContext, useEffect, us
 import { FieldNameMetaStore } from '@/components/Table/TableTypes';
 import { LogsFrame } from '@/services/logsFrame';
 import { useHistory } from 'react-router-dom';
+import { TABLE_COLUMNS_URL_PARAM } from '@/components/Table/TableWrap';
 
 type TableColumnsContextType = {
   // the current list of labels from the dataframe combined with UI metadata
@@ -15,7 +16,15 @@ type TableColumnsContextType = {
   // WIP - sets the visibility of the drawer right now
   visible: boolean;
   setVisible: (v: boolean) => void;
+  bodyState: LogLineState;
+  setBodyState: (s: LogLineState) => void;
 };
+
+export enum LogLineState {
+  text = 'text',
+  labels = 'labels',
+  auto = 'auto',
+}
 
 const TableColumnsContext = createContext<TableColumnsContextType>({
   columns: {},
@@ -24,6 +33,8 @@ const TableColumnsContext = createContext<TableColumnsContextType>({
   setFilteredColumns: () => {},
   setVisible: () => false,
   visible: false,
+  bodyState: LogLineState.auto,
+  setBodyState: () => {},
 });
 
 export const TableColumnContextProvider = ({
@@ -35,14 +46,15 @@ export const TableColumnContextProvider = ({
   initialColumns: FieldNameMetaStore;
   logsFrame: LogsFrame;
 }) => {
-  const [columns, setColumns] = useState<FieldNameMetaStore>(initialColumns);
+  const [columns, setColumns] = useState<FieldNameMetaStore>(removeExtraColumns(initialColumns));
+  const [bodyState, setBodyState] = useState<LogLineState>(LogLineState.auto);
   const [filteredColumns, setFilteredColumns] = useState<FieldNameMetaStore | undefined>(undefined);
   const [visible, setVisible] = useState(false);
   const history = useHistory();
 
   const handleSetColumns = useCallback((newColumns: FieldNameMetaStore) => {
     if (newColumns) {
-      setColumns(newColumns);
+      setColumns(removeExtraColumns(newColumns));
     }
   }, []);
 
@@ -53,16 +65,16 @@ export const TableColumnContextProvider = ({
   // When the parent component recalculates new columns on dataframe change, we need to update or the column UI will be stale!
   useEffect(() => {
     if (initialColumns) {
-      setColumns(initialColumns);
+      handleSetColumns(initialColumns);
     }
-  }, [initialColumns]);
+  }, [initialColumns, handleSetColumns]);
 
   // Handle url updates with react router or we'll get state sync errors with scenes
   useEffect(() => {
     const search = new URLSearchParams(location.search);
     const activeColumns = getColumnsForUrl(columns, logsFrame);
     if (activeColumns?.length) {
-      search.set('tableColumns', JSON.stringify(activeColumns));
+      search.set(TABLE_COLUMNS_URL_PARAM, JSON.stringify(activeColumns));
       history.push({ search: search.toString() });
       setFilteredColumns(columns);
     }
@@ -71,6 +83,8 @@ export const TableColumnContextProvider = ({
   return (
     <TableColumnsContext.Provider
       value={{
+        bodyState,
+        setBodyState,
         setFilteredColumns,
         filteredColumns,
         columns,
@@ -82,6 +96,20 @@ export const TableColumnContextProvider = ({
       {children}
     </TableColumnsContext.Provider>
   );
+};
+/**
+ * Filter out fields that shouldn't be exposed in the UI
+ * @param columns
+ */
+const removeExtraColumns = (columns: FieldNameMetaStore): FieldNameMetaStore => {
+  // Remove label Types
+  if ('labelTypes' in columns) {
+    const { labelTypes, ...columnsToSet }: FieldNameMetaStore = {
+      ...columns,
+    };
+    return columnsToSet;
+  }
+  return columns;
 };
 
 function getColumnsForUrl(pendingLabelState: FieldNameMetaStore, logsFrame: LogsFrame) {
@@ -106,7 +134,6 @@ function getColumnsForUrl(pendingLabelState: FieldNameMetaStore, logsFrame: Logs
   const bodyField = logsFrame.bodyField;
 
   if ((timeField && bodyField) || Object.keys(newColumnsArray).length) {
-    // const defaultColumns = { 0: timeField?.name ?? '', 1: bodyField?.name ?? '' };
     const defaultColumns = [];
     if (timeField?.name) {
       defaultColumns.push(timeField.name);
@@ -115,10 +142,8 @@ function getColumnsForUrl(pendingLabelState: FieldNameMetaStore, logsFrame: Logs
       defaultColumns.push(bodyField.name);
     }
 
-    const columns = Object.keys(newColumnsArray).length ? newColumnsArray : defaultColumns;
-
     // Update url state
-    return columns;
+    return Object.keys(newColumnsArray).length ? newColumnsArray : defaultColumns;
   }
 
   return [];
