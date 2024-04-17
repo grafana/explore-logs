@@ -87,7 +87,12 @@ export function LogsTableHeaderWrap(props: {
               }
             }}
           >
-            <Icon name={'text-fields'} size={'xl'} />
+            {bodyState === LogLineState.text ? (
+              <Icon name={'brackets-curly'} size={'xl'} />
+            ) : (
+              <Icon name={'text-fields'} size={'xl'} />
+            )}
+
             {bodyState === LogLineState.text ? 'Show labels' : 'Show log text'}
           </a>
         </div>
