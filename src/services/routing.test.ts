@@ -5,7 +5,7 @@ describe('createAppUrl', () => {
     const queryParams = new URLSearchParams();
     queryParams.set('dsUid', 'test');
 
-    const result = '/a/grafana-logs-app/?dsUid=test';
+    const result = '/a/grafana-lokiexplore-app/?dsUid=test';
 
     expect(createAppUrl(queryParams)).toBe(result);
   });
