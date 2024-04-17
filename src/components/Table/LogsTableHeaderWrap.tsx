@@ -8,7 +8,6 @@ import { Field } from '@grafana/data';
 
 export function LogsTableHeaderWrap(props: {
   headerProps: LogsTableHeaderProps;
-  // removeColumn: () => void;
   openColumnManagementDrawer: () => void;
 
   // Moves the current column forward or backward one index

@@ -7,9 +7,7 @@ type ScenesTableContextType = TablePanelProps;
 const ScenesTableContext = createContext<ScenesTableContextType>({
   filters: [],
   addFilter: (filter: AdHocVariableFilter) => {},
-  // setSelectedColumns: (cols: string[]) => {},
   timeRange: undefined,
-  // selectedColumns: [],
   selectedLine: undefined,
 });
 
@@ -17,8 +15,6 @@ export const ScenesTableContextProvider = ({
   children,
   filters,
   addFilter,
-  // selectedColumns,
-  // setSelectedColumns,
   selectedLine,
   timeRange,
 }: {
