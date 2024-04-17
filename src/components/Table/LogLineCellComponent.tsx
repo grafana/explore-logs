@@ -38,7 +38,7 @@ export const LogLineCellComponent = (props: Props) => {
   const theme = useTheme2();
   const bgColor = getBgColorForCell(props);
   const styles = getStyles(theme, bgColor);
-  const { setColumns, columns, setVisible, bodyState } = useTableColumnContext();
+  const { columns, setVisible, bodyState } = useTableColumnContext();
   const { logsFrame } = useQueryContext();
   const [isHover, setIsHover] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
@@ -51,28 +51,11 @@ export const LogLineCellComponent = (props: Props) => {
     value = formattedValueToString(displayValue);
   }
 
-  const onClick = (label: string) => {
-    const pendingColumns = { ...columns };
-
-    const length = Object.keys(columns).filter((c) => columns[c].active).length;
-    if (pendingColumns[label].active) {
-      pendingColumns[label].active = false;
-      pendingColumns[label].index = undefined;
-    } else {
-      pendingColumns[label].active = true;
-      pendingColumns[label].index = length;
-    }
-
-    setColumns(pendingColumns);
-  };
-
   /**
    * Render labels as log line pills
    * @param labels Label[]
-   * @param onClick
-   * @param value raw log line
    */
-  const renderLabels = (labels: Labels, onClick: (label: string) => void, value: unknown) => {
+  const renderLabels = (labels: Labels) => {
     const columnLabelNames = Object.keys(columns);
     const labelNames = columnLabelNames
       .filter((name) => name !== DATAPLANE_BODY_NAME)
@@ -111,6 +94,7 @@ export const LogLineCellComponent = (props: Props) => {
         const rawValue = field?.values[props.rowIndex];
         const isDerived = !labelValue && !!rawValue;
 
+        // @todo This is confusing and needs refactor
         if (labelValue) {
           return (
             <LogLinePill
@@ -124,10 +108,10 @@ export const LogLineCellComponent = (props: Props) => {
               label={label}
               isDerivedField={false}
               value={labelValue}
-              showColumn={onClick}
             />
           );
         }
+
         if (isDerived && untransformedField?.name) {
           const untransformedValue = untransformedField?.values[props.rowIndex];
           // are derived fields always strings?
@@ -145,7 +129,6 @@ export const LogLineCellComponent = (props: Props) => {
                 key={untransformedField.name}
                 label={untransformedField.name}
                 isDerivedField={true}
-                showColumn={onClick}
               />
             );
           }
@@ -156,7 +139,7 @@ export const LogLineCellComponent = (props: Props) => {
       .filter((v) => v);
   };
 
-  const labels = renderLabels(props.labels, onClick, props.value);
+  const labels = renderLabels(props.labels);
   const isAuto = bodyState === LogLineState.auto;
   const hasLabels = labels.length > 0;
 
