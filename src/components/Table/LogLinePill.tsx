@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Row } from 'react-table';
 import { css, cx } from '@emotion/css';
 
-import { DataFrame, Field, FieldType, getLinksSupplier, GrafanaTheme2, LinkModel, ScopedVars } from '@grafana/data';
+import { DataFrame, Field, FieldType, getLinksSupplier, GrafanaTheme2, LinkModel } from '@grafana/data';
 import { getCellLinks, useTheme2 } from '@grafana/ui';
 
 import { useTableCellContext } from '@/components/Context/TableCellContext';
