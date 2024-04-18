@@ -32,7 +32,7 @@ import { getLiveTailControl } from 'utils/scenes';
 import { getFavoriteServicesFromStorage } from 'utils/store';
 
 const LIMIT_SERVICES = 20;
-const SERVICE_NAME = 'service_name';
+export const SERVICE_NAME = 'service_name';
 
 interface ServiceSelectionComponentState extends SceneObjectState {
   body: SceneCSSGridLayout;
