@@ -5,7 +5,6 @@ import { DataFrame, GrafanaTheme2, reduceField, ReducerID, PanelData } from '@gr
 import { getDataSourceSrv } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
-  CustomVariable,
   PanelBuilders,
   SceneComponentProps,
   SceneCSSGridLayout,
@@ -21,7 +20,6 @@ import {
   SceneVariable,
   //SceneVariableSet,
   VariableDependencyConfig,
-  VariableValue,
   VizPanel,
 } from '@grafana/scenes';
 import { DrawStyle, Field, Icon, Input, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
@@ -31,12 +29,10 @@ import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from '../../utils/shared';
 import { map, Observable, Unsubscribable } from 'rxjs';
 import { ByLabelRepeater } from 'components/Explore/ByLabelRepeater';
 import { getLiveTailControl } from 'utils/scenes';
-import pluginJson from '../../plugin.json';
 import { getFavoriteServicesFromStorage } from 'utils/store';
 
 const LIMIT_SERVICES = 20;
 const SERVICE_NAME = 'service_name';
-export const SERVICES_LOCALSTORAGE_KEY = `${pluginJson.id}.services.favorite`;
 
 export interface LogSelectSceneState extends SceneObjectState {
   body: SceneCSSGridLayout;
@@ -52,11 +48,6 @@ export interface LogSelectSceneState extends SceneObjectState {
   searchServicesString: string;
   topServicesToBeUsed?: string[];
 }
-
-//const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
-
-const VAR_METRIC_FN = 'fn';
-//const VAR_METRIC_FN_EXPR = '${fn}';
 
 export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
@@ -225,9 +216,9 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
                         } else if (!aIsFavorite && bIsFavorite) {
                           return 1;
                         } else if (aIsFavorite && bIsFavorite) {
-                          if(favoriteServices.indexOf(aService) < favoriteServices.indexOf(bService)) {
+                          if (favoriteServices.indexOf(aService) < favoriteServices.indexOf(bService)) {
                             return -1;
-                          } 
+                          }
                           return 1;
                         } else {
                           return (b.fields[1].state?.calcs?.max || 0) - (a.fields[1].state?.calcs?.max || 0);
@@ -330,27 +321,8 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
     return layout;
   }
 
-  public getMetricFnVariable() {
-    const variable = sceneGraph.lookupVariable(VAR_METRIC_FN, this);
-    if (!(variable instanceof CustomVariable)) {
-      throw new Error('Metric function variable not found');
-    }
-
-    return variable;
-  }
-
-  public onChangeMetricsFn = (value?: VariableValue) => {
-    if (!value) {
-      return;
-    }
-    const metricFnVariable = this.getMetricFnVariable();
-    metricFnVariable.changeValueTo(value);
-  };
-
   public static Component = ({ model }: SceneComponentProps<SelectStartingPointScene>) => {
     const styles = useStyles2(getStyles);
-    //const metricFnVariable = model.getMetricFnVariable();
-    // const { value: metricFnValue } = metricFnVariable.useState();
     const { isTopSeriesLoading, topServicesToBeUsed, topServices } = model.useState();
 
     const body = model.state.body;

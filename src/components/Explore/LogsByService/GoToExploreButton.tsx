@@ -1,13 +1,13 @@
 import React from 'react';
 
+import { toURLRange, urlUtil } from '@grafana/data';
+import { config } from '@grafana/runtime';
+import { sceneGraph } from '@grafana/scenes';
 import { ToolbarButton } from '@grafana/ui';
 
-import { LogExploration } from '../../../pages/Explore';
-import { getDataSource, getQueryExpr } from '../../../utils/utils';
-import { sceneGraph } from '@grafana/scenes';
-import { toURLRange, urlUtil } from '@grafana/data';
+import { LogExploration } from 'pages/Explore/LogExploration';
 import { VAR_LOGS_FORMAT_EXPR } from 'utils/shared';
-import { config } from '@grafana/runtime';
+import { getDataSource, getQueryExpr } from 'utils/utils';
 
 interface ShareExplorationButtonState {
   exploration: LogExploration;

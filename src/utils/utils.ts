@@ -8,15 +8,14 @@ import {
   SceneObjectUrlValues,
   SceneTimeRange,
 } from '@grafana/scenes';
-
-import { LogExploration } from '../pages/Explore';
+import { LogExploration } from 'pages/Explore/LogExploration';
 import {
-  ALL_VARIABLE_VALUE,
-  EXPLORATIONS_ROUTE,
-  LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE_EXPR,
+  LOG_STREAM_SELECTOR_EXPR,
   VAR_FILTERS,
+  ALL_VARIABLE_VALUE,
 } from './shared';
+import { EXPLORATIONS_ROUTE } from './routing';
 
 export function getExplorationFor(model: SceneObject): LogExploration {
   return sceneGraph.getAncestor(model, LogExploration);
@@ -44,18 +43,6 @@ export function getDataSource(exploration: LogExploration) {
 
 export function getQueryExpr(exploration: LogExploration) {
   return sceneGraph.interpolate(exploration, LOG_STREAM_SELECTOR_EXPR).replace(/\s+/g, ' ');
-}
-
-export function getDataSourceName(dataSourceUid: string) {
-  return getDataSourceSrv().getInstanceSettings(dataSourceUid)?.name || dataSourceUid;
-}
-
-export function getDatasourceForNewExploration(): string | undefined {
-  const typeDatasources = getDataSourceSrv().getList({ type: 'loki' });
-  if (typeDatasources.length > 0) {
-    return typeDatasources.find((mds) => mds.uid === config.defaultDatasource)?.uid ?? typeDatasources[0].uid;
-  }
-  return undefined;
 }
 
 export function getColorByIndex(index: number) {

@@ -3,9 +3,9 @@ import { useLocation } from 'react-use';
 
 import { ToolbarButton } from '@grafana/ui';
 
-import { LogExploration } from '../../../pages/Explore';
-import { copyText, getUrlForExploration } from '../../../utils/utils';
 import { config } from '@grafana/runtime';
+import { LogExploration } from 'pages/Explore/LogExploration';
+import { copyText, getUrlForExploration } from 'utils/utils';
 
 interface ShareExplorationButtonState {
   exploration: LogExploration;

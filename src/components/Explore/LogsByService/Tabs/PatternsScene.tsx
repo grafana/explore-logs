@@ -18,16 +18,14 @@ import {
   SceneVariableSet,
 } from '@grafana/scenes';
 import { Button, DrawStyle, StackingMode, useStyles2, Text } from '@grafana/ui';
-
-import { StatusWrapper } from '../../StatusWrapper';
-import { VAR_LABEL_GROUP_BY } from '../../../../utils/shared';
-
-import { AddToFiltersGraphAction } from '../../AddToFiltersGraphAction';
-import { LayoutSwitcher } from '../../LayoutSwitcher';
-import { getColorByIndex } from '../../../../utils/utils';
-import { AddToPatternsGraphAction } from './AddToPatternsGraphAction';
+import { AddToFiltersGraphAction } from 'components/Explore/AddToFiltersGraphAction';
+import { LayoutSwitcher } from 'components/Explore/LayoutSwitcher';
+import { StatusWrapper } from 'components/Explore/StatusWrapper';
+import { GrotError } from 'components/GrotError/GrotError';
+import { VAR_LABEL_GROUP_BY } from 'utils/shared';
+import { getColorByIndex } from 'utils/utils';
 import { LogsByServiceScene } from '../LogsByServiceScene';
-import { GrotError } from '../../../GrotError';
+import { AddToPatternsGraphAction } from './AddToPatternsGraphAction';
 
 export interface PatternsSceneState extends SceneObjectState {
   body?: SceneObject;

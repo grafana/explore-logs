@@ -2,7 +2,7 @@ import { DataFrame, PanelData } from '@grafana/data';
 import { DrawStyle, StackingMode } from '@grafana/ui';
 import { PanelBuilders, SceneCSSGridItem, SceneDataNode } from '@grafana/scenes';
 import { getColorByIndex } from './utils';
-import { AddToFiltersGraphAction } from '../components/Explore/AddToFiltersGraphAction';
+import { AddToFiltersGraphAction } from 'components/Explore/AddToFiltersGraphAction';
 import { VAR_FIELDS } from './shared';
 
 export function extractFields(data: DataFrame) {

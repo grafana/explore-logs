@@ -2,14 +2,13 @@ import { css } from '@emotion/css';
 import React from 'react';
 
 import { DashboardCursorSync, GrafanaTheme2, LoadingState } from '@grafana/data';
+import { DataSourceWithBackend, getDataSourceSrv, locationService } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
-  behaviors,
   CustomVariable,
   SceneComponentProps,
   SceneFlexItem,
   SceneFlexLayout,
-  sceneGraph,
   SceneObjectBase,
   SceneObjectState,
   SceneObjectUrlSyncConfig,
@@ -18,39 +17,39 @@ import {
   SceneVariable,
   SceneVariableSet,
   VariableDependencyConfig,
+  behaviors,
+  sceneGraph,
 } from '@grafana/scenes';
 import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
-
-import { LogTimeSeriesPanel } from './LogTimeSeriesPanel';
-import { buildLogsListScene } from './Tabs/LogsListScene';
+import { renderLogQLLabelFilters } from 'pages/Explore/LogExploration';
+import { Unsubscribable } from 'rxjs';
+import { extractFields } from 'utils/fields';
+import { EXPLORATIONS_ROUTE } from 'utils/routing';
+import { getLiveTailControl } from 'utils/scenes';
 import {
+  ALL_VARIABLE_VALUE,
   ActionViewDefinition,
   ActionViewType,
-  MakeOptional,
-  explorationDS,
-  VAR_FILTERS,
-  VAR_FIELDS,
-  VAR_PATTERNS,
-  VAR_LOGS_FORMAT,
   LOG_STREAM_SELECTOR_EXPR,
-  VAR_DATASOURCE_EXPR,
-  EXPLORATIONS_ROUTE,
+  MakeOptional,
   VAR_DATASOURCE,
-  ALL_VARIABLE_VALUE,
-} from '../../../utils/shared';
-import { getDatasource, getExplorationFor } from '../../../utils/utils';
-import { ShareExplorationButton } from './ShareExplorationButton';
-import { buildLabelBreakdownActionScene } from './Tabs/LabelBreakdownScene';
-import { DataSourceWithBackend, getDataSourceSrv, locationService } from '@grafana/runtime';
-import { buildPatternsScene } from './Tabs/PatternsScene';
-import { buildFieldsBreakdownActionScene } from './Tabs/FieldsBreakdownScene';
-import { Unsubscribable } from 'rxjs';
-import { getLiveTailControl } from 'utils/scenes';
-import { extractFields } from '../../../utils/fields';
-import { GoToExploreButton } from './GoToExploreButton';
-import { GiveFeedback } from './GiveFeedback';
-import { renderLogQLLabelFilters } from 'pages/Explore';
+  VAR_DATASOURCE_EXPR,
+  VAR_FIELDS,
+  VAR_FILTERS,
+  VAR_LOGS_FORMAT,
+  VAR_PATTERNS,
+  explorationDS,
+} from 'utils/shared';
+import { getDatasource, getExplorationFor } from 'utils/utils';
 import { DetectedLabelsResponse } from '../types';
+import { GiveFeedback } from './GiveFeedback';
+import { GoToExploreButton } from './GoToExploreButton';
+import { LogTimeSeriesPanel } from './LogTimeSeriesPanel';
+import { ShareExplorationButton } from './ShareExplorationButton';
+import { buildFieldsBreakdownActionScene } from './Tabs/FieldsBreakdownScene';
+import { buildLabelBreakdownActionScene } from './Tabs/LabelBreakdownScene';
+import { buildLogsListScene } from './Tabs/LogsListScene';
+import { buildPatternsScene } from './Tabs/PatternsScene';
 
 interface LokiPattern {
   pattern: string;

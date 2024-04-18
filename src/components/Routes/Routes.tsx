@@ -1,9 +1,8 @@
 import React from 'react';
 import { Redirect, Route, Switch } from 'react-router-dom';
-import { prefixRoute } from '../../utils/utils.routing';
-import { ROUTES } from '../../constants';
-import { LogExplorationPage } from '../../pages/Explore';
 import { config } from '@grafana/runtime';
+import { LogExplorationPage } from 'pages/Explore/LogExplorationPage';
+import { ROUTES, prefixRoute } from 'utils/routing';
 
 export const Routes = () => {
   const userPermissions = config.bootData.user.permissions;

@@ -7,7 +7,7 @@ import {
   SceneObjectBase,
   SceneObjectState,
 } from '@grafana/scenes';
-import { getLogsPanel } from '../../panels/logsPanel';
+import { getLogsPanel } from 'components/Explore/panels/logsPanel';
 import { LineFilter } from '../LineFilter';
 
 export interface LogsListSceneState extends SceneObjectState {

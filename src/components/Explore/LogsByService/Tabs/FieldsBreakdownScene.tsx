@@ -21,22 +21,20 @@ import {
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { Button, DrawStyle, Field, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
-
-import { BreakdownLabelSelector } from './BreakdownLabelSelector';
-import { StatusWrapper } from '../../StatusWrapper';
+import { AddToFiltersGraphAction } from 'components/Explore/AddToFiltersGraphAction';
+import { ByFrameRepeater } from 'components/Explore/ByFrameRepeater';
+import { LayoutSwitcher } from 'components/Explore/LayoutSwitcher';
+import { StatusWrapper } from 'components/Explore/StatusWrapper';
+import { getLayoutChild } from 'utils/fields';
 import {
+  VAR_FILTERS,
+  VAR_FIELD_GROUP_BY,
   ALL_VARIABLE_VALUE,
   explorationDS,
   LOG_STREAM_SELECTOR_EXPR,
-  VAR_FIELD_GROUP_BY,
-  VAR_FILTERS,
-} from '../../../../utils/shared';
-
-import { AddToFiltersGraphAction } from '../../AddToFiltersGraphAction';
-import { ByFrameRepeater } from '../../ByFrameRepeater';
-import { LayoutSwitcher } from '../../LayoutSwitcher';
+} from 'utils/shared';
 import { LogsByServiceScene } from '../LogsByServiceScene';
-import { getLayoutChild } from '../../../../utils/fields';
+import { BreakdownLabelSelector } from './BreakdownLabelSelector';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -208,7 +206,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         new SceneCSSGridLayout({
           templateColumns: '1fr',
           autoRows: '200px',
-          children: children.map(child => child.clone()),
+          children: children.map((child) => child.clone()),
         }),
       ],
     });
@@ -311,7 +309,7 @@ function buildQuery(tagKey: string) {
     editorMode: 'code',
     maxLines: 1000,
     intervalMs: 2000,
-    legendFormat: `{{${tagKey}}}`
+    legendFormat: `{{${tagKey}}}`,
   };
 }
 
@@ -351,7 +349,7 @@ function buildNormalLayout(variable: CustomVariable) {
               body: new SceneReactObject({
                 reactNode: <LoadingPlaceholder text="Loading..." />,
               }),
-            })
+            }),
           ],
           isLazy: true,
         }),
@@ -369,7 +367,7 @@ function buildNormalLayout(variable: CustomVariable) {
               body: new SceneReactObject({
                 reactNode: <LoadingPlaceholder text="Loading..." />,
               }),
-            })
+            }),
           ],
           isLazy: true,
         }),

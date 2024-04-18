@@ -1,16 +1,14 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { AdHocVariableFilter, GrafanaTheme2, SelectableValue } from '@grafana/data';
+import { AdHocVariableFilter, GrafanaTheme2, SelectableValue, VariableHide } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   CustomVariable,
   DataSourceVariable,
-  getUrlSyncManager,
   SceneComponentProps,
   SceneControlsSpacer,
   SceneFlexItem,
-  sceneGraph,
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
@@ -22,25 +20,24 @@ import {
   SceneVariableSet,
   SplitLayout,
   VariableValueSelectors,
+  getUrlSyncManager,
+  sceneGraph,
 } from '@grafana/scenes';
 import { Text, useStyles2 } from '@grafana/ui';
-
-import { LogsByServiceScene } from '../../components/Explore/LogsByService/LogsByServiceScene';
-import { SelectStartingPointScene } from './SelectStartingPointScene';
+import { LogsByServiceScene } from 'components/Explore/LogsByService/LogsByServiceScene';
+import { Pattern } from 'components/Explore/LogsByService/Pattern';
+import { AppliedPattern } from 'components/Explore/types';
 import {
-  DetailsSceneUpdated,
-  explorationDS,
   StartingPointSelectedEvent,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_FILTERS,
   VAR_LINE_FILTER,
   VAR_PATTERNS,
-} from '../../utils/shared';
-import { DetailsScene } from '../../components/Explore/LogsByService/DetailsScene';
-import { AppliedPattern } from '../../components/Explore/types';
-import { VariableHide } from '@grafana/schema';
-import { Pattern } from 'components/Explore/LogsByService/Pattern';
+  explorationDS,
+} from 'utils/shared';
+import { SelectStartingPointScene } from './SelectStartingPointScene';
+
 import pluginJson from '../../plugin.json';
 
 type LogExplorationMode = 'start' | 'logs';
@@ -52,7 +49,6 @@ export interface LogExplorationState extends SceneObjectState {
   body: SplitLayout;
 
   mode?: LogExplorationMode;
-  detailsScene?: DetailsScene;
   showDetails?: boolean;
 
   // just for the starting data source
@@ -80,7 +76,6 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
         new SceneRefreshPicker({}),
       ],
       body: buildSplitLayout(),
-      detailsScene: new DetailsScene({}),
       ...state,
     });
 
@@ -116,19 +111,8 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
 
     // Some scene elements publish this
     this.subscribeToEvent(StartingPointSelectedEvent, this._handleStartingPointSelected.bind(this));
-    this.subscribeToEvent(DetailsSceneUpdated, this._handleDetailsSceneUpdated.bind(this));
 
     this.subscribeToState((newState, oldState) => {
-      if (newState.showDetails !== oldState.showDetails) {
-        if (newState.showDetails) {
-          this.state.body.setState({ secondary: new DetailsScene(this.state.detailsScene?.state || {}) });
-          this.setState({ detailsScene: undefined });
-        } else {
-          this.state.body.setState({ secondary: undefined });
-          this.setState({ detailsScene: new DetailsScene({}) });
-        }
-      }
-
       if (newState.mode !== oldState.mode) {
         this.setState({ topScene: getTopScene(newState.mode) });
       }
@@ -173,10 +157,6 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
     this.setState({
       mode: 'logs',
     });
-  }
-
-  private _handleDetailsSceneUpdated(evt: DetailsSceneUpdated) {
-    this.setState({ showDetails: true });
   }
 
   private setupAutoHideVariable(variable: AdHocFiltersVariable) {
@@ -413,7 +393,7 @@ function getStyles(theme: GrafanaTheme2) {
         // The wrapper of each filter
         '& > div': {
           // the 'service_name' filter wrapper
-          '&:nth-child(2) > div':{
+          '&:nth-child(2) > div': {
             gap: 0,
           },
           // The actual inputs container

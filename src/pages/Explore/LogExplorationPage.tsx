@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { newLogsExploration } from '../../utils/utils';
-import { LogExploration } from './LogExploration';
+
 import { getUrlSyncManager } from '@grafana/scenes';
+import { LogExploration } from './LogExploration';
+import { newLogsExploration } from 'utils/utils';
 
 export const LogExplorationPage = () => {
   const [exploration] = useState(newLogsExploration());

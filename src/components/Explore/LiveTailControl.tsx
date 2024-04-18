@@ -7,7 +7,7 @@ import {
   SceneRefreshPicker,
 } from '@grafana/scenes';
 import { ButtonGroup, ToolbarButton, Tooltip } from '@grafana/ui';
-import { LogExploration } from '../../pages/Explore/LogExploration';
+import { LogExploration } from 'pages/Explore/LogExploration';
 
 export interface LiveTailControlState extends SceneObjectState {
   liveStreaming?: boolean;

@@ -2,7 +2,7 @@ import React from 'react';
 
 import { SceneObjectState, SceneObjectBase, SceneComponentProps, sceneGraph } from '@grafana/scenes';
 import { Button } from '@grafana/ui';
-import { LogExploration } from '../../../../pages/Explore';
+import { LogExploration } from 'pages/Explore/LogExploration';
 
 export interface AddToPatternsGraphActionState extends SceneObjectState {
   pattern: string;

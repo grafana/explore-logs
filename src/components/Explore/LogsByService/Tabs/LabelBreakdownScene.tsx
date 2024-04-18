@@ -22,23 +22,21 @@ import {
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { Button, DrawStyle, Field, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
-
-import { BreakdownLabelSelector } from './BreakdownLabelSelector';
-import { StatusWrapper } from '../../StatusWrapper';
+import { AddToFiltersGraphAction } from 'components/Explore/AddToFiltersGraphAction';
+import { ByFrameRepeater } from 'components/Explore/ByFrameRepeater';
+import { LayoutSwitcher } from 'components/Explore/LayoutSwitcher';
+import { StatusWrapper } from 'components/Explore/StatusWrapper';
+import { DetectedLabelsResponse } from 'components/Explore/types';
+import { getLayoutChild } from 'utils/fields';
 import {
+  VAR_FILTERS,
+  VAR_LABEL_GROUP_BY,
   ALL_VARIABLE_VALUE,
   explorationDS,
   LOG_STREAM_SELECTOR_EXPR,
-  VAR_FILTERS,
-  VAR_LABEL_GROUP_BY,
-} from '../../../../utils/shared';
-
-import { AddToFiltersGraphAction } from '../../AddToFiltersGraphAction';
-import { ByFrameRepeater } from '../../ByFrameRepeater';
-import { LayoutSwitcher } from '../../LayoutSwitcher';
-import { getDatasource, getLabelOptions } from '../../../../utils/utils';
-import { getLayoutChild } from '../../../../utils/fields';
-import { DetectedLabelsResponse } from 'components/Explore/types';
+} from 'utils/shared';
+import { getDatasource, getLabelOptions } from 'utils/utils';
+import { BreakdownLabelSelector } from './BreakdownLabelSelector';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -211,7 +209,7 @@ function getStyles(theme: GrafanaTheme2) {
   };
 }
 
-export function buildAllLayout(options: Array<SelectableValue<string>>) {
+function buildAllLayout(options: Array<SelectableValue<string>>) {
   const children: SceneFlexItemLike[] = [];
 
   for (const option of options) {
@@ -297,7 +295,7 @@ function buildNormalLayout(variable: CustomVariable) {
     .setCustomFieldConfig('lineWidth', 0)
     .setCustomFieldConfig('pointSize', 0)
     .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-    .setTitle(variable.getValueText())
+    .setTitle(variable.getValueText());
 
   const body = bodyOpts.build();
 
@@ -332,8 +330,8 @@ function buildNormalLayout(variable: CustomVariable) {
               body: new SceneReactObject({
                 reactNode: <LoadingPlaceholder text="Loading..." />,
               }),
-            })
-          ]
+            }),
+          ],
         }),
         getLayoutChild: getLayoutChild(
           getLabelValue,
@@ -349,7 +347,7 @@ function buildNormalLayout(variable: CustomVariable) {
               body: new SceneReactObject({
                 reactNode: <LoadingPlaceholder text="Loading..." />,
               }),
-            })
+            }),
           ],
         }),
         getLayoutChild: getLayoutChild(

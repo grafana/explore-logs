@@ -10,10 +10,10 @@ import {
   SceneQueryRunner,
   SceneDataTransformer,
 } from '@grafana/scenes';
-import { explorationDS, LOG_STREAM_SELECTOR_EXPR } from '../../../utils/shared';
 import { DrawStyle, StackingMode } from '@grafana/ui';
 import { DataFrame } from '@grafana/data';
 import { map, Observable } from 'rxjs';
+import { LOG_STREAM_SELECTOR_EXPR, explorationDS } from 'utils/shared';
 
 export interface LogTimeSeriesPanelState extends SceneObjectState {
   panel?: SceneFlexLayout;
