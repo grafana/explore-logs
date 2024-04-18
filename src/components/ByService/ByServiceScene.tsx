@@ -232,18 +232,26 @@ export class ByServiceScene extends SceneObjectBase<ByServiceSceneState> {
   private async updateDetectedFields() {
     const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
     const timeRange = sceneGraph.getTimeRange(this).state.value;
-    const variable = sceneGraph.lookupVariable('filters', this);
-    if (!(variable instanceof AdHocFiltersVariable)) {
+    const filters = sceneGraph.lookupVariable(VAR_FILTERS, this);
+    const labels = sceneGraph.lookupVariable(VAR_FIELDS, this);
+    if (!(filters instanceof AdHocFiltersVariable)) {
       return;
     }
-    console.debug('expression', variable?.state?.filterExpression);
+    if (!(labels instanceof AdHocFiltersVariable)) {
+      return;
+    }
+    console.debug('filter expression:', filters?.state?.filterExpression);
+    console.debug('labels expression:', labels?.state?.filterExpression);
+
+    const expression = `${filters?.state?.filterExpression} | logfmt ${labels?.state?.filterExpression}`;
+    console.log('expression', expression);
 
     getDataSourceSrv()
       .get(ds as string)
       .then((datasourceInstance) => {
         // @ts-ignore
         datasourceInstance.getResource!('detected_fields', {
-          query: variable?.state?.filterExpression,
+          query: expression,
           from: timeRange.from.utc().toISOString(),
           to: timeRange.to.utc().toISOString(),
         })
