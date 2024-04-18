@@ -36,7 +36,7 @@ import {
   LOG_STREAM_SELECTOR_EXPR,
 } from 'utils/shared';
 import { getDatasource, getLabelOptions } from 'utils/utils';
-import { FieldSelector } from '../misc/FieldSelector';
+import { FieldSelector } from '../../misc/FieldSelector';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;

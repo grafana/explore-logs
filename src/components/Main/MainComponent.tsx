@@ -25,7 +25,7 @@ import {
 } from '@grafana/scenes';
 import { Text, useStyles2 } from '@grafana/ui';
 import { ByServiceScene } from 'components/ByService/ByServiceScene';
-import { Pattern } from 'components/Patterns/Pattern';
+import { Pattern } from 'components/Tabs/Patterns/Pattern';
 import {
   StartingPointSelectedEvent,
   VAR_DATASOURCE,

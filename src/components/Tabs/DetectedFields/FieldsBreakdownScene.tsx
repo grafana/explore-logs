@@ -33,8 +33,8 @@ import {
   explorationDS,
   LOG_STREAM_SELECTOR_EXPR,
 } from 'utils/shared';
-import { ByServiceScene } from '../ByService/ByServiceScene';
-import { FieldSelector } from '../misc/FieldSelector';
+import { ByServiceScene } from '../../ByService/ByServiceScene';
+import { FieldSelector } from '../../misc/FieldSelector';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;

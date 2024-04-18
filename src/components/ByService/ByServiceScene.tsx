@@ -46,10 +46,10 @@ import { GiveFeedback } from '../misc/GiveFeedback';
 import { GoToExploreButton } from '../misc/GoToExploreButton';
 import { LogsVolumePanel } from './LogsVolumePanel';
 import { ShareExplorationButton } from '../misc/ShareExplorationButton';
-import { buildFieldsBreakdownActionScene } from '../DetectedFields/FieldsBreakdownScene';
-import { buildLabelBreakdownActionScene } from '../Labels/LabelBreakdownScene';
-import { buildLogsListScene } from '../Logs/LogsListScene';
-import { buildPatternsScene } from '../Patterns/PatternsScene';
+import { buildFieldsBreakdownActionScene } from '../Tabs/DetectedFields/FieldsBreakdownScene';
+import { buildLabelBreakdownActionScene } from '../Tabs/Labels/LabelBreakdownScene';
+import { buildLogsListScene } from '../Tabs/Logs/LogsListScene';
+import { buildPatternsScene } from '../Tabs/Patterns/PatternsScene';
 
 interface LokiPattern {
   pattern: string;
