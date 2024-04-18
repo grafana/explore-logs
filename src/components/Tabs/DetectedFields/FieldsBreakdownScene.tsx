@@ -95,15 +95,18 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   private updateFields() {
     const variable = this.getVariable();
     const logsScene = sceneGraph.getAncestor(this, ByServiceScene);
-
-    this.setState({
-      fields: [
-        { label: 'All', value: ALL_VARIABLE_VALUE },
-        ...(logsScene.state.detectedFields?.map((f) => ({
+    const fields = [
+      { label: 'All', value: ALL_VARIABLE_VALUE },
+      ...(logsScene.state.detectedFields
+        ?.filter((f) => f.cardinality > 1)
+        .map((f) => ({
           label: f.label,
           value: f.label,
         })) || []),
-      ],
+    ];
+
+    this.setState({
+      fields,
     });
 
     this.updateBody(variable);
