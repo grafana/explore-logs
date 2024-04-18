@@ -21,7 +21,7 @@ import {
   sceneGraph,
 } from '@grafana/scenes';
 import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
-import { renderLogQLLabelFilters } from 'pages/Explore/LogExploration';
+import { renderLogQLLabelFilters } from 'components/Main/MainComponent';
 import { Unsubscribable } from 'rxjs';
 import { extractFields } from 'utils/fields';
 import { EXPLORATIONS_ROUTE } from 'utils/routing';
@@ -41,22 +41,22 @@ import {
   explorationDS,
 } from 'utils/shared';
 import { getDatasource, getExplorationFor } from 'utils/utils';
-import { DetectedLabelsResponse } from '../types';
-import { GiveFeedback } from './GiveFeedback';
-import { GoToExploreButton } from './GoToExploreButton';
-import { LogTimeSeriesPanel } from './LogTimeSeriesPanel';
-import { ShareExplorationButton } from './ShareExplorationButton';
-import { buildFieldsBreakdownActionScene } from './Tabs/FieldsBreakdownScene';
-import { buildLabelBreakdownActionScene } from './Tabs/LabelBreakdownScene';
-import { buildLogsListScene } from './Tabs/LogsListScene';
-import { buildPatternsScene } from './Tabs/PatternsScene';
+import { DetectedLabelsResponse } from '../../utils/types';
+import { GiveFeedback } from '../misc/GiveFeedback';
+import { GoToExploreButton } from '../misc/GoToExploreButton';
+import { LogsVolumePanel } from './LogsVolumePanel';
+import { ShareExplorationButton } from '../misc/ShareExplorationButton';
+import { buildFieldsBreakdownActionScene } from '../DetectedFields/FieldsBreakdownScene';
+import { buildLabelBreakdownActionScene } from '../Labels/LabelBreakdownScene';
+import { buildLogsListScene } from '../Logs/LogsListScene';
+import { buildPatternsScene } from '../Patterns/PatternsScene';
 
 interface LokiPattern {
   pattern: string;
   samples: Array<[number, string]>;
 }
 
-export interface LogSceneState extends SceneObjectState {
+export interface ByServiceSceneState extends SceneObjectState {
   body: SceneFlexLayout;
   actionView?: string;
 
@@ -67,14 +67,14 @@ export interface LogSceneState extends SceneObjectState {
   detectedFieldsCount?: number;
 }
 
-export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
+export class ByServiceScene extends SceneObjectBase<ByServiceSceneState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['actionView'] });
   protected _variableDependency = new VariableDependencyConfig(this, {
     variableNames: [VAR_DATASOURCE, VAR_FILTERS, VAR_FIELDS, VAR_PATTERNS],
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
   });
 
-  public constructor(state: MakeOptional<LogSceneState, 'body'>) {
+  public constructor(state: MakeOptional<ByServiceSceneState, 'body'>) {
     super({
       body: state.body ?? buildGraphScene(),
       $variables:
@@ -342,7 +342,7 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
     }
   }
 
-  static Component = ({ model }: SceneComponentProps<LogsByServiceScene>) => {
+  static Component = ({ model }: SceneComponentProps<ByServiceScene>) => {
     const { body } = model.useState();
     return <body.Component model={body} />;
   };
@@ -359,7 +359,7 @@ export interface LogsActionBarState extends SceneObjectState {}
 
 export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
   public static Component = ({ model }: SceneComponentProps<LogsActionBar>) => {
-    const logsScene = sceneGraph.getAncestor(model, LogsByServiceScene);
+    const logsScene = sceneGraph.getAncestor(model, ByServiceScene);
     const styles = useStyles2(getStyles);
     const exploration = getExplorationFor(model);
     const { actionView } = logsScene.useState();
@@ -442,7 +442,7 @@ function buildGraphScene() {
       new SceneFlexItem({
         minHeight: MAIN_PANEL_MIN_HEIGHT,
         maxHeight: MAIN_PANEL_MAX_HEIGHT,
-        body: new LogTimeSeriesPanel({}),
+        body: new LogsVolumePanel({}),
       }),
       new SceneFlexItem({
         ySizing: 'content',

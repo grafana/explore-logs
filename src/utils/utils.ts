@@ -8,7 +8,7 @@ import {
   SceneObjectUrlValues,
   SceneTimeRange,
 } from '@grafana/scenes';
-import { LogExploration } from 'pages/Explore/LogExploration';
+import { MainComponent } from 'components/Main/MainComponent';
 import {
   VAR_DATASOURCE_EXPR,
   LOG_STREAM_SELECTOR_EXPR,
@@ -17,18 +17,18 @@ import {
 } from './shared';
 import { EXPLORATIONS_ROUTE } from './routing';
 
-export function getExplorationFor(model: SceneObject): LogExploration {
-  return sceneGraph.getAncestor(model, LogExploration);
+export function getExplorationFor(model: SceneObject): MainComponent {
+  return sceneGraph.getAncestor(model, MainComponent);
 }
 
-export function newLogsExploration(initialDS?: string): LogExploration {
-  return new LogExploration({
+export function newLogsExploration(initialDS?: string): MainComponent {
+  return new MainComponent({
     initialDS,
     $timeRange: new SceneTimeRange({ from: 'now-15m', to: 'now' }),
   });
 }
 
-export function getUrlForExploration(exploration: LogExploration) {
+export function getUrlForExploration(exploration: MainComponent) {
   const params = getUrlSyncManager().getUrlState(exploration);
   return getUrlForValues(params);
 }
@@ -37,11 +37,11 @@ export function getUrlForValues(values: SceneObjectUrlValues) {
   return urlUtil.renderUrl(EXPLORATIONS_ROUTE, values);
 }
 
-export function getDataSource(exploration: LogExploration) {
+export function getDataSource(exploration: MainComponent) {
   return sceneGraph.interpolate(exploration, VAR_DATASOURCE_EXPR);
 }
 
-export function getQueryExpr(exploration: LogExploration) {
+export function getQueryExpr(exploration: MainComponent) {
   return sceneGraph.interpolate(exploration, LOG_STREAM_SELECTOR_EXPR).replace(/\s+/g, ' ');
 }
 

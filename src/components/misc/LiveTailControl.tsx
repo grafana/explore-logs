@@ -7,7 +7,7 @@ import {
   SceneRefreshPicker,
 } from '@grafana/scenes';
 import { ButtonGroup, ToolbarButton, Tooltip } from '@grafana/ui';
-import { LogExploration } from 'pages/Explore/LogExploration';
+import { MainComponent } from 'components/Main/MainComponent';
 
 export interface LiveTailControlState extends SceneObjectState {
   liveStreaming?: boolean;
@@ -19,7 +19,7 @@ export class LiveTailControl extends SceneObjectBase<LiveTailControlState> {
 
 function LiveTailControlRenderer({ model }: SceneComponentProps<LiveTailControl>) {
   const { liveStreaming } = model.useState();
-  const logExploration = sceneGraph.getAncestor(model, LogExploration);
+  const logExploration = sceneGraph.getAncestor(model, MainComponent);
   const { controls } = logExploration.useState();
   const refreshPicker = controls.find((c) => c instanceof SceneRefreshPicker) as SceneRefreshPicker;
   const refresh = refreshPicker?.useState().refresh || '';

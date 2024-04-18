@@ -5,12 +5,12 @@ import { config } from '@grafana/runtime';
 import { sceneGraph } from '@grafana/scenes';
 import { ToolbarButton } from '@grafana/ui';
 
-import { LogExploration } from 'pages/Explore/LogExploration';
+import { MainComponent } from 'components/Main/MainComponent';
 import { VAR_LOGS_FORMAT_EXPR } from 'utils/shared';
 import { getDataSource, getQueryExpr } from 'utils/utils';
 
 interface ShareExplorationButtonState {
-  exploration: LogExploration;
+  exploration: MainComponent;
 }
 
 export const GoToExploreButton = ({ exploration }: ShareExplorationButtonState) => {

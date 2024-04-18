@@ -21,10 +21,10 @@ import {
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { Button, DrawStyle, Field, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
-import { AddToFiltersGraphAction } from 'components/Explore/AddToFiltersGraphAction';
-import { ByFrameRepeater } from 'components/Explore/ByFrameRepeater';
-import { LayoutSwitcher } from 'components/Explore/LayoutSwitcher';
-import { StatusWrapper } from 'components/Explore/StatusWrapper';
+import { AddToFiltersGraphAction } from 'components/misc/AddToFiltersButton';
+import { ByFrameRepeater } from 'components/misc/ByFrameRepeater';
+import { LayoutSwitcher } from 'components/misc/LayoutSwitcher';
+import { StatusWrapper } from 'components/misc/StatusWrapper';
 import { getLayoutChild } from 'utils/fields';
 import {
   VAR_FILTERS,
@@ -33,8 +33,8 @@ import {
   explorationDS,
   LOG_STREAM_SELECTOR_EXPR,
 } from 'utils/shared';
-import { LogsByServiceScene } from '../LogsByServiceScene';
-import { BreakdownLabelSelector } from './BreakdownLabelSelector';
+import { ByServiceScene } from '../ByService/ByServiceScene';
+import { FieldSelector } from '../misc/FieldSelector';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -72,7 +72,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   private _onActivate() {
     const variable = this.getVariable();
 
-    sceneGraph.getAncestor(this, LogsByServiceScene)!.subscribeToState((newState, oldState) => {
+    sceneGraph.getAncestor(this, ByServiceScene)!.subscribeToState((newState, oldState) => {
       if (newState.detectedFields !== oldState.detectedFields) {
         this.updateFields();
       }
@@ -94,7 +94,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   private updateFields() {
     const variable = this.getVariable();
-    const logsScene = sceneGraph.getAncestor(this, LogsByServiceScene);
+    const logsScene = sceneGraph.getAncestor(this, ByServiceScene);
 
     this.setState({
       fields: [
@@ -233,7 +233,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
             {!loading && fields.length > 0 && (
               <div className={styles.controlsLeft}>
                 <Field label="By field">
-                  <BreakdownLabelSelector options={fields} value={value} onChange={model.onChange} />
+                  <FieldSelector options={fields} value={value} onChange={model.onChange} />
                 </Field>
               </div>
             )}

@@ -24,17 +24,17 @@ import {
 } from '@grafana/scenes';
 import { DrawStyle, Field, Icon, Input, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 
-import { SelectAttributeWithValueAction } from './SelectAttributeWithValueAction';
+import { SelectFieldButton } from '../misc/SelectFieldButton';
 import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from '../../utils/shared';
 import { map, Observable, Unsubscribable } from 'rxjs';
-import { ByLabelRepeater } from 'components/Explore/ByLabelRepeater';
+import { ByLabelRepeater } from 'components/misc/ByLabelRepeater';
 import { getLiveTailControl } from 'utils/scenes';
 import { getFavoriteServicesFromStorage } from 'utils/store';
 
 const LIMIT_SERVICES = 20;
 const SERVICE_NAME = 'service_name';
 
-export interface LogSelectSceneState extends SceneObjectState {
+interface ServiceSelectionComponentState extends SceneObjectState {
   body: SceneCSSGridLayout;
   repeater?: ByLabelRepeater;
   groupBy: string;
@@ -49,7 +49,7 @@ export interface LogSelectSceneState extends SceneObjectState {
   topServicesToBeUsed?: string[];
 }
 
-export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneState> {
+export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionComponentState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
     variableNames: [VAR_FILTERS, VAR_DATASOURCE],
     onReferencedVariableValueChanged: async (variable: SceneVariable) => {
@@ -61,7 +61,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
   });
   private _services: Record<string, ServiceItem> = {};
 
-  constructor(state: Partial<LogSelectSceneState>) {
+  constructor(state: Partial<ServiceSelectionComponentState>) {
     super({
       // $variables: state.$variables ?? getVariableSet(),
       showPreviews: true,
@@ -282,7 +282,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
         });
       })
       .setOption('legend', { showLegend: false })
-      .setHeaderActions(new SelectAttributeWithValueAction({ value: service }))
+      .setHeaderActions(new SelectFieldButton({ value: service }))
       .build();
 
     const logsQueryRunner = new SceneQueryRunner({
@@ -321,7 +321,7 @@ export class SelectStartingPointScene extends SceneObjectBase<LogSelectSceneStat
     return layout;
   }
 
-  public static Component = ({ model }: SceneComponentProps<SelectStartingPointScene>) => {
+  public static Component = ({ model }: SceneComponentProps<ServiceSelectionComponent>) => {
     const styles = useStyles2(getStyles);
     const { isTopSeriesLoading, topServicesToBeUsed, topServices } = model.useState();
 

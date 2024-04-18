@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { getUrlSyncManager } from '@grafana/scenes';
-import { LogExploration } from './LogExploration';
+import { MainComponent } from '../../components/Main/MainComponent';
 import { newLogsExploration } from 'utils/utils';
 
 export const LogExplorationPage = () => {
@@ -10,7 +10,7 @@ export const LogExplorationPage = () => {
   return <LogExplorationView exploration={exploration} />;
 };
 
-export function LogExplorationView({ exploration }: { exploration: LogExploration }) {
+function LogExplorationView({ exploration }: { exploration: MainComponent }) {
   const [isInitialized, setIsInitialized] = React.useState(false);
 
   useEffect(() => {

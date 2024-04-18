@@ -15,12 +15,12 @@ import { DataFrame } from '@grafana/data';
 import { map, Observable } from 'rxjs';
 import { LOG_STREAM_SELECTOR_EXPR, explorationDS } from 'utils/shared';
 
-export interface LogTimeSeriesPanelState extends SceneObjectState {
+export interface LogsVolumePanelState extends SceneObjectState {
   panel?: SceneFlexLayout;
 }
 
-export class LogTimeSeriesPanel extends SceneObjectBase<LogTimeSeriesPanelState> {
-  constructor(state: LogTimeSeriesPanelState) {
+export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
+  constructor(state: LogsVolumePanelState) {
     super(state);
 
     this.addActivationHandler(this._onActivate.bind(this));
@@ -106,7 +106,7 @@ export class LogTimeSeriesPanel extends SceneObjectBase<LogTimeSeriesPanelState>
     });
   }
 
-  public static Component = ({ model }: SceneComponentProps<LogTimeSeriesPanel>) => {
+  public static Component = ({ model }: SceneComponentProps<LogsVolumePanel>) => {
     const { panel } = model.useState();
 
     if (!panel) {

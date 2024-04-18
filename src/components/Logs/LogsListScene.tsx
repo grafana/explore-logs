@@ -1,14 +1,14 @@
 import React from 'react';
 
 import {
+  PanelBuilders,
   SceneComponentProps,
   SceneFlexItem,
   SceneFlexLayout,
   SceneObjectBase,
   SceneObjectState,
 } from '@grafana/scenes';
-import { getLogsPanel } from 'components/Explore/panels/logsPanel';
-import { LineFilter } from '../LineFilter';
+import { LineFilter } from '../misc/LineFilter';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -42,7 +42,11 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         }),
         new SceneFlexItem({
           height: 'calc(100vh - 220px)',
-          body: getLogsPanel(),
+          body: PanelBuilders.logs()
+            .setTitle('Logs')
+            .setOption('showLogContextToggle', true)
+            .setOption('showTime', true)
+            .build(),
         }),
       ],
     });

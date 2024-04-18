@@ -22,11 +22,11 @@ import {
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { Button, DrawStyle, Field, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
-import { AddToFiltersGraphAction } from 'components/Explore/AddToFiltersGraphAction';
-import { ByFrameRepeater } from 'components/Explore/ByFrameRepeater';
-import { LayoutSwitcher } from 'components/Explore/LayoutSwitcher';
-import { StatusWrapper } from 'components/Explore/StatusWrapper';
-import { DetectedLabelsResponse } from 'components/Explore/types';
+import { AddToFiltersGraphAction } from 'components/misc/AddToFiltersButton';
+import { ByFrameRepeater } from 'components/misc/ByFrameRepeater';
+import { LayoutSwitcher } from 'components/misc/LayoutSwitcher';
+import { StatusWrapper } from 'components/misc/StatusWrapper';
+import { DetectedLabelsResponse } from 'utils/types';
 import { getLayoutChild } from 'utils/fields';
 import {
   VAR_FILTERS,
@@ -36,7 +36,7 @@ import {
   LOG_STREAM_SELECTOR_EXPR,
 } from 'utils/shared';
 import { getDatasource, getLabelOptions } from 'utils/utils';
-import { BreakdownLabelSelector } from './BreakdownLabelSelector';
+import { FieldSelector } from '../misc/FieldSelector';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -158,7 +158,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
             {!loading && labels.length > 0 && (
               <div className={styles.controlsLeft}>
                 <Field label="By label">
-                  <BreakdownLabelSelector options={labels} value={value} onChange={model.onChange} />
+                  <FieldSelector options={labels} value={value} onChange={model.onChange} />
                 </Field>
               </div>
             )}

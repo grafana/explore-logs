@@ -24,9 +24,8 @@ import {
   sceneGraph,
 } from '@grafana/scenes';
 import { Text, useStyles2 } from '@grafana/ui';
-import { LogsByServiceScene } from 'components/Explore/LogsByService/LogsByServiceScene';
-import { Pattern } from 'components/Explore/LogsByService/Pattern';
-import { AppliedPattern } from 'components/Explore/types';
+import { ByServiceScene } from 'components/ByService/ByServiceScene';
+import { Pattern } from 'components/Patterns/Pattern';
 import {
   StartingPointSelectedEvent,
   VAR_DATASOURCE,
@@ -36,13 +35,18 @@ import {
   VAR_PATTERNS,
   explorationDS,
 } from 'utils/shared';
-import { SelectStartingPointScene } from './SelectStartingPointScene';
+import { ServiceSelectionComponent } from './ServiceSelectionComponent';
 
 import pluginJson from '../../plugin.json';
 
 type LogExplorationMode = 'start' | 'logs';
 
-export interface LogExplorationState extends SceneObjectState {
+export interface AppliedPattern {
+  pattern: string;
+  type: 'include' | 'exclude';
+}
+
+export interface MainComponentState extends SceneObjectState {
   topScene?: SceneObject;
   controls: SceneObject[];
   // history: ExplorationHistory;
@@ -60,10 +64,10 @@ export interface LogExplorationState extends SceneObjectState {
 
 const DS_LOCALSTORAGE_KEY = `${pluginJson.id}.datasource`;
 
-export class LogExploration extends SceneObjectBase<LogExplorationState> {
+export class MainComponent extends SceneObjectBase<MainComponentState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['mode', 'patterns'] });
 
-  public constructor(state: Partial<LogExplorationState>) {
+  public constructor(state: Partial<MainComponentState>) {
     super({
       $timeRange: state.$timeRange ?? new SceneTimeRange({}),
       $variables:
@@ -82,7 +86,7 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
     this.addActivationHandler(this._onActivate.bind(this));
   }
 
-  static Component = ({ model }: SceneComponentProps<LogExploration>) => {
+  static Component = ({ model }: SceneComponentProps<MainComponent>) => {
     const { body } = model.useState();
     const styles = useStyles2(getStyles);
 
@@ -138,7 +142,7 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
   }
 
   updateFromUrl(values: SceneObjectUrlValues) {
-    const stateUpdate: Partial<LogExplorationState> = {};
+    const stateUpdate: Partial<MainComponentState> = {};
     if (values.mode !== this.state.mode) {
       const mode: LogExplorationMode = (values.mode as LogExplorationMode) ?? 'start';
       stateUpdate.mode = mode;
@@ -184,7 +188,7 @@ export class LogExploration extends SceneObjectBase<LogExplorationState> {
 
 export class LogExplorationScene extends SceneObjectBase {
   static Component = ({ model }: SceneComponentProps<LogExplorationScene>) => {
-    const logExploration = sceneGraph.getAncestor(model, LogExploration);
+    const logExploration = sceneGraph.getAncestor(model, MainComponent);
     const { controls, topScene, mode, patterns } = logExploration.useState();
     const styles = useStyles2(getStyles);
     const includePatterns = patterns ? patterns.filter((pattern) => pattern.type === 'include') : [];
@@ -265,9 +269,9 @@ function buildSplitLayout() {
 
 function getTopScene(mode?: LogExplorationMode) {
   if (mode === 'logs') {
-    return new LogsByServiceScene({});
+    return new ByServiceScene({});
   }
-  return new SelectStartingPointScene({});
+  return new ServiceSelectionComponent({});
 }
 
 function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter[]) {

@@ -12,11 +12,11 @@ import { VariableHide } from '@grafana/schema';
 import { addToFavoriteServicesInStorage } from 'utils/store';
 import { VAR_DATASOURCE, StartingPointSelectedEvent } from 'utils/shared';
 
-export interface SelectAttributeWithValueActionState extends SceneObjectState {
+export interface SelectFieldButtonState extends SceneObjectState {
   value: string;
 }
 
-export class SelectAttributeWithValueAction extends SceneObjectBase<SelectAttributeWithValueActionState> {
+export class SelectFieldButton extends SceneObjectBase<SelectFieldButtonState> {
   public onClick = () => {
     const variable = sceneGraph.lookupVariable('filters', this);
     if (!(variable instanceof AdHocFiltersVariable)) {
@@ -44,7 +44,7 @@ export class SelectAttributeWithValueAction extends SceneObjectBase<SelectAttrib
     this.publishEvent(new StartingPointSelectedEvent(), true);
   };
 
-  public static Component = ({ model }: SceneComponentProps<SelectAttributeWithValueAction>) => {
+  public static Component = ({ model }: SceneComponentProps<SelectFieldButton>) => {
     return (
       <Button variant="secondary" size="sm" onClick={model.onClick}>
         Select

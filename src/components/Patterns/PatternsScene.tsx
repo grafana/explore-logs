@@ -18,14 +18,14 @@ import {
   SceneVariableSet,
 } from '@grafana/scenes';
 import { Button, DrawStyle, StackingMode, useStyles2, Text } from '@grafana/ui';
-import { AddToFiltersGraphAction } from 'components/Explore/AddToFiltersGraphAction';
-import { LayoutSwitcher } from 'components/Explore/LayoutSwitcher';
-import { StatusWrapper } from 'components/Explore/StatusWrapper';
-import { GrotError } from 'components/GrotError/GrotError';
+import { AddToFiltersGraphAction } from 'components/misc/AddToFiltersButton';
+import { LayoutSwitcher } from 'components/misc/LayoutSwitcher';
+import { StatusWrapper } from 'components/misc/StatusWrapper';
+import { GrotError } from 'components/misc/GrotError';
 import { VAR_LABEL_GROUP_BY } from 'utils/shared';
 import { getColorByIndex } from 'utils/utils';
-import { LogsByServiceScene } from '../LogsByServiceScene';
-import { AddToPatternsGraphAction } from './AddToPatternsGraphAction';
+import { ByServiceScene } from '../ByService/ByServiceScene';
+import { FilterByPatternsButton } from './FilterByPatternsButton';
 
 export interface PatternsSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -58,7 +58,7 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
 
   private _onActivate() {
     this.updateBody();
-    const unsub = sceneGraph.getAncestor(this, LogsByServiceScene).subscribeToState((newState, prevState) => {
+    const unsub = sceneGraph.getAncestor(this, ByServiceScene).subscribeToState((newState, prevState) => {
       if (newState.patterns !== prevState.patterns) {
         this.updateBody();
       }
@@ -78,7 +78,7 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
   private async updateBody() {
     const children: SceneFlexItemLike[] = [];
 
-    const patterns = sceneGraph.getAncestor(this, LogsByServiceScene).state.patterns;
+    const patterns = sceneGraph.getAncestor(this, ByServiceScene).state.patterns;
     if (!patterns) {
       return;
     }
@@ -161,8 +161,8 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
             .setCustomFieldConfig('axisSoftMax', maxValue)
             .setCustomFieldConfig('axisSoftMin', minValue)
             .setHeaderActions([
-              new AddToPatternsGraphAction({ pattern: pattern, type: 'exclude' }),
-              new AddToPatternsGraphAction({ pattern: pattern, type: 'include' }),
+              new FilterByPatternsButton({ pattern: pattern, type: 'exclude' }),
+              new FilterByPatternsButton({ pattern: pattern, type: 'include' }),
             ])
             .build(),
         })
@@ -205,7 +205,7 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
 
   public static Component = ({ model }: SceneComponentProps<PatternsScene>) => {
     const { body, loading, blockingMessage } = model.useState();
-    const logsByServiceScene = sceneGraph.getAncestor(model, LogsByServiceScene);
+    const logsByServiceScene = sceneGraph.getAncestor(model, ByServiceScene);
     const { patterns } = logsByServiceScene.useState();
     const styles = useStyles2(getStyles);
     return (

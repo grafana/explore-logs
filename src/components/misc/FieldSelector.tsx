@@ -11,7 +11,7 @@ type Props = {
   onChange: (label: string | undefined) => void;
 };
 
-export function BreakdownLabelSelector({ options, value, onChange }: Props) {
+export function FieldSelector({ options, value, onChange }: Props) {
   const styles = useStyles2(getStyles);
   const theme = useTheme2();
 

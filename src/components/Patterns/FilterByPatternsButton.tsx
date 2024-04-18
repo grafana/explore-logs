@@ -2,16 +2,16 @@ import React from 'react';
 
 import { SceneObjectState, SceneObjectBase, SceneComponentProps, sceneGraph } from '@grafana/scenes';
 import { Button } from '@grafana/ui';
-import { LogExploration } from 'pages/Explore/LogExploration';
+import { MainComponent } from 'components/Main/MainComponent';
 
-export interface AddToPatternsGraphActionState extends SceneObjectState {
+export interface FilterByPatternsButtonState extends SceneObjectState {
   pattern: string;
   type: 'exclude' | 'include';
 }
 
-export class AddToPatternsGraphAction extends SceneObjectBase<AddToPatternsGraphActionState> {
+export class FilterByPatternsButton extends SceneObjectBase<FilterByPatternsButtonState> {
   public onClick = () => {
-    const logExploration = sceneGraph.getAncestor(this, LogExploration);
+    const logExploration = sceneGraph.getAncestor(this, MainComponent);
 
     if (!logExploration) {
       return;
@@ -29,7 +29,7 @@ export class AddToPatternsGraphAction extends SceneObjectBase<AddToPatternsGraph
     });
   };
 
-  public static Component = ({ model }: SceneComponentProps<AddToPatternsGraphAction>) => {
+  public static Component = ({ model }: SceneComponentProps<FilterByPatternsButton>) => {
     const { type } = model.useState();
     return (
       <Button variant="secondary" size="sm" onClick={model.onClick}>
