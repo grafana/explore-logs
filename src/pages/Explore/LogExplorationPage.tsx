@@ -2,11 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { newLogsExploration } from '../../utils/utils';
 import { LogExploration } from './LogExploration';
 import { getUrlSyncManager } from '@grafana/scenes';
-
+import { ScenesContextProvider } from '../../context/ScenesContext';
 export const LogExplorationPage = () => {
   const [exploration] = useState(newLogsExploration());
-
-  return <LogExplorationView exploration={exploration} />;
+  return (
+    <ScenesContextProvider sceneObject={exploration}>
+      <LogExplorationView exploration={exploration} />;
+    </ScenesContextProvider>
+  );
 };
 
 export function LogExplorationView({ exploration }: { exploration: LogExploration }) {

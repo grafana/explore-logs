@@ -1,5 +1,5 @@
 import { css } from '@emotion/css';
-import React from 'react';
+import React, { useContext } from 'react';
 
 import { DashboardCursorSync, GrafanaTheme2, LoadingState } from '@grafana/data';
 import {
@@ -18,6 +18,7 @@ import {
   SceneVariable,
   SceneVariableSet,
   VariableDependencyConfig,
+  sceneUtils,
 } from '@grafana/scenes';
 import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
 
@@ -51,6 +52,7 @@ import { GoToExploreButton } from './GoToExploreButton';
 import { GiveFeedback } from './GiveFeedback';
 import { renderLogQLLabelFilters } from 'pages/Explore';
 import { DetectedLabelsResponse } from '../types';
+import { ScenesContext } from '../../../context/ScenesContext';
 
 interface LokiPattern {
   pattern: string;
@@ -303,6 +305,7 @@ export class LogsByServiceScene extends SceneObjectBase<LogSceneState> {
   }
 
   updateFromUrl(values: SceneObjectUrlValues) {
+    console.log('Action view updateFromUrl :>> ');
     if (typeof values.actionView === 'string') {
       if (this.state.actionView !== values.actionView) {
         const actionViewDef = actionViewsDefinitions.find((v) => v.value === values.actionView);
@@ -360,6 +363,8 @@ export interface LogsActionBarState extends SceneObjectState {}
 
 export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
   public static Component = ({ model }: SceneComponentProps<LogsActionBar>) => {
+    // @ts-ignore
+    const { sceneObject, updateSceneObject } = useContext(ScenesContext);
     const logsScene = sceneGraph.getAncestor(model, LogsByServiceScene);
     const styles = useStyles2(getStyles);
     const exploration = getExplorationFor(model);
@@ -398,7 +403,45 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                 counter={getCounter(tab)}
                 onChangeTab={() => {
                   if (tab.value !== logsScene.state.actionView) {
-                    logsScene.setActionView(tab.value);
+                    // logsScene.setActionView(tab.value);
+
+                    // This method cloneSceneObject does not appear to be exported by sceneUtils in scenes but is in the library
+                    const cloneSceneObject = (sceneObject: any, withState: any) => {
+                      const clonedState = sceneUtils.cloneSceneObjectState(sceneObject.state, withState);
+                      return new (sceneObject.constructor as any)(clonedState);
+                    };
+
+                    // This works updating custom subclass scene object state
+                    const newStuff = cloneSceneObject(sceneObject.topScene, { actionView: tab.value });
+
+                    const updatedSceneObject = {
+                      ...sceneObject,
+                      topScene: newStuff,
+                    };
+                    // Observe the tab change just like before
+                    updateSceneObject(updatedSceneObject);
+
+                    // This does not work for $timeRange :(
+                    // const newTime = cloneSceneObject(sceneObject.$timeRange, {
+                    //   from: 'now-5m',
+                    //   value: {
+                    //     ...sceneObject.$timeRange._state.value,
+                    //     raw: {
+                    //       from: 'now-5m',
+                    //       to: 'now',
+                    //     },
+                    //   },
+                    // });
+
+                    // const newSceneObject = {
+                    //   ...sceneObject,
+                    //   $timeRange: newTime,
+                    // };
+
+                    // updateSceneObject(newSceneObject);
+
+                    // This works to update the $timeRange but need to trigger re-render
+                    // sceneObject.$timeRange.setState({ from: 'now-5m', raw: { from: 'now-5m', to: 'now' } });
                   }
                 }}
               />

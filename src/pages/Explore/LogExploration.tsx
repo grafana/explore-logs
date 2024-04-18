@@ -413,7 +413,7 @@ function getStyles(theme: GrafanaTheme2) {
         // The wrapper of each filter
         '& > div': {
           // the 'service_name' filter wrapper
-          '&:nth-child(2) > div':{
+          '&:nth-child(2) > div': {
             gap: 0,
           },
           // The actual inputs container
