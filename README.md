@@ -16,7 +16,7 @@ Explore Logs offers a query-less experience for browsing Loki logs without the n
 
 You can install Explore Logs in your own Grafana instance using `grafana-cli`:
 > [!IMPORTANT]  
-> For an optimal experience, the following Loki and Grafana version and configuration are required:
+> The following Loki and Grafana version and configuration are required:
 > - Loki v 3.0+
 >   - `--pattern-ingester.enabled=true` for pattern ingestion
 >   -  Volume endpoint enabled in Loki config:
