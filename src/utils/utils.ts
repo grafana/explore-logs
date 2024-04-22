@@ -75,7 +75,7 @@ export function getLabelOptions(scenObject: SceneObject, allOptions: string[]) {
   return [{ label: 'All', value: ALL_VARIABLE_VALUE }, ...levelOption, ...labelOptions];
 }
 
-export async function getDatasource(sceneObject: SceneObject) {
+export async function getLokiDatasource(sceneObject: SceneObject) {
   const ds = (await getDataSourceSrv().get(VAR_DATASOURCE_EXPR, { __sceneObject: { value: sceneObject } })) as
     | DataSourceWithBackend
     | undefined;
@@ -85,7 +85,8 @@ export async function getDatasource(sceneObject: SceneObject) {
 export const copyText = async (text: string, buttonRef: React.MutableRefObject<HTMLButtonElement | null>) => {
   if (navigator.clipboard && window.isSecureContext) {
     return navigator.clipboard.writeText(text);
-  } else {
+  // eslint-disable-next-line deprecation/deprecation
+  } else if (document.execCommand) {
     // Use a fallback method for browsers/contexts that don't support the Clipboard API.
     // See https://web.dev/async-clipboard/#feature-detection.
     // Use textarea so the user can copy multi-line content.

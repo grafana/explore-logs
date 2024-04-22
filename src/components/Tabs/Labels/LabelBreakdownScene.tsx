@@ -35,8 +35,8 @@ import {
   explorationDS,
   LOG_STREAM_SELECTOR_EXPR,
 } from 'utils/shared';
-import { getDatasource, getLabelOptions } from 'utils/utils';
-import { FieldSelector } from '../../Forms/FieldSelector';
+import { getLokiDatasource, getLabelOptions } from 'utils/utils';
+import { FieldSelector } from 'Components/Forms/FieldSelector';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -100,7 +100,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   }
 
   private async updateBody(variable: CustomVariable) {
-    const ds = await getDatasource(this);
+    const ds = await getLokiDatasource(this);
 
     if (!ds) {
       return;

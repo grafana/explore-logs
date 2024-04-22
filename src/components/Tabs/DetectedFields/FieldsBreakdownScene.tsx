@@ -33,8 +33,8 @@ import {
   explorationDS,
   LOG_STREAM_SELECTOR_EXPR,
 } from 'utils/shared';
-import { ByServiceScene } from '../../Service/ServiceScene';
-import { FieldSelector } from '../../Forms/FieldSelector';
+import { ServiceScene } from 'Components/Service/ServiceScene';
+import { FieldSelector } from 'Components/Forms/FieldSelector';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -72,7 +72,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   private _onActivate() {
     const variable = this.getVariable();
 
-    sceneGraph.getAncestor(this, ByServiceScene)!.subscribeToState((newState, oldState) => {
+    sceneGraph.getAncestor(this, ServiceScene)!.subscribeToState((newState, oldState) => {
       if (newState.detectedFields !== oldState.detectedFields) {
         this.updateFields();
       }
@@ -94,7 +94,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   private updateFields() {
     const variable = this.getVariable();
-    const logsScene = sceneGraph.getAncestor(this, ByServiceScene);
+    const logsScene = sceneGraph.getAncestor(this, ServiceScene);
 
     this.setState({
       fields: [

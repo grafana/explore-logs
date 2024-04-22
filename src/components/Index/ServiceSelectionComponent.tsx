@@ -2,7 +2,6 @@ import { css } from '@emotion/css';
 import React, { useCallback, useRef, useState } from 'react';
 
 import { DataFrame, GrafanaTheme2, reduceField, ReducerID, PanelData } from '@grafana/data';
-import { getDataSourceSrv } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
   PanelBuilders,
@@ -18,7 +17,6 @@ import {
   SceneQueryRunner,
   SceneReactObject,
   SceneVariable,
-  //SceneVariableSet,
   VariableDependencyConfig,
   VizPanel,
 } from '@grafana/scenes';
@@ -30,6 +28,7 @@ import { map, Observable, Unsubscribable } from 'rxjs';
 import { ByLabelRepeater } from 'Components/ByLabelRepeater';
 import { getLiveTailControl } from 'utils/scenes';
 import { getFavoriteServicesFromStorage } from 'utils/store';
+import { getLokiDatasource } from 'utils/utils';
 
 const LIMIT_SERVICES = 20;
 const SERVICE_NAME = 'service_name';
@@ -130,54 +129,51 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
     return () => unsubs.forEach((u) => u.unsubscribe());
   }
 
-  private _onTopServiceChange() {
+  private async _onTopServiceChange() {
     const timeRange = sceneGraph.getTimeRange(this).state.value;
-    const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
     this.setState({
       isTopSeriesLoading: true,
     });
+    const ds = await getLokiDatasource(this);
+    if (!ds) {
+      return;
+    }
 
-    getDataSourceSrv()
-      .get(ds as string)
-      .then((datasourceInstance) => {
-        // @ts-ignore
-        datasourceInstance.getResource!('index/volume', {
-          query: `{${SERVICE_NAME}=~".+"}`,
-          from: timeRange.from.utc().toISOString(),
-          to: timeRange.to.utc().toISOString(),
-        })
-          .then((res: any) => {
-            const serviceMetrics: { [key: string]: number } = {};
-            res.data.result.forEach((item: any) => {
-              const serviceName = item['metric'][SERVICE_NAME];
-              const value = Number(item['value'][1]);
-              serviceMetrics[serviceName] = value;
-            });
-
-            const topServices = Object.entries(serviceMetrics)
-              .sort((a, b) => b[1] - a[1]) // Sort by value in descending order
-              .map(([serviceName]) => serviceName); // Extract service names
-
-            // this is run to get initial services + and we are adding favorite services
-            let topServicesToBeUsed = addFavoriteServices(
-              topServices.slice(0, LIMIT_SERVICES),
-              getFavoriteServicesFromStorage(ds)
-            );
-            this.setState({
-              topServices,
-              topServicesToBeUsed,
-              isTopSeriesLoading: false,
-            });
-          })
-          .catch((err: any) => {
-            console.error('Could not fetch volume', err);
-            this.setState({
-              topServices: [],
-              topServicesToBeUsed: [],
-              isTopSeriesLoading: false,
-            });
-          });
+    try {
+      const volumeReponse = await ds.getResource!('index/volume', {
+        query: `{${SERVICE_NAME}=~".+"}`,
+        from: timeRange.from.utc().toISOString(),
+        to: timeRange.to.utc().toISOString(),
       });
+      const serviceMetrics: { [key: string]: number } = {};
+      volumeReponse.data.result.forEach((item: any) => {
+        const serviceName = item['metric'][SERVICE_NAME];
+        const value = Number(item['value'][1]);
+        serviceMetrics[serviceName] = value;
+      });
+
+      const topServices = Object.entries(serviceMetrics)
+        .sort((a, b) => b[1] - a[1]) // Sort by value in descending order
+        .map(([serviceName]) => serviceName); // Extract service names
+
+      // this is run to get initial services + and we are adding favorite services
+      let topServicesToBeUsed = addFavoriteServices(
+        topServices.slice(0, LIMIT_SERVICES),
+        getFavoriteServicesFromStorage(ds)
+      );
+      this.setState({
+        topServices,
+        topServicesToBeUsed,
+        isTopSeriesLoading: false,
+      });
+    } catch (error) {
+      console.log(`Failed to fetch top services:`, error);
+      this.setState({
+        topServices: [],
+        topServicesToBeUsed: [],
+        isTopSeriesLoading: false,
+      });
+    }
   }
 
   public getRepeater(): ByLabelRepeater {

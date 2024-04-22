@@ -40,7 +40,7 @@ import {
   VAR_PATTERNS,
   explorationDS,
 } from 'utils/shared';
-import { getDatasource, getExplorationFor } from 'utils/utils';
+import { getLokiDatasource, getExplorationFor } from 'utils/utils';
 import { DetectedLabelsResponse } from '../../utils/types';
 import { GiveFeedbackButton } from '../Forms/GiveFeedbackButton';
 import { GoToExploreButton } from '../Forms/GoToExploreButton';
@@ -56,7 +56,7 @@ interface LokiPattern {
   samples: Array<[number, string]>;
 }
 
-export interface ByServiceSceneState extends SceneObjectState {
+export interface ServiceSceneState extends SceneObjectState {
   body: SceneFlexLayout;
   actionView?: string;
 
@@ -67,14 +67,14 @@ export interface ByServiceSceneState extends SceneObjectState {
   detectedFieldsCount?: number;
 }
 
-export class ByServiceScene extends SceneObjectBase<ByServiceSceneState> {
+export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['actionView'] });
   protected _variableDependency = new VariableDependencyConfig(this, {
     variableNames: [VAR_DATASOURCE, VAR_FILTERS, VAR_FIELDS, VAR_PATTERNS],
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
   });
 
-  public constructor(state: MakeOptional<ByServiceSceneState, 'body'>) {
+  public constructor(state: MakeOptional<ServiceSceneState, 'body'>) {
     super({
       body: state.body ?? buildGraphScene(),
       $variables:
@@ -237,11 +237,8 @@ export class ByServiceScene extends SceneObjectBase<ByServiceSceneState> {
   }
 
   private async updatePatterns() {
-    const ds = (await getDataSourceSrv().get(VAR_DATASOURCE_EXPR, { __sceneObject: { value: this } })) as
-      | DataSourceWithBackend
-      | undefined;
-
-    if (!ds || !ds.getResource) {
+    const ds = await getLokiDatasource(this);
+    if (!ds) {
       return;
     }
 
@@ -268,7 +265,7 @@ export class ByServiceScene extends SceneObjectBase<ByServiceSceneState> {
   }
 
   private async updateLabels() {
-    const ds = await getDatasource(this);
+    const ds = await getLokiDatasource(this);
 
     if (!ds) {
       return;
@@ -342,7 +339,7 @@ export class ByServiceScene extends SceneObjectBase<ByServiceSceneState> {
     }
   }
 
-  static Component = ({ model }: SceneComponentProps<ByServiceScene>) => {
+  static Component = ({ model }: SceneComponentProps<ServiceScene>) => {
     const { body } = model.useState();
     return <body.Component model={body} />;
   };
@@ -359,7 +356,7 @@ export interface LogsActionBarState extends SceneObjectState {}
 
 export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
   public static Component = ({ model }: SceneComponentProps<LogsActionBar>) => {
-    const logsScene = sceneGraph.getAncestor(model, ByServiceScene);
+    const logsScene = sceneGraph.getAncestor(model, ServiceScene);
     const styles = useStyles2(getStyles);
     const exploration = getExplorationFor(model);
     const { actionView } = logsScene.useState();

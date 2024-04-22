@@ -24,7 +24,7 @@ import {
   sceneGraph,
 } from '@grafana/scenes';
 import { Text, useStyles2 } from '@grafana/ui';
-import { ByServiceScene } from 'Components/Service/ServiceScene';
+import { ServiceScene } from 'Components/Service/ServiceScene';
 import { Pattern } from 'Components/Tabs/Patterns/Pattern';
 import {
   StartingPointSelectedEvent,
@@ -49,7 +49,6 @@ export interface AppliedPattern {
 export interface IndexSceneState extends SceneObjectState {
   topScene?: SceneObject;
   controls: SceneObject[];
-  // history: ExplorationHistory;
   body: SplitLayout;
 
   mode?: LogExplorationMode;
@@ -269,7 +268,7 @@ function buildSplitLayout() {
 
 function getTopScene(mode?: LogExplorationMode) {
   if (mode === 'logs') {
-    return new ByServiceScene({});
+    return new ServiceScene({});
   }
   return new ServiceSelectionComponent({});
 }
