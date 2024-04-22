@@ -29,8 +29,8 @@ export class LineFilter extends SceneObjectBase<LineFilterState> {
     this.setState({
       lineFilter: matches[1],
     });
-  }
-  
+  };
+
   private getVariable() {
     const variable = sceneGraph.lookupVariable(VAR_LINE_FILTER, this);
     if (!(variable instanceof CustomVariable)) {
