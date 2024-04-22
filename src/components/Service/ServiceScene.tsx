@@ -2,7 +2,7 @@ import { css } from '@emotion/css';
 import React from 'react';
 
 import { DashboardCursorSync, GrafanaTheme2, LoadingState } from '@grafana/data';
-import { DataSourceWithBackend, getDataSourceSrv, locationService } from '@grafana/runtime';
+import { locationService } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
   CustomVariable,
@@ -33,7 +33,6 @@ import {
   LOG_STREAM_SELECTOR_EXPR,
   MakeOptional,
   VAR_DATASOURCE,
-  VAR_DATASOURCE_EXPR,
   VAR_FIELDS,
   VAR_FILTERS,
   VAR_LOGS_FORMAT,
