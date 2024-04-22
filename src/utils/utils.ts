@@ -8,28 +8,27 @@ import {
   SceneObjectUrlValues,
   SceneTimeRange,
 } from '@grafana/scenes';
-
-import { LogExploration } from '../pages/Explore';
+import { IndexScene } from 'Components/Index/IndexScene';
 import {
-  ALL_VARIABLE_VALUE,
-  EXPLORATIONS_ROUTE,
-  LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE_EXPR,
+  LOG_STREAM_SELECTOR_EXPR,
   VAR_FILTERS,
+  ALL_VARIABLE_VALUE,
 } from './shared';
+import { EXPLORATIONS_ROUTE } from './routing';
 
-export function getExplorationFor(model: SceneObject): LogExploration {
-  return sceneGraph.getAncestor(model, LogExploration);
+export function getExplorationFor(model: SceneObject): IndexScene {
+  return sceneGraph.getAncestor(model, IndexScene);
 }
 
-export function newLogsExploration(initialDS?: string): LogExploration {
-  return new LogExploration({
+export function newLogsExploration(initialDS?: string): IndexScene {
+  return new IndexScene({
     initialDS,
     $timeRange: new SceneTimeRange({ from: 'now-15m', to: 'now' }),
   });
 }
 
-export function getUrlForExploration(exploration: LogExploration) {
+export function getUrlForExploration(exploration: IndexScene) {
   const params = getUrlSyncManager().getUrlState(exploration);
   return getUrlForValues(params);
 }
@@ -38,24 +37,12 @@ export function getUrlForValues(values: SceneObjectUrlValues) {
   return urlUtil.renderUrl(EXPLORATIONS_ROUTE, values);
 }
 
-export function getDataSource(exploration: LogExploration) {
+export function getDataSource(exploration: IndexScene) {
   return sceneGraph.interpolate(exploration, VAR_DATASOURCE_EXPR);
 }
 
-export function getQueryExpr(exploration: LogExploration) {
+export function getQueryExpr(exploration: IndexScene) {
   return sceneGraph.interpolate(exploration, LOG_STREAM_SELECTOR_EXPR).replace(/\s+/g, ' ');
-}
-
-export function getDataSourceName(dataSourceUid: string) {
-  return getDataSourceSrv().getInstanceSettings(dataSourceUid)?.name || dataSourceUid;
-}
-
-export function getDatasourceForNewExploration(): string | undefined {
-  const typeDatasources = getDataSourceSrv().getList({ type: 'loki' });
-  if (typeDatasources.length > 0) {
-    return typeDatasources.find((mds) => mds.uid === config.defaultDatasource)?.uid ?? typeDatasources[0].uid;
-  }
-  return undefined;
 }
 
 export function getColorByIndex(index: number) {
@@ -88,7 +75,7 @@ export function getLabelOptions(scenObject: SceneObject, allOptions: string[]) {
   return [{ label: 'All', value: ALL_VARIABLE_VALUE }, ...levelOption, ...labelOptions];
 }
 
-export async function getDatasource(sceneObject: SceneObject) {
+export async function getLokiDatasource(sceneObject: SceneObject) {
   const ds = (await getDataSourceSrv().get(VAR_DATASOURCE_EXPR, { __sceneObject: { value: sceneObject } })) as
     | DataSourceWithBackend
     | undefined;
@@ -98,7 +85,8 @@ export async function getDatasource(sceneObject: SceneObject) {
 export const copyText = async (text: string, buttonRef: React.MutableRefObject<HTMLButtonElement | null>) => {
   if (navigator.clipboard && window.isSecureContext) {
     return navigator.clipboard.writeText(text);
-  } else {
+  // eslint-disable-next-line deprecation/deprecation
+  } else if (document.execCommand) {
     // Use a fallback method for browsers/contexts that don't support the Clipboard API.
     // See https://web.dev/async-clipboard/#feature-detection.
     // Use textarea so the user can copy multi-line content.

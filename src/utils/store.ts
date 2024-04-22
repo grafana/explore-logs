@@ -1,4 +1,6 @@
-import { SERVICES_LOCALSTORAGE_KEY } from 'pages/Explore/SelectStartingPointScene';
+import pluginJson from '../plugin.json';
+
+const SERVICES_LOCALSTORAGE_KEY = `${pluginJson.id}.services.favorite`;
 
 export function getFavoriteServicesFromStorage(ds: any): string[] {
   if (!ds || typeof ds !== 'string') {

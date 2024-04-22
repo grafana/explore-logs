@@ -8,8 +8,6 @@ export interface ActionViewDefinition {
   getScene: (changeFields: (f: string[]) => void) => SceneObject;
 }
 
-export const EXPLORATIONS_ROUTE = '/a/grafana-lokiexplore-app/explore';
-
 export const VAR_FILTERS = 'filters';
 export const VAR_FILTERS_EXPR = '${filters}';
 export const VAR_FIELDS = 'fields';
@@ -34,8 +32,4 @@ export type MakeOptional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K
 
 export class StartingPointSelectedEvent extends BusEventBase {
   public static type = 'start-point-selected-event';
-}
-
-export class DetailsSceneUpdated extends BusEventBase {
-  public static type = 'details-scene-updated';
 }

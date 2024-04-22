@@ -1,9 +1,9 @@
 import { SceneObject, sceneGraph } from '@grafana/scenes';
-import { LiveTailControl } from 'components/Explore/LiveTailControl';
-import { LogExploration } from 'pages/Explore';
+import { LiveTailButton } from 'Components/Forms/LiveTailButton';
+import { IndexScene } from 'Components/Index/IndexScene';
 
-export function getLiveTailControl(model: SceneObject): LiveTailControl | undefined {
+export function getLiveTailControl(model: SceneObject): LiveTailButton | undefined {
   return sceneGraph
-    .getAncestor(model, LogExploration)
-    ?.state.controls.find((c) => c instanceof LiveTailControl) as LiveTailControl;
+    .getAncestor(model, IndexScene)
+    ?.state.controls.find((c) => c instanceof LiveTailButton) as LiveTailButton;
 }
