@@ -4,11 +4,11 @@ import { useLocation } from 'react-use';
 import { ToolbarButton } from '@grafana/ui';
 
 import { config } from '@grafana/runtime';
-import { MainComponent } from 'components/Main/MainComponent';
+import { IndexScene } from 'Components/Index/IndexScene';
 import { copyText, getUrlForExploration } from 'utils/utils';
 
 interface ShareExplorationButtonState {
-  exploration: MainComponent;
+  exploration: IndexScene;
 }
 
 export const ShareExplorationButton = ({ exploration }: ShareExplorationButtonState) => {

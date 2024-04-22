@@ -8,7 +8,7 @@ import {
   SceneObjectUrlValues,
   SceneTimeRange,
 } from '@grafana/scenes';
-import { MainComponent } from 'components/Main/MainComponent';
+import { IndexScene } from 'Components/Index/IndexScene';
 import {
   VAR_DATASOURCE_EXPR,
   LOG_STREAM_SELECTOR_EXPR,
@@ -17,18 +17,18 @@ import {
 } from './shared';
 import { EXPLORATIONS_ROUTE } from './routing';
 
-export function getExplorationFor(model: SceneObject): MainComponent {
-  return sceneGraph.getAncestor(model, MainComponent);
+export function getExplorationFor(model: SceneObject): IndexScene {
+  return sceneGraph.getAncestor(model, IndexScene);
 }
 
-export function newLogsExploration(initialDS?: string): MainComponent {
-  return new MainComponent({
+export function newLogsExploration(initialDS?: string): IndexScene {
+  return new IndexScene({
     initialDS,
     $timeRange: new SceneTimeRange({ from: 'now-15m', to: 'now' }),
   });
 }
 
-export function getUrlForExploration(exploration: MainComponent) {
+export function getUrlForExploration(exploration: IndexScene) {
   const params = getUrlSyncManager().getUrlState(exploration);
   return getUrlForValues(params);
 }
@@ -37,11 +37,11 @@ export function getUrlForValues(values: SceneObjectUrlValues) {
   return urlUtil.renderUrl(EXPLORATIONS_ROUTE, values);
 }
 
-export function getDataSource(exploration: MainComponent) {
+export function getDataSource(exploration: IndexScene) {
   return sceneGraph.interpolate(exploration, VAR_DATASOURCE_EXPR);
 }
 
-export function getQueryExpr(exploration: MainComponent) {
+export function getQueryExpr(exploration: IndexScene) {
   return sceneGraph.interpolate(exploration, LOG_STREAM_SELECTOR_EXPR).replace(/\s+/g, ' ');
 }
 

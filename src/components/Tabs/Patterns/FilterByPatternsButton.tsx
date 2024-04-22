@@ -2,7 +2,7 @@ import React from 'react';
 
 import { SceneObjectState, SceneObjectBase, SceneComponentProps, sceneGraph } from '@grafana/scenes';
 import { Button } from '@grafana/ui';
-import { MainComponent } from 'components/Main/MainComponent';
+import { IndexScene } from 'Components/Index/IndexScene';
 
 export interface FilterByPatternsButtonState extends SceneObjectState {
   pattern: string;
@@ -11,7 +11,7 @@ export interface FilterByPatternsButtonState extends SceneObjectState {
 
 export class FilterByPatternsButton extends SceneObjectBase<FilterByPatternsButtonState> {
   public onClick = () => {
-    const logExploration = sceneGraph.getAncestor(this, MainComponent);
+    const logExploration = sceneGraph.getAncestor(this, IndexScene);
 
     if (!logExploration) {
       return;

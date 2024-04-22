@@ -21,7 +21,7 @@ import {
   sceneGraph,
 } from '@grafana/scenes';
 import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
-import { renderLogQLLabelFilters } from 'components/Main/MainComponent';
+import { renderLogQLLabelFilters } from 'Components/Index/IndexScene';
 import { Unsubscribable } from 'rxjs';
 import { extractFields } from 'utils/fields';
 import { EXPLORATIONS_ROUTE } from 'utils/routing';
@@ -42,10 +42,10 @@ import {
 } from 'utils/shared';
 import { getDatasource, getExplorationFor } from 'utils/utils';
 import { DetectedLabelsResponse } from '../../utils/types';
-import { GiveFeedback } from '../misc/GiveFeedback';
-import { GoToExploreButton } from '../misc/GoToExploreButton';
+import { GiveFeedbackButton } from '../Forms/GiveFeedbackButton';
+import { GoToExploreButton } from '../Forms/GoToExploreButton';
 import { LogsVolumePanel } from './LogsVolumePanel';
-import { ShareExplorationButton } from '../misc/ShareExplorationButton';
+import { ShareExplorationButton } from '../Forms/ShareExplorationButton';
 import { buildFieldsBreakdownActionScene } from '../Tabs/DetectedFields/FieldsBreakdownScene';
 import { buildLabelBreakdownActionScene } from '../Tabs/Labels/LabelBreakdownScene';
 import { buildLogsListScene } from '../Tabs/Logs/LogsListScene';
@@ -381,7 +381,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
       <Box paddingY={1}>
         <div className={styles.actions}>
           <Stack gap={2}>
-            <GiveFeedback />
+            <GiveFeedbackButton />
             <ShareExplorationButton exploration={exploration} />
             <GoToExploreButton exploration={exploration} />
           </Stack>

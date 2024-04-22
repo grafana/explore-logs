@@ -24,8 +24,8 @@ import {
   sceneGraph,
 } from '@grafana/scenes';
 import { Text, useStyles2 } from '@grafana/ui';
-import { ByServiceScene } from 'components/ByService/ByServiceScene';
-import { Pattern } from 'components/Tabs/Patterns/Pattern';
+import { ByServiceScene } from 'Components/Service/ServiceScene';
+import { Pattern } from 'Components/Tabs/Patterns/Pattern';
 import {
   StartingPointSelectedEvent,
   VAR_DATASOURCE,
@@ -46,7 +46,7 @@ export interface AppliedPattern {
   type: 'include' | 'exclude';
 }
 
-export interface MainComponentState extends SceneObjectState {
+export interface IndexSceneState extends SceneObjectState {
   topScene?: SceneObject;
   controls: SceneObject[];
   // history: ExplorationHistory;
@@ -64,10 +64,10 @@ export interface MainComponentState extends SceneObjectState {
 
 const DS_LOCALSTORAGE_KEY = `${pluginJson.id}.datasource`;
 
-export class MainComponent extends SceneObjectBase<MainComponentState> {
+export class IndexScene extends SceneObjectBase<IndexSceneState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['mode', 'patterns'] });
 
-  public constructor(state: Partial<MainComponentState>) {
+  public constructor(state: Partial<IndexSceneState>) {
     super({
       $timeRange: state.$timeRange ?? new SceneTimeRange({}),
       $variables:
@@ -86,7 +86,7 @@ export class MainComponent extends SceneObjectBase<MainComponentState> {
     this.addActivationHandler(this._onActivate.bind(this));
   }
 
-  static Component = ({ model }: SceneComponentProps<MainComponent>) => {
+  static Component = ({ model }: SceneComponentProps<IndexScene>) => {
     const { body } = model.useState();
     const styles = useStyles2(getStyles);
 
@@ -142,7 +142,7 @@ export class MainComponent extends SceneObjectBase<MainComponentState> {
   }
 
   updateFromUrl(values: SceneObjectUrlValues) {
-    const stateUpdate: Partial<MainComponentState> = {};
+    const stateUpdate: Partial<IndexSceneState> = {};
     if (values.mode !== this.state.mode) {
       const mode: LogExplorationMode = (values.mode as LogExplorationMode) ?? 'start';
       stateUpdate.mode = mode;
@@ -188,7 +188,7 @@ export class MainComponent extends SceneObjectBase<MainComponentState> {
 
 export class LogExplorationScene extends SceneObjectBase {
   static Component = ({ model }: SceneComponentProps<LogExplorationScene>) => {
-    const logExploration = sceneGraph.getAncestor(model, MainComponent);
+    const logExploration = sceneGraph.getAncestor(model, IndexScene);
     const { controls, topScene, mode, patterns } = logExploration.useState();
     const styles = useStyles2(getStyles);
     const includePatterns = patterns ? patterns.filter((pattern) => pattern.type === 'include') : [];

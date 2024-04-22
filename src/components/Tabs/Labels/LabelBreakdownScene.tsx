@@ -22,10 +22,10 @@ import {
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { Button, DrawStyle, Field, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
-import { AddToFiltersGraphAction } from 'components/misc/AddToFiltersButton';
-import { ByFrameRepeater } from 'components/misc/ByFrameRepeater';
-import { LayoutSwitcher } from 'components/misc/LayoutSwitcher';
-import { StatusWrapper } from 'components/misc/StatusWrapper';
+import { AddToFiltersGraphAction } from 'Components/Forms/AddToFiltersButton';
+import { ByFrameRepeater } from 'Components/ByFrameRepeater';
+import { LayoutSwitcher } from 'Components/LayoutSwitcher';
+import { StatusWrapper } from 'Components/StatusWrapper';
 import { DetectedLabelsResponse } from 'utils/types';
 import { getLayoutChild } from 'utils/fields';
 import {
@@ -36,7 +36,7 @@ import {
   LOG_STREAM_SELECTOR_EXPR,
 } from 'utils/shared';
 import { getDatasource, getLabelOptions } from 'utils/utils';
-import { FieldSelector } from '../../misc/FieldSelector';
+import { FieldSelector } from '../../Forms/FieldSelector';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;

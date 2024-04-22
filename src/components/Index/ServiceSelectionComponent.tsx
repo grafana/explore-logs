@@ -24,10 +24,10 @@ import {
 } from '@grafana/scenes';
 import { DrawStyle, Field, Icon, Input, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 
-import { SelectFieldButton } from '../misc/SelectFieldButton';
+import { SelectFieldButton } from '../Forms/SelectFieldButton';
 import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from '../../utils/shared';
 import { map, Observable, Unsubscribable } from 'rxjs';
-import { ByLabelRepeater } from 'components/misc/ByLabelRepeater';
+import { ByLabelRepeater } from 'Components/ByLabelRepeater';
 import { getLiveTailControl } from 'utils/scenes';
 import { getFavoriteServicesFromStorage } from 'utils/store';
 
@@ -63,7 +63,6 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
 
   constructor(state: Partial<ServiceSelectionComponentState>) {
     super({
-      // $variables: state.$variables ?? getVariableSet(),
       showPreviews: true,
       groupBy: state.groupBy ?? 'resource.service.name',
       metricFn: state.metricFn ?? 'rate()',

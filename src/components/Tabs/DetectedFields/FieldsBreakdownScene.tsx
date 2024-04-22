@@ -21,10 +21,10 @@ import {
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { Button, DrawStyle, Field, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
-import { AddToFiltersGraphAction } from 'components/misc/AddToFiltersButton';
-import { ByFrameRepeater } from 'components/misc/ByFrameRepeater';
-import { LayoutSwitcher } from 'components/misc/LayoutSwitcher';
-import { StatusWrapper } from 'components/misc/StatusWrapper';
+import { AddToFiltersGraphAction } from 'Components/Forms/AddToFiltersButton';
+import { ByFrameRepeater } from 'Components/ByFrameRepeater';
+import { LayoutSwitcher } from 'Components/LayoutSwitcher';
+import { StatusWrapper } from 'Components/StatusWrapper';
 import { getLayoutChild } from 'utils/fields';
 import {
   VAR_FILTERS,
@@ -33,8 +33,8 @@ import {
   explorationDS,
   LOG_STREAM_SELECTOR_EXPR,
 } from 'utils/shared';
-import { ByServiceScene } from '../../ByService/ByServiceScene';
-import { FieldSelector } from '../../misc/FieldSelector';
+import { ByServiceScene } from '../../Service/ServiceScene';
+import { FieldSelector } from '../../Forms/FieldSelector';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;

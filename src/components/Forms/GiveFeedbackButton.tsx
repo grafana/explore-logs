@@ -3,7 +3,7 @@ import { Icon, useStyles2 } from '@grafana/ui';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 
-export const GiveFeedback = () => {
+export const GiveFeedbackButton = () => {
   const styles = useStyles2(getStyles);
   return (
     <a

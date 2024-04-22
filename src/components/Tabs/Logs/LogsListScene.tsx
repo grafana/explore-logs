@@ -8,7 +8,7 @@ import {
   SceneObjectBase,
   SceneObjectState,
 } from '@grafana/scenes';
-import { LineFilter } from '../../misc/LineFilter';
+import { LineFilter } from 'Components/Forms/LineFilter';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
