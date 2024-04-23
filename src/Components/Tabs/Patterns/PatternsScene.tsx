@@ -17,7 +17,7 @@ import {
   SceneObjectState,
   SceneVariableSet,
 } from '@grafana/scenes';
-import { Button, DrawStyle, StackingMode, useStyles2, Text } from '@grafana/ui';
+import { Button, DrawStyle, StackingMode, useStyles2, Text, TextLink } from '@grafana/ui';
 import { AddToFiltersGraphAction } from 'Components/Forms/AddToFiltersButton';
 import { LayoutSwitcher } from 'Components/LayoutSwitcher';
 import { StatusWrapper } from 'Components/StatusWrapper';
@@ -223,7 +223,20 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
               </Text>
             </div>
           )}
-          {!loading && patterns?.length === 0 && <GrotError />}
+          {!loading && patterns?.length === 0 && (
+            <GrotError>
+              <div>
+                Sorry, we could not detect any patterns.
+                <p>
+                  Check back later or reachout to the{' '}
+                  <TextLink href="https://slack.grafana.com/" external>
+                    Grafana Labs community Slack channel
+                  </TextLink>
+                </p>
+                Patterns let you detect similar log lines and add or exclude them from your search.
+              </div>
+            </GrotError>
+          )}
           {!loading && patterns && patterns.length > 0 && (
             <>
               <div className={styles.controls}>

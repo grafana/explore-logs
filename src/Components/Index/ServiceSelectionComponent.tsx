@@ -20,12 +20,13 @@ import {
   VariableDependencyConfig,
   VizPanel,
 } from '@grafana/scenes';
-import { DrawStyle, Field, Icon, Input, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
+import { DrawStyle, Field, Icon, Input, LoadingPlaceholder, StackingMode, useStyles2, Text } from '@grafana/ui';
 
 import { SelectFieldButton } from '../Forms/SelectFieldButton';
 import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from '../../utils/shared';
 import { map, Observable, Unsubscribable } from 'rxjs';
 import { ByLabelRepeater } from 'Components/ByLabelRepeater';
+import { GrotError } from 'Components/GrotError';
 import { getLiveTailControl } from 'utils/scenes';
 import { getFavoriteServicesFromStorage } from 'utils/store';
 import { getLokiDatasource } from 'utils/utils';
@@ -325,7 +326,6 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
   public static Component = ({ model }: SceneComponentProps<ServiceSelectionComponent>) => {
     const styles = useStyles2(getStyles);
     const { isTopSeriesLoading, topServicesToBeUsed, topServices } = model.useState();
-
     const body = model.state.body;
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -364,7 +364,19 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
           </Field>
           {isTopSeriesLoading && <LoadingPlaceholder text="Fetching services..." />}
           {!isTopSeriesLoading && (!topServicesToBeUsed || topServicesToBeUsed.length === 0) && (
-            <div>No services found</div>
+            <GrotError>
+              <p>Log volume has not been configured.</p>
+              <p>To enable update the Loki config:</p>
+              <Text textAlignment="left">
+                <pre>
+                  <code>
+                    limits_config:
+                    <br />
+                    &nbsp;&nbsp;volume_enabled: true
+                  </code>
+                </pre>
+              </Text>
+            </GrotError>
           )}
           {!isTopSeriesLoading && topServicesToBeUsed && topServicesToBeUsed.length > 0 && (
             <div className={styles.body}>
