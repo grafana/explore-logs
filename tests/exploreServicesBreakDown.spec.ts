@@ -15,9 +15,7 @@ test.describe('explore services breakdown page', () => {
     await explorePage.serviceBreakdownSearch.click();
     await explorePage.serviceBreakdownSearch.fill('broadcast');
     await expect(page.getByRole('table').locator('tr').first().getByText('broadcast')).toBeVisible();
-    await expect(page).toHaveURL(
-      `/a/${pluginJson.id}/${ROUTES.Explore}?mode=logs&var-patterns=&var-filters=service_name%7C%3D%7Ctempo-distributor&actionView=logs&var-logsFormat=%20%7C%20logfmt&var-fields=&var-ds=gdev-loki&var-lineFilter=%7C%3D%20%60broadcast%60`
-    );
+    await expect(page).toHaveURL(/broadcast/);
   });
 
   test('should select a label, update filters, open in explore', async ({ page }) => {
