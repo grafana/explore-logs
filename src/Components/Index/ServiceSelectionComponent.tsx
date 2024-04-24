@@ -296,10 +296,16 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
         children: [
           new SceneFlexItem({
             width: '30%',
+            md: {
+              width: '100%',
+            },
             body: volumePanel,
           }),
           new SceneFlexItem({
             width: '70%',
+            md: {
+              width: '100%',
+            },
             body: logsPanel,
           }),
         ],
