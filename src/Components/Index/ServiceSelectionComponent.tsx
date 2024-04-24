@@ -20,7 +20,17 @@ import {
   VariableDependencyConfig,
   VizPanel,
 } from '@grafana/scenes';
-import { DrawStyle, Field, Icon, Input, LoadingPlaceholder, StackingMode, useStyles2, Text } from '@grafana/ui';
+import {
+  DrawStyle,
+  Field,
+  Icon,
+  Input,
+  LoadingPlaceholder,
+  StackingMode,
+  useStyles2,
+  Text,
+  TextLink,
+} from '@grafana/ui';
 
 import { SelectFieldButton } from '../Forms/SelectFieldButton';
 import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from '../../utils/shared';
@@ -366,7 +376,11 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
           {!isTopSeriesLoading && (!topServicesToBeUsed || topServicesToBeUsed.length === 0) && (
             <GrotError>
               <p>Log volume has not been configured.</p>
-              <p>To enable update the Loki config:</p>
+              <p>
+                <TextLink href="https://grafana.com/docs/loki/latest/reference/api/#query-log-volume" external>
+                  Instructions to enable volume in the Loki config:
+                </TextLink>
+              </p>
               <Text textAlignment="left">
                 <pre>
                   <code>
