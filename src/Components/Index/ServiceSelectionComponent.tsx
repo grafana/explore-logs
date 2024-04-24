@@ -39,6 +39,7 @@ import { ByLabelRepeater } from 'Components/ByLabelRepeater';
 import { GrotError } from 'Components/GrotError';
 import { getLiveTailControl, getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
+import { testIds } from 'Components/testIds';
 
 const LIMIT_SERVICES = 20;
 const SERVICE_NAME = 'service_name';
@@ -365,6 +366,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
           </div>
           <Field className={styles.searchField}>
             <Input
+              data-testid={testIds.exploreService.search}
               value={searchQuery}
               prefix={<Icon name="search" />}
               placeholder="Search services"
