@@ -208,7 +208,6 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
               transformations: [
                 () => (source: Observable<DataFrame[]>) => {
                   const favoriteServices = getFavoriteServicesFromStorage(ds);
-
                   return source.pipe(
                     map((data: DataFrame[]) => {
                       data.forEach((a) => reduceField({ field: a.fields[1], reducers: [ReducerID.max] }));
@@ -301,22 +300,18 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
     const logsPanel = PanelBuilders.logs().setData(logsQueryRunner).setOption('showTime', true).build();
 
     const layout = new SceneFlexItem({
-      body: new SceneFlexLayout({
-        height: '200px',
-        direction: 'row',
+      body: new SceneCSSGridLayout({
+        isLazy: true,
+        rowGap: 1,
+        columnGap: 1,
+        templateColumns: 'repeat(auto-fit, minmax(100px, 1fr) minmax(200px, 2fr))',
         children: [
           new SceneFlexItem({
-            width: '30%',
-            md: {
-              width: '100%',
-            },
+            height: '200px',
             body: volumePanel,
           }),
           new SceneFlexItem({
-            width: '70%',
-            md: {
-              width: '100%',
-            },
+            height: '200px',
             body: logsPanel,
           }),
         ],
