@@ -6,6 +6,9 @@ on:
       - main
     paths:
       - 'generator/**/*'
+  pull_request:
+    types:
+      - opened
   workflow_dispatch:
 
 # These permissions are needed to assume roles from Github's OIDC.
