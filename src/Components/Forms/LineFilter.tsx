@@ -3,8 +3,8 @@ import { CustomVariable, SceneComponentProps, SceneObjectBase, SceneObjectState,
 import { Field, Input } from '@grafana/ui';
 import { debounce } from 'lodash';
 import React, { ChangeEvent } from 'react';
-import { VAR_LINE_FILTER } from 'utils/shared';
-
+import { VAR_LINE_FILTER } from 'services/shared';
+import { testIds } from 'Components/testIds';
 interface LineFilterState extends SceneObjectState {
   lineFilter: string;
 }
@@ -57,7 +57,13 @@ function LineFilterRenderer({ model }: SceneComponentProps<LineFilter>) {
 
   return (
     <Field>
-      <Input value={lineFilter} className={styles.input} onChange={model.handleChange} placeholder="Search" />
+      <Input
+        data-testid={testIds.exploreServiceBreakdown.search}
+        value={lineFilter}
+        className={styles.input}
+        onChange={model.handleChange}
+        placeholder="Search"
+      />
     </Field>
   );
 }

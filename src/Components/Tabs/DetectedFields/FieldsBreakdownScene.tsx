@@ -25,14 +25,14 @@ import { AddToFiltersGraphAction } from 'Components/Forms/AddToFiltersButton';
 import { ByFrameRepeater } from 'Components/ByFrameRepeater';
 import { LayoutSwitcher } from 'Components/LayoutSwitcher';
 import { StatusWrapper } from 'Components/StatusWrapper';
-import { getLayoutChild } from 'utils/fields';
+import { getLayoutChild } from 'services/fields';
 import {
   VAR_FILTERS,
   VAR_FIELD_GROUP_BY,
   ALL_VARIABLE_VALUE,
   explorationDS,
   LOG_STREAM_SELECTOR_EXPR,
-} from 'utils/shared';
+} from 'services/shared';
 import { ServiceScene } from 'Components/Service/ServiceScene';
 import { FieldSelector } from 'Components/Forms/FieldSelector';
 

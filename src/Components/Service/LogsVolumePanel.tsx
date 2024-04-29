@@ -13,7 +13,7 @@ import {
 import { DrawStyle, StackingMode } from '@grafana/ui';
 import { DataFrame } from '@grafana/data';
 import { map, Observable } from 'rxjs';
-import { LOG_STREAM_SELECTOR_EXPR, explorationDS } from 'utils/shared';
+import { LOG_STREAM_SELECTOR_EXPR, explorationDS } from 'services/shared';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: SceneFlexLayout;

@@ -9,8 +9,8 @@ import {
 } from '@grafana/scenes';
 import { Button } from '@grafana/ui';
 import { VariableHide } from '@grafana/schema';
-import { addToFavoriteServicesInStorage } from 'utils/store';
-import { VAR_DATASOURCE, StartingPointSelectedEvent } from 'utils/shared';
+import { addToFavoriteServicesInStorage } from 'services/store';
+import { VAR_DATASOURCE, StartingPointSelectedEvent } from 'services/shared';
 
 export interface SelectFieldButtonState extends SceneObjectState {
   value: string;

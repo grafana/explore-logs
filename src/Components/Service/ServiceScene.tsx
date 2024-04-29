@@ -23,9 +23,9 @@ import {
 import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
 import { renderLogQLLabelFilters } from 'Components/Index/IndexScene';
 import { Unsubscribable } from 'rxjs';
-import { extractFields } from 'utils/fields';
-import { EXPLORATIONS_ROUTE } from 'utils/routing';
-import { getLiveTailControl } from 'utils/scenes';
+import { extractFields } from 'services/fields';
+import { EXPLORATIONS_ROUTE } from 'services/routing';
+import { getLokiDatasource, getExplorationFor, getLiveTailControl } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
   ActionViewDefinition,
@@ -38,9 +38,8 @@ import {
   VAR_LOGS_FORMAT,
   VAR_PATTERNS,
   explorationDS,
-} from 'utils/shared';
-import { getLokiDatasource, getExplorationFor } from 'utils/utils';
-import { DetectedLabelsResponse } from '../../utils/types';
+} from 'services/shared';
+import { DetectedLabelsResponse } from 'services/types';
 import { GiveFeedbackButton } from '../Forms/GiveFeedbackButton';
 import { GoToExploreButton } from '../Forms/GoToExploreButton';
 import { LogsVolumePanel } from './LogsVolumePanel';

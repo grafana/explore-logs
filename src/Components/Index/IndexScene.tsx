@@ -34,7 +34,7 @@ import {
   VAR_LINE_FILTER,
   VAR_PATTERNS,
   explorationDS,
-} from 'utils/shared';
+} from 'services/shared';
 import { ServiceSelectionComponent } from './ServiceSelectionComponent';
 
 import pluginJson from '../../plugin.json';
