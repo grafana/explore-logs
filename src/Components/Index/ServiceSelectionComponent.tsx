@@ -53,7 +53,7 @@ interface ServiceSelectionComponentState extends SceneObjectState {
   // Keeps track of the search query in input field
   searchServicesString: string;
   // List of services to be shown in the body
-  topServicesToBeUsed?: string[];
+  listOfServicesToQuery?: string[];
 }
 
 export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionComponentState> {
@@ -75,7 +75,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
       isListOfServicesLoading: false,
       listOfServicesOrderedByVolume: undefined,
       searchServicesString: '',
-      topServicesToBeUsed: undefined,
+      listOfServicesToQuery: undefined,
       ...state,
     });
 
@@ -85,36 +85,36 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
   private _onActivate() {
     this._getListOfServicesOrderedByVolume();
     this.subscribeToState((newState, oldState) => {
-      // Updates topServicesToBeUsed when listOfServicesOrderedByVolume is changed - should happen only once when the list of services is fetched during initialization
+      // Updates listOfServicesToQuery when listOfServicesOrderedByVolume is changed - should happen only once when the list of services is fetched during initialization
       if (newState.listOfServicesOrderedByVolume !== oldState.listOfServicesOrderedByVolume) {
         const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
-        const topServicesToBeUsed = addFavoriteServices(
+        const listOfServicesToQuery = addFavoriteServices(
           newState.listOfServicesOrderedByVolume?.slice(0, LIMIT_SERVICES) ?? [],
           getFavoriteServicesFromStorage(ds)
         );
         this.setState({
-          topServicesToBeUsed,
+          listOfServicesToQuery,
         });
       }
 
-      // Updates topServicesToBeUsed when searchServicesString is changed
+      // Updates listOfServicesToQuery when searchServicesString is changed
       if (newState.searchServicesString !== oldState.searchServicesString) {
         const services = this.state.listOfServicesOrderedByVolume?.filter((service) =>
           service.toLowerCase().includes(newState.searchServicesString?.toLowerCase() ?? '')
         );
-        let topServicesToBeUsed = services?.slice(0, LIMIT_SERVICES) ?? [];
+        let listOfServicesToQuery = services?.slice(0, LIMIT_SERVICES) ?? [];
         // If user is not searching for anything, add favorite services to the top
         if (newState.searchServicesString === '') {
           const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
-          topServicesToBeUsed = addFavoriteServices(topServicesToBeUsed, getFavoriteServicesFromStorage(ds));
+          listOfServicesToQuery = addFavoriteServices(listOfServicesToQuery, getFavoriteServicesFromStorage(ds));
         }
         this.setState({
-          topServicesToBeUsed,
+          listOfServicesToQuery,
         });
       }
 
-      // When topServicesToBeUsed is changed, update the body and render the panels with the new services
-      if (newState.topServicesToBeUsed !== oldState.topServicesToBeUsed) {
+      // When listOfServicesToQuery is changed, update the body and render the panels with the new services
+      if (newState.listOfServicesToQuery !== oldState.listOfServicesToQuery) {
         this.updateBody();
       }
     });
@@ -163,7 +163,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
 
   private updateBody() {
     const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue() as string;
-    if (!this.state.topServicesToBeUsed || this.state.topServicesToBeUsed.length === 0) {
+    if (!this.state.listOfServicesToQuery || this.state.listOfServicesToQuery.length === 0) {
       this.state.body.setState({ children: [] });
     } else {
       this.state.body.setState({
@@ -172,7 +172,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
             $data: new SceneDataTransformer({
               $data: new SceneQueryRunner({
                 datasource: explorationDS,
-                queries: [buildVolumeQuery(this.state.topServicesToBeUsed)],
+                queries: [buildVolumeQuery(this.state.listOfServicesToQuery)],
                 maxDataPoints: 80,
               }),
               transformations: [
@@ -312,7 +312,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
 
   public static Component = ({ model }: SceneComponentProps<ServiceSelectionComponent>) => {
     const styles = useStyles2(getStyles);
-    const { isListOfServicesLoading, topServicesToBeUsed, listOfServicesOrderedByVolume, body } = model.useState();
+    const { isListOfServicesLoading, listOfServicesToQuery, listOfServicesOrderedByVolume, body } = model.useState();
 
     // searchQuery is used to keep track of the search query in input field
     const [searchQuery, setSearchQuery] = useState('');
@@ -330,7 +330,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
             {isListOfServicesLoading && <LoadingPlaceholder text={'Loading'} className={styles.loadingText} />}
             {!isListOfServicesLoading && (
               <>
-                Showing: {topServicesToBeUsed?.length} of {listOfServicesOrderedByVolume?.length} services
+                Showing: {listOfServicesToQuery?.length} of {listOfServicesOrderedByVolume?.length} services
               </>
             )}
           </div>
@@ -343,7 +343,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
             />
           </Field>
           {isListOfServicesLoading && <LoadingPlaceholder text="Fetching services..." />}
-          {!isListOfServicesLoading && (!topServicesToBeUsed || topServicesToBeUsed.length === 0) && (
+          {!isListOfServicesLoading && (!listOfServicesToQuery || listOfServicesToQuery.length === 0) && (
             <GrotError>
               <p>Log volume has not been configured.</p>
               <p>
@@ -362,7 +362,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
               </Text>
             </GrotError>
           )}
-          {!isListOfServicesLoading && topServicesToBeUsed && topServicesToBeUsed.length > 0 && (
+          {!isListOfServicesLoading && listOfServicesToQuery && listOfServicesToQuery.length > 0 && (
             <div className={styles.body}>
               <body.Component model={body} />
             </div>
