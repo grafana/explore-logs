@@ -1,9 +1,8 @@
 import { css } from '@emotion/css';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 
 import { DataFrame, GrafanaTheme2, reduceField, ReducerID, PanelData } from '@grafana/data';
 import {
-  AdHocFiltersVariable,
   PanelBuilders,
   SceneComponentProps,
   SceneCSSGridLayout,
@@ -33,38 +32,38 @@ import {
 } from '@grafana/ui';
 
 import { SelectFieldButton } from '../Forms/SelectFieldButton';
-import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from 'services/shared';
-import { map, Observable, Unsubscribable } from 'rxjs';
+import { explorationDS, VAR_DATASOURCE } from 'services/shared';
+import { map, Observable } from 'rxjs';
 import { ByLabelRepeater } from 'Components/ByLabelRepeater';
 import { GrotError } from 'Components/GrotError';
 import { getLiveTailControl, getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
+import { debounce } from 'lodash';
 
 const LIMIT_SERVICES = 20;
 const SERVICE_NAME = 'service_name';
 
 interface ServiceSelectionComponentState extends SceneObjectState {
+  // The body of the component
   body: SceneCSSGridLayout;
-  repeater?: ByLabelRepeater;
-  groupBy: string;
-  metricFn: string;
-
-  showHeading?: boolean;
-  searchQuery?: string;
-  showPreviews?: boolean;
-  topServices?: string[];
-  isTopSeriesLoading: boolean;
+  // We query volume endpoint to get list of all services and order them by volume
+  listOfServicesOrderedByVolume?: string[];
+  // Keeps track of whether service list is being fetched from volume endpoint
+  isListOfServicesLoading: boolean;
+  // Keeps track of the search query in input field
   searchServicesString: string;
+  // List of services to be shown in the body
   topServicesToBeUsed?: string[];
 }
 
 export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionComponentState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
-    variableNames: [VAR_FILTERS, VAR_DATASOURCE],
+    // We want to subscribe to changes in datasource variables and update the top services when the datasource changes
+    variableNames: [VAR_DATASOURCE],
     onReferencedVariableValueChanged: async (variable: SceneVariable) => {
       const { name } = variable.state;
       if (name === VAR_DATASOURCE) {
-        this._onTopServiceChange();
+        this._getListOfServicesOrderedByVolume();
       }
     },
   });
@@ -72,12 +71,9 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
 
   constructor(state: Partial<ServiceSelectionComponentState>) {
     super({
-      showPreviews: true,
-      groupBy: state.groupBy ?? 'resource.service.name',
-      metricFn: state.metricFn ?? 'rate()',
       body: new SceneCSSGridLayout({ children: [] }),
-      isTopSeriesLoading: false,
-      topServices: undefined,
+      isListOfServicesLoading: false,
+      listOfServicesOrderedByVolume: undefined,
       searchServicesString: '',
       topServicesToBeUsed: undefined,
       ...state,
@@ -87,41 +83,23 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
   }
 
   private _onActivate() {
-    // terribad hack - remove single service filter if it's there
-    const variable = sceneGraph.lookupVariable(VAR_FILTERS, this);
-    if (variable instanceof AdHocFiltersVariable && variable.state.filters.find((f) => f.key === SERVICE_NAME)) {
-      variable.setState({
-        filters: variable.state.filters.filter((f) => f.key !== SERVICE_NAME),
-      });
-    }
-
-    const unsubs: Unsubscribable[] = [];
-
-    const liveTailControl = getLiveTailControl(this);
-    if (liveTailControl) {
-      unsubs.push(
-        liveTailControl.subscribeToState(({ liveStreaming }) => {
-          Object.values(this._services).forEach((service) => {
-            service.logsQueryRunner.setState({
-              liveStreaming,
-              queries: [...service.logsQueryRunner.state.queries],
-            });
-            service.logsQueryRunner.runQueries();
-          });
-        })
-      );
-    }
-
-    this._onTopServiceChange();
-
+    this._getListOfServicesOrderedByVolume();
     this.subscribeToState((newState, oldState) => {
-      if (newState.topServicesToBeUsed !== oldState.topServicesToBeUsed) {
-        this.updateBody();
+      // Updates topServicesToBeUsed when listOfServicesOrderedByVolume is changed - should happen only once when the list of services is fetched during initialization
+      if (newState.listOfServicesOrderedByVolume !== oldState.listOfServicesOrderedByVolume) {
+        const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
+        const topServicesToBeUsed = addFavoriteServices(
+          newState.listOfServicesOrderedByVolume?.slice(0, LIMIT_SERVICES) ?? [],
+          getFavoriteServicesFromStorage(ds)
+        );
+        this.setState({
+          topServicesToBeUsed,
+        });
       }
 
       // Updates topServicesToBeUsed when searchServicesString is changed
       if (newState.searchServicesString !== oldState.searchServicesString) {
-        const services = this.state.topServices?.filter((service) =>
+        const services = this.state.listOfServicesOrderedByVolume?.filter((service) =>
           service.toLowerCase().includes(newState.searchServicesString?.toLowerCase() ?? '')
         );
         let topServicesToBeUsed = services?.slice(0, LIMIT_SERVICES) ?? [];
@@ -134,15 +112,19 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
           topServicesToBeUsed,
         });
       }
-    });
 
-    return () => unsubs.forEach((u) => u.unsubscribe());
+      // When topServicesToBeUsed is changed, update the body and render the panels with the new services
+      if (newState.topServicesToBeUsed !== oldState.topServicesToBeUsed) {
+        this.updateBody();
+      }
+    });
   }
 
-  private async _onTopServiceChange() {
+  // Run on initialization to fetch list of services ordered by volume
+  private async _getListOfServicesOrderedByVolume() {
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     this.setState({
-      isTopSeriesLoading: true,
+      isListOfServicesLoading: true,
     });
     const ds = await getLokiDatasource(this);
     if (!ds) {
@@ -150,44 +132,33 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
     }
 
     try {
-      const volumeReponse = await ds.getResource!('index/volume', {
+      const volumeResponse = await ds.getResource!('index/volume', {
         query: `{${SERVICE_NAME}=~".+"}`,
         from: timeRange.from.utc().toISOString(),
         to: timeRange.to.utc().toISOString(),
       });
       const serviceMetrics: { [key: string]: number } = {};
-      volumeReponse.data.result.forEach((item: any) => {
+      volumeResponse.data.result.forEach((item: any) => {
         const serviceName = item['metric'][SERVICE_NAME];
         const value = Number(item['value'][1]);
         serviceMetrics[serviceName] = value;
       });
 
-      const topServices = Object.entries(serviceMetrics)
+      const listOfServicesOrderedByVolume = Object.entries(serviceMetrics)
         .sort((a, b) => b[1] - a[1]) // Sort by value in descending order
         .map(([serviceName]) => serviceName); // Extract service names
 
-      // this is run to get initial services + and we are adding favorite services
-      let topServicesToBeUsed = addFavoriteServices(
-        topServices.slice(0, LIMIT_SERVICES),
-        getFavoriteServicesFromStorage(ds)
-      );
       this.setState({
-        topServices,
-        topServicesToBeUsed,
-        isTopSeriesLoading: false,
+        listOfServicesOrderedByVolume,
+        isListOfServicesLoading: false,
       });
     } catch (error) {
       console.log(`Failed to fetch top services:`, error);
       this.setState({
-        topServices: [],
-        topServicesToBeUsed: [],
-        isTopSeriesLoading: false,
+        listOfServicesOrderedByVolume: [],
+        isListOfServicesLoading: false,
       });
     }
-  }
-
-  public getRepeater(): ByLabelRepeater {
-    return this.state.body!.state.children[0] as ByLabelRepeater;
   }
 
   private updateBody() {
@@ -292,7 +263,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
 
     const logsQueryRunner = new SceneQueryRunner({
       datasource: explorationDS,
-      queries: [buildLogsQuery(service, this.state.topServices)],
+      queries: [buildLogsQuery(service, this.state.listOfServicesOrderedByVolume)],
       maxDataPoints: 80,
       liveStreaming: getLiveTailControl(this)?.state.liveStreaming,
     });
@@ -332,23 +303,23 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
     return layout;
   }
 
+  // We could also run model.setState in component, but it is recommended to implement the state-modifying methods in the scene object
+  public onSearchServicesChange = debounce((serviceString: string) => {
+    this.setState({
+      searchServicesString: serviceString,
+    });
+  }, 500);
+
   public static Component = ({ model }: SceneComponentProps<ServiceSelectionComponent>) => {
     const styles = useStyles2(getStyles);
-    const { isTopSeriesLoading, topServicesToBeUsed, topServices } = model.useState();
-    const body = model.state.body;
+    const { isListOfServicesLoading, topServicesToBeUsed, listOfServicesOrderedByVolume, body } = model.useState();
 
+    // searchQuery is used to keep track of the search query in input field
     const [searchQuery, setSearchQuery] = useState('');
-
-    const timeout = useRef<NodeJS.Timeout>();
-
     const onSearchChange = useCallback(
       (e: React.FormEvent<HTMLInputElement>) => {
-        const value = e.currentTarget.value;
-        setSearchQuery(value);
-        clearTimeout(timeout.current);
-        timeout.current = setTimeout(() => {
-          model.setState({ searchServicesString: value });
-        }, 700);
+        setSearchQuery(e.currentTarget.value);
+        model.onSearchServicesChange(e.currentTarget.value);
       },
       [model]
     );
@@ -356,10 +327,10 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
       <div className={styles.container}>
         <div className={styles.bodyWrapper}>
           <div>
-            {isTopSeriesLoading && <LoadingPlaceholder text={'Loading'} className={styles.loadingText} />}
-            {!isTopSeriesLoading && (
+            {isListOfServicesLoading && <LoadingPlaceholder text={'Loading'} className={styles.loadingText} />}
+            {!isListOfServicesLoading && (
               <>
-                Showing: {topServicesToBeUsed?.length} of {topServices?.length} services
+                Showing: {topServicesToBeUsed?.length} of {listOfServicesOrderedByVolume?.length} services
               </>
             )}
           </div>
@@ -371,8 +342,8 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
               onChange={onSearchChange}
             />
           </Field>
-          {isTopSeriesLoading && <LoadingPlaceholder text="Fetching services..." />}
-          {!isTopSeriesLoading && (!topServicesToBeUsed || topServicesToBeUsed.length === 0) && (
+          {isListOfServicesLoading && <LoadingPlaceholder text="Fetching services..." />}
+          {!isListOfServicesLoading && (!topServicesToBeUsed || topServicesToBeUsed.length === 0) && (
             <GrotError>
               <p>Log volume has not been configured.</p>
               <p>
@@ -391,7 +362,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
               </Text>
             </GrotError>
           )}
-          {!isTopSeriesLoading && topServicesToBeUsed && topServicesToBeUsed.length > 0 && (
+          {!isListOfServicesLoading && topServicesToBeUsed && topServicesToBeUsed.length > 0 && (
             <div className={styles.body}>
               <body.Component model={body} />
             </div>
