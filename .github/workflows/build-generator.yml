@@ -33,4 +33,4 @@ jobs:
           tags: ${{ env.TAGS_CONFIG }}
           context: ./generator/
           image_name: 'fake-log-generator'
-          environment: 'dev' # can be either dev/prod
+          environment: 'dev'
