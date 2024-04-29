@@ -47,13 +47,13 @@ interface ServiceSelectionComponentState extends SceneObjectState {
   // The body of the component
   body: SceneCSSGridLayout;
   // We query volume endpoint to get list of all services and order them by volume
-  listOfServicesOrderedByVolume?: string[];
+  servicesByVolume?: string[];
   // Keeps track of whether service list is being fetched from volume endpoint
-  isListOfServicesLoading: boolean;
+  areServicesLoading: boolean;
   // Keeps track of the search query in input field
   searchServicesString: string;
   // List of services to be shown in the body
-  listOfServicesToQuery?: string[];
+  servicesToQuery?: string[];
 }
 
 export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionComponentState> {
@@ -63,7 +63,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
     onReferencedVariableValueChanged: async (variable: SceneVariable) => {
       const { name } = variable.state;
       if (name === VAR_DATASOURCE) {
-        this._getListOfServicesOrderedByVolume();
+        this._getServicesByVolume();
       }
     },
   });
@@ -72,10 +72,10 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
   constructor(state: Partial<ServiceSelectionComponentState>) {
     super({
       body: new SceneCSSGridLayout({ children: [] }),
-      isListOfServicesLoading: false,
-      listOfServicesOrderedByVolume: undefined,
+      areServicesLoading: false,
+      servicesByVolume: undefined,
       searchServicesString: '',
-      listOfServicesToQuery: undefined,
+      servicesToQuery: undefined,
       ...state,
     });
 
@@ -83,48 +83,48 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
   }
 
   private _onActivate() {
-    this._getListOfServicesOrderedByVolume();
+    this._getServicesByVolume();
     this.subscribeToState((newState, oldState) => {
-      // Updates listOfServicesToQuery when listOfServicesOrderedByVolume is changed - should happen only once when the list of services is fetched during initialization
-      if (newState.listOfServicesOrderedByVolume !== oldState.listOfServicesOrderedByVolume) {
+      // Updates servicesToQuery when servicesByVolume is changed - should happen only once when the list of services is fetched during initialization
+      if (newState.servicesByVolume !== oldState.servicesByVolume) {
         const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
-        const listOfServicesToQuery = addFavoriteServices(
-          newState.listOfServicesOrderedByVolume?.slice(0, LIMIT_SERVICES) ?? [],
+        const servicesToQuery = addFavoriteServices(
+          newState.servicesByVolume?.slice(0, LIMIT_SERVICES) ?? [],
           getFavoriteServicesFromStorage(ds)
         );
         this.setState({
-          listOfServicesToQuery,
+          servicesToQuery,
         });
       }
 
-      // Updates listOfServicesToQuery when searchServicesString is changed
+      // Updates servicesToQuery when searchServicesString is changed
       if (newState.searchServicesString !== oldState.searchServicesString) {
-        const services = this.state.listOfServicesOrderedByVolume?.filter((service) =>
+        const services = this.state.servicesByVolume?.filter((service) =>
           service.toLowerCase().includes(newState.searchServicesString?.toLowerCase() ?? '')
         );
-        let listOfServicesToQuery = services?.slice(0, LIMIT_SERVICES) ?? [];
+        let servicesToQuery = services?.slice(0, LIMIT_SERVICES) ?? [];
         // If user is not searching for anything, add favorite services to the top
         if (newState.searchServicesString === '') {
           const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
-          listOfServicesToQuery = addFavoriteServices(listOfServicesToQuery, getFavoriteServicesFromStorage(ds));
+          servicesToQuery = addFavoriteServices(servicesToQuery, getFavoriteServicesFromStorage(ds));
         }
         this.setState({
-          listOfServicesToQuery,
+          servicesToQuery,
         });
       }
 
-      // When listOfServicesToQuery is changed, update the body and render the panels with the new services
-      if (newState.listOfServicesToQuery !== oldState.listOfServicesToQuery) {
+      // When servicesToQuery is changed, update the body and render the panels with the new services
+      if (newState.servicesToQuery !== oldState.servicesToQuery) {
         this.updateBody();
       }
     });
   }
 
   // Run on initialization to fetch list of services ordered by volume
-  private async _getListOfServicesOrderedByVolume() {
+  private async _getServicesByVolume() {
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     this.setState({
-      isListOfServicesLoading: true,
+      areServicesLoading: true,
     });
     const ds = await getLokiDatasource(this);
     if (!ds) {
@@ -144,26 +144,26 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
         serviceMetrics[serviceName] = value;
       });
 
-      const listOfServicesOrderedByVolume = Object.entries(serviceMetrics)
+      const servicesByVolume = Object.entries(serviceMetrics)
         .sort((a, b) => b[1] - a[1]) // Sort by value in descending order
         .map(([serviceName]) => serviceName); // Extract service names
 
       this.setState({
-        listOfServicesOrderedByVolume,
-        isListOfServicesLoading: false,
+        servicesByVolume,
+        areServicesLoading: false,
       });
     } catch (error) {
       console.log(`Failed to fetch top services:`, error);
       this.setState({
-        listOfServicesOrderedByVolume: [],
-        isListOfServicesLoading: false,
+        servicesByVolume: [],
+        areServicesLoading: false,
       });
     }
   }
 
   private updateBody() {
     const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue() as string;
-    if (!this.state.listOfServicesToQuery || this.state.listOfServicesToQuery.length === 0) {
+    if (!this.state.servicesToQuery || this.state.servicesToQuery.length === 0) {
       this.state.body.setState({ children: [] });
     } else {
       this.state.body.setState({
@@ -172,7 +172,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
             $data: new SceneDataTransformer({
               $data: new SceneQueryRunner({
                 datasource: explorationDS,
-                queries: [buildVolumeQuery(this.state.listOfServicesToQuery)],
+                queries: [buildVolumeQuery(this.state.servicesToQuery)],
                 maxDataPoints: 80,
               }),
               transformations: [
@@ -263,7 +263,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
 
     const logsQueryRunner = new SceneQueryRunner({
       datasource: explorationDS,
-      queries: [buildLogsQuery(service, this.state.listOfServicesOrderedByVolume)],
+      queries: [buildLogsQuery(service, this.state.servicesByVolume)],
       maxDataPoints: 80,
       liveStreaming: getLiveTailControl(this)?.state.liveStreaming,
     });
@@ -312,7 +312,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
 
   public static Component = ({ model }: SceneComponentProps<ServiceSelectionComponent>) => {
     const styles = useStyles2(getStyles);
-    const { isListOfServicesLoading, listOfServicesToQuery, listOfServicesOrderedByVolume, body } = model.useState();
+    const { areServicesLoading, servicesToQuery, servicesByVolume, body } = model.useState();
 
     // searchQuery is used to keep track of the search query in input field
     const [searchQuery, setSearchQuery] = useState('');
@@ -327,10 +327,10 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
       <div className={styles.container}>
         <div className={styles.bodyWrapper}>
           <div>
-            {isListOfServicesLoading && <LoadingPlaceholder text={'Loading'} className={styles.loadingText} />}
-            {!isListOfServicesLoading && (
+            {areServicesLoading && <LoadingPlaceholder text={'Loading'} className={styles.loadingText} />}
+            {!areServicesLoading && (
               <>
-                Showing: {listOfServicesToQuery?.length} of {listOfServicesOrderedByVolume?.length} services
+                Showing: {servicesToQuery?.length} of {servicesByVolume?.length} services
               </>
             )}
           </div>
@@ -342,8 +342,8 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
               onChange={onSearchChange}
             />
           </Field>
-          {isListOfServicesLoading && <LoadingPlaceholder text="Fetching services..." />}
-          {!isListOfServicesLoading && (!listOfServicesToQuery || listOfServicesToQuery.length === 0) && (
+          {areServicesLoading && <LoadingPlaceholder text="Fetching services..." />}
+          {!areServicesLoading && (!servicesToQuery || servicesToQuery.length === 0) && (
             <GrotError>
               <p>Log volume has not been configured.</p>
               <p>
@@ -362,7 +362,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
               </Text>
             </GrotError>
           )}
-          {!isListOfServicesLoading && listOfServicesToQuery && listOfServicesToQuery.length > 0 && (
+          {!areServicesLoading && servicesToQuery && servicesToQuery.length > 0 && (
             <div className={styles.body}>
               <body.Component model={body} />
             </div>
