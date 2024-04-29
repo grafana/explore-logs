@@ -8,6 +8,11 @@ on:
       - 'generator/**/*'
   workflow_dispatch:
 
+# These permissions are needed to assume roles from Github's OIDC.
+permissions:
+  contents: read
+  id-token: write
+
 env:
   TAGS_CONFIG: |
     type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
@@ -21,11 +26,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build and push
-        uses: grafana/shared-workflows/actions/build-push-to-dockerhub@main
+      - uses: grafana/shared-workflows/actions/push-to-gar-docker@main
+        name: Build and push
         with:
-          repository: grafana/fakeloggenerator
-          context: ./generator/
-          push: true
-          platforms: linux/amd64,linux/arm64
+          registry: 'us-docker.pkg.dev'
           tags: ${{ env.TAGS_CONFIG }}
+          context: ./generator/
+          image_name: 'fake-log-generator'
+          environment: 'dev' # can be either dev/prod
