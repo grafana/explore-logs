@@ -8,7 +8,7 @@ export const Routes = () => {
   const userPermissions = config.bootData.user.permissions;
   const canUseApp = userPermissions?.['grafana-lokiexplore-app:read'] || userPermissions?.['datasources:explore'];
   if (!canUseApp) {
-    return null;
+    return <Redirect to="/" />;
   }
 
   return (
