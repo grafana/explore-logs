@@ -24,7 +24,7 @@ import {
 import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
 import { renderLogQLLabelFilters } from 'Components/Index/IndexScene';
 import { Unsubscribable } from 'rxjs';
-import { extractParserAndFieldsFromDataFrame } from 'services/fields';
+import { extractParserAndFieldsFromDataFrame, DetectedLabelsResponse } from 'services/fields';
 import { EXPLORATIONS_ROUTE } from 'services/routing';
 import { getLokiDatasource, getExplorationFor, getLiveTailControl } from 'services/scenes';
 import {
@@ -37,7 +37,6 @@ import {
   VAR_PATTERNS,
   explorationDS,
 } from 'services/variables';
-import { DetectedLabelsResponse } from 'services/types';
 import { GiveFeedbackButton } from '../Forms/GiveFeedbackButton';
 import { GoToExploreButton } from '../Forms/GoToExploreButton';
 import { LogsVolumePanel } from './LogsVolumePanel';

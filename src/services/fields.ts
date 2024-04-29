@@ -5,6 +5,15 @@ import { getColorByIndex } from './scenes';
 import { AddToFiltersGraphAction } from 'Components/Forms/AddToFiltersButton';
 import { VAR_FIELDS } from './variables';
 
+export type DetectedLabel = {
+  label: string;
+  cardinality: number;
+};
+
+export type DetectedLabelsResponse = {
+  detectedLabels: DetectedLabel[];
+};
+
 interface ExtratedFields {
   type: 'logfmt' | 'json';
   fields: string[];

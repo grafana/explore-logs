@@ -26,8 +26,7 @@ import { AddToFiltersGraphAction } from 'Components/Forms/AddToFiltersButton';
 import { ByFrameRepeater } from 'Components/ByFrameRepeater';
 import { LayoutSwitcher } from 'Components/LayoutSwitcher';
 import { StatusWrapper } from 'Components/StatusWrapper';
-import { DetectedLabelsResponse } from 'services/types';
-import { getLabelValueScene } from 'services/fields';
+import { getLabelValueScene, DetectedLabelsResponse } from 'services/fields';
 import {
   VAR_FILTERS,
   VAR_LABEL_GROUP_BY,
