@@ -1,7 +1,7 @@
 import pluginJson from '../src/plugin.json';
 import { test, expect } from '@grafana/plugin-e2e';
 import { ExplorePage } from './fixtures/explore';
-import { ROUTES } from '../src/utils/routing';
+import { ROUTES } from '../src/services/routing';
 
 test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;

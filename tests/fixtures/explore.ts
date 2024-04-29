@@ -1,6 +1,6 @@
 import type { Page, Locator } from '@playwright/test';
 import pluginJson from '../../src/plugin.json';
-import { ROUTES } from '../../src/utils/routing';
+import { ROUTES } from '../../src/services/routing';
 import { testIds } from '../../src/Components/testIds';
 
 export class ExplorePage {
