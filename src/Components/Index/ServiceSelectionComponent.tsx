@@ -49,7 +49,7 @@ interface ServiceSelectionComponentState extends SceneObjectState {
   // We query volume endpoint to get list of all services and order them by volume
   servicesByVolume?: string[];
   // Keeps track of whether service list is being fetched from volume endpoint
-  isServicesLoading: boolean;
+  isServicesByVolumeLoading: boolean;
   // Keeps track of the search query in input field
   searchServicesString: string;
   // List of services to be shown in the body
@@ -72,7 +72,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
   constructor(state: Partial<ServiceSelectionComponentState>) {
     super({
       body: new SceneCSSGridLayout({ children: [] }),
-      isServicesLoading: false,
+      isServicesByVolumeLoading: false,
       servicesByVolume: undefined,
       searchServicesString: '',
       servicesToQuery: undefined,
@@ -124,7 +124,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
   private async _getServicesByVolume() {
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     this.setState({
-      isServicesLoading: true,
+      isServicesByVolumeLoading: true,
     });
     const ds = await getLokiDatasource(this);
     if (!ds) {
@@ -150,13 +150,13 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
 
       this.setState({
         servicesByVolume,
-        isServicesLoading: false,
+        isServicesByVolumeLoading: false,
       });
     } catch (error) {
       console.log(`Failed to fetch top services:`, error);
       this.setState({
         servicesByVolume: [],
-        isServicesLoading: false,
+        isServicesByVolumeLoading: false,
       });
     }
   }
@@ -312,7 +312,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
 
   public static Component = ({ model }: SceneComponentProps<ServiceSelectionComponent>) => {
     const styles = useStyles2(getStyles);
-    const { isServicesLoading, servicesToQuery, servicesByVolume, body } = model.useState();
+    const { isServicesByVolumeLoading, servicesToQuery, servicesByVolume, body } = model.useState();
 
     // searchQuery is used to keep track of the search query in input field
     const [searchQuery, setSearchQuery] = useState('');
@@ -327,8 +327,8 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
       <div className={styles.container}>
         <div className={styles.bodyWrapper}>
           <div>
-            {isServicesLoading && <LoadingPlaceholder text={'Loading'} className={styles.loadingText} />}
-            {!isServicesLoading && (
+            {isServicesByVolumeLoading && <LoadingPlaceholder text={'Loading'} className={styles.loadingText} />}
+            {!isServicesByVolumeLoading && (
               <>
                 Showing: {servicesToQuery?.length} of {servicesByVolume?.length} services
               </>
@@ -342,8 +342,8 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
               onChange={onSearchChange}
             />
           </Field>
-          {isServicesLoading && <LoadingPlaceholder text="Fetching services..." />}
-          {!isServicesLoading && (!servicesToQuery || servicesToQuery.length === 0) && (
+          {isServicesByVolumeLoading && <LoadingPlaceholder text="Fetching services..." />}
+          {!isServicesByVolumeLoading && (!servicesToQuery || servicesToQuery.length === 0) && (
             <GrotError>
               <p>Log volume has not been configured.</p>
               <p>
@@ -362,7 +362,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
               </Text>
             </GrotError>
           )}
-          {!isServicesLoading && servicesToQuery && servicesToQuery.length > 0 && (
+          {!isServicesByVolumeLoading && servicesToQuery && servicesToQuery.length > 0 && (
             <div className={styles.body}>
               <body.Component model={body} />
             </div>
