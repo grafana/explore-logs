@@ -1,0 +1,31 @@
+name: Build Generator
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'generator/**/*'
+  workflow_dispatch:
+
+env:
+  TAGS_CONFIG: |
+    type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+    type=sha,prefix={{ branch }}-,format=short,enable=${{ github.ref == 'refs/heads/main' }}
+    type=semver,pattern={{ version }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and push
+        uses: grafana/shared-workflows/actions/build-push-to-dockerhub@main
+        with:
+          repository: grafana/fakeloggenerator
+          context: ./generator/
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ env.TAGS_CONFIG }}
