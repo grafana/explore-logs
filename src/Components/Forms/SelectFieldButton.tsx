@@ -10,7 +10,7 @@ import {
 import { Button } from '@grafana/ui';
 import { VariableHide } from '@grafana/schema';
 import { addToFavoriteServicesInStorage } from 'services/store';
-import { VAR_DATASOURCE } from 'services/shared';
+import { VAR_DATASOURCE } from 'services/variables';
 import { BusEventBase } from '@grafana/data';
 
 export class StartingPointSelectedEvent extends BusEventBase {

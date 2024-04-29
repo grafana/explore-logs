@@ -9,7 +9,7 @@ import {
   SceneTimeRange,
 } from '@grafana/scenes';
 import { IndexScene } from 'Components/Index/IndexScene';
-import { VAR_DATASOURCE_EXPR, LOG_STREAM_SELECTOR_EXPR, VAR_FILTERS, ALL_VARIABLE_VALUE } from './shared';
+import { VAR_DATASOURCE_EXPR, LOG_STREAM_SELECTOR_EXPR, VAR_FILTERS, ALL_VARIABLE_VALUE } from './variables';
 import { EXPLORATIONS_ROUTE } from './routing';
 import { LiveTailButton } from 'Components/Forms/LiveTailButton';
 

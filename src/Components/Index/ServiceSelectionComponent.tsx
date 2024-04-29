@@ -33,7 +33,7 @@ import {
 } from '@grafana/ui';
 
 import { SelectFieldButton } from '../Forms/SelectFieldButton';
-import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from 'services/shared';
+import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from 'services/variables';
 import { map, Observable, Unsubscribable } from 'rxjs';
 import { ByLabelRepeater } from 'Components/ByLabelRepeater';
 import { GrotError } from 'Components/GrotError';

@@ -3,7 +3,7 @@ import { DrawStyle, StackingMode } from '@grafana/ui';
 import { PanelBuilders, SceneCSSGridItem, SceneDataNode } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
 import { AddToFiltersGraphAction } from 'Components/Forms/AddToFiltersButton';
-import { VAR_FIELDS } from './shared';
+import { VAR_FIELDS } from './variables';
 
 interface ExtratedFields {
   type: 'logfmt' | 'json';

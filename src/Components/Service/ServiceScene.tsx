@@ -36,7 +36,7 @@ import {
   VAR_LOGS_FORMAT,
   VAR_PATTERNS,
   explorationDS,
-} from 'services/shared';
+} from 'services/variables';
 import { DetectedLabelsResponse } from 'services/types';
 import { GiveFeedbackButton } from '../Forms/GiveFeedbackButton';
 import { GoToExploreButton } from '../Forms/GoToExploreButton';

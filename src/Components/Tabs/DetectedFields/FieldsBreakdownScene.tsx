@@ -32,7 +32,7 @@ import {
   ALL_VARIABLE_VALUE,
   explorationDS,
   LOG_STREAM_SELECTOR_EXPR,
-} from 'services/shared';
+} from 'services/variables';
 import { ServiceScene } from 'Components/Service/ServiceScene';
 import { FieldSelector } from 'Components/Forms/FieldSelector';
 
