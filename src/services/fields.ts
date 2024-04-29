@@ -1,7 +1,7 @@
 import { DataFrame, PanelData } from '@grafana/data';
 import { DrawStyle, StackingMode } from '@grafana/ui';
 import { PanelBuilders, SceneCSSGridItem, SceneDataNode } from '@grafana/scenes';
-import { getColorByIndex } from './utils';
+import { getColorByIndex } from './scenes';
 import { AddToFiltersGraphAction } from 'Components/Forms/AddToFiltersButton';
 import { VAR_FIELDS } from './shared';
 

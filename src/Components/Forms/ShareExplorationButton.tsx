@@ -5,7 +5,8 @@ import { ToolbarButton } from '@grafana/ui';
 
 import { config } from '@grafana/runtime';
 import { IndexScene } from 'Components/Index/IndexScene';
-import { copyText, getUrlForExploration } from 'utils/utils';
+import { getUrlForExploration } from 'services/scenes';
+import { copyText } from 'services/text';
 
 interface ShareExplorationButtonState {
   exploration: IndexScene;

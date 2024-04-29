@@ -33,13 +33,12 @@ import {
 } from '@grafana/ui';
 
 import { SelectFieldButton } from '../Forms/SelectFieldButton';
-import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from '../../utils/shared';
+import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from 'services/shared';
 import { map, Observable, Unsubscribable } from 'rxjs';
 import { ByLabelRepeater } from 'Components/ByLabelRepeater';
 import { GrotError } from 'Components/GrotError';
-import { getLiveTailControl } from 'utils/scenes';
-import { getFavoriteServicesFromStorage } from 'utils/store';
-import { getLokiDatasource } from 'utils/utils';
+import { getLiveTailControl, getLokiDatasource } from 'services/scenes';
+import { getFavoriteServicesFromStorage } from 'services/store';
 
 const LIMIT_SERVICES = 20;
 const SERVICE_NAME = 'service_name';

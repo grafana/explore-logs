@@ -26,16 +26,16 @@ import { AddToFiltersGraphAction } from 'Components/Forms/AddToFiltersButton';
 import { ByFrameRepeater } from 'Components/ByFrameRepeater';
 import { LayoutSwitcher } from 'Components/LayoutSwitcher';
 import { StatusWrapper } from 'Components/StatusWrapper';
-import { DetectedLabelsResponse } from 'utils/types';
-import { getLayoutChild } from 'utils/fields';
+import { DetectedLabelsResponse } from 'services/types';
+import { getLayoutChild } from 'services/fields';
 import {
   VAR_FILTERS,
   VAR_LABEL_GROUP_BY,
   ALL_VARIABLE_VALUE,
   explorationDS,
   LOG_STREAM_SELECTOR_EXPR,
-} from 'utils/shared';
-import { getLokiDatasource, getLabelOptions } from 'utils/utils';
+} from 'services/shared';
+import { getLokiDatasource, getLabelOptions } from 'services/scenes';
 import { FieldSelector } from 'Components/Forms/FieldSelector';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
