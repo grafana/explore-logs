@@ -23,7 +23,7 @@ export function extractFields(data: DataFrame) {
   return result;
 }
 
-export function getLayoutChild(getTitle: (df: DataFrame) => string, style: DrawStyle) {
+export function getLabelValueScene(getTitle: (df: DataFrame) => string, style: DrawStyle) {
   return (data: PanelData, frame: DataFrame, frameIndex: number) => {
     const panel = PanelBuilders.timeseries() //
       .setOption('legend', { showLegend: false })
@@ -32,7 +32,7 @@ export function getLayoutChild(getTitle: (df: DataFrame) => string, style: DrawS
       .setData(new SceneDataNode({ data: { ...data, series: [frame] } }))
       .setColor({ mode: 'fixed', fixedColor: getColorByIndex(frameIndex) })
       .setHeaderActions(new AddToFiltersGraphAction({ frame, variableName: VAR_FIELDS }));
-    // TODO hack
+
     if (style === DrawStyle.Bars) {
       panel
         .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })

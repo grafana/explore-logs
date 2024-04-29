@@ -27,7 +27,7 @@ import { ByFrameRepeater } from 'Components/ByFrameRepeater';
 import { LayoutSwitcher } from 'Components/LayoutSwitcher';
 import { StatusWrapper } from 'Components/StatusWrapper';
 import { DetectedLabelsResponse } from 'services/types';
-import { getLayoutChild } from 'services/fields';
+import { getLabelValueScene } from 'services/fields';
 import {
   VAR_FILTERS,
   VAR_LABEL_GROUP_BY,
@@ -132,7 +132,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       blockingMessage: undefined,
     };
 
-    stateUpdate.body = variable.hasAllValue() ? buildAllLayout(options) : buildNormalLayout(variable);
+    stateUpdate.body = variable.hasAllValue() ? buildLabelsLayout(options) : buildLabelValuesLayout(variable);
 
     this.setState(stateUpdate);
   }
@@ -209,11 +209,11 @@ function getStyles(theme: GrafanaTheme2) {
   };
 }
 
-function buildAllLayout(options: Array<SelectableValue<string>>) {
+function buildLabelsLayout(options: Array<SelectableValue<string>>) {
   const children: SceneFlexItemLike[] = [];
 
   for (const option of options) {
-    if (option.value === ALL_VARIABLE_VALUE) {
+    if (option.value === ALL_VARIABLE_VALUE || !option.value) {
       continue;
     }
 
@@ -228,7 +228,7 @@ function buildAllLayout(options: Array<SelectableValue<string>>) {
               queries: [
                 {
                   refId: 'A',
-                  expr: getExpr(option.value!),
+                  expr: getExpr(option.value),
                   legendFormat: `{{${option.label}}}`,
                 },
               ],
@@ -285,7 +285,7 @@ function buildQuery(tagKey: string) {
 
 const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
-function buildNormalLayout(variable: CustomVariable) {
+function buildLabelValuesLayout(variable: CustomVariable) {
   const query = buildQuery(variable.getValueText());
 
   let bodyOpts = PanelBuilders.timeseries();
@@ -333,7 +333,7 @@ function buildNormalLayout(variable: CustomVariable) {
             }),
           ],
         }),
-        getLayoutChild: getLayoutChild(
+        getLayoutChild: getLabelValueScene(
           getLabelValue,
           query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line
         ),
@@ -350,7 +350,7 @@ function buildNormalLayout(variable: CustomVariable) {
             }),
           ],
         }),
-        getLayoutChild: getLayoutChild(
+        getLayoutChild: getLabelValueScene(
           getLabelValue,
           query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line
         ),
