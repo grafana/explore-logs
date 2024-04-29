@@ -6,8 +6,8 @@ import { sceneGraph } from '@grafana/scenes';
 import { ToolbarButton } from '@grafana/ui';
 
 import { IndexScene } from 'Components/Index/IndexScene';
-import { VAR_LOGS_FORMAT_EXPR } from 'utils/shared';
-import { getDataSource, getQueryExpr } from 'utils/utils';
+import { VAR_LOGS_FORMAT_EXPR } from 'services/shared';
+import { getDataSource, getQueryExpr } from 'services/scenes';
 
 interface ShareExplorationButtonState {
   exploration: IndexScene;

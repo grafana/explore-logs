@@ -3,7 +3,7 @@ import { CustomVariable, SceneComponentProps, SceneObjectBase, SceneObjectState,
 import { Field, Input } from '@grafana/ui';
 import { debounce } from 'lodash';
 import React, { ChangeEvent } from 'react';
-import { VAR_LINE_FILTER } from 'utils/shared';
+import { VAR_LINE_FILTER } from 'services/shared';
 
 interface LineFilterState extends SceneObjectState {
   lineFilter: string;
