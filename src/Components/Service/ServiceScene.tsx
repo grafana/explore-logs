@@ -23,7 +23,7 @@ import {
 import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
 import { renderLogQLLabelFilters } from 'Components/Index/IndexScene';
 import { Unsubscribable } from 'rxjs';
-import { extractFields } from 'services/fields';
+import { extractParserAndFieldsFromDataFrame } from 'services/fields';
 import { EXPLORATIONS_ROUTE } from 'services/routing';
 import { getLokiDatasource, getExplorationFor, getLiveTailControl } from 'services/scenes';
 import {
@@ -219,7 +219,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     if (newState.data?.state === LoadingState.Done) {
       const frame = newState.data?.series[0];
       if (frame) {
-        const res = extractFields(frame);
+        const res = extractParserAndFieldsFromDataFrame(frame);
         const detectedFields = res.fields.filter((f) => !disabledFields.includes(f)).sort((a, b) => a.localeCompare(b));
         if (JSON.stringify(detectedFields) !== JSON.stringify(this.state.detectedFields)) {
           this.setState({

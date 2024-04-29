@@ -5,8 +5,13 @@ import { getColorByIndex } from './scenes';
 import { AddToFiltersGraphAction } from 'Components/Forms/AddToFiltersButton';
 import { VAR_FIELDS } from './shared';
 
-export function extractFields(data: DataFrame) {
-  const result: { type: 'logfmt' | 'json'; fields: string[] } = { type: 'logfmt', fields: [] };
+interface ExtratedFields {
+  type: 'logfmt' | 'json';
+  fields: string[];
+}
+
+export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
+  const result: ExtratedFields = { type: 'logfmt', fields: [] };
   const labelTypesField = data.fields.find((f) => f.name === 'labelTypes');
   result.fields = Object.keys(
     labelTypesField?.values.reduce((acc: Record<string, boolean>, value: Record<string, string>) => {
