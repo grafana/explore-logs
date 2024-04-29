@@ -26,18 +26,11 @@ import {
 import { Text, useStyles2 } from '@grafana/ui';
 import { ServiceScene } from 'Components/Service/ServiceScene';
 import { Pattern } from 'Components/Tabs/Patterns/Pattern';
-import {
-  StartingPointSelectedEvent,
-  VAR_DATASOURCE,
-  VAR_FIELDS,
-  VAR_FILTERS,
-  VAR_LINE_FILTER,
-  VAR_PATTERNS,
-  explorationDS,
-} from 'services/shared';
+import { VAR_DATASOURCE, VAR_FIELDS, VAR_FILTERS, VAR_LINE_FILTER, VAR_PATTERNS, explorationDS } from 'services/shared';
 import { ServiceSelectionComponent } from './ServiceSelectionComponent';
 
 import pluginJson from '../../plugin.json';
+import { StartingPointSelectedEvent } from 'Components/Forms/SelectFieldButton';
 
 type LogExplorationMode = 'start' | 'logs';
 

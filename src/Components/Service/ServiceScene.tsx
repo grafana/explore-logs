@@ -9,6 +9,7 @@ import {
   SceneComponentProps,
   SceneFlexItem,
   SceneFlexLayout,
+  SceneObject,
   SceneObjectBase,
   SceneObjectState,
   SceneObjectUrlSyncConfig,
@@ -28,10 +29,7 @@ import { EXPLORATIONS_ROUTE } from 'services/routing';
 import { getLokiDatasource, getExplorationFor, getLiveTailControl } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
-  ActionViewDefinition,
-  ActionViewType,
   LOG_STREAM_SELECTOR_EXPR,
-  MakeOptional,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_FILTERS,
@@ -53,6 +51,16 @@ interface LokiPattern {
   pattern: string;
   samples: Array<[number, string]>;
 }
+
+type ActionViewType = 'logs' | 'labels' | 'patterns' | 'fields' | 'traces' | 'relatedMetrics';
+
+interface ActionViewDefinition {
+  displayName: string;
+  value: ActionViewType;
+  getScene: (changeFields: (f: string[]) => void) => SceneObject;
+}
+
+type MakeOptional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
 export interface ServiceSceneState extends SceneObjectState {
   body: SceneFlexLayout;
