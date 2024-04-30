@@ -156,6 +156,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       }
 
       const expr = getExpr(option.value!);
+      console.log('expr', expr);
       const queryRunner = new SceneQueryRunner({
         maxDataPoints: 300,
         datasource: explorationDS,
@@ -295,13 +296,15 @@ function isAvgField(field: string) {
 
 function getExpr(field: string) {
   if (isAvgField(field)) {
+    // Logfmt not working with the following
     return (
-      `avg_over_time(${LOG_STREAM_SELECTOR_EXPR} | unwrap ` +
+      `avg_over_time(${LOG_STREAM_SELECTOR_EXPR}|logfmt|unwrap ` +
       (field === 'duration' ? `duration` : field === 'bytes' ? `bytes` : ``) +
-      `(${field}) [$__auto]) by ()`
+      `(${field}) [$__auto]) by()`
     );
   }
-  return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${field}!=""   [$__auto]))`;
+  // Cannot be any spaces around logfmt, and it must proceed the ${field}!=""
+  return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ |logfmt|${field}!=""   [$__auto]))`;
 }
 
 function buildQuery(tagKey: string) {
@@ -320,6 +323,7 @@ const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
 function buildNormalLayout(variable: CustomVariable) {
   const query = buildQuery(variable.getValueText());
+  console.log('query', query);
 
   return new LayoutSwitcher({
     $data: new SceneQueryRunner({

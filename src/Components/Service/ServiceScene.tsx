@@ -293,7 +293,9 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         })
           .then((res: { fieldLimit: number; fields: DetectedField[] }) => {
             this.setState({
-              detectedFields: res.fields.filter((field) => !disabledFields.includes(field.label)),
+              detectedFields: res.fields
+                .filter((field) => !disabledFields.includes(field.label))
+                .sort((a, b) => a.label.localeCompare(b.label)),
             });
             // console.debug('detected_fields result', res);
           })
