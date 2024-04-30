@@ -9,6 +9,7 @@ import {
   SceneComponentProps,
   SceneFlexItem,
   SceneFlexLayout,
+  SceneObject,
   SceneObjectBase,
   SceneObjectState,
   SceneObjectUrlSyncConfig,
@@ -23,23 +24,19 @@ import {
 import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
 import { renderLogQLLabelFilters } from 'Components/Index/IndexScene';
 import { Unsubscribable } from 'rxjs';
-import { extractFields } from 'services/fields';
+import { extractParserAndFieldsFromDataFrame, DetectedLabelsResponse } from 'services/fields';
 import { EXPLORATIONS_ROUTE } from 'services/routing';
 import { getLokiDatasource, getExplorationFor } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
-  ActionViewDefinition,
-  ActionViewType,
   LOG_STREAM_SELECTOR_EXPR,
-  MakeOptional,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_FILTERS,
   VAR_LOGS_FORMAT,
   VAR_PATTERNS,
   explorationDS,
-} from 'services/shared';
-import { DetectedLabelsResponse } from 'services/types';
+} from 'services/variables';
 import { GiveFeedbackButton } from '../Forms/GiveFeedbackButton';
 import { GoToExploreButton } from '../Forms/GoToExploreButton';
 import { LogsVolumePanel } from './LogsVolumePanel';
@@ -53,6 +50,16 @@ interface LokiPattern {
   pattern: string;
   samples: Array<[number, string]>;
 }
+
+type ActionViewType = 'logs' | 'labels' | 'patterns' | 'fields' | 'traces' | 'relatedMetrics';
+
+interface ActionViewDefinition {
+  displayName: string;
+  value: ActionViewType;
+  getScene: (changeFields: (f: string[]) => void) => SceneObject;
+}
+
+type MakeOptional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
 export interface ServiceSceneState extends SceneObjectState {
   body: SceneFlexLayout;
@@ -207,7 +214,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     if (newState.data?.state === LoadingState.Done) {
       const frame = newState.data?.series[0];
       if (frame) {
-        const res = extractFields(frame);
+        const res = extractParserAndFieldsFromDataFrame(frame);
         const detectedFields = res.fields.filter((f) => !disabledFields.includes(f)).sort((a, b) => a.localeCompare(b));
         if (JSON.stringify(detectedFields) !== JSON.stringify(this.state.detectedFields)) {
           this.setState({

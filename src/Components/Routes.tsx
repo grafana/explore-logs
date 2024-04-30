@@ -1,14 +1,14 @@
 import React from 'react';
 import { Redirect, Route, Switch } from 'react-router-dom';
 import { config } from '@grafana/runtime';
-import { LogExplorationPage } from 'pages/Explore/LogExplorationPage';
+import { LogExplorationPage } from 'Components/Pages/Explore/LogExplorationPage';
 import { ROUTES, prefixRoute } from 'services/routing';
 
 export const Routes = () => {
   const userPermissions = config.bootData.user.permissions;
   const canUseApp = userPermissions?.['grafana-lokiexplore-app:read'] || userPermissions?.['datasources:explore'];
   if (!canUseApp) {
-    return null;
+    return <Redirect to="/" />;
   }
 
   return (

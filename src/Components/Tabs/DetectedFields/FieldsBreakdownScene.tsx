@@ -25,14 +25,14 @@ import { AddToFiltersGraphAction } from 'Components/Forms/AddToFiltersButton';
 import { ByFrameRepeater } from 'Components/ByFrameRepeater';
 import { LayoutSwitcher } from 'Components/LayoutSwitcher';
 import { StatusWrapper } from 'Components/StatusWrapper';
-import { getLayoutChild } from 'services/fields';
+import { getLabelValueScene } from 'services/fields';
 import {
   VAR_FILTERS,
   VAR_FIELD_GROUP_BY,
   ALL_VARIABLE_VALUE,
   explorationDS,
   LOG_STREAM_SELECTOR_EXPR,
-} from 'services/shared';
+} from 'services/variables';
 import { ServiceScene } from 'Components/Service/ServiceScene';
 import { FieldSelector } from 'Components/Forms/FieldSelector';
 
@@ -353,7 +353,7 @@ function buildNormalLayout(variable: CustomVariable) {
           ],
           isLazy: true,
         }),
-        getLayoutChild: getLayoutChild(
+        getLayoutChild: getLabelValueScene(
           getLabelValue,
           query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line
         ),
@@ -371,7 +371,7 @@ function buildNormalLayout(variable: CustomVariable) {
           ],
           isLazy: true,
         }),
-        getLayoutChild: getLayoutChild(
+        getLayoutChild: getLabelValueScene(
           getLabelValue,
           query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line
         ),

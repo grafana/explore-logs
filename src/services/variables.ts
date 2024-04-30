@@ -1,13 +1,3 @@
-import { BusEventBase } from '@grafana/data';
-import { SceneObject } from '@grafana/scenes';
-
-export type ActionViewType = 'logs' | 'labels' | 'patterns' | 'fields' | 'traces' | 'relatedMetrics';
-export interface ActionViewDefinition {
-  displayName: string;
-  value: ActionViewType;
-  getScene: (changeFields: (f: string[]) => void) => SceneObject;
-}
-
 export const VAR_FILTERS = 'filters';
 export const VAR_FILTERS_EXPR = '${filters}';
 export const VAR_FIELDS = 'fields';
@@ -27,9 +17,3 @@ export const LOG_STREAM_SELECTOR_EXPR = `${VAR_FILTERS_EXPR} ${VAR_PATTERNS_EXPR
 export const explorationDS = { uid: VAR_DATASOURCE_EXPR };
 
 export const ALL_VARIABLE_VALUE = '$__all';
-
-export type MakeOptional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
-
-export class StartingPointSelectedEvent extends BusEventBase {
-  public static type = 'start-point-selected-event';
-}
