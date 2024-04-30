@@ -36,7 +36,7 @@ import { explorationDS, VAR_DATASOURCE } from 'services/variables';
 import { map, Observable } from 'rxjs';
 import { ByLabelRepeater } from 'Components/ByLabelRepeater';
 import { GrotError } from 'Components/GrotError';
-import { getLiveTailControl, getLokiDatasource } from 'services/scenes';
+import { getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
 import { debounce } from 'lodash';
 import { testIds } from 'Components/testIds';
@@ -163,7 +163,8 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
   }
 
   private updateBody() {
-    const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue() as string;
+    const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
+    // If no services are to be queried, clear the body
     if (!this.state.servicesToQuery || this.state.servicesToQuery.length === 0) {
       this.state.body.setState({ children: [] });
     } else {
@@ -172,38 +173,12 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
           new ByLabelRepeater({
             $data: new SceneDataTransformer({
               $data: new SceneQueryRunner({
-                datasource: explorationDS,
+                datasource: explorationDS, // explorationDS is just { uid: VAR_DATASOURCE}
                 queries: [buildVolumeQuery(this.state.servicesToQuery)],
-                maxDataPoints: 80,
               }),
               transformations: [
-                () => (source: Observable<DataFrame[]>) => {
-                  const favoriteServices = getFavoriteServicesFromStorage(ds);
-
-                  return source.pipe(
-                    map((data: DataFrame[]) => {
-                      data.forEach((a) => reduceField({ field: a.fields[1], reducers: [ReducerID.max] }));
-                      return data.sort((a, b) => {
-                        const aService = a.fields?.[1]?.labels?.[SERVICE_NAME] ?? '';
-                        const bService = b.fields?.[1]?.labels?.[SERVICE_NAME] ?? '';
-                        const aIsFavorite = favoriteServices.includes(aService);
-                        const bIsFavorite = favoriteServices.includes(bService);
-                        if (aIsFavorite && !bIsFavorite) {
-                          return -1;
-                        } else if (!aIsFavorite && bIsFavorite) {
-                          return 1;
-                        } else if (aIsFavorite && bIsFavorite) {
-                          if (favoriteServices.indexOf(aService) < favoriteServices.indexOf(bService)) {
-                            return -1;
-                          }
-                          return 1;
-                        } else {
-                          return (b.fields[1].state?.calcs?.max || 0) - (a.fields[1].state?.calcs?.max || 0);
-                        }
-                      });
-                    })
-                  );
-                },
+                () => (source: Observable<DataFrame[]>) =>
+                  source.pipe(map((data: DataFrame[]) => orderResults(data, getFavoriteServicesFromStorage(ds)))),
               ],
             }),
             body: new SceneFlexLayout({
@@ -225,7 +200,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
     }
   }
 
-  private getLayoutChild(data: PanelData, frames: DataFrame[], service: string, frameIndex: number): SceneFlexItem {
+  private getLayoutChild(data: PanelData, frames: DataFrame[], service: string): SceneFlexItem {
     if (this._services[service]) {
       this._services[service].volumePanel.setState({
         $data: new SceneDataNode({ data: { ...data, series: frames } }),
@@ -265,8 +240,6 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
     const logsQueryRunner = new SceneQueryRunner({
       datasource: explorationDS,
       queries: [buildLogsQuery(service, this.state.servicesByVolume)],
-      maxDataPoints: 80,
-      liveStreaming: getLiveTailControl(this)?.state.liveStreaming,
     });
 
     const logsPanel = PanelBuilders.logs().setData(logsQueryRunner).setOption('showTime', true).build();
@@ -328,6 +301,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
       <div className={styles.container}>
         <div className={styles.bodyWrapper}>
           <div>
+            {/** This is on top to show that we are loading Showing: X of X services div */}
             {isServicesByVolumeLoading && <LoadingPlaceholder text={'Loading'} className={styles.loadingText} />}
             {!isServicesByVolumeLoading && (
               <>
@@ -345,7 +319,8 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
             />
           </Field>
           {isServicesByVolumeLoading && <LoadingPlaceholder text="Fetching services..." />}
-          {!isServicesByVolumeLoading && (!servicesToQuery || servicesToQuery.length === 0) && (
+          {/** If we don't have any servicesByVolume, volume endpoint is probably not enabled */}
+          {!isServicesByVolumeLoading && !servicesByVolume?.length && (
             <GrotError>
               <p>Log volume has not been configured.</p>
               <p>
@@ -404,6 +379,28 @@ function buildVolumeQuery(services: string[]) {
 function addFavoriteServices(services: string[], favoriteServices: string[]) {
   const set = new Set([...favoriteServices, ...services]);
   return Array.from(set);
+}
+
+function orderResults(data: DataFrame[], favoriteServices: string[]) {
+  data.forEach((a) => reduceField({ field: a.fields[1], reducers: [ReducerID.max] }));
+  return data.sort((a, b) => {
+    const aService = a.fields?.[1]?.labels?.[SERVICE_NAME] ?? '';
+    const bService = b.fields?.[1]?.labels?.[SERVICE_NAME] ?? '';
+    const aIsFavorite = favoriteServices.includes(aService);
+    const bIsFavorite = favoriteServices.includes(bService);
+    if (aIsFavorite && !bIsFavorite) {
+      return -1;
+    } else if (!aIsFavorite && bIsFavorite) {
+      return 1;
+    } else if (aIsFavorite && bIsFavorite) {
+      if (favoriteServices.indexOf(aService) < favoriteServices.indexOf(bService)) {
+        return -1;
+      }
+      return 1;
+    } else {
+      return (b.fields[1].state?.calcs?.max || 0) - (a.fields[1].state?.calcs?.max || 0);
+    }
+  });
 }
 
 function getStyles(theme: GrafanaTheme2) {
