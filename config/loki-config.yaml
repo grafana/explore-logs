@@ -17,6 +17,7 @@ common:
       store: inmemory
 frontend:
   max_outstanding_per_tenant: 2048
+  encoding: protobuf
 pattern_ingester:
   enabled: true
 limits_config:
