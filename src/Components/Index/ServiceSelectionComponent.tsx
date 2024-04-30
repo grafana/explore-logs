@@ -80,7 +80,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
       // Updates servicesToQuery when servicesByVolume is changed - should happen only once when the list of services is fetched during initialization
       if (newState.servicesByVolume !== oldState.servicesByVolume) {
         const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
-        const servicesToQuery = addFavoriteServices(
+        const servicesToQuery = createListOfServicesToQuery(
           newState.servicesByVolume ?? [],
           getFavoriteServicesFromStorage(ds)
         );
@@ -98,7 +98,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
         // If user is not searching for anything, add favorite services to the top
         if (newState.searchServicesString === '') {
           const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
-          servicesToQuery = addFavoriteServices(servicesToQuery, getFavoriteServicesFromStorage(ds));
+          servicesToQuery = createListOfServicesToQuery(servicesToQuery, getFavoriteServicesFromStorage(ds));
         }
         this.setState({
           servicesToQuery,
@@ -160,15 +160,9 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
     } else {
       // If we have services to query, build the layout with the services. Children is an array of layouts for each service (1 row with 2 columns - timeseries and logs panel)
       const children = [];
-      const favoriteServices = getFavoriteServicesFromStorage(
-        sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue()
-      );
       for (const service of this.state.servicesToQuery) {
         // for each service, we create a layout with timeseries and logs panel
-        children.push(
-          this.buildServiceLayout(service, favoriteServices.includes(service)),
-          this.buildServiceLogsLayout(service)
-        );
+        children.push(this.buildServiceLayout(service), this.buildServiceLogsLayout(service));
       }
       this.state.body.setState({
         children: [
@@ -184,11 +178,11 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
   }
 
   // Creates a layout with timeseries panel
-  buildServiceLayout(service: string, isFavorite: boolean) {
+  buildServiceLayout(service: string) {
     return new SceneFlexItem({
       body: PanelBuilders.timeseries()
         // If service was previously selected, we show it in the title
-        .setTitle(`${service}${isFavorite ? ' (previously selected)' : ''}`)
+        .setTitle(service)
         .setData(
           new SceneQueryRunner({
             datasource: explorationDS,
@@ -329,7 +323,12 @@ function buildLogQuery(service: string) {
   };
 }
 
-function addFavoriteServices(services: string[], favoriteServices: string[]) {
+// Helper function to create a list of services to query. We want to show favorite services first and remove duplicates.
+// If there are no services, we return an empty array (don't want to use favorite services if there are no services)
+function createListOfServicesToQuery(services: string[], favoriteServices: string[]) {
+  if (!services.length) {
+    return [];
+  }
   const set = new Set([...favoriteServices, ...services]);
   return Array.from(set);
 }
