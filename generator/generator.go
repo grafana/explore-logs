@@ -72,26 +72,6 @@ var generators = map[model.LabelValue]map[model.LabelValue]LogGenerator{
 				}
 			}()
 		},
-		// "syslog": func(ctx context.Context, logger *AppLogger) {
-		// 	go func() {
-		// 		for ctx.Err() == nil {
-		// 			level := randLevel()
-		// 			t := time.Now()
-		// 			logger.Log(level, t, flog.NewRFC3164Log(t))
-		// 			time.Sleep(time.Duration(rand.Intn(5000)) * time.Millisecond)
-		// 		}
-		// 	}()
-		// },
-		// "syslog-ng": func(ctx context.Context, logger *AppLogger) {
-		// 	go func() {
-		// 		for ctx.Err() == nil {
-		// 			level := randLevel()
-		// 			t := time.Now()
-		// 			logger.Log(level, t, flog.NewRFC5424Log(t))
-		// 			time.Sleep(time.Duration(rand.Intn(5000)) * time.Millisecond)
-		// 		}
-		// 	}()
-		// },
 		"nginx": func(ctx context.Context, logger *AppLogger) {
 			go func() {
 				for ctx.Err() == nil {
