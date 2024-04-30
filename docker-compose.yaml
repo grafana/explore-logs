@@ -27,5 +27,5 @@ services:
     command: -config.file=/etc/loki/local-config.yaml
     restart: on-failure
   generator:
-    image: svennergr/fake-logs-generator:main-c8d21cc
+    image: us-docker.pkg.dev/grafanalabs-global/docker-explore-logs-prod/fake-log-generator:latest
     command: -url http://loki:3100/loki/api/v1/push
