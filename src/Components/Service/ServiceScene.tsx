@@ -1,8 +1,8 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DashboardCursorSync, GrafanaTheme2, LoadingState } from '@grafana/data';
-import { locationService } from '@grafana/runtime';
+import { DashboardCursorSync, GrafanaTheme2 } from '@grafana/data';
+import { getDataSourceSrv, locationService } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
   CustomVariable,
@@ -24,7 +24,7 @@ import {
 import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
 import { renderLogQLLabelFilters } from 'Components/Index/IndexScene';
 import { Unsubscribable } from 'rxjs';
-import { extractParserAndFieldsFromDataFrame, DetectedLabelsResponse } from 'services/fields';
+import { DetectedLabelsResponse } from 'services/fields';
 import { EXPLORATIONS_ROUTE } from 'services/routing';
 import { getLokiDatasource, getExplorationFor } from 'services/scenes';
 import {
@@ -61,11 +61,17 @@ interface ActionViewDefinition {
 
 type MakeOptional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
+type DetectedField = {
+  label: string;
+  type: string;
+  cardinality: number;
+};
+
 export interface ServiceSceneState extends SceneObjectState {
   body: SceneFlexLayout;
   actionView?: string;
 
-  detectedFields?: string[];
+  detectedFields?: DetectedField[];
   labels?: string[];
   patterns?: LokiPattern[];
 
@@ -150,13 +156,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
     this.setEmptyFiltersRedirection();
 
-    const dataUnsub = this.state.$data?.subscribeToState(() => {
-      this.updateFields();
-    });
-    if (dataUnsub) {
-      unsubs.push(dataUnsub);
-    }
-
+    this.updateDetectedFields();
     this.updateLabels();
     this.updatePatterns();
 
@@ -164,6 +164,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       sceneGraph.getTimeRange(this).subscribeToState(() => {
         this.updateLabels();
         this.updatePatterns();
+        this.updateDetectedFields();
       })
     );
 
@@ -182,51 +183,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.updatePatterns();
     this.updateLabels();
     locationService.partial({ actionView: 'logs' });
-  }
-
-  private getLogsFormatVariable() {
-    const variable = sceneGraph.lookupVariable(VAR_LOGS_FORMAT, this);
-    if (!(variable instanceof CustomVariable)) {
-      throw new Error('Logs format variable not found');
-    }
-    return variable;
-  }
-
-  private updateFields() {
-    const variable = this.getLogsFormatVariable();
-    const disabledFields = [
-      '__time',
-      'timestamp',
-      'time',
-      'datetime',
-      'date',
-      'timestamp_ms',
-      'timestamp_us',
-      'ts',
-      'traceID',
-      'trace',
-      'spanID',
-      'span',
-      'referer',
-      'user_identifier',
-    ];
-    const newState = sceneGraph.getData(this).state;
-    if (newState.data?.state === LoadingState.Done) {
-      const frame = newState.data?.series[0];
-      if (frame) {
-        const res = extractParserAndFieldsFromDataFrame(frame);
-        const detectedFields = res.fields.filter((f) => !disabledFields.includes(f)).sort((a, b) => a.localeCompare(b));
-        if (JSON.stringify(detectedFields) !== JSON.stringify(this.state.detectedFields)) {
-          this.setState({
-            detectedFields,
-          });
-        }
-        const newType = res.type ? ` | ${res.type}` : '';
-        if (variable.getValue() !== newType) {
-          variable.changeValueTo(newType);
-        }
-      }
-    }
   }
 
   private async updatePatterns() {
@@ -285,6 +241,66 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     if (JSON.stringify(labels) !== JSON.stringify(this.state.labels)) {
       this.setState({ labels });
     }
+  }
+
+  private async updateDetectedFields() {
+    const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
+    const timeRange = sceneGraph.getTimeRange(this).state.value;
+    const filters = sceneGraph.lookupVariable(VAR_FILTERS, this);
+    const labels = sceneGraph.lookupVariable(VAR_FIELDS, this);
+
+    const disabledFields = [
+      '__time',
+      'timestamp',
+      'time',
+      'datetime',
+      'date',
+      'timestamp_ms',
+      'timestamp_us',
+      'ts',
+      'traceID',
+      'trace',
+      'spanID',
+      'span',
+      'referer',
+      'user_identifier',
+    ];
+
+    if (!(filters instanceof AdHocFiltersVariable)) {
+      return;
+    }
+    if (!(labels instanceof AdHocFiltersVariable)) {
+      return;
+    }
+    if (!ds || typeof ds !== 'string') {
+      return;
+    }
+    // console.debug('filter expression:', filters?.state?.filterExpression);
+    // console.debug('labels expression:', labels?.state?.filterExpression);
+
+    const expression = `${filters?.state?.filterExpression} | logfmt ${labels?.state?.filterExpression}`;
+    // console.log('expression', expression);
+    // console.log('ds', ds);
+
+    getDataSourceSrv()
+      .get(ds)
+      .then((datasourceInstance) => {
+        // @ts-ignore
+        datasourceInstance.getResource!('detected_fields', {
+          query: expression,
+          from: timeRange.from.utc().toISOString(),
+          to: timeRange.to.utc().toISOString(),
+        })
+          .then((res: { fieldLimit: number; fields: DetectedField[] }) => {
+            this.setState({
+              detectedFields: res.fields.filter((field) => !disabledFields.includes(field.label)),
+            });
+            // console.debug('detected_fields result', res);
+          })
+          .catch((err: any) => {
+            console.error('Could not fetch detected_fields', err);
+          });
+      });
   }
 
   getUrlState() {
