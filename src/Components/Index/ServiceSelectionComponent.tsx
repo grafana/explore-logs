@@ -7,7 +7,6 @@ import {
   SceneComponentProps,
   SceneCSSGridLayout,
   SceneFlexItem,
-  SceneFlexLayout,
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
@@ -166,14 +165,17 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
       );
       for (const service of this.state.servicesToQuery) {
         // for each service, we create a layout with timeseries and logs panel
-        children.push(this.buildServiceLayout(service, favoriteServices.includes(service)));
+        children.push(
+          this.buildServiceLayout(service, favoriteServices.includes(service)),
+          this.buildServiceLogsLayout(service)
+        );
       }
       this.state.body.setState({
         children: [
           new SceneCSSGridLayout({
             children,
             isLazy: true,
-            templateColumns: 'repeat(1, 1fr)',
+            templateColumns: 'repeat(auto-fit, minmax(400px, 1fr) minmax(600px, 2fr))',
             autoRows: '200px',
           }),
         ],
@@ -181,74 +183,62 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
     }
   }
 
-  // Creates a layout with timeseries and logs panel for a service (1 row with 2 columns)
+  // Creates a layout with timeseries panel
   buildServiceLayout(service: string, isFavorite: boolean) {
     return new SceneFlexItem({
-      body: new SceneFlexLayout({
-        direction: 'row',
-        children: [
-          new SceneFlexItem({
-            width: '30%',
-            md: {
-              width: '100%',
-            },
+      body: PanelBuilders.timeseries()
+        // If service was previously selected, we show it in the title
+        .setTitle(`${service}${isFavorite ? ' (previously selected)' : ''}`)
+        .setData(
+          new SceneQueryRunner({
+            datasource: explorationDS,
+            queries: [
+              // Volume of logs for service grouped by level
+              buildVolumeQuery(service),
+            ],
+          })
+        )
+        .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
+        .setCustomFieldConfig('fillOpacity', 100)
+        .setCustomFieldConfig('lineWidth', 0)
+        .setCustomFieldConfig('pointSize', 0)
+        .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+        .setOverrides((overrides) => {
+          overrides.matchFieldsWithName('info').overrideColor({
+            mode: 'fixed',
+            fixedColor: 'semi-dark-green',
+          });
+          overrides.matchFieldsWithName('debug').overrideColor({
+            mode: 'fixed',
+            fixedColor: 'semi-dark-blue',
+          });
+          overrides.matchFieldsWithName('error').overrideColor({
+            mode: 'fixed',
+            fixedColor: 'semi-dark-red',
+          });
+          overrides.matchFieldsWithName('warn').overrideColor({
+            mode: 'fixed',
+            fixedColor: 'semi-dark-orange',
+          });
+        })
+        .setOption('legend', { showLegend: false })
+        .setHeaderActions(new SelectFieldButton({ value: service }))
+        .build(),
+    });
+  }
 
-            body: PanelBuilders.timeseries()
-              // If service was previously selected, we show it in the title
-              .setTitle(`${service}${isFavorite ? ' (previously selected)' : ''}`)
-              .setData(
-                new SceneQueryRunner({
-                  datasource: explorationDS,
-                  queries: [
-                    // Volume of logs for service grouped by level
-                    buildVolumeQuery(service),
-                  ],
-                })
-              )
-              .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
-              .setCustomFieldConfig('fillOpacity', 100)
-              .setCustomFieldConfig('lineWidth', 0)
-              .setCustomFieldConfig('pointSize', 0)
-              .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-              .setOverrides((overrides) => {
-                overrides.matchFieldsWithName('info').overrideColor({
-                  mode: 'fixed',
-                  fixedColor: 'semi-dark-green',
-                });
-                overrides.matchFieldsWithName('debug').overrideColor({
-                  mode: 'fixed',
-                  fixedColor: 'semi-dark-blue',
-                });
-                overrides.matchFieldsWithName('error').overrideColor({
-                  mode: 'fixed',
-                  fixedColor: 'semi-dark-red',
-                });
-                overrides.matchFieldsWithName('warn').overrideColor({
-                  mode: 'fixed',
-                  fixedColor: 'semi-dark-orange',
-                });
-              })
-              .setOption('legend', { showLegend: false })
-              .setHeaderActions(new SelectFieldButton({ value: service }))
-              .build(),
-          }),
-          new SceneFlexItem({
-            width: '70%',
-            md: {
-              width: '100%',
-            },
-            body: PanelBuilders.logs()
-              .setData(
-                new SceneQueryRunner({
-                  datasource: explorationDS,
-                  queries: [buildLogQuery(service)],
-                })
-              )
-              .setOption('showTime', true)
-              .build(),
-          }),
-        ],
-      }),
+  // Creates a layout with logs panel
+  buildServiceLogsLayout(service: string) {
+    return new SceneFlexItem({
+      body: PanelBuilders.logs()
+        .setData(
+          new SceneQueryRunner({
+            datasource: explorationDS,
+            queries: [buildLogQuery(service)],
+          })
+        )
+        .setOption('showTime', true)
+        .build(),
     });
   }
 
