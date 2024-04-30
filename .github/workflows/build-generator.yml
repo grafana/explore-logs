@@ -1,0 +1,39 @@
+name: Build Generator
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'generator/**/*'
+  pull_request:   
+    paths:
+      - 'generator/**/*'
+
+# These permissions are needed to assume roles from Github's OIDC.
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  TAGS_CONFIG: |
+    type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+    type=sha,prefix={{ branch }}-,format=short,enable=${{ github.ref == 'refs/heads/main' }}
+    type=semver,pattern={{ version }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: grafana/shared-workflows/actions/push-to-gar-docker@main
+        name: Build and push
+        with:
+          registry: 'us-docker.pkg.dev'
+          tags: ${{ env.TAGS_CONFIG }}
+          context: ./generator/
+          image_name: 'fake-log-generator'
+          environment: 'prod'
+          platforms: linux/amd64,linux/arm64

@@ -8,7 +8,7 @@ import { ToolbarButton } from '@grafana/ui';
 import { IndexScene } from 'Components/Index/IndexScene';
 import { VAR_LOGS_FORMAT_EXPR } from 'services/variables';
 import { getDataSource, getQueryExpr } from 'services/scenes';
-
+import { testIds } from 'Components/testIds';
 interface ShareExplorationButtonState {
   exploration: IndexScene;
 }
@@ -31,7 +31,12 @@ export const GoToExploreButton = ({ exploration }: ShareExplorationButtonState) 
   };
 
   return (
-    <ToolbarButton variant={'canvas'} icon={'compass'} onClick={onClick}>
+    <ToolbarButton
+      data-testid={testIds.exploreServiceBreakdown.openExplore}
+      variant={'canvas'}
+      icon={'compass'}
+      onClick={onClick}
+    >
       Open in Explore
     </ToolbarButton>
   );
