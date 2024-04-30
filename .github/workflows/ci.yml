@@ -13,6 +13,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      plugin-id: ${{ steps.metadata.outputs.plugin-id }}
+      plugin-version: ${{ steps.metadata.outputs.plugin-version }}
+      has-e2e: ${{ steps.check-for-e2e.outputs.has-e2e }}
+      has-backend: ${{ steps.check-for-backend.outputs.has-backend }}
     env:
       GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
     steps:
@@ -45,13 +50,27 @@ jobs:
           key: ${{ steps.restore-npm-cache.outputs.cache-primary-key }}
 
       - name: Check types
-        run: npm run typecheck
+        run: yarn typecheck
       - name: Lint
-        run: npm run lint
-      # - name: Unit tests
-      #   run: npm run test:ci
+        run: yarn lint
+      - name: Unit tests
+        run: yarn test:ci
       - name: Build frontend
-        run: npm run build
+        run: yarn build
+      - name: Start grafana docker
+        run: yarn server:ci
+      - name: Install Playwright Browsers
+        run: npx playwright install chromium --with-deps
+      - name: Run e2e tests
+        run: yarn e2e
+      - name: Upload Playwright artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{github.run_id}}
+          path: playwright-report/
+          retention-days: 5
+      - name: Stop grafana docker
+        run: docker-compose down
 
       - name: Check for backend
         id: check-for-backend
@@ -81,36 +100,8 @@ jobs:
           version: latest
           args: buildAll
 
-      - name: Check for E2E
-        id: check-for-e2e
-        run: |
-          if [ -d "cypress" ]
-          then
-            echo "has-e2e=true" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Start grafana docker
-        if: steps.check-for-e2e.outputs.has-e2e == 'true'
-        run: docker-compose up -d
-
-      - name: Run e2e tests
-        if: steps.check-for-e2e.outputs.has-e2e == 'true'
-        run: npm run e2e
-
-      - name: Stop grafana docker
-        if: steps.check-for-e2e.outputs.has-e2e == 'true'
-        run: docker-compose down
-
-      - name: Archive E2E output
-        uses: actions/upload-artifact@v4
-        if: steps.check-for-e2e.outputs.has-e2e == 'true' && steps.run-e2e-tests.outcome != 'success'
-        with:
-          name: cypress-videos
-          path: cypress/videos
-          retention-days: 5
-
       - name: Sign plugin
-        run: npm run sign
+        run: yarn sign
         if: ${{ env.GRAFANA_ACCESS_POLICY_TOKEN != '' }}
 
       - name: Get plugin metadata

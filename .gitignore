@@ -24,9 +24,6 @@ dist/
 artifacts/
 work/
 ci/
-e2e-results/
-**/cypress/videos
-**/cypress/report.json
 
 # Editor
 .idea
@@ -35,3 +32,10 @@ e2e-results/
 
 # Ignore OSX indexing
 .DS_Store
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
