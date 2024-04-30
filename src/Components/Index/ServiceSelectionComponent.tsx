@@ -28,7 +28,7 @@ import {
 } from '@grafana/ui';
 
 import { SelectFieldButton } from '../Forms/SelectFieldButton';
-import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from 'services/variables';
+import { explorationDS, VAR_DATASOURCE } from 'services/variables';
 import { GrotError } from 'Components/GrotError';
 import { getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
@@ -53,7 +53,7 @@ interface ServiceSelectionComponentState extends SceneObjectState {
 export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionComponentState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
     // We want to subscribe to changes in datasource variables and update the top services when the datasource changes
-    variableNames: [VAR_DATASOURCE, VAR_FILTERS],
+    variableNames: [VAR_DATASOURCE],
     onReferencedVariableValueChanged: async (variable: SceneVariable) => {
       const { name } = variable.state;
       if (name === VAR_DATASOURCE) {
