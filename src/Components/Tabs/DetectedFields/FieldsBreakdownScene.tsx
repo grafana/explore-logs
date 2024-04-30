@@ -95,15 +95,18 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   private updateFields() {
     const variable = this.getVariable();
     const logsScene = sceneGraph.getAncestor(this, ServiceScene);
+    const fields = [
+      { label: 'All', value: ALL_VARIABLE_VALUE },
+      ...(logsScene.state.detectedFields
+        ?.filter((f) => f.cardinality > 1)
+        .map((f) => ({
+          label: f.label,
+          value: f.label,
+        })) || []),
+    ];
 
     this.setState({
-      fields: [
-        { label: 'All', value: ALL_VARIABLE_VALUE },
-        ...(logsScene.state.detectedFields?.map((f) => ({
-          label: f,
-          value: f,
-        })) || []),
-      ],
+      fields,
     });
 
     this.updateBody(variable);
@@ -292,13 +295,15 @@ function isAvgField(field: string) {
 
 function getExpr(field: string) {
   if (isAvgField(field)) {
+    // @todo Logfmt not working with the following
     return (
-      `avg_over_time(${LOG_STREAM_SELECTOR_EXPR} | unwrap ` +
+      `avg_over_time(${LOG_STREAM_SELECTOR_EXPR}|unwrap ` +
       (field === 'duration' ? `duration` : field === 'bytes' ? `bytes` : ``) +
-      `(${field}) [$__auto]) by ()`
+      `(${field}) [$__auto]) by()`
     );
   }
-  return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${field}!=""   [$__auto]))`;
+  // Cannot be any spaces around logfmt, and it must proceed the ${field}!=""
+  return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ |logfmt|${field}!=""   [$__auto]))`;
 }
 
 function buildQuery(tagKey: string) {
