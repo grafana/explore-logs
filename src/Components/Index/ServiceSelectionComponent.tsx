@@ -238,7 +238,6 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
               width: '100%',
             },
             body: PanelBuilders.logs()
-              .setTitle(`${service}`)
               .setData(
                 new SceneQueryRunner({
                   datasource: explorationDS,
