@@ -36,3 +36,4 @@ jobs:
           context: ./generator/
           image_name: 'fake-log-generator'
           environment: 'prod'
+          platforms: linux/amd64,linux/arm64
