@@ -22,7 +22,7 @@ import { AddToFiltersGraphAction } from 'Components/Forms/AddToFiltersButton';
 import { LayoutSwitcher } from 'Components/LayoutSwitcher';
 import { StatusWrapper } from 'Components/StatusWrapper';
 import { GrotError } from 'Components/GrotError';
-import { VAR_LABEL_GROUP_BY } from 'services/shared';
+import { VAR_LABEL_GROUP_BY } from 'services/variables';
 import { getColorByIndex } from 'services/scenes';
 import { ServiceScene } from 'Components/Service/ServiceScene';
 import { FilterByPatternsButton } from './FilterByPatternsButton';

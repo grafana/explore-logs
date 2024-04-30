@@ -3,10 +3,24 @@ import { DrawStyle, StackingMode } from '@grafana/ui';
 import { PanelBuilders, SceneCSSGridItem, SceneDataNode } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
 import { AddToFiltersGraphAction } from 'Components/Forms/AddToFiltersButton';
-import { VAR_FIELDS } from './shared';
+import { VAR_FIELDS } from './variables';
 
-export function extractFields(data: DataFrame) {
-  const result: { type: 'logfmt' | 'json'; fields: string[] } = { type: 'logfmt', fields: [] };
+export type DetectedLabel = {
+  label: string;
+  cardinality: number;
+};
+
+export type DetectedLabelsResponse = {
+  detectedLabels: DetectedLabel[];
+};
+
+interface ExtratedFields {
+  type: 'logfmt' | 'json';
+  fields: string[];
+}
+
+export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
+  const result: ExtratedFields = { type: 'logfmt', fields: [] };
   const labelTypesField = data.fields.find((f) => f.name === 'labelTypes');
   result.fields = Object.keys(
     labelTypesField?.values.reduce((acc: Record<string, boolean>, value: Record<string, string>) => {
@@ -23,7 +37,7 @@ export function extractFields(data: DataFrame) {
   return result;
 }
 
-export function getLayoutChild(getTitle: (df: DataFrame) => string, style: DrawStyle) {
+export function getLabelValueScene(getTitle: (df: DataFrame) => string, style: DrawStyle) {
   return (data: PanelData, frame: DataFrame, frameIndex: number) => {
     const panel = PanelBuilders.timeseries() //
       .setOption('legend', { showLegend: false })
@@ -32,7 +46,7 @@ export function getLayoutChild(getTitle: (df: DataFrame) => string, style: DrawS
       .setData(new SceneDataNode({ data: { ...data, series: [frame] } }))
       .setColor({ mode: 'fixed', fixedColor: getColorByIndex(frameIndex) })
       .setHeaderActions(new AddToFiltersGraphAction({ frame, variableName: VAR_FIELDS }));
-    // TODO hack
+
     if (style === DrawStyle.Bars) {
       panel
         .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
