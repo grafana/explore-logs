@@ -297,7 +297,7 @@ function getExpr(field: string) {
   if (isAvgField(field)) {
     // Logfmt not working with the following
     return (
-      `avg_over_time(${LOG_STREAM_SELECTOR_EXPR}|logfmt|unwrap ` +
+      `avg_over_time(${LOG_STREAM_SELECTOR_EXPR}|unwrap ` +
       (field === 'duration' ? `duration` : field === 'bytes' ? `bytes` : ``) +
       `(${field}) [$__auto]) by()`
     );
