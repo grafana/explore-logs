@@ -12,8 +12,8 @@ test.describe('explore services page', () => {
   test('should filter service labels on search', async ({ page }) => {
     await explorePage.servicesSearch.click();
     await explorePage.servicesSearch.fill('mimir');
-    await expect(page.getByTestId('data-testid Panel header mimir-querier')).toBeVisible();
-    await expect(page.getByText('Showing: 4 of 10 services')).toBeVisible();
+    await expect(page.getByTestId('data-testid Panel header mimir-ingester')).toBeVisible();
+    await expect(page.getByText('Showing 4 services')).toBeVisible();
   });
 
   test('should select a service label value and navigate to log view', async ({ page }) => {

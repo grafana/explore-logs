@@ -1,23 +1,18 @@
 import { css } from '@emotion/css';
 import React, { useCallback, useState } from 'react';
 
-import { DataFrame, GrafanaTheme2, reduceField, ReducerID, PanelData } from '@grafana/data';
+import { GrafanaTheme2 } from '@grafana/data';
 import {
   PanelBuilders,
   SceneComponentProps,
   SceneCSSGridLayout,
-  SceneDataNode,
-  SceneDataTransformer,
   SceneFlexItem,
-  SceneFlexLayout,
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
   SceneQueryRunner,
-  SceneReactObject,
   SceneVariable,
   VariableDependencyConfig,
-  VizPanel,
 } from '@grafana/scenes';
 import {
   DrawStyle,
@@ -33,15 +28,12 @@ import {
 
 import { SelectFieldButton } from '../Forms/SelectFieldButton';
 import { explorationDS, VAR_DATASOURCE } from 'services/variables';
-import { map, Observable } from 'rxjs';
-import { ByLabelRepeater } from 'Components/ByLabelRepeater';
 import { GrotError } from 'Components/GrotError';
 import { getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
 import { debounce } from 'lodash';
 import { testIds } from 'Components/testIds';
 
-const LIMIT_SERVICES = 20;
 const SERVICE_NAME = 'service_name';
 
 interface ServiceSelectionComponentState extends SceneObjectState {
@@ -68,7 +60,6 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
       }
     },
   });
-  private _services: Record<string, ServiceItem> = {};
 
   constructor(state: Partial<ServiceSelectionComponentState>) {
     super({
@@ -89,8 +80,8 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
       // Updates servicesToQuery when servicesByVolume is changed - should happen only once when the list of services is fetched during initialization
       if (newState.servicesByVolume !== oldState.servicesByVolume) {
         const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
-        const servicesToQuery = addFavoriteServices(
-          newState.servicesByVolume?.slice(0, LIMIT_SERVICES) ?? [],
+        const servicesToQuery = createListOfServicesToQuery(
+          newState.servicesByVolume ?? [],
           getFavoriteServicesFromStorage(ds)
         );
         this.setState({
@@ -103,11 +94,11 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
         const services = this.state.servicesByVolume?.filter((service) =>
           service.toLowerCase().includes(newState.searchServicesString?.toLowerCase() ?? '')
         );
-        let servicesToQuery = services?.slice(0, LIMIT_SERVICES) ?? [];
+        let servicesToQuery = services ?? [];
         // If user is not searching for anything, add favorite services to the top
         if (newState.searchServicesString === '') {
           const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
-          servicesToQuery = addFavoriteServices(servicesToQuery, getFavoriteServicesFromStorage(ds));
+          servicesToQuery = createListOfServicesToQuery(servicesToQuery, getFavoriteServicesFromStorage(ds));
         }
         this.setState({
           servicesToQuery,
@@ -163,118 +154,86 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
   }
 
   private updateBody() {
-    const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
     // If no services are to be queried, clear the body
     if (!this.state.servicesToQuery || this.state.servicesToQuery.length === 0) {
       this.state.body.setState({ children: [] });
     } else {
+      // If we have services to query, build the layout with the services. Children is an array of layouts for each service (1 row with 2 columns - timeseries and logs panel)
+      const children = [];
+      for (const service of this.state.servicesToQuery) {
+        // for each service, we create a layout with timeseries and logs panel
+        children.push(this.buildServiceLayout(service), this.buildServiceLogsLayout(service));
+      }
       this.state.body.setState({
         children: [
-          new ByLabelRepeater({
-            $data: new SceneDataTransformer({
-              $data: new SceneQueryRunner({
-                datasource: explorationDS, // explorationDS is just { uid: VAR_DATASOURCE}
-                queries: [buildVolumeQuery(this.state.servicesToQuery)],
-              }),
-              transformations: [
-                () => (source: Observable<DataFrame[]>) =>
-                  source.pipe(map((data: DataFrame[]) => orderResults(data, getFavoriteServicesFromStorage(ds)))),
-              ],
-            }),
-            body: new SceneFlexLayout({
-              height: '200px',
-              direction: 'column',
-              children: [
-                new SceneFlexItem({
-                  body: new SceneReactObject({
-                    reactNode: <LoadingPlaceholder text="Fetching services..." />,
-                  }),
-                }),
-              ],
-            }),
-            repeatByLabel: SERVICE_NAME,
-            getLayoutChild: this.getLayoutChild.bind(this),
+          new SceneCSSGridLayout({
+            children,
+            isLazy: true,
+            templateColumns: 'repeat(auto-fit, minmax(400px, 1fr) minmax(600px, 2fr))',
+            autoRows: '200px',
           }),
         ],
       });
     }
   }
 
-  private getLayoutChild(data: PanelData, frames: DataFrame[], service: string): SceneFlexItem {
-    if (this._services[service]) {
-      this._services[service].volumePanel.setState({
-        $data: new SceneDataNode({ data: { ...data, series: frames } }),
-      });
-      return this._services[service].layout;
-    }
-    const volumePanel = PanelBuilders.timeseries()
-      .setTitle(service)
-      .setData(new SceneDataNode({ data: { ...data, series: frames } }))
-      .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
-      .setCustomFieldConfig('fillOpacity', 100)
-      .setCustomFieldConfig('lineWidth', 0)
-      .setCustomFieldConfig('pointSize', 0)
-      .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-      .setOverrides((overrides) => {
-        overrides.matchFieldsWithName('info').overrideColor({
-          mode: 'fixed',
-          fixedColor: 'semi-dark-green',
-        });
-        overrides.matchFieldsWithName('debug').overrideColor({
-          mode: 'fixed',
-          fixedColor: 'semi-dark-blue',
-        });
-        overrides.matchFieldsWithName('error').overrideColor({
-          mode: 'fixed',
-          fixedColor: 'semi-dark-red',
-        });
-        overrides.matchFieldsWithName('warn').overrideColor({
-          mode: 'fixed',
-          fixedColor: 'semi-dark-orange',
-        });
-      })
-      .setOption('legend', { showLegend: false })
-      .setHeaderActions(new SelectFieldButton({ value: service }))
-      .build();
-
-    const logsQueryRunner = new SceneQueryRunner({
-      datasource: explorationDS,
-      queries: [buildLogsQuery(service, this.state.servicesByVolume)],
+  // Creates a layout with timeseries panel
+  buildServiceLayout(service: string) {
+    return new SceneFlexItem({
+      body: PanelBuilders.timeseries()
+        // If service was previously selected, we show it in the title
+        .setTitle(service)
+        .setData(
+          new SceneQueryRunner({
+            datasource: explorationDS,
+            queries: [
+              // Volume of logs for service grouped by level
+              buildVolumeQuery(service),
+            ],
+          })
+        )
+        .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
+        .setCustomFieldConfig('fillOpacity', 100)
+        .setCustomFieldConfig('lineWidth', 0)
+        .setCustomFieldConfig('pointSize', 0)
+        .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+        .setOverrides((overrides) => {
+          overrides.matchFieldsWithName('info').overrideColor({
+            mode: 'fixed',
+            fixedColor: 'semi-dark-green',
+          });
+          overrides.matchFieldsWithName('debug').overrideColor({
+            mode: 'fixed',
+            fixedColor: 'semi-dark-blue',
+          });
+          overrides.matchFieldsWithName('error').overrideColor({
+            mode: 'fixed',
+            fixedColor: 'semi-dark-red',
+          });
+          overrides.matchFieldsWithName('warn').overrideColor({
+            mode: 'fixed',
+            fixedColor: 'semi-dark-orange',
+          });
+        })
+        .setOption('legend', { showLegend: false })
+        .setHeaderActions(new SelectFieldButton({ value: service }))
+        .build(),
     });
+  }
 
-    const logsPanel = PanelBuilders.logs().setData(logsQueryRunner).setOption('showTime', true).build();
-
-    const layout = new SceneFlexItem({
-      body: new SceneFlexLayout({
-        height: '200px',
-        direction: 'row',
-        children: [
-          new SceneFlexItem({
-            width: '30%',
-            md: {
-              width: '100%',
-            },
-            body: volumePanel,
-          }),
-          new SceneFlexItem({
-            width: '70%',
-            md: {
-              width: '100%',
-            },
-            body: logsPanel,
-          }),
-        ],
-      }),
+  // Creates a layout with logs panel
+  buildServiceLogsLayout(service: string) {
+    return new SceneFlexItem({
+      body: PanelBuilders.logs()
+        .setData(
+          new SceneQueryRunner({
+            datasource: explorationDS,
+            queries: [buildLogQuery(service)],
+          })
+        )
+        .setOption('showTime', true)
+        .build(),
     });
-
-    this._services[service] = {
-      volumePanel,
-      logsPanel,
-      logsQueryRunner,
-      layout,
-    };
-
-    return layout;
   }
 
   // We could also run model.setState in component, but it is recommended to implement the state-modifying methods in the scene object
@@ -286,7 +245,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
 
   public static Component = ({ model }: SceneComponentProps<ServiceSelectionComponent>) => {
     const styles = useStyles2(getStyles);
-    const { isServicesByVolumeLoading, servicesToQuery, servicesByVolume, body } = model.useState();
+    const { isServicesByVolumeLoading, servicesByVolume, servicesToQuery, body } = model.useState();
 
     // searchQuery is used to keep track of the search query in input field
     const [searchQuery, setSearchQuery] = useState('');
@@ -303,11 +262,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
           <div>
             {/** This is on top to show that we are loading Showing: X of X services div */}
             {isServicesByVolumeLoading && <LoadingPlaceholder text={'Loading'} className={styles.loadingText} />}
-            {!isServicesByVolumeLoading && (
-              <>
-                Showing: {servicesToQuery?.length} of {servicesByVolume?.length} services
-              </>
-            )}
+            {!isServicesByVolumeLoading && <>Showing {servicesToQuery?.length} services</>}
           </div>
           <Field className={styles.searchField}>
             <Input
@@ -350,57 +305,32 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
   };
 }
 
-function buildBaseExpr(service: string | undefined, topServices: string[] | undefined) {
-  const servicesLogQl = topServices && topServices.length > 0 ? topServices.join('|') : '.+';
-  return `{${SERVICE_NAME}${service ? `="${service}"` : `=~"${servicesLogQl}"`}}`;
-}
-
-function buildLogsQuery(service: string | undefined, topServices: string[] | undefined) {
+function buildVolumeQuery(service: string) {
   return {
     refId: 'A',
-    expr: buildBaseExpr(service, topServices),
+    expr: `sum by(level) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`,
     queryType: 'range',
     legendFormat: '{{level}}',
+  };
+}
+
+function buildLogQuery(service: string) {
+  return {
+    refId: 'A',
+    expr: `{${SERVICE_NAME}=\`${service}\`}`,
+    queryType: 'range',
     maxLines: 100,
   };
 }
 
-function buildVolumeQuery(services: string[]) {
-  const stream = `${SERVICE_NAME}=~"${services.join('|')}"`;
-  return {
-    refId: 'A',
-    expr: `sum by(${SERVICE_NAME}, level) (count_over_time({${stream}} | drop __error__ [$__auto]))`,
-    queryType: 'range',
-    legendFormat: '{{level}}',
-    maxLines: 100,
-  };
-}
-
-function addFavoriteServices(services: string[], favoriteServices: string[]) {
+// Helper function to create a list of services to query. We want to show favorite services first and remove duplicates.
+// If there are no services, we return an empty array (don't want to use favorite services if there are no services)
+function createListOfServicesToQuery(services: string[], favoriteServices: string[]) {
+  if (!services.length) {
+    return [];
+  }
   const set = new Set([...favoriteServices, ...services]);
   return Array.from(set);
-}
-
-function orderResults(data: DataFrame[], favoriteServices: string[]) {
-  data.forEach((a) => reduceField({ field: a.fields[1], reducers: [ReducerID.max] }));
-  return data.sort((a, b) => {
-    const aService = a.fields?.[1]?.labels?.[SERVICE_NAME] ?? '';
-    const bService = b.fields?.[1]?.labels?.[SERVICE_NAME] ?? '';
-    const aIsFavorite = favoriteServices.includes(aService);
-    const bIsFavorite = favoriteServices.includes(bService);
-    if (aIsFavorite && !bIsFavorite) {
-      return -1;
-    } else if (!aIsFavorite && bIsFavorite) {
-      return 1;
-    } else if (aIsFavorite && bIsFavorite) {
-      if (favoriteServices.indexOf(aService) < favoriteServices.indexOf(bService)) {
-        return -1;
-      }
-      return 1;
-    } else {
-      return (b.fields[1].state?.calcs?.max || 0) - (a.fields[1].state?.calcs?.max || 0);
-    }
-  });
 }
 
 function getStyles(theme: GrafanaTheme2) {
@@ -438,11 +368,4 @@ function getStyles(theme: GrafanaTheme2) {
       marginTop: theme.spacing(1),
     }),
   };
-}
-
-interface ServiceItem {
-  volumePanel: VizPanel;
-  logsPanel: VizPanel;
-  logsQueryRunner: SceneQueryRunner;
-  layout: SceneFlexItem;
 }
