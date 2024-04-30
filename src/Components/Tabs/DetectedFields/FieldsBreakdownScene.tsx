@@ -156,7 +156,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       }
 
       const expr = getExpr(option.value!);
-      console.log('expr', expr);
       const queryRunner = new SceneQueryRunner({
         maxDataPoints: 300,
         datasource: explorationDS,
@@ -323,7 +322,6 @@ const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
 function buildNormalLayout(variable: CustomVariable) {
   const query = buildQuery(variable.getValueText());
-  console.log('query', query);
 
   return new LayoutSwitcher({
     $data: new SceneQueryRunner({

@@ -2,7 +2,7 @@ import { css } from '@emotion/css';
 import React from 'react';
 
 import { DashboardCursorSync, GrafanaTheme2 } from '@grafana/data';
-import { getDataSourceSrv, locationService } from '@grafana/runtime';
+import { locationService } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
   CustomVariable,
@@ -244,7 +244,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private async updateDetectedFields() {
-    const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     const filters = sceneGraph.lookupVariable(VAR_FILTERS, this);
     const labels = sceneGraph.lookupVariable(VAR_FIELDS, this);
@@ -272,37 +271,26 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     if (!(labels instanceof AdHocFiltersVariable)) {
       return;
     }
-    if (!ds || typeof ds !== 'string') {
+    const expression = `${filters?.state?.filterExpression} ${labels?.state?.filterExpression}`;
+
+    const ds = await getLokiDatasource(this);
+    if (!ds) {
       return;
     }
-    // console.debug('filter expression:', filters?.state?.filterExpression);
-    // console.debug('labels expression:', labels?.state?.filterExpression);
-
-    const expression = `${filters?.state?.filterExpression} | logfmt ${labels?.state?.filterExpression}`;
-    // console.log('expression', expression);
-    // console.log('ds', ds);
-
-    getDataSourceSrv()
-      .get(ds)
-      .then((datasourceInstance) => {
-        // @ts-ignore
-        datasourceInstance.getResource!('detected_fields', {
-          query: expression,
-          from: timeRange.from.utc().toISOString(),
-          to: timeRange.to.utc().toISOString(),
-        })
-          .then((res: { fieldLimit: number; fields: DetectedField[] }) => {
-            this.setState({
-              detectedFields: res.fields
-                .filter((field) => !disabledFields.includes(field.label))
-                .sort((a, b) => a.label.localeCompare(b.label)),
-            });
-            // console.debug('detected_fields result', res);
-          })
-          .catch((err: any) => {
-            console.error('Could not fetch detected_fields', err);
-          });
+    try {
+      const response: { fieldLimit: number; fields: DetectedField[] } = await ds.getResource('detected_fields', {
+        query: expression,
+        from: timeRange.from.utc().toISOString(),
+        to: timeRange.to.utc().toISOString(),
       });
+      this.setState({
+        detectedFields: response.fields
+          .filter((field) => !disabledFields.includes(field.label))
+          .sort((a, b) => a.label.localeCompare(b.label)),
+      });
+    } catch (error) {
+      console.error('Could not fetch detected_fields', error);
+    }
   }
 
   getUrlState() {
