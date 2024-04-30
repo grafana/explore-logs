@@ -11,7 +11,6 @@ import {
 import { IndexScene } from 'Components/Index/IndexScene';
 import { VAR_DATASOURCE_EXPR, LOG_STREAM_SELECTOR_EXPR, VAR_FILTERS, ALL_VARIABLE_VALUE } from './variables';
 import { EXPLORATIONS_ROUTE } from './routing';
-import { LiveTailButton } from 'Components/Forms/LiveTailButton';
 
 export function getExplorationFor(model: SceneObject): IndexScene {
   return sceneGraph.getAncestor(model, IndexScene);
@@ -76,10 +75,4 @@ export async function getLokiDatasource(sceneObject: SceneObject) {
     | DataSourceWithBackend
     | undefined;
   return ds;
-}
-
-export function getLiveTailControl(model: SceneObject): LiveTailButton | undefined {
-  return sceneGraph
-    .getAncestor(model, IndexScene)
-    ?.state.controls.find((c) => c instanceof LiveTailButton) as LiveTailButton;
 }

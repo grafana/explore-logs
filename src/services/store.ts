@@ -2,11 +2,12 @@ import pluginJson from '../plugin.json';
 
 const SERVICES_LOCALSTORAGE_KEY = `${pluginJson.id}.services.favorite`;
 
-export function getFavoriteServicesFromStorage(ds: any): string[] {
-  if (!ds || typeof ds !== 'string') {
+// This should be a string, but we'll accept anything and return an empty array if it's not a string
+export function getFavoriteServicesFromStorage(dsKey: string | unknown): string[] {
+  if (!dsKey || typeof dsKey !== 'string') {
     return [];
   }
-  const key = createServicesLocalStorageKey(ds);
+  const key = createServicesLocalStorageKey(dsKey);
   let services = [];
   try {
     services = JSON.parse(localStorage.getItem(key) || '[]');
@@ -20,11 +21,12 @@ export function getFavoriteServicesFromStorage(ds: any): string[] {
   return services;
 }
 
-export function addToFavoriteServicesInStorage(ds: any, serviceName: string) {
-  if (!ds || typeof ds !== 'string') {
+// This should be a string, but we'll accept anything and return early
+export function addToFavoriteServicesInStorage(dsKey: string | unknown, serviceName: string) {
+  if (!dsKey || typeof dsKey !== 'string') {
     return;
   }
-  const key = createServicesLocalStorageKey(ds);
+  const key = createServicesLocalStorageKey(dsKey);
   let services = [];
   try {
     services = JSON.parse(localStorage.getItem(key) || '[]');

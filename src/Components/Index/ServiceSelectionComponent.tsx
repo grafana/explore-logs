@@ -262,7 +262,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
 
   public static Component = ({ model }: SceneComponentProps<ServiceSelectionComponent>) => {
     const styles = useStyles2(getStyles);
-    const { isServicesByVolumeLoading, servicesToQuery, body } = model.useState();
+    const { isServicesByVolumeLoading, servicesByVolume, servicesToQuery, body } = model.useState();
 
     // searchQuery is used to keep track of the search query in input field
     const [searchQuery, setSearchQuery] = useState('');
@@ -277,6 +277,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
       <div className={styles.container}>
         <div className={styles.bodyWrapper}>
           <div>
+            {/** This is on top to show that we are loading Showing: X of X services div */}
             {isServicesByVolumeLoading && <LoadingPlaceholder text={'Loading'} className={styles.loadingText} />}
             {!isServicesByVolumeLoading && <>Showing {servicesToQuery?.length} services</>}
           </div>
@@ -290,7 +291,8 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
             />
           </Field>
           {isServicesByVolumeLoading && <LoadingPlaceholder text="Fetching services..." />}
-          {!isServicesByVolumeLoading && (!servicesToQuery || servicesToQuery.length === 0) && (
+          {/** If we don't have any servicesByVolume, volume endpoint is probably not enabled */}
+          {!isServicesByVolumeLoading && !servicesByVolume?.length && (
             <GrotError>
               <p>Log volume has not been configured.</p>
               <p>

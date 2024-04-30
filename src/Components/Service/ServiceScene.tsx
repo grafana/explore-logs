@@ -26,7 +26,7 @@ import { renderLogQLLabelFilters } from 'Components/Index/IndexScene';
 import { Unsubscribable } from 'rxjs';
 import { extractParserAndFieldsFromDataFrame, DetectedLabelsResponse } from 'services/fields';
 import { EXPLORATIONS_ROUTE } from 'services/routing';
-import { getLokiDatasource, getExplorationFor, getLiveTailControl } from 'services/scenes';
+import { getLokiDatasource, getExplorationFor } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
@@ -145,20 +145,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     if (this.state.actionView === undefined) {
       this.setActionView('logs');
     }
-    if (getLiveTailControl(this)?.state.liveStreaming) {
-      (this.state.$data as SceneQueryRunner).setState({ liveStreaming: true });
-    }
+
     const unsubs: Unsubscribable[] = [];
-    const liveTailControl = getLiveTailControl(this);
-    if (liveTailControl) {
-      unsubs.push(
-        liveTailControl.subscribeToState(({ liveStreaming }) => {
-          const runner = this.state.$data as SceneQueryRunner;
-          runner.setState({ liveStreaming });
-          runner.runQueries();
-        })
-      );
-    }
 
     this.setEmptyFiltersRedirection();
 
