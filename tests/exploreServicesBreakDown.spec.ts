@@ -32,7 +32,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page1.getByText('{service_name=`tempo-distributor`}')).toBeVisible();
   });
 
-  test.only('should select a detected field, update filters, open log panel', async ({ page }) => {
+  test('should select a detected field, update filters, open log panel', async ({ page }) => {
     await page.getByLabel('Tab Detected fields').click();
     await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
     await page.getByRole('button', { name: 'Add to filters' }).nth(0).click();
