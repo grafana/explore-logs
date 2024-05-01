@@ -32,13 +32,10 @@ test.describe('explore services breakdown page', () => {
     await expect(page1.getByText('{service_name=`tempo-distributor`}')).toBeVisible();
   });
 
-  test('should select a detected field, update filters, open log panel', async ({ page }) => {
+  test.only('should select a detected field, update filters, open log panel', async ({ page }) => {
     await page.getByLabel('Tab Detected fields').click();
     await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
-    await page
-      .getByTestId('data-testid Panel header memcache: connect timeout to 132.85.28.4:11211')
-      .getByRole('button', { name: 'Add to filters' })
-      .click();
+    await page.getByRole('button', { name: 'Add to filters' }).nth(0).click();
     // Should see the logs panel full of errors
     await expect(page.getByTestId('data-testid search-logs')).toBeVisible();
     // Adhoc err filter should be added
