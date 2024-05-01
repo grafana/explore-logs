@@ -36,7 +36,7 @@ import { testIds } from 'Components/testIds';
 
 const SERVICE_NAME = 'service_name';
 
-interface ServiceSelectionComponentState extends SceneObjectState {
+export interface ServiceSelectionComponentState extends SceneObjectState {
   // The body of the component
   body: SceneCSSGridLayout;
   // We query volume endpoint to get list of all services and order them by volume
@@ -325,7 +325,7 @@ function buildLogQuery(service: string) {
 
 // Helper function to create a list of services to query. We want to show favorite services first and remove duplicates.
 // If there are no services, we return an empty array (don't want to use favorite services if there are no services)
-function createListOfServicesToQuery(services: string[], favoriteServices: string[]) {
+export function createListOfServicesToQuery(services: string[], favoriteServices: string[]) {
   if (!services.length) {
     return [];
   }
