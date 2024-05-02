@@ -20,6 +20,7 @@ interface ExtratedFields {
 }
 
 export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
+  console.log('data :>> ', data);
   const result: ExtratedFields = { type: 'logfmt', fields: [] };
   const labelTypesField = data.fields.find((f) => f.name === 'labelTypes');
   result.fields = Object.keys(
