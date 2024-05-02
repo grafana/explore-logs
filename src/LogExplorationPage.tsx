@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 import { getUrlSyncManager } from '@grafana/scenes';
 import { newLogsExploration } from 'services/scenes';
-import { IndexScene } from 'Components/MainScenes/IndexScene';
+import { IndexScene } from 'Components/IndexScene/IndexScene';
 
 export const LogExplorationPage = () => {
   const [exploration] = useState(newLogsExploration());

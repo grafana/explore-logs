@@ -8,9 +8,9 @@ import {
   SceneObjectUrlValues,
   SceneTimeRange,
 } from '@grafana/scenes';
-import { IndexScene } from 'Components/MainScenes/IndexScene';
 import { VAR_DATASOURCE_EXPR, LOG_STREAM_SELECTOR_EXPR, VAR_FILTERS, ALL_VARIABLE_VALUE } from './variables';
 import { EXPLORATIONS_ROUTE } from './routing';
+import { IndexScene } from 'Components/IndexScene/IndexScene';
 
 export function getExplorationFor(model: SceneObject): IndexScene {
   return sceneGraph.getAncestor(model, IndexScene);

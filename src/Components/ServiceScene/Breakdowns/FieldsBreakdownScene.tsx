@@ -3,7 +3,6 @@ import React from 'react';
 
 import { DataFrame, GrafanaTheme2, SelectableValue } from '@grafana/data';
 import {
-  AdHocFiltersVariable,
   CustomVariable,
   PanelBuilders,
   SceneComponentProps,
@@ -22,44 +21,47 @@ import {
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { Button, DrawStyle, Field, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
-import { AddToFiltersGraphAction } from 'Components/Forms/AddToFiltersButton';
-import { ByFrameRepeater } from 'Components/ByFrameRepeater';
-import { LayoutSwitcher } from 'Components/LayoutSwitcher';
-import { StatusWrapper } from 'Components/StatusWrapper';
-import { getLabelValueScene, DetectedLabelsResponse } from 'services/fields';
+import { AddToFiltersGraphAction } from './AddToFiltersButton';
+import { ByFrameRepeater } from './ByFrameRepeater';
+import { LayoutSwitcher } from './LayoutSwitcher';
+import { StatusWrapper } from './StatusWrapper';
+import { FieldSelector } from './FieldSelector';
+import { ServiceScene } from '../ServiceScene';
+import { getLabelValueScene } from 'services/fields';
 import {
   VAR_FILTERS,
-  VAR_LABEL_GROUP_BY,
+  VAR_FIELD_GROUP_BY,
   ALL_VARIABLE_VALUE,
   explorationDS,
   LOG_STREAM_SELECTOR_EXPR,
 } from 'services/variables';
-import { getLokiDatasource, getLabelOptions } from 'services/scenes';
-import { FieldSelector } from 'Components/Forms/FieldSelector';
 
-export interface LabelBreakdownSceneState extends SceneObjectState {
+export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
-  labels: Array<SelectableValue<string>>;
+  fields: Array<SelectableValue<string>>;
+
   value?: string;
   loading?: boolean;
   error?: string;
   blockingMessage?: string;
+
+  changeFields?: (n: string[]) => void;
 }
 
-export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneState> {
+export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
     variableNames: [VAR_FILTERS],
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
   });
 
-  constructor(state: Partial<LabelBreakdownSceneState>) {
+  constructor(state: Partial<FieldsBreakdownSceneState>) {
     super({
       $variables:
         state.$variables ??
         new SceneVariableSet({
-          variables: [new CustomVariable({ name: VAR_LABEL_GROUP_BY, defaultToAll: true, includeAll: true })],
+          variables: [new CustomVariable({ name: VAR_FIELD_GROUP_BY, defaultToAll: true, includeAll: true })],
         }),
-      labels: state.labels ?? [],
+      fields: state.fields ?? [],
       loading: true,
       ...state,
     });
@@ -69,6 +71,12 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
 
   private _onActivate() {
     const variable = this.getVariable();
+
+    sceneGraph.getAncestor(this, ServiceScene)!.subscribeToState((newState, oldState) => {
+      if (newState.detectedFields !== oldState.detectedFields) {
+        this.updateFields();
+      }
+    });
 
     variable.subscribeToState((newState, oldState) => {
       if (
@@ -80,11 +88,29 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       }
     });
 
+    this.updateFields();
+    this.updateBody(variable);
+  }
+
+  private updateFields() {
+    const variable = this.getVariable();
+    const logsScene = sceneGraph.getAncestor(this, ServiceScene);
+
+    this.setState({
+      fields: [
+        { label: 'All', value: ALL_VARIABLE_VALUE },
+        ...(logsScene.state.detectedFields?.map((f) => ({
+          label: f,
+          value: f,
+        })) || []),
+      ],
+    });
+
     this.updateBody(variable);
   }
 
   private getVariable(): CustomVariable {
-    const variable = sceneGraph.lookupVariable(VAR_LABEL_GROUP_BY, this)!;
+    const variable = sceneGraph.lookupVariable(VAR_FIELD_GROUP_BY, this)!;
     if (!(variable instanceof CustomVariable)) {
       throw new Error('Group by variable not found');
     }
@@ -98,42 +124,92 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     this.updateBody(variable);
   }
 
+  private hideField(field: string) {
+    // TODO: store in localstorage that this field was hidden?
+    const fields = this.state.fields.filter((f) => f.value !== field);
+    this.setState({ fields });
+
+    this.state.changeFields?.(fields.filter((f) => f.value !== ALL_VARIABLE_VALUE).map((f) => f.value!));
+  }
+
   private async updateBody(variable: CustomVariable) {
-    const ds = await getLokiDatasource(this);
-
-    if (!ds) {
-      return;
-    }
-
-    const timeRange = sceneGraph.getTimeRange(this).state.value;
-    const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
-
-    const { detectedLabels } = await ds.getResource<DetectedLabelsResponse>('detected_labels', {
-      query: filters.state.filterExpression,
-      start: timeRange.from.utc().toISOString(),
-      end: timeRange.to.utc().toISOString(),
-    });
-
-    if (!detectedLabels || !Array.isArray(detectedLabels)) {
-      return;
-    }
-
-    const labels = detectedLabels
-      .filter((a) => a.cardinality > 1)
-      .sort((a, b) => a.cardinality - b.cardinality)
-      .map((l) => l.label);
-    const options = getLabelOptions(this, labels);
-
-    const stateUpdate: Partial<LabelBreakdownSceneState> = {
+    const stateUpdate: Partial<FieldsBreakdownSceneState> = {
       loading: false,
       value: String(variable.state.value),
-      labels: options, // this now includes "all"
       blockingMessage: undefined,
     };
 
-    stateUpdate.body = variable.hasAllValue() ? buildLabelsLayout(options) : buildLabelValuesLayout(variable);
+    stateUpdate.body = variable.hasAllValue() ? this.buildAllLayout(this.state.fields) : buildNormalLayout(variable);
 
     this.setState(stateUpdate);
+  }
+
+  private buildAllLayout(options: Array<SelectableValue<string>>) {
+    const children: SceneFlexItemLike[] = [];
+
+    for (const option of options) {
+      if (option.value === ALL_VARIABLE_VALUE) {
+        continue;
+      }
+
+      const expr = getExpr(option.value!);
+      const queryRunner = new SceneQueryRunner({
+        maxDataPoints: 300,
+        datasource: explorationDS,
+        queries: [
+          {
+            refId: option.value!,
+            expr,
+            legendFormat: `{{${option.label}}}`,
+          },
+        ],
+      });
+      let body = PanelBuilders.timeseries().setTitle(option.label!).setData(queryRunner);
+
+      if (!isAvgField(option.label ?? '')) {
+        // TODO hack
+        body = body
+          .setHeaderActions(new SelectLabelAction({ labelName: String(option.value) }))
+          .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
+          .setCustomFieldConfig('fillOpacity', 100)
+          .setCustomFieldConfig('lineWidth', 0)
+          .setCustomFieldConfig('pointSize', 0)
+          .setCustomFieldConfig('drawStyle', DrawStyle.Bars);
+      }
+      const gridItem = new SceneCSSGridItem({
+        body: body.build(),
+      });
+
+      queryRunner.getResultsStream().subscribe((result) => {
+        if (result.data.errors && result.data.errors.length > 0) {
+          const val = result.data.errors[0].refId!;
+          this.hideField(val);
+          gridItem.setState({ isHidden: true });
+        }
+      });
+
+      children.push(gridItem);
+    }
+
+    return new LayoutSwitcher({
+      options: [
+        { value: 'grid', label: 'Grid' },
+        { value: 'rows', label: 'Rows' },
+      ],
+      active: 'grid',
+      layouts: [
+        new SceneCSSGridLayout({
+          templateColumns: GRID_TEMPLATE_COLUMNS,
+          autoRows: '200px',
+          children: children,
+        }),
+        new SceneCSSGridLayout({
+          templateColumns: '1fr',
+          autoRows: '200px',
+          children: children.map((child) => child.clone()),
+        }),
+      ],
+    });
   }
 
   public onChange = (value?: string) => {
@@ -146,18 +222,18 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     variable.changeValueTo(value);
   };
 
-  public static Component = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
-    const { labels, body, loading, value, blockingMessage } = model.useState();
+  public static Component = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
+    const { fields, body, loading, value, blockingMessage } = model.useState();
     const styles = useStyles2(getStyles);
 
     return (
       <div className={styles.container}>
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
           <div className={styles.controls}>
-            {!loading && labels.length > 0 && (
+            {!loading && fields.length > 0 && (
               <div className={styles.controlsLeft}>
-                <Field label="By label">
-                  <FieldSelector options={labels} value={value} onChange={model.onChange} />
+                <Field label="By field">
+                  <FieldSelector options={fields} value={value} onChange={model.onChange} />
                 </Field>
               </div>
             )}
@@ -208,66 +284,21 @@ function getStyles(theme: GrafanaTheme2) {
   };
 }
 
-function buildLabelsLayout(options: Array<SelectableValue<string>>) {
-  const children: SceneFlexItemLike[] = [];
+const avgFields = ['duration', 'count', 'total', 'bytes'];
 
-  for (const option of options) {
-    if (option.value === ALL_VARIABLE_VALUE || !option.value) {
-      continue;
-    }
-
-    children.push(
-      new SceneCSSGridItem({
-        body: PanelBuilders.timeseries()
-          .setTitle(option.label!)
-          .setData(
-            new SceneQueryRunner({
-              maxDataPoints: 300,
-              datasource: explorationDS,
-              queries: [
-                {
-                  refId: 'A',
-                  expr: getExpr(option.value),
-                  legendFormat: `{{${option.label}}}`,
-                },
-              ],
-            })
-          )
-          .setHeaderActions(new SelectLabelAction({ labelName: String(option.value) }))
-          .setHeaderActions(new SelectLabelAction({ labelName: String(option.value) }))
-          .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
-          .setCustomFieldConfig('fillOpacity', 100)
-          .setCustomFieldConfig('lineWidth', 0)
-          .setCustomFieldConfig('pointSize', 0)
-          .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-          .build(),
-      })
-    );
-  }
-
-  return new LayoutSwitcher({
-    options: [
-      { value: 'grid', label: 'Grid' },
-      { value: 'rows', label: 'Rows' },
-    ],
-    active: 'grid',
-    layouts: [
-      new SceneCSSGridLayout({
-        templateColumns: GRID_TEMPLATE_COLUMNS,
-        autoRows: '200px',
-        children: children,
-      }),
-      new SceneCSSGridLayout({
-        templateColumns: '1fr',
-        autoRows: '200px',
-        children: children.map((child) => child.clone()),
-      }),
-    ],
-  });
+function isAvgField(field: string) {
+  return avgFields.includes(field);
 }
 
-function getExpr(tagKey: string) {
-  return `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${tagKey}!="" [$__auto])) by (${tagKey})`;
+function getExpr(field: string) {
+  if (isAvgField(field)) {
+    return (
+      `avg_over_time(${LOG_STREAM_SELECTOR_EXPR} | unwrap ` +
+      (field === 'duration' ? `duration` : field === 'bytes' ? `bytes` : ``) +
+      `(${field}) [$__auto]) by ()`
+    );
+  }
+  return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${field}!=""   [$__auto]))`;
 }
 
 function buildQuery(tagKey: string) {
@@ -284,19 +315,8 @@ function buildQuery(tagKey: string) {
 
 const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
-function buildLabelValuesLayout(variable: CustomVariable) {
+function buildNormalLayout(variable: CustomVariable) {
   const query = buildQuery(variable.getValueText());
-
-  let bodyOpts = PanelBuilders.timeseries();
-  bodyOpts = bodyOpts
-    .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
-    .setCustomFieldConfig('fillOpacity', 100)
-    .setCustomFieldConfig('lineWidth', 0)
-    .setCustomFieldConfig('pointSize', 0)
-    .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-    .setTitle(variable.getValueText());
-
-  const body = bodyOpts.build();
 
   return new LayoutSwitcher({
     $data: new SceneQueryRunner({
@@ -316,7 +336,7 @@ function buildLabelValuesLayout(variable: CustomVariable) {
         children: [
           new SceneFlexItem({
             minHeight: 300,
-            body,
+            body: PanelBuilders.timeseries().setTitle(variable.getValueText()).build(),
           }),
         ],
       }),
@@ -331,6 +351,7 @@ function buildLabelValuesLayout(variable: CustomVariable) {
               }),
             }),
           ],
+          isLazy: true,
         }),
         getLayoutChild: getLabelValueScene(
           getLabelValue,
@@ -348,6 +369,7 @@ function buildLabelValuesLayout(variable: CustomVariable) {
               }),
             }),
           ],
+          isLazy: true,
         }),
         getLayoutChild: getLabelValueScene(
           getLabelValue,
@@ -373,9 +395,9 @@ function getLabelValue(frame: DataFrame) {
   return labels[keys[0]];
 }
 
-export function buildLabelBreakdownActionScene() {
+export function buildFieldsBreakdownActionScene(changeFieldNumber: (n: string[]) => void) {
   return new SceneFlexItem({
-    body: new LabelBreakdownScene({}),
+    body: new FieldsBreakdownScene({ changeFields: changeFieldNumber }),
   });
 }
 
@@ -384,7 +406,7 @@ interface SelectLabelActionState extends SceneObjectState {
 }
 export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
   public onClick = () => {
-    getBreakdownSceneFor(this).onChange(this.state.labelName);
+    getFieldsBreakdownSceneFor(this).onChange(this.state.labelName);
   };
 
   public static Component = ({ model }: SceneComponentProps<AddToFiltersGraphAction>) => {
@@ -396,13 +418,13 @@ export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
   };
 }
 
-function getBreakdownSceneFor(model: SceneObject): LabelBreakdownScene {
-  if (model instanceof LabelBreakdownScene) {
+function getFieldsBreakdownSceneFor(model: SceneObject): FieldsBreakdownScene {
+  if (model instanceof FieldsBreakdownScene) {
     return model;
   }
 
   if (model.parent) {
-    return getBreakdownSceneFor(model.parent);
+    return getFieldsBreakdownSceneFor(model.parent);
   }
 
   throw new Error('Unable to find breakdown scene');

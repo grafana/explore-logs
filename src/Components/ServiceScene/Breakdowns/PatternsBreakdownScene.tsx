@@ -18,15 +18,15 @@ import {
   SceneVariableSet,
 } from '@grafana/scenes';
 import { Button, DrawStyle, StackingMode, useStyles2, Text, TextLink } from '@grafana/ui';
-import { AddToFiltersGraphAction } from 'Components/Forms/AddToFiltersButton';
-import { LayoutSwitcher } from 'Components/LayoutSwitcher';
-import { StatusWrapper } from 'Components/StatusWrapper';
+import { AddToFiltersGraphAction } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
+import { LayoutSwitcher } from 'Components/ServiceScene/Breakdowns/LayoutSwitcher';
+import { StatusWrapper } from 'Components/ServiceScene/Breakdowns/StatusWrapper';
 import { GrotError } from 'Components/GrotError';
 import { VAR_LABEL_GROUP_BY } from 'services/variables';
 import { getColorByIndex } from 'services/scenes';
-import { ServiceScene } from 'Components/MainScenes/ServiceScene';
+import { ServiceScene } from '../ServiceScene';
 import { FilterByPatternsButton } from './FilterByPatternsButton';
-export interface PatternsSceneState extends SceneObjectState {
+export interface PatternsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
   value?: string;
   loading?: boolean;
@@ -40,8 +40,8 @@ type PatternFrame = {
   sum: number;
 };
 
-export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
-  constructor(state: Partial<PatternsSceneState>) {
+export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSceneState> {
+  constructor(state: Partial<PatternsBreakdownSceneState>) {
     super({
       $variables:
         state.$variables ??
@@ -202,7 +202,7 @@ export class PatternsScene extends SceneObjectBase<PatternsSceneState> {
     variable.changeValueTo(value);
   };
 
-  public static Component = ({ model }: SceneComponentProps<PatternsScene>) => {
+  public static Component = ({ model }: SceneComponentProps<PatternsBreakdownScene>) => {
     const { body, loading, blockingMessage } = model.useState();
     const logsByServiceScene = sceneGraph.getAncestor(model, ServiceScene);
     const { patterns } = logsByServiceScene.useState();
@@ -296,7 +296,7 @@ const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(600px, 1fr))';
 
 export function buildPatternsScene() {
   return new SceneFlexItem({
-    body: new PatternsScene({}),
+    body: new PatternsBreakdownScene({}),
   });
 }
 
@@ -317,8 +317,8 @@ export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
   };
 }
 
-function getPatternsSceneFor(model: SceneObject): PatternsScene {
-  if (model instanceof PatternsScene) {
+function getPatternsSceneFor(model: SceneObject): PatternsBreakdownScene {
+  if (model instanceof PatternsBreakdownScene) {
     return model;
   }
 

@@ -2,7 +2,7 @@ import React from 'react';
 
 import { SceneObjectState, SceneObjectBase, SceneComponentProps, sceneGraph } from '@grafana/scenes';
 import { Button } from '@grafana/ui';
-import { IndexScene } from 'Components/MainScenes/IndexScene';
+import { IndexScene } from '../../IndexScene/IndexScene';
 
 export interface FilterByPatternsButtonState extends SceneObjectState {
   pattern: string;
