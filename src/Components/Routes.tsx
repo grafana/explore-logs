@@ -1,7 +1,7 @@
 import React from 'react';
 import { Redirect, Route, Switch } from 'react-router-dom';
 import { config } from '@grafana/runtime';
-import { LogExplorationPage } from 'LogExplorationPage';
+import { LogExplorationPage } from './LogExplorationPage';
 import { ROUTES, prefixRoute } from 'services/routing';
 
 export const Routes = () => {
