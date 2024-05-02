@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from 'react';
 
-import { getUrlSyncManager } from '@grafana/scenes';
-import { newLogsExploration } from 'services/scenes';
+import { SceneTimeRange, getUrlSyncManager } from '@grafana/scenes';
 import { IndexScene } from './IndexScene/IndexScene';
+const DEFAULT_TIME_RANGE = { from: 'now-15m', to: 'now' };
 
 export const LogExplorationPage = () => {
-  const [exploration] = useState(newLogsExploration());
+  // Here we are initializing the scene with the default time range
+  const [exploration] = useState(
+    new IndexScene({
+      $timeRange: new SceneTimeRange(DEFAULT_TIME_RANGE),
+    })
+  );
 
   return <LogExplorationView exploration={exploration} />;
 };
