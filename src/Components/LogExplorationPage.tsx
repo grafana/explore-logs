@@ -5,6 +5,7 @@ import { IndexScene } from './IndexScene/IndexScene';
 const DEFAULT_TIME_RANGE = { from: 'now-15m', to: 'now' };
 
 export const LogExplorationPage = () => {
+  // Here we are initializing the scene in here with the default time range
   const [exploration] = useState(
     new IndexScene({
       $timeRange: new SceneTimeRange(DEFAULT_TIME_RANGE),
