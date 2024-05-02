@@ -5,10 +5,10 @@ import { config } from '@grafana/runtime';
 import { sceneGraph } from '@grafana/scenes';
 import { ToolbarButton } from '@grafana/ui';
 
-import { IndexScene } from 'Components/Index/IndexScene';
 import { VAR_LOGS_FORMAT_EXPR } from 'services/variables';
 import { getDataSource, getQueryExpr } from 'services/scenes';
-import { testIds } from 'Components/testIds';
+import { testIds } from 'services/testIds';
+import { IndexScene } from 'Components/IndexScene/IndexScene';
 interface ShareExplorationButtonState {
   exploration: IndexScene;
 }

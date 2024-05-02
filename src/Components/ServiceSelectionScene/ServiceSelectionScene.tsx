@@ -1,7 +1,8 @@
 import { css } from '@emotion/css';
 import React, { useCallback, useState } from 'react';
+import { debounce } from 'lodash';
 
-import { GrafanaTheme2 } from '@grafana/data';
+import { BusEventBase, GrafanaTheme2 } from '@grafana/data';
 import {
   PanelBuilders,
   SceneComponentProps,
@@ -25,14 +26,12 @@ import {
   Text,
   TextLink,
 } from '@grafana/ui';
-
-import { SelectFieldButton } from '../Forms/SelectFieldButton';
 import { explorationDS, VAR_DATASOURCE } from 'services/variables';
-import { GrotError } from 'Components/GrotError';
 import { getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
-import { debounce } from 'lodash';
-import { testIds } from 'Components/testIds';
+import { testIds } from 'services/testIds';
+import { SelectFieldButton } from './SelectFieldButton';
+import { GrotError } from '../GrotError';
 
 const SERVICE_NAME = 'service_name';
 
@@ -47,6 +46,10 @@ interface ServiceSelectionComponentState extends SceneObjectState {
   searchServicesString: string;
   // List of services to be shown in the body
   servicesToQuery?: string[];
+}
+
+export class StartingPointSelectedEvent extends BusEventBase {
+  public static type = 'start-point-selected-event';
 }
 
 export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionComponentState> {

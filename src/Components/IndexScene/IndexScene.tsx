@@ -24,8 +24,6 @@ import {
   sceneGraph,
 } from '@grafana/scenes';
 import { Text, useStyles2 } from '@grafana/ui';
-import { ServiceScene } from 'Components/Service/ServiceScene';
-import { Pattern } from 'Components/Tabs/Patterns/Pattern';
 import {
   VAR_DATASOURCE,
   VAR_FIELDS,
@@ -34,10 +32,12 @@ import {
   VAR_PATTERNS,
   explorationDS,
 } from 'services/variables';
-import { ServiceSelectionComponent } from './ServiceSelectionComponent';
 
 import pluginJson from '../../plugin.json';
-import { StartingPointSelectedEvent } from 'Components/Forms/SelectFieldButton';
+
+import { Pattern } from './Pattern';
+import { ServiceScene } from '../ServiceScene/ServiceScene';
+import { ServiceSelectionComponent, StartingPointSelectedEvent } from '../ServiceSelectionScene/ServiceSelectionScene';
 
 type LogExplorationMode = 'start' | 'logs';
 

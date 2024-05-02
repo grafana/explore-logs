@@ -1,7 +1,7 @@
 import type { Page, Locator } from '@playwright/test';
 import pluginJson from '../../src/plugin.json';
 import { ROUTES } from '../../src/services/routing';
-import { testIds } from '../../src/Components/testIds';
+import { testIds } from '../../src/services/testIds';
 
 export class ExplorePage {
   private readonly firstServicePageSelect: Locator;

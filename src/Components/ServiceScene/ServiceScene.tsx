@@ -22,7 +22,6 @@ import {
   sceneGraph,
 } from '@grafana/scenes';
 import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
-import { renderLogQLLabelFilters } from 'Components/Index/IndexScene';
 import { Unsubscribable } from 'rxjs';
 import { extractParserAndFieldsFromDataFrame, DetectedLabelsResponse } from 'services/fields';
 import { EXPLORATIONS_ROUTE } from 'services/routing';
@@ -37,14 +36,15 @@ import {
   VAR_PATTERNS,
   explorationDS,
 } from 'services/variables';
-import { GiveFeedbackButton } from '../Forms/GiveFeedbackButton';
-import { GoToExploreButton } from '../Forms/GoToExploreButton';
+import { GiveFeedbackButton } from './GiveFeedbackButton';
+import { GoToExploreButton } from './GoToExploreButton';
 import { LogsVolumePanel } from './LogsVolumePanel';
-import { ShareExplorationButton } from '../Forms/ShareExplorationButton';
-import { buildFieldsBreakdownActionScene } from '../Tabs/DetectedFields/FieldsBreakdownScene';
-import { buildLabelBreakdownActionScene } from '../Tabs/Labels/LabelBreakdownScene';
-import { buildLogsListScene } from '../Tabs/Logs/LogsListScene';
-import { buildPatternsScene } from '../Tabs/Patterns/PatternsScene';
+import { ShareExplorationButton } from './ShareExplorationButton';
+import { renderLogQLLabelFilters } from 'Components/IndexScene/IndexScene';
+import { buildLogsListScene } from './LogsListScene';
+import { buildLabelBreakdownActionScene } from './Breakdowns/LabelBreakdownScene';
+import { buildFieldsBreakdownActionScene } from './Breakdowns/FieldsBreakdownScene';
+import { buildPatternsScene } from './Breakdowns/PatternsBreakdownScene';
 
 interface LokiPattern {
   pattern: string;

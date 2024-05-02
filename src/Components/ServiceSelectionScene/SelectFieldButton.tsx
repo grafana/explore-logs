@@ -9,13 +9,10 @@ import {
 } from '@grafana/scenes';
 import { Button } from '@grafana/ui';
 import { VariableHide } from '@grafana/schema';
+
 import { addToFavoriteServicesInStorage } from 'services/store';
 import { VAR_DATASOURCE } from 'services/variables';
-import { BusEventBase } from '@grafana/data';
-
-export class StartingPointSelectedEvent extends BusEventBase {
-  public static type = 'start-point-selected-event';
-}
+import { StartingPointSelectedEvent } from './ServiceSelectionScene';
 
 export interface SelectFieldButtonState extends SceneObjectState {
   value: string;

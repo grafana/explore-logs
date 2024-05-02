@@ -2,7 +2,7 @@ import { DataFrame, PanelData } from '@grafana/data';
 import { DrawStyle, StackingMode } from '@grafana/ui';
 import { PanelBuilders, SceneCSSGridItem, SceneDataNode } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
-import { AddToFiltersGraphAction } from 'Components/Forms/AddToFiltersButton';
+import { AddToFiltersGraphAction } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { VAR_FIELDS } from './variables';
 
 export type DetectedLabel = {
