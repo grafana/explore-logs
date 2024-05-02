@@ -8,7 +8,6 @@ import {
   DataSourceVariable,
   SceneComponentProps,
   SceneControlsSpacer,
-  SceneFlexItem,
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
@@ -18,7 +17,6 @@ import {
   SceneTimePicker,
   SceneTimeRange,
   SceneVariableSet,
-  SplitLayout,
   VariableValueSelectors,
   getUrlSyncManager,
   sceneGraph,
@@ -47,13 +45,14 @@ export interface AppliedPattern {
 }
 
 export interface IndexSceneState extends SceneObjectState {
-  topScene?: SceneObject;
-  controls: SceneObject[];
-  body: SplitLayout;
-
+  // Selected scene that will be rendered - currently can be either ServiceSelectionScene or ServiceScene (based on mode)
+  selectedScene?: SceneObject;
+  // Mode - start (renders ServiceSelectionScene) or logs (renders ServiceScene)
   mode?: LogExplorationMode;
-  showDetails?: boolean;
+  controls: SceneObject[];
+  body: LogExplorationScene;
 
+  showDetails?: boolean;
   // just for the starting data source
   initialDS?: string;
   initialFilters?: AdHocVariableFilter[];
@@ -78,7 +77,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
         new SceneTimePicker({}),
         new SceneRefreshPicker({}),
       ],
-      body: buildSplitLayout(),
+      body: new LogExplorationScene({}),
       ...state,
     });
 
@@ -93,31 +92,17 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   };
 
   public _onActivate() {
-    if (!this.state.topScene) {
-      this.setState({ topScene: getTopScene(this.state.mode) });
+    if (!this.state.selectedScene) {
+      this.setState({ selectedScene: getSelectedScene(this.state.mode) });
     }
-    if (this.state.mode !== undefined && this.state.mode !== 'start') {
-      this.setState({
-        controls: [...this.state.controls],
-      });
-    }
-
-    // Services
-    const serviceVar = this.state.$variables?.getByName(VAR_FIELDS) as AdHocFiltersVariable;
-    this.setupAutoHideVariable(serviceVar);
-    this.updateVariableHide(serviceVar);
-
-    // Labels
-    const filtersVar = this.state.$variables?.getByName(VAR_FILTERS) as AdHocFiltersVariable;
-    this.setupAutoHideVariable(filtersVar);
-    this.updateVariableHide(filtersVar);
 
     // Some scene elements publish this
     this.subscribeToEvent(StartingPointSelectedEvent, this._handleStartingPointSelected.bind(this));
 
+    // If mode changes, update topScene
     this.subscribeToState((newState, oldState) => {
       if (newState.mode !== oldState.mode) {
-        this.setState({ topScene: getTopScene(newState.mode) });
+        this.setState({ selectedScene: getSelectedScene(newState.mode) });
       }
 
       const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
@@ -145,7 +130,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     if (values.mode !== this.state.mode) {
       const mode: LogExplorationMode = (values.mode as LogExplorationMode) ?? 'start';
       stateUpdate.mode = mode;
-      stateUpdate.topScene = getTopScene(mode);
+      stateUpdate.selectedScene = getSelectedScene(mode);
     }
     if (this.state.mode === 'start') {
       // Clear patterns on start
@@ -161,34 +146,12 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       mode: 'logs',
     });
   }
-
-  private setupAutoHideVariable(variable: AdHocFiltersVariable) {
-    variable.subscribeToState(() => {
-      this.updateVariableHide(variable);
-    });
-  }
-
-  private updateVariableHide(variable: AdHocFiltersVariable) {
-    if (variable.state.filters.length === 0) {
-      if (variable.state.hide !== VariableHide.hideVariable) {
-        variable.setState({
-          hide: VariableHide.hideVariable,
-        });
-      }
-    } else {
-      if (variable.state.hide !== VariableHide.hideLabel) {
-        variable.setState({
-          hide: VariableHide.hideLabel,
-        });
-      }
-    }
-  }
 }
 
 export class LogExplorationScene extends SceneObjectBase {
   static Component = ({ model }: SceneComponentProps<LogExplorationScene>) => {
     const logExploration = sceneGraph.getAncestor(model, IndexScene);
-    const { controls, topScene, mode, patterns } = logExploration.useState();
+    const { controls, selectedScene, mode, patterns } = logExploration.useState();
     const styles = useStyles2(getStyles);
     const includePatterns = patterns ? patterns.filter((pattern) => pattern.type === 'include') : [];
     const excludePatterns = patterns ? patterns.filter((pattern) => pattern.type !== 'include') : [];
@@ -250,23 +213,13 @@ export class LogExplorationScene extends SceneObjectBase {
             )}
           </div>
         )}
-        <div className={styles.body}>{topScene && <topScene.Component model={topScene} />}</div>
+        <div className={styles.body}>{selectedScene && <selectedScene.Component model={selectedScene} />}</div>
       </div>
     );
   };
 }
 
-function buildSplitLayout() {
-  return new SplitLayout({
-    direction: 'row',
-    initialSize: 0.6,
-    primary: new SceneFlexItem({
-      body: new LogExplorationScene({}),
-    }),
-  });
-}
-
-function getTopScene(mode?: LogExplorationMode) {
+function getSelectedScene(mode?: LogExplorationMode) {
   if (mode === 'logs') {
     return new ServiceScene({});
   }
