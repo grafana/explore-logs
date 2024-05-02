@@ -27,7 +27,7 @@ import {
   Text,
   TextLink,
 } from '@grafana/ui';
-import { explorationDS, VAR_DATASOURCE } from 'services/variables';
+import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from 'services/variables';
 import { getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
 import { testIds } from 'services/testIds';
