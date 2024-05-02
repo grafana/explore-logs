@@ -24,7 +24,7 @@ import { StatusWrapper } from 'Components/StatusWrapper';
 import { GrotError } from 'Components/GrotError';
 import { VAR_LABEL_GROUP_BY } from 'services/variables';
 import { getColorByIndex } from 'services/scenes';
-import { ServiceScene } from 'Components/Service/ServiceScene';
+import { ServiceScene } from 'Components/MainScenes/ServiceScene';
 import { FilterByPatternsButton } from './FilterByPatternsButton';
 export interface PatternsSceneState extends SceneObjectState {
   body?: SceneObject;

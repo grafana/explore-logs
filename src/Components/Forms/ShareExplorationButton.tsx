@@ -4,7 +4,7 @@ import { useLocation } from 'react-use';
 import { ToolbarButton } from '@grafana/ui';
 
 import { config } from '@grafana/runtime';
-import { IndexScene } from 'Components/Index/IndexScene';
+import { IndexScene } from 'Components/MainScenes/IndexScene';
 import { getUrlForExploration } from 'services/scenes';
 import { copyText } from 'services/text';
 

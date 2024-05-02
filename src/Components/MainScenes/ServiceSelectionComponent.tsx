@@ -32,7 +32,7 @@ import { GrotError } from 'Components/GrotError';
 import { getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
 import { debounce } from 'lodash';
-import { testIds } from 'Components/testIds';
+import { testIds } from 'services/testIds';
 
 const SERVICE_NAME = 'service_name';
 

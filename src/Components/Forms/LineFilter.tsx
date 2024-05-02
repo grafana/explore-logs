@@ -4,7 +4,7 @@ import { Field, Input } from '@grafana/ui';
 import { debounce } from 'lodash';
 import React, { ChangeEvent } from 'react';
 import { VAR_LINE_FILTER } from 'services/variables';
-import { testIds } from 'Components/testIds';
+import { testIds } from 'services/testIds';
 
 interface LineFilterState extends SceneObjectState {
   lineFilter: string;
