@@ -33,7 +33,7 @@ import { testIds } from 'services/testIds';
 import { SelectFieldButton } from './SelectFieldButton';
 import { GrotError } from '../GrotError';
 
-const SERVICE_NAME = 'service_name';
+export const SERVICE_NAME = 'service_name';
 
 interface ServiceSelectionComponentState extends SceneObjectState {
   // The body of the component
