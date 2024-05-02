@@ -174,6 +174,11 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
             isLazy: true,
             templateColumns: 'repeat(auto-fit, minmax(400px, 1fr) minmax(600px, 2fr))',
             autoRows: '200px',
+            md: {
+              templateColumns: '1fr',
+              rowGap: 1,
+              columnGap: 1,
+            },
           }),
         ],
       });
