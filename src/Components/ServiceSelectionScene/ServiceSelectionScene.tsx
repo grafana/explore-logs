@@ -4,6 +4,7 @@ import { debounce } from 'lodash';
 
 import { BusEventBase, GrafanaTheme2 } from '@grafana/data';
 import {
+  AdHocFiltersVariable,
   PanelBuilders,
   SceneComponentProps,
   SceneCSSGridLayout,
@@ -26,7 +27,7 @@ import {
   Text,
   TextLink,
 } from '@grafana/ui';
-import { explorationDS, VAR_DATASOURCE } from 'services/variables';
+import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from 'services/variables';
 import { getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
 import { testIds } from 'services/testIds';
@@ -78,6 +79,13 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
   }
 
   private _onActivate() {
+    // Clear all adhoc filters when the scene is activated, if there are any
+    const variable = sceneGraph.lookupVariable(VAR_FILTERS, this);
+    if (variable instanceof AdHocFiltersVariable && variable.state.filters.length > 0) {
+      variable.setState({
+        filters: [],
+      });
+    }
     this._getServicesByVolume();
     this.subscribeToState((newState, oldState) => {
       // Updates servicesToQuery when servicesByVolume is changed - should happen only once when the list of services is fetched during initialization
