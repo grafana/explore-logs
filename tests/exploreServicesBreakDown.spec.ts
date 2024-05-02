@@ -31,4 +31,38 @@ test.describe('explore services breakdown page', () => {
     const page1 = await page1Promise;
     await expect(page1.getByText('{service_name=`tempo-distributor`}')).toBeVisible();
   });
+
+  test('should select a detected field, update filters, open log panel', async ({ page }) => {
+    await page.getByLabel('Tab Detected fields').click();
+    await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
+    await page.getByRole('button', { name: 'Add to filters' }).nth(0).click();
+    // Should see the logs panel full of errors
+    await expect(page.getByTestId('data-testid search-logs')).toBeVisible();
+    // Adhoc err filter should be added
+    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
+  });
+
+  test('should select a pattern field, update filters, open log panel', async ({ page }) => {
+    await page.getByLabel('Tab Patterns').click();
+    await page
+      .getByTestId('data-testid Panel header level=info <_> caller=flush.go:253 msg="completing block" <_>')
+      .getByRole('button', { name: 'Add to filters' })
+      .click();
+    // Should see the logs panel full of patterns
+    await expect(page.getByTestId('data-testid search-logs')).toBeVisible();
+    // Pattern filter should be added
+    await expect(page.getByText('Patterns', { exact: true })).toBeVisible();
+    await expect(page.getByText('level=info < … g block" <_>')).toBeVisible();
+  });
+
+  test('should update a filter and run new logs', async ({ page }) => {
+    await page.getByTestId('AdHocFilter-service_name').getByRole('img').nth(1).click();
+    await page.getByText('mimir-distributor').click();
+
+    // open logs panel
+    await page.getByTitle('See log details').nth(1).click();
+
+    // find text corresponding text to match adhoc filter
+    await expect(page.getByTestId('data-testid Panel header Logs').getByText('mimir-distributor').nth(0)).toBeVisible();
+  });
 });
