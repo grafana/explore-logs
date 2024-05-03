@@ -8,7 +8,6 @@ import {
   DataSourceVariable,
   SceneComponentProps,
   SceneControlsSpacer,
-  SceneFlexItem,
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
@@ -18,12 +17,11 @@ import {
   SceneTimePicker,
   SceneTimeRange,
   SceneVariableSet,
-  SplitLayout,
   VariableValueSelectors,
   getUrlSyncManager,
   sceneGraph,
 } from '@grafana/scenes';
-import { Text, useStyles2 } from '@grafana/ui';
+import { useStyles2 } from '@grafana/ui';
 import {
   VAR_DATASOURCE,
   VAR_FIELDS,
@@ -33,11 +31,10 @@ import {
   explorationDS,
 } from 'services/variables';
 
-import pluginJson from '../../plugin.json';
-
-import { Pattern } from './Pattern';
 import { ServiceScene } from '../ServiceScene/ServiceScene';
 import { ServiceSelectionComponent, StartingPointSelectedEvent } from '../ServiceSelectionScene/ServiceSelectionScene';
+import { PatternControls } from './PatternControls';
+import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
 
 type LogExplorationMode = 'start' | 'logs';
 
@@ -47,21 +44,16 @@ export interface AppliedPattern {
 }
 
 export interface IndexSceneState extends SceneObjectState {
+  // topScene is the scene that is displayed in the main body of the index scene - it can be either the service selection or service scene
   topScene?: SceneObject;
   controls: SceneObject[];
-  body: SplitLayout;
-
+  body: LogExplorationScene;
+  // mode is the current mode of the index scene - it can be either 'start' for service selection or 'logs' for service
   mode?: LogExplorationMode;
-  showDetails?: boolean;
-
-  // just for the starting data source
-  initialDS?: string;
   initialFilters?: AdHocVariableFilter[];
 
   patterns?: AppliedPattern[];
 }
-
-const DS_LOCALSTORAGE_KEY = `${pluginJson.id}.datasource`;
 
 export class IndexScene extends SceneObjectBase<IndexSceneState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['mode', 'patterns'] });
@@ -69,16 +61,14 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   public constructor(state: Partial<IndexSceneState>) {
     super({
       $timeRange: state.$timeRange ?? new SceneTimeRange({}),
-      $variables:
-        state.$variables ??
-        getVariableSet(state.initialDS ?? localStorage.getItem(DS_LOCALSTORAGE_KEY) ?? undefined, state.initialFilters),
+      $variables: state.$variables ?? getVariableSet(getLastUsedDataSourceFromStorage(), state.initialFilters),
       controls: state.controls ?? [
         new VariableValueSelectors({ layout: 'vertical' }),
         new SceneControlsSpacer(),
         new SceneTimePicker({}),
         new SceneRefreshPicker({}),
       ],
-      body: buildSplitLayout(),
+      body: new LogExplorationScene({}),
       ...state,
     });
 
@@ -96,21 +86,6 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     if (!this.state.topScene) {
       this.setState({ topScene: getTopScene(this.state.mode) });
     }
-    if (this.state.mode !== undefined && this.state.mode !== 'start') {
-      this.setState({
-        controls: [...this.state.controls],
-      });
-    }
-
-    // Services
-    const serviceVar = this.state.$variables?.getByName(VAR_FIELDS) as AdHocFiltersVariable;
-    this.setupAutoHideVariable(serviceVar);
-    this.updateVariableHide(serviceVar);
-
-    // Labels
-    const filtersVar = this.state.$variables?.getByName(VAR_FILTERS) as AdHocFiltersVariable;
-    this.setupAutoHideVariable(filtersVar);
-    this.updateVariableHide(filtersVar);
 
     // Some scene elements publish this
     this.subscribeToEvent(StartingPointSelectedEvent, this._handleStartingPointSelected.bind(this));
@@ -161,37 +136,13 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       mode: 'logs',
     });
   }
-
-  private setupAutoHideVariable(variable: AdHocFiltersVariable) {
-    variable.subscribeToState(() => {
-      this.updateVariableHide(variable);
-    });
-  }
-
-  private updateVariableHide(variable: AdHocFiltersVariable) {
-    if (variable.state.filters.length === 0) {
-      if (variable.state.hide !== VariableHide.hideVariable) {
-        variable.setState({
-          hide: VariableHide.hideVariable,
-        });
-      }
-    } else {
-      if (variable.state.hide !== VariableHide.hideLabel) {
-        variable.setState({
-          hide: VariableHide.hideLabel,
-        });
-      }
-    }
-  }
 }
 
 export class LogExplorationScene extends SceneObjectBase {
   static Component = ({ model }: SceneComponentProps<LogExplorationScene>) => {
     const logExploration = sceneGraph.getAncestor(model, IndexScene);
-    const { controls, topScene, mode, patterns } = logExploration.useState();
+    const { controls, topScene, patterns } = logExploration.useState();
     const styles = useStyles2(getStyles);
-    const includePatterns = patterns ? patterns.filter((pattern) => pattern.type === 'include') : [];
-    const excludePatterns = patterns ? patterns.filter((pattern) => pattern.type !== 'include') : [];
     return (
       <div className={styles.container}>
         {controls && (
@@ -212,58 +163,14 @@ export class LogExplorationScene extends SceneObjectBase {
             </div>
           </div>
         )}
-        {mode === 'logs' && patterns && patterns.length > 0 && (
-          <div>
-            {includePatterns.length > 0 && (
-              <div className={styles.patternsContainer}>
-                <Text variant="bodySmall" weight="bold">
-                  {excludePatterns.length > 0 ? 'Include patterns' : 'Patterns'}
-                </Text>
-                <div className={styles.patterns}>
-                  {includePatterns.map((p) => (
-                    <Pattern
-                      key={p.pattern}
-                      pattern={p.pattern}
-                      type={p.type}
-                      onRemove={() => logExploration.setState({ patterns: patterns?.filter((pat) => pat !== p) || [] })}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-            {excludePatterns.length > 0 && (
-              <div className={styles.patternsContainer}>
-                <Text variant="bodySmall" weight="bold">
-                  Exclude patterns:
-                </Text>
-                <div className={styles.patterns}>
-                  {excludePatterns.map((p) => (
-                    <Pattern
-                      key={p.pattern}
-                      pattern={p.pattern}
-                      type={p.type}
-                      onRemove={() => logExploration.setState({ patterns: patterns?.filter((pat) => pat !== p) || [] })}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        <PatternControls
+          patterns={patterns}
+          onRemove={(patterns: AppliedPattern[]) => logExploration.setState({ patterns })}
+        />
         <div className={styles.body}>{topScene && <topScene.Component model={topScene} />}</div>
       </div>
     );
   };
-}
-
-function buildSplitLayout() {
-  return new SplitLayout({
-    direction: 'row',
-    initialSize: 0.6,
-    primary: new SceneFlexItem({
-      body: new LogExplorationScene({}),
-    }),
-  });
 }
 
 function getTopScene(mode?: LogExplorationMode) {
@@ -322,7 +229,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
   });
   dsVariable.subscribeToState((newState) => {
     const dsValue = `${newState.value}`;
-    newState.value && localStorage.setItem(DS_LOCALSTORAGE_KEY, dsValue);
+    newState.value && addLastUsedDataSourceToStorage(dsValue);
   });
   return new SceneVariableSet({
     variables: [
@@ -437,16 +344,6 @@ function getStyles(theme: GrafanaTheme2) {
     }),
     rotateIcon: css({
       svg: { transform: 'rotate(180deg)' },
-    }),
-    patternsContainer: css({
-      paddingBottom: theme.spacing(1),
-      overflow: 'hidden',
-    }),
-    patterns: css({
-      display: 'flex',
-      gap: theme.spacing(1),
-      alignItems: 'center',
-      flexWrap: 'wrap',
     }),
   };
 }
