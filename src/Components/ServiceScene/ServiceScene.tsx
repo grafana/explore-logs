@@ -32,6 +32,7 @@ import {
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_FILTERS,
+  VAR_LINE_FILTER,
   VAR_LOGS_FORMAT,
   VAR_PATTERNS,
   explorationDS,
@@ -120,6 +121,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   private redirectToStart() {
     const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
     fields.setState({ filters: [] });
+    const lineFilter = sceneGraph.lookupVariable(VAR_LINE_FILTER, this);
+    if (lineFilter instanceof CustomVariable) {
+      lineFilter.changeValueTo('');
+    }
 
     // Use locationService to do the redirect and allow the users to start afresh,
     // potentially getting them unstuck of any leakage produced by subscribers, listeners,
