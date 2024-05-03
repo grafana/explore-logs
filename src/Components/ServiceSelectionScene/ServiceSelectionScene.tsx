@@ -1,14 +1,14 @@
 import { css } from '@emotion/css';
-import React, { useCallback, useState } from 'react';
 import { debounce } from 'lodash';
+import React, { useCallback, useState } from 'react';
 
 import { BusEventBase, GrafanaTheme2 } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   PanelBuilders,
   SceneComponentProps,
+  SceneCSSGridItem,
   SceneCSSGridLayout,
-  SceneFlexItem,
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
@@ -23,16 +23,16 @@ import {
   Input,
   LoadingPlaceholder,
   StackingMode,
-  useStyles2,
   Text,
   TextLink,
+  useStyles2,
 } from '@grafana/ui';
-import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from 'services/variables';
 import { getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
 import { testIds } from 'services/testIds';
-import { SelectFieldButton } from './SelectFieldButton';
+import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from 'services/variables';
 import { GrotError } from '../GrotError';
+import { SelectFieldButton } from './SelectFieldButton';
 
 export const SERVICE_NAME = 'service_name';
 
@@ -180,7 +180,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
           new SceneCSSGridLayout({
             children,
             isLazy: true,
-            templateColumns: 'repeat(auto-fit, minmax(400px, 1fr) minmax(600px, 2fr))',
+            templateColumns: 'repeat(auto-fit, minmax(400px, 1fr) minmax(600px, 100%))',
             autoRows: '200px',
             md: {
               templateColumns: '1fr',
@@ -195,7 +195,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
 
   // Creates a layout with timeseries panel
   buildServiceLayout(service: string) {
-    return new SceneFlexItem({
+    return new SceneCSSGridItem({
       body: PanelBuilders.timeseries()
         // If service was previously selected, we show it in the title
         .setTitle(service)
@@ -239,7 +239,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
 
   // Creates a layout with logs panel
   buildServiceLogsLayout(service: string) {
-    return new SceneFlexItem({
+    return new SceneCSSGridItem({
       body: PanelBuilders.logs()
         .setData(
           new SceneQueryRunner({
