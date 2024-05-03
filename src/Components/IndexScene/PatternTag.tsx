@@ -4,12 +4,11 @@ import { GrafanaTheme2 } from '@grafana/data';
 import React, { useState } from 'react';
 
 interface Props {
-  type: 'include' | 'exclude';
   onRemove(): void;
   pattern: string;
 }
 
-export const Pattern = ({ type, onRemove, pattern }: Props) => {
+export const PatternTag = ({ onRemove, pattern }: Props) => {
   const styles = useStyles2(getStyles);
   const [expanded, setExpanded] = useState(false);
   return (

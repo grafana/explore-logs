@@ -1,6 +1,7 @@
 import pluginJson from '../plugin.json';
 
 const SERVICES_LOCALSTORAGE_KEY = `${pluginJson.id}.services.favorite`;
+const DS_LOCALSTORAGE_KEY = `${pluginJson.id}.datasource`;
 
 // This should be a string, but we'll accept anything and return an empty array if it's not a string
 export function getFavoriteServicesFromStorage(dsKey: string | unknown): string[] {
@@ -47,4 +48,12 @@ export function addToFavoriteServicesInStorage(dsKey: string | unknown, serviceN
 
 function createServicesLocalStorageKey(ds: string) {
   return `${SERVICES_LOCALSTORAGE_KEY}_${ds}`;
+}
+
+export function getLastUsedDataSourceFromStorage(): string | undefined {
+  return localStorage.getItem(DS_LOCALSTORAGE_KEY) ?? undefined;
+}
+
+export function addLastUsedDataSourceToStorage(dsKey: string) {
+  localStorage.setItem(DS_LOCALSTORAGE_KEY, dsKey);
 }
