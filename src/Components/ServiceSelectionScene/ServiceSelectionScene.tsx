@@ -248,6 +248,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
           })
         )
         .setOption('showTime', true)
+        .setOption('enableLogDetails', false)
         .build(),
     });
   }
