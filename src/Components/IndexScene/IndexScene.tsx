@@ -51,7 +51,7 @@ export interface IndexSceneState extends SceneObjectState {
   // mode is the current mode of the index scene - it can be either 'start' for service selection or 'logs' for service
   mode?: LogExplorationMode;
   initialFilters?: AdHocVariableFilter[];
-
+  initialDS?: string;
   patterns?: AppliedPattern[];
 }
 
@@ -61,7 +61,8 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   public constructor(state: Partial<IndexSceneState>) {
     super({
       $timeRange: state.$timeRange ?? new SceneTimeRange({}),
-      $variables: state.$variables ?? getVariableSet(getLastUsedDataSourceFromStorage(), state.initialFilters),
+      $variables:
+        state.$variables ?? getVariableSet(state.initialDS ?? getLastUsedDataSourceFromStorage(), state.initialFilters),
       controls: state.controls ?? [
         new VariableValueSelectors({ layout: 'vertical' }),
         new SceneControlsSpacer(),
