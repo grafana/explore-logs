@@ -37,6 +37,7 @@ import {
 } from 'services/variables';
 import { buildLokiQuery } from 'services/query';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
+import { filterUsedLabelNames } from 'services/scenes';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -101,10 +102,10 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this.setState({
       fields: [
         { label: 'All', value: ALL_VARIABLE_VALUE },
-        ...(logsScene.state.detectedFields?.map((f) => ({
+        ...filterUsedLabelNames(logsScene, logsScene.state.detectedFields || []).map((f) => ({
           label: f,
           value: f,
-        })) || []),
+        })),
       ],
     });
 
