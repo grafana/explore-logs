@@ -2,13 +2,12 @@ import { reportInteraction } from '@grafana/runtime';
 import pluginJson from '../plugin.json';
 
 // Helper function to create a unique interaction name for analytics
-// TODO: Type action parameter
 const createInteractionName = (page: UserEventPagesType, action: string) => {
   return `grafana_${pluginJson.id}_${page}_${action}`;
 };
 
 // Runs reportInteraction with a standardized interaction name
-// TODO: Type action parameter
+// TODO: Add better types for "action" to ensure that only USER_EVENTS_ACTIONS.page.action are used
 export const reportAppInteraction = (
   page: UserEventPagesType,
   action: string,
