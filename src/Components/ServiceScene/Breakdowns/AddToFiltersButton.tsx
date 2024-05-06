@@ -10,6 +10,7 @@ import {
 } from '@grafana/scenes';
 import { Button } from '@grafana/ui';
 import { VariableHide } from '@grafana/schema';
+import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
 
 export interface AddToFiltersGraphActionState extends SceneObjectState {
   frame: DataFrame;
@@ -48,6 +49,17 @@ export class AddToFiltersGraphAction extends SceneObjectBase<AddToFiltersGraphAc
         hide: VariableHide.hideLabel,
       });
     }
+
+    reportAppInteraction(
+      USER_EVENTS_PAGES.service_details,
+      USER_EVENTS_ACTIONS.service_details.add_to_filters_in_breakdown_clicked,
+      {
+        filterType: this.state.variableName,
+        key: labelName,
+        isFilterDuplicate,
+        filtersLength: variable.state.filters.length,
+      }
+    );
   };
 
   public static Component = ({ model }: SceneComponentProps<AddToFiltersGraphAction>) => {

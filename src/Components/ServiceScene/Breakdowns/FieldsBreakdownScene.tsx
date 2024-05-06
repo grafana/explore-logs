@@ -36,6 +36,7 @@ import {
   LOG_STREAM_SELECTOR_EXPR,
 } from 'services/variables';
 import { PLUGIN_ID } from 'services/routing';
+import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -197,6 +198,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         { value: 'grid', label: 'Grid' },
         { value: 'rows', label: 'Rows' },
       ],
+      actionView: 'fields',
       active: 'grid',
       layouts: [
         new SceneCSSGridLayout({
@@ -219,6 +221,15 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     }
 
     const variable = this.getVariable();
+    reportAppInteraction(
+      USER_EVENTS_PAGES.service_details,
+      USER_EVENTS_ACTIONS.service_details.select_field_in_breakdown_clicked,
+      {
+        field: value,
+        previousField: variable.getValueText(),
+        view: 'fields',
+      }
+    );
 
     variable.changeValueTo(value);
   };
@@ -326,6 +337,7 @@ function buildNormalLayout(variable: CustomVariable) {
       maxDataPoints: 300,
       queries: [query],
     }),
+    actionView: 'fields',
     options: [
       { value: 'single', label: 'Single' },
       { value: 'grid', label: 'Grid' },
