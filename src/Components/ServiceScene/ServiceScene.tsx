@@ -46,7 +46,7 @@ import { buildLogsListScene } from './LogsListScene';
 import { buildLabelBreakdownActionScene } from './Breakdowns/LabelBreakdownScene';
 import { buildFieldsBreakdownActionScene } from './Breakdowns/FieldsBreakdownScene';
 import { buildPatternsScene } from './Breakdowns/PatternsBreakdownScene';
-import { buildLogQuery } from 'services/query';
+import { buildLokiQuery } from 'services/query';
 
 interface LokiPattern {
   pattern: string;
@@ -89,7 +89,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         new SceneVariableSet({ variables: [new CustomVariable({ name: VAR_LOGS_FORMAT, value: '' })] }),
       $data: new SceneQueryRunner({
         datasource: explorationDS,
-        queries: [buildLogQuery(LOG_STREAM_SELECTOR_EXPR)],
+        queries: [buildLokiQuery(LOG_STREAM_SELECTOR_EXPR)],
       }),
       ...state,
     });

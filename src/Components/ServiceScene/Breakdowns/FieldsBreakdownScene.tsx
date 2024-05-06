@@ -35,7 +35,7 @@ import {
   explorationDS,
   LOG_STREAM_SELECTOR_EXPR,
 } from 'services/variables';
-import { buildLogVolumeQuery } from 'services/query';
+import { buildLokiQuery } from 'services/query';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -154,7 +154,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         continue;
       }
 
-      const query = buildLogVolumeQuery(getExpr(optionValue), {
+      const query = buildLokiQuery(getExpr(optionValue), {
         legendFormat: `{{${optionValue}}}`,
         refId: optionValue,
       });
@@ -304,7 +304,7 @@ const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
 function buildNormalLayout(variable: CustomVariable) {
   const tagKey = variable.getValueText();
-  const query = buildLogVolumeQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
+  const query = buildLokiQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
 
   return new LayoutSwitcher({
     $data: new SceneQueryRunner({

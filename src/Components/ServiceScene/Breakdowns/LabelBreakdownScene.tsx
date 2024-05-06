@@ -37,7 +37,7 @@ import {
 } from 'services/variables';
 import { getLokiDatasource, getLabelOptions } from 'services/scenes';
 import { PLUGIN_ID } from 'services/routing';
-import { buildLogVolumeQuery } from 'services/query';
+import { buildLokiQuery } from 'services/query';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -235,7 +235,7 @@ function buildLabelsLayout(options: Array<SelectableValue<string>>) {
             new SceneQueryRunner({
               maxDataPoints: 300,
               datasource: explorationDS,
-              queries: [buildLogVolumeQuery(getExpr(optionValue), { legendFormat: `{{${optionValue}}}` })],
+              queries: [buildLokiQuery(getExpr(optionValue), { legendFormat: `{{${optionValue}}}` })],
             })
           )
           .setHeaderActions(new SelectLabelAction({ labelName: String(optionValue) }))
@@ -279,7 +279,7 @@ const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
 function buildLabelValuesLayout(variable: CustomVariable) {
   const tagKey = variable.getValueText();
-  const query = buildLogVolumeQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
+  const query = buildLokiQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
 
   let bodyOpts = PanelBuilders.timeseries();
   bodyOpts = bodyOpts

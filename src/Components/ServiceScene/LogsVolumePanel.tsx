@@ -14,7 +14,7 @@ import { DrawStyle, StackingMode } from '@grafana/ui';
 import { DataFrame } from '@grafana/data';
 import { map, Observable } from 'rxjs';
 import { LOG_STREAM_SELECTOR_EXPR, explorationDS } from 'services/variables';
-import { buildLogVolumeQuery } from 'services/query';
+import { buildLokiQuery } from 'services/query';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: SceneFlexLayout;
@@ -48,8 +48,9 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
                 $data: new SceneQueryRunner({
                   datasource: explorationDS,
                   queries: [
-                    buildLogVolumeQuery(
-                      `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ [$__auto])) by (level)`
+                    buildLokiQuery(
+                      `sum by (level) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ [$__auto]))`,
+                      { legendFormat: '{{level}}' }
                     ),
                   ],
                 }),
