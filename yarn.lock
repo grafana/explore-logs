@@ -6531,7 +6531,7 @@ prompts@^2.0.1:
     kleur "^3.0.3"
     sisteransi "^1.0.5"
 
-prop-types@15.x, prop-types@^15.5.10, prop-types@^15.5.8, prop-types@^15.6.0, prop-types@^15.6.2, prop-types@^15.7.2, prop-types@^15.8.1:
+prop-types@15.x, prop-types@^15.5.10, prop-types@^15.5.7, prop-types@^15.5.8, prop-types@^15.6.0, prop-types@^15.6.2, prop-types@^15.7.2, prop-types@^15.8.1:
   version "15.8.1"
   resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.8.1.tgz#67d87bf1a694f48435cf332c24af10214a3140b5"
   integrity sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==
@@ -7022,6 +7022,13 @@ react-router@5.3.4:
     react-is "^16.6.0"
     tiny-invariant "^1.0.2"
     tiny-warning "^1.0.0"
+
+react-scroll-sync@^0.11.2:
+  version "0.11.2"
+  resolved "https://registry.yarnpkg.com/react-scroll-sync/-/react-scroll-sync-0.11.2.tgz#fe8a3a09eab5a44323bdf0f63283c1dd0cd99b45"
+  integrity sha512-n7m+bbRTSWuczhKQf6Evvl7PFGkTt4RfP4bhyUtUyv6znovpybhAScQDdrFr9Jh280nG39x9AWMY8j477PHL1A==
+  dependencies:
+    prop-types "^15.5.7"
 
 react-select@5.8.0:
   version "5.8.0"
