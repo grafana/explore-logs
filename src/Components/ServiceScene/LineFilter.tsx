@@ -5,7 +5,7 @@ import { debounce } from 'lodash';
 import React, { ChangeEvent } from 'react';
 import { VAR_LINE_FILTER } from 'services/variables';
 import { testIds } from 'services/testIds';
-import { reportAppInteraction } from 'services/analytics';
+import { USER_EVENTS, reportAppInteraction } from 'services/analytics';
 
 interface LineFilterState extends SceneObjectState {
   lineFilter: string;
@@ -51,9 +51,13 @@ export class LineFilter extends SceneObjectBase<LineFilterState> {
   updateVariable = debounce((search: string) => {
     const variable = this.getVariable();
     variable.changeValueTo(`|= \`${search}\``);
-    reportAppInteraction('service_selection', 'logs_view_search_changed', {
-      searchQuery: search,
-    });
+    reportAppInteraction(
+      USER_EVENTS.pages.service_details,
+      USER_EVENTS.actions.service_details.search_string_in_logs_changed,
+      {
+        searchQuery: search,
+      }
+    );
   }, 350);
 }
 

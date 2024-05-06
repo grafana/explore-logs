@@ -4,7 +4,7 @@ import { AppliedPattern } from './IndexScene';
 import { PatternTag } from './PatternTag';
 import { css } from '@emotion/css';
 import { useStyles2, Text } from '@grafana/ui';
-import { reportAppInteraction } from 'services/analytics';
+import { USER_EVENTS, reportAppInteraction } from 'services/analytics';
 
 type Props = {
   patterns: AppliedPattern[] | undefined;
@@ -22,7 +22,7 @@ export const PatternControls = ({ patterns, onRemove }: Props) => {
 
   const onRemovePattern = (pattern: AppliedPattern) => {
     onRemove(patterns.filter((pat) => pat !== pattern));
-    reportAppInteraction('service_selection', 'pattern_removed', {
+    reportAppInteraction(USER_EVENTS.pages.service_details, USER_EVENTS.actions.service_details.pattern_removed, {
       includePatternsLength: includePatterns.length - (pattern?.type === 'include' ? 1 : 0),
       excludePatternsLength: excludePatterns.length - (pattern?.type !== 'include' ? 1 : 0),
       type: pattern.type,

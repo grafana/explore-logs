@@ -37,7 +37,7 @@ import {
 } from 'services/variables';
 import { getLokiDatasource, getLabelOptions } from 'services/scenes';
 import { PLUGIN_ID } from 'services/routing';
-import { reportAppInteraction } from 'services/analytics';
+import { USER_EVENTS, reportAppInteraction } from 'services/analytics';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -152,10 +152,15 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     }
 
     const variable = this.getVariable();
-    reportAppInteraction('service_selection', 'labels_view_label_selected', {
-      label: value,
-      previousLabel: variable.getValueText(),
-    });
+    reportAppInteraction(
+      USER_EVENTS.pages.service_details,
+      USER_EVENTS.actions.service_details.select_field_in_breakdown_clicked,
+      {
+        label: value,
+        previousLabel: variable.getValueText(),
+        view: 'labels',
+      }
+    );
 
     variable.changeValueTo(value);
   };

@@ -36,7 +36,7 @@ import {
   LOG_STREAM_SELECTOR_EXPR,
 } from 'services/variables';
 import { PLUGIN_ID } from 'services/routing';
-import { reportAppInteraction } from 'services/analytics';
+import { USER_EVENTS, reportAppInteraction } from 'services/analytics';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -221,10 +221,15 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     }
 
     const variable = this.getVariable();
-    reportAppInteraction('service_selection', 'fields_view_field_selected', {
-      field: value,
-      previousField: variable.getValueText(),
-    });
+    reportAppInteraction(
+      USER_EVENTS.pages.service_details,
+      USER_EVENTS.actions.service_details.select_field_in_breakdown_clicked,
+      {
+        field: value,
+        previousField: variable.getValueText(),
+        view: 'fields',
+      }
+    );
 
     variable.changeValueTo(value);
   };

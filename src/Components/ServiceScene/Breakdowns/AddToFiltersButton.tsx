@@ -10,7 +10,7 @@ import {
 } from '@grafana/scenes';
 import { Button } from '@grafana/ui';
 import { VariableHide } from '@grafana/schema';
-import { reportAppInteraction } from 'services/analytics';
+import { USER_EVENTS, reportAppInteraction } from 'services/analytics';
 
 export interface AddToFiltersGraphActionState extends SceneObjectState {
   frame: DataFrame;
@@ -50,12 +50,16 @@ export class AddToFiltersGraphAction extends SceneObjectBase<AddToFiltersGraphAc
       });
     }
 
-    reportAppInteraction('service_selection', 'add_to_filters', {
-      filterType: this.state.variableName,
-      key: labelName,
-      isFilterDuplicate,
-      filtersLength: variable.state.filters.length,
-    });
+    reportAppInteraction(
+      USER_EVENTS.pages.service_details,
+      USER_EVENTS.actions.service_details.add_to_filters_in_breakdown_clicked,
+      {
+        filterType: this.state.variableName,
+        key: labelName,
+        isFilterDuplicate,
+        filtersLength: variable.state.filters.length,
+      }
+    );
   };
 
   public static Component = ({ model }: SceneComponentProps<AddToFiltersGraphAction>) => {
