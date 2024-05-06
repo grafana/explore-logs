@@ -249,7 +249,6 @@ function buildLabelsLayout(options: Array<SelectableValue<string>>) {
             })
           )
           .setHeaderActions(new SelectLabelAction({ labelName: String(optionValue) }))
-          .setHeaderActions(new SelectLabelAction({ labelName: String(optionValue) }))
           .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
           .setCustomFieldConfig('fillOpacity', 100)
           .setCustomFieldConfig('lineWidth', 0)
