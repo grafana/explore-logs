@@ -198,7 +198,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         { value: 'grid', label: 'Grid' },
         { value: 'rows', label: 'Rows' },
       ],
-      viewName: 'fields',
+      actionView: 'fields',
       active: 'grid',
       layouts: [
         new SceneCSSGridLayout({
@@ -337,7 +337,7 @@ function buildNormalLayout(variable: CustomVariable) {
       maxDataPoints: 300,
       queries: [query],
     }),
-    viewName: 'fields',
+    actionView: 'fields',
     options: [
       { value: 'single', label: 'Single' },
       { value: 'grid', label: 'Grid' },

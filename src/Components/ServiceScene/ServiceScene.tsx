@@ -53,7 +53,7 @@ interface LokiPattern {
   samples: Array<[number, string]>;
 }
 
-type ActionViewType = 'logs' | 'labels' | 'patterns' | 'fields';
+export type ActionViewType = 'logs' | 'labels' | 'patterns' | 'fields';
 
 interface ActionViewDefinition {
   displayName: string;
