@@ -33,7 +33,7 @@ import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from 'services/variables';
 import { GrotError } from '../GrotError';
 import { SelectFieldButton } from './SelectFieldButton';
 import { PLUGIN_ID } from 'services/routing';
-import { USER_EVENTS, reportAppInteraction } from 'services/analytics';
+import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
 
 export const SERVICE_NAME = 'service_name';
 
@@ -268,8 +268,8 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
       searchServicesString: serviceString,
     });
     reportAppInteraction(
-      USER_EVENTS.pages.service_selection,
-      USER_EVENTS.actions.service_selection.search_services_changed,
+      USER_EVENTS_PAGES.service_selection,
+      USER_EVENTS_ACTIONS.service_selection.search_services_changed,
       {
         searchQuery: serviceString,
       }

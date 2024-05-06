@@ -46,7 +46,7 @@ import { buildLogsListScene } from './LogsListScene';
 import { buildLabelBreakdownActionScene } from './Breakdowns/LabelBreakdownScene';
 import { buildFieldsBreakdownActionScene } from './Breakdowns/FieldsBreakdownScene';
 import { buildPatternsScene } from './Breakdowns/PatternsBreakdownScene';
-import { USER_EVENTS, reportAppInteraction } from 'services/analytics';
+import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
 
 interface LokiPattern {
   pattern: string;
@@ -409,8 +409,8 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                 onChangeTab={() => {
                   if (tab.value !== logsScene.state.actionView) {
                     reportAppInteraction(
-                      USER_EVENTS.pages.service_details,
-                      USER_EVENTS.actions.service_details.action_view_changed,
+                      USER_EVENTS_PAGES.service_details,
+                      USER_EVENTS_ACTIONS.service_details.action_view_changed,
                       {
                         newActionView: tab.value,
                         previousActionView: logsScene.state.actionView,

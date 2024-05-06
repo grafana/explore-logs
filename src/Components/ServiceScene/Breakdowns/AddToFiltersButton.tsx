@@ -10,7 +10,7 @@ import {
 } from '@grafana/scenes';
 import { Button } from '@grafana/ui';
 import { VariableHide } from '@grafana/schema';
-import { USER_EVENTS, reportAppInteraction } from 'services/analytics';
+import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
 
 export interface AddToFiltersGraphActionState extends SceneObjectState {
   frame: DataFrame;
@@ -51,8 +51,8 @@ export class AddToFiltersGraphAction extends SceneObjectBase<AddToFiltersGraphAc
     }
 
     reportAppInteraction(
-      USER_EVENTS.pages.service_details,
-      USER_EVENTS.actions.service_details.add_to_filters_in_breakdown_clicked,
+      USER_EVENTS_PAGES.service_details,
+      USER_EVENTS_ACTIONS.service_details.add_to_filters_in_breakdown_clicked,
       {
         filterType: this.state.variableName,
         key: labelName,

@@ -3,7 +3,7 @@ import React from 'react';
 import { SceneObjectState, SceneObjectBase, SceneComponentProps, sceneGraph } from '@grafana/scenes';
 import { Button } from '@grafana/ui';
 import { IndexScene } from '../../IndexScene/IndexScene';
-import { USER_EVENTS, reportAppInteraction } from 'services/analytics';
+import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
 
 export interface FilterByPatternsButtonState extends SceneObjectState {
   pattern: string;
@@ -26,7 +26,7 @@ export class FilterByPatternsButton extends SceneObjectBase<FilterByPatternsButt
     // Analytics
     const includePatternsLength = filteredPatterns.filter((p) => p.type === 'include')?.length ?? 0;
     const excludePatternsLength = filteredPatterns.filter((p) => p.type === 'exclude')?.length ?? 0;
-    reportAppInteraction(USER_EVENTS.pages.service_details, USER_EVENTS.actions.service_details.pattern_selected, {
+    reportAppInteraction(USER_EVENTS_PAGES.service_details, USER_EVENTS_ACTIONS.service_details.pattern_selected, {
       type: this.state.type,
       includePatternsLength: includePatternsLength + (this.state.type === 'include' ? 1 : 0),
       excludePatternsLength: excludePatternsLength + (this.state.type === 'exclude' ? 1 : 0),

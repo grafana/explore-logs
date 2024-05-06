@@ -12,7 +12,7 @@ import { VariableHide } from '@grafana/schema';
 import { addToFavoriteServicesInStorage } from 'services/store';
 import { VAR_DATASOURCE } from 'services/variables';
 import { SERVICE_NAME, StartingPointSelectedEvent } from './ServiceSelectionScene';
-import { reportAppInteraction, USER_EVENTS } from 'services/analytics';
+import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 
 export interface SelectFieldButtonState extends SceneObjectState {
   value: string;
@@ -29,7 +29,7 @@ export class SelectFieldButton extends SceneObjectBase<SelectFieldButtonState> {
       return;
     }
 
-    reportAppInteraction(USER_EVENTS.pages.service_selection, USER_EVENTS.actions.service_selection.service_selected, {
+    reportAppInteraction(USER_EVENTS_PAGES.service_selection, USER_EVENTS_ACTIONS.service_selection.service_selected, {
       service: this.state.value,
     });
 
