@@ -149,25 +149,26 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     const children: SceneFlexItemLike[] = [];
 
     for (const option of options) {
-      if (option.value === ALL_VARIABLE_VALUE) {
+      const { value: optionValue } = option;
+      if (optionValue === ALL_VARIABLE_VALUE || !optionValue) {
         continue;
       }
 
-      const query = buildLogVolumeQuery(getExpr(option.value!), {
-        legendFormat: `{{${option.label}}}`,
-        refId: option.value!,
+      const query = buildLogVolumeQuery(getExpr(optionValue), {
+        legendFormat: `{{${optionValue}}}`,
+        refId: optionValue,
       });
       const queryRunner = new SceneQueryRunner({
         maxDataPoints: 300,
         datasource: explorationDS,
         queries: [query],
       });
-      let body = PanelBuilders.timeseries().setTitle(option.label!).setData(queryRunner);
+      let body = PanelBuilders.timeseries().setTitle(optionValue).setData(queryRunner);
 
-      if (!isAvgField(option.label ?? '')) {
+      if (!isAvgField(optionValue)) {
         // TODO hack
         body = body
-          .setHeaderActions(new SelectLabelAction({ labelName: String(option.value) }))
+          .setHeaderActions(new SelectLabelAction({ labelName: String(optionValue) }))
           .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
           .setCustomFieldConfig('fillOpacity', 100)
           .setCustomFieldConfig('lineWidth', 0)

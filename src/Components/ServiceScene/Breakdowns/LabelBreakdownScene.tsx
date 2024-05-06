@@ -222,23 +222,24 @@ function buildLabelsLayout(options: Array<SelectableValue<string>>) {
   const children: SceneFlexItemLike[] = [];
 
   for (const option of options) {
-    if (option.value === ALL_VARIABLE_VALUE || !option.value) {
+    const { value: optionValue } = option;
+    if (optionValue === ALL_VARIABLE_VALUE || !optionValue) {
       continue;
     }
 
     children.push(
       new SceneCSSGridItem({
         body: PanelBuilders.timeseries()
-          .setTitle(option.label!)
+          .setTitle(optionValue)
           .setData(
             new SceneQueryRunner({
               maxDataPoints: 300,
               datasource: explorationDS,
-              queries: [buildLogVolumeQuery(getExpr(option.value), { legendFormat: `{{${option.label}}}` })],
+              queries: [buildLogVolumeQuery(getExpr(optionValue), { legendFormat: `{{${optionValue}}}` })],
             })
           )
-          .setHeaderActions(new SelectLabelAction({ labelName: String(option.value) }))
-          .setHeaderActions(new SelectLabelAction({ labelName: String(option.value) }))
+          .setHeaderActions(new SelectLabelAction({ labelName: String(optionValue) }))
+          .setHeaderActions(new SelectLabelAction({ labelName: String(optionValue) }))
           .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
           .setCustomFieldConfig('fillOpacity', 100)
           .setCustomFieldConfig('lineWidth', 0)
