@@ -136,11 +136,19 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
     }
 
     try {
-      const volumeResponse = await ds.getResource!('index/volume', {
-        query: `{${SERVICE_NAME}=~".+"}`,
-        from: timeRange.from.utc().toISOString(),
-        to: timeRange.to.utc().toISOString(),
-      });
+      const volumeResponse = await ds.getResource!(
+        'index/volume',
+        {
+          query: `{${SERVICE_NAME}=~".+"}`,
+          from: timeRange.from.utc().toISOString(),
+          to: timeRange.to.utc().toISOString(),
+        },
+        {
+          headers: {
+            'X-Query-Tags': `Source=${PLUGIN_ID}`,
+          },
+        }
+      );
       const serviceMetrics: { [key: string]: number } = {};
       volumeResponse.data.result.forEach((item: any) => {
         const serviceName = item['metric'][SERVICE_NAME];
