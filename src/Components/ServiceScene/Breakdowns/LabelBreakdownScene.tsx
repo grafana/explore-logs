@@ -36,6 +36,7 @@ import {
   LOG_STREAM_SELECTOR_EXPR,
 } from 'services/variables';
 import { getLokiDatasource, getLabelOptions } from 'services/scenes';
+import { PLUGIN_ID } from 'services/routing';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -228,6 +229,7 @@ function buildLabelsLayout(options: Array<SelectableValue<string>>) {
                 {
                   refId: 'A',
                   expr: getExpr(option.value),
+                  supportingQueryType: PLUGIN_ID,
                   legendFormat: `{{${option.label}}}`,
                 },
               ],
@@ -274,6 +276,7 @@ function buildQuery(tagKey: string) {
   return {
     refId: 'A',
     expr: getExpr(tagKey),
+    supportingQueryType: PLUGIN_ID,
     queryType: 'range',
     editorMode: 'code',
     maxLines: 1000,

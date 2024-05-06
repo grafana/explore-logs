@@ -24,7 +24,7 @@ import {
 import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
 import { Unsubscribable } from 'rxjs';
 import { extractParserAndFieldsFromDataFrame, DetectedLabelsResponse } from 'services/fields';
-import { EXPLORATIONS_ROUTE } from 'services/routing';
+import { EXPLORATIONS_ROUTE, PLUGIN_ID } from 'services/routing';
 import { getLokiDatasource, getExplorationFor } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
@@ -423,6 +423,7 @@ function buildQuery() {
   return {
     refId: 'A',
     expr: LOG_STREAM_SELECTOR_EXPR,
+    supportingQueryType: PLUGIN_ID,
     queryType: 'range',
     editorMode: 'code',
     maxLines: 1000,

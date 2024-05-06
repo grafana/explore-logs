@@ -14,6 +14,7 @@ import { DrawStyle, StackingMode } from '@grafana/ui';
 import { DataFrame } from '@grafana/data';
 import { map, Observable } from 'rxjs';
 import { LOG_STREAM_SELECTOR_EXPR, explorationDS } from 'services/variables';
+import { PLUGIN_ID } from 'services/routing';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: SceneFlexLayout;
@@ -123,5 +124,6 @@ function buildQuery() {
     expr: `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ [$__auto])) by (level)`,
     queryType: 'range',
     editorMode: 'code',
+    supportingQueryType: PLUGIN_ID,
   };
 }
