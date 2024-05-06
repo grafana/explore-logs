@@ -7,7 +7,13 @@ import {
   SceneObject,
   SceneObjectUrlValues,
 } from '@grafana/scenes';
-import { VAR_DATASOURCE_EXPR, LOG_STREAM_SELECTOR_EXPR, VAR_FILTERS, ALL_VARIABLE_VALUE } from './variables';
+import {
+  VAR_DATASOURCE_EXPR,
+  LOG_STREAM_SELECTOR_EXPR,
+  VAR_FILTERS,
+  ALL_VARIABLE_VALUE,
+  VAR_FIELDS,
+} from './variables';
 import { EXPLORATIONS_ROUTE } from './routing';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
 
@@ -36,22 +42,12 @@ export function getColorByIndex(index: number) {
   return visTheme.getColorByName(visTheme.palette[index % 8]);
 }
 
-export function getLabelOptions(scenObject: SceneObject, allOptions: string[]) {
-  const labelFilters = sceneGraph.lookupVariable(VAR_FILTERS, scenObject);
-  const labelOptions: Array<SelectableValue<string>> = [];
-
-  if (!(labelFilters instanceof AdHocFiltersVariable)) {
-    return [];
-  }
-
-  const filters = labelFilters.state.filters;
-
-  for (const option of allOptions) {
-    const filterExists = filters.find((f) => f.key === option);
-    if (!filterExists) {
-      labelOptions.push({ label: option, value: String(option) });
-    }
-  }
+export function getLabelOptions(sceneObject: SceneObject, allOptions: string[]) {
+  const filteredOptions = filterUsedLabelNames(sceneObject, allOptions);
+  const labelOptions: Array<SelectableValue<string>> = filteredOptions.map((label) => ({
+    label,
+    value: String(label),
+  }));
 
   const levelOption = [];
   if (!allOptions.includes('level')) {
@@ -59,6 +55,30 @@ export function getLabelOptions(scenObject: SceneObject, allOptions: string[]) {
   }
 
   return [{ label: 'All', value: ALL_VARIABLE_VALUE }, ...levelOption, ...labelOptions];
+}
+
+/**
+ * Given an array of label names, return those that are not already present in the filters.
+ */
+export function filterUsedLabelNames(sceneObject: SceneObject, labelNames: string[]) {
+  const labelFilters = sceneGraph.lookupVariable(VAR_FILTERS, sceneObject);
+  const fieldsFilters = sceneGraph.lookupVariable(VAR_FIELDS, sceneObject);
+  const uniqueFilters: string[] = [];
+
+  if (!(labelFilters instanceof AdHocFiltersVariable) || !(fieldsFilters instanceof AdHocFiltersVariable)) {
+    return [];
+  }
+
+  const existingFilters = [...labelFilters.state.filters, ...fieldsFilters.state.filters];
+
+  for (const label of labelNames) {
+    const filterExists = existingFilters.find((f) => f.key === label) || existingFilters.find((f) => f.key === label);
+    if (!filterExists) {
+      uniqueFilters.push(label);
+    }
+  }
+
+  return uniqueFilters;
 }
 
 export async function getLokiDatasource(sceneObject: SceneObject) {
