@@ -3,6 +3,7 @@ import React from 'react';
 import { SceneObjectState, SceneObjectBase, SceneComponentProps, sceneGraph } from '@grafana/scenes';
 import { Button } from '@grafana/ui';
 import { IndexScene } from '../../IndexScene/IndexScene';
+import { reportAppInteraction } from 'services/analytics';
 
 export interface FilterByPatternsButtonState extends SceneObjectState {
   pattern: string;
@@ -17,15 +18,22 @@ export class FilterByPatternsButton extends SceneObjectBase<FilterByPatternsButt
       return;
     }
 
-    // remove from the other list if it's there
-    if (logExploration.state.patterns?.find((p) => p.pattern === this.state.pattern)) {
-      logExploration.setState({
-        patterns: logExploration.state.patterns.filter((pattern) => pattern.pattern !== this.state.pattern),
-      });
-    }
+    const { patterns = [] } = logExploration.state;
+
+    // Remove the pattern if it's already there
+    const filteredPatterns = patterns.filter((pattern) => pattern.pattern !== this.state.pattern);
+
+    // Analytics
+    const includePatternsLength = filteredPatterns.filter((p) => p.type === 'include')?.length ?? 0;
+    const excludePatternsLength = filteredPatterns.filter((p) => p.type === 'exclude')?.length ?? 0;
+    reportAppInteraction('service_selection', 'patterns_filtered', {
+      type: this.state.type,
+      includePatternsLength: includePatternsLength + (this.state.type === 'include' ? 1 : 0),
+      excludePatternsLength: excludePatternsLength + (this.state.type === 'exclude' ? 1 : 0),
+    });
 
     logExploration.setState({
-      patterns: [...(logExploration.state.patterns || []), { pattern: this.state.pattern, type: this.state.type }],
+      patterns: [...filteredPatterns, { pattern: this.state.pattern, type: this.state.type }],
     });
   };
 

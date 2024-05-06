@@ -46,6 +46,7 @@ import { buildLogsListScene } from './LogsListScene';
 import { buildLabelBreakdownActionScene } from './Breakdowns/LabelBreakdownScene';
 import { buildFieldsBreakdownActionScene } from './Breakdowns/FieldsBreakdownScene';
 import { buildPatternsScene } from './Breakdowns/PatternsBreakdownScene';
+import { reportAppInteraction } from 'services/analytics';
 
 interface LokiPattern {
   pattern: string;
@@ -392,6 +393,10 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                 counter={getCounter(tab)}
                 onChangeTab={() => {
                   if (tab.value !== logsScene.state.actionView) {
+                    reportAppInteraction('service_selection', 'action_view_changed', {
+                      newActionView: tab.value,
+                      previousActionView: logsScene.state.actionView,
+                    });
                     logsScene.setActionView(tab.value);
                   }
                 }}

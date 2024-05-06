@@ -3,11 +3,14 @@ import React from 'react';
 import { SelectableValue } from '@grafana/data';
 import { SceneComponentProps, SceneObject, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { Field, RadioButtonGroup } from '@grafana/ui';
+import { reportAppInteraction } from 'services/analytics';
 
 export interface LayoutSwitcherState extends SceneObjectState {
   active: LayoutType;
   layouts: SceneObject[];
   options: Array<SelectableValue<LayoutType>>;
+  // used for analytics
+  viewName: 'labels' | 'fields' | 'logs' | 'patterns';
 }
 
 export type LayoutType = 'single' | 'grid' | 'rows';
@@ -24,6 +27,10 @@ export class LayoutSwitcher extends SceneObjectBase<LayoutSwitcherState> {
   }
 
   public onLayoutChange = (active: LayoutType) => {
+    reportAppInteraction('service_selection', 'layout_changed', {
+      layout: active,
+      view: this.state.viewName,
+    });
     this.setState({ active });
   };
 

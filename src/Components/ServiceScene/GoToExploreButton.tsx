@@ -9,12 +9,14 @@ import { VAR_LOGS_FORMAT_EXPR } from 'services/variables';
 import { getDataSource, getQueryExpr } from 'services/scenes';
 import { testIds } from 'services/testIds';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
+import { reportAppInteraction } from 'services/analytics';
 interface ShareExplorationButtonState {
   exploration: IndexScene;
 }
 
 export const GoToExploreButton = ({ exploration }: ShareExplorationButtonState) => {
   const onClick = () => {
+    reportAppInteraction('service_selection', 'open_in_explore_clicked');
     const datasource = getDataSource(exploration);
     const expr = getQueryExpr(exploration).replace(VAR_LOGS_FORMAT_EXPR, '').replace(/\s+/g, ' ').trimEnd();
     const timeRange = sceneGraph.getTimeRange(exploration).state.value;

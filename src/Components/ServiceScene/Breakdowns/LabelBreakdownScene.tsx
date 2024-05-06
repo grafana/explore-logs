@@ -37,6 +37,7 @@ import {
 } from 'services/variables';
 import { getLokiDatasource, getLabelOptions } from 'services/scenes';
 import { PLUGIN_ID } from 'services/routing';
+import { reportAppInteraction } from 'services/analytics';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -143,6 +144,10 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     }
 
     const variable = this.getVariable();
+    reportAppInteraction('service_selection', 'labels_view_label_selected', {
+      label: value,
+      previousLabel: variable.getValueText(),
+    });
 
     variable.changeValueTo(value);
   };
@@ -253,6 +258,7 @@ function buildLabelsLayout(options: Array<SelectableValue<string>>) {
       { value: 'rows', label: 'Rows' },
     ],
     active: 'grid',
+    viewName: 'labels',
     layouts: [
       new SceneCSSGridLayout({
         templateColumns: GRID_TEMPLATE_COLUMNS,
@@ -313,6 +319,7 @@ function buildLabelValuesLayout(variable: CustomVariable) {
       { value: 'rows', label: 'Rows' },
     ],
     active: 'grid',
+    viewName: 'labels',
     layouts: [
       new SceneFlexLayout({
         direction: 'column',

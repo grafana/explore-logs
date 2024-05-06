@@ -7,6 +7,7 @@ import { config } from '@grafana/runtime';
 import { getUrlForExploration } from 'services/scenes';
 import { copyText } from 'services/text';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
+import { reportAppInteraction } from 'services/analytics';
 
 interface ShareExplorationButtonState {
   exploration: IndexScene;
@@ -25,6 +26,7 @@ export const ShareExplorationButton = ({ exploration }: ShareExplorationButtonSt
     const subUrl = config.appSubUrl ?? '';
     copyText(`${origin}${subUrl}${getUrlForExploration(exploration)}`, buttonRef);
     setTooltip('Copied!');
+    reportAppInteraction('service_selection', 'share_exploration_clicked');
     setTimeout(() => {
       setTooltip('Copy url');
     }, 2000);
