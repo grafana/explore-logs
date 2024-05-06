@@ -6,7 +6,7 @@ import { ScenesTableContextProvider } from 'Components/Table/Context/ScenesTable
 // import { LogsVisualizationType, TablePanelProps } from '@/components/Explore/LogsByService/Tabs/LogsListScene';
 import { RadioButtonGroup } from '@grafana/ui';
 import { css } from '@emotion/css';
-import { LogsVisualizationType, TablePanelProps } from '../ServiceScene/LogsTableScene';
+import { LogsVisualizationType, TablePanelProps } from '../ServiceScene/LogsListScene';
 
 export interface CustomTableFieldOptions {}
 

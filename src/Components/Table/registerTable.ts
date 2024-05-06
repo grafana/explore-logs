@@ -1,6 +1,6 @@
 import { PanelPlugin } from '@grafana/data';
-import { TablePanelProps } from '../ServiceScene/LogsTableScene';
 import { CustomTableFieldOptions, CustomTablePanel } from './tablePanel';
+import { TablePanelProps } from '../ServiceScene/LogsListScene';
 
 export const customTablePanel = new PanelPlugin<TablePanelProps, CustomTableFieldOptions>(
   CustomTablePanel
@@ -14,5 +14,3 @@ export const customTablePanel = new PanelPlugin<TablePanelProps, CustomTableFiel
     });
   },
 });
-// @todo where is a good place to register stuff?
-// sceneUtils.registerRuntimePanelPlugin({ pluginId: 'custom-table-viz', plugin: customTablePanel });

@@ -1,6 +1,6 @@
 import React, { createContext, ReactNode, useContext } from 'react';
 import { AdHocVariableFilter } from '@grafana/data';
-import { TablePanelProps } from '../../ServiceScene/LogsTableScene';
+import { TablePanelProps } from '../../ServiceScene/LogsListScene';
 
 type ScenesTableContextType = TablePanelProps;
 

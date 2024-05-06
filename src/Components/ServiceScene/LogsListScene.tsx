@@ -13,13 +13,22 @@ import {
 } from '@grafana/scenes';
 import { LineFilter } from './LineFilter';
 import { LOGS_TABLE_PLUGIN_ID, LogsPanelHeaderActions } from '../Table/tablePanel';
-import { AdHocVariableFilter } from '@grafana/data';
+import { AdHocVariableFilter, TimeRange } from '@grafana/data';
 import { VAR_FIELDS } from '../../services/variables';
+import { SelectedTableRow } from '../Table/LogLineCellComponent';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
   panel?: SceneFlexLayout;
   visualizationType: LogsVisualizationType;
+}
+
+// Values/callbacks passed into react table component from scene
+export interface TablePanelProps {
+  filters: AdHocVariableFilter[];
+  addFilter: (filter: AdHocVariableFilter) => void;
+  selectedLine?: SelectedTableRow;
+  timeRange?: TimeRange;
 }
 
 export type LogsVisualizationType = 'logs' | 'table';
