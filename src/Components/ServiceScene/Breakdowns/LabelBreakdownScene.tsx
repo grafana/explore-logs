@@ -37,6 +37,7 @@ import {
 } from 'services/variables';
 import { getLokiDatasource, getLabelOptions } from 'services/scenes';
 import { PLUGIN_ID } from 'services/routing';
+import { buildLokiQuery } from 'services/query';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
@@ -231,30 +232,24 @@ function buildLabelsLayout(options: Array<SelectableValue<string>>) {
   const children: SceneFlexItemLike[] = [];
 
   for (const option of options) {
-    if (option.value === ALL_VARIABLE_VALUE || !option.value) {
+    const { value: optionValue } = option;
+    if (optionValue === ALL_VARIABLE_VALUE || !optionValue) {
       continue;
     }
 
     children.push(
       new SceneCSSGridItem({
         body: PanelBuilders.timeseries()
-          .setTitle(option.label!)
+          .setTitle(optionValue)
           .setData(
             new SceneQueryRunner({
               maxDataPoints: 300,
               datasource: explorationDS,
-              queries: [
-                {
-                  refId: 'A',
-                  expr: getExpr(option.value),
-                  supportingQueryType: PLUGIN_ID,
-                  legendFormat: `{{${option.label}}}`,
-                },
-              ],
+              queries: [buildLokiQuery(getExpr(optionValue), { legendFormat: `{{${optionValue}}}` })],
             })
           )
-          .setHeaderActions(new SelectLabelAction({ labelName: String(option.value) }))
-          .setHeaderActions(new SelectLabelAction({ labelName: String(option.value) }))
+          .setHeaderActions(new SelectLabelAction({ labelName: String(optionValue) }))
+          .setHeaderActions(new SelectLabelAction({ labelName: String(optionValue) }))
           .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
           .setCustomFieldConfig('fillOpacity', 100)
           .setCustomFieldConfig('lineWidth', 0)
@@ -291,23 +286,11 @@ function getExpr(tagKey: string) {
   return `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${tagKey}!="" [$__auto])) by (${tagKey})`;
 }
 
-function buildQuery(tagKey: string) {
-  return {
-    refId: 'A',
-    expr: getExpr(tagKey),
-    supportingQueryType: PLUGIN_ID,
-    queryType: 'range',
-    editorMode: 'code',
-    maxLines: 1000,
-    intervalMs: 2000,
-    legendFormat: `{{${tagKey}}}`,
-  };
-}
-
 const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
 function buildLabelValuesLayout(variable: CustomVariable) {
-  const query = buildQuery(variable.getValueText());
+  const tagKey = variable.getValueText();
+  const query = buildLokiQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
 
   let bodyOpts = PanelBuilders.timeseries();
   bodyOpts = bodyOpts

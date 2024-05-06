@@ -35,7 +35,7 @@ import {
   explorationDS,
   LOG_STREAM_SELECTOR_EXPR,
 } from 'services/variables';
-import { PLUGIN_ID } from 'services/routing';
+import { buildLokiQuery } from 'services/query';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
@@ -150,28 +150,26 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     const children: SceneFlexItemLike[] = [];
 
     for (const option of options) {
-      if (option.value === ALL_VARIABLE_VALUE) {
+      const { value: optionValue } = option;
+      if (optionValue === ALL_VARIABLE_VALUE || !optionValue) {
         continue;
       }
 
-      const expr = getExpr(option.value!);
+      const query = buildLokiQuery(getExpr(optionValue), {
+        legendFormat: `{{${optionValue}}}`,
+        refId: optionValue,
+      });
       const queryRunner = new SceneQueryRunner({
         maxDataPoints: 300,
         datasource: explorationDS,
-        queries: [
-          {
-            refId: option.value!,
-            expr,
-            legendFormat: `{{${option.label}}}`,
-          },
-        ],
+        queries: [query],
       });
-      let body = PanelBuilders.timeseries().setTitle(option.label!).setData(queryRunner);
+      let body = PanelBuilders.timeseries().setTitle(optionValue).setData(queryRunner);
 
-      if (!isAvgField(option.label ?? '')) {
+      if (!isAvgField(optionValue)) {
         // TODO hack
         body = body
-          .setHeaderActions(new SelectLabelAction({ labelName: String(option.value) }))
+          .setHeaderActions(new SelectLabelAction({ labelName: String(optionValue) }))
           .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
           .setCustomFieldConfig('fillOpacity', 100)
           .setCustomFieldConfig('lineWidth', 0)
@@ -313,23 +311,11 @@ function getExpr(field: string) {
   return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${field}!=""   [$__auto]))`;
 }
 
-function buildQuery(tagKey: string) {
-  return {
-    refId: 'A',
-    expr: getExpr(tagKey),
-    supportingQueryType: PLUGIN_ID,
-    queryType: 'range',
-    editorMode: 'code',
-    maxLines: 1000,
-    intervalMs: 2000,
-    legendFormat: `{{${tagKey}}}`,
-  };
-}
-
 const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
 function buildNormalLayout(variable: CustomVariable) {
-  const query = buildQuery(variable.getValueText());
+  const tagKey = variable.getValueText();
+  const query = buildLokiQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
 
   return new LayoutSwitcher({
     $data: new SceneQueryRunner({

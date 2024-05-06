@@ -46,6 +46,7 @@ import { buildLogsListScene } from './LogsListScene';
 import { buildLabelBreakdownActionScene } from './Breakdowns/LabelBreakdownScene';
 import { buildFieldsBreakdownActionScene } from './Breakdowns/FieldsBreakdownScene';
 import { buildPatternsScene } from './Breakdowns/PatternsBreakdownScene';
+import { buildLokiQuery } from 'services/query';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
 
 interface LokiPattern {
@@ -89,7 +90,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         new SceneVariableSet({ variables: [new CustomVariable({ name: VAR_LOGS_FORMAT, value: '' })] }),
       $data: new SceneQueryRunner({
         datasource: explorationDS,
-        queries: [buildQuery()],
+        queries: [buildLokiQuery(LOG_STREAM_SELECTOR_EXPR)],
       }),
       ...state,
     });
@@ -442,17 +443,6 @@ function getStyles(theme: GrafanaTheme2) {
 
 const MAIN_PANEL_MIN_HEIGHT = 200;
 const MAIN_PANEL_MAX_HEIGHT = '30%';
-
-function buildQuery() {
-  return {
-    refId: 'A',
-    expr: LOG_STREAM_SELECTOR_EXPR,
-    supportingQueryType: PLUGIN_ID,
-    queryType: 'range',
-    editorMode: 'code',
-    maxLines: 1000,
-  };
-}
 
 function buildGraphScene() {
   return new SceneFlexLayout({

@@ -14,7 +14,7 @@ import { DrawStyle, StackingMode } from '@grafana/ui';
 import { DataFrame } from '@grafana/data';
 import { map, Observable } from 'rxjs';
 import { LOG_STREAM_SELECTOR_EXPR, explorationDS } from 'services/variables';
-import { PLUGIN_ID } from 'services/routing';
+import { buildLokiQuery } from 'services/query';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: SceneFlexLayout;
@@ -40,14 +40,19 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       direction: 'row',
       children: [
         new SceneFlexItem({
-          body: PanelBuilders.timeseries() //
+          body: PanelBuilders.timeseries()
             .setTitle('Log volume')
             .setOption('legend', { showLegend: false })
             .setData(
               new SceneDataTransformer({
                 $data: new SceneQueryRunner({
                   datasource: explorationDS,
-                  queries: [buildQuery()],
+                  queries: [
+                    buildLokiQuery(
+                      `sum by (level) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ [$__auto]))`,
+                      { legendFormat: '{{level}}' }
+                    ),
+                  ],
                 }),
                 transformations: [
                   () => (source: Observable<DataFrame[]>) => {
@@ -115,15 +120,5 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     }
 
     return <panel.Component model={panel} />;
-  };
-}
-
-function buildQuery() {
-  return {
-    refId: 'A',
-    expr: `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ [$__auto])) by (level)`,
-    queryType: 'range',
-    editorMode: 'code',
-    supportingQueryType: PLUGIN_ID,
   };
 }
