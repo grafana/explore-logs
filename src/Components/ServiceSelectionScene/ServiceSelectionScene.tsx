@@ -34,6 +34,7 @@ import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from 'services/variables';
 import { GrotError } from '../GrotError';
 import { SelectFieldButton } from './SelectFieldButton';
 import { PLUGIN_ID } from 'services/routing';
+import { buildLogQuery, buildLogVolumeQuery } from 'services/query';
 
 export const SERVICE_NAME = 'service_name';
 
@@ -213,7 +214,9 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
             datasource: explorationDS,
             queries: [
               // Volume of logs for service grouped by level
-              buildVolumeQuery(service),
+              buildLogVolumeQuery(
+                `sum by(level) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`
+              ),
             ],
           })
         )
@@ -253,7 +256,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
         .setData(
           new SceneQueryRunner({
             datasource: explorationDS,
-            queries: [buildLogQuery(service)],
+            queries: [buildLogQuery(`{${SERVICE_NAME}=\`${service}\`}`, { maxLines: 100 })],
           })
         )
         .setOption('showTime', true)
@@ -328,26 +331,6 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
         </div>
       </div>
     );
-  };
-}
-
-function buildVolumeQuery(service: string) {
-  return {
-    refId: 'A',
-    expr: `sum by(level) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`,
-    queryType: 'range',
-    legendFormat: '{{level}}',
-    supportingQueryType: PLUGIN_ID,
-  };
-}
-
-function buildLogQuery(service: string) {
-  return {
-    refId: 'A',
-    expr: `{${SERVICE_NAME}=\`${service}\`}`,
-    supportingQueryType: PLUGIN_ID,
-    queryType: 'range',
-    maxLines: 100,
   };
 }
 

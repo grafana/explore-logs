@@ -35,7 +35,7 @@ import {
   explorationDS,
   LOG_STREAM_SELECTOR_EXPR,
 } from 'services/variables';
-import { PLUGIN_ID } from 'services/routing';
+import { buildLogVolumeQuery } from 'services/query';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -153,17 +153,14 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         continue;
       }
 
-      const expr = getExpr(option.value!);
+      const query = buildLogVolumeQuery(getExpr(option.value!), {
+        legendFormat: `{{${option.label}}}`,
+        refId: option.value!,
+      });
       const queryRunner = new SceneQueryRunner({
         maxDataPoints: 300,
         datasource: explorationDS,
-        queries: [
-          {
-            refId: option.value!,
-            expr,
-            legendFormat: `{{${option.label}}}`,
-          },
-        ],
+        queries: [query],
       });
       let body = PanelBuilders.timeseries().setTitle(option.label!).setData(queryRunner);
 
@@ -302,23 +299,11 @@ function getExpr(field: string) {
   return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${field}!=""   [$__auto]))`;
 }
 
-function buildQuery(tagKey: string) {
-  return {
-    refId: 'A',
-    expr: getExpr(tagKey),
-    supportingQueryType: PLUGIN_ID,
-    queryType: 'range',
-    editorMode: 'code',
-    maxLines: 1000,
-    intervalMs: 2000,
-    legendFormat: `{{${tagKey}}}`,
-  };
-}
-
 const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
 function buildNormalLayout(variable: CustomVariable) {
-  const query = buildQuery(variable.getValueText());
+  const tagKey = variable.getValueText();
+  const query = buildLogVolumeQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
 
   return new LayoutSwitcher({
     $data: new SceneQueryRunner({

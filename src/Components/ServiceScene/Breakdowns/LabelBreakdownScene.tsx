@@ -37,6 +37,7 @@ import {
 } from 'services/variables';
 import { getLokiDatasource, getLabelOptions } from 'services/scenes';
 import { PLUGIN_ID } from 'services/routing';
+import { buildLogVolumeQuery } from 'services/query';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -233,14 +234,7 @@ function buildLabelsLayout(options: Array<SelectableValue<string>>) {
             new SceneQueryRunner({
               maxDataPoints: 300,
               datasource: explorationDS,
-              queries: [
-                {
-                  refId: 'A',
-                  expr: getExpr(option.value),
-                  supportingQueryType: PLUGIN_ID,
-                  legendFormat: `{{${option.label}}}`,
-                },
-              ],
+              queries: [buildLogVolumeQuery(getExpr(option.value), { legendFormat: `{{${option.label}}}` })],
             })
           )
           .setHeaderActions(new SelectLabelAction({ labelName: String(option.value) }))
@@ -280,23 +274,11 @@ function getExpr(tagKey: string) {
   return `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${tagKey}!="" [$__auto])) by (${tagKey})`;
 }
 
-function buildQuery(tagKey: string) {
-  return {
-    refId: 'A',
-    expr: getExpr(tagKey),
-    supportingQueryType: PLUGIN_ID,
-    queryType: 'range',
-    editorMode: 'code',
-    maxLines: 1000,
-    intervalMs: 2000,
-    legendFormat: `{{${tagKey}}}`,
-  };
-}
-
 const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
 function buildLabelValuesLayout(variable: CustomVariable) {
-  const query = buildQuery(variable.getValueText());
+  const tagKey = variable.getValueText();
+  const query = buildLogVolumeQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
 
   let bodyOpts = PanelBuilders.timeseries();
   bodyOpts = bodyOpts
