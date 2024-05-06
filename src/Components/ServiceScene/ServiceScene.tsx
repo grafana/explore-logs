@@ -245,21 +245,28 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
     const excludeLabels = [ALL_VARIABLE_VALUE, 'level'];
 
-    ds.getResource('patterns', {
-      query: renderLogQLLabelFilters([
-        // this will only be the service name for now
-        ...filters.state.filters,
-        // only include fields that are an indexed label
-        ...fields.state.filters.filter(
-          // we manually add level as a label, but it'll be structured metadata mostly, so we skip it here
-          (field) => this.state.labels?.includes(field.key) && !excludeLabels.includes(field.key)
-        ),
-      ]),
-      start: timeRange.from.utc().toISOString(),
-      end: timeRange.to.utc().toISOString(),
-    }).then(({ data }: { data: LokiPattern[] }) => {
-      this.setState({ patterns: data });
-    });
+    const { data } = await ds.getResource(
+      'patterns',
+      {
+        query: renderLogQLLabelFilters([
+          // this will only be the service name for now
+          ...filters.state.filters,
+          // only include fields that are an indexed label
+          ...fields.state.filters.filter(
+            // we manually add level as a label, but it'll be structured metadata mostly, so we skip it here
+            (field) => this.state.labels?.includes(field.key) && !excludeLabels.includes(field.key)
+          ),
+        ]),
+        start: timeRange.from.utc().toISOString(),
+        end: timeRange.to.utc().toISOString(),
+      },
+      {
+        headers: {
+          'X-Query-Tags': `Source=${PLUGIN_ID}`,
+        },
+      }
+    );
+    this.setState({ patterns: data });
   }
 
   private async updateLabels() {
@@ -270,11 +277,19 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
-    const { detectedLabels } = await ds.getResource<DetectedLabelsResponse>('detected_labels', {
-      query: filters.state.filterExpression,
-      start: timeRange.from.utc().toISOString(),
-      end: timeRange.to.utc().toISOString(),
-    });
+    const { detectedLabels } = await ds.getResource<DetectedLabelsResponse>(
+      'detected_labels',
+      {
+        query: filters.state.filterExpression,
+        start: timeRange.from.utc().toISOString(),
+        end: timeRange.to.utc().toISOString(),
+      },
+      {
+        headers: {
+          'X-Query-Tags': `Source=${PLUGIN_ID}`,
+        },
+      }
+    );
 
     if (!detectedLabels || !Array.isArray(detectedLabels)) {
       return;

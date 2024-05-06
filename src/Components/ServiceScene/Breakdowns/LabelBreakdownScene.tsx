@@ -109,11 +109,19 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
 
-    const { detectedLabels } = await ds.getResource<DetectedLabelsResponse>('detected_labels', {
-      query: filters.state.filterExpression,
-      start: timeRange.from.utc().toISOString(),
-      end: timeRange.to.utc().toISOString(),
-    });
+    const { detectedLabels } = await ds.getResource<DetectedLabelsResponse>(
+      'detected_labels',
+      {
+        query: filters.state.filterExpression,
+        start: timeRange.from.utc().toISOString(),
+        end: timeRange.to.utc().toISOString(),
+      },
+      {
+        headers: {
+          'X-Query-Tags': `Source=${PLUGIN_ID}`,
+        },
+      }
+    );
 
     if (!detectedLabels || !Array.isArray(detectedLabels)) {
       return;
