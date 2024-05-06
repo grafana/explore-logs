@@ -174,6 +174,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
           { value: 'grid', label: 'Grid' },
           { value: 'rows', label: 'Rows' },
         ],
+        actionView: 'patterns',
         active: 'grid',
         layouts: [
           new SceneCSSGridLayout({
