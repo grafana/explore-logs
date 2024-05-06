@@ -33,6 +33,7 @@ import { testIds } from 'services/testIds';
 import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from 'services/variables';
 import { GrotError } from '../GrotError';
 import { SelectFieldButton } from './SelectFieldButton';
+import { PLUGIN_ID } from 'services/routing';
 
 export const SERVICE_NAME = 'service_name';
 
@@ -328,6 +329,7 @@ function buildVolumeQuery(service: string) {
     expr: `sum by(level) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`,
     queryType: 'range',
     legendFormat: '{{level}}',
+    supportingQueryType: PLUGIN_ID,
   };
 }
 
@@ -335,6 +337,7 @@ function buildLogQuery(service: string) {
   return {
     refId: 'A',
     expr: `{${SERVICE_NAME}=\`${service}\`}`,
+    supportingQueryType: PLUGIN_ID,
     queryType: 'range',
     maxLines: 100,
   };

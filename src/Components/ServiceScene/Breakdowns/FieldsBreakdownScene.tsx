@@ -35,6 +35,7 @@ import {
   explorationDS,
   LOG_STREAM_SELECTOR_EXPR,
 } from 'services/variables';
+import { PLUGIN_ID } from 'services/routing';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -305,6 +306,7 @@ function buildQuery(tagKey: string) {
   return {
     refId: 'A',
     expr: getExpr(tagKey),
+    supportingQueryType: PLUGIN_ID,
     queryType: 'range',
     editorMode: 'code',
     maxLines: 1000,
