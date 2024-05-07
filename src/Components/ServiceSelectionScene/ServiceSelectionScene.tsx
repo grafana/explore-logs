@@ -233,6 +233,8 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
   buildServiceLogsLayout(service: string) {
     return new SceneCSSGridItem({
       body: PanelBuilders.logs()
+        // Hover header set to true hides the extra padding on top saved for header that we don't use in logs panel (more logs are visible)
+        .setHoverHeader(true)
         .setData(getQueryRunner(buildLokiQuery(`{${SERVICE_NAME}=\`${service}\`}`, { maxLines: 100 })))
         .setOption('showTime', true)
         .setOption('enableLogDetails', false)
