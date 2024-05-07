@@ -54,14 +54,12 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   }
 
   getUrlState() {
-    console.log('getUrlState', this.state.urlColumns);
     const urlColumns = this.state.urlColumns ?? [];
     return {
       urlColumns: JSON.stringify(urlColumns),
     };
   }
   updateFromUrl(values: SceneObjectUrlValues) {
-    console.log('updateFromUrl', values);
     if (typeof values.urlColumns === 'string') {
       const decoded: string[] = JSON.parse(values.urlColumns);
       if (decoded !== this.state.urlColumns) {
@@ -85,6 +83,18 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
             panel: this.getVizPanel(),
           });
         }
+        if (prevState.urlColumns !== newState.urlColumns) {
+          //@todo how to reference body correctly?
+          //@ts-ignore
+          const vizPanel: VizPanel<TablePanelProps> = this.state.panel?.state.children[1].state?.body;
+          vizPanel.setState({
+            options: {
+              ...vizPanel.state.options,
+              urlColumns: newState.urlColumns,
+            },
+          });
+          console.log('Scene state changed', newState.urlColumns);
+        }
       })
     );
   }
@@ -107,8 +117,12 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
           filters: fields.state.filters,
           addFilter,
           setUrlColumns: (urlColumns) => {
-            this.setState({ urlColumns });
+            if (JSON.stringify(urlColumns) !== JSON.stringify(this.state.urlColumns)) {
+              console.log('Setting scene state columns', urlColumns, this.state.urlColumns);
+              this.setState({ urlColumns });
+            }
           },
+          urlColumns: this.state.urlColumns,
 
           // @todo selected line should be moved to table scene,
           // @todo timerange should be moved to table scene
@@ -143,7 +157,6 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   }
 
   private setVisualizationType(type: LogsVisualizationType) {
-    console.log('type', type);
     this.setState({
       visualizationType: type,
     });

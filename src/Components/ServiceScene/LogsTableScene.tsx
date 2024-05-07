@@ -39,8 +39,6 @@ export class TableColumnsScene extends SceneObjectBase<TableColumnsSceneState> {
       $data: state.$data,
     });
 
-    console.log('data', state.$data);
-
     this.addActivationHandler(this._onActivate.bind(this));
   }
 

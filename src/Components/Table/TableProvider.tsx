@@ -21,6 +21,8 @@ export const TableProvider = ({ dataFrame, setUrlColumns, urlColumns }: TablePro
     return null;
   }
 
+  console.log('TableProvider', urlColumns);
+
   return (
     <QueryContextProvider logsFrame={logsFrame}>
       <TableWrap setUrlColumns={setUrlColumns} urlColumns={urlColumns} />

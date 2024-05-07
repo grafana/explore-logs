@@ -1,11 +1,11 @@
 import { FieldType } from '@grafana/data';
 
-export type ActiveFieldMeta = {
+export type InactiveFieldMeta = {
   active: false;
   index: undefined; // if undefined the column is not selected
 };
 
-export type InactiveFieldMeta = {
+export type ActiveFieldMeta = {
   active: true;
   index: number; // if undefined the column is not selected
 };
@@ -18,7 +18,7 @@ export type GenericMeta = {
   detectedFieldType?: FieldType;
 };
 
-export type FieldNameMeta = (InactiveFieldMeta | ActiveFieldMeta) & GenericMeta;
+export type FieldNameMeta = (ActiveFieldMeta | InactiveFieldMeta) & GenericMeta;
 
 export type FieldName = string;
 export type FieldNameMetaStore = Record<FieldName, FieldNameMeta>;

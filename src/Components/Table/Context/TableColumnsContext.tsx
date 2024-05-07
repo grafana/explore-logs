@@ -1,5 +1,5 @@
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
-import { FieldNameMetaStore } from 'Components/Table/TableTypes';
+import { ActiveFieldMeta, FieldNameMetaStore } from 'Components/Table/TableTypes';
 import { useHistory } from 'react-router-dom';
 import { DATAPLANE_BODY_NAME, DATAPLANE_TIMESTAMP_NAME, LogsFrame } from '../../../services/logsFrame';
 
@@ -61,11 +61,13 @@ export const TableColumnContextProvider = ({
   initialColumns,
   logsFrame,
   setUrlColumns,
+  urlColumns,
 }: {
   children: ReactNode;
   initialColumns: FieldNameMetaStore;
   logsFrame: LogsFrame;
   setUrlColumns: (columns: string[]) => void;
+  urlColumns: string[];
 }) => {
   const [columns, setColumns] = useState<FieldNameMetaStore>(removeExtraColumns(initialColumns));
   const [bodyState, setBodyState] = useState<LogLineState>(LogLineState.auto);
@@ -73,29 +75,43 @@ export const TableColumnContextProvider = ({
   const [visible, setVisible] = useState(false);
   const history = useHistory();
 
-  const handleSetColumns = useCallback((newColumns: FieldNameMetaStore) => {
-    if (newColumns) {
-      setColumns(removeExtraColumns(newColumns));
-    }
-  }, []);
+  const getActiveColumns = (columns: FieldNameMetaStore): string[] => {
+    let activeColumns: string[] = [];
+    Object.keys(columns).forEach((fieldName) => {
+      if (columns[fieldName].active && columns[fieldName].index !== undefined) {
+        activeColumns.push(fieldName);
+      }
+    });
+    activeColumns.sort((a, b) => {
+      // Typescript doesn't seem to know that the indicies we picked in the loop above are only for ActiveFieldMeta, so we're forced to assert
+      // @todo how to do this better?
+      const colA: ActiveFieldMeta = columns[a] as ActiveFieldMeta;
+      const colB: ActiveFieldMeta = columns[b] as ActiveFieldMeta;
+      return colA.index - colB.index;
+    });
+    return activeColumns;
+  };
+
+  const handleSetColumns = useCallback(
+    (newColumns: FieldNameMetaStore) => {
+      if (newColumns) {
+        const columns = removeExtraColumns(newColumns);
+        setColumns(columns);
+
+        // Sync react state update with scenes url management
+        setUrlColumns(getActiveColumns(columns));
+      }
+    },
+    [setUrlColumns]
+  );
 
   const handleSetVisible = useCallback((isVisible: boolean) => {
     setVisible(isVisible);
   }, []);
 
-  // When the parent component recalculates new columns on dataframe change, we need to update or the column UI will be stale!
   useEffect(() => {
-    if (initialColumns) {
-      handleSetColumns(initialColumns);
-    }
-  }, [initialColumns, handleSetColumns]);
-
-  // Handle url updates with react router or we'll get state sync errors with scenes
-  useEffect(() => {
-    const activeColumns = getColumnsForUrl(columns, logsFrame);
+    const activeColumns = getDefaultColumns(columns, logsFrame);
     if (activeColumns?.length) {
-      setUrlColumns(activeColumns);
-
       const activeFields = Object.keys(columns).filter((col) => columns[col].active);
 
       // If we're missing all fields, the user must have removed the last column, let's revert back to the default state
@@ -106,7 +122,7 @@ export const TableColumnContextProvider = ({
       // Reset any local search state
       setFilteredColumns(undefined);
     }
-  }, [columns, history, logsFrame, setFilteredColumns, handleSetColumns, setUrlColumns]);
+  }, [columns, history, logsFrame, setFilteredColumns, handleSetColumns]);
 
   return (
     <TableColumnsContext.Provider
@@ -140,7 +156,7 @@ const removeExtraColumns = (columns: FieldNameMetaStore): FieldNameMetaStore => 
   return columns;
 };
 
-function getColumnsForUrl(pendingLabelState: FieldNameMetaStore, logsFrame: LogsFrame) {
+function getDefaultColumns(pendingLabelState: FieldNameMetaStore, logsFrame: LogsFrame) {
   if (!logsFrame) {
     console.warn('missing dataframe, cannot set url state');
     return;

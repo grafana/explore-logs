@@ -93,8 +93,10 @@ export const TableWrap = (props: TableWrapProps) => {
 
     pendingLabelState = getColumnsFromProps(pendingLabelState);
 
-    // Get all active columns
-    const active = Object.keys(pendingLabelState).filter((key) => pendingLabelState[key].active);
+    // Get all active columns, pull from url if set
+    const active = props.urlColumns.length
+      ? props.urlColumns
+      : Object.keys(pendingLabelState).filter((key) => pendingLabelState[key].active);
 
     // If nothing is selected, then select the default columns
     setSpecialFieldMeta(active, specialFields, pendingLabelState);
@@ -106,6 +108,7 @@ export const TableWrap = (props: TableWrapProps) => {
         logsFrame={logsFrame}
         initialColumns={pendingLabelState}
         setUrlColumns={props.setUrlColumns}
+        urlColumns={props.urlColumns}
       >
         <Table logsFrame={logsFrame} timeZone={timeZone} height={height - 270} width={width - 50} labels={labels} />
       </TableColumnContextProvider>
