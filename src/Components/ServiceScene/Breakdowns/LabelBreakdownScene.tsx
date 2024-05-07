@@ -22,7 +22,7 @@ import {
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { Button, DrawStyle, Field, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
-import { AddToFiltersGraphAction } from './AddToFiltersButton';
+import { AddToFiltersButton } from './AddToFiltersButton';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
@@ -392,7 +392,7 @@ export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
     getBreakdownSceneFor(this).onChange(this.state.labelName);
   };
 
-  public static Component = ({ model }: SceneComponentProps<AddToFiltersGraphAction>) => {
+  public static Component = ({ model }: SceneComponentProps<AddToFiltersButton>) => {
     return (
       <Button variant="secondary" size="sm" onClick={model.onClick}>
         Select

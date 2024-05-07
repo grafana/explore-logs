@@ -2,7 +2,7 @@ import { DataFrame, PanelData } from '@grafana/data';
 import { DrawStyle, StackingMode } from '@grafana/ui';
 import { PanelBuilders, SceneCSSGridItem, SceneDataNode } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
-import { AddToFiltersGraphAction } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
+import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { VAR_FIELDS } from './variables';
 
 export type DetectedLabel = {
@@ -45,7 +45,7 @@ export function getLabelValueScene(getTitle: (df: DataFrame) => string, style: D
       .setTitle(getTitle(frame))
       .setData(new SceneDataNode({ data: { ...data, series: [frame] } }))
       .setColor({ mode: 'fixed', fixedColor: getColorByIndex(frameIndex) })
-      .setHeaderActions(new AddToFiltersGraphAction({ frame, variableName: VAR_FIELDS }));
+      .setHeaderActions(new AddToFiltersButton({ frame, variableName: VAR_FIELDS }));
 
     if (style === DrawStyle.Bars) {
       panel

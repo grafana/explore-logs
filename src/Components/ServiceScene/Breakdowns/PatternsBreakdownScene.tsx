@@ -18,7 +18,7 @@ import {
   SceneVariableSet,
 } from '@grafana/scenes';
 import { Button, DrawStyle, StackingMode, useStyles2, Text, TextLink } from '@grafana/ui';
-import { AddToFiltersGraphAction } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
+import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { LayoutSwitcher } from 'Components/ServiceScene/Breakdowns/LayoutSwitcher';
 import { StatusWrapper } from 'Components/ServiceScene/Breakdowns/StatusWrapper';
 import { GrotError } from 'Components/GrotError';
@@ -309,7 +309,7 @@ export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
     getPatternsSceneFor(this).onChange(this.state.labelName);
   };
 
-  public static Component = ({ model }: SceneComponentProps<AddToFiltersGraphAction>) => {
+  public static Component = ({ model }: SceneComponentProps<AddToFiltersButton>) => {
     return (
       <Button variant="secondary" size="sm" fill="text" onClick={model.onClick}>
         Select

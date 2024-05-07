@@ -12,12 +12,12 @@ import { Button } from '@grafana/ui';
 import { VariableHide } from '@grafana/schema';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
 
-export interface AddToFiltersGraphActionState extends SceneObjectState {
+export interface AddToFiltersButtonState extends SceneObjectState {
   frame: DataFrame;
   variableName: string;
 }
 
-export class AddToFiltersGraphAction extends SceneObjectBase<AddToFiltersGraphActionState> {
+export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState> {
   public onClick = () => {
     const variable = sceneGraph.lookupVariable(this.state.variableName, this);
     if (!(variable instanceof AdHocFiltersVariable)) {
@@ -62,7 +62,7 @@ export class AddToFiltersGraphAction extends SceneObjectBase<AddToFiltersGraphAc
     );
   };
 
-  public static Component = ({ model }: SceneComponentProps<AddToFiltersGraphAction>) => {
+  public static Component = ({ model }: SceneComponentProps<AddToFiltersButton>) => {
     return (
       <Button variant="secondary" size="sm" onClick={model.onClick}>
         Add to filters
