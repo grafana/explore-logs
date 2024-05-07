@@ -1,5 +1,4 @@
 import { ClipboardButton, IconButton, Modal, useTheme2 } from '@grafana/ui';
-import { useScenesTableContext } from 'Components/Table/Context/ScenesTableContext';
 import React, { useState } from 'react';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
@@ -49,8 +48,7 @@ export const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
 export function LineActionIcons(props: { rowIndex: number; value: unknown }) {
   const theme = useTheme2();
   const styles = getStyles(theme);
-  const { timeRange } = useScenesTableContext();
-  const { logsFrame } = useQueryContext();
+  const { logsFrame, timeRange } = useQueryContext();
   const logId = logsFrame?.idField?.values[props.rowIndex];
   const lineValue = logsFrame?.bodyField.values[props.rowIndex];
   const [isInspecting, setIsInspecting] = useState(false);

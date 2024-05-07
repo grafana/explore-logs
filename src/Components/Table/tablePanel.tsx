@@ -17,6 +17,10 @@ export function CustomTablePanel(props: Props) {
 
   return (
     <TableProvider
+      filters={options.filters}
+      addFilter={options.addFilter}
+      timeRange={options.timeRange}
+      selectedLine={options.selectedLine}
       urlColumns={options.urlColumns ?? []}
       setUrlColumns={options.setUrlColumns}
       dataFrame={data.series[0]}

@@ -34,9 +34,9 @@ import { LogLineCellComponent } from 'Components/Table/LogLineCellComponent';
 import { CustomHeaderRendererProps } from 'Components/Table/LogsTableHeader';
 import { FieldName, FieldNameMeta, FieldNameMetaStore } from 'Components/Table/TableTypes';
 import { guessLogsFieldTypeForValue } from 'Components/Table/TableWrap';
-import { useScenesTableContext } from 'Components/Table/Context/ScenesTableContext';
 import { LogsTableHeaderWrap } from 'Components/Table/LogsTableHeaderWrap';
 import { DATAPLANE_BODY_NAME, DATAPLANE_ID_NAME, LogsFrame } from '../../services/logsFrame';
+import { useQueryContext } from './Context/QueryContext';
 
 interface Props {
   height: number;
@@ -78,7 +78,7 @@ export const Table = (props: Props) => {
 
   const [tableFrame, setTableFrame] = useState<DataFrame | undefined>(undefined);
   const { columns, visible, setVisible, setFilteredColumns, setColumns } = useTableColumnContext();
-  const { selectedLine } = useScenesTableContext();
+  const { selectedLine } = useQueryContext();
 
   const reorderColumn = getReorderColumn(setColumns);
 

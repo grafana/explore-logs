@@ -3,8 +3,7 @@ import { css } from '@emotion/css';
 
 import { GrafanaTheme2, LinkModel } from '@grafana/data';
 import { Icon, useTheme2 } from '@grafana/ui';
-
-import { useScenesTableContext } from 'Components/Table/Context/ScenesTableContext';
+import { useQueryContext } from './Context/QueryContext';
 
 interface Props {
   fieldType?: 'derived';
@@ -38,7 +37,7 @@ export enum FilterOp {
 export const CellContextMenu = (props: Props) => {
   const theme = useTheme2();
   const styles = getStyles(theme);
-  const { addFilter } = useScenesTableContext();
+  const { addFilter } = useQueryContext();
 
   return (
     <span className={styles.menu}>
