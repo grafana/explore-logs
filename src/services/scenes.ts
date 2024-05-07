@@ -72,7 +72,7 @@ export function getUniqueFilters(sceneObject: SceneObject, labelNames: string[])
   const existingFilters = [...labelFilters.state.filters, ...fieldsFilters.state.filters];
 
   for (const label of labelNames) {
-    const filterExists = existingFilters.find((f) => f.key === label) || existingFilters.find((f) => f.key === label);
+    const filterExists = existingFilters.find((f) => f.key === label);
     if (!filterExists) {
       uniqueFilters.push(label);
     }
