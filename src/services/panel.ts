@@ -41,8 +41,8 @@ export function sortLevelTransformation() {
 }
 
 export function getQueryRunner(query: LokiQuery) {
-  // if there's anything related to `level`, we want to sort the output equally
-  if (query.expr.includes('level')) {
+  // if there's formatting related to `level`, we want to sort the output equally
+  if (query.legendFormat?.toLowerCase().includes('level')) {
     return new SceneDataTransformer({
       $data: new SceneQueryRunner({
         datasource: explorationDS,
