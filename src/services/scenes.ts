@@ -62,13 +62,9 @@ export function getLabelOptions(sceneObject: SceneObject, allOptions: string[]) 
  * Given an array of label, or fields names, return those that are not already present in the filters.
  */
 export function getUniqueFilters(sceneObject: SceneObject, labelNames: string[]) {
-  const labelFilters = sceneGraph.lookupVariable(VAR_FILTERS, sceneObject);
-  const fieldsFilters = sceneGraph.lookupVariable(VAR_FIELDS, sceneObject);
+  const labelFilters = sceneGraph.lookupVariable(VAR_FILTERS, sceneObject) as AdHocFiltersVariable;
+  const fieldsFilters = sceneGraph.lookupVariable(VAR_FIELDS, sceneObject) as AdHocFiltersVariable;
   const uniqueFilters: string[] = [];
-
-  if (!(labelFilters instanceof AdHocFiltersVariable) || !(fieldsFilters instanceof AdHocFiltersVariable)) {
-    return [];
-  }
 
   const existingFilters = [...labelFilters.state.filters, ...fieldsFilters.state.filters];
 
