@@ -11,6 +11,7 @@ import {
   SceneObjectState,
   SceneObjectUrlSyncConfig,
   SceneObjectUrlValues,
+  SceneTimeRangeLike,
   VizPanel,
 } from '@grafana/scenes';
 import { LineFilter } from './LineFilter';
@@ -24,6 +25,8 @@ export interface LogsListSceneState extends SceneObjectState {
   panel?: SceneFlexLayout;
   visualizationType: LogsVisualizationType;
   urlColumns?: string[];
+  selectedLine?: SelectedTableRow;
+  $timeRange?: SceneTimeRangeLike;
 }
 
 // Values/callbacks passed into react table component from scene
@@ -41,13 +44,14 @@ export type LogsVisualizationType = 'logs' | 'table';
 const VISUALIZATION_TYPE_LOCALSTORAGE_KEY = 'grafana.explore.logs.visualisationType';
 
 export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
-  protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['urlColumns'] });
+  protected _urlSync = new SceneObjectUrlSyncConfig(this, {
+    keys: ['urlColumns', 'selectedLine', 'visualizationType'],
+  });
   constructor(state: Partial<LogsListSceneState>) {
     super({
       ...state,
       visualizationType:
-        // (localStorage.getItem(VISUALIZATION_TYPE_LOCALSTORAGE_KEY) as LogsVisualizationType) ?? 'table',
-        'logs',
+        (localStorage.getItem(VISUALIZATION_TYPE_LOCALSTORAGE_KEY) as LogsVisualizationType) ?? 'table',
     });
 
     this.addActivationHandler(this._onActivate.bind(this));
@@ -55,18 +59,38 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
 
   getUrlState() {
     const urlColumns = this.state.urlColumns ?? [];
+    const selectedLine = this.state.selectedLine;
+    const visualizationType = this.state.visualizationType;
     return {
       urlColumns: JSON.stringify(urlColumns),
+      selectedLine: JSON.stringify(selectedLine),
+      visualizationType: JSON.stringify(visualizationType),
     };
   }
   updateFromUrl(values: SceneObjectUrlValues) {
+    const stateUpdate: Partial<LogsListSceneState> = {};
     if (typeof values.urlColumns === 'string') {
-      const decoded: string[] = JSON.parse(values.urlColumns);
-      if (decoded !== this.state.urlColumns) {
-        this.setState({
-          urlColumns: decoded,
-        });
+      const decodedUrlColumns: string[] = JSON.parse(values.urlColumns);
+      if (decodedUrlColumns !== this.state.urlColumns) {
+        stateUpdate.urlColumns = decodedUrlColumns;
       }
+    }
+    if (typeof values.selectedLine === 'string') {
+      const decodedSelectedTableRow: SelectedTableRow = JSON.parse(values.selectedLine);
+      if (decodedSelectedTableRow !== this.state.selectedLine) {
+        stateUpdate.selectedLine = decodedSelectedTableRow;
+      }
+    }
+
+    if (typeof values.visualizationType === 'string') {
+      const decodedVisualizationType: LogsVisualizationType = JSON.parse(values.visualizationType);
+      if (decodedVisualizationType !== this.state.visualizationType) {
+        stateUpdate.visualizationType = decodedVisualizationType;
+      }
+    }
+
+    if (stateUpdate.urlColumns || stateUpdate.selectedLine || stateUpdate.visualizationType) {
+      this.setState(stateUpdate);
     }
   }
 
@@ -93,7 +117,26 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
               urlColumns: newState.urlColumns,
             },
           });
-          console.log('Scene state changed', newState.urlColumns);
+        }
+      })
+    );
+
+    const timeRange = sceneGraph.getTimeRange(this);
+    this._subs.add(
+      timeRange.subscribeToState((newState, prevState) => {
+        if (
+          newState.value.to.valueOf() !== prevState.value.to.valueOf() ||
+          newState.value.from.valueOf() !== prevState.value.from.valueOf()
+        ) {
+          // @todo how to reference body correctly?
+          // @ts-ignore
+          const vizPanel: VizPanel<TablePanelProps> = this.state.panel?.state.children[1].state?.body;
+          vizPanel.setState({
+            options: {
+              ...vizPanel.state.options,
+              timeRange: newState.value,
+            },
+          });
         }
       })
     );
@@ -109,6 +152,8 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       });
     };
 
+    const timeRange = sceneGraph.getTimeRange(this);
+
     return new SceneFlexItem({
       height: 'calc(100vh - 220px)',
       body: new VizPanel({
@@ -118,14 +163,14 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
           addFilter,
           setUrlColumns: (urlColumns) => {
             if (JSON.stringify(urlColumns) !== JSON.stringify(this.state.urlColumns)) {
-              console.log('Setting scene state columns', urlColumns, this.state.urlColumns);
               this.setState({ urlColumns });
             }
           },
           urlColumns: this.state.urlColumns,
+          timeRange: timeRange.state.value,
+          selectedLine: this.state.selectedLine,
 
           // @todo selected line should be moved to table scene,
-          // @todo timerange should be moved to table scene
         } as TablePanelProps,
         $data: this.state.$data,
         title: 'Logs',

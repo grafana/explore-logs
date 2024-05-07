@@ -79,7 +79,6 @@ export function LineActionIcons(props: { rowIndex: number; value: unknown }) {
             tooltipPlacement="top"
             tabIndex={0}
             getText={() => {
-              // Does this force absolute?
               const searchParams = new URLSearchParams(window.location.search);
               if (searchParams && timeRange) {
                 const selectedLine: SelectedTableRow = {

@@ -15,6 +15,7 @@ import { LineActionIcons } from 'Components/Table/LineActionIcons';
 import { RawLogLineText } from 'Components/Table/RawLogLineText';
 import { DATAPLANE_BODY_NAME } from '../../services/logsFrame';
 
+//@todo remove row number
 export type SelectedTableRow = {
   row: number;
   id: string;
