@@ -28,7 +28,7 @@ import {
 import { getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
 import { testIds } from 'services/testIds';
-import { VAR_DATASOURCE, VAR_FILTERS } from 'services/variables';
+import { LEVEL_VARIABLE_VALUE, VAR_DATASOURCE, VAR_FILTERS } from 'services/variables';
 import { GrotError } from '../GrotError';
 import { SelectFieldButton } from './SelectFieldButton';
 import { PLUGIN_ID } from 'services/routing';
@@ -212,8 +212,8 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
         .setData(
           getQueryRunner(
             buildLokiQuery(
-              `sum by (detected_level) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`,
-              { legendFormat: '{{detected_level}}' }
+              `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`,
+              { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}` }
             )
           )
         )
