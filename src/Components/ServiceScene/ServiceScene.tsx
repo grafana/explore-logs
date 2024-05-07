@@ -28,7 +28,7 @@ import { DetectedLabelsResponse, extractParserAndFieldsFromDataFrame } from 'ser
 import { getQueryRunner } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { EXPLORATIONS_ROUTE, PLUGIN_ID } from 'services/routing';
-import { getExplorationFor, getLokiDatasource, filterUsedLabelNames } from 'services/scenes';
+import { getExplorationFor, getLokiDatasource, getUniqueFilters } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
   LEVEL_VARIABLE_VALUE,
@@ -378,12 +378,12 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
         case 'fields':
           return (
             logsScene.state.detectedFieldsCount ??
-            filterUsedLabelNames(logsScene, logsScene.state.detectedFields || []).length
+            getUniqueFilters(logsScene, logsScene.state.detectedFields || []).length
           );
         case 'patterns':
           return logsScene.state.patterns?.length;
         case 'labels':
-          return filterUsedLabelNames(logsScene, logsScene.state.labels?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? [])
+          return getUniqueFilters(logsScene, logsScene.state.labels?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? [])
             .length;
         default:
           return undefined;

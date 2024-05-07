@@ -24,6 +24,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'se
 import { getLabelValueScene } from 'services/fields';
 import { getQueryRunner, levelOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
+import { getUniqueFilters } from 'services/scenes';
 import { ALL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR, VAR_FIELD_GROUP_BY, VAR_FILTERS } from 'services/variables';
 import { ServiceScene } from '../ServiceScene';
 import { AddToFiltersGraphAction } from './AddToFiltersButton';
@@ -31,7 +32,6 @@ import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
-import { filterUsedLabelNames } from 'services/scenes';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -96,7 +96,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this.setState({
       fields: [
         { label: 'All', value: ALL_VARIABLE_VALUE },
-        ...filterUsedLabelNames(logsScene, logsScene.state.detectedFields || []).map((f) => ({
+        ...getUniqueFilters(logsScene, logsScene.state.detectedFields || []).map((f) => ({
           label: f,
           value: f,
         })),

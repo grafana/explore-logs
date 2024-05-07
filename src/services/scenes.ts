@@ -44,7 +44,7 @@ export function getColorByIndex(index: number) {
 }
 
 export function getLabelOptions(sceneObject: SceneObject, allOptions: string[]) {
-  const filteredOptions = filterUsedLabelNames(sceneObject, allOptions);
+  const filteredOptions = getUniqueFilters(sceneObject, allOptions);
   const labelOptions: Array<SelectableValue<string>> = filteredOptions.map((label) => ({
     label,
     value: String(label),
@@ -59,9 +59,9 @@ export function getLabelOptions(sceneObject: SceneObject, allOptions: string[]) 
 }
 
 /**
- * Given an array of label names, return those that are not already present in the filters.
+ * Given an array of label, or fields names, return those that are not already present in the filters.
  */
-export function filterUsedLabelNames(sceneObject: SceneObject, labelNames: string[]) {
+export function getUniqueFilters(sceneObject: SceneObject, labelNames: string[]) {
   const labelFilters = sceneGraph.lookupVariable(VAR_FILTERS, sceneObject);
   const fieldsFilters = sceneGraph.lookupVariable(VAR_FIELDS, sceneObject);
   const uniqueFilters: string[] = [];
@@ -73,7 +73,7 @@ export function filterUsedLabelNames(sceneObject: SceneObject, labelNames: strin
   const existingFilters = [...labelFilters.state.filters, ...fieldsFilters.state.filters];
 
   for (const label of labelNames) {
-    const filterExists = existingFilters.find((f) => f.key === label) || existingFilters.find((f) => f.key === label);
+    const filterExists = existingFilters.find((f) => f.key === label);
     if (!filterExists) {
       uniqueFilters.push(label);
     }
