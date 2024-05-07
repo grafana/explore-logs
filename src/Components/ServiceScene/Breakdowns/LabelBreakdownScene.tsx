@@ -237,7 +237,6 @@ function buildLabelsLayout(options: Array<SelectableValue<string>>) {
           .setTitle(optionValue)
           .setData(getQueryRunner(buildLokiQuery(getExpr(optionValue), { legendFormat: `{{${optionValue}}}` })))
           .setHeaderActions(new SelectLabelAction({ labelName: String(optionValue) }))
-          .setHeaderActions(new SelectLabelAction({ labelName: String(optionValue) }))
           .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
           .setCustomFieldConfig('fillOpacity', 100)
           .setCustomFieldConfig('lineWidth', 0)
