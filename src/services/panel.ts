@@ -4,7 +4,8 @@ import { map, Observable } from 'rxjs';
 import { LokiQuery } from './query';
 import { explorationDS } from './variables';
 
-// TODO: `FieldConfigOverridesBuilder` is not exported, so it can not be used here.
+// TODO: `FieldConfigOverridesBuilder` is not exported, so it can not be used
+// here.
 export function levelOverrides(overrides: any) {
   overrides.matchFieldsWithName('info').overrideColor({
     mode: 'fixed',
@@ -41,7 +42,10 @@ export function sortLevelTransformation() {
 }
 
 export function getQueryRunner(query: LokiQuery) {
-  // if there's formatting related to `level`, we want to sort the output equally
+  // if there's a legendFormat related to any `level` like label, we want to
+  // sort the output equally. That's purposefully not `LEVEL_VARIABLE_VALUE`,
+  // such that the `detected_level` graph looks the same as a graph for the
+  // `level` label.
   if (query.legendFormat?.toLowerCase().includes('level')) {
     return new SceneDataTransformer({
       $data: new SceneQueryRunner({
