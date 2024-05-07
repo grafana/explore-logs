@@ -11,7 +11,7 @@ import {
 import { DrawStyle, StackingMode } from '@grafana/ui';
 import { getQueryRunner, levelOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
-import { LOG_STREAM_SELECTOR_EXPR } from 'services/variables';
+import { LEVEL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR } from 'services/variables';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: SceneFlexLayout;
@@ -43,8 +43,8 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
             .setData(
               getQueryRunner(
                 buildLokiQuery(
-                  `sum by (detected_level) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ [$__auto]))`,
-                  { legendFormat: '{{detected_level}}' }
+                  `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ [$__auto]))`,
+                  { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}` }
                 )
               )
             )
