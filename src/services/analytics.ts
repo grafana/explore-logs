@@ -21,7 +21,7 @@ export const USER_EVENTS_PAGES = {
   service_details: 'service_details',
 } as const;
 
-type UserEventPagesType = (typeof USER_EVENTS_PAGES)[keyof typeof USER_EVENTS_PAGES];
+type UserEventPagesType = keyof typeof USER_EVENTS_PAGES;
 
 export const USER_EVENTS_ACTIONS = {
   [USER_EVENTS_PAGES.service_selection]: {
