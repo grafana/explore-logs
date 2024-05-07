@@ -28,9 +28,10 @@ export type SpecialFieldsType = {
 // matches common ISO 8601
 const iso8601Regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3,})?(?:Z|[-+]\d{2}:?\d{2})$/;
 
-export const TABLE_COLUMNS_URL_PARAM = 'tableColumns';
-
-interface TableWrapProps {}
+interface TableWrapProps {
+  urlColumns: string[];
+  setUrlColumns: (columns: string[]) => void;
+}
 
 const getStyles = (theme: GrafanaTheme2) => ({
   section: css({
@@ -49,22 +50,22 @@ export const TableWrap = (props: TableWrapProps) => {
 
   // This function is called when we want to grab the column names that are currently stored in the URL.
   // So instead we have to grab the current columns directly from the URL.
-  const getColumnsFromProps = useCallback((fieldNames: FieldNameMetaStore) => {
-    const searchParams = new URLSearchParams(location.search);
-    const tableColumnsRaw = searchParams.get(TABLE_COLUMNS_URL_PARAM);
-    const tableColumnsFromUrl: string[] = tableColumnsRaw ? JSON.parse(tableColumnsRaw) : [];
-    const previouslySelected = tableColumnsFromUrl;
-    if (previouslySelected?.length) {
-      Object.values(previouslySelected).forEach((key, index) => {
-        if (fieldNames[key]) {
-          fieldNames[key].active = true;
-          fieldNames[key].index = index;
-        }
-      });
-    }
+  const getColumnsFromProps = useCallback(
+    (fieldNames: FieldNameMetaStore) => {
+      const previouslySelected = props.urlColumns;
+      if (previouslySelected?.length) {
+        Object.values(previouslySelected).forEach((key, index) => {
+          if (fieldNames[key]) {
+            fieldNames[key].active = true;
+            fieldNames[key].index = index;
+          }
+        });
+      }
 
-    return fieldNames;
-  }, []);
+      return fieldNames;
+    },
+    [props.urlColumns]
+  );
 
   // If the data frame is empty, there's nothing to viz, it could mean the user has unselected all columns
   if (!logsFrame || !logsFrame.raw.length) {
@@ -101,7 +102,11 @@ export const TableWrap = (props: TableWrapProps) => {
 
   return (
     <section className={styles.section}>
-      <TableColumnContextProvider logsFrame={logsFrame} initialColumns={pendingLabelState}>
+      <TableColumnContextProvider
+        logsFrame={logsFrame}
+        initialColumns={pendingLabelState}
+        setUrlColumns={props.setUrlColumns}
+      >
         <Table logsFrame={logsFrame} timeZone={timeZone} height={height - 270} width={width - 50} labels={labels} />
       </TableColumnContextProvider>
     </section>

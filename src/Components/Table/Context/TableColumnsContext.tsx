@@ -1,7 +1,6 @@
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import { FieldNameMetaStore } from 'Components/Table/TableTypes';
 import { useHistory } from 'react-router-dom';
-import { TABLE_COLUMNS_URL_PARAM } from 'Components/Table/TableWrap';
 import { DATAPLANE_BODY_NAME, DATAPLANE_TIMESTAMP_NAME, LogsFrame } from '../../../services/logsFrame';
 
 type TableColumnsContextType = {
@@ -56,14 +55,17 @@ function setDefaultColumns(columns: FieldNameMetaStore, handleSetColumns: (newCo
   };
   handleSetColumns(pendingColumns);
 }
+
 export const TableColumnContextProvider = ({
   children,
   initialColumns,
   logsFrame,
+  setUrlColumns,
 }: {
   children: ReactNode;
   initialColumns: FieldNameMetaStore;
   logsFrame: LogsFrame;
+  setUrlColumns: (columns: string[]) => void;
 }) => {
   const [columns, setColumns] = useState<FieldNameMetaStore>(removeExtraColumns(initialColumns));
   const [bodyState, setBodyState] = useState<LogLineState>(LogLineState.auto);
@@ -90,11 +92,9 @@ export const TableColumnContextProvider = ({
 
   // Handle url updates with react router or we'll get state sync errors with scenes
   useEffect(() => {
-    const search = new URLSearchParams(location.search);
     const activeColumns = getColumnsForUrl(columns, logsFrame);
     if (activeColumns?.length) {
-      search.set(TABLE_COLUMNS_URL_PARAM, JSON.stringify(activeColumns));
-      history.push({ search: search.toString() });
+      setUrlColumns(activeColumns);
 
       const activeFields = Object.keys(columns).filter((col) => columns[col].active);
 
@@ -106,7 +106,7 @@ export const TableColumnContextProvider = ({
       // Reset any local search state
       setFilteredColumns(undefined);
     }
-  }, [columns, history, logsFrame, setFilteredColumns, handleSetColumns]);
+  }, [columns, history, logsFrame, setFilteredColumns, handleSetColumns, setUrlColumns]);
 
   return (
     <TableColumnsContext.Provider

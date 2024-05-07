@@ -1,8 +1,6 @@
 import { PanelProps } from '@grafana/data';
 import React from 'react';
 import { TableProvider } from 'Components/Table/TableProvider';
-import { VizPanel } from '@grafana/scenes';
-import { ScenesTableContextProvider } from 'Components/Table/Context/ScenesTableContext';
 // import { LogsVisualizationType, TablePanelProps } from '@/components/Explore/LogsByService/Tabs/LogsListScene';
 import { RadioButtonGroup } from '@grafana/ui';
 import { css } from '@emotion/css';
@@ -18,9 +16,11 @@ export function CustomTablePanel(props: Props) {
   const { data, options } = props;
 
   return (
-    <ScenesTableContextProvider {...options}>
-      <TableProvider dataFrame={data.series[0]} />
-    </ScenesTableContextProvider>
+    <TableProvider
+      urlColumns={options.urlColumns ?? []}
+      setUrlColumns={options.setUrlColumns}
+      dataFrame={data.series[0]}
+    />
   );
 }
 
@@ -55,19 +55,19 @@ export function LogsPanelHeaderActions(props: {
   );
 }
 
-export interface VizTypeProps {
-  vizType: LogsVisualizationType;
-  setVizType: (type: LogsVisualizationType) => void;
-}
-
-export const getTablePanel = (tableProps: TablePanelProps, vizTypeProps: VizTypeProps) => {
-  return new VizPanel({
-    pluginId: LOGS_TABLE_PLUGIN_ID,
-    options: tableProps,
-    title: 'Logs',
-    headerActions: <LogsPanelHeaderActions vizType={vizTypeProps.vizType} onChange={vizTypeProps.setVizType} />,
-  });
-};
+// export interface VizTypeProps {
+//   vizType: LogsVisualizationType;
+//   setVizType: (type: LogsVisualizationType) => void;
+// }
+//
+// export const getTablePanel = (tableProps: TablePanelProps, vizTypeProps: VizTypeProps) => {
+//   return new VizPanel({
+//     pluginId: LOGS_TABLE_PLUGIN_ID,
+//     options: tableProps,
+//     title: 'Logs',
+//     headerActions: <LogsPanelHeaderActions vizType={vizTypeProps.vizType} onChange={vizTypeProps.setVizType} />,
+//   });
+// };
 
 const getStyles = () => {
   return {

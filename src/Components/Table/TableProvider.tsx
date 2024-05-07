@@ -7,9 +7,11 @@ import { parseLogsFrame } from '../../services/logsFrame';
 
 interface TableProviderProps {
   dataFrame: DataFrame;
+  setUrlColumns: (columns: string[]) => void;
+  urlColumns: string[];
 }
 
-export const TableProvider = ({ dataFrame }: TableProviderProps) => {
+export const TableProvider = ({ dataFrame, setUrlColumns, urlColumns }: TableProviderProps) => {
   if (!dataFrame) {
     return null;
   }
@@ -21,7 +23,7 @@ export const TableProvider = ({ dataFrame }: TableProviderProps) => {
 
   return (
     <QueryContextProvider logsFrame={logsFrame}>
-      <TableWrap />
+      <TableWrap setUrlColumns={setUrlColumns} urlColumns={urlColumns} />
     </QueryContextProvider>
   );
 };

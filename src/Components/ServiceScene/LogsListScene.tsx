@@ -9,6 +9,8 @@ import {
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
+  SceneObjectUrlSyncConfig,
+  SceneObjectUrlValues,
   VizPanel,
 } from '@grafana/scenes';
 import { LineFilter } from './LineFilter';
@@ -21,6 +23,7 @@ export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
   panel?: SceneFlexLayout;
   visualizationType: LogsVisualizationType;
+  urlColumns?: string[];
 }
 
 // Values/callbacks passed into react table component from scene
@@ -29,6 +32,8 @@ export interface TablePanelProps {
   addFilter: (filter: AdHocVariableFilter) => void;
   selectedLine?: SelectedTableRow;
   timeRange?: TimeRange;
+  urlColumns?: string[];
+  setUrlColumns: (columns: string[]) => void;
 }
 
 export type LogsVisualizationType = 'logs' | 'table';
@@ -36,6 +41,7 @@ export type LogsVisualizationType = 'logs' | 'table';
 const VISUALIZATION_TYPE_LOCALSTORAGE_KEY = 'grafana.explore.logs.visualisationType';
 
 export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
+  protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['urlColumns'] });
   constructor(state: Partial<LogsListSceneState>) {
     super({
       ...state,
@@ -45,6 +51,25 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     });
 
     this.addActivationHandler(this._onActivate.bind(this));
+  }
+
+  getUrlState() {
+    console.log('getUrlState', this.state.urlColumns);
+    const urlColumns = this.state.urlColumns ?? [];
+    return {
+      urlColumns: JSON.stringify(urlColumns),
+    };
+  }
+  updateFromUrl(values: SceneObjectUrlValues) {
+    console.log('updateFromUrl', values);
+    if (typeof values.urlColumns === 'string') {
+      const decoded: string[] = JSON.parse(values.urlColumns);
+      if (decoded !== this.state.urlColumns) {
+        this.setState({
+          urlColumns: decoded,
+        });
+      }
+    }
   }
 
   public _onActivate() {
@@ -81,9 +106,14 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         options: {
           filters: fields.state.filters,
           addFilter,
+          setUrlColumns: (urlColumns) => {
+            this.setState({ urlColumns });
+          },
+
           // @todo selected line should be moved to table scene,
           // @todo timerange should be moved to table scene
-        },
+        } as TablePanelProps,
+        $data: this.state.$data,
         title: 'Logs',
         headerActions: (
           <LogsPanelHeaderActions

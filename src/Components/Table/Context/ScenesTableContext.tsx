@@ -9,6 +9,8 @@ const ScenesTableContext = createContext<ScenesTableContextType>({
   addFilter: (filter: AdHocVariableFilter) => {},
   timeRange: undefined,
   selectedLine: undefined,
+  urlColumns: [],
+  setUrlColumns: (columns) => {},
 });
 
 export const ScenesTableContextProvider = ({
@@ -17,11 +19,12 @@ export const ScenesTableContextProvider = ({
   addFilter,
   selectedLine,
   timeRange,
+  setUrlColumns,
 }: {
   children: ReactNode;
 } & ScenesTableContextType) => {
   return (
-    <ScenesTableContext.Provider value={{ filters, addFilter, selectedLine, timeRange }}>
+    <ScenesTableContext.Provider value={{ filters, addFilter, selectedLine, timeRange, setUrlColumns }}>
       {children}
     </ScenesTableContext.Provider>
   );
