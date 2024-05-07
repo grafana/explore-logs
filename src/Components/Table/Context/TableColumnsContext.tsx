@@ -61,13 +61,11 @@ export const TableColumnContextProvider = ({
   initialColumns,
   logsFrame,
   setUrlColumns,
-  urlColumns,
 }: {
   children: ReactNode;
   initialColumns: FieldNameMetaStore;
   logsFrame: LogsFrame;
   setUrlColumns: (columns: string[]) => void;
-  urlColumns: string[];
 }) => {
   const [columns, setColumns] = useState<FieldNameMetaStore>(removeExtraColumns(initialColumns));
   const [bodyState, setBodyState] = useState<LogLineState>(LogLineState.auto);
