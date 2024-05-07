@@ -12,6 +12,7 @@ import {
   LOG_STREAM_SELECTOR_EXPR,
   VAR_FILTERS,
   ALL_VARIABLE_VALUE,
+  LEVEL_VARIABLE_VALUE,
   VAR_FIELDS,
 } from './variables';
 import { EXPLORATIONS_ROUTE } from './routing';
@@ -50,8 +51,8 @@ export function getLabelOptions(sceneObject: SceneObject, allOptions: string[]) 
   }));
 
   const levelOption = [];
-  if (!allOptions.includes('level')) {
-    levelOption.push({ label: 'level', value: 'level' });
+  if (!allOptions.includes(LEVEL_VARIABLE_VALUE)) {
+    levelOption.push({ label: LEVEL_VARIABLE_VALUE, value: LEVEL_VARIABLE_VALUE });
   }
 
   return [{ label: 'All', value: ALL_VARIABLE_VALUE }, ...levelOption, ...labelOptions];

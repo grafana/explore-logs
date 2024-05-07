@@ -15,29 +15,23 @@ import {
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
-  SceneQueryRunner,
   SceneReactObject,
   SceneVariableSet,
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { Button, DrawStyle, Field, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
+import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
+import { getLabelValueScene } from 'services/fields';
+import { getQueryRunner, levelOverrides } from 'services/panel';
+import { buildLokiQuery } from 'services/query';
+import { getUniqueFilters } from 'services/scenes';
+import { ALL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR, VAR_FIELD_GROUP_BY, VAR_FILTERS } from 'services/variables';
+import { ServiceScene } from '../ServiceScene';
 import { AddToFiltersButton } from './AddToFiltersButton';
 import { ByFrameRepeater } from './ByFrameRepeater';
+import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
-import { FieldSelector } from './FieldSelector';
-import { ServiceScene } from '../ServiceScene';
-import { getLabelValueScene } from 'services/fields';
-import {
-  VAR_FILTERS,
-  VAR_FIELD_GROUP_BY,
-  ALL_VARIABLE_VALUE,
-  explorationDS,
-  LOG_STREAM_SELECTOR_EXPR,
-} from 'services/variables';
-import { buildLokiQuery } from 'services/query';
-import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
-import { getUniqueFilters } from 'services/scenes';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -160,22 +154,18 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         legendFormat: `{{${optionValue}}}`,
         refId: optionValue,
       });
-      const queryRunner = new SceneQueryRunner({
-        maxDataPoints: 300,
-        datasource: explorationDS,
-        queries: [query],
-      });
+      const queryRunner = getQueryRunner(query);
       let body = PanelBuilders.timeseries().setTitle(optionValue).setData(queryRunner);
 
       if (!isAvgField(optionValue)) {
-        // TODO hack
         body = body
           .setHeaderActions(new SelectLabelAction({ labelName: String(optionValue) }))
           .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
           .setCustomFieldConfig('fillOpacity', 100)
           .setCustomFieldConfig('lineWidth', 0)
           .setCustomFieldConfig('pointSize', 0)
-          .setCustomFieldConfig('drawStyle', DrawStyle.Bars);
+          .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+          .setOverrides(levelOverrides);
       }
       const gridItem = new SceneCSSGridItem({
         body: body.build(),
@@ -319,11 +309,7 @@ function buildNormalLayout(variable: CustomVariable) {
   const query = buildLokiQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
 
   return new LayoutSwitcher({
-    $data: new SceneQueryRunner({
-      datasource: explorationDS,
-      maxDataPoints: 300,
-      queries: [query],
-    }),
+    $data: getQueryRunner(query),
     actionView: 'fields',
     options: [
       { value: 'single', label: 'Single' },

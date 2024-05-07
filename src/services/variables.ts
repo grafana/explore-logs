@@ -17,3 +17,4 @@ export const LOG_STREAM_SELECTOR_EXPR = `${VAR_FILTERS_EXPR} ${VAR_PATTERNS_EXPR
 export const explorationDS = { uid: VAR_DATASOURCE_EXPR };
 
 export const ALL_VARIABLE_VALUE = '$__all';
+export const LEVEL_VARIABLE_VALUE = 'detected_level';

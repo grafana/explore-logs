@@ -1,6 +1,14 @@
 import { PLUGIN_ID } from './routing';
 
-export const buildLokiQuery = (expr: string, queryParamsOverrides?: Record<string, unknown>) => {
+export type LokiQuery = {
+  refId: string;
+  queryType: string;
+  editorMode: string;
+  supportingQueryType: string;
+  expr: string;
+  legendFormat?: string;
+};
+export const buildLokiQuery = (expr: string, queryParamsOverrides?: Record<string, unknown>): LokiQuery => {
   return {
     ...defaultQueryParams,
     ...queryParamsOverrides,

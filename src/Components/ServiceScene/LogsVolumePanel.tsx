@@ -1,20 +1,17 @@
 import React from 'react';
 
 import {
-  SceneObjectState,
-  SceneObjectBase,
-  SceneComponentProps,
   PanelBuilders,
+  SceneComponentProps,
   SceneFlexItem,
   SceneFlexLayout,
-  SceneQueryRunner,
-  SceneDataTransformer,
+  SceneObjectBase,
+  SceneObjectState,
 } from '@grafana/scenes';
 import { DrawStyle, StackingMode } from '@grafana/ui';
-import { DataFrame } from '@grafana/data';
-import { map, Observable } from 'rxjs';
-import { LOG_STREAM_SELECTOR_EXPR, explorationDS } from 'services/variables';
+import { getQueryRunner, levelOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
+import { LEVEL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR } from 'services/variables';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: SceneFlexLayout;
@@ -44,68 +41,19 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
             .setTitle('Log volume')
             .setOption('legend', { showLegend: false })
             .setData(
-              new SceneDataTransformer({
-                $data: new SceneQueryRunner({
-                  datasource: explorationDS,
-                  queries: [
-                    buildLokiQuery(
-                      `sum by (level) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ [$__auto]))`,
-                      { legendFormat: '{{level}}' }
-                    ),
-                  ],
-                }),
-                transformations: [
-                  () => (source: Observable<DataFrame[]>) => {
-                    return source.pipe(
-                      map((data: DataFrame[]) => {
-                        return data.sort((a, b) => {
-                          const aName = a.fields[1].config.displayNameFromDS;
-                          const aVal = aName?.includes('error')
-                            ? 4
-                            : aName?.includes('warn')
-                            ? 3
-                            : aName?.includes('info')
-                            ? 2
-                            : 1;
-                          const bName = b.fields[1].config.displayNameFromDS;
-                          const bVal = bName?.includes('error')
-                            ? 4
-                            : bName?.includes('warn')
-                            ? 3
-                            : bName?.includes('info')
-                            ? 2
-                            : 1;
-                          return aVal - bVal;
-                        });
-                      })
-                    );
-                  },
-                ],
-              })
+              getQueryRunner(
+                buildLokiQuery(
+                  `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ [$__auto]))`,
+                  { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}` }
+                )
+              )
             )
             .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
             .setCustomFieldConfig('fillOpacity', 100)
             .setCustomFieldConfig('lineWidth', 0)
             .setCustomFieldConfig('pointSize', 0)
             .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-            .setOverrides((overrides) => {
-              overrides.matchFieldsWithName('{level="info"}').overrideColor({
-                mode: 'fixed',
-                fixedColor: 'semi-dark-green',
-              });
-              overrides.matchFieldsWithName('{level="debug"}').overrideColor({
-                mode: 'fixed',
-                fixedColor: 'semi-dark-blue',
-              });
-              overrides.matchFieldsWithName('{level="error"}').overrideColor({
-                mode: 'fixed',
-                fixedColor: 'semi-dark-red',
-              });
-              overrides.matchFieldsWithName('{level="warn"}').overrideColor({
-                mode: 'fixed',
-                fixedColor: 'semi-dark-orange',
-              });
-            })
+            .setOverrides(levelOverrides)
             .build(),
         }),
       ],

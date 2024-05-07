@@ -16,29 +16,23 @@ import {
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
-  SceneQueryRunner,
   SceneReactObject,
   SceneVariableSet,
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { Button, DrawStyle, Field, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
+import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
+import { DetectedLabelsResponse, getLabelValueScene } from 'services/fields';
+import { getQueryRunner, levelOverrides } from 'services/panel';
+import { buildLokiQuery } from 'services/query';
+import { PLUGIN_ID } from 'services/routing';
+import { getLabelOptions, getLokiDatasource } from 'services/scenes';
+import { ALL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR, VAR_FILTERS, VAR_LABEL_GROUP_BY } from 'services/variables';
 import { AddToFiltersButton } from './AddToFiltersButton';
 import { ByFrameRepeater } from './ByFrameRepeater';
+import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
-import { FieldSelector } from './FieldSelector';
-import { getLabelValueScene, DetectedLabelsResponse } from 'services/fields';
-import {
-  VAR_FILTERS,
-  VAR_LABEL_GROUP_BY,
-  ALL_VARIABLE_VALUE,
-  explorationDS,
-  LOG_STREAM_SELECTOR_EXPR,
-} from 'services/variables';
-import { getLokiDatasource, getLabelOptions } from 'services/scenes';
-import { PLUGIN_ID } from 'services/routing';
-import { buildLokiQuery } from 'services/query';
-import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -241,19 +235,14 @@ function buildLabelsLayout(options: Array<SelectableValue<string>>) {
       new SceneCSSGridItem({
         body: PanelBuilders.timeseries()
           .setTitle(optionValue)
-          .setData(
-            new SceneQueryRunner({
-              maxDataPoints: 300,
-              datasource: explorationDS,
-              queries: [buildLokiQuery(getExpr(optionValue), { legendFormat: `{{${optionValue}}}` })],
-            })
-          )
+          .setData(getQueryRunner(buildLokiQuery(getExpr(optionValue), { legendFormat: `{{${optionValue}}}` })))
           .setHeaderActions(new SelectLabelAction({ labelName: String(optionValue) }))
           .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
           .setCustomFieldConfig('fillOpacity', 100)
           .setCustomFieldConfig('lineWidth', 0)
           .setCustomFieldConfig('pointSize', 0)
           .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+          .setOverrides(levelOverrides)
           .build(),
       })
     );
@@ -298,16 +287,13 @@ function buildLabelValuesLayout(variable: CustomVariable) {
     .setCustomFieldConfig('lineWidth', 0)
     .setCustomFieldConfig('pointSize', 0)
     .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+    .setOverrides(levelOverrides)
     .setTitle(variable.getValueText());
 
   const body = bodyOpts.build();
 
   return new LayoutSwitcher({
-    $data: new SceneQueryRunner({
-      datasource: explorationDS,
-      maxDataPoints: 300,
-      queries: [query],
-    }),
+    $data: getQueryRunner(query),
     options: [
       { value: 'single', label: 'Single' },
       { value: 'grid', label: 'Grid' },
