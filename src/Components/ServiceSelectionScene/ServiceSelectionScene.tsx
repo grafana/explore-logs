@@ -34,7 +34,7 @@ import { SelectFieldButton } from './SelectFieldButton';
 import { PLUGIN_ID } from 'services/routing';
 import { buildLokiQuery } from 'services/query';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
-import { getQueryRunner, levelOverrides } from 'services/panel';
+import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 
 export const SERVICE_NAME = 'service_name';
 
@@ -222,7 +222,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
         .setCustomFieldConfig('lineWidth', 0)
         .setCustomFieldConfig('pointSize', 0)
         .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-        .setOverrides(levelOverrides)
+        .setOverrides(setLeverColorOverrides)
         .setOption('legend', { showLegend: false })
         .setHeaderActions(new SelectFieldButton({ value: service }))
         .build(),
