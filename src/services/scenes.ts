@@ -7,7 +7,13 @@ import {
   SceneObject,
   SceneObjectUrlValues,
 } from '@grafana/scenes';
-import { VAR_DATASOURCE_EXPR, LOG_STREAM_SELECTOR_EXPR, VAR_FILTERS, ALL_VARIABLE_VALUE } from './variables';
+import {
+  VAR_DATASOURCE_EXPR,
+  LOG_STREAM_SELECTOR_EXPR,
+  VAR_FILTERS,
+  ALL_VARIABLE_VALUE,
+  LEVEL_VARIABLE_VALUE,
+} from './variables';
 import { EXPLORATIONS_ROUTE } from './routing';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
 
@@ -54,8 +60,8 @@ export function getLabelOptions(scenObject: SceneObject, allOptions: string[]) {
   }
 
   const levelOption = [];
-  if (!allOptions.includes('level')) {
-    levelOption.push({ label: 'level', value: 'level' });
+  if (!allOptions.includes(LEVEL_VARIABLE_VALUE)) {
+    levelOption.push({ label: LEVEL_VARIABLE_VALUE, value: LEVEL_VARIABLE_VALUE });
   }
 
   return [{ label: 'All', value: ALL_VARIABLE_VALUE }, ...levelOption, ...labelOptions];

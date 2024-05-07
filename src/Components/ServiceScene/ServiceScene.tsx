@@ -5,29 +5,33 @@ import { DashboardCursorSync, GrafanaTheme2, LoadingState } from '@grafana/data'
 import { locationService } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
+  behaviors,
   CustomVariable,
   SceneComponentProps,
   SceneFlexItem,
   SceneFlexLayout,
+  sceneGraph,
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
   SceneObjectUrlSyncConfig,
   SceneObjectUrlValues,
-  SceneQueryRunner,
   SceneVariable,
   SceneVariableSet,
   VariableDependencyConfig,
-  behaviors,
-  sceneGraph,
 } from '@grafana/scenes';
 import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
+import { renderLogQLLabelFilters } from 'Components/IndexScene/IndexScene';
 import { Unsubscribable } from 'rxjs';
-import { extractParserAndFieldsFromDataFrame, DetectedLabelsResponse } from 'services/fields';
+import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
+import { DetectedLabelsResponse, extractParserAndFieldsFromDataFrame } from 'services/fields';
+import { getQueryRunner } from 'services/panel';
+import { buildLokiQuery } from 'services/query';
 import { EXPLORATIONS_ROUTE, PLUGIN_ID } from 'services/routing';
-import { getLokiDatasource, getExplorationFor } from 'services/scenes';
+import { getExplorationFor, getLokiDatasource } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
+  LEVEL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE,
   VAR_FIELDS,
@@ -35,19 +39,15 @@ import {
   VAR_LINE_FILTER,
   VAR_LOGS_FORMAT,
   VAR_PATTERNS,
-  explorationDS,
 } from 'services/variables';
+import { buildFieldsBreakdownActionScene } from './Breakdowns/FieldsBreakdownScene';
+import { buildLabelBreakdownActionScene } from './Breakdowns/LabelBreakdownScene';
+import { buildPatternsScene } from './Breakdowns/PatternsBreakdownScene';
 import { GiveFeedbackButton } from './GiveFeedbackButton';
 import { GoToExploreButton } from './GoToExploreButton';
+import { buildLogsListScene } from './LogsListScene';
 import { LogsVolumePanel } from './LogsVolumePanel';
 import { ShareExplorationButton } from './ShareExplorationButton';
-import { renderLogQLLabelFilters } from 'Components/IndexScene/IndexScene';
-import { buildLogsListScene } from './LogsListScene';
-import { buildLabelBreakdownActionScene } from './Breakdowns/LabelBreakdownScene';
-import { buildFieldsBreakdownActionScene } from './Breakdowns/FieldsBreakdownScene';
-import { buildPatternsScene } from './Breakdowns/PatternsBreakdownScene';
-import { buildLokiQuery } from 'services/query';
-import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
 
 interface LokiPattern {
   pattern: string;
@@ -88,10 +88,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       $variables:
         state.$variables ??
         new SceneVariableSet({ variables: [new CustomVariable({ name: VAR_LOGS_FORMAT, value: '' })] }),
-      $data: new SceneQueryRunner({
-        datasource: explorationDS,
-        queries: [buildLokiQuery(LOG_STREAM_SELECTOR_EXPR)],
-      }),
+      $data: getQueryRunner(buildLokiQuery(LOG_STREAM_SELECTOR_EXPR)),
       ...state,
     });
 
@@ -245,7 +242,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
     const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
-    const excludeLabels = [ALL_VARIABLE_VALUE, 'level'];
+    const excludeLabels = [ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE];
 
     const { data } = await ds.getResource(
       'patterns',
@@ -301,8 +298,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       .filter((a) => a.cardinality > 1)
       .sort((a, b) => a.cardinality - b.cardinality)
       .map((l) => l.label);
-    if (!labels.includes('level')) {
-      labels.unshift('level');
+    if (!labels.includes(LEVEL_VARIABLE_VALUE)) {
+      labels.unshift(LEVEL_VARIABLE_VALUE);
     }
     if (JSON.stringify(labels) !== JSON.stringify(this.state.labels)) {
       this.setState({ labels });
