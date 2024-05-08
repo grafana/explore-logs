@@ -1,6 +1,6 @@
 import { GrafanaTheme2 } from '@grafana/data';
 import { SceneComponentProps, SceneObjectBase, VariableValueSelectors } from '@grafana/scenes';
-import { useStyles2 } from '@grafana/ui';
+import { Badge, useStyles2 } from '@grafana/ui';
 import React from 'react';
 import { PatternControls } from './PatternControls';
 import { AppliedPattern, IndexSceneState } from './IndexScene';
@@ -31,6 +31,7 @@ export class LayoutScene extends SceneObjectBase {
                 )}
               </div>
               <div className={styles.controls}>
+                <Badge text={'Preview'} color={'blue'} icon={'rocket'} />
                 {controls.map((control) =>
                   control instanceof VariableValueSelectors === false ? (
                     <control.Component key={control.state.key} model={control} />
@@ -43,9 +44,7 @@ export class LayoutScene extends SceneObjectBase {
             patterns={patterns}
             onRemove={(patterns: AppliedPattern[]) => model.parent?.setState({ patterns } as IndexSceneState)}
           />
-          <div className={styles.body}>
-            <contentScene.Component model={contentScene} />
-          </div>
+          <div className={styles.body}>{contentScene && <contentScene.Component model={contentScene} />}</div>
         </div>
       </div>
     );
@@ -132,9 +131,8 @@ function getStyles(theme: GrafanaTheme2) {
     }),
     controls: css({
       display: 'flex',
-      maxWidth: 450,
       paddingTop: theme.spacing(3),
-      gap: theme.spacing(2),
+      gap: theme.spacing(1),
     }),
     rotateIcon: css({
       svg: { transform: 'rotate(180deg)' },
