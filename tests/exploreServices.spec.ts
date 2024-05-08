@@ -1,11 +1,13 @@
 import { test, expect } from '@grafana/plugin-e2e';
 import { ExplorePage } from './fixtures/explore';
+import {testIds} from "../src/services/testIds";
 
 test.describe('explore services page', () => {
   let explorePage: ExplorePage;
 
   test.beforeEach(async ({ page }) => {
     explorePage = new ExplorePage(page);
+    await page.evaluate(() => window.localStorage.clear());
     await explorePage.gotoServices();
   });
 

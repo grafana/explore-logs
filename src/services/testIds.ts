@@ -12,4 +12,7 @@ export const testIds = {
     search: 'data-testid search-logs',
     openExplore: 'data-testid open-explore',
   },
+  logsPanelHeader: {
+    radio: 'data-testid radio-button',
+  },
 };

@@ -2,18 +2,21 @@ import pluginJson from '../src/plugin.json';
 import { test, expect } from '@grafana/plugin-e2e';
 import { ExplorePage } from './fixtures/explore';
 import { ROUTES } from '../src/services/routing';
+import {testIds} from "../src/services/testIds";
 
 test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;
 
   test.beforeEach(async ({ page }) => {
     explorePage = new ExplorePage(page);
+    await page.evaluate(() => window.localStorage.clear());
     await explorePage.gotoServicesBreakdown();
   });
 
   test('should filter logs panel on search', async ({ page }) => {
     await explorePage.serviceBreakdownSearch.click();
     await explorePage.serviceBreakdownSearch.fill('broadcast');
+    await page.getByRole('radiogroup').getByTestId(testIds.logsPanelHeader.radio).nth(0).click()
     await expect(page.getByRole('table').locator('tr').first().getByText('broadcast')).toBeVisible();
     await expect(page).toHaveURL(/broadcast/);
   });
@@ -60,6 +63,7 @@ test.describe('explore services breakdown page', () => {
     await page.getByText('mimir-distributor').click();
 
     // open logs panel
+    await page.getByRole('radiogroup').getByTestId(testIds.logsPanelHeader.radio).nth(0).click()
     await page.getByTitle('See log details').nth(1).click();
 
     // find text corresponding text to match adhoc filter

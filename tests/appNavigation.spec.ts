@@ -7,6 +7,7 @@ test.describe('navigating app', () => {
   let explorePage: ExplorePage;
 
   test.beforeEach(async ({ page }) => {
+    await page.evaluate(() => window.localStorage.clear());
     explorePage = new ExplorePage(page);
   });
 
