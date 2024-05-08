@@ -2,8 +2,9 @@ import { DataFrame, PanelData } from '@grafana/data';
 import { DrawStyle, StackingMode } from '@grafana/ui';
 import { PanelBuilders, SceneCSSGridItem, SceneDataNode } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
-import { AddToFiltersGraphAction } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
+import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { VAR_FIELDS } from './variables';
+import { levelOverrides } from './panel';
 
 export type DetectedLabel = {
   label: string;
@@ -45,7 +46,8 @@ export function getLabelValueScene(getTitle: (df: DataFrame) => string, style: D
       .setTitle(getTitle(frame))
       .setData(new SceneDataNode({ data: { ...data, series: [frame] } }))
       .setColor({ mode: 'fixed', fixedColor: getColorByIndex(frameIndex) })
-      .setHeaderActions(new AddToFiltersGraphAction({ frame, variableName: VAR_FIELDS }));
+      .setOverrides(levelOverrides)
+      .setHeaderActions(new AddToFiltersButton({ frame, variableName: VAR_FIELDS }));
 
     if (style === DrawStyle.Bars) {
       panel
@@ -53,6 +55,7 @@ export function getLabelValueScene(getTitle: (df: DataFrame) => string, style: D
         .setCustomFieldConfig('fillOpacity', 100)
         .setCustomFieldConfig('lineWidth', 0)
         .setCustomFieldConfig('pointSize', 0)
+        .setOverrides(levelOverrides)
         .setCustomFieldConfig('drawStyle', DrawStyle.Bars);
     }
     return new SceneCSSGridItem({

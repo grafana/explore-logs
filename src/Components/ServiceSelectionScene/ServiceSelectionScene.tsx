@@ -11,7 +11,6 @@ import {
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
-  SceneQueryRunner,
   SceneVariable,
   VariableDependencyConfig,
 } from '@grafana/scenes';
@@ -29,12 +28,13 @@ import {
 import { getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
 import { testIds } from 'services/testIds';
-import { explorationDS, VAR_DATASOURCE, VAR_FILTERS } from 'services/variables';
+import { LEVEL_VARIABLE_VALUE, VAR_DATASOURCE, VAR_FILTERS } from 'services/variables';
 import { GrotError } from '../GrotError';
 import { SelectFieldButton } from './SelectFieldButton';
 import { PLUGIN_ID } from 'services/routing';
 import { buildLokiQuery } from 'services/query';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
+import { getQueryRunner, levelOverrides } from 'services/panel';
 
 export const SERVICE_NAME = 'service_name';
 
@@ -210,40 +210,19 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
         // If service was previously selected, we show it in the title
         .setTitle(service)
         .setData(
-          new SceneQueryRunner({
-            datasource: explorationDS,
-            queries: [
-              // Volume of logs for service grouped by level
-              buildLokiQuery(
-                `sum by(level) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`,
-                { legendFormat: '{{level}}' }
-              ),
-            ],
-          })
+          getQueryRunner(
+            buildLokiQuery(
+              `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`,
+              { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}` }
+            )
+          )
         )
         .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
         .setCustomFieldConfig('fillOpacity', 100)
         .setCustomFieldConfig('lineWidth', 0)
         .setCustomFieldConfig('pointSize', 0)
         .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-        .setOverrides((overrides) => {
-          overrides.matchFieldsWithName('info').overrideColor({
-            mode: 'fixed',
-            fixedColor: 'semi-dark-green',
-          });
-          overrides.matchFieldsWithName('debug').overrideColor({
-            mode: 'fixed',
-            fixedColor: 'semi-dark-blue',
-          });
-          overrides.matchFieldsWithName('error').overrideColor({
-            mode: 'fixed',
-            fixedColor: 'semi-dark-red',
-          });
-          overrides.matchFieldsWithName('warn').overrideColor({
-            mode: 'fixed',
-            fixedColor: 'semi-dark-orange',
-          });
-        })
+        .setOverrides(levelOverrides)
         .setOption('legend', { showLegend: false })
         .setHeaderActions(new SelectFieldButton({ value: service }))
         .build(),
@@ -254,12 +233,9 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
   buildServiceLogsLayout(service: string) {
     return new SceneCSSGridItem({
       body: PanelBuilders.logs()
-        .setData(
-          new SceneQueryRunner({
-            datasource: explorationDS,
-            queries: [buildLokiQuery(`{${SERVICE_NAME}=\`${service}\`}`, { maxLines: 100 })],
-          })
-        )
+        // Hover header set to true removes unused header padding, displaying more logs
+        .setHoverHeader(true)
+        .setData(getQueryRunner(buildLokiQuery(`{${SERVICE_NAME}=\`${service}\`}`, { maxLines: 100 })))
         .setOption('showTime', true)
         .setOption('enableLogDetails', false)
         .build(),
