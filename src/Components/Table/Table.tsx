@@ -37,6 +37,7 @@ import { guessLogsFieldTypeForValue } from 'Components/Table/TableWrap';
 import { LogsTableHeaderWrap } from 'Components/Table/LogsTableHeaderWrap';
 import { DATAPLANE_BODY_NAME, DATAPLANE_ID_NAME, LogsFrame } from '../../services/logsFrame';
 import { useQueryContext } from './Context/QueryContext';
+import { testIds } from '../../services/testIds';
 
 interface Props {
   height: number;
@@ -202,7 +203,7 @@ export const Table = (props: Props) => {
   const lineIndex = idField?.values.findIndex((v) => v === selectedLine?.id);
 
   return (
-    <div className={styles.section}>
+    <div data-testid={testIds.table.wrapper} className={styles.section}>
       {visible && (
         <Drawer
           size={'sm'}

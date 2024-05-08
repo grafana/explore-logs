@@ -21,6 +21,14 @@ test.describe('explore services breakdown page', () => {
     await expect(page).toHaveURL(/broadcast/);
   });
 
+  test('should filter table panel on search', async ({ page }) => {
+    await explorePage.serviceBreakdownSearch.click();
+    await explorePage.serviceBreakdownSearch.fill('broadcast');
+
+    // Expect table to be visible
+    await expect(await page.getByTestId(testIds.table.wrapper)).toBeVisible();
+  });
+
   test('should select a label, update filters, open in explore', async ({ page }) => {
     await page.getByLabel('Tab Labels').click();
     await page.getByLabel('namespace').click();

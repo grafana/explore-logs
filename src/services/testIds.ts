@@ -15,4 +15,7 @@ export const testIds = {
   logsPanelHeader: {
     radio: 'data-testid radio-button',
   },
+  table: {
+    wrapper: 'data-testid table-wrapper',
+  },
 };
