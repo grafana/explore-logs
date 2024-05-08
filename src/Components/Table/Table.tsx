@@ -111,6 +111,8 @@ export const Table = (props: Props) => {
         field.type =
           field.type === FieldType.string ? guessLogsFieldTypeForField(field) ?? FieldType.string : field.type;
 
+        console.log('index', index, frame.fields.length);
+
         field.config = {
           ...field.config,
           custom: {
@@ -121,8 +123,14 @@ export const Table = (props: Props) => {
                 <LogsTableHeaderWrap
                   headerProps={{ ...props, fieldIndex: index }}
                   openColumnManagementDrawer={() => setVisible(true)}
-                  slideLeft={(cols: FieldNameMetaStore) => reorderColumn(cols, index, index + 1)}
-                  slideRight={(cols: FieldNameMetaStore) => reorderColumn(cols, index, index - 1)}
+                  slideLeft={
+                    index !== 0 ? (cols: FieldNameMetaStore) => reorderColumn(cols, index, index - 1) : undefined
+                  }
+                  slideRight={
+                    index !== frame.fields.length - 1
+                      ? (cols: FieldNameMetaStore) => reorderColumn(cols, index, index + 1)
+                      : undefined
+                  }
                 />
               </TableHeaderContextProvider>
             ),

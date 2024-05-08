@@ -13,8 +13,8 @@ export function LogsTableHeaderWrap(props: {
   openColumnManagementDrawer: () => void;
 
   // Moves the current column forward or backward one index
-  slideLeft: (cols: FieldNameMetaStore) => void;
-  slideRight: (cols: FieldNameMetaStore) => void;
+  slideLeft?: (cols: FieldNameMetaStore) => void;
+  slideRight?: (cols: FieldNameMetaStore) => void;
 }) {
   const { setHeaderMenuActive } = useTableHeaderContext();
   const { columns, setColumns, bodyState, setBodyState } = useTableColumnContext();
@@ -67,18 +67,22 @@ export function LogsTableHeaderWrap(props: {
           Remove column
         </a>
       </div>
-      <div className={styles.linkWrap}>
-        <a className={styles.link} onClick={() => props.slideRight(columns)}>
-          <Icon className={cx(styles.icon, styles.reverse)} name={'arrow-from-right'} size={'md'} />
-          Move left
-        </a>
-      </div>
-      <div className={styles.linkWrap}>
-        <a className={styles.link} onClick={() => props.slideLeft(columns)}>
-          <Icon className={styles.icon} name={'arrow-from-right'} size={'md'} />
-          Move right
-        </a>
-      </div>
+      {props.slideLeft && (
+        <div className={styles.linkWrap}>
+          <a className={styles.link} onClick={() => props.slideLeft?.(columns)}>
+            <Icon className={cx(styles.icon, styles.reverse)} name={'arrow-from-right'} size={'md'} />
+            Move left
+          </a>
+        </div>
+      )}
+      {props.slideRight && (
+        <div className={styles.linkWrap}>
+          <a className={styles.link} onClick={() => props.slideRight?.(columns)}>
+            <Icon className={styles.icon} name={'arrow-from-right'} size={'md'} />
+            Move right
+          </a>
+        </div>
+      )}
       {isBodyField && (
         <div className={styles.linkWrap}>
           <a
