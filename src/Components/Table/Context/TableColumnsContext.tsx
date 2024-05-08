@@ -1,6 +1,5 @@
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import { ActiveFieldMeta, FieldNameMetaStore } from 'Components/Table/TableTypes';
-import { useHistory } from 'react-router-dom';
 import { DATAPLANE_BODY_NAME, DATAPLANE_TIMESTAMP_NAME, LogsFrame } from '../../../services/logsFrame';
 
 type TableColumnsContextType = {
@@ -71,7 +70,6 @@ export const TableColumnContextProvider = ({
   const [bodyState, setBodyState] = useState<LogLineState>(LogLineState.auto);
   const [filteredColumns, setFilteredColumns] = useState<FieldNameMetaStore | undefined>(undefined);
   const [visible, setVisible] = useState(false);
-  const history = useHistory();
 
   const getActiveColumns = (columns: FieldNameMetaStore): string[] => {
     let activeColumns: string[] = [];
@@ -107,6 +105,14 @@ export const TableColumnContextProvider = ({
     setVisible(isVisible);
   }, []);
 
+  // When the parent component recalculates new columns on dataframe change, we need to update or the column UI will be stale!
+  useEffect(() => {
+    if (initialColumns) {
+      handleSetColumns(initialColumns);
+    }
+  }, [initialColumns, handleSetColumns]);
+
+  // When the columns are updated, we need to check if nothing is selected so we can set the default
   useEffect(() => {
     const activeColumns = getDefaultColumns(columns, logsFrame);
     if (activeColumns?.length) {
@@ -120,7 +126,7 @@ export const TableColumnContextProvider = ({
       // Reset any local search state
       setFilteredColumns(undefined);
     }
-  }, [columns, history, logsFrame, setFilteredColumns, handleSetColumns]);
+  }, [columns, logsFrame, setFilteredColumns, handleSetColumns]);
 
   return (
     <TableColumnsContext.Provider

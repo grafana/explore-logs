@@ -78,6 +78,7 @@ export const Table = (props: Props) => {
 
   const [tableFrame, setTableFrame] = useState<DataFrame | undefined>(undefined);
   const { columns, visible, setVisible, setFilteredColumns, setColumns } = useTableColumnContext();
+
   const { selectedLine } = useQueryContext();
 
   const reorderColumn = getReorderColumn(setColumns);

@@ -1,24 +1,21 @@
 import React from 'react';
 
 import {
-  AdHocFiltersVariable,
   PanelBuilders,
   SceneComponentProps,
   SceneFlexItem,
   SceneFlexLayout,
-  sceneGraph,
   SceneObjectBase,
   SceneObjectState,
   SceneObjectUrlSyncConfig,
   SceneObjectUrlValues,
   SceneTimeRangeLike,
-  VizPanel,
 } from '@grafana/scenes';
 import { LineFilter } from './LineFilter';
-import { LOGS_TABLE_PLUGIN_ID, LogsPanelHeaderActions } from '../Table/tablePanel';
 import { AdHocVariableFilter, TimeRange } from '@grafana/data';
-import { VAR_FIELDS } from '../../services/variables';
 import { SelectedTableRow } from '../Table/LogLineCellComponent';
+import { LogsTableScene } from './LogsTableScene';
+import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -67,6 +64,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       visualizationType: JSON.stringify(visualizationType),
     };
   }
+
   updateFromUrl(values: SceneObjectUrlValues) {
     const stateUpdate: Partial<LogsListSceneState> = {};
     if (typeof values.urlColumns === 'string') {
@@ -100,91 +98,18 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         panel: this.getVizPanel(),
       });
     }
-    this._subs.add(
-      this.subscribeToState((newState, prevState) => {
-        if (prevState.visualizationType !== newState.visualizationType) {
-          this.setState({
-            panel: this.getVizPanel(),
-          });
-        }
-        if (prevState.urlColumns !== newState.urlColumns) {
-          //@todo how to reference body correctly?
-          //@ts-ignore
-          const vizPanel: VizPanel<TablePanelProps> = this.state.panel?.state.children[1].state?.body;
-          vizPanel.setState({
-            options: {
-              ...vizPanel.state.options,
-              urlColumns: newState.urlColumns,
-            },
-          });
-        }
-      })
-    );
 
-    const timeRange = sceneGraph.getTimeRange(this);
-    this._subs.add(
-      timeRange.subscribeToState((newState, prevState) => {
-        if (
-          newState.value.to.valueOf() !== prevState.value.to.valueOf() ||
-          newState.value.from.valueOf() !== prevState.value.from.valueOf()
-        ) {
-          // @todo how to reference body correctly?
-          // @ts-ignore
-          const vizPanel: VizPanel<TablePanelProps> = this.state.panel?.state.children[1].state?.body;
-          vizPanel.setState({
-            options: {
-              ...vizPanel.state.options,
-              timeRange: newState.value,
-            },
-          });
-        }
-      })
-    );
-  }
-
-  private getTablePanel(): SceneFlexItem {
-    const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
-    const addFilter = (filter: AdHocVariableFilter) => {
-      const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
-      const filters = fields.state.filters;
-      fields.setState({
-        filters: [...filters, filter],
-      });
-    };
-
-    const timeRange = sceneGraph.getTimeRange(this);
-
-    return new SceneFlexItem({
-      height: 'calc(100vh - 220px)',
-      body: new VizPanel({
-        pluginId: LOGS_TABLE_PLUGIN_ID,
-        options: {
-          filters: fields.state.filters,
-          addFilter,
-          setUrlColumns: (urlColumns) => {
-            if (JSON.stringify(urlColumns) !== JSON.stringify(this.state.urlColumns)) {
-              this.setState({ urlColumns });
-            }
-          },
-          urlColumns: this.state.urlColumns,
-          timeRange: timeRange.state.value,
-          selectedLine: this.state.selectedLine,
-
-          // @todo selected line should be moved to table scene,
-        } as TablePanelProps,
-        $data: this.state.$data,
-        title: 'Logs',
-        headerActions: (
-          <LogsPanelHeaderActions
-            vizType={this.state.visualizationType}
-            onChange={this.setVisualizationType.bind(this)}
-          />
-        ),
-      }),
+    this.subscribeToState((newState, prevState) => {
+      if (newState.visualizationType !== prevState.visualizationType) {
+        this.setState({
+          panel: this.getVizPanel(),
+        });
+      }
     });
   }
 
   private getLogsPanel() {
+    const visualizationType = this.state.visualizationType;
     return new SceneFlexItem({
       height: 'calc(100vh - 220px)',
       body: PanelBuilders.logs()
@@ -192,16 +117,13 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         .setOption('showLogContextToggle', true)
         .setOption('showTime', true)
         .setHeaderActions(
-          <LogsPanelHeaderActions
-            vizType={this.state.visualizationType}
-            onChange={this.setVisualizationType.bind(this)}
-          />
+          <LogsPanelHeaderActions vizType={visualizationType} onChange={this.setVisualizationType.bind(this)} />
         )
         .build(),
     });
   }
 
-  private setVisualizationType(type: LogsVisualizationType) {
+  public setVisualizationType(type: LogsVisualizationType) {
     this.setState({
       visualizationType: type,
     });
@@ -216,7 +138,12 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
           body: new LineFilter(),
           ySizing: 'content',
         }),
-        this.state.visualizationType === 'logs' ? this.getLogsPanel() : this.getTablePanel(),
+        this.state.visualizationType === 'logs'
+          ? this.getLogsPanel()
+          : new SceneFlexItem({
+              height: 'calc(100vh - 220px)',
+              body: new LogsTableScene({}),
+            }),
       ],
     });
   }
