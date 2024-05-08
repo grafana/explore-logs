@@ -88,7 +88,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       ...state,
     });
 
-    this.addActivationHandler(this._onActivate.bind(this));
+    this.addActivationHandler(this.onActivate.bind(this));
   }
 
   private getFiltersVariable(): AdHocFiltersVariable {
@@ -141,7 +141,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     locationService.push(`${EXPLORATIONS_ROUTE}?${newParams}`);
   }
 
-  private _onActivate() {
+  private onActivate() {
     if (this.state.actionView === undefined) {
       this.setActionView('logs');
     }

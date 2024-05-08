@@ -21,10 +21,10 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       ...state,
     });
 
-    this.addActivationHandler(this._onActivate.bind(this));
+    this.addActivationHandler(this.onActivate.bind(this));
   }
 
-  public _onActivate() {
+  public onActivate() {
     if (!this.state.panel) {
       this.setState({
         panel: this.getVizPanel(),

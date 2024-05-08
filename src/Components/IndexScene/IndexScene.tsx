@@ -74,7 +74,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       ...state,
     });
 
-    this.addActivationHandler(this._onActivate.bind(this));
+    this.addActivationHandler(this.onActivate.bind(this));
   }
 
   static Component = ({ model }: SceneComponentProps<IndexScene>) => {
@@ -84,7 +84,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     return <div className={styles.bodyContainer}> {body && <body.Component model={body} />} </div>;
   };
 
-  public _onActivate() {
+  public onActivate() {
     if (!this.state.topScene) {
       this.setState({ topScene: getTopScene(this.state.mode) });
     }
