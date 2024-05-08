@@ -111,8 +111,6 @@ export const Table = (props: Props) => {
         field.type =
           field.type === FieldType.string ? guessLogsFieldTypeForField(field) ?? FieldType.string : field.type;
 
-        console.log('index', index, frame.fields.length);
-
         field.config = {
           ...field.config,
           custom: {
