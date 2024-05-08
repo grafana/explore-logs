@@ -6,6 +6,7 @@ import { Icon } from '@grafana/ui';
 import React, { useCallback } from 'react';
 import { Field } from '@grafana/data';
 import { DATAPLANE_BODY_NAME } from '../../services/logsFrame';
+import { css, cx } from '@emotion/css';
 
 export function LogsTableHeaderWrap(props: {
   headerProps: LogsTableHeaderProps;
@@ -17,6 +18,7 @@ export function LogsTableHeaderWrap(props: {
 }) {
   const { setHeaderMenuActive } = useTableHeaderContext();
   const { columns, setColumns, bodyState, setBodyState } = useTableColumnContext();
+  const styles = getStyles();
 
   const hideColumn = useCallback(
     (field: Field) => {
@@ -47,38 +49,40 @@ export function LogsTableHeaderWrap(props: {
 
   return (
     <LogsTableHeader {...props.headerProps}>
-      <div>
-        <a onClick={() => hideColumn(props.headerProps.field)}>
-          <Icon name={'minus'} size={'xl'} />
-          Remove column
-        </a>
-      </div>
-      <div>
+      <div className={styles.linkWrap}>
         <a
+          className={styles.link}
           onClick={() => {
             props.openColumnManagementDrawer();
             setHeaderMenuActive(false);
           }}
         >
-          <Icon name={'columns'} size={'xl'} />
+          <Icon className={styles.icon} name={'columns'} size={'md'} />
           Manage columns
         </a>
       </div>
-      <div>
-        <a onClick={() => props.slideLeft(columns)}>
-          <Icon name={'forward'} size={'xl'} />
-          Move forward
+      <div className={styles.linkWrap}>
+        <a className={styles.link} onClick={() => hideColumn(props.headerProps.field)}>
+          <Icon className={styles.icon} name={'minus'} size={'md'} />
+          Remove column
         </a>
       </div>
-      <div>
-        <a onClick={() => props.slideRight(columns)}>
-          <Icon name={'backward'} size={'xl'} />
-          Move backward
+      <div className={styles.linkWrap}>
+        <a className={styles.link} onClick={() => props.slideRight(columns)}>
+          <Icon className={cx(styles.icon, styles.reverse)} name={'arrow-from-right'} size={'md'} />
+          Move left
+        </a>
+      </div>
+      <div className={styles.linkWrap}>
+        <a className={styles.link} onClick={() => props.slideLeft(columns)}>
+          <Icon className={styles.icon} name={'arrow-from-right'} size={'md'} />
+          Move right
         </a>
       </div>
       {isBodyField && (
-        <div>
+        <div className={styles.linkWrap}>
           <a
+            className={styles.link}
             onClick={() => {
               if (bodyState === LogLineState.text) {
                 setBodyState(LogLineState.labels);
@@ -88,9 +92,9 @@ export function LogsTableHeaderWrap(props: {
             }}
           >
             {bodyState === LogLineState.text ? (
-              <Icon name={'brackets-curly'} size={'xl'} />
+              <Icon className={styles.icon} name={'brackets-curly'} size={'md'} />
             ) : (
-              <Icon name={'text-fields'} size={'xl'} />
+              <Icon className={styles.icon} name={'text-fields'} size={'md'} />
             )}
 
             {bodyState === LogLineState.text ? 'Show labels' : 'Show log text'}
@@ -100,3 +104,19 @@ export function LogsTableHeaderWrap(props: {
     </LogsTableHeader>
   );
 }
+
+const getStyles = () => {
+  return {
+    reverse: css({
+      transform: 'scaleX(-1)',
+    }),
+    link: css({
+      paddingTop: '5px',
+      paddingBottom: '5px',
+    }),
+    icon: css({
+      marginRight: '10px',
+    }),
+    linkWrap: css({}),
+  };
+};

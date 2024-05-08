@@ -19,7 +19,7 @@ interface Props extends PropsWithChildren<DefaultCellWrapComponentProps> {
 const getStyles = (theme: GrafanaTheme2, bgColor?: string, numberOfMenuItems?: number) => ({
   active: css({
     // Save 20px for context menu
-    height: `calc(${100}% + 20px)`,
+    height: `calc(${100}% + 36px)`,
     zIndex: theme.zIndex.tooltip,
     background: 'transparent',
   }),

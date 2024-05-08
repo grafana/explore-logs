@@ -71,7 +71,7 @@ export const DefaultPill = (props: DefaultPillProps) => {
             <>{value}</>
           </span>
           {isPillActive && typeof value === 'string' && props.field.type !== FieldType.time && (
-            <CellContextMenu label={props.label} value={value} />
+            <CellContextMenu label={props.label} value={value} pillType={'column'} />
           )}
         </>
       )}

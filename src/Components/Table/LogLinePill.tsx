@@ -78,6 +78,7 @@ function LogLinePillValue(props: {
       </span>
       {props.menuActive && (
         <CellContextMenu
+          pillType={'logPill'}
           fieldType={props.fieldType}
           links={props.links}
           label={props.label}
