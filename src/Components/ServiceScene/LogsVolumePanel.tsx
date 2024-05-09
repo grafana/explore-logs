@@ -9,7 +9,7 @@ import {
   SceneObjectState,
 } from '@grafana/scenes';
 import { DrawStyle, StackingMode } from '@grafana/ui';
-import { getQueryRunner, levelOverrides } from 'services/panel';
+import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { LEVEL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR } from 'services/variables';
 
@@ -53,7 +53,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
             .setCustomFieldConfig('lineWidth', 0)
             .setCustomFieldConfig('pointSize', 0)
             .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-            .setOverrides(levelOverrides)
+            .setOverrides(setLeverColorOverrides)
             .build(),
         }),
       ],

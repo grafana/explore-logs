@@ -6,7 +6,7 @@ import { explorationDS } from './variables';
 
 // TODO: `FieldConfigOverridesBuilder` is not exported, so it can not be used
 // here.
-export function levelOverrides(overrides: any) {
+export function setLeverColorOverrides(overrides: any) {
   overrides.matchFieldsWithName('info').overrideColor({
     mode: 'fixed',
     fixedColor: 'semi-dark-green',

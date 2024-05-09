@@ -7,10 +7,9 @@ const createInteractionName = (page: UserEventPagesType, action: string) => {
 };
 
 // Runs reportInteraction with a standardized interaction name
-// TODO: Add better types for "action" to ensure that only USER_EVENTS_ACTIONS.page.action are used
 export const reportAppInteraction = (
   page: UserEventPagesType,
-  action: string,
+  action: UserEventActionType,
   properties?: Record<string, unknown>
 ) => {
   reportInteraction(createInteractionName(page, action), properties);
@@ -21,7 +20,10 @@ export const USER_EVENTS_PAGES = {
   service_details: 'service_details',
 } as const;
 
-type UserEventPagesType = (typeof USER_EVENTS_PAGES)[keyof typeof USER_EVENTS_PAGES];
+type UserEventPagesType = keyof typeof USER_EVENTS_PAGES;
+type UserEventActionType =
+  | keyof (typeof USER_EVENTS_ACTIONS)['service_selection']
+  | keyof (typeof USER_EVENTS_ACTIONS)['service_details'];
 
 export const USER_EVENTS_ACTIONS = {
   [USER_EVENTS_PAGES.service_selection]: {
