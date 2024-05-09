@@ -14,6 +14,7 @@ interface TableProviderProps {
   addFilter: (filter: AdHocVariableFilter) => void;
   selectedLine?: SelectedTableRow;
   timeRange?: TimeRange;
+  panelWrap: React.RefObject<HTMLDivElement>;
 }
 
 export const TableProvider = ({
@@ -24,6 +25,7 @@ export const TableProvider = ({
   addFilter,
   selectedLine,
   timeRange,
+  panelWrap,
 }: TableProviderProps) => {
   if (!dataFrame) {
     return null;
@@ -42,7 +44,7 @@ export const TableProvider = ({
       timeRange={timeRange}
       logsFrame={logsFrame}
     >
-      <TableWrap setUrlColumns={setUrlColumns} urlColumns={urlColumns} />
+      <TableWrap setUrlColumns={setUrlColumns} urlColumns={urlColumns} panelWrap={panelWrap} />
     </QueryContextProvider>
   );
 };

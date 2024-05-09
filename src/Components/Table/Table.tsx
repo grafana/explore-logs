@@ -114,6 +114,7 @@ export const Table = (props: Props) => {
 
         field.config = {
           ...field.config,
+
           custom: {
             inspect: true,
             filterable: true, // This sets the columns to be filterable

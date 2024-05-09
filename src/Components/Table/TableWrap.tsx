@@ -1,23 +1,13 @@
-import React, { useCallback, useLayoutEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { css } from '@emotion/css';
 
-import {
-  DataFrame,
-  FieldType,
-  FieldWithIndex,
-  getTimeZone,
-  GrafanaTheme2,
-  guessFieldTypeFromValue,
-  Labels,
-} from '@grafana/data';
-import { useTheme2 } from '@grafana/ui';
+import { DataFrame, FieldType, FieldWithIndex, getTimeZone, guessFieldTypeFromValue, Labels } from '@grafana/data';
 
 import { TableColumnContextProvider } from 'Components/Table/Context/TableColumnsContext';
 import { Table } from 'Components/Table/Table';
 import { FieldNameMeta, FieldNameMetaStore } from 'Components/Table/TableTypes';
 import { useQueryContext } from 'Components/Table/Context/QueryContext';
-
-export type LogFrameLabels = Record<string, unknown>;
+import { useResizeObserver } from '@react-aria/utils';
 
 export type SpecialFieldsType = {
   time: FieldWithIndex;
@@ -31,9 +21,10 @@ const iso8601Regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3,})?(?:Z|[-+]
 interface TableWrapProps {
   urlColumns: string[];
   setUrlColumns: (columns: string[]) => void;
+  panelWrap: React.RefObject<HTMLDivElement>;
 }
 
-const getStyles = (theme: GrafanaTheme2) => ({
+const getStyles = () => ({
   section: css({
     position: 'relative',
   }),
@@ -41,11 +32,28 @@ const getStyles = (theme: GrafanaTheme2) => ({
 
 export const TableWrap = (props: TableWrapProps) => {
   const { logsFrame } = useQueryContext();
-  const [width, height] = useWindowSize();
 
-  const theme = useTheme2();
-  const styles = getStyles(theme);
+  const [panelWrapSize, setPanelWrapSize] = useState({ width: 0, height: 0 });
 
+  // Table needs to be positioned absolutely, passing in reference wrapping panelChrome from parent
+  useResizeObserver({
+    ref: props.panelWrap,
+    onResize: () => {
+      console.log('width', props.panelWrap.current?.clientWidth);
+      console.log('height', props.panelWrap.current?.clientHeight);
+      const element = props.panelWrap.current;
+      if (element) {
+        if (panelWrapSize.width !== element.clientWidth || panelWrapSize.height !== element.clientHeight) {
+          setPanelWrapSize({
+            width: element.clientWidth,
+            height: element.clientHeight,
+          });
+        }
+      }
+    },
+  });
+
+  const styles = getStyles();
   const timeZone = getTimeZone();
 
   // This function is called when we want to grab the column names that are currently stored in the URL.
@@ -107,7 +115,13 @@ export const TableWrap = (props: TableWrapProps) => {
         initialColumns={pendingLabelState}
         setUrlColumns={props.setUrlColumns}
       >
-        <Table logsFrame={logsFrame} timeZone={timeZone} height={height - 270} width={width - 50} labels={labels} />
+        <Table
+          logsFrame={logsFrame}
+          timeZone={timeZone}
+          height={panelWrapSize.height}
+          width={panelWrapSize.width - 25}
+          labels={labels}
+        />
       </TableColumnContextProvider>
     </section>
   );
@@ -146,22 +160,6 @@ export function getCardinalityMapFromLabels(labels: Labels[]) {
   });
 
   return cardinalityMap;
-}
-
-// Hacky resize-y
-//@todo discuss with squad
-function useWindowSize() {
-  const [size, setSize] = useState([0, 0]);
-  useLayoutEffect(() => {
-    function updateSize() {
-      setSize([window.innerWidth, window.innerHeight]);
-    }
-
-    window.addEventListener('resize', updateSize);
-    updateSize();
-    return () => window.removeEventListener('resize', updateSize);
-  }, []);
-  return size;
 }
 
 /**
