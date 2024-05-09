@@ -2,7 +2,7 @@ import { FieldType, createDataFrame } from '@grafana/data';
 
 import { extractParserAndFieldsFromDataFrame } from './fields';
 
-describe('', () => {
+describe('extractParserAndFieldsFromDataFrame', () => {
   const dataFrame = createDataFrame({
     refId: 'A',
     fields: [
