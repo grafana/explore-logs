@@ -1,33 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo } from 'react';
 
 import { SceneTimeRange, getUrlSyncManager } from '@grafana/scenes';
 import { IndexScene } from './IndexScene/IndexScene';
 const DEFAULT_TIME_RANGE = { from: 'now-15m', to: 'now' };
 
-export const LogExplorationPage = () => {
-  // Here we are initializing the scene with the default time range
-  const [exploration] = useState(
-    new IndexScene({
-      $timeRange: new SceneTimeRange(DEFAULT_TIME_RANGE),
-    })
-  );
-
-  return <LogExplorationView exploration={exploration} />;
-};
-
-function LogExplorationView({ exploration }: { exploration: IndexScene }) {
+export function LogExplorationView() {
   const [isInitialized, setIsInitialized] = React.useState(false);
+  const scene = useMemo(
+    () =>
+      new IndexScene({
+        $timeRange: new SceneTimeRange(DEFAULT_TIME_RANGE),
+      }),
+    []
+  );
 
   useEffect(() => {
     if (!isInitialized) {
-      getUrlSyncManager().initSync(exploration);
+      getUrlSyncManager().initSync(scene);
       setIsInitialized(true);
     }
-  }, [exploration, isInitialized]);
+  }, [scene, isInitialized]);
 
   if (!isInitialized) {
     return null;
   }
 
-  return <exploration.Component model={exploration} />;
+  return <scene.Component model={scene} />;
 }
