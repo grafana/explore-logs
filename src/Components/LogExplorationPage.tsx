@@ -7,7 +7,8 @@ import { prefixRoute, ROUTES } from '../services/routing';
 const DEFAULT_TIME_RANGE = { from: 'now-15m', to: 'now' };
 
 const myAppPage = new SceneAppPage({
-  title: 'Grafana Scenes App',
+  title: 'Logs',
+  renderTitle: () => undefined,
   url: prefixRoute(ROUTES.Explore),
   getScene: (routeMatch) =>
     new EmbeddedScene({
