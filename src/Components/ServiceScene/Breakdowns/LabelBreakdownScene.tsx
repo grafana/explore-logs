@@ -23,7 +23,7 @@ import {
 import { Button, DrawStyle, Field, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { DetectedLabelsResponse, getLabelValueScene } from 'services/fields';
-import { getQueryRunner, levelOverrides } from 'services/panel';
+import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { PLUGIN_ID } from 'services/routing';
 import { getLabelOptions, getLokiDatasource } from 'services/scenes';
@@ -242,7 +242,7 @@ function buildLabelsLayout(options: Array<SelectableValue<string>>) {
           .setCustomFieldConfig('lineWidth', 0)
           .setCustomFieldConfig('pointSize', 0)
           .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-          .setOverrides(levelOverrides)
+          .setOverrides(setLeverColorOverrides)
           .build(),
       })
     );
@@ -287,7 +287,7 @@ function buildLabelValuesLayout(variable: CustomVariable) {
     .setCustomFieldConfig('lineWidth', 0)
     .setCustomFieldConfig('pointSize', 0)
     .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-    .setOverrides(levelOverrides)
+    .setOverrides(setLeverColorOverrides)
     .setTitle(variable.getValueText());
 
   const body = bodyOpts.build();

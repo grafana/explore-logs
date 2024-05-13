@@ -1,4 +1,4 @@
-import { SelectableValue, urlUtil } from '@grafana/data';
+import { AdHocVariableFilter, SelectableValue, urlUtil } from '@grafana/data';
 import { DataSourceWithBackend, config, getDataSourceSrv } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
@@ -62,15 +62,18 @@ export function getLabelOptions(sceneObject: SceneObject, allOptions: string[]) 
  * Given an array of label, or fields names, return those that are not already present in the filters.
  */
 export function getUniqueFilters(sceneObject: SceneObject, labelNames: string[]) {
-  const labelFilters = sceneGraph.lookupVariable(VAR_FILTERS, sceneObject);
-  const fieldsFilters = sceneGraph.lookupVariable(VAR_FIELDS, sceneObject);
+  const labelFilters = sceneGraph.lookupVariable(VAR_FILTERS, sceneObject) as AdHocFiltersVariable | null;
+  const fieldsFilters = sceneGraph.lookupVariable(VAR_FIELDS, sceneObject) as AdHocFiltersVariable | null;
+
   const uniqueFilters: string[] = [];
+  let existingFilters: AdHocVariableFilter[] = [];
 
-  if (!(labelFilters instanceof AdHocFiltersVariable) || !(fieldsFilters instanceof AdHocFiltersVariable)) {
-    return [];
+  if (labelFilters) {
+    existingFilters = [...labelFilters.state.filters];
   }
-
-  const existingFilters = [...labelFilters.state.filters, ...fieldsFilters.state.filters];
+  if (fieldsFilters) {
+    existingFilters = [...existingFilters, ...fieldsFilters.state.filters];
+  }
 
   for (const label of labelNames) {
     const filterExists = existingFilters.find((f) => f.key === label);

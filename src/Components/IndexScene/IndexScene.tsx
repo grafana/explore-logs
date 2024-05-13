@@ -21,7 +21,7 @@ import {
   getUrlSyncManager,
   sceneGraph,
 } from '@grafana/scenes';
-import { useStyles2 } from '@grafana/ui';
+import { Badge, useStyles2 } from '@grafana/ui';
 import {
   VAR_DATASOURCE,
   VAR_FIELDS,
@@ -156,6 +156,7 @@ export class LogExplorationScene extends SceneObjectBase {
               )}
             </div>
             <div className={styles.controls}>
+              <Badge text={'Preview'} color={'blue'} icon={'rocket'} />
               {controls.map((control) =>
                 control instanceof VariableValueSelectors === false ? (
                   <control.Component key={control.state.key} model={control} />
@@ -339,9 +340,8 @@ function getStyles(theme: GrafanaTheme2) {
     }),
     controls: css({
       display: 'flex',
-      maxWidth: 450,
       paddingTop: theme.spacing(3),
-      gap: theme.spacing(2),
+      gap: theme.spacing(1),
     }),
     rotateIcon: css({
       svg: { transform: 'rotate(180deg)' },
