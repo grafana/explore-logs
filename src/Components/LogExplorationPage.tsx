@@ -1,29 +1,30 @@
-import React, { useEffect, useMemo } from 'react';
+import React from 'react';
 
-import { SceneTimeRange, getUrlSyncManager } from '@grafana/scenes';
+import { EmbeddedScene, SceneApp, SceneAppPage, SceneTimeRange, useSceneApp } from '@grafana/scenes';
 import { IndexScene } from './IndexScene/IndexScene';
+import { prefixRoute, ROUTES } from '../services/routing';
+
 const DEFAULT_TIME_RANGE = { from: 'now-15m', to: 'now' };
 
-export function LogExplorationView() {
-  const [isInitialized, setIsInitialized] = React.useState(false);
-  const scene = useMemo(
-    () =>
-      new IndexScene({
+const myAppPage = new SceneAppPage({
+  title: 'Grafana Scenes App',
+  url: prefixRoute(ROUTES.Explore),
+  getScene: (routeMatch) =>
+    new EmbeddedScene({
+      body: new IndexScene({
         $timeRange: new SceneTimeRange(DEFAULT_TIME_RANGE),
       }),
-    []
-  );
+    }),
+});
 
-  useEffect(() => {
-    if (!isInitialized) {
-      getUrlSyncManager().initSync(scene);
-      setIsInitialized(true);
-    }
-  }, [scene, isInitialized]);
-
-  if (!isInitialized) {
-    return null;
-  }
+export function ExploreLogsApp() {
+  const scene = useSceneApp(getExploreLogsApp);
 
   return <scene.Component model={scene} />;
+}
+
+function getExploreLogsApp() {
+  return new SceneApp({
+    pages: [myAppPage],
+  });
 }
