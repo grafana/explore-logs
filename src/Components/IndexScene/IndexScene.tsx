@@ -36,7 +36,7 @@ import { ServiceSelectionComponent, StartingPointSelectedEvent } from '../Servic
 import { PatternControls } from './PatternControls';
 import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
 
-type LogExplorationMode = 'start' | 'logs';
+type LogExplorationMode = 'service_selection' | 'service_details';
 
 export interface AppliedPattern {
   pattern: string;
@@ -48,7 +48,7 @@ export interface IndexSceneState extends SceneObjectState {
   topScene?: SceneObject;
   controls: SceneObject[];
   body: LogExplorationScene;
-  // mode is the current mode of the index scene - it can be either 'start' for service selection or 'logs' for service
+  // mode is the current mode of the index scene - it can be either service_selection or 'service_details'
   mode?: LogExplorationMode;
   initialFilters?: AdHocVariableFilter[];
   initialDS?: string;
@@ -112,18 +112,18 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   getUrlState() {
     return {
       mode: this.state.mode,
-      patterns: this.state.mode === 'start' ? '' : JSON.stringify(this.state.patterns),
+      patterns: this.state.mode === 'service_selection' ? '' : JSON.stringify(this.state.patterns),
     };
   }
 
   updateFromUrl(values: SceneObjectUrlValues) {
     const stateUpdate: Partial<IndexSceneState> = {};
     if (values.mode !== this.state.mode) {
-      const mode: LogExplorationMode = (values.mode as LogExplorationMode) ?? 'start';
+      const mode: LogExplorationMode = (values.mode as LogExplorationMode) ?? 'service_selection';
       stateUpdate.mode = mode;
       stateUpdate.topScene = getTopScene(mode);
     }
-    if (this.state.mode === 'start') {
+    if (this.state.mode === 'service_selection') {
       // Clear patterns on start
       stateUpdate.patterns = undefined;
     } else if (values.patterns && typeof values.patterns === 'string') {
@@ -134,7 +134,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
   private _handleStartingPointSelected(evt: StartingPointSelectedEvent) {
     this.setState({
-      mode: 'logs',
+      mode: 'service_details',
     });
   }
 }
@@ -176,7 +176,7 @@ export class LogExplorationScene extends SceneObjectBase {
 }
 
 function getTopScene(mode?: LogExplorationMode) {
-  if (mode === 'logs') {
+  if (mode === 'service_details') {
     return new ServiceScene({});
   }
   return new ServiceSelectionComponent({});
