@@ -6,6 +6,7 @@ const DEFAULT_TIME_RANGE = { from: 'now-15m', to: 'now' };
 
 export function LogExplorationView() {
   const [isInitialized, setIsInitialized] = React.useState(false);
+  // Must memoize the top-level scene or any route change will re-instantiate all the scene classes
   const scene = useMemo(
     () =>
       new IndexScene({
