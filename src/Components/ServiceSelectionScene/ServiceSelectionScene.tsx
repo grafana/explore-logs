@@ -309,9 +309,9 @@ function createListOfServicesToQuery(services: string[], ds: string, searchStrin
     return [];
   }
 
-  const servicesToQuery = services.filter((service) => service.toLowerCase().startsWith(searchString.toLowerCase()));
+  const servicesToQuery = services.filter((service) => service.toLowerCase().includes(searchString.toLowerCase()));
   const favoriteServicesToQuery = getFavoriteServicesFromStorage(ds).filter((service) =>
-    service.toLowerCase().startsWith(searchString.toLowerCase())
+    service.toLowerCase().includes(searchString.toLowerCase())
   );
 
   // Deduplicate
