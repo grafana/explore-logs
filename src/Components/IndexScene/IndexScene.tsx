@@ -48,7 +48,7 @@ export interface IndexSceneState extends SceneObjectState {
   topScene?: SceneObject;
   controls: SceneObject[];
   body: LogExplorationScene;
-  // mode is the current mode of the index scene - it can be either service_selection or 'service_details'
+  // mode is the current mode of the index scene - it can be either 'service_selection' or 'service_details'
   mode?: LogExplorationMode;
   initialFilters?: AdHocVariableFilter[];
   initialDS?: string;
