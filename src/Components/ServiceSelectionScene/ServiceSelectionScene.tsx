@@ -112,7 +112,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
       }
     });
 
-    sceneGraph.getTimeRange(this).state.$timeRange?.subscribeToState((newTime, oldTime) => {
+    sceneGraph.getTimeRange(this).subscribeToState((newTime, oldTime) => {
       if (shouldUpdateServicesByVolume(newTime.value, oldTime.value)) {
         this.getServicesByVolume();
       }
