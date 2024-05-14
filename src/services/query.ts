@@ -7,6 +7,7 @@ export type LokiQuery = {
   supportingQueryType: string;
   expr: string;
   legendFormat?: string;
+  splitDuration?: string;
 };
 export const buildLokiQuery = (expr: string, queryParamsOverrides?: Record<string, unknown>): LokiQuery => {
   return {
