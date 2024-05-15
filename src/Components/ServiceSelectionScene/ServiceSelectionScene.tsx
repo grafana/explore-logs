@@ -30,7 +30,7 @@ import { getFavoriteServicesFromStorage } from 'services/store';
 import { testIds } from 'services/testIds';
 import { LEVEL_VARIABLE_VALUE, VAR_DATASOURCE, VAR_FILTERS } from 'services/variables';
 import { GrotError } from '../GrotError';
-import { SelectFieldButton } from './SelectFieldButton';
+import { SelectServiceButton } from './SelectServiceButton';
 import { PLUGIN_ID } from 'services/routing';
 import { buildLokiQuery } from 'services/query';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
@@ -224,7 +224,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
         .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
         .setOverrides(setLeverColorOverrides)
         .setOption('legend', { showLegend: false })
-        .setHeaderActions(new SelectFieldButton({ value: service }))
+        .setHeaderActions(new SelectServiceButton({ service }))
         .build(),
     });
   }
