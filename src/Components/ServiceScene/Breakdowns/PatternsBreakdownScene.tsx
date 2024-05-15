@@ -10,6 +10,7 @@ import {
   SceneDataNode,
   SceneFlexItem,
   SceneFlexItemLike,
+  SceneFlexLayout,
   sceneGraph,
   SceneObject,
   SceneObjectBase,
@@ -24,7 +25,8 @@ import { GrotError } from 'Components/GrotError';
 import { VAR_LABEL_GROUP_BY } from 'services/variables';
 import { getColorByIndex } from 'services/scenes';
 import { LokiPattern, ServiceScene } from '../ServiceScene';
-import { FilterByPatternsButton } from './FilterByPatternsButton';
+import { FilterByPatternsButton, onPatternClick } from './FilterByPatternsButton';
+import { IndexScene } from '../../IndexScene/IndexScene';
 
 export interface PatternsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -144,13 +146,18 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       return;
     }
 
-    this.buildPatterns(patterns, children);
+    const timeRange = sceneGraph.getTimeRange(this).state.value;
+
+    const patternFrames = this.buildPatterns(patterns, timeRange, children);
+
+    const logExploration = sceneGraph.getAncestor(this, IndexScene);
 
     this.setState({
       body: new LayoutSwitcher({
         options: [
           { value: 'grid', label: 'Grid' },
           { value: 'rows', label: 'Rows' },
+          { value: 'single', label: 'Single' },
         ],
         actionView: 'patterns',
         active: 'grid',
@@ -167,13 +174,65 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
             isLazy: true,
             children: children.map((child) => child.clone()),
           }),
+          new SceneFlexLayout({
+            direction: 'column',
+            children: [
+              patternFrames
+                ? new SceneFlexItem({
+                    minHeight: 300,
+                    body: PanelBuilders.timeseries()
+                      .setData(
+                        new SceneDataNode({
+                          data: {
+                            series: patternFrames.map((patternFrame) => {
+                              return patternFrame.dataFrame;
+                            }),
+                            state: LoadingState.Done,
+                            timeRange: timeRange,
+                          },
+                        })
+                      )
+                      .setTitle('Patterns')
+                      .setLinks([
+                        {
+                          url: '',
+                          onClick: (event) => {
+                            onPatternClick({
+                              pattern: event.origin.name,
+                              type: 'include',
+                              indexScene: logExploration,
+                            });
+                          },
+                          title: 'Include',
+                        },
+                        {
+                          url: '',
+                          onClick: (event) => {
+                            onPatternClick({
+                              pattern: event.origin.name,
+                              type: 'exclude',
+                              indexScene: logExploration,
+                            });
+                          },
+                          title: 'Exclude',
+                        },
+                      ])
+                      .build(),
+                  })
+                : //@todo undefined dataframe state
+                  new SceneFlexItem({
+                    body: undefined,
+                    $data: undefined,
+                  }),
+            ],
+          }),
         ],
       }),
       loading: false,
     });
   }
 
-  private buildPatterns(patterns: LokiPattern[], children: SceneFlexItemLike[]) {
+  private buildPatterns(patterns: LokiPattern[], timeRange: TimeRange, children: SceneFlexItemLike[]): PatternFrame[] {
     let maxValue = -Infinity;
     let minValue = 0;
 
@@ -224,12 +283,12 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       })
       .sort((a, b) => b.sum - a.sum);
 
-    const timeRange = sceneGraph.getTimeRange(this).state.value;
-
     for (let i = 0; i < frames.length; i++) {
       const { dataFrame, pattern, sum } = frames[i];
       children.push(this.buildPatternTimeseries(dataFrame, timeRange, pattern, sum, i, minValue, maxValue));
     }
+
+    return frames;
   }
 
   private buildPatternTimeseries(

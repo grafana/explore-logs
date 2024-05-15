@@ -10,6 +10,37 @@ export interface FilterByPatternsButtonState extends SceneObjectState {
   type: 'exclude' | 'include';
 }
 
+export interface FilterByPatternsState extends FilterByPatternsButtonState {
+  indexScene: IndexScene;
+}
+
+export function onPatternClick(props: FilterByPatternsState) {
+  const { indexScene, pattern, type } = { ...props };
+
+  if (!indexScene) {
+    console.warn('logs exploration scene not found');
+    return;
+  }
+
+  const { patterns = [] } = indexScene.state;
+
+  // Remove the pattern if it's already there
+  const filteredPatterns = patterns.filter((pat) => pat.pattern !== pattern);
+
+  // Analytics
+  const includePatternsLength = filteredPatterns.filter((p) => p.type === 'include')?.length ?? 0;
+  const excludePatternsLength = filteredPatterns.filter((p) => p.type === 'exclude')?.length ?? 0;
+  reportAppInteraction(USER_EVENTS_PAGES.service_details, USER_EVENTS_ACTIONS.service_details.pattern_selected, {
+    type: type,
+    includePatternsLength: includePatternsLength + (type === 'include' ? 1 : 0),
+    excludePatternsLength: excludePatternsLength + (type === 'exclude' ? 1 : 0),
+  });
+
+  indexScene.setState({
+    patterns: [...filteredPatterns, { pattern: pattern, type: type }],
+  });
+}
+
 export class FilterByPatternsButton extends SceneObjectBase<FilterByPatternsButtonState> {
   public onClick = () => {
     const logExploration = sceneGraph.getAncestor(this, IndexScene);
