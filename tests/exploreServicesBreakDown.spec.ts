@@ -38,7 +38,7 @@ test.describe('explore services breakdown page', () => {
 
     const buffer = await page.screenshot();
     console.log('screenshot', buffer.toString('base64'));
-    
+
     await page.getByLabel('namespace').click();
     await page
         .getByTestId('data-testid Panel header tempo-dev')
