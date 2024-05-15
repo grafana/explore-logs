@@ -20,12 +20,12 @@ test.describe('explore services breakdown page', () => {
 
   test('should select a label, update filters, open in explore', async ({ page }) => {
     await page.getByLabel('Tab Labels').click();
-    await page.getByLabel('cluster').click();
+    await page.getByLabel('detected_level').click();
     await page
-      .getByTestId('data-testid Panel header us-east-2')
+      .getByTestId('data-testid Panel header info')
       .getByRole('button', { name: 'Add to filters' })
       .click();
-    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label cluster')).toBeVisible();
+    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label detected_level')).toBeVisible();
     const page1Promise = page.waitForEvent('popup');
     await explorePage.serviceBreakdownOpenExplore.click();
     const page1 = await page1Promise;
