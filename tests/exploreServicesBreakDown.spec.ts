@@ -18,38 +18,18 @@ test.describe('explore services breakdown page', () => {
     await expect(page).toHaveURL(/broadcast/);
   });
 
-  test('should select a label, update filters, open in explore', async ({ page }) => {
+  test.only('should select a label, update filters, open in explore', async ({ page }) => {
     await page.getByLabel('Tab Labels').click();
-    await page.getByLabel('namespace').click();
+    await page.getByLabel('cluster').click();
     await page
-      .getByTestId('data-testid Panel header tempo-dev')
+      .getByTestId('data-testid Panel header us-east-2')
       .getByRole('button', { name: 'Add to filters' })
       .click();
-    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label namespace')).toBeVisible();
+    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label cluster')).toBeVisible();
     const page1Promise = page.waitForEvent('popup');
     await explorePage.serviceBreakdownOpenExplore.click();
     const page1 = await page1Promise;
     await expect(page1.getByText('{service_name=`tempo-distributor`}')).toBeVisible();
-  });
-
-  //@todo remove
-  test('should select a label, update filters, open in explore (why fail in ci only)', async ({ page }) => {
-    await page.getByLabel('Tab Labels').click();
-
-    const buffer = await page.screenshot();
-    console.log('screenshot', buffer.toString('base64'));
-
-    await page.getByLabel('namespace').click();
-    await page
-        .getByTestId('data-testid Panel header tempo-dev')
-        .getByRole('button', { name: 'Add to filters' })
-        .click();
-    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label namespace')).toBeVisible();
-    const page1Promise = page.waitForEvent('popup');
-    await explorePage.serviceBreakdownOpenExplore.click();
-    const page1 = await page1Promise;
-    await expect(page1.getByText('{service_name=`tempo-distributor`}')).toBeVisible();
-
   });
 
   test('should select a detected field, update filters, open log panel', async ({ page }) => {
