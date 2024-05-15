@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DataFrame, FieldType, GrafanaTheme2, LoadingState } from '@grafana/data';
+import { DataFrame, FieldType, GrafanaTheme2, LoadingState, TimeRange } from '@grafana/data';
 import {
   CustomVariable,
   PanelBuilders,
@@ -224,21 +224,23 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       })
       .sort((a, b) => b.sum - a.sum);
 
+    const timeRange = sceneGraph.getTimeRange(this).state.value;
+
     for (let i = 0; i < frames.length; i++) {
       const { dataFrame, pattern, sum } = frames[i];
-      children.push(this.buildPatternTimeseries(dataFrame, pattern, sum, i, minValue, maxValue));
+      children.push(this.buildPatternTimeseries(dataFrame, timeRange, pattern, sum, i, minValue, maxValue));
     }
   }
 
   private buildPatternTimeseries(
     dataFrame: DataFrame,
+    timeRange: TimeRange,
     pattern: string,
     sum: number,
     index: number,
     minValue: number,
     maxValue: number
   ) {
-    const timeRange = sceneGraph.getTimeRange(this).state.value;
     return PanelBuilders.timeseries()
       .setTitle(`${pattern}`)
       .setDescription(`The pattern \`${pattern}\` has been matched \`${sum}\` times in the given timerange.`)
