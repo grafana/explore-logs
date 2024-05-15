@@ -25,7 +25,7 @@ test.describe('explore services breakdown page', () => {
       .getByTestId('data-testid Panel header info')
       .getByRole('button', { name: 'Add to filters' })
       .click();
-    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label detected_level')).toBeVisible();
+    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label detected_levels')).toBeVisible();
     const page1Promise = page.waitForEvent('popup');
     await explorePage.serviceBreakdownOpenExplore.click();
     const page1 = await page1Promise;
