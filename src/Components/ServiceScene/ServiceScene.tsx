@@ -17,7 +17,6 @@ import {
   SceneObjectUrlSyncConfig,
   SceneObjectUrlValues,
   SceneVariable,
-  SceneVariableSet,
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
@@ -85,9 +84,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   public constructor(state: MakeOptional<ServiceSceneState, 'body'>) {
     super({
       body: state.body ?? buildGraphScene(),
-      $variables:
-        state.$variables ??
-        new SceneVariableSet({ variables: [new CustomVariable({ name: VAR_LOGS_FORMAT, value: '' })] }),
+      $variables: state.$variables,
       $data: getQueryRunner(buildLokiQuery(LOG_STREAM_SELECTOR_EXPR)),
       ...state,
     });

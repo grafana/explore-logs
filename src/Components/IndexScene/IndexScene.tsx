@@ -29,6 +29,7 @@ import {
   VAR_LINE_FILTER,
   VAR_PATTERNS,
   explorationDS,
+  VAR_LOGS_FORMAT,
 } from 'services/variables';
 
 import { ServiceScene } from '../ServiceScene/ServiceScene';
@@ -244,6 +245,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
         hide: VariableHide.hideVariable,
       }),
       new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable }),
+      new CustomVariable({ name: VAR_LOGS_FORMAT, value: '', hide: VariableHide.hideVariable }),
     ],
   });
 }
