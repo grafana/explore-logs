@@ -62,6 +62,7 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install chromium --with-deps
       - name: Run e2e tests
+        id: run-tests
         run: yarn e2e
       - name: Upload Playwright artifacts
         uses: actions/upload-artifact@v4

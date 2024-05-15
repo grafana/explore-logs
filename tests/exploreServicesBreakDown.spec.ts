@@ -18,7 +18,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page).toHaveURL(/broadcast/);
   });
 
-  test.only('should select a label, update filters, open in explore', async ({ page }) => {
+  test('should select a label, update filters, open in explore', async ({ page }) => {
     await page.getByLabel('Tab Labels').click();
     await page.getByLabel('cluster').click();
     await page
