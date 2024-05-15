@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import { debounce } from 'lodash';
 import React, { useCallback, useState } from 'react';
-import { BusEventBase, GrafanaTheme2 } from '@grafana/data';
+import { BusEventBase, GrafanaTheme2, TimeRange } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   PanelBuilders,
@@ -14,27 +14,17 @@ import {
   SceneVariable,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import {
-  DrawStyle,
-  Field,
-  Icon,
-  Input,
-  LoadingPlaceholder,
-  StackingMode,
-  Text,
-  TextLink,
-  useStyles2,
-} from '@grafana/ui';
+import { DrawStyle, Field, Icon, Input, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
 import { testIds } from 'services/testIds';
 import { LEVEL_VARIABLE_VALUE, VAR_DATASOURCE, VAR_FILTERS } from 'services/variables';
-import { GrotError } from '../GrotError';
 import { SelectServiceButton } from './SelectServiceButton';
 import { PLUGIN_ID } from 'services/routing';
 import { buildLokiQuery } from 'services/query';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
+import { ConfigureVolumeError } from './ConfigureVolumeError';
 
 export const SERVICE_NAME = 'service_name';
 
@@ -62,7 +52,8 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
     onReferencedVariableValueChanged: async (variable: SceneVariable) => {
       const { name } = variable.state;
       if (name === VAR_DATASOURCE) {
-        this._getServicesByVolume();
+        // If datasource changes, we need to fetch services by volume for the new datasource
+        this.getServicesByVolume();
       }
     },
   });
@@ -88,15 +79,16 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
         filters: [],
       });
     }
-    this._getServicesByVolume();
+    // On activation, fetch services by volume
+    this.getServicesByVolume();
     this.subscribeToState((newState, oldState) => {
-      // Updates servicesToQuery when servicesByVolume is changed - should happen only once when the list of services is fetched during initialization
+      // Updates servicesToQuery when servicesByVolume is changed
       if (newState.servicesByVolume !== oldState.servicesByVolume) {
-        const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
-        const servicesToQuery = createListOfServicesToQuery(
-          newState.servicesByVolume ?? [],
-          getFavoriteServicesFromStorage(ds)
-        );
+        const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue()?.toString();
+        let servicesToQuery: string[] = [];
+        if (ds && newState.servicesByVolume) {
+          servicesToQuery = createListOfServicesToQuery(newState.servicesByVolume, ds, this.state.searchServicesString);
+        }
         this.setState({
           servicesToQuery,
         });
@@ -104,14 +96,10 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
 
       // Updates servicesToQuery when searchServicesString is changed
       if (newState.searchServicesString !== oldState.searchServicesString) {
-        const services = this.state.servicesByVolume?.filter((service) =>
-          service.toLowerCase().includes(newState.searchServicesString?.toLowerCase() ?? '')
-        );
-        let servicesToQuery = services ?? [];
-        // If user is not searching for anything, add favorite services to the top
-        if (newState.searchServicesString === '') {
-          const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
-          servicesToQuery = createListOfServicesToQuery(servicesToQuery, getFavoriteServicesFromStorage(ds));
+        const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue()?.toString();
+        let servicesToQuery: string[] = [];
+        if (ds && this.state.servicesByVolume) {
+          servicesToQuery = createListOfServicesToQuery(this.state.servicesByVolume, ds, newState.searchServicesString);
         }
         this.setState({
           servicesToQuery,
@@ -123,10 +111,16 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
         this.updateBody();
       }
     });
+
+    sceneGraph.getTimeRange(this).subscribeToState((newTime, oldTime) => {
+      if (shouldUpdateServicesByVolume(newTime.value, oldTime.value)) {
+        this.getServicesByVolume();
+      }
+    });
   }
 
-  // Run on initialization to fetch list of services ordered by volume
-  private async _getServicesByVolume() {
+  // Run to fetch services by volume
+  private async getServicesByVolume() {
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     this.setState({
       isServicesByVolumeLoading: true,
@@ -181,9 +175,10 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
     } else {
       // If we have services to query, build the layout with the services. Children is an array of layouts for each service (1 row with 2 columns - timeseries and logs panel)
       const children = [];
+      const timeRange = sceneGraph.getTimeRange(this).state.value;
       for (const service of this.state.servicesToQuery) {
         // for each service, we create a layout with timeseries and logs panel
-        children.push(this.buildServiceLayout(service), this.buildServiceLogsLayout(service));
+        children.push(this.buildServiceLayout(service, timeRange), this.buildServiceLogsLayout(service));
       }
       this.state.body.setState({
         children: [
@@ -204,7 +199,11 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
   }
 
   // Creates a layout with timeseries panel
-  buildServiceLayout(service: string) {
+  buildServiceLayout(service: string, timeRange: TimeRange) {
+    let splitDuration;
+    if (timeRange.to.diff(timeRange.from, 'hours') >= 4 && timeRange.to.diff(timeRange.from, 'hours') <= 26) {
+      splitDuration = '2h';
+    }
     return new SceneCSSGridItem({
       body: PanelBuilders.timeseries()
         // If service was previously selected, we show it in the title
@@ -213,7 +212,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
           getQueryRunner(
             buildLokiQuery(
               `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`,
-              { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}` }
+              { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`, splitDuration }
             )
           )
         )
@@ -273,9 +272,11 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
       <div className={styles.container}>
         <div className={styles.bodyWrapper}>
           <div>
-            {/** This is on top to show that we are loading Showing: X of X services div */}
-            {isServicesByVolumeLoading && <LoadingPlaceholder text={'Loading'} className={styles.loadingText} />}
-            {!isServicesByVolumeLoading && <>Showing {servicesToQuery?.length} services</>}
+            {/** When services fetched, show how many services are we showing */}
+            {isServicesByVolumeLoading && (
+              <LoadingPlaceholder text={'Loading services'} className={styles.loadingText} />
+            )}
+            {!isServicesByVolumeLoading && <>Showing {servicesToQuery?.length ?? 0} services</>}
           </div>
           <Field className={styles.searchField}>
             <Input
@@ -286,27 +287,8 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
               onChange={onSearchChange}
             />
           </Field>
-          {isServicesByVolumeLoading && <LoadingPlaceholder text="Fetching services..." />}
           {/** If we don't have any servicesByVolume, volume endpoint is probably not enabled */}
-          {!isServicesByVolumeLoading && !servicesByVolume?.length && (
-            <GrotError>
-              <p>Log volume has not been configured.</p>
-              <p>
-                <TextLink href="https://grafana.com/docs/loki/latest/reference/api/#query-log-volume" external>
-                  Instructions to enable volume in the Loki config:
-                </TextLink>
-              </p>
-              <Text textAlignment="left">
-                <pre>
-                  <code>
-                    limits_config:
-                    <br />
-                    &nbsp;&nbsp;volume_enabled: true
-                  </code>
-                </pre>
-              </Text>
-            </GrotError>
-          )}
+          {!isServicesByVolumeLoading && !servicesByVolume?.length && <ConfigureVolumeError />}
           {!isServicesByVolumeLoading && servicesToQuery && servicesToQuery.length > 0 && (
             <div className={styles.body}>
               <body.Component model={body} />
@@ -318,14 +300,57 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
   };
 }
 
-// Helper function to create a list of services to query. We want to show favorite services first and remove duplicates.
-// If there are no services, we return an empty array (don't want to use favorite services if there are no services)
-function createListOfServicesToQuery(services: string[], favoriteServices: string[]) {
-  if (!services.length) {
+// Create a list of services to query:
+// 1. Filters provided services by searchString
+// 2. Gets favoriteServicesToQuery from localStorage and filters them by searchString
+// 3. Orders them correctly
+function createListOfServicesToQuery(services: string[], ds: string, searchString: string) {
+  if (!services?.length) {
     return [];
   }
-  const set = new Set([...favoriteServices, ...services]);
-  return Array.from(set);
+
+  const servicesToQuery = services.filter((service) => service.toLowerCase().includes(searchString.toLowerCase()));
+  const favoriteServicesToQuery = getFavoriteServicesFromStorage(ds).filter((service) =>
+    service.toLowerCase().includes(searchString.toLowerCase())
+  );
+
+  // Deduplicate
+  return Array.from(new Set([...favoriteServicesToQuery, ...servicesToQuery]));
+}
+
+function shouldUpdateServicesByVolume(newTime: TimeRange, oldTime: TimeRange) {
+  // Update if the time range is not within the same scope (hours vs. days)
+  if (newTime.to.diff(newTime.from, 'days') > 1 !== oldTime.to.diff(oldTime.from, 'days') > 1) {
+    return true;
+  }
+  // Update if the time range is less than 6 hours and the difference between the old and new 'from' and 'to' times is greater than 30 minutes
+  if (newTime.to.diff(newTime.from, 'hours') < 6 && timeDiffBetweenRangesLargerThan(newTime, oldTime, 'minutes', 30)) {
+    return true;
+  }
+  // Update if the time range is less than 1 day and the difference between the old and new 'from' and 'to' times is greater than 1 hour
+  if (newTime.to.diff(newTime.from, 'days') < 1 && timeDiffBetweenRangesLargerThan(newTime, oldTime, 'hours', 1)) {
+    return true;
+  }
+  // Update if the time range is more than 1 day and the difference between the old and new 'from' and 'to' times is greater than 1 day
+  if (newTime.to.diff(newTime.from, 'days') > 1 && timeDiffBetweenRangesLargerThan(newTime, oldTime, 'days', 1)) {
+    return true;
+  }
+
+  return false;
+}
+
+// Helper function to check if difference between two time ranges is larger than value
+function timeDiffBetweenRangesLargerThan(
+  newTimeRange: TimeRange,
+  oldTimeRange: TimeRange,
+  unit: 'minutes' | 'hours' | 'days',
+  value: number
+) {
+  const toChange =
+    newTimeRange.to.diff(oldTimeRange.to, unit) > value || newTimeRange.to.diff(oldTimeRange.to, unit) < -value;
+  const fromChange =
+    newTimeRange.from.diff(oldTimeRange.from, unit) > value || newTimeRange.from.diff(oldTimeRange.from, unit) < -value;
+  return toChange || fromChange;
 }
 
 function getStyles(theme: GrafanaTheme2) {
