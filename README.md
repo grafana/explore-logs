@@ -75,5 +75,27 @@ Once the docker container started, navigate to http://localhost:3000/a/grafana-l
 In order to run the setup locally and build the plugin by your own, follow these steps:
 
 1. `yarn install` 
-2. `yarn dev` this builds the plugin continously
+2. `yarn dev` this builds the plugin continuously
 3. `yarn server` this spins up the docker setup, including a Loki instance and the fake data generator
+
+## Supported Features
+
+This section outlines the supported features available by page: Service Selection and Service Detail.
+
+### Service Selection
+
+Service Selection is the entry step where users can choose a service. List of features and functionalities:
+
+**1. Fetching of services** - Services are fetched using the Loki [/loki/api/v1/index/volume](https://grafana.com/docs/loki/latest/reference/loki-http-api/#query-log-volume) endpoint and ordered by their volume. Services are re-fetched when the time range significantly changes to ensure correct data. Services are updated if:
+- The time range scope changes (hours vs. days).
+- The new time range is under 6 hours and the difference exceeds 30 minutes.
+- The new time range is under 1 day and the difference exceeds 1 hour.
+- The new time range is over 1 day and the difference exceeds 1 day.
+
+**2. Showing of services** - Services are shown based on volume and are lazy-loaded. Metrics and logs are queried only for services that are scrolled to.
+
+**3. Previously selected services** - Previously selected services are displayed at the top of the list for easier access.
+
+**4. Searching of services** - The search input can be used to filter services that include the specified string.
+
+### Service Details
