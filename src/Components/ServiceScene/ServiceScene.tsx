@@ -48,7 +48,7 @@ import { buildLogsListScene } from './LogsListScene';
 import { LogsVolumePanel } from './LogsVolumePanel';
 import { ShareExplorationButton } from './ShareExplorationButton';
 
-interface LokiPattern {
+export interface LokiPattern {
   pattern: string;
   samples: Array<[number, string]>;
 }
