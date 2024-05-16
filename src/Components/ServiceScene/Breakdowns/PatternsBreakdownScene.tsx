@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DataFrame, FieldType, GrafanaTheme2, LoadingState, TimeRange } from '@grafana/data';
+import { DataFrame, FieldType, getTimeZone, GrafanaTheme2, LoadingState, TimeRange } from '@grafana/data';
 import {
   CustomVariable,
   PanelBuilders,
@@ -15,9 +15,21 @@ import {
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
+  SceneReactObject,
   SceneVariableSet,
 } from '@grafana/scenes';
-import { Button, DrawStyle, StackingMode, Text, TextLink, useStyles2 } from '@grafana/ui';
+import { CellProps } from 'react-table';
+import {
+  Button,
+  Column,
+  DrawStyle,
+  InteractiveTable,
+  StackingMode,
+  Text,
+  TextLink,
+  TimeSeries,
+  useStyles2,
+} from '@grafana/ui';
 import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { LayoutSwitcher } from 'Components/ServiceScene/Breakdowns/LayoutSwitcher';
 import { StatusWrapper } from 'Components/ServiceScene/Breakdowns/StatusWrapper';
@@ -27,6 +39,7 @@ import { getColorByIndex } from 'services/scenes';
 import { LokiPattern, ServiceScene } from '../ServiceScene';
 import { FilterByPatternsButton, onPatternClick } from './FilterByPatternsButton';
 import { IndexScene } from '../../IndexScene/IndexScene';
+import { LegendDisplayMode } from '@grafana/schema';
 
 export interface PatternsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -41,6 +54,14 @@ type PatternFrame = {
   pattern: string;
   sum: number;
 };
+
+interface WithCustomCellData {
+  pattern: string;
+  dataFrame: DataFrame;
+  // samples: Array<[number, string]>,
+  includeLink: () => void;
+  excludeLink: () => void;
+}
 
 export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSceneState> {
   constructor(state: Partial<PatternsBreakdownSceneState>) {
@@ -141,14 +162,14 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
   private async updateBody() {
     const children: SceneFlexItemLike[] = [];
 
-    const patterns = sceneGraph.getAncestor(this, ServiceScene).state.patterns;
-    if (!patterns) {
+    const lokiPatterns = sceneGraph.getAncestor(this, ServiceScene).state.patterns;
+    if (!lokiPatterns) {
       return;
     }
 
     const timeRange = sceneGraph.getTimeRange(this).state.value;
 
-    const patternFrames = this.buildPatterns(patterns, timeRange, children);
+    const patternFrames = this.buildPatterns(lokiPatterns, timeRange, children);
 
     const logExploration = sceneGraph.getAncestor(this, IndexScene);
 
@@ -174,61 +195,170 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
             isLazy: true,
             children: children.map((child) => child.clone()),
           }),
-          new SceneFlexLayout({
-            direction: 'column',
-            children: [
-              patternFrames
-                ? new SceneFlexItem({
-                    minHeight: 300,
-                    body: PanelBuilders.timeseries()
-                      .setData(
-                        new SceneDataNode({
-                          data: {
-                            series: patternFrames.map((patternFrame) => {
-                              return patternFrame.dataFrame;
-                            }),
-                            state: LoadingState.Done,
-                            timeRange: timeRange,
-                          },
-                        })
-                      )
-                      .setTitle('Patterns')
-                      .setLinks([
-                        {
-                          url: '',
-                          onClick: (event) => {
-                            onPatternClick({
-                              pattern: event.origin.name,
-                              type: 'include',
-                              indexScene: logExploration,
-                            });
-                          },
-                          title: 'Include',
-                        },
-                        {
-                          url: '',
-                          onClick: (event) => {
-                            onPatternClick({
-                              pattern: event.origin.name,
-                              type: 'exclude',
-                              indexScene: logExploration,
-                            });
-                          },
-                          title: 'Exclude',
-                        },
-                      ])
-                      .build(),
-                  })
-                : //@todo undefined dataframe state
-                  new SceneFlexItem({
-                    body: undefined,
-                    $data: undefined,
-                  }),
-            ],
-          }),
+          this.getSingleViewLayout(patternFrames, timeRange, logExploration),
         ],
       }),
       loading: false,
+    });
+  }
+
+  private getSingleViewLayout(patternFrames: PatternFrame[], timeRange: TimeRange, logExploration: IndexScene) {
+    return new SceneFlexLayout({
+      direction: 'column',
+      children: [
+        new SceneFlexLayout({
+          direction: 'column',
+          children: [
+            patternFrames
+              ? new SceneFlexItem({
+                  minHeight: 300,
+                  maxWidth: '100%',
+                  body: PanelBuilders.timeseries()
+                    .setData(
+                      new SceneDataNode({
+                        data: {
+                          series: patternFrames.map((patternFrame) => {
+                            return patternFrame.dataFrame;
+                          }),
+                          state: LoadingState.Done,
+                          timeRange: timeRange,
+                        },
+                      })
+                    )
+                    .setTitle('Patterns')
+                    .setLinks([
+                      {
+                        url: '',
+                        onClick: (event) => {
+                          onPatternClick({
+                            pattern: event.origin.name,
+                            type: 'include',
+                            indexScene: logExploration,
+                          });
+                        },
+                        title: 'Include',
+                      },
+                      {
+                        url: '',
+                        onClick: (event) => {
+                          onPatternClick({
+                            pattern: event.origin.name,
+                            type: 'exclude',
+                            indexScene: logExploration,
+                          });
+                        },
+                        title: 'Exclude',
+                      },
+                    ])
+                    .build(),
+                })
+              : //@todo undefined dataframe state
+                new SceneFlexItem({
+                  body: undefined,
+                  $data: undefined,
+                }),
+          ],
+        }),
+        this.getSingleViewTable(patternFrames, logExploration, timeRange),
+      ],
+    });
+  }
+
+  private getSingleViewTable(patternFrames: PatternFrame[], logExploration: IndexScene, timeRange: TimeRange) {
+    const timeZone = getTimeZone();
+    const lokiPatterns = sceneGraph.getAncestor(this, ServiceScene).state.patterns;
+    if (!lokiPatterns) {
+      //@todo empty state
+      return new SceneFlexItem({
+        body: undefined,
+        $data: undefined,
+      });
+    }
+    const tableData: WithCustomCellData[] = patternFrames.map((pattern: PatternFrame) => {
+      return {
+        dataFrame: pattern.dataFrame,
+        pattern: pattern.pattern,
+        includeLink: () =>
+          onPatternClick({
+            pattern: pattern.pattern,
+            type: 'include',
+            indexScene: logExploration,
+          }),
+        excludeLink: () =>
+          onPatternClick({
+            pattern: pattern.pattern,
+            type: 'exclude',
+            indexScene: logExploration,
+          }),
+      };
+    });
+
+    const columns: Array<Column<WithCustomCellData>> = [
+      {
+        id: 'volume-samples',
+        header: 'Volume',
+        cell: (props: CellProps<WithCustomCellData>) => {
+          return (
+            <TimeSeries
+              options={{}}
+              width={180}
+              timeZone={timeZone}
+              legend={{
+                displayMode: LegendDisplayMode.Hidden,
+                width: 0,
+                calcs: [],
+                isVisible: false,
+                placement: 'bottom',
+                showLegend: false,
+              }}
+              height={80}
+              timeRange={timeRange}
+              frames={[props.cell.row.original.dataFrame]}
+            />
+          );
+        },
+      },
+      {
+        id: 'pattern',
+        header: 'Pattern',
+      },
+      {
+        id: 'include',
+        header: undefined,
+        cell: (props: CellProps<WithCustomCellData>) => {
+          return (
+            <Button
+              variant={'secondary'}
+              onClick={() => {
+                props.cell.row.original.includeLink();
+              }}
+            >
+              Add to search
+            </Button>
+          );
+        },
+      },
+      {
+        id: 'exclude',
+        header: undefined,
+        cell: (props: CellProps<WithCustomCellData>) => {
+          return (
+            <Button variant={'secondary'} onClick={() => props.cell.row.original.excludeLink()}>
+              Exclude from search
+            </Button>
+          );
+        },
+      },
+    ];
+
+    return new SceneFlexItem({
+      body: new SceneReactObject({
+        reactNode: (
+          <div className={'hello-weird-thing'} style={{ width: '100%' }}>
+            <InteractiveTable columns={columns} data={tableData} getRowId={(r: WithCustomCellData) => r.pattern} />
+          </div>
+        ),
+      }),
     });
   }
 
@@ -260,13 +390,21 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
               name: 'time',
               type: FieldType.time,
               values: timeValues,
-              config: {},
+              config: {
+                custom: {
+                  axisPlacement: 'hidden',
+                },
+              },
             },
             {
               name: pat.pattern,
               type: FieldType.number,
               values: sampleValues,
-              config: {},
+              config: {
+                custom: {
+                  axisPlacement: 'hidden',
+                },
+              },
             },
           ],
           length: pat.samples.length,
