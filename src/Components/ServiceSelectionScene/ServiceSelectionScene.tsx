@@ -220,7 +220,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
         .setData(
           getQueryRunner(
             buildLokiQuery(
-              `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME}=\`${service}\`} | logfmt| drop __error__ [$__auto]))`,
+              `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`,
               { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`, splitDuration }
             )
           )
