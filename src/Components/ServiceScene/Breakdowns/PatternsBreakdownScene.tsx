@@ -1,12 +1,11 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DataFrame, FieldType, GrafanaTheme2, LoadingState } from '@grafana/data';
+import { DataFrame, FieldType, GrafanaTheme2, LoadingState, TimeRange } from '@grafana/data';
 import {
   CustomVariable,
   PanelBuilders,
   SceneComponentProps,
-  SceneCSSGridItem,
   SceneCSSGridLayout,
   SceneDataNode,
   SceneFlexItem,
@@ -17,15 +16,16 @@ import {
   SceneObjectState,
   SceneVariableSet,
 } from '@grafana/scenes';
-import { Button, DrawStyle, StackingMode, useStyles2, Text, TextLink } from '@grafana/ui';
+import { Button, DrawStyle, StackingMode, Text, TextLink, useStyles2 } from '@grafana/ui';
 import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { LayoutSwitcher } from 'Components/ServiceScene/Breakdowns/LayoutSwitcher';
 import { StatusWrapper } from 'Components/ServiceScene/Breakdowns/StatusWrapper';
 import { GrotError } from 'Components/GrotError';
 import { VAR_LABEL_GROUP_BY } from 'services/variables';
 import { getColorByIndex } from 'services/scenes';
-import { ServiceScene } from '../ServiceScene';
+import { LokiPattern, ServiceScene } from '../ServiceScene';
 import { FilterByPatternsButton } from './FilterByPatternsButton';
+
 export interface PatternsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
   value?: string;
@@ -54,154 +54,6 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
 
     this.addActivationHandler(this._onActivate.bind(this));
   }
-
-  private _onActivate() {
-    this.updateBody();
-    const unsub = sceneGraph.getAncestor(this, ServiceScene).subscribeToState((newState, prevState) => {
-      if (newState.patterns !== prevState.patterns) {
-        this.updateBody();
-      }
-    });
-    return () => unsub.unsubscribe();
-  }
-
-  private getVariable(): CustomVariable {
-    const variable = sceneGraph.lookupVariable(VAR_LABEL_GROUP_BY, this)!;
-    if (!(variable instanceof CustomVariable)) {
-      throw new Error('Group by variable not found');
-    }
-
-    return variable;
-  }
-
-  private async updateBody() {
-    const children: SceneFlexItemLike[] = [];
-
-    const patterns = sceneGraph.getAncestor(this, ServiceScene).state.patterns;
-    if (!patterns) {
-      return;
-    }
-    const timeRange = sceneGraph.getTimeRange(this).state.value;
-
-    let maxValue = -Infinity;
-    let minValue = 0;
-
-    const frames: PatternFrame[] = patterns
-      .map((pat, frameIndex) => {
-        const timeValues: number[] = [];
-        const sampleValues: number[] = [];
-        let sum = 0;
-        pat.samples.forEach(([time, value]) => {
-          timeValues.push(time * 1000);
-          const sample = parseFloat(value);
-          sampleValues.push(sample);
-          if (sample > maxValue) {
-            maxValue = sample;
-          }
-          if (sample < minValue) {
-            minValue = sample;
-          }
-          sum += sample;
-        });
-        const dataFrame: DataFrame = {
-          refId: pat.pattern,
-          fields: [
-            {
-              name: 'time',
-              type: FieldType.time,
-              values: timeValues,
-              config: {},
-            },
-            {
-              name: pat.pattern,
-              type: FieldType.number,
-              values: sampleValues,
-              config: {},
-            },
-          ],
-          length: pat.samples.length,
-          meta: {
-            preferredVisualisationType: 'graph',
-          },
-        };
-
-        return {
-          dataFrame,
-          pattern: pat.pattern,
-          sum,
-        };
-      })
-      .sort((a, b) => b.sum - a.sum)
-      .slice(0, 20);
-
-    for (let i = 0; i < frames.length; i++) {
-      const { dataFrame, pattern, sum } = frames[i];
-      children.push(
-        new SceneCSSGridItem({
-          body: PanelBuilders.timeseries()
-            .setTitle(`${pattern}`)
-            .setDescription(`The pattern \`${pattern}\` has been matched \`${sum}\` times in the given timerange.`)
-            .setOption('legend', { showLegend: false })
-            .setData(
-              new SceneDataNode({
-                data: {
-                  series: [dataFrame],
-                  state: LoadingState.Done,
-                  timeRange,
-                },
-              })
-            )
-            .setColor({ mode: 'fixed', fixedColor: getColorByIndex(i) })
-            .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
-            .setCustomFieldConfig('fillOpacity', 100)
-            .setCustomFieldConfig('lineWidth', 0)
-            .setCustomFieldConfig('pointSize', 0)
-            .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-            .setCustomFieldConfig('axisSoftMax', maxValue)
-            .setCustomFieldConfig('axisSoftMin', minValue)
-            .setHeaderActions([
-              new FilterByPatternsButton({ pattern: pattern, type: 'exclude' }),
-              new FilterByPatternsButton({ pattern: pattern, type: 'include' }),
-            ])
-            .build(),
-        })
-      );
-    }
-
-    this.setState({
-      body: new LayoutSwitcher({
-        options: [
-          { value: 'grid', label: 'Grid' },
-          { value: 'rows', label: 'Rows' },
-        ],
-        actionView: 'patterns',
-        active: 'grid',
-        layouts: [
-          new SceneCSSGridLayout({
-            templateColumns: GRID_TEMPLATE_COLUMNS,
-            autoRows: '200px',
-            children: children,
-          }),
-          new SceneCSSGridLayout({
-            templateColumns: '1fr',
-            autoRows: '200px',
-            children: children.map((child) => child.clone()),
-          }),
-        ],
-      }),
-      loading: false,
-    });
-  }
-
-  public onChange = (value?: string) => {
-    if (!value) {
-      return;
-    }
-
-    const variable = this.getVariable();
-
-    variable.changeValueTo(value);
-  };
 
   public static Component = ({ model }: SceneComponentProps<PatternsBreakdownScene>) => {
     const { body, loading, blockingMessage } = model.useState();
@@ -254,6 +106,168 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       </div>
     );
   };
+
+  public onChange = (value?: string) => {
+    if (!value) {
+      return;
+    }
+
+    const variable = this.getVariable();
+
+    variable.changeValueTo(value);
+  };
+
+  private _onActivate() {
+    this.updateBody();
+    const unsub = sceneGraph.getAncestor(this, ServiceScene).subscribeToState((newState, prevState) => {
+      if (newState.patterns !== prevState.patterns) {
+        this.updateBody();
+      }
+    });
+    return () => unsub.unsubscribe();
+  }
+
+  private getVariable(): CustomVariable {
+    const variable = sceneGraph.lookupVariable(VAR_LABEL_GROUP_BY, this)!;
+    if (!(variable instanceof CustomVariable)) {
+      throw new Error('Group by variable not found');
+    }
+
+    return variable;
+  }
+
+  private async updateBody() {
+    const children: SceneFlexItemLike[] = [];
+
+    const patterns = sceneGraph.getAncestor(this, ServiceScene).state.patterns;
+    if (!patterns) {
+      return;
+    }
+
+    this.buildPatterns(patterns, children);
+
+    this.setState({
+      body: new LayoutSwitcher({
+        options: [
+          { value: 'grid', label: 'Grid' },
+          { value: 'rows', label: 'Rows' },
+        ],
+        actionView: 'patterns',
+        active: 'grid',
+        layouts: [
+          new SceneCSSGridLayout({
+            templateColumns: GRID_TEMPLATE_COLUMNS,
+            autoRows: '200px',
+            isLazy: true,
+            children: children,
+          }),
+          new SceneCSSGridLayout({
+            templateColumns: '1fr',
+            autoRows: '200px',
+            isLazy: true,
+            children: children.map((child) => child.clone()),
+          }),
+        ],
+      }),
+      loading: false,
+    });
+  }
+
+  private buildPatterns(patterns: LokiPattern[], children: SceneFlexItemLike[]) {
+    let maxValue = -Infinity;
+    let minValue = 0;
+
+    const frames: PatternFrame[] = patterns
+      .map((pat, frameIndex) => {
+        const timeValues: number[] = [];
+        const sampleValues: number[] = [];
+        let sum = 0;
+        pat.samples.forEach(([time, value]) => {
+          timeValues.push(time * 1000);
+          const sample = parseFloat(value);
+          sampleValues.push(sample);
+          if (sample > maxValue) {
+            maxValue = sample;
+          }
+          if (sample < minValue) {
+            minValue = sample;
+          }
+          sum += sample;
+        });
+        const dataFrame: DataFrame = {
+          refId: pat.pattern,
+          fields: [
+            {
+              name: 'time',
+              type: FieldType.time,
+              values: timeValues,
+              config: {},
+            },
+            {
+              name: pat.pattern,
+              type: FieldType.number,
+              values: sampleValues,
+              config: {},
+            },
+          ],
+          length: pat.samples.length,
+          meta: {
+            preferredVisualisationType: 'graph',
+          },
+        };
+
+        return {
+          dataFrame,
+          pattern: pat.pattern,
+          sum,
+        };
+      })
+      .sort((a, b) => b.sum - a.sum);
+
+    const timeRange = sceneGraph.getTimeRange(this).state.value;
+
+    for (let i = 0; i < frames.length; i++) {
+      const { dataFrame, pattern, sum } = frames[i];
+      children.push(this.buildPatternTimeseries(dataFrame, timeRange, pattern, sum, i, minValue, maxValue));
+    }
+  }
+
+  private buildPatternTimeseries(
+    dataFrame: DataFrame,
+    timeRange: TimeRange,
+    pattern: string,
+    sum: number,
+    index: number,
+    minValue: number,
+    maxValue: number
+  ) {
+    return PanelBuilders.timeseries()
+      .setTitle(`${pattern}`)
+      .setDescription(`The pattern \`${pattern}\` has been matched \`${sum}\` times in the given timerange.`)
+      .setOption('legend', { showLegend: false })
+      .setData(
+        new SceneDataNode({
+          data: {
+            series: [dataFrame],
+            state: LoadingState.Done,
+            timeRange,
+          },
+        })
+      )
+      .setColor({ mode: 'fixed', fixedColor: getColorByIndex(index) })
+      .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
+      .setCustomFieldConfig('fillOpacity', 100)
+      .setCustomFieldConfig('lineWidth', 0)
+      .setCustomFieldConfig('pointSize', 0)
+      .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+      .setCustomFieldConfig('axisSoftMax', maxValue)
+      .setCustomFieldConfig('axisSoftMin', minValue)
+      .setHeaderActions([
+        new FilterByPatternsButton({ pattern: pattern, type: 'exclude' }),
+        new FilterByPatternsButton({ pattern: pattern, type: 'include' }),
+      ])
+      .build();
+  }
 }
 
 function getStyles(theme: GrafanaTheme2) {
@@ -304,17 +318,18 @@ export function buildPatternsScene() {
 interface SelectLabelActionState extends SceneObjectState {
   labelName: string;
 }
-export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
-  public onClick = () => {
-    getPatternsSceneFor(this).onChange(this.state.labelName);
-  };
 
+export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
   public static Component = ({ model }: SceneComponentProps<AddToFiltersButton>) => {
     return (
       <Button variant="secondary" size="sm" fill="text" onClick={model.onClick}>
         Select
       </Button>
     );
+  };
+
+  public onClick = () => {
+    getPatternsSceneFor(this).onChange(this.state.labelName);
   };
 }
 
