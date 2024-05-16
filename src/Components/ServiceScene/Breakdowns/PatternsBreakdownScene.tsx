@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DataFrame, FieldType, getTimeZone, GrafanaTheme2, LoadingState, TimeRange } from '@grafana/data';
+import { DataFrame, FieldType, GrafanaTheme2, LoadingState, PanelData, TimeRange } from '@grafana/data';
 import {
   CustomVariable,
   PanelBuilders,
@@ -20,6 +20,7 @@ import {
 } from '@grafana/scenes';
 import { CellProps } from 'react-table';
 import {
+  AxisPlacement,
   Button,
   Column,
   DrawStyle,
@@ -27,7 +28,7 @@ import {
   StackingMode,
   Text,
   TextLink,
-  TimeSeries,
+  TooltipDisplayMode,
   useStyles2,
 } from '@grafana/ui';
 import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
@@ -39,7 +40,6 @@ import { getColorByIndex } from 'services/scenes';
 import { LokiPattern, ServiceScene } from '../ServiceScene';
 import { FilterByPatternsButton, onPatternClick } from './FilterByPatternsButton';
 import { IndexScene } from '../../IndexScene/IndexScene';
-import { LegendDisplayMode } from '@grafana/schema';
 
 export interface PatternsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -161,7 +161,6 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
 
   private async updateBody() {
     const children: SceneFlexItemLike[] = [];
-
     const lokiPatterns = sceneGraph.getAncestor(this, ServiceScene).state.patterns;
     if (!lokiPatterns) {
       return;
@@ -205,6 +204,8 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
   private getSingleViewLayout(patternFrames: PatternFrame[], timeRange: TimeRange, logExploration: IndexScene) {
     return new SceneFlexLayout({
       direction: 'column',
+      width: 'calc(100vw - 60px)',
+      maxWidth: '100%',
       children: [
         new SceneFlexLayout({
           direction: 'column',
@@ -265,7 +266,6 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
   }
 
   private getSingleViewTable(patternFrames: PatternFrame[], logExploration: IndexScene, timeRange: TimeRange) {
-    const timeZone = getTimeZone();
     const lokiPatterns = sceneGraph.getAncestor(this, ServiceScene).state.patterns;
     if (!lokiPatterns) {
       //@todo empty state
@@ -298,33 +298,81 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
         id: 'volume-samples',
         header: 'Volume',
         cell: (props: CellProps<WithCustomCellData>) => {
+          const panelData: PanelData = {
+            timeRange: timeRange,
+            series: [props.cell.row.original.dataFrame],
+            state: LoadingState.Done,
+          };
+          const dataNode = new SceneDataNode({
+            data: panelData,
+          });
+          const heatmap = PanelBuilders.heatmap()
+            .setData(dataNode)
+            .setCustomFieldConfig('hideFrom', {
+              legend: true,
+              tooltip: true,
+              viz: true,
+            })
+            .setOption('yAxis', {
+              axisPlacement: AxisPlacement.Hidden,
+            })
+            .setOption('color', {
+              scheme: 'YlOrRd',
+            })
+            .setOption('tooltip', {
+              mode: TooltipDisplayMode.None,
+              yHistogram: false,
+            })
+            .setOption('legend', {
+              show: false,
+            })
+            .setDisplayMode('transparent')
+            .build();
+
+          const timeSeries = PanelBuilders.timeseries()
+            .setData(dataNode.clone())
+            .setCustomFieldConfig('hideFrom', {
+              legend: true,
+              tooltip: true,
+            })
+            .setDisplayMode('transparent')
+            .build();
+
           return (
-            <TimeSeries
-              options={{}}
-              width={180}
-              timeZone={timeZone}
-              legend={{
-                displayMode: LegendDisplayMode.Hidden,
-                width: 0,
-                calcs: [],
-                isVisible: false,
-                placement: 'bottom',
-                showLegend: false,
-              }}
-              height={80}
-              timeRange={timeRange}
-              frames={[props.cell.row.original.dataFrame]}
-            />
+            <div style={{ width: '230px' }}>
+              <div style={{ height: '100px' }}>
+                <heatmap.Component model={heatmap} />
+              </div>
+              <div style={{ height: '60px' }}>
+                <timeSeries.Component model={timeSeries} />
+              </div>
+            </div>
           );
         },
       },
       {
         id: 'pattern',
         header: 'Pattern',
+        cell: (props: CellProps<WithCustomCellData>) => {
+          return (
+            <div
+              style={{
+                width: 'calc(100vw - 640px)',
+                minWidth: '200px',
+                textOverflow: 'ellipsis',
+                overflow: 'hidden',
+              }}
+              className={'hellloooo2'}
+            >
+              {props.cell.row.original.pattern}
+            </div>
+          );
+        },
       },
       {
         id: 'include',
         header: undefined,
+        disableGrow: true,
         cell: (props: CellProps<WithCustomCellData>) => {
           return (
             <Button
@@ -341,6 +389,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       {
         id: 'exclude',
         header: undefined,
+        disableGrow: true,
         cell: (props: CellProps<WithCustomCellData>) => {
           return (
             <Button variant={'secondary'} onClick={() => props.cell.row.original.excludeLink()}>
@@ -354,7 +403,12 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     return new SceneFlexItem({
       body: new SceneReactObject({
         reactNode: (
-          <div className={'hello-weird-thing'} style={{ width: '100%' }}>
+          <div
+            style={{
+              maxWidth: 'calc(100vw - 31px)',
+            }}
+            className={'hello-weird-thing2'}
+          >
             <InteractiveTable columns={columns} data={tableData} getRowId={(r: WithCustomCellData) => r.pattern} />
           </div>
         ),
