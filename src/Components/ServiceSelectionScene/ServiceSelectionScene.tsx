@@ -14,7 +14,16 @@ import {
   SceneVariable,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import { DrawStyle, Field, Icon, Input, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
+import {
+  DrawStyle,
+  Field,
+  Icon,
+  Input,
+  LegendDisplayMode,
+  LoadingPlaceholder,
+  StackingMode,
+  useStyles2,
+} from '@grafana/ui';
 import { getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
 import { testIds } from 'services/testIds';
@@ -185,7 +194,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
           new SceneCSSGridLayout({
             children,
             isLazy: true,
-            templateColumns: 'repeat(auto-fit, minmax(400px, 1fr) minmax(600px, 70%))',
+            templateColumns: 'repeat(auto-fit, minmax(500px, 1fr) minmax(300px, 70%))',
             autoRows: '200px',
             md: {
               templateColumns: '1fr',
@@ -211,7 +220,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
         .setData(
           getQueryRunner(
             buildLokiQuery(
-              `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`,
+              `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME}=\`${service}\`} | logfmt| drop __error__ [$__auto]))`,
               { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`, splitDuration }
             )
           )
@@ -221,8 +230,14 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
         .setCustomFieldConfig('lineWidth', 0)
         .setCustomFieldConfig('pointSize', 0)
         .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+        .setUnit('short')
         .setOverrides(setLeverColorOverrides)
-        .setOption('legend', { showLegend: false })
+        .setOption('legend', {
+          showLegend: true,
+          calcs: ['sum'],
+          placement: 'right',
+          displayMode: LegendDisplayMode.Table,
+        })
         .setHeaderActions(new SelectServiceButton({ service }))
         .build(),
     });
