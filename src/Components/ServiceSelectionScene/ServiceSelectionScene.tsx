@@ -22,6 +22,7 @@ import {
   LegendDisplayMode,
   LoadingPlaceholder,
   StackingMode,
+  TooltipDisplayMode,
   useStyles2,
 } from '@grafana/ui';
 import { getLokiDatasource } from 'services/scenes';
@@ -237,6 +238,9 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
           calcs: ['sum'],
           placement: 'right',
           displayMode: LegendDisplayMode.Table,
+        })
+        .setOption('tooltip', {
+          mode: TooltipDisplayMode.None,
         })
         .setHeaderActions(new SelectServiceButton({ service }))
         .build(),
