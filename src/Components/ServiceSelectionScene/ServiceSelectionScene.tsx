@@ -222,7 +222,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
           getQueryRunner(
             buildLokiQuery(
               `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`,
-              { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`, splitDuration }
+              { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`, splitDuration, refId: `ts-${service}` }
             )
           )
         )
@@ -253,7 +253,11 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
       body: PanelBuilders.logs()
         // Hover header set to true removes unused header padding, displaying more logs
         .setHoverHeader(true)
-        .setData(getQueryRunner(buildLokiQuery(`{${SERVICE_NAME}=\`${service}\`}`, { maxLines: 100 })))
+        .setData(
+          getQueryRunner(
+            buildLokiQuery(`{${SERVICE_NAME}=\`${service}\`}`, { maxLines: 100, refId: `logs-${service}` })
+          )
+        )
         .setOption('showTime', true)
         .setOption('enableLogDetails', false)
         .build(),
