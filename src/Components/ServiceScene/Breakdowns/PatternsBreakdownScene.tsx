@@ -55,7 +55,26 @@ export type PatternFrame = {
   dataFrame: DataFrame;
   pattern: string;
   sum: number;
+  status?: 'include' | 'exclude';
 };
+
+function buildPatternHeaderActions(
+  status: 'include' | 'exclude' | undefined,
+  pattern: string
+): VizPanelState['headerActions'] {
+  if (status) {
+    if (status === 'include') {
+      return [new FilterByPatternsButton({ pattern: pattern, type: 'exclude' })];
+    } else {
+      return [new FilterByPatternsButton({ pattern: pattern, type: 'include' })];
+    }
+  } else {
+    return [
+      new FilterByPatternsButton({ pattern: pattern, type: 'exclude' }),
+      new FilterByPatternsButton({ pattern: pattern, type: 'include' }),
+    ];
+  }
+}
 
 export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSceneState> {
   constructor(state: Partial<PatternsBreakdownSceneState>) {
@@ -153,7 +172,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
 
           console.log('newState.visiblePatterns', newState.visiblePatterns);
 
-          this.updateBody();
+          // this.updateBody();
           // //@ts-ignore
           // const flexLayout: SceneFlexLayout = layoutSwitcher.layouts[2]
           // console.log('flexLayout2', flexLayout);
@@ -177,15 +196,15 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
   }
 
   private async updateBody() {
-    const children: SceneFlexItemLike[] = [];
-    const lokiPatterns = sceneGraph.getAncestor(this, ServiceScene).state.patterns;
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
+    const lokiPatterns = serviceScene.state.patterns;
     if (!lokiPatterns) {
       return;
     }
 
     const timeRange = sceneGraph.getTimeRange(this).state.value;
 
-    const patternFrames = this.buildPatterns(lokiPatterns, timeRange, children);
+    const { children, frames: patternFrames } = this.buildPatterns(lokiPatterns, timeRange);
 
     const logExploration = sceneGraph.getAncestor(this, IndexScene);
 
@@ -320,7 +339,14 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     });
   }
 
-  private buildPatterns(patterns: LokiPattern[], timeRange: TimeRange, children: SceneFlexItemLike[]): PatternFrame[] {
+  private buildPatterns(
+    patterns: LokiPattern[],
+    timeRange: TimeRange
+  ): { children: SceneFlexItemLike[]; frames: PatternFrame[] } {
+    const children: SceneFlexItemLike[] = [];
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
+    const appliedPatterns = sceneGraph.getAncestor(serviceScene, IndexScene).state.patterns;
+
     let maxValue = -Infinity;
     let minValue = 0;
 
@@ -370,34 +396,36 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
             preferredVisualisationType: 'graph',
           },
         };
+        const existingPattern = appliedPatterns?.find((appliedPattern) => appliedPattern.pattern === pat.pattern);
 
         return {
           dataFrame,
           pattern: pat.pattern,
           sum,
+          status: existingPattern?.type,
         };
       })
       .sort((a, b) => b.sum - a.sum);
 
     for (let i = 0; i < frames.length; i++) {
-      const { dataFrame, pattern, sum } = frames[i];
-      children.push(this.buildPatternTimeseries(dataFrame, timeRange, pattern, sum, i, minValue, maxValue));
+      children.push(this.buildPatternTimeseries(frames[i], timeRange, i, minValue, maxValue));
     }
 
-    return frames;
+    return { children, frames };
   }
 
   private buildPatternTimeseries(
-    dataFrame: DataFrame,
+    patternFrame: PatternFrame,
     timeRange: TimeRange,
-    pattern: string,
-    sum: number,
     index: number,
     minValue: number,
     maxValue: number
   ) {
+    const { dataFrame, pattern, sum, status } = patternFrame;
+    const headerActions = buildPatternHeaderActions(status, pattern);
     return PanelBuilders.timeseries()
       .setTitle(`${pattern}`)
+
       .setDescription(`The pattern \`${pattern}\` has been matched \`${sum}\` times in the given timerange.`)
       .setOption('legend', { showLegend: false })
       .setData(
@@ -417,10 +445,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
       .setCustomFieldConfig('axisSoftMax', maxValue)
       .setCustomFieldConfig('axisSoftMin', minValue)
-      .setHeaderActions([
-        new FilterByPatternsButton({ pattern: pattern, type: 'exclude' }),
-        new FilterByPatternsButton({ pattern: pattern, type: 'include' }),
-      ])
+      .setHeaderActions(headerActions)
       .build();
   }
 }

@@ -2,7 +2,6 @@ import {
   PanelBuilders,
   SceneComponentProps,
   SceneDataNode,
-  SceneFlexItem,
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
@@ -14,7 +13,6 @@ import { DataFrame, LoadingState, PanelData, TimeRange } from '@grafana/data';
 import { Button, Column, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
 import { CellProps } from 'react-table';
 import { css } from '@emotion/css';
-import { ServiceScene } from '../ServiceScene';
 import { onPatternClick } from './FilterByPatternsButton';
 
 export interface SingleViewTableSceneState extends SceneObjectState {
@@ -26,6 +24,7 @@ export interface SingleViewTableSceneState extends SceneObjectState {
 interface WithCustomCellData {
   pattern: string;
   dataFrame: DataFrame;
+  sum: number;
   // samples: Array<[number, string]>,
   includeLink: () => void;
   excludeLink: () => void;
@@ -57,32 +56,16 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
     this.addActivationHandler(this._onActivate.bind(this));
   }
 
-  private _onActivate() {
-    this.subscribeToState((newState, prevState) => {
-      if (prevState.visiblePatterns !== newState.visiblePatterns) {
-        console.log('should re-render', newState.visiblePatterns);
-      }
-    });
-  }
-
   public static Component({ model }: SceneComponentProps<SingleViewTableScene>) {
     console.log('rendering SingleViewTableScene', model);
     const styles = getVizStyles();
     const { patternFrames, visiblePatterns, timeRange } = model.useState();
-    if (!model.parent) {
-      return <>No state</>;
-    }
-    const logExploration = sceneGraph.getAncestor(model.parent, IndexScene);
 
-    const lokiPatterns = sceneGraph.getAncestor(model, ServiceScene).state.patterns;
-    if (!lokiPatterns) {
-      console.log('emptystate', lokiPatterns);
-      //@todo empty state
-      return new SceneFlexItem({
-        body: undefined,
-        $data: undefined,
-      });
-    }
+    const total = patternFrames.reduce((previousValue, frame) => {
+      return previousValue + frame.sum;
+    }, 0);
+
+    const logExploration = sceneGraph.getAncestor(model, IndexScene);
     const tableData: WithCustomCellData[] = patternFrames
       .filter((patternFrame) => {
         if (visiblePatterns?.length) {
@@ -95,6 +78,7 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
         return {
           dataFrame: pattern.dataFrame,
           pattern: pattern.pattern,
+          sum: pattern.sum,
           includeLink: () =>
             onPatternClick({
               pattern: pattern.pattern,
@@ -148,6 +132,11 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
             </div>
           );
         },
+      },
+      {
+        id: 'percent',
+        header: '%',
+        cell: (props) => <div>{((100 * props.cell.row.original.sum) / total).toFixed(1)}</div>,
       },
       {
         id: 'pattern',
@@ -211,5 +200,13 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
         <InteractiveTable columns={columns} data={tableData} getRowId={(r: WithCustomCellData) => r.pattern} />
       </div>
     );
+  }
+
+  private _onActivate() {
+    this.subscribeToState((newState, prevState) => {
+      if (prevState.visiblePatterns !== newState.visiblePatterns) {
+        console.log('should re-render', newState.visiblePatterns);
+      }
+    });
   }
 }

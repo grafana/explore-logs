@@ -52,7 +52,18 @@ export class FilterByPatternsButton extends SceneObjectBase<FilterByPatternsButt
     const { patterns = [] } = logExploration.state;
 
     // Remove the pattern if it's already there
-    const filteredPatterns = patterns.filter((pattern) => pattern.pattern !== this.state.pattern);
+    let filteredPatterns = patterns.filter((pattern) => pattern.pattern !== this.state.pattern);
+
+    if (this.state.type === 'include') {
+      // Patterns are mutually exclusive, if one is included, we should remove the rest
+      filteredPatterns = [{ pattern: this.state.pattern, type: this.state.type }];
+    } else {
+      // If a pattern is excluded, remove any existing included patterns
+      filteredPatterns = [
+        ...filteredPatterns.filter((pat) => pat.type === 'exclude'),
+        { pattern: this.state.pattern, type: this.state.type },
+      ];
+    }
 
     // Analytics
     const includePatternsLength = filteredPatterns.filter((p) => p.type === 'include')?.length ?? 0;
@@ -64,7 +75,7 @@ export class FilterByPatternsButton extends SceneObjectBase<FilterByPatternsButt
     });
 
     logExploration.setState({
-      patterns: [...filteredPatterns, { pattern: this.state.pattern, type: this.state.type }],
+      patterns: filteredPatterns,
     });
   };
 
@@ -72,7 +83,7 @@ export class FilterByPatternsButton extends SceneObjectBase<FilterByPatternsButt
     const { type } = model.useState();
     return (
       <Button variant="secondary" size="sm" onClick={model.onClick}>
-        {type === 'include' ? 'Add to filters' : 'Exclude from filters'}
+        {type === 'include' ? 'Select' : 'Exclude'}
       </Button>
     );
   };

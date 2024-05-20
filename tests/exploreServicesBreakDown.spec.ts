@@ -46,7 +46,7 @@ test.describe('explore services breakdown page', () => {
     await page.getByLabel('Tab Patterns').click();
     await page
       .getByTestId('data-testid Panel header level=info <_> caller=flush.go:253 msg="completing block" <_>')
-      .getByRole('button', { name: 'Add to filters' })
+      .getByRole('button', { name: 'Select' })
       .click();
     // Should see the logs panel full of patterns
     await expect(page.getByTestId('data-testid search-logs')).toBeVisible();
@@ -57,8 +57,8 @@ test.describe('explore services breakdown page', () => {
 
   test('patterns should be lazy loaded', async ({ page }) => {
     await page.getByLabel('Tab Patterns').click();
-    const addToFilterButtons = page
-        .getByRole('button', { name: 'Add to filters' })
+    const addToFilterButtons = page.getByTestId('header-container')
+        .getByRole('button', { name: 'Select' })
 
     // Only the first 4 patterns are visible above the fold
     await expect(addToFilterButtons).toHaveCount(4)
