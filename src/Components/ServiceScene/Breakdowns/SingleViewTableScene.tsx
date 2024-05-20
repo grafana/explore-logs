@@ -1,0 +1,215 @@
+import {
+  PanelBuilders,
+  SceneComponentProps,
+  SceneDataNode,
+  SceneFlexItem,
+  sceneGraph,
+  SceneObjectBase,
+  SceneObjectState,
+} from '@grafana/scenes';
+import { PatternFrame } from './PatternsBreakdownScene';
+import React from 'react';
+import { IndexScene } from '../../IndexScene/IndexScene';
+import { DataFrame, LoadingState, PanelData, TimeRange } from '@grafana/data';
+import { Button, Column, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
+import { CellProps } from 'react-table';
+import { css } from '@emotion/css';
+import { ServiceScene } from '../ServiceScene';
+import { onPatternClick } from './FilterByPatternsButton';
+
+export interface SingleViewTableSceneState extends SceneObjectState {
+  visiblePatterns: string[] | undefined;
+  timeRange: TimeRange;
+  patternFrames: PatternFrame[];
+}
+
+interface WithCustomCellData {
+  pattern: string;
+  dataFrame: DataFrame;
+  // samples: Array<[number, string]>,
+  includeLink: () => void;
+  excludeLink: () => void;
+}
+
+function getVizStyles() {
+  return {
+    tableWrap: css({
+      maxWidth: 'calc(100vw - 31px)',
+    }),
+    tableTimeSeriesWrap: css({
+      width: '230px',
+    }),
+    tableTimeSeries: css({
+      height: '60px',
+      overflow: 'hidden',
+      // Hide header on hover hack
+      '.show-on-hover': {
+        display: 'none',
+      },
+    }),
+  };
+}
+
+export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneState> {
+  constructor(state: SingleViewTableSceneState) {
+    super(state);
+
+    this.addActivationHandler(this._onActivate.bind(this));
+  }
+
+  private _onActivate() {
+    this.subscribeToState((newState, prevState) => {
+      if (prevState.visiblePatterns !== newState.visiblePatterns) {
+        console.log('should re-render', newState.visiblePatterns);
+      }
+    });
+  }
+
+  public static Component({ model }: SceneComponentProps<SingleViewTableScene>) {
+    console.log('rendering SingleViewTableScene', model);
+    const styles = getVizStyles();
+    const { patternFrames, visiblePatterns, timeRange } = model.useState();
+    if (!model.parent) {
+      return <>No state</>;
+    }
+    const logExploration = sceneGraph.getAncestor(model.parent, IndexScene);
+
+    const lokiPatterns = sceneGraph.getAncestor(model, ServiceScene).state.patterns;
+    if (!lokiPatterns) {
+      console.log('emptystate', lokiPatterns);
+      //@todo empty state
+      return new SceneFlexItem({
+        body: undefined,
+        $data: undefined,
+      });
+    }
+    const tableData: WithCustomCellData[] = patternFrames
+      .filter((patternFrame) => {
+        if (visiblePatterns?.length) {
+          return visiblePatterns.find((pattern) => pattern === patternFrame.pattern);
+        } else {
+          return true;
+        }
+      })
+      .map((pattern: PatternFrame) => {
+        return {
+          dataFrame: pattern.dataFrame,
+          pattern: pattern.pattern,
+          includeLink: () =>
+            onPatternClick({
+              pattern: pattern.pattern,
+              type: 'include',
+              indexScene: logExploration,
+            }),
+          excludeLink: () =>
+            onPatternClick({
+              pattern: pattern.pattern,
+              type: 'exclude',
+              indexScene: logExploration,
+            }),
+        };
+      });
+
+    const columns: Array<Column<WithCustomCellData>> = [
+      {
+        id: 'volume-samples',
+        header: 'Volume',
+        cell: (props: CellProps<WithCustomCellData>) => {
+          const panelData: PanelData = {
+            timeRange: timeRange,
+            series: [props.cell.row.original.dataFrame],
+            state: LoadingState.Done,
+          };
+          const dataNode = new SceneDataNode({
+            data: panelData,
+          });
+
+          const timeSeries = PanelBuilders.timeseries()
+            .setData(dataNode)
+            .setHoverHeader(true)
+            //@ts-ignore
+            .setOption('hoverHeaderOffset', 10)
+
+            .setOption('tooltip', {
+              mode: TooltipDisplayMode.None,
+            })
+            .setCustomFieldConfig('hideFrom', {
+              legend: true,
+              tooltip: true,
+            })
+            .setDisplayMode('transparent')
+            .build();
+
+          return (
+            <div className={styles.tableTimeSeriesWrap}>
+              <div className={styles.tableTimeSeries}>
+                <timeSeries.Component model={timeSeries} />
+              </div>
+            </div>
+          );
+        },
+      },
+      {
+        id: 'pattern',
+        header: 'Pattern',
+        cell: (props: CellProps<WithCustomCellData>) => {
+          return (
+            <div
+              style={{
+                width: 'calc(100vw - 640px)',
+                minWidth: '200px',
+                textOverflow: 'ellipsis',
+                overflow: 'hidden',
+              }}
+              className={'hellloooo2'}
+            >
+              {props.cell.row.original.pattern}
+            </div>
+          );
+        },
+      },
+      {
+        id: 'include',
+        header: undefined,
+        disableGrow: true,
+        cell: (props: CellProps<WithCustomCellData>) => {
+          return (
+            <Button
+              variant={'secondary'}
+              fill={'outline'}
+              size={'sm'}
+              onClick={() => {
+                props.cell.row.original.includeLink();
+              }}
+            >
+              Select
+            </Button>
+          );
+        },
+      },
+      {
+        id: 'exclude',
+        header: undefined,
+        disableGrow: true,
+        cell: (props: CellProps<WithCustomCellData>) => {
+          return (
+            <Button
+              variant={'secondary'}
+              fill={'outline'}
+              size={'sm'}
+              onClick={() => props.cell.row.original.excludeLink()}
+            >
+              Exclude
+            </Button>
+          );
+        },
+      },
+    ];
+
+    return (
+      <div className={styles.tableWrap}>
+        <InteractiveTable columns={columns} data={tableData} getRowId={(r: WithCustomCellData) => r.pattern} />
+      </div>
+    );
+  }
+}

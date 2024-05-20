@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DataFrame, FieldType, GrafanaTheme2, LoadingState, PanelData, TimeRange } from '@grafana/data';
+import { DataFrame, FieldType, GrafanaTheme2, LoadingState, TimeRange } from '@grafana/data';
 import {
   CustomVariable,
   PanelBuilders,
@@ -15,20 +15,19 @@ import {
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
-  SceneReactObject,
   SceneVariableSet,
+  VizPanel,
+  VizPanelState,
 } from '@grafana/scenes';
-import { CellProps } from 'react-table';
 import {
-  AxisPlacement,
   Button,
-  Column,
   DrawStyle,
-  InteractiveTable,
+  LegendDisplayMode,
+  PanelContext,
+  SeriesVisibilityChangeMode,
   StackingMode,
   Text,
   TextLink,
-  TooltipDisplayMode,
   useStyles2,
 } from '@grafana/ui';
 import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
@@ -40,6 +39,7 @@ import { getColorByIndex } from 'services/scenes';
 import { LokiPattern, ServiceScene } from '../ServiceScene';
 import { FilterByPatternsButton, onPatternClick } from './FilterByPatternsButton';
 import { IndexScene } from '../../IndexScene/IndexScene';
+import { SingleViewTableScene } from './SingleViewTableScene';
 
 export interface PatternsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -47,21 +47,15 @@ export interface PatternsBreakdownSceneState extends SceneObjectState {
   loading?: boolean;
   error?: string;
   blockingMessage?: string;
+  //@todo convert to set
+  visiblePatterns?: string[];
 }
 
-type PatternFrame = {
+export type PatternFrame = {
   dataFrame: DataFrame;
   pattern: string;
   sum: number;
 };
-
-interface WithCustomCellData {
-  pattern: string;
-  dataFrame: DataFrame;
-  // samples: Array<[number, string]>,
-  includeLink: () => void;
-  excludeLink: () => void;
-}
 
 export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSceneState> {
   constructor(state: Partial<PatternsBreakdownSceneState>) {
@@ -142,12 +136,35 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
 
   private _onActivate() {
     this.updateBody();
-    const unsub = sceneGraph.getAncestor(this, ServiceScene).subscribeToState((newState, prevState) => {
-      if (newState.patterns !== prevState.patterns) {
-        this.updateBody();
-      }
-    });
-    return () => unsub.unsubscribe();
+    this._subs.add(
+      sceneGraph.getAncestor(this, ServiceScene).subscribeToState((newState, prevState) => {
+        if (newState.patterns !== prevState.patterns) {
+          this.updateBody();
+        }
+      })
+    );
+    this._subs.add(
+      this.subscribeToState((newState, prevState) => {
+        if (newState.visiblePatterns !== prevState.visiblePatterns) {
+          const lokiPatterns = sceneGraph.getAncestor(this, ServiceScene).state.patterns;
+          if (!lokiPatterns) {
+            return;
+          }
+
+          console.log('newState.visiblePatterns', newState.visiblePatterns);
+
+          this.updateBody();
+          // //@ts-ignore
+          // const flexLayout: SceneFlexLayout = layoutSwitcher.layouts[2]
+          // console.log('flexLayout2', flexLayout);
+          //
+          // flexLayout.state.children[1].setState(
+          //     //@ts-ignore
+          //     this.getSingleViewTable(patternFrames, logExploration, timeRange),
+          // )
+        }
+      })
+    );
   }
 
   private getVariable(): CustomVariable {
@@ -180,7 +197,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
           { value: 'single', label: 'Single' },
         ],
         actionView: 'patterns',
-        active: 'grid',
+        active: 'single',
         layouts: [
           new SceneCSSGridLayout({
             templateColumns: GRID_TEMPLATE_COLUMNS,
@@ -201,7 +218,78 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     });
   }
 
+  private extendTimeSeriesLegendBus(vizPanel: VizPanel, context: PanelContext) {
+    const originalFn = context.onToggleSeriesVisibility;
+
+    context.onToggleSeriesVisibility = (label: string, mode: SeriesVisibilityChangeMode) => {
+      // console.log('context.onToggleSeriesVisibility', context.onToggleSeriesVisibility)
+      originalFn?.(label, mode);
+      if (mode === SeriesVisibilityChangeMode.ToggleSelection || !this.state.visiblePatterns) {
+        this.setState({
+          visiblePatterns: [label],
+        });
+      } else if (mode === SeriesVisibilityChangeMode.AppendToSelection && this.state.visiblePatterns?.length) {
+        this.setState({
+          visiblePatterns: [...this.state.visiblePatterns, label],
+        });
+      }
+    };
+  }
+
   private getSingleViewLayout(patternFrames: PatternFrame[], timeRange: TimeRange, logExploration: IndexScene) {
+    const timeSeries = PanelBuilders.timeseries()
+      .setData(
+        new SceneDataNode({
+          data: {
+            series: patternFrames.map((patternFrame) => {
+              return patternFrame.dataFrame;
+            }),
+            state: LoadingState.Done,
+            timeRange: timeRange,
+          },
+        })
+      )
+      .setOption('legend', {
+        asTable: true,
+        showLegend: true,
+        displayMode: LegendDisplayMode.Table,
+        placement: 'right',
+        width: 200,
+      })
+      .setTitle('Patterns')
+      .setLinks([
+        {
+          url: '',
+          onClick: (event) => {
+            onPatternClick({
+              pattern: event.origin.name,
+              type: 'include',
+              indexScene: logExploration,
+            });
+          },
+          title: 'Select',
+        },
+        {
+          url: '',
+          onClick: (event) => {
+            onPatternClick({
+              pattern: event.origin.name,
+              type: 'exclude',
+              indexScene: logExploration,
+            });
+          },
+          title: 'Exclude',
+        },
+      ])
+      .build();
+
+    const panelState: VizPanelState = {
+      ...timeSeries.state,
+      extendPanelContext: (vizPanel, context) => this.extendTimeSeriesLegendBus(vizPanel, context),
+    };
+
+    const panel = new VizPanel(panelState);
+
     return new SceneFlexLayout({
       direction: 'column',
       width: 'calc(100vw - 60px)',
@@ -214,44 +302,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
               ? new SceneFlexItem({
                   minHeight: 300,
                   maxWidth: '100%',
-                  body: PanelBuilders.timeseries()
-                    .setData(
-                      new SceneDataNode({
-                        data: {
-                          series: patternFrames.map((patternFrame) => {
-                            return patternFrame.dataFrame;
-                          }),
-                          state: LoadingState.Done,
-                          timeRange: timeRange,
-                        },
-                      })
-                    )
-                    .setTitle('Patterns')
-                    .setLinks([
-                      {
-                        url: '',
-                        onClick: (event) => {
-                          onPatternClick({
-                            pattern: event.origin.name,
-                            type: 'include',
-                            indexScene: logExploration,
-                          });
-                        },
-                        title: 'Include',
-                      },
-                      {
-                        url: '',
-                        onClick: (event) => {
-                          onPatternClick({
-                            pattern: event.origin.name,
-                            type: 'exclude',
-                            indexScene: logExploration,
-                          });
-                        },
-                        title: 'Exclude',
-                      },
-                    ])
-                    .build(),
+                  body: panel,
                 })
               : //@todo undefined dataframe state
                 new SceneFlexItem({
@@ -260,159 +311,12 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
                 }),
           ],
         }),
-        this.getSingleViewTable(patternFrames, logExploration, timeRange),
+        new SingleViewTableScene({
+          timeRange,
+          visiblePatterns: this.state.visiblePatterns,
+          patternFrames,
+        }),
       ],
-    });
-  }
-
-  private getSingleViewTable(patternFrames: PatternFrame[], logExploration: IndexScene, timeRange: TimeRange) {
-    const lokiPatterns = sceneGraph.getAncestor(this, ServiceScene).state.patterns;
-    if (!lokiPatterns) {
-      //@todo empty state
-      return new SceneFlexItem({
-        body: undefined,
-        $data: undefined,
-      });
-    }
-    const tableData: WithCustomCellData[] = patternFrames.map((pattern: PatternFrame) => {
-      return {
-        dataFrame: pattern.dataFrame,
-        pattern: pattern.pattern,
-        includeLink: () =>
-          onPatternClick({
-            pattern: pattern.pattern,
-            type: 'include',
-            indexScene: logExploration,
-          }),
-        excludeLink: () =>
-          onPatternClick({
-            pattern: pattern.pattern,
-            type: 'exclude',
-            indexScene: logExploration,
-          }),
-      };
-    });
-
-    const columns: Array<Column<WithCustomCellData>> = [
-      {
-        id: 'volume-samples',
-        header: 'Volume',
-        cell: (props: CellProps<WithCustomCellData>) => {
-          const panelData: PanelData = {
-            timeRange: timeRange,
-            series: [props.cell.row.original.dataFrame],
-            state: LoadingState.Done,
-          };
-          const dataNode = new SceneDataNode({
-            data: panelData,
-          });
-          const heatmap = PanelBuilders.heatmap()
-            .setData(dataNode)
-            .setCustomFieldConfig('hideFrom', {
-              legend: true,
-              tooltip: true,
-              viz: true,
-            })
-            .setOption('yAxis', {
-              axisPlacement: AxisPlacement.Hidden,
-            })
-            .setOption('color', {
-              scheme: 'YlOrRd',
-            })
-            .setOption('tooltip', {
-              mode: TooltipDisplayMode.None,
-              yHistogram: false,
-            })
-            .setOption('legend', {
-              show: false,
-            })
-            .setDisplayMode('transparent')
-            .build();
-
-          const timeSeries = PanelBuilders.timeseries()
-            .setData(dataNode.clone())
-            .setCustomFieldConfig('hideFrom', {
-              legend: true,
-              tooltip: true,
-            })
-            .setDisplayMode('transparent')
-            .build();
-
-          return (
-            <div style={{ width: '230px' }}>
-              <div style={{ height: '100px' }}>
-                <heatmap.Component model={heatmap} />
-              </div>
-              <div style={{ height: '60px' }}>
-                <timeSeries.Component model={timeSeries} />
-              </div>
-            </div>
-          );
-        },
-      },
-      {
-        id: 'pattern',
-        header: 'Pattern',
-        cell: (props: CellProps<WithCustomCellData>) => {
-          return (
-            <div
-              style={{
-                width: 'calc(100vw - 640px)',
-                minWidth: '200px',
-                textOverflow: 'ellipsis',
-                overflow: 'hidden',
-              }}
-              className={'hellloooo2'}
-            >
-              {props.cell.row.original.pattern}
-            </div>
-          );
-        },
-      },
-      {
-        id: 'include',
-        header: undefined,
-        disableGrow: true,
-        cell: (props: CellProps<WithCustomCellData>) => {
-          return (
-            <Button
-              variant={'secondary'}
-              onClick={() => {
-                props.cell.row.original.includeLink();
-              }}
-            >
-              Add to search
-            </Button>
-          );
-        },
-      },
-      {
-        id: 'exclude',
-        header: undefined,
-        disableGrow: true,
-        cell: (props: CellProps<WithCustomCellData>) => {
-          return (
-            <Button variant={'secondary'} onClick={() => props.cell.row.original.excludeLink()}>
-              Exclude from search
-            </Button>
-          );
-        },
-      },
-    ];
-
-    return new SceneFlexItem({
-      body: new SceneReactObject({
-        reactNode: (
-          <div
-            style={{
-              maxWidth: 'calc(100vw - 31px)',
-            }}
-            className={'hello-weird-thing2'}
-          >
-            <InteractiveTable columns={columns} data={tableData} getRowId={(r: WithCustomCellData) => r.pattern} />
-          </div>
-        ),
-      }),
     });
   }
 
