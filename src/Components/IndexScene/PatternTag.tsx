@@ -26,7 +26,7 @@ export const PatternTag = ({ onRemove, pattern }: Props) => {
   );
 };
 
-const MAX_PATTERN_WIDTH = 25;
+const MAX_PATTERN_WIDTH = Math.round(window.innerWidth / 8);
 
 function getPatternPreview(pattern: string) {
   const length = pattern.length;
@@ -34,7 +34,7 @@ function getPatternPreview(pattern: string) {
     return pattern;
   }
 
-  const substringLength = Math.round(length * 0.2);
+  const substringLength = Math.round(MAX_PATTERN_WIDTH * 0.4);
 
   return `${pattern.substring(0, substringLength)} … ${pattern.substring(length - substringLength)}`;
 }
