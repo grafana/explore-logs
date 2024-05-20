@@ -1,13 +1,13 @@
 import React from 'react';
 
-import { PanelBuilders, SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
+import { PanelBuilders, SceneComponentProps, SceneObjectBase, SceneObjectState, VizPanel } from '@grafana/scenes';
 import { DrawStyle, LegendDisplayMode, StackingMode } from '@grafana/ui';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { LEVEL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR } from 'services/variables';
 
 export interface LogsVolumePanelState extends SceneObjectState {
-  panel?: any;
+  panel?: VizPanel;
 }
 
 export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
