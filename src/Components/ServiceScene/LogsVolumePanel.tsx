@@ -8,7 +8,7 @@ import {
   SceneObjectBase,
   SceneObjectState,
 } from '@grafana/scenes';
-import { DrawStyle, StackingMode } from '@grafana/ui';
+import { DrawStyle, LegendDisplayMode, StackingMode } from '@grafana/ui';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { LEVEL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR } from 'services/variables';
@@ -39,7 +39,8 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
         new SceneFlexItem({
           body: PanelBuilders.timeseries()
             .setTitle('Log volume')
-            .setOption('legend', { showLegend: false })
+            .setOption('legend', { showLegend: true, calcs: ['sum'], displayMode: LegendDisplayMode.List })
+            .setUnit('short')
             .setData(
               getQueryRunner(
                 buildLokiQuery(
