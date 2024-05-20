@@ -31,12 +31,12 @@ test.describe('explore services breakdown page', () => {
 
   test('should select a label, update filters, open in explore', async ({ page }) => {
     await page.getByLabel('Tab Labels').click();
-    await page.getByLabel('namespace').click();
+    await page.getByLabel('detected_level').click();
     await page
-      .getByTestId('data-testid Panel header tempo-dev')
+      .getByTestId('data-testid Panel header info')
       .getByRole('button', { name: 'Add to filters' })
       .click();
-    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label namespace')).toBeVisible();
+    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label detected_level')).toBeVisible();
     const page1Promise = page.waitForEvent('popup');
     await explorePage.serviceBreakdownOpenExplore.click();
     const page1 = await page1Promise;
@@ -64,6 +64,20 @@ test.describe('explore services breakdown page', () => {
     // Pattern filter should be added
     await expect(page.getByText('Patterns', { exact: true })).toBeVisible();
     await expect(page.getByText('level=info < … g block" <_>')).toBeVisible();
+  });
+
+  test('patterns should be lazy loaded', async ({ page }) => {
+    await page.getByLabel('Tab Patterns').click();
+    const addToFilterButtons = page
+        .getByRole('button', { name: 'Add to filters' })
+
+    // Only the first 4 patterns are visible above the fold
+    await expect(addToFilterButtons).toHaveCount(4)
+
+    page.mouse.wheel(0, 600)
+
+    // Fake data only generates 8 patterns, they should all be rendered after scrolling down a bit
+    await expect(addToFilterButtons).toHaveCount(8)
   });
 
   test('should update a filter and run new logs', async ({ page }) => {
