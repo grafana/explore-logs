@@ -215,6 +215,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
       splitDuration = '2h';
     }
     return new SceneCSSGridItem({
+      $behaviors: [new behaviors.CursorSync({ key: 'serviceCrosshairSync', sync: DashboardCursorSync.Crosshair })],
       body: PanelBuilders.timeseries()
         // If service was previously selected, we show it in the title
         .setTitle(service)
