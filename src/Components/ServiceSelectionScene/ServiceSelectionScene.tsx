@@ -1,9 +1,10 @@
 import { css } from '@emotion/css';
 import { debounce } from 'lodash';
 import React, { useCallback, useState } from 'react';
-import { BusEventBase, GrafanaTheme2, TimeRange } from '@grafana/data';
+import { BusEventBase, DashboardCursorSync, GrafanaTheme2, TimeRange } from '@grafana/data';
 import {
   AdHocFiltersVariable,
+  behaviors,
   PanelBuilders,
   SceneComponentProps,
   SceneCSSGridItem,
@@ -246,6 +247,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
   // Creates a layout with logs panel
   buildServiceLogsLayout(service: string) {
     return new SceneCSSGridItem({
+      $behaviors: [new behaviors.CursorSync({ sync: DashboardCursorSync.Off })],
       body: PanelBuilders.logs()
         // Hover header set to true removes unused header padding, displaying more logs
         .setHoverHeader(true)
