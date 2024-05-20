@@ -52,7 +52,7 @@ export class FilterByPatternsButton extends SceneObjectBase<FilterByPatternsButt
     const { type } = model.useState();
     return (
       <Button variant="secondary" size="sm" onClick={model.onClick}>
-        {type === 'include' ? 'Add to filters' : 'Exclude from filters'}
+        {type === 'include' ? 'Select' : 'Exclude'}
       </Button>
     );
   };
