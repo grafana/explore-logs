@@ -447,8 +447,7 @@ function buildGraphScene() {
     $behaviors: [new behaviors.CursorSync({ key: 'logsCrosshairSync', sync: DashboardCursorSync.Crosshair })],
     children: [
       new SceneFlexItem({
-        minHeight: MAIN_PANEL_MIN_HEIGHT,
-        maxHeight: MAIN_PANEL_MAX_HEIGHT,
+        height: MAIN_PANEL_MIN_HEIGHT,
         body: new LogsVolumePanel({}),
       }),
       new SceneFlexItem({
