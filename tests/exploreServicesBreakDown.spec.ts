@@ -53,7 +53,7 @@ test.describe('explore services breakdown page', () => {
     // Should see the logs panel full of patterns
     await expect(page.getByTestId('data-testid search-logs')).toBeVisible();
     // Pattern filter should be added
-    await expect(page.getByText('Patterns', { exact: true })).toBeVisible();
+    await expect(page.getByText('Pattern', { exact: true })).toBeVisible();
     await expect(page.getByText('level=info < … g block" <_>')).toBeVisible();
   });
 
