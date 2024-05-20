@@ -15,6 +15,7 @@ import {
   SceneObjectBase,
   SceneObjectState,
   SceneVariableSet,
+  VizPanelState,
 } from '@grafana/scenes';
 import { Button, DrawStyle, StackingMode, Text, TextLink, useStyles2 } from '@grafana/ui';
 import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
@@ -25,6 +26,7 @@ import { VAR_LABEL_GROUP_BY } from 'services/variables';
 import { getColorByIndex } from 'services/scenes';
 import { LokiPattern, ServiceScene } from '../ServiceScene';
 import { FilterByPatternsButton } from './FilterByPatternsButton';
+import { AppliedPattern, IndexScene } from '../../IndexScene/IndexScene';
 
 export interface PatternsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -38,7 +40,26 @@ type PatternFrame = {
   dataFrame: DataFrame;
   pattern: string;
   sum: number;
+  status?: 'include' | 'exclude';
 };
+
+function buildPatternHeaderActions(
+  status: 'include' | 'exclude' | undefined,
+  pattern: string
+): VizPanelState['headerActions'] {
+  if (status) {
+    if (status === 'include') {
+      return [new FilterByPatternsButton({ pattern: pattern, type: 'exclude' })];
+    } else {
+      return [new FilterByPatternsButton({ pattern: pattern, type: 'include' })];
+    }
+  } else {
+    return [
+      new FilterByPatternsButton({ pattern: pattern, type: 'exclude' }),
+      new FilterByPatternsButton({ pattern: pattern, type: 'include' }),
+    ];
+  }
+}
 
 export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSceneState> {
   constructor(state: Partial<PatternsBreakdownSceneState>) {
@@ -137,14 +158,14 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
   }
 
   private async updateBody() {
-    const children: SceneFlexItemLike[] = [];
-
-    const patterns = sceneGraph.getAncestor(this, ServiceScene).state.patterns;
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
+    const patterns = serviceScene.state.patterns;
+    const appliedPatterns = sceneGraph.getAncestor(serviceScene, IndexScene).state.patterns;
     if (!patterns) {
       return;
     }
 
-    this.buildPatterns(patterns, children);
+    const children = this.buildPatterns(patterns, appliedPatterns);
 
     this.setState({
       body: new LayoutSwitcher({
@@ -173,7 +194,8 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     });
   }
 
-  private buildPatterns(patterns: LokiPattern[], children: SceneFlexItemLike[]) {
+  private buildPatterns(patterns: LokiPattern[], appliedPatterns?: AppliedPattern[]) {
+    const children: SceneFlexItemLike[] = [];
     let maxValue = -Infinity;
     let minValue = 0;
 
@@ -215,11 +237,13 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
             preferredVisualisationType: 'graph',
           },
         };
+        const existingPattern = appliedPatterns?.find((appliedPattern) => appliedPattern.pattern === pat.pattern);
 
         return {
           dataFrame,
           pattern: pat.pattern,
           sum,
+          status: existingPattern?.type,
         };
       })
       .sort((a, b) => b.sum - a.sum);
@@ -227,22 +251,24 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     const timeRange = sceneGraph.getTimeRange(this).state.value;
 
     for (let i = 0; i < frames.length; i++) {
-      const { dataFrame, pattern, sum } = frames[i];
-      children.push(this.buildPatternTimeseries(dataFrame, timeRange, pattern, sum, i, minValue, maxValue));
+      children.push(this.buildPatternTimeseries(frames[i], timeRange, i, minValue, maxValue));
     }
+
+    return children;
   }
 
   private buildPatternTimeseries(
-    dataFrame: DataFrame,
+    patternFrame: PatternFrame,
     timeRange: TimeRange,
-    pattern: string,
-    sum: number,
     index: number,
     minValue: number,
     maxValue: number
   ) {
+    const { dataFrame, pattern, sum, status } = patternFrame;
+    const headerActions = buildPatternHeaderActions(status, pattern);
     return PanelBuilders.timeseries()
       .setTitle(`${pattern}`)
+
       .setDescription(`The pattern \`${pattern}\` has been matched \`${sum}\` times in the given timerange.`)
       .setOption('legend', { showLegend: false })
       .setData(
@@ -262,10 +288,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
       .setCustomFieldConfig('axisSoftMax', maxValue)
       .setCustomFieldConfig('axisSoftMin', minValue)
-      .setHeaderActions([
-        new FilterByPatternsButton({ pattern: pattern, type: 'exclude' }),
-        new FilterByPatternsButton({ pattern: pattern, type: 'include' }),
-      ])
+      .setHeaderActions(headerActions)
       .build();
   }
 }
