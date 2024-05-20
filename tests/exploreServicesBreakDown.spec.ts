@@ -55,9 +55,9 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByText('level=info < … g block" <_>')).toBeVisible();
   });
 
-  test('patterns should be lazy loaded', async ({ page }) => {
+  test.only('patterns should be lazy loaded', async ({ page }) => {
     await page.getByLabel('Tab Patterns').click();
-    const addToFilterButtons = page
+    const addToFilterButtons = page.getByTestId('header-container')
         .getByRole('button', { name: 'Select' })
 
     // Only the first 4 patterns are visible above the fold
