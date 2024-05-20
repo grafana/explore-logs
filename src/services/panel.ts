@@ -4,6 +4,7 @@ import { map, Observable } from 'rxjs';
 import { LokiQuery } from './query';
 import { explorationDS } from './variables';
 
+const UNKNOWN_LEVEL_LOGS = 'logs';
 // TODO: `FieldConfigOverridesBuilder` is not exported, so it can not be used
 // here.
 export function setLeverColorOverrides(overrides: any) {
@@ -23,19 +24,30 @@ export function setLeverColorOverrides(overrides: any) {
     mode: 'fixed',
     fixedColor: 'semi-dark-orange',
   });
+  overrides.matchFieldsWithName('logs').overrideColor({
+    mode: 'fixed',
+    fixedColor: 'darkgray',
+  });
 }
 
 export function sortLevelTransformation() {
   return (source: Observable<DataFrame[]>) => {
     return source.pipe(
       map((data: DataFrame[]) => {
-        return data.sort((a, b) => {
-          const aName: string | undefined = a.fields[1].config.displayNameFromDS;
-          const aVal = aName?.includes('error') ? 4 : aName?.includes('warn') ? 3 : aName?.includes('info') ? 2 : 1;
-          const bName: string | undefined = b.fields[1].config.displayNameFromDS;
-          const bVal = bName?.includes('error') ? 4 : bName?.includes('warn') ? 3 : bName?.includes('info') ? 2 : 1;
-          return aVal - bVal;
-        });
+        return data
+          .map((d) => {
+            if (!d.fields[1].config.displayNameFromDS) {
+              d.fields[1].config.displayNameFromDS = UNKNOWN_LEVEL_LOGS;
+            }
+            return d;
+          })
+          .sort((a, b) => {
+            const aName: string | undefined = a.fields[1].config.displayNameFromDS;
+            const aVal = aName?.includes('error') ? 4 : aName?.includes('warn') ? 3 : aName?.includes('info') ? 2 : 1;
+            const bName: string | undefined = b.fields[1].config.displayNameFromDS;
+            const bVal = bName?.includes('error') ? 4 : bName?.includes('warn') ? 3 : bName?.includes('info') ? 2 : 1;
+            return aVal - bVal;
+          });
       })
     );
   };
