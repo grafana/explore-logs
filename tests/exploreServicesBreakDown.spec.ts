@@ -54,7 +54,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId('data-testid search-logs')).toBeVisible();
     // Pattern filter should be added
     await expect(page.getByText('Pattern', { exact: true })).toBeVisible();
-    await expect(page.getByText('level=info < … g block" <_>')).toBeVisible();
+    await expect(page.getByText('level=info <_> caller=flush.go:253 msg="completing block" <_>')).toBeVisible();
   });
 
   test('Should add multiple exclude patterns, which are replaced by include pattern', async ({ page }) => {
