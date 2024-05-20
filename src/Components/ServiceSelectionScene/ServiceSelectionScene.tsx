@@ -1,9 +1,10 @@
 import { css } from '@emotion/css';
 import { debounce } from 'lodash';
 import React, { useCallback, useState } from 'react';
-import { BusEventBase, GrafanaTheme2, TimeRange } from '@grafana/data';
+import { BusEventBase, DashboardCursorSync, GrafanaTheme2, TimeRange } from '@grafana/data';
 import {
   AdHocFiltersVariable,
+  behaviors,
   PanelBuilders,
   SceneComponentProps,
   SceneCSSGridItem,
@@ -214,6 +215,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
       splitDuration = '2h';
     }
     return new SceneCSSGridItem({
+      $behaviors: [new behaviors.CursorSync({ key: 'serviceCrosshairSync', sync: DashboardCursorSync.Crosshair })],
       body: PanelBuilders.timeseries()
         // If service was previously selected, we show it in the title
         .setTitle(service)
