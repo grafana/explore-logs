@@ -34,7 +34,7 @@ export const PatternControls = ({ patterns, onRemove }: Props) => {
       {includePatterns.length > 0 && (
         <div className={styles.patternsContainer}>
           <Text variant="bodySmall" weight="bold">
-            {excludePatterns.length > 0 ? 'Include patterns' : 'Patterns'}
+            {excludePatterns.length > 0 ? 'Include pattern' : 'Pattern'}
           </Text>
           <div className={styles.patterns}>
             {includePatterns.map((p) => (
@@ -46,7 +46,7 @@ export const PatternControls = ({ patterns, onRemove }: Props) => {
       {excludePatterns.length > 0 && (
         <div className={styles.patternsContainer}>
           <Text variant="bodySmall" weight="bold">
-            Exclude patterns:
+            Exclude pattern:
           </Text>
           <div className={styles.patterns}>
             {excludePatterns.map((p) => (
