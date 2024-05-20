@@ -12,12 +12,13 @@ describe('setLeverColorOverrides', () => {
     };
     setLeverColorOverrides(overrides);
 
-    expect(matchFieldsWithNameMock).toHaveBeenCalledTimes(4);
-    expect(overrideColorMock).toHaveBeenCalledTimes(4);
+    expect(matchFieldsWithNameMock).toHaveBeenCalledTimes(5);
+    expect(overrideColorMock).toHaveBeenCalledTimes(5);
     expect(matchFieldsWithNameMock).toHaveBeenCalledWith('info');
     expect(matchFieldsWithNameMock).toHaveBeenCalledWith('debug');
     expect(matchFieldsWithNameMock).toHaveBeenCalledWith('error');
     expect(matchFieldsWithNameMock).toHaveBeenCalledWith('warn');
+    expect(matchFieldsWithNameMock).toHaveBeenCalledWith('logs');
   });
 });
 

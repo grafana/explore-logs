@@ -1,9 +1,10 @@
 import { css } from '@emotion/css';
 import { debounce } from 'lodash';
 import React, { useCallback, useState } from 'react';
-import { BusEventBase, GrafanaTheme2, TimeRange } from '@grafana/data';
+import { BusEventBase, DashboardCursorSync, GrafanaTheme2, TimeRange } from '@grafana/data';
 import {
   AdHocFiltersVariable,
+  behaviors,
   PanelBuilders,
   SceneComponentProps,
   SceneCSSGridItem,
@@ -14,7 +15,16 @@ import {
   SceneVariable,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import { DrawStyle, Field, Icon, Input, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
+import {
+  DrawStyle,
+  Field,
+  Icon,
+  Input,
+  LegendDisplayMode,
+  LoadingPlaceholder,
+  StackingMode,
+  useStyles2,
+} from '@grafana/ui';
 import { getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
 import { testIds } from 'services/testIds';
@@ -185,7 +195,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
           new SceneCSSGridLayout({
             children,
             isLazy: true,
-            templateColumns: 'repeat(auto-fit, minmax(400px, 1fr) minmax(600px, 70%))',
+            templateColumns: 'repeat(auto-fit, minmax(500px, 1fr) minmax(300px, 70%))',
             autoRows: '200px',
             md: {
               templateColumns: '1fr',
@@ -205,6 +215,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
       splitDuration = '2h';
     }
     return new SceneCSSGridItem({
+      $behaviors: [new behaviors.CursorSync({ key: 'serviceCrosshairSync', sync: DashboardCursorSync.Crosshair })],
       body: PanelBuilders.timeseries()
         // If service was previously selected, we show it in the title
         .setTitle(service)
@@ -212,7 +223,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
           getQueryRunner(
             buildLokiQuery(
               `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`,
-              { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`, splitDuration }
+              { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`, splitDuration, refId: `ts-${service}` }
             )
           )
         )
@@ -221,8 +232,14 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
         .setCustomFieldConfig('lineWidth', 0)
         .setCustomFieldConfig('pointSize', 0)
         .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+        .setUnit('short')
         .setOverrides(setLeverColorOverrides)
-        .setOption('legend', { showLegend: false })
+        .setOption('legend', {
+          showLegend: true,
+          calcs: ['sum'],
+          placement: 'right',
+          displayMode: LegendDisplayMode.Table,
+        })
         .setHeaderActions(new SelectServiceButton({ service }))
         .build(),
     });
@@ -231,10 +248,15 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
   // Creates a layout with logs panel
   buildServiceLogsLayout(service: string) {
     return new SceneCSSGridItem({
+      $behaviors: [new behaviors.CursorSync({ sync: DashboardCursorSync.Off })],
       body: PanelBuilders.logs()
         // Hover header set to true removes unused header padding, displaying more logs
         .setHoverHeader(true)
-        .setData(getQueryRunner(buildLokiQuery(`{${SERVICE_NAME}=\`${service}\`}`, { maxLines: 100 })))
+        .setData(
+          getQueryRunner(
+            buildLokiQuery(`{${SERVICE_NAME}=\`${service}\`}`, { maxLines: 100, refId: `logs-${service}` })
+          )
+        )
         .setOption('showTime', true)
         .setOption('enableLogDetails', false)
         .build(),

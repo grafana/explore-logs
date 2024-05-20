@@ -214,8 +214,8 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
     label: 'Filters',
     applyMode: 'manual',
     layout: 'vertical',
-    getTagKeysProvider: () => Promise.resolve({ values: [] }),
-    getTagValuesProvider: () => Promise.resolve({ values: [] }),
+    getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
+    getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
     expressionBuilder: renderLogQLFieldFilters,
     hide: VariableHide.hideLabel,
   });
