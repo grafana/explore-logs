@@ -20,7 +20,6 @@ import {
   VizPanelState,
 } from '@grafana/scenes';
 import {
-  Button,
   DrawStyle,
   LegendDisplayMode,
   PanelContext,
@@ -30,7 +29,6 @@ import {
   TextLink,
   useStyles2,
 } from '@grafana/ui';
-import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { LayoutSwitcher } from 'Components/ServiceScene/Breakdowns/LayoutSwitcher';
 import { StatusWrapper } from 'Components/ServiceScene/Breakdowns/StatusWrapper';
 import { GrotError } from 'Components/GrotError';
@@ -277,6 +275,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       })
       .setTitle('Patterns')
       .setLinks([
+        //@todo only if not already filtered
         {
           url: '',
           onClick: (event) => {
@@ -493,34 +492,4 @@ export function buildPatternsScene() {
   return new SceneFlexItem({
     body: new PatternsBreakdownScene({}),
   });
-}
-
-interface SelectLabelActionState extends SceneObjectState {
-  labelName: string;
-}
-
-export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
-  public static Component = ({ model }: SceneComponentProps<AddToFiltersButton>) => {
-    return (
-      <Button variant="secondary" size="sm" fill="text" onClick={model.onClick}>
-        Select
-      </Button>
-    );
-  };
-
-  public onClick = () => {
-    getPatternsSceneFor(this).onChange(this.state.labelName);
-  };
-}
-
-function getPatternsSceneFor(model: SceneObject): PatternsBreakdownScene {
-  if (model instanceof PatternsBreakdownScene) {
-    return model;
-  }
-
-  if (model.parent) {
-    return getPatternsSceneFor(model.parent);
-  }
-
-  throw new Error('Unable to find breakdown scene');
 }

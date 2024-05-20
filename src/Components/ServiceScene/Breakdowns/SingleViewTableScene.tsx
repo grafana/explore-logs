@@ -150,7 +150,6 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
                 textOverflow: 'ellipsis',
                 overflow: 'hidden',
               }}
-              className={'hellloooo2'}
             >
               {props.cell.row.original.pattern}
             </div>
@@ -162,6 +161,7 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
         header: undefined,
         disableGrow: true,
         cell: (props: CellProps<WithCustomCellData>) => {
+          //@todo only if not already filtered
           return (
             <Button
               variant={'secondary'}
