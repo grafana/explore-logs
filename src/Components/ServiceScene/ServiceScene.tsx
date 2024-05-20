@@ -444,7 +444,7 @@ const MAIN_PANEL_MAX_HEIGHT = '30%';
 function buildGraphScene() {
   return new SceneFlexLayout({
     direction: 'column',
-    $behaviors: [new behaviors.CursorSync({ key: 'metricCrosshairSync', sync: DashboardCursorSync.Crosshair })],
+    $behaviors: [new behaviors.CursorSync({ key: 'logsCrosshairSync', sync: DashboardCursorSync.Crosshair })],
     children: [
       new SceneFlexItem({
         minHeight: MAIN_PANEL_MIN_HEIGHT,
