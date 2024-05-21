@@ -46,7 +46,8 @@ export interface PatternsBreakdownSceneState extends SceneObjectState {
   error?: string;
   blockingMessage?: string;
   //@todo convert to set
-  visiblePatterns?: string[];
+
+  legendSyncPatterns?: string[];
 }
 
 export type PatternFrame = {
@@ -162,13 +163,13 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     );
     this._subs.add(
       this.subscribeToState((newState, prevState) => {
-        if (newState.visiblePatterns !== prevState.visiblePatterns) {
+        if (newState.legendSyncPatterns !== prevState.legendSyncPatterns) {
           const lokiPatterns = sceneGraph.getAncestor(this, ServiceScene).state.patterns;
           if (!lokiPatterns) {
             return;
           }
 
-          console.log('newState.visiblePatterns', newState.visiblePatterns);
+          console.log('newState.visiblePatterns', newState.legendSyncPatterns);
 
           // this.updateBody();
           // //@ts-ignore
@@ -241,19 +242,21 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     context.onToggleSeriesVisibility = (label: string, mode: SeriesVisibilityChangeMode) => {
       // console.log('context.onToggleSeriesVisibility', context.onToggleSeriesVisibility)
       originalFn?.(label, mode);
-      if (mode === SeriesVisibilityChangeMode.ToggleSelection || !this.state.visiblePatterns) {
+      if (mode === SeriesVisibilityChangeMode.ToggleSelection || !this.state.legendSyncPatterns) {
         this.setState({
-          visiblePatterns: [label],
+          legendSyncPatterns: [label],
         });
-      } else if (mode === SeriesVisibilityChangeMode.AppendToSelection && this.state.visiblePatterns?.length) {
+      } else if (mode === SeriesVisibilityChangeMode.AppendToSelection && this.state.legendSyncPatterns?.length) {
         this.setState({
-          visiblePatterns: [...this.state.visiblePatterns, label],
+          legendSyncPatterns: [...this.state.legendSyncPatterns, label],
         });
       }
     };
   }
 
   private getSingleViewLayout(patternFrames: PatternFrame[], timeRange: TimeRange, logExploration: IndexScene) {
+    const appliedPatterns = sceneGraph.getAncestor(logExploration, IndexScene).state.patterns;
+    console.log('appliedPatterns', appliedPatterns);
     const timeSeries = PanelBuilders.timeseries()
       .setData(
         new SceneDataNode({
@@ -331,8 +334,9 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
         }),
         new SingleViewTableScene({
           timeRange,
-          visiblePatterns: this.state.visiblePatterns,
+          legendSyncPatterns: this.state.legendSyncPatterns,
           patternFrames,
+          appliedPatterns,
         }),
       ],
     });

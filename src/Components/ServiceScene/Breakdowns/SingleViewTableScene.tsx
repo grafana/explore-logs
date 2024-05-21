@@ -8,7 +8,7 @@ import {
 } from '@grafana/scenes';
 import { PatternFrame } from './PatternsBreakdownScene';
 import React from 'react';
-import { IndexScene } from '../../IndexScene/IndexScene';
+import { AppliedPattern, IndexScene } from '../../IndexScene/IndexScene';
 import { DataFrame, LoadingState, PanelData, TimeRange } from '@grafana/data';
 import { Button, Column, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
 import { CellProps } from 'react-table';
@@ -16,9 +16,10 @@ import { css } from '@emotion/css';
 import { onPatternClick } from './FilterByPatternsButton';
 
 export interface SingleViewTableSceneState extends SceneObjectState {
-  visiblePatterns: string[] | undefined;
+  legendSyncPatterns: string[] | undefined;
   timeRange: TimeRange;
   patternFrames: PatternFrame[];
+  appliedPatterns?: AppliedPattern[];
 }
 
 interface WithCustomCellData {
@@ -59,7 +60,7 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
   public static Component({ model }: SceneComponentProps<SingleViewTableScene>) {
     console.log('rendering SingleViewTableScene', model);
     const styles = getVizStyles();
-    const { patternFrames, visiblePatterns, timeRange } = model.useState();
+    const { patternFrames, legendSyncPatterns, timeRange, appliedPatterns } = model.useState();
 
     const total = patternFrames.reduce((previousValue, frame) => {
       return previousValue + frame.sum;
@@ -68,8 +69,8 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
     const logExploration = sceneGraph.getAncestor(model, IndexScene);
     const tableData: WithCustomCellData[] = patternFrames
       .filter((patternFrame) => {
-        if (visiblePatterns?.length) {
-          return visiblePatterns.find((pattern) => pattern === patternFrame.pattern);
+        if (legendSyncPatterns?.length) {
+          return legendSyncPatterns.find((pattern) => pattern === patternFrame.pattern);
         } else {
           return true;
         }
@@ -161,19 +162,25 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
         header: undefined,
         disableGrow: true,
         cell: (props: CellProps<WithCustomCellData>) => {
-          //@todo only if not already filtered
-          return (
-            <Button
-              variant={'secondary'}
-              fill={'outline'}
-              size={'sm'}
-              onClick={() => {
-                props.cell.row.original.includeLink();
-              }}
-            >
-              Select
-            </Button>
+          const existingPattern = appliedPatterns?.find(
+            (appliedPattern) => appliedPattern.pattern === props.cell.row.original.pattern
           );
+          if (existingPattern?.type !== 'include') {
+            //@todo only if not already filtered
+            return (
+              <Button
+                variant={'secondary'}
+                fill={'outline'}
+                size={'sm'}
+                onClick={() => {
+                  props.cell.row.original.includeLink();
+                }}
+              >
+                Select
+              </Button>
+            );
+          }
+          return <></>;
         },
       },
       {
@@ -204,8 +211,8 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
 
   private _onActivate() {
     this.subscribeToState((newState, prevState) => {
-      if (prevState.visiblePatterns !== newState.visiblePatterns) {
-        console.log('should re-render', newState.visiblePatterns);
+      if (prevState.legendSyncPatterns !== newState.legendSyncPatterns) {
+        console.log('should re-render', newState.legendSyncPatterns);
       }
     });
   }
