@@ -22,7 +22,13 @@ export const PatternTag = ({ onRemove, pattern, size = 'lg' }: Props) => {
         name={expanded ? pattern : getPatternPreview(pattern, size)}
         className={styles.tag}
       />
-      <Button variant="secondary" size="sm" className={styles.removeButton} onClick={onRemove}>
+      <Button
+        aria-label="Remove pattern"
+        variant="secondary"
+        size="sm"
+        className={styles.removeButton}
+        onClick={onRemove}
+      >
         <Icon name="times" />
       </Button>
     </div>
