@@ -40,9 +40,6 @@ export function onPatternClick(props: FilterByPatternsState) {
     excludePatternsLength: excludePatternsLength + (type === 'exclude' ? 1 : 0),
   });
 
-  const newPatterns = [...filteredPatterns, { pattern: pattern, type: type }];
-  console.log('newPatterns', newPatterns);
-
   indexScene.setState({
     patterns: [...filteredPatterns, { pattern: pattern, type: type }],
   });
