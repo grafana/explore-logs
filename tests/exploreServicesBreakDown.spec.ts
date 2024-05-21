@@ -42,6 +42,8 @@ test.describe('explore services breakdown page', () => {
 
   test('should select a pattern field, update filters, open log panel', async ({ page }) => {
     await page.getByLabel('Tab Patterns').click();
+    await page.getByLabel('Grid').click()
+
     await page
       .getByTestId('data-testid Panel header level=info <_> caller=flush.go:253 msg="completing block" <_>')
       .getByRole('button', { name: 'Select' })
@@ -55,6 +57,8 @@ test.describe('explore services breakdown page', () => {
 
   test('patterns should be lazy loaded', async ({ page }) => {
     await page.getByLabel('Tab Patterns').click();
+    await page.getByLabel('Grid').click()
+
     const addToFilterButtons = page.getByTestId('header-container')
         .getByRole('button', { name: 'Select' })
 
