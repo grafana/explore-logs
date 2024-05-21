@@ -1,9 +1,9 @@
 import React from 'react';
 
-import { SceneObjectState, SceneObjectBase, SceneComponentProps, sceneGraph } from '@grafana/scenes';
+import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { Button } from '@grafana/ui';
 import { IndexScene } from '../../IndexScene/IndexScene';
-import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
+import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 
 export interface FilterByPatternsButtonState extends SceneObjectState {
   pattern: string;
@@ -15,7 +15,9 @@ export interface FilterByPatternsState extends FilterByPatternsButtonState {
 }
 
 export function onPatternClick(props: FilterByPatternsState) {
-  const { indexScene, pattern, type } = { ...props };
+  const { indexScene: staleIndex, pattern, type } = { ...props };
+
+  const indexScene = sceneGraph.getAncestor(staleIndex, IndexScene);
 
   if (!indexScene) {
     console.warn('logs exploration scene not found');
@@ -25,7 +27,9 @@ export function onPatternClick(props: FilterByPatternsState) {
   const { patterns = [] } = indexScene.state;
 
   // Remove the pattern if it's already there
-  const filteredPatterns = patterns.filter((pat) => pat.pattern !== pattern);
+  const filteredPatterns = patterns.filter(
+    (pat) => pat.pattern !== pattern && type !== 'include' && pat.type !== 'include'
+  );
 
   // Analytics
   const includePatternsLength = filteredPatterns.filter((p) => p.type === 'include')?.length ?? 0;
@@ -36,12 +40,24 @@ export function onPatternClick(props: FilterByPatternsState) {
     excludePatternsLength: excludePatternsLength + (type === 'exclude' ? 1 : 0),
   });
 
+  const newPatterns = [...filteredPatterns, { pattern: pattern, type: type }];
+  console.log('newPatterns', newPatterns);
+
   indexScene.setState({
     patterns: [...filteredPatterns, { pattern: pattern, type: type }],
   });
 }
 
 export class FilterByPatternsButton extends SceneObjectBase<FilterByPatternsButtonState> {
+  public static Component = ({ model }: SceneComponentProps<FilterByPatternsButton>) => {
+    const { type } = model.useState();
+    return (
+      <Button variant="secondary" size="sm" onClick={model.onClick}>
+        {type === 'include' ? 'Select' : 'Exclude'}
+      </Button>
+    );
+  };
+
   public onClick = () => {
     const logExploration = sceneGraph.getAncestor(this, IndexScene);
 
@@ -77,14 +93,5 @@ export class FilterByPatternsButton extends SceneObjectBase<FilterByPatternsButt
     logExploration.setState({
       patterns: filteredPatterns,
     });
-  };
-
-  public static Component = ({ model }: SceneComponentProps<FilterByPatternsButton>) => {
-    const { type } = model.useState();
-    return (
-      <Button variant="secondary" size="sm" onClick={model.onClick}>
-        {type === 'include' ? 'Select' : 'Exclude'}
-      </Button>
-    );
   };
 }
