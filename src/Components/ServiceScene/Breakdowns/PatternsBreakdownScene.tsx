@@ -375,7 +375,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     return PanelBuilders.timeseries()
       .setTitle(`${pattern}`)
       .setDescription(`The pattern \`${pattern}\` has been matched \`${sum}\` times in the given timerange.`)
-      .setOption('legend', { showLegend: false })
+      .setOption('legend', { showLegend: false, sortBy: 'sum' })
       .setData(
         new SceneDataNode({
           data: {
