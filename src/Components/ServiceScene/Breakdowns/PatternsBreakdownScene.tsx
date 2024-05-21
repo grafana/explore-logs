@@ -15,6 +15,7 @@ import {
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
+  sceneUtils,
   SceneVariableSet,
   VizPanel,
   VizPanelState,
@@ -304,12 +305,12 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       ])
       .build();
 
-    const panelState: VizPanelState = {
-      ...timeSeries.state,
-      extendPanelContext: (vizPanel, context) => this.extendTimeSeriesLegendBus(vizPanel, context),
-    };
+    const panelState = sceneUtils.cloneSceneObjectState(timeSeries.state);
 
-    const panel = new VizPanel(panelState);
+    const panel = new VizPanel({
+      ...panelState,
+      extendPanelContext: (vizPanel, context) => this.extendTimeSeriesLegendBus(vizPanel, context),
+    });
 
     return new SceneFlexLayout({
       direction: 'column',
@@ -319,17 +320,11 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
         new SceneFlexLayout({
           direction: 'column',
           children: [
-            patternFrames
-              ? new SceneFlexItem({
-                  minHeight: 300,
-                  maxWidth: '100%',
-                  body: panel,
-                })
-              : //@todo undefined dataframe state
-                new SceneFlexItem({
-                  body: undefined,
-                  $data: undefined,
-                }),
+            new SceneFlexItem({
+              minHeight: 300,
+              maxWidth: '100%',
+              body: panel,
+            }),
           ],
         }),
         new SingleViewTableScene({
