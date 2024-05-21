@@ -55,7 +55,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByText('level=info < … g block" <_>')).toBeVisible();
   });
 
-  test.only('should select an include pattern field in default single view, update filters, open log panel', async ({ page }) => {
+  test('should select an include pattern field in default single view, update filters, open log panel', async ({ page }) => {
     await page.getByLabel('Tab Patterns').click();
 
     // Include pattern
