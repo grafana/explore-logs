@@ -30,7 +30,7 @@ import {
   TextLink,
   useStyles2,
 } from '@grafana/ui';
-import { LayoutSwitcher } from 'Components/ServiceScene/Breakdowns/LayoutSwitcher';
+import { LayoutSwitcher, LayoutSwitcherState } from 'Components/ServiceScene/Breakdowns/LayoutSwitcher';
 import { StatusWrapper } from 'Components/ServiceScene/Breakdowns/StatusWrapper';
 import { GrotError } from 'Components/GrotError';
 import { VAR_LABEL_GROUP_BY } from 'services/variables';
@@ -166,6 +166,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       this.subscribeToState((newState, prevState) => {
         if (newState.legendSyncPatterns !== prevState.legendSyncPatterns) {
           const lokiPatterns = sceneGraph.getAncestor(this, ServiceScene).state.patterns;
+          console.log('newState.visiblePatterns', newState.legendSyncPatterns);
           if (!lokiPatterns) {
             return;
           }
@@ -173,14 +174,19 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
           console.log('newState.visiblePatterns', newState.legendSyncPatterns);
 
           // this.updateBody();
-          // //@ts-ignore
-          // const flexLayout: SceneFlexLayout = layoutSwitcher.layouts[2]
-          // console.log('flexLayout2', flexLayout);
-          //
-          // flexLayout.state.children[1].setState(
-          //     //@ts-ignore
-          //     this.getSingleViewTable(patternFrames, logExploration, timeRange),
-          // )
+          const flexLayout = newState?.body?.state as LayoutSwitcherState;
+          console.log('layouts', flexLayout.layouts);
+
+          const timeRange = sceneGraph.getTimeRange(this).state.value;
+
+          const { frames: patternFrames } = this.buildPatterns(lokiPatterns, timeRange);
+
+          const logExploration = sceneGraph.getAncestor(this, IndexScene);
+          const targetFlexLayout = flexLayout.layouts[2] as SceneFlexLayout;
+
+          //@todo unhack
+          //@ts-ignore
+          targetFlexLayout.setState(this.getSingleViewLayout(patternFrames, timeRange, logExploration));
         }
       })
     );
@@ -243,21 +249,40 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     context.onToggleSeriesVisibility = (label: string, mode: SeriesVisibilityChangeMode) => {
       // console.log('context.onToggleSeriesVisibility', context.onToggleSeriesVisibility)
       originalFn?.(label, mode);
+
       if (mode === SeriesVisibilityChangeMode.ToggleSelection || !this.state.legendSyncPatterns) {
-        this.setState({
-          legendSyncPatterns: [label],
-        });
+        // if the user is selecting the only one that is already selected, set undefined
+        if (this.state.legendSyncPatterns?.length === 1 && this.state.legendSyncPatterns[0] === label) {
+          this.setState({
+            legendSyncPatterns: undefined,
+          });
+        } else {
+          // Otherwise add the new label
+          this.setState({
+            legendSyncPatterns: [label],
+          });
+        }
       } else if (mode === SeriesVisibilityChangeMode.AppendToSelection && this.state.legendSyncPatterns?.length) {
-        this.setState({
-          legendSyncPatterns: [...this.state.legendSyncPatterns, label],
-        });
+        //@todo cleanup
+        if (this.state.legendSyncPatterns.find((existingPattern) => existingPattern === label)) {
+          const patternsToSync = this.state.legendSyncPatterns.filter((pattern) => pattern !== label);
+          this.setState({
+            legendSyncPatterns: patternsToSync,
+          });
+        } else {
+          this.setState({
+            legendSyncPatterns: [...this.state.legendSyncPatterns, label],
+          });
+        }
+
+        // Todo remove if already added
       }
     };
   }
 
   private getSingleViewLayout(patternFrames: PatternFrame[], timeRange: TimeRange, logExploration: IndexScene) {
     const appliedPatterns = sceneGraph.getAncestor(logExploration, IndexScene).state.patterns;
-    console.log('appliedPatterns', appliedPatterns);
+    console.log('legendSyncPatterns', this.state.legendSyncPatterns);
     const timeSeries = PanelBuilders.timeseries()
       .setData(
         new SceneDataNode({
@@ -311,6 +336,8 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       ...panelState,
       extendPanelContext: (vizPanel, context) => this.extendTimeSeriesLegendBus(vizPanel, context),
     });
+
+    console.log('LegendSync', this.state.legendSyncPatterns);
 
     return new SceneFlexLayout({
       direction: 'column',

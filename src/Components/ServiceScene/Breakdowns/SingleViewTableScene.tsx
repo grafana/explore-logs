@@ -6,7 +6,7 @@ import {
   SceneObjectBase,
   SceneObjectState,
 } from '@grafana/scenes';
-import { PatternFrame } from './PatternsBreakdownScene';
+import { PatternFrame, PatternsBreakdownScene } from './PatternsBreakdownScene';
 import React from 'react';
 import { AppliedPattern, IndexScene } from '../../IndexScene/IndexScene';
 import { DataFrame, LoadingState, PanelData, TimeRange } from '@grafana/data';
@@ -35,6 +35,8 @@ function getVizStyles() {
   return {
     tableWrap: css({
       maxWidth: 'calc(100vw - 31px)',
+      height: '470px',
+      overflowY: 'scroll',
     }),
     tableTimeSeriesWrap: css({
       width: '230px',
@@ -52,15 +54,28 @@ function getVizStyles() {
 
 export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneState> {
   constructor(state: SingleViewTableSceneState) {
-    super(state);
+    super({
+      ...state,
+      legendSyncPatterns: state.legendSyncPatterns,
+    });
+
+    console.log('construct', state);
 
     this.addActivationHandler(this._onActivate.bind(this));
   }
 
+  //@todo how to use theme hook?
   public static Component({ model }: SceneComponentProps<SingleViewTableScene>) {
     console.log('rendering SingleViewTableScene', model);
     const styles = getVizStyles();
-    const { patternFrames, legendSyncPatterns, timeRange, appliedPatterns } = model.useState();
+    const { patternFrames, legendSyncPatterns: legendSyncPatternsChild, timeRange, appliedPatterns } = model.useState();
+
+    console.log('rendering legendSyncPatterns', legendSyncPatternsChild);
+    const parent = sceneGraph.getAncestor(model, PatternsBreakdownScene);
+
+    //@todo why does getting the parent with sceneGraph.getAncestor work, but model.parent, or passing in the state not work?
+    console.log('parent legendSyncPatterns', parent.state.legendSyncPatterns);
+    const legendSyncPatterns = parent.state.legendSyncPatterns;
 
     const total = patternFrames.reduce((previousValue, frame) => {
       return previousValue + frame.sum;
@@ -166,7 +181,6 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
             (appliedPattern) => appliedPattern.pattern === props.cell.row.original.pattern
           );
           if (existingPattern?.type !== 'include') {
-            //@todo only if not already filtered
             return (
               <Button
                 variant={'secondary'}
@@ -188,16 +202,22 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
         header: undefined,
         disableGrow: true,
         cell: (props: CellProps<WithCustomCellData>) => {
-          return (
-            <Button
-              variant={'secondary'}
-              fill={'outline'}
-              size={'sm'}
-              onClick={() => props.cell.row.original.excludeLink()}
-            >
-              Exclude
-            </Button>
+          const existingPattern = appliedPatterns?.find(
+            (appliedPattern) => appliedPattern.pattern === props.cell.row.original.pattern
           );
+          if (existingPattern?.type !== 'exclude') {
+            return (
+              <Button
+                variant={'secondary'}
+                fill={'outline'}
+                size={'sm'}
+                onClick={() => props.cell.row.original.excludeLink()}
+              >
+                Exclude
+              </Button>
+            );
+          }
+          return <></>;
         },
       },
     ];
