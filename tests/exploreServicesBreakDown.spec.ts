@@ -55,6 +55,60 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByText('level=info < … g block" <_>')).toBeVisible();
   });
 
+  test.only('should select an include pattern field in default single view, update filters, open log panel', async ({ page }) => {
+    await page.getByLabel('Tab Patterns').click();
+
+    // Include pattern
+    const firstIncludeButton = page.getByRole('table').getByRole('row', { name: /level=info <_> caller=flush\.go/ }).getByText('Select');
+    await firstIncludeButton.click()
+    // Should see the logs panel full of patterns
+    await expect(page.getByTestId('data-testid search-logs')).toBeVisible();
+    // Pattern filter should be added
+    await expect(page.getByText('Patterns', { exact: true })).toBeVisible();
+    await expect(page.getByText('level=info < … g block" <_>')).toBeVisible();
+  });
+
+  test('Should add multiple exclude patterns, which are replaced by include pattern', async ({ page }) => {
+    await page.getByLabel('Tab Patterns').click();
+
+    const firstIncludeButton = page.getByRole('table').getByRole('row', { name: /level=info <_> caller=flush\.go/ }).getByText('Select');
+    const firstExcludeButton = page.getByRole('table').getByRole('row', { name: /level=info <_> caller=flush\.go/ }).getByText('Exclude');
+
+    await expect(firstIncludeButton).toBeVisible()
+    await expect(firstExcludeButton).toBeVisible()
+
+    // Include pattern
+    await firstExcludeButton.click()
+    // Should see the logs panel full of patterns
+    await expect(page.getByTestId('data-testid search-logs')).toBeVisible();
+
+    // Exclude another pattern
+    await page.getByLabel('Tab Patterns').click();
+
+    // Include button should be visible, but exclude should not
+    await expect(firstIncludeButton).toBeVisible()
+    await expect(firstExcludeButton).not.toBeVisible()
+
+    const secondExcludeButton = page.getByRole('table').getByRole('row', { name: /level=debug <_> caller=broadcast\.go:48/ }).getByText('Exclude')
+    await secondExcludeButton.click()
+
+    // Both exclude patterns should be visible
+    await expect(page.getByText('Patterns', { exact: true })).not.toBeVisible();
+    await expect(page.getByText('Exclude patterns:', { exact: true })).toBeVisible();
+    await expect(page.getByText('level=info < … g block" <_>')).toBeVisible();
+    await expect(page.getByText('level=debug <_> calle … lectors/compactor')).toBeVisible();
+
+    // Back to patterns to include a pattern instead
+    await page.getByLabel('Tab Patterns').click();
+
+    await firstIncludeButton.click()
+    await expect(page.getByText('Patterns', { exact: true })).toBeVisible();
+    await expect(page.getByText('Exclude patterns:', { exact: true })).not.toBeVisible();
+    await expect(page.getByText('level=info < … g block" <_>')).toBeVisible();
+
+
+  });
+
   test('patterns should be lazy loaded', async ({ page }) => {
     await page.getByLabel('Tab Patterns').click();
     await page.getByLabel('Grid').click()
