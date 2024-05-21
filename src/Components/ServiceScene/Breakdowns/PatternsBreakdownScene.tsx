@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DataFrame, FieldType, GrafanaTheme2, LoadingState, TimeRange } from '@grafana/data';
+import { ConfigOverrideRule, DataFrame, FieldType, GrafanaTheme2, LoadingState, TimeRange } from '@grafana/data';
 import {
   CustomVariable,
   PanelBuilders,
@@ -15,7 +15,6 @@ import {
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
-  sceneUtils,
   SceneVariableSet,
   VizPanel,
   VizPanelState,
@@ -30,7 +29,7 @@ import {
   TextLink,
   useStyles2,
 } from '@grafana/ui';
-import { LayoutSwitcher, LayoutSwitcherState } from 'Components/ServiceScene/Breakdowns/LayoutSwitcher';
+import { LayoutSwitcher } from 'Components/ServiceScene/Breakdowns/LayoutSwitcher';
 import { StatusWrapper } from 'Components/ServiceScene/Breakdowns/StatusWrapper';
 import { GrotError } from 'Components/GrotError';
 import { VAR_LABEL_GROUP_BY } from 'services/variables';
@@ -46,8 +45,6 @@ export interface PatternsBreakdownSceneState extends SceneObjectState {
   loading?: boolean;
   error?: string;
   blockingMessage?: string;
-  //@todo convert to set
-
   legendSyncPatterns: Set<string>;
 }
 
@@ -92,6 +89,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     this.addActivationHandler(this._onActivate.bind(this));
   }
 
+  // parent render
   public static Component = ({ model }: SceneComponentProps<PatternsBreakdownScene>) => {
     const { body, loading, blockingMessage } = model.useState();
     const logsByServiceScene = sceneGraph.getAncestor(model, ServiceScene);
@@ -153,34 +151,6 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
         }
       })
     );
-    this._subs.add(
-      this.subscribeToState((newState, prevState) => {
-        if (newState.legendSyncPatterns !== prevState.legendSyncPatterns) {
-          const lokiPatterns = sceneGraph.getAncestor(this, ServiceScene).state.patterns;
-          console.log('newState.visiblePatterns', newState.legendSyncPatterns);
-          if (!lokiPatterns) {
-            return;
-          }
-
-          console.log('newState.visiblePatterns', newState.legendSyncPatterns);
-
-          // this.updateBody();
-          const flexLayout = newState?.body?.state as LayoutSwitcherState;
-          console.log('layouts', flexLayout.layouts);
-
-          const timeRange = sceneGraph.getTimeRange(this).state.value;
-
-          const { frames: patternFrames } = this.buildPatterns(lokiPatterns, timeRange);
-
-          const logExploration = sceneGraph.getAncestor(this, IndexScene);
-          const targetFlexLayout = flexLayout.layouts[2] as SceneFlexLayout;
-
-          //@todo unhack
-          //@ts-ignore
-          targetFlexLayout.setState(this.getSingleViewLayout(patternFrames, timeRange, logExploration));
-        }
-      })
-    );
   }
 
   private async updateBody() {
@@ -190,9 +160,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       return;
     }
 
-    const timeRange = sceneGraph.getTimeRange(this).state.value;
-
-    const { children, frames: patternFrames } = this.buildPatterns(lokiPatterns, timeRange);
+    const { children, frames: patternFrames } = this.buildPatterns(lokiPatterns);
 
     const logExploration = sceneGraph.getAncestor(this, IndexScene);
 
@@ -218,7 +186,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
             isLazy: true,
             children: children.map((child) => child.clone()),
           }),
-          this.getSingleViewLayout(patternFrames, timeRange, logExploration),
+          this.getSingleViewLayout(patternFrames, logExploration),
         ],
       }),
       loading: false,
@@ -229,26 +197,25 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     const originalFn = context.onToggleSeriesVisibility;
 
     context.onToggleSeriesVisibility = (label: string, mode: SeriesVisibilityChangeMode) => {
-      // console.log('context.onToggleSeriesVisibility', context.onToggleSeriesVisibility)
       originalFn?.(label, mode);
 
-      const legendSyncPatterns = this.state.legendSyncPatterns;
-      if (legendSyncPatterns.has(label)) {
-        legendSyncPatterns.delete(label);
-        this.setState({
-          legendSyncPatterns,
-        });
-      } else {
-        legendSyncPatterns.add(label);
-        this.setState({
-          legendSyncPatterns,
-        });
+      const override: ConfigOverrideRule | undefined = vizPanel.state.fieldConfig.overrides?.[0];
+      const patternsToShow: string[] = override?.matcher.options.names;
+      const legendSyncPatterns = new Set<string>();
+
+      if (patternsToShow) {
+        patternsToShow.forEach(legendSyncPatterns.add, legendSyncPatterns);
       }
+
+      this.setState({
+        legendSyncPatterns,
+      });
     };
   }
 
-  private getSingleViewLayout(patternFrames: PatternFrame[], timeRange: TimeRange, logExploration: IndexScene) {
+  private getSingleViewLayout(patternFrames: PatternFrame[], logExploration: IndexScene) {
     const appliedPatterns = sceneGraph.getAncestor(logExploration, IndexScene).state.patterns;
+    const timeRange = sceneGraph.getTimeRange(this).state.value;
     const timeSeries = PanelBuilders.timeseries()
       .setData(
         new SceneDataNode({
@@ -268,9 +235,9 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
         placement: 'right',
         width: 200,
       })
+
       .setTitle('Patterns')
       .setLinks([
-        //@todo only if not already filtered
         {
           url: '',
           onClick: (event) => {
@@ -296,14 +263,9 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       ])
       .build();
 
-    const panelState = sceneUtils.cloneSceneObjectState(timeSeries.state);
-
-    const panel = new VizPanel({
-      ...panelState,
+    timeSeries.setState({
       extendPanelContext: (vizPanel, context) => this.extendTimeSeriesLegendBus(vizPanel, context),
     });
-
-    console.log('LegendSync', this.state.legendSyncPatterns);
 
     return new SceneFlexLayout({
       direction: 'column',
@@ -316,13 +278,11 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
             new SceneFlexItem({
               minHeight: 300,
               maxWidth: '100%',
-              body: panel,
+              body: timeSeries,
             }),
           ],
         }),
         new SingleViewTableScene({
-          timeRange,
-          legendSyncPatterns: this.state.legendSyncPatterns,
           patternFrames,
           appliedPatterns,
         }),
@@ -330,19 +290,17 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     });
   }
 
-  private buildPatterns(
-    patterns: LokiPattern[],
-    timeRange: TimeRange
-  ): { children: SceneFlexItemLike[]; frames: PatternFrame[] } {
+  private buildPatterns(patterns: LokiPattern[]): { children: SceneFlexItemLike[]; frames: PatternFrame[] } {
     const children: SceneFlexItemLike[] = [];
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     const appliedPatterns = sceneGraph.getAncestor(serviceScene, IndexScene).state.patterns;
+    const timeRange = sceneGraph.getTimeRange(this).state.value;
 
     let maxValue = -Infinity;
     let minValue = 0;
 
     const frames: PatternFrame[] = patterns
-      .map((pat, frameIndex) => {
+      .map((pat) => {
         const timeValues: number[] = [];
         const sampleValues: number[] = [];
         let sum = 0;
@@ -416,7 +374,6 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     const headerActions = buildPatternHeaderActions(status, pattern);
     return PanelBuilders.timeseries()
       .setTitle(`${pattern}`)
-
       .setDescription(`The pattern \`${pattern}\` has been matched \`${sum}\` times in the given timerange.`)
       .setOption('legend', { showLegend: false })
       .setData(

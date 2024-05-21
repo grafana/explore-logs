@@ -14,6 +14,7 @@ export interface FilterByPatternsState extends FilterByPatternsButtonState {
   indexScene: IndexScene;
 }
 
+// @todo refactor
 export function onPatternClick(props: FilterByPatternsState) {
   const { indexScene: staleIndex, pattern, type } = { ...props };
 
@@ -62,33 +63,10 @@ export class FilterByPatternsButton extends SceneObjectBase<FilterByPatternsButt
       return;
     }
 
-    const { patterns = [] } = logExploration.state;
-
-    // Remove the pattern if it's already there
-    let filteredPatterns = patterns.filter((pattern) => pattern.pattern !== this.state.pattern);
-
-    if (this.state.type === 'include') {
-      // Patterns are mutually exclusive, if one is included, we should remove the rest
-      filteredPatterns = [{ pattern: this.state.pattern, type: this.state.type }];
-    } else {
-      // If a pattern is excluded, remove any existing included patterns
-      filteredPatterns = [
-        ...filteredPatterns.filter((pat) => pat.type === 'exclude'),
-        { pattern: this.state.pattern, type: this.state.type },
-      ];
-    }
-
-    // Analytics
-    const includePatternsLength = filteredPatterns.filter((p) => p.type === 'include')?.length ?? 0;
-    const excludePatternsLength = filteredPatterns.filter((p) => p.type === 'exclude')?.length ?? 0;
-    reportAppInteraction(USER_EVENTS_PAGES.service_details, USER_EVENTS_ACTIONS.service_details.pattern_selected, {
+    onPatternClick({
+      indexScene: logExploration,
+      pattern: this.state.pattern,
       type: this.state.type,
-      includePatternsLength: includePatternsLength + (this.state.type === 'include' ? 1 : 0),
-      excludePatternsLength: excludePatternsLength + (this.state.type === 'exclude' ? 1 : 0),
-    });
-
-    logExploration.setState({
-      patterns: filteredPatterns,
     });
   };
 }

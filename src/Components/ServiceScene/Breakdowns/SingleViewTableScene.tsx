@@ -9,15 +9,13 @@ import {
 import { PatternFrame, PatternsBreakdownScene } from './PatternsBreakdownScene';
 import React from 'react';
 import { AppliedPattern, IndexScene } from '../../IndexScene/IndexScene';
-import { DataFrame, LoadingState, PanelData, TimeRange } from '@grafana/data';
+import { DataFrame, LoadingState, PanelData } from '@grafana/data';
 import { Button, Column, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
 import { CellProps } from 'react-table';
 import { css } from '@emotion/css';
 import { onPatternClick } from './FilterByPatternsButton';
 
 export interface SingleViewTableSceneState extends SceneObjectState {
-  legendSyncPatterns: Set<string>;
-  timeRange: TimeRange;
   patternFrames: PatternFrame[];
   appliedPatterns?: AppliedPattern[];
 }
@@ -31,86 +29,45 @@ interface WithCustomCellData {
   excludeLink: () => void;
 }
 
-function getVizStyles() {
-  return {
-    tableWrap: css({
-      maxWidth: 'calc(100vw - 31px)',
-      height: '470px',
-      overflowY: 'scroll',
-    }),
-    tableTimeSeriesWrap: css({
-      width: '230px',
-    }),
-    tableTimeSeries: css({
-      height: '60px',
-      overflow: 'hidden',
-      // Hide header on hover hack
-      '.show-on-hover': {
-        display: 'none',
-      },
-    }),
-  };
-}
-
 export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneState> {
   constructor(state: SingleViewTableSceneState) {
     super({
       ...state,
-      legendSyncPatterns: state.legendSyncPatterns,
     });
-
-    console.log('construct', state);
-
-    this.addActivationHandler(this._onActivate.bind(this));
   }
 
-  //@todo how to use theme hook?
   public static Component({ model }: SceneComponentProps<SingleViewTableScene>) {
-    console.log('rendering SingleViewTableScene', model);
     const styles = getVizStyles();
-    const { patternFrames, legendSyncPatterns: legendSyncPatternsChild, timeRange, appliedPatterns } = model.useState();
+    const { patternFrames, appliedPatterns } = model.useState();
 
-    console.log('rendering legendSyncPatterns', legendSyncPatternsChild);
+    // Get state from parent
     const parent = sceneGraph.getAncestor(model, PatternsBreakdownScene);
+    const { legendSyncPatterns } = parent.useState();
 
-    //@todo why does getting the parent with sceneGraph.getAncestor work, but model.parent, or passing in the state not work?
-    console.log('parent legendSyncPatterns', parent.state.legendSyncPatterns);
-    const legendSyncPatterns = parent.state.legendSyncPatterns;
-
+    // Calculate total for percentages
     const total = patternFrames.reduce((previousValue, frame) => {
       return previousValue + frame.sum;
     }, 0);
 
-    const logExploration = sceneGraph.getAncestor(model, IndexScene);
-    const tableData: WithCustomCellData[] = patternFrames
-      .filter((patternFrame) => {
-        return legendSyncPatterns.has(patternFrame.pattern);
-        // if (legendSyncPatterns?.size) {
-        //   return legendSyncPatterns.find((pattern) => pattern === patternFrame.pattern);
-        // } else {
-        //   return true;
-        // }
-      })
-      .map((pattern: PatternFrame) => {
-        return {
-          dataFrame: pattern.dataFrame,
-          pattern: pattern.pattern,
-          sum: pattern.sum,
-          includeLink: () =>
-            onPatternClick({
-              pattern: pattern.pattern,
-              type: 'include',
-              indexScene: logExploration,
-            }),
-          excludeLink: () =>
-            onPatternClick({
-              pattern: pattern.pattern,
-              type: 'exclude',
-              indexScene: logExploration,
-            }),
-        };
-      });
+    const tableData = model.buildTableData(patternFrames, legendSyncPatterns);
+    const columns = model.buildColumns(total, appliedPatterns);
 
+    return (
+      <div className={styles.tableWrap}>
+        <InteractiveTable columns={columns} data={tableData} getRowId={(r: WithCustomCellData) => r.pattern} />
+      </div>
+    );
+  }
+
+  /**
+   * Build columns for interactive table (wrapper for react-table v7)
+   * @param total
+   * @param appliedPatterns
+   * @protected
+   */
+  protected buildColumns(total: number, appliedPatterns?: AppliedPattern[]) {
+    const styles = getVizStyles();
+    const timeRange = sceneGraph.getTimeRange(this).state.value;
     const columns: Array<Column<WithCustomCellData>> = [
       {
         id: 'volume-samples',
@@ -128,9 +85,6 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
           const timeSeries = PanelBuilders.timeseries()
             .setData(dataNode)
             .setHoverHeader(true)
-            //@ts-ignore
-            .setOption('hoverHeaderOffset', 10)
-
             .setOption('tooltip', {
               mode: TooltipDisplayMode.None,
             })
@@ -222,19 +176,60 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
         },
       },
     ];
-
-    return (
-      <div className={styles.tableWrap}>
-        <InteractiveTable columns={columns} data={tableData} getRowId={(r: WithCustomCellData) => r.pattern} />
-      </div>
-    );
+    return columns;
   }
 
-  private _onActivate() {
-    this.subscribeToState((newState, prevState) => {
-      if (prevState.legendSyncPatterns !== newState.legendSyncPatterns) {
-        console.log('should re-render', newState.legendSyncPatterns);
-      }
-    });
+  /**
+   * Filter visible patterns in table, and return cell data for InteractiveTable
+   * @param patternFrames
+   * @param legendSyncPatterns
+   * @private
+   */
+  private buildTableData(patternFrames: PatternFrame[], legendSyncPatterns: Set<string>): WithCustomCellData[] {
+    const logExploration = sceneGraph.getAncestor(this, IndexScene);
+    return patternFrames
+      .filter((patternFrame) => {
+        return legendSyncPatterns.size ? legendSyncPatterns.has(patternFrame.pattern) : true;
+      })
+      .map((pattern: PatternFrame) => {
+        return {
+          dataFrame: pattern.dataFrame,
+          pattern: pattern.pattern,
+          sum: pattern.sum,
+          includeLink: () =>
+            onPatternClick({
+              pattern: pattern.pattern,
+              type: 'include',
+              indexScene: logExploration,
+            }),
+          excludeLink: () =>
+            onPatternClick({
+              pattern: pattern.pattern,
+              type: 'exclude',
+              indexScene: logExploration,
+            }),
+        };
+      });
   }
+}
+
+function getVizStyles() {
+  return {
+    tableWrap: css({
+      maxWidth: 'calc(100vw - 31px)',
+      height: '470px',
+      overflowY: 'scroll',
+    }),
+    tableTimeSeriesWrap: css({
+      width: '230px',
+    }),
+    tableTimeSeries: css({
+      height: '60px',
+      overflow: 'hidden',
+      // Hide header on hover hack
+      '.show-on-hover': {
+        display: 'none',
+      },
+    }),
+  };
 }
