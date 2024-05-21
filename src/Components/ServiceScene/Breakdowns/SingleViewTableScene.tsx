@@ -16,7 +16,7 @@ import { css } from '@emotion/css';
 import { onPatternClick } from './FilterByPatternsButton';
 
 export interface SingleViewTableSceneState extends SceneObjectState {
-  legendSyncPatterns: string[] | undefined;
+  legendSyncPatterns: Set<string>;
   timeRange: TimeRange;
   patternFrames: PatternFrame[];
   appliedPatterns?: AppliedPattern[];
@@ -84,11 +84,12 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
     const logExploration = sceneGraph.getAncestor(model, IndexScene);
     const tableData: WithCustomCellData[] = patternFrames
       .filter((patternFrame) => {
-        if (legendSyncPatterns?.length) {
-          return legendSyncPatterns.find((pattern) => pattern === patternFrame.pattern);
-        } else {
-          return true;
-        }
+        return legendSyncPatterns.has(patternFrame.pattern);
+        // if (legendSyncPatterns?.size) {
+        //   return legendSyncPatterns.find((pattern) => pattern === patternFrame.pattern);
+        // } else {
+        //   return true;
+        // }
       })
       .map((pattern: PatternFrame) => {
         return {

@@ -48,7 +48,7 @@ export interface PatternsBreakdownSceneState extends SceneObjectState {
   blockingMessage?: string;
   //@todo convert to set
 
-  legendSyncPatterns?: string[];
+  legendSyncPatterns: Set<string>;
 }
 
 export type PatternFrame = {
@@ -85,6 +85,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
           variables: [new CustomVariable({ name: VAR_LABEL_GROUP_BY, defaultToAll: true, includeAll: true })],
         }),
       loading: true,
+      legendSyncPatterns: new Set(),
       ...state,
     });
 
@@ -143,16 +144,6 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     );
   };
 
-  public onChange = (value?: string) => {
-    if (!value) {
-      return;
-    }
-
-    const variable = this.getVariable();
-
-    variable.changeValueTo(value);
-  };
-
   private _onActivate() {
     this.updateBody();
     this._subs.add(
@@ -190,15 +181,6 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
         }
       })
     );
-  }
-
-  private getVariable(): CustomVariable {
-    const variable = sceneGraph.lookupVariable(VAR_LABEL_GROUP_BY, this)!;
-    if (!(variable instanceof CustomVariable)) {
-      throw new Error('Group by variable not found');
-    }
-
-    return variable;
   }
 
   private async updateBody() {
@@ -250,39 +232,23 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       // console.log('context.onToggleSeriesVisibility', context.onToggleSeriesVisibility)
       originalFn?.(label, mode);
 
-      if (mode === SeriesVisibilityChangeMode.ToggleSelection || !this.state.legendSyncPatterns) {
-        // if the user is selecting the only one that is already selected, set undefined
-        if (this.state.legendSyncPatterns?.length === 1 && this.state.legendSyncPatterns[0] === label) {
-          this.setState({
-            legendSyncPatterns: undefined,
-          });
-        } else {
-          // Otherwise add the new label
-          this.setState({
-            legendSyncPatterns: [label],
-          });
-        }
-      } else if (mode === SeriesVisibilityChangeMode.AppendToSelection && this.state.legendSyncPatterns?.length) {
-        //@todo cleanup
-        if (this.state.legendSyncPatterns.find((existingPattern) => existingPattern === label)) {
-          const patternsToSync = this.state.legendSyncPatterns.filter((pattern) => pattern !== label);
-          this.setState({
-            legendSyncPatterns: patternsToSync,
-          });
-        } else {
-          this.setState({
-            legendSyncPatterns: [...this.state.legendSyncPatterns, label],
-          });
-        }
-
-        // Todo remove if already added
+      const legendSyncPatterns = this.state.legendSyncPatterns;
+      if (legendSyncPatterns.has(label)) {
+        legendSyncPatterns.delete(label);
+        this.setState({
+          legendSyncPatterns,
+        });
+      } else {
+        legendSyncPatterns.add(label);
+        this.setState({
+          legendSyncPatterns,
+        });
       }
     };
   }
 
   private getSingleViewLayout(patternFrames: PatternFrame[], timeRange: TimeRange, logExploration: IndexScene) {
     const appliedPatterns = sceneGraph.getAncestor(logExploration, IndexScene).state.patterns;
-    console.log('legendSyncPatterns', this.state.legendSyncPatterns);
     const timeSeries = PanelBuilders.timeseries()
       .setData(
         new SceneDataNode({
