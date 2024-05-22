@@ -19,12 +19,35 @@ test.describe('explore services breakdown page', () => {
     await expect(page).toHaveURL(/broadcast/);
   });
 
-  test('should filter table panel on search', async ({ page }) => {
+  test('should filter table panel on text search', async ({ page }) => {
+    const initialText = await page.getByTestId(testIds.table.wrapper).allTextContents()
     await explorePage.serviceBreakdownSearch.click();
     await explorePage.serviceBreakdownSearch.fill('broadcast');
+    const afterFilterText = await page.getByTestId(testIds.table.wrapper).allTextContents()
+    expect(initialText).not.toBe(afterFilterText)
+  })
 
-    // Expect table to be visible
-    await expect(await page.getByTestId(testIds.table.wrapper)).toBeVisible();
+  test('should change filters on table click', async ({ page }) => {
+    const table = await page.getByTestId(testIds.table.wrapper);
+    // Get a level pill, and click it
+    const levelPill = table.getByRole('cell').getByText("level=debug").first()
+    await levelPill.click()
+    // Get the context menu
+    const pillContextMenu = await table.getByRole('img', { name: 'Add to search' });
+    // Assert menu is open
+    await expect(pillContextMenu).toBeVisible()
+    // Click the filter button
+    await pillContextMenu.click()
+    // New level filter should be added
+    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label level')).toBeVisible()
+  })
+
+  test('should show inspect modal', async ({ page }) => {
+    // Expect table to be rendered
+    await expect(page.getByTestId(testIds.table.wrapper)).toBeVisible();
+
+    await page.getByTestId(testIds.table.inspectLine).last().click();
+    await expect(page.getByRole('dialog', { name: 'Inspect value' })).toBeVisible()
   });
 
   test('should select a label, update filters, open in explore', async ({ page }) => {

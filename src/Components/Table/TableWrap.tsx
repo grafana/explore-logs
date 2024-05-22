@@ -39,8 +39,6 @@ export const TableWrap = (props: TableWrapProps) => {
   useResizeObserver({
     ref: props.panelWrap,
     onResize: () => {
-      console.log('width', props.panelWrap.current?.clientWidth);
-      console.log('height', props.panelWrap.current?.clientHeight);
       const element = props.panelWrap.current;
       if (element) {
         if (panelWrapSize.width !== element.clientWidth || panelWrapSize.height !== element.clientHeight) {

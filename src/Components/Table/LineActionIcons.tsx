@@ -4,6 +4,7 @@ import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 import { SelectedTableRow } from 'Components/Table/LogLineCellComponent';
 import { useQueryContext } from 'Components/Table/Context/QueryContext';
+import { testIds } from '../../services/testIds';
 
 export enum UrlParameterType {
   SelectedLine = 'selectedLine',
@@ -56,6 +57,7 @@ export function LineActionIcons(props: { rowIndex: number; value: unknown }) {
       <div className={styles.iconWrapper}>
         <div className={styles.inspect}>
           <IconButton
+            data-testid={testIds.table.inspectLine}
             className={styles.inspectButton}
             tooltip="View log line"
             variant="secondary"
