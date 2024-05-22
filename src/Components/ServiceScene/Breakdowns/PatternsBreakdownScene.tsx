@@ -223,15 +223,10 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       width: 'calc(100vw - 60px)',
       maxWidth: '100%',
       children: [
-        new SceneFlexLayout({
-          direction: 'column',
-          children: [
-            new SceneFlexItem({
-              minHeight: 300,
-              maxWidth: '100%',
-              body: timeSeries,
-            }),
-          ],
+        new SceneFlexItem({
+          minHeight: 300,
+          maxWidth: '100%',
+          body: timeSeries,
         }),
         new SingleViewTableScene({
           patternFrames,
