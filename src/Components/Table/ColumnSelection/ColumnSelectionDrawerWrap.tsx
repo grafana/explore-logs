@@ -7,6 +7,7 @@ import { LogsColumnSearch } from 'Components/Table/ColumnSelection/LogsColumnSea
 import { LogsTableMultiSelect } from 'Components/Table/ColumnSelection/LogsTableMultiSelect';
 
 import { FieldNameMetaStore } from '../TableTypes';
+import { reportInteraction } from '@grafana/runtime';
 
 export function getReorderColumn(setColumns: (cols: FieldNameMetaStore) => void) {
   return (columns: FieldNameMetaStore, sourceIndex: number, destinationIndex: number) => {
@@ -71,7 +72,7 @@ export function ColumnSelectionDrawerWrap() {
     }
 
     // Analytics
-    // columnFilterEvent(columnName);
+    columnFilterEvent(columnName);
 
     // Set local state
     setColumns(pendingLabelState);
@@ -123,6 +124,19 @@ export function ColumnSelectionDrawerWrap() {
     setFilteredColumns(pendingLabelState);
     setSearchValue('');
   };
+
+  // Tracking event for filtering columns
+  function columnFilterEvent(columnName: string) {
+    if (columns) {
+      const newState = !columns[columnName]?.active;
+      const priorActiveCount = Object.keys(columns).filter((column) => columns[column]?.active)?.length;
+      const event = {
+        columnAction: newState ? 'add' : 'remove',
+        columnCount: newState ? priorActiveCount + 1 : priorActiveCount - 1,
+      };
+      reportInteraction('grafana_logs_app_table_column_filter_clicked', event);
+    }
+  }
 
   return (
     <ClickOutsideWrapper

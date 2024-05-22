@@ -7,6 +7,7 @@ import { Field, Input, useTheme2 } from '@grafana/ui';
 import { useTableColumnContext } from 'Components/Table/Context/TableColumnsContext';
 import { FieldNameMetaStore } from 'Components/Table/TableTypes';
 import { debouncedFuzzySearch } from 'Components/Table/uFuzzy/uFuzzy';
+import { reportInteraction } from '@grafana/runtime';
 
 function getStyles(theme: GrafanaTheme2) {
   return {
@@ -27,12 +28,15 @@ export function LogsColumnSearch({ searchValue, setSearchValue }: LogsColumnSear
   const dispatcher = (data: string[][]) => {
     const matches = data[0];
     let newColumnsWithMeta: FieldNameMetaStore = {};
+    let numberOfResults = 0;
     matches.forEach((match) => {
       if (match in columns) {
         newColumnsWithMeta[match] = columns[match];
+        numberOfResults++;
       }
     });
     setFilteredColumns(newColumnsWithMeta);
+    searchFilterEvent(numberOfResults);
   };
 
   // uFuzzy search
@@ -59,4 +63,10 @@ export function LogsColumnSearch({ searchValue, setSearchValue }: LogsColumnSear
       <Input value={searchValue} type={'text'} placeholder={'Search fields by name'} onChange={onSearchInputChange} />
     </Field>
   );
+}
+
+function searchFilterEvent(searchResultCount: number) {
+  reportInteraction('grafana_explore_logs_table_text_search_result_count', {
+    resultCount: searchResultCount,
+  });
 }
