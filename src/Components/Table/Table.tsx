@@ -437,6 +437,9 @@ function getInitialFieldWidth(
     return undefined;
   }
 
-  // Just derived fields
-  return 200 + extraPadding;
+  // Just derived fields, which should have uniform length
+  return Math.min(
+    Math.max((field.values?.[0]?.length ?? 80) * 6.5 + 95 + extraPadding, minWidth + extraPadding),
+    maxWidth
+  );
 }
