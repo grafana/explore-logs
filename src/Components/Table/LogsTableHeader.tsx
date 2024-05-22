@@ -74,6 +74,7 @@ export const LogsTableHeader = (props: LogsTableHeaderProps) => {
         <Icon title={'Show menu'} name={'ellipsis-v'} />
       </button>
       {referenceElement.current && (
+        //@ts-ignore
         <Popover
           show={isHeaderMenuActive}
           content={

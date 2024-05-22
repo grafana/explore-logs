@@ -1,30 +1,33 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DataFrame, FieldType, GrafanaTheme2, LoadingState, TimeRange } from '@grafana/data';
+import { ConfigOverrideRule, DataFrame, FieldColor, FieldType, GrafanaTheme2, LoadingState } from '@grafana/data';
 import {
   CustomVariable,
   PanelBuilders,
   SceneComponentProps,
-  SceneCSSGridLayout,
   SceneDataNode,
   SceneFlexItem,
-  SceneFlexItemLike,
+  SceneFlexLayout,
   sceneGraph,
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
   SceneVariableSet,
+  VizPanel,
 } from '@grafana/scenes';
-import { Button, DrawStyle, StackingMode, Text, TextLink, useStyles2 } from '@grafana/ui';
-import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
+import { LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode, Text, TextLink, useStyles2 } from '@grafana/ui';
 import { LayoutSwitcher } from 'Components/ServiceScene/Breakdowns/LayoutSwitcher';
 import { StatusWrapper } from 'Components/ServiceScene/Breakdowns/StatusWrapper';
 import { GrotError } from 'Components/GrotError';
 import { VAR_LABEL_GROUP_BY } from 'services/variables';
-import { getColorByIndex } from 'services/scenes';
 import { LokiPattern, ServiceScene } from '../ServiceScene';
-import { FilterByPatternsButton } from './FilterByPatternsButton';
+import { onPatternClick } from './FilterByPatternsButton';
+import { IndexScene } from '../../IndexScene/IndexScene';
+import { PatternsViewTableScene } from './PatternsViewTableScene';
+import { config } from '@grafana/runtime';
+
+const palette = config.theme2.visualization.palette;
 
 export interface PatternsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -32,12 +35,14 @@ export interface PatternsBreakdownSceneState extends SceneObjectState {
   loading?: boolean;
   error?: string;
   blockingMessage?: string;
+  legendSyncPatterns: Set<string>;
 }
 
-type PatternFrame = {
+export type PatternFrame = {
   dataFrame: DataFrame;
   pattern: string;
   sum: number;
+  status?: 'include' | 'exclude';
 };
 
 export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSceneState> {
@@ -49,12 +54,14 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
           variables: [new CustomVariable({ name: VAR_LABEL_GROUP_BY, defaultToAll: true, includeAll: true })],
         }),
       loading: true,
+      legendSyncPatterns: new Set(),
       ...state,
     });
 
     this.addActivationHandler(this._onActivate.bind(this));
   }
 
+  // parent render
   public static Component = ({ model }: SceneComponentProps<PatternsBreakdownScene>) => {
     const { body, loading, blockingMessage } = model.useState();
     const logsByServiceScene = sceneGraph.getAncestor(model, ServiceScene);
@@ -107,78 +114,140 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     );
   };
 
-  public onChange = (value?: string) => {
-    if (!value) {
-      return;
-    }
-
-    const variable = this.getVariable();
-
-    variable.changeValueTo(value);
-  };
-
   private _onActivate() {
     this.updateBody();
-    const unsub = sceneGraph.getAncestor(this, ServiceScene).subscribeToState((newState, prevState) => {
-      if (newState.patterns !== prevState.patterns) {
-        this.updateBody();
-      }
-    });
-    return () => unsub.unsubscribe();
-  }
-
-  private getVariable(): CustomVariable {
-    const variable = sceneGraph.lookupVariable(VAR_LABEL_GROUP_BY, this)!;
-    if (!(variable instanceof CustomVariable)) {
-      throw new Error('Group by variable not found');
-    }
-
-    return variable;
+    this._subs.add(
+      sceneGraph.getAncestor(this, ServiceScene).subscribeToState((newState, prevState) => {
+        if (newState.patterns !== prevState.patterns) {
+          this.updateBody();
+        }
+      })
+    );
   }
 
   private async updateBody() {
-    const children: SceneFlexItemLike[] = [];
-
-    const patterns = sceneGraph.getAncestor(this, ServiceScene).state.patterns;
-    if (!patterns) {
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
+    const lokiPatterns = serviceScene.state.patterns;
+    if (!lokiPatterns) {
       return;
     }
 
-    this.buildPatterns(patterns, children);
+    const patternFrames = this.buildPatterns(lokiPatterns);
+
+    const logExploration = sceneGraph.getAncestor(this, IndexScene);
 
     this.setState({
-      body: new LayoutSwitcher({
-        options: [
-          { value: 'grid', label: 'Grid' },
-          { value: 'rows', label: 'Rows' },
-        ],
-        actionView: 'patterns',
-        active: 'grid',
-        layouts: [
-          new SceneCSSGridLayout({
-            templateColumns: GRID_TEMPLATE_COLUMNS,
-            autoRows: '200px',
-            isLazy: true,
-            children: children,
-          }),
-          new SceneCSSGridLayout({
-            templateColumns: '1fr',
-            autoRows: '200px',
-            isLazy: true,
-            children: children.map((child) => child.clone()),
-          }),
-        ],
-      }),
+      body: this.getSingleViewLayout(patternFrames, logExploration),
       loading: false,
     });
   }
 
-  private buildPatterns(patterns: LokiPattern[], children: SceneFlexItemLike[]) {
+  private extendTimeSeriesLegendBus(vizPanel: VizPanel, context: PanelContext) {
+    const originalOnToggleSeriesVisibility = context.onToggleSeriesVisibility;
+
+    context.onToggleSeriesVisibility = (label: string, mode: SeriesVisibilityChangeMode) => {
+      originalOnToggleSeriesVisibility?.(label, mode);
+
+      const override: ConfigOverrideRule | undefined = vizPanel.state.fieldConfig.overrides?.[0];
+      const patternsToShow: string[] = override?.matcher.options.names;
+      const legendSyncPatterns = new Set<string>();
+
+      if (patternsToShow) {
+        patternsToShow.forEach(legendSyncPatterns.add, legendSyncPatterns);
+      }
+
+      this.setState({
+        legendSyncPatterns,
+      });
+    };
+  }
+
+  private getSingleViewLayout(patternFrames: PatternFrame[], logExploration: IndexScene) {
+    const appliedPatterns = sceneGraph.getAncestor(logExploration, IndexScene).state.patterns;
+    const timeRange = sceneGraph.getTimeRange(this).state.value;
+    // @ts-ignore
+    const timeSeries = PanelBuilders.timeseries()
+      .setData(
+        new SceneDataNode({
+          data: {
+            series: patternFrames.map((patternFrame, seriesIndex) => {
+              // Mutating the dataframe config here means that we don't need to update the colors in the table view
+              const dataFrame = patternFrame.dataFrame;
+              dataFrame.fields[1].config.color = overrideToFixedColor(seriesIndex);
+              return dataFrame;
+            }),
+            state: LoadingState.Done,
+            timeRange: timeRange,
+          },
+        })
+      )
+      .setOption('legend', {
+        asTable: true,
+        showLegend: true,
+        displayMode: LegendDisplayMode.Table,
+        placement: 'right',
+        width: 200,
+      })
+      .setTitle('Patterns')
+      .setLinks([
+        {
+          url: '#',
+          targetBlank: false,
+          onClick: (event) => {
+            onPatternClick({
+              pattern: event.origin.name,
+              type: 'include',
+              indexScene: logExploration,
+            });
+          },
+          title: 'Select',
+        },
+        {
+          url: '#',
+          targetBlank: false,
+          onClick: (event) => {
+            onPatternClick({
+              pattern: event.origin.name,
+              type: 'exclude',
+              indexScene: logExploration,
+            });
+          },
+          title: 'Exclude',
+        },
+      ])
+      .build();
+
+    timeSeries.setState({
+      extendPanelContext: (vizPanel, context) => this.extendTimeSeriesLegendBus(vizPanel, context),
+    });
+
+    return new SceneFlexLayout({
+      direction: 'column',
+      width: 'calc(100vw - 60px)',
+      maxWidth: '100%',
+      children: [
+        new SceneFlexItem({
+          minHeight: 300,
+          maxWidth: '100%',
+          body: timeSeries,
+        }),
+        new PatternsViewTableScene({
+          patternFrames,
+          appliedPatterns,
+        }),
+      ],
+    });
+  }
+
+  private buildPatterns(patterns: LokiPattern[]): PatternFrame[] {
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
+    const appliedPatterns = sceneGraph.getAncestor(serviceScene, IndexScene).state.patterns;
+
     let maxValue = -Infinity;
     let minValue = 0;
 
-    const frames: PatternFrame[] = patterns
-      .map((pat, frameIndex) => {
+    return patterns
+      .map((pat) => {
         const timeValues: number[] = [];
         const sampleValues: number[] = [];
         let sum = 0;
@@ -201,13 +270,21 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
               name: 'time',
               type: FieldType.time,
               values: timeValues,
-              config: {},
+              config: {
+                custom: {
+                  axisPlacement: 'hidden',
+                },
+              },
             },
             {
               name: pat.pattern,
               type: FieldType.number,
               values: sampleValues,
-              config: {},
+              config: {
+                custom: {
+                  axisPlacement: 'hidden',
+                },
+              },
             },
           ],
           length: pat.samples.length,
@@ -215,58 +292,16 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
             preferredVisualisationType: 'graph',
           },
         };
+        const existingPattern = appliedPatterns?.find((appliedPattern) => appliedPattern.pattern === pat.pattern);
 
         return {
           dataFrame,
           pattern: pat.pattern,
           sum,
+          status: existingPattern?.type,
         };
       })
       .sort((a, b) => b.sum - a.sum);
-
-    const timeRange = sceneGraph.getTimeRange(this).state.value;
-
-    for (let i = 0; i < frames.length; i++) {
-      const { dataFrame, pattern, sum } = frames[i];
-      children.push(this.buildPatternTimeseries(dataFrame, timeRange, pattern, sum, i, minValue, maxValue));
-    }
-  }
-
-  private buildPatternTimeseries(
-    dataFrame: DataFrame,
-    timeRange: TimeRange,
-    pattern: string,
-    sum: number,
-    index: number,
-    minValue: number,
-    maxValue: number
-  ) {
-    return PanelBuilders.timeseries()
-      .setTitle(`${pattern}`)
-      .setDescription(`The pattern \`${pattern}\` has been matched \`${sum}\` times in the given timerange.`)
-      .setOption('legend', { showLegend: false })
-      .setData(
-        new SceneDataNode({
-          data: {
-            series: [dataFrame],
-            state: LoadingState.Done,
-            timeRange,
-          },
-        })
-      )
-      .setColor({ mode: 'fixed', fixedColor: getColorByIndex(index) })
-      .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
-      .setCustomFieldConfig('fillOpacity', 100)
-      .setCustomFieldConfig('lineWidth', 0)
-      .setCustomFieldConfig('pointSize', 0)
-      .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-      .setCustomFieldConfig('axisSoftMax', maxValue)
-      .setCustomFieldConfig('axisSoftMin', minValue)
-      .setHeaderActions([
-        new FilterByPatternsButton({ pattern: pattern, type: 'exclude' }),
-        new FilterByPatternsButton({ pattern: pattern, type: 'include' }),
-      ])
-      .build();
   }
 }
 
@@ -307,40 +342,15 @@ function getStyles(theme: GrafanaTheme2) {
   };
 }
 
-const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(600px, 1fr))';
-
 export function buildPatternsScene() {
   return new SceneFlexItem({
     body: new PatternsBreakdownScene({}),
   });
 }
 
-interface SelectLabelActionState extends SceneObjectState {
-  labelName: string;
-}
-
-export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
-  public static Component = ({ model }: SceneComponentProps<AddToFiltersButton>) => {
-    return (
-      <Button variant="secondary" size="sm" fill="text" onClick={model.onClick}>
-        Select
-      </Button>
-    );
+export function overrideToFixedColor(key: keyof typeof palette): FieldColor {
+  return {
+    mode: 'fixed',
+    fixedColor: palette[key] as string,
   };
-
-  public onClick = () => {
-    getPatternsSceneFor(this).onChange(this.state.labelName);
-  };
-}
-
-function getPatternsSceneFor(model: SceneObject): PatternsBreakdownScene {
-  if (model instanceof PatternsBreakdownScene) {
-    return model;
-  }
-
-  if (model.parent) {
-    return getPatternsSceneFor(model.parent);
-  }
-
-  throw new Error('Unable to find breakdown scene');
 }
