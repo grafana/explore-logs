@@ -55,7 +55,8 @@ export class LineFilter extends SceneObjectBase<LineFilterState> {
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.search_string_in_logs_changed,
       {
-        searchQuery: search,
+        searchQueryLength: search.length,
+        containsLevel: search.toLowerCase().includes('level'),
       }
     );
   }, 350);
