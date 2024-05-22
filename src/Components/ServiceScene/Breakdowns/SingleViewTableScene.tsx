@@ -38,7 +38,6 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
   }
 
   public static Component({ model }: SceneComponentProps<SingleViewTableScene>) {
-    const styles = getVizStyles();
     const { patternFrames, appliedPatterns } = model.useState();
 
     // Get state from parent
@@ -54,7 +53,7 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
     const columns = model.buildColumns(total, appliedPatterns);
 
     return (
-      <div className={styles.tableWrap}>
+      <div className={renderStyles}>
         <InteractiveTable columns={columns} data={tableData} getRowId={(r: WithCustomCellData) => r.pattern} />
       </div>
     );
@@ -67,7 +66,6 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
    * @protected
    */
   protected buildColumns(total: number, appliedPatterns?: AppliedPattern[]) {
-    const styles = getVizStyles();
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     const columns: Array<Column<WithCustomCellData>> = [
       {
@@ -97,8 +95,8 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
             .build();
 
           return (
-            <div className={styles.tableTimeSeriesWrap}>
-              <div className={styles.tableTimeSeries}>
+            <div className={vizStyles.tableTimeSeriesWrap}>
+              <div className={vizStyles.tableTimeSeries}>
                 <timeSeries.Component model={timeSeries} />
               </div>
             </div>
@@ -114,7 +112,7 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
         id: 'pattern',
         header: 'Pattern',
         cell: (props: CellProps<WithCustomCellData>) => {
-          return <div className={styles.tablePatternText}>{props.cell.row.original.pattern}</div>;
+          return <div className={vizStyles.tablePatternText}>{props.cell.row.original.pattern}</div>;
         },
       },
       {
@@ -203,29 +201,29 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
   }
 }
 
-function getVizStyles() {
-  const theme = config.theme2;
-  return {
-    tableWrap: css({
-      maxWidth: 'calc(100vw - 31px)',
-      height: '470px',
-      overflowY: 'scroll',
-    }),
-    tablePatternText: css({
-      width: 'calc(100vw - 640px)',
-      minWidth: '200px',
-      fontFamily: theme.typography.fontFamilyMonospace,
-    }),
-    tableTimeSeriesWrap: css({
-      width: '230px',
-    }),
-    tableTimeSeries: css({
-      height: '30px',
-      overflow: 'hidden',
-      // Hide header on hover hack
-      '.show-on-hover': {
-        display: 'none',
-      },
-    }),
-  };
-}
+const theme = config.theme2;
+
+const vizStyles = {
+  tablePatternText: css({
+    width: 'calc(100vw - 640px)',
+    minWidth: '200px',
+    fontFamily: theme.typography.fontFamilyMonospace,
+  }),
+  tableTimeSeriesWrap: css({
+    width: '230px',
+  }),
+  tableTimeSeries: css({
+    height: '30px',
+    overflow: 'hidden',
+    // Hide header on hover hack
+    '.show-on-hover': {
+      display: 'none',
+    },
+  }),
+};
+
+const renderStyles = css({
+  maxWidth: 'calc(100vw - 31px)',
+  height: '470px',
+  overflowY: 'scroll',
+});
