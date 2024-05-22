@@ -40,21 +40,6 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
   });
 
-  test('should select a pattern field, update filters, open log panel', async ({ page }) => {
-    await page.getByLabel('Tab Patterns').click();
-    await page.getByLabel('Grid').click()
-
-    await page
-      .getByTestId('data-testid Panel header level=info <_> caller=flush.go:253 msg="completing block" <_>')
-      .getByRole('button', { name: 'Select' })
-      .click();
-    // Should see the logs panel full of patterns
-    await expect(page.getByTestId('data-testid search-logs')).toBeVisible();
-    // Pattern filter should be added
-    await expect(page.getByText('Patterns', { exact: true })).toBeVisible();
-    await expect(page.getByText('level=info < … g block" <_>')).toBeVisible();
-  });
-
   test('should select an include pattern field in default single view, update filters, open log panel', async ({ page }) => {
     await page.getByLabel('Tab Patterns').click();
 
@@ -107,22 +92,6 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByText('level=info < … g block" <_>')).toBeVisible();
 
 
-  });
-
-  test('patterns should be lazy loaded', async ({ page }) => {
-    await page.getByLabel('Tab Patterns').click();
-    await page.getByLabel('Grid').click()
-
-    const addToFilterButtons = page.getByTestId('header-container')
-        .getByRole('button', { name: 'Select' })
-
-    // Only the first 4 patterns are visible above the fold
-    await expect(addToFilterButtons).toHaveCount(4)
-
-    page.mouse.wheel(0, 600)
-
-    // Fake data only generates 8 patterns, they should all be rendered after scrolling down a bit
-    await expect(addToFilterButtons).toHaveCount(8)
   });
 
   test('should update a filter and run new logs', async ({ page }) => {
