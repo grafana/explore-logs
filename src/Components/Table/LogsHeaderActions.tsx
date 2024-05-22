@@ -41,6 +41,7 @@ const getStyles = () => {
       display: 'flex',
       flex: '1',
       justifyContent: 'space-between',
+      marginTop: '8px',
     }),
     visualisationTypeRadio: css({
       margin: `0 0 0 8px`,
