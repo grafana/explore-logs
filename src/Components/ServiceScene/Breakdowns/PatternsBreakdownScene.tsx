@@ -24,7 +24,7 @@ import { VAR_LABEL_GROUP_BY } from 'services/variables';
 import { LokiPattern, ServiceScene } from '../ServiceScene';
 import { onPatternClick } from './FilterByPatternsButton';
 import { IndexScene } from '../../IndexScene/IndexScene';
-import { SingleViewTableScene } from './SingleViewTableScene';
+import { PatternsViewTableScene } from './PatternsViewTableScene';
 import { config } from '@grafana/runtime';
 
 const palette = config.theme2.visualization.palette;
@@ -231,7 +231,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
           maxWidth: '100%',
           body: timeSeries,
         }),
-        new SingleViewTableScene({
+        new PatternsViewTableScene({
           patternFrames,
           appliedPatterns,
         }),

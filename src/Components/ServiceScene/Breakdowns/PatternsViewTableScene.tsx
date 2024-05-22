@@ -30,14 +30,14 @@ interface WithCustomCellData {
   excludeLink: () => void;
 }
 
-export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneState> {
+export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableSceneState> {
   constructor(state: SingleViewTableSceneState) {
     super({
       ...state,
     });
   }
 
-  public static Component({ model }: SceneComponentProps<SingleViewTableScene>) {
+  public static Component({ model }: SceneComponentProps<PatternsViewTableScene>) {
     const { patternFrames, appliedPatterns } = model.useState();
 
     // Get state from parent
