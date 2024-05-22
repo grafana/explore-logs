@@ -1,7 +1,4 @@
-import React from 'react';
-
-import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
-import { Button } from '@grafana/ui';
+import { sceneGraph, SceneObjectState } from '@grafana/scenes';
 import { IndexScene } from '../../IndexScene/IndexScene';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 
@@ -14,7 +11,6 @@ export interface FilterByPatternsState extends FilterByPatternsButtonState {
   indexScene: IndexScene;
 }
 
-// @todo refactor
 export function onPatternClick(props: FilterByPatternsState) {
   const { indexScene: staleIndex, pattern, type } = { ...props };
 
@@ -44,29 +40,4 @@ export function onPatternClick(props: FilterByPatternsState) {
   indexScene.setState({
     patterns: [...filteredPatterns, { pattern: pattern, type: type }],
   });
-}
-
-export class FilterByPatternsButton extends SceneObjectBase<FilterByPatternsButtonState> {
-  public static Component = ({ model }: SceneComponentProps<FilterByPatternsButton>) => {
-    const { type } = model.useState();
-    return (
-      <Button variant="secondary" size="sm" onClick={model.onClick}>
-        {type === 'include' ? 'Select' : 'Exclude'}
-      </Button>
-    );
-  };
-
-  public onClick = () => {
-    const logExploration = sceneGraph.getAncestor(this, IndexScene);
-
-    if (!logExploration) {
-      return;
-    }
-
-    onPatternClick({
-      indexScene: logExploration,
-      pattern: this.state.pattern,
-      type: this.state.type,
-    });
-  };
 }
