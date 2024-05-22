@@ -1,7 +1,15 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { ConfigOverrideRule, DataFrame, FieldType, GrafanaTheme2, LoadingState, TimeRange } from '@grafana/data';
+import {
+  ConfigOverrideRule,
+  DataFrame,
+  FieldColor,
+  FieldType,
+  GrafanaTheme2,
+  LoadingState,
+  TimeRange,
+} from '@grafana/data';
 import {
   CustomVariable,
   PanelBuilders,
@@ -38,6 +46,9 @@ import { LokiPattern, ServiceScene } from '../ServiceScene';
 import { FilterByPatternsButton, onPatternClick } from './FilterByPatternsButton';
 import { IndexScene } from '../../IndexScene/IndexScene';
 import { SingleViewTableScene } from './SingleViewTableScene';
+import { config } from '@grafana/runtime';
+
+const palette = config.theme2.visualization.palette;
 
 export interface PatternsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -194,10 +205,10 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
   }
 
   private extendTimeSeriesLegendBus(vizPanel: VizPanel, context: PanelContext) {
-    const originalFn = context.onToggleSeriesVisibility;
+    const originalOnToggleSeriesVisibility = context.onToggleSeriesVisibility;
 
     context.onToggleSeriesVisibility = (label: string, mode: SeriesVisibilityChangeMode) => {
-      originalFn?.(label, mode);
+      originalOnToggleSeriesVisibility?.(label, mode);
 
       const override: ConfigOverrideRule | undefined = vizPanel.state.fieldConfig.overrides?.[0];
       const patternsToShow: string[] = override?.matcher.options.names;
@@ -220,8 +231,11 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       .setData(
         new SceneDataNode({
           data: {
-            series: patternFrames.map((patternFrame) => {
-              return patternFrame.dataFrame;
+            series: patternFrames.map((patternFrame, seriesIndex) => {
+              // Mutating the dataframe config here means that we don't need to update the colors in the table view
+              const dataFrame = patternFrame.dataFrame;
+              dataFrame.fields[1].config.color = overrideToFixedColor(seriesIndex);
+              return dataFrame;
             }),
             state: LoadingState.Done,
             timeRange: timeRange,
@@ -235,7 +249,6 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
         placement: 'right',
         width: 200,
       })
-
       .setTitle('Patterns')
       .setLinks([
         {
@@ -441,4 +454,11 @@ export function buildPatternsScene() {
   return new SceneFlexItem({
     body: new PatternsBreakdownScene({}),
   });
+}
+
+export function overrideToFixedColor(key: keyof typeof palette): FieldColor {
+  return {
+    mode: 'fixed',
+    fixedColor: palette[key] as string,
+  };
 }

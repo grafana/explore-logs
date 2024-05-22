@@ -224,7 +224,7 @@ function getVizStyles() {
       width: '230px',
     }),
     tableTimeSeries: css({
-      height: '60px',
+      height: '30px',
       overflow: 'hidden',
       // Hide header on hover hack
       '.show-on-hover': {
