@@ -66,7 +66,7 @@ export function LogsColumnSearch({ searchValue, setSearchValue }: LogsColumnSear
 }
 
 function searchFilterEvent(searchResultCount: number) {
-  reportInteraction('grafana_explore_logs_table_text_search_result_count', {
+  reportInteraction('grafana_logs_app_table_text_search_result_count', {
     resultCount: searchResultCount,
   });
 }
