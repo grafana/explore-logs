@@ -67,24 +67,24 @@ export const CellContextMenu = (props: Props) => {
             >
               <Icon title={'Add to search'} size={'md'} name={'plus-circle'} />
             </div>
-            <div
-              className={styles.menuItem}
-              onClick={() => {
-                addFilter({
-                  key: props.label,
-                  value: props.value,
-                  operator: FilterOp.NotEqual,
-                });
-              }}
-            >
-              <Icon title={'Exclude from search'} size={'md'} name={'minus-circle'} />
-            </div>
+            {/* commented out until filters have added support for negative filters*/}
+            {/*<div*/}
+            {/*  className={styles.menuItem}*/}
+            {/*  onClick={() => {*/}
+            {/*    addFilter({*/}
+            {/*      key: props.label,*/}
+            {/*      value: props.value,*/}
+            {/*      operator: FilterOp.NotEqual,*/}
+            {/*    });*/}
+            {/*  }}*/}
+            {/*>*/}
+            {/*  <Icon title={'Exclude from search'} size={'md'} name={'minus-circle'} />*/}
+            {/*</div>*/}
           </>
         )}
 
         {props.showColumn && (
           <div onClick={props.showColumn} className={styles.menuItem}>
-            {/*<Icon title={'Add column'} size={'md'} name={'columns'}/>*/}
             <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
                 fillRule="evenodd"
