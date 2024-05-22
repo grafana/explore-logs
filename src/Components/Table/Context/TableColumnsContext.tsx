@@ -80,7 +80,6 @@ export const TableColumnContextProvider = ({
     });
     activeColumns.sort((a, b) => {
       // Typescript doesn't seem to know that the indicies we picked in the loop above are only for ActiveFieldMeta, so we're forced to assert
-      // @todo how to do this better?
       const colA: ActiveFieldMeta = columns[a] as ActiveFieldMeta;
       const colB: ActiveFieldMeta = columns[b] as ActiveFieldMeta;
       return colA.index - colB.index;

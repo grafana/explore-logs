@@ -10,7 +10,7 @@ import { DATAPLANE_BODY_NAME } from '../../services/logsFrame';
 export interface LogsTableHeaderProps extends PropsWithChildren<CustomHeaderRendererProps> {
   fieldIndex: number;
 }
-//@todo delete in g11
+//@todo delete when released in Grafana core
 export interface CustomHeaderRendererProps {
   field: Field;
   defaultContent: React.ReactNode;

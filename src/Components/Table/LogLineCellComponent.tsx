@@ -15,7 +15,6 @@ import { LineActionIcons } from 'Components/Table/LineActionIcons';
 import { RawLogLineText } from 'Components/Table/RawLogLineText';
 import { DATAPLANE_BODY_NAME } from '../../services/logsFrame';
 
-//@todo remove row number
 export type SelectedTableRow = {
   row: number;
   id: string;
@@ -88,7 +87,7 @@ export const LogLineCellComponent = (props: Props) => {
         const rawValue = field?.values[props.rowIndex];
         const isDerived = !labelValue && !!rawValue;
 
-        // @todo This is confusing and needs refactor
+        // If we have a label value, the field is not derived
         if (labelValue) {
           return (
             <LogLinePill
@@ -106,9 +105,9 @@ export const LogLineCellComponent = (props: Props) => {
           );
         }
 
+        // Otherwise, the field might be derived
         if (isDerived && untransformedField?.name) {
           const untransformedValue = untransformedField?.values[props.rowIndex];
-          // are derived fields always strings?
           if (untransformedField?.type === FieldType.string && untransformedValue) {
             return (
               <LogLinePill

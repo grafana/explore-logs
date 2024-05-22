@@ -59,7 +59,6 @@ export const DefaultCellComponent = (props: CustomCellRendererProps & DefaultCel
   const { cellIndex, setActiveCellIndex } = useTableCellContext();
 
   // We don't get back the full react.table row here, but the calling function only uses the index, which are in `CustomCellRendererProps`
-  // @todo update def of Row in getCellLinks to {index: number} ?
   const row = { index: props.rowIndex } as Row;
   const hasLinks = Boolean(getCellLinks(props.field, row)?.length);
 

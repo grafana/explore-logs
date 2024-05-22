@@ -108,13 +108,11 @@ export const CellContextMenu = (props: Props) => {
               <div
                 className={styles.menuItem}
                 onClick={() => {
-                  //@todo hacky openy
                   window.open(link.href, '_blank');
                 }}
                 key={link.href}
               >
                 <Icon title={link.title ?? 'Link'} key={link.href} size={'md'} name={'link'} />
-                {/*@todo this comes from user defined data in loki config, needs some limits */}
               </div>
             );
           })}

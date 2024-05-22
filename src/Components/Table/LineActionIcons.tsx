@@ -5,7 +5,6 @@ import { css } from '@emotion/css';
 import { SelectedTableRow } from 'Components/Table/LogLineCellComponent';
 import { useQueryContext } from 'Components/Table/Context/QueryContext';
 
-// @todo refactor
 export enum UrlParameterType {
   SelectedLine = 'selectedLine',
   From = 'from',
