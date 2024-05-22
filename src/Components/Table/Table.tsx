@@ -433,5 +433,9 @@ function getInitialFieldWidth(
     return Math.min(Math.max(maxLength * 6.5 + 95 + extraPadding, minWidth + extraPadding), maxWidth);
   }
 
-  return undefined;
+  if (field.name === DATAPLANE_BODY_NAME) {
+    return undefined;
+  }
+
+  return 200 + extraPadding;
 }

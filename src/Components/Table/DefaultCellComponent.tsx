@@ -28,6 +28,7 @@ const getStyles = (theme: GrafanaTheme2, fieldType?: FieldType) => ({
   linkWrapper: css({
     color: theme.colors.text.link,
     marginTop: '7px',
+    marginLeft: '7px',
     '&:hover': {
       textDecoration: 'underline',
     },

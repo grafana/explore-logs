@@ -84,7 +84,7 @@ export const CellContextMenu = (props: Props) => {
         )}
 
         {props.showColumn && (
-          <div onClick={props.showColumn} className={styles.menuItem}>
+          <div title={'Add column'} onClick={props.showColumn} className={styles.menuItem}>
             <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
                 fillRule="evenodd"
