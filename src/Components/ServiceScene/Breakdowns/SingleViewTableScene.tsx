@@ -14,6 +14,7 @@ import { Button, Column, InteractiveTable, TooltipDisplayMode } from '@grafana/u
 import { CellProps } from 'react-table';
 import { css } from '@emotion/css';
 import { onPatternClick } from './FilterByPatternsButton';
+import { config } from '@grafana/runtime';
 
 export interface SingleViewTableSceneState extends SceneObjectState {
   patternFrames: PatternFrame[];
@@ -113,18 +114,7 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
         id: 'pattern',
         header: 'Pattern',
         cell: (props: CellProps<WithCustomCellData>) => {
-          return (
-            <div
-              style={{
-                width: 'calc(100vw - 640px)',
-                minWidth: '200px',
-                textOverflow: 'ellipsis',
-                overflow: 'hidden',
-              }}
-            >
-              {props.cell.row.original.pattern}
-            </div>
-          );
+          return <div className={styles.tablePatternText}>{props.cell.row.original.pattern}</div>;
         },
       },
       {
@@ -214,11 +204,17 @@ export class SingleViewTableScene extends SceneObjectBase<SingleViewTableSceneSt
 }
 
 function getVizStyles() {
+  const theme = config.theme2;
   return {
     tableWrap: css({
       maxWidth: 'calc(100vw - 31px)',
       height: '470px',
       overflowY: 'scroll',
+    }),
+    tablePatternText: css({
+      width: 'calc(100vw - 640px)',
+      minWidth: '200px',
+      fontFamily: theme.typography.fontFamilyMonospace,
     }),
     tableTimeSeriesWrap: css({
       width: '230px',
