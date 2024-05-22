@@ -437,5 +437,6 @@ function getInitialFieldWidth(
     return undefined;
   }
 
+  // Just derived fields
   return 200 + extraPadding;
 }
