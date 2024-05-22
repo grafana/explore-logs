@@ -1,23 +1,13 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import {
-  ConfigOverrideRule,
-  DataFrame,
-  FieldColor,
-  FieldType,
-  GrafanaTheme2,
-  LoadingState,
-  TimeRange,
-} from '@grafana/data';
+import { ConfigOverrideRule, DataFrame, FieldColor, FieldType, GrafanaTheme2, LoadingState } from '@grafana/data';
 import {
   CustomVariable,
   PanelBuilders,
   SceneComponentProps,
-  SceneCSSGridLayout,
   SceneDataNode,
   SceneFlexItem,
-  SceneFlexItemLike,
   SceneFlexLayout,
   sceneGraph,
   SceneObject,
@@ -25,25 +15,14 @@ import {
   SceneObjectState,
   SceneVariableSet,
   VizPanel,
-  VizPanelState,
 } from '@grafana/scenes';
-import {
-  DrawStyle,
-  LegendDisplayMode,
-  PanelContext,
-  SeriesVisibilityChangeMode,
-  StackingMode,
-  Text,
-  TextLink,
-  useStyles2,
-} from '@grafana/ui';
+import { LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode, Text, TextLink, useStyles2 } from '@grafana/ui';
 import { LayoutSwitcher } from 'Components/ServiceScene/Breakdowns/LayoutSwitcher';
 import { StatusWrapper } from 'Components/ServiceScene/Breakdowns/StatusWrapper';
 import { GrotError } from 'Components/GrotError';
 import { VAR_LABEL_GROUP_BY } from 'services/variables';
-import { getColorByIndex } from 'services/scenes';
 import { LokiPattern, ServiceScene } from '../ServiceScene';
-import { FilterByPatternsButton, onPatternClick } from './FilterByPatternsButton';
+import { onPatternClick } from './FilterByPatternsButton';
 import { IndexScene } from '../../IndexScene/IndexScene';
 import { SingleViewTableScene } from './SingleViewTableScene';
 import { config } from '@grafana/runtime';
@@ -65,24 +44,6 @@ export type PatternFrame = {
   sum: number;
   status?: 'include' | 'exclude';
 };
-
-function buildPatternHeaderActions(
-  status: 'include' | 'exclude' | undefined,
-  pattern: string
-): VizPanelState['headerActions'] {
-  if (status) {
-    if (status === 'include') {
-      return [new FilterByPatternsButton({ pattern: pattern, type: 'exclude' })];
-    } else {
-      return [new FilterByPatternsButton({ pattern: pattern, type: 'include' })];
-    }
-  } else {
-    return [
-      new FilterByPatternsButton({ pattern: pattern, type: 'exclude' }),
-      new FilterByPatternsButton({ pattern: pattern, type: 'include' }),
-    ];
-  }
-}
 
 export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSceneState> {
   constructor(state: Partial<PatternsBreakdownSceneState>) {
@@ -171,35 +132,12 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       return;
     }
 
-    const { children, frames: patternFrames } = this.buildPatterns(lokiPatterns);
+    const patternFrames = this.buildPatterns(lokiPatterns);
 
     const logExploration = sceneGraph.getAncestor(this, IndexScene);
 
     this.setState({
-      body: new LayoutSwitcher({
-        options: [
-          { value: 'grid', label: 'Grid' },
-          { value: 'rows', label: 'Rows' },
-          { value: 'single', label: 'Single' },
-        ],
-        actionView: 'patterns',
-        active: 'single',
-        layouts: [
-          new SceneCSSGridLayout({
-            templateColumns: GRID_TEMPLATE_COLUMNS,
-            autoRows: '200px',
-            isLazy: true,
-            children: children,
-          }),
-          new SceneCSSGridLayout({
-            templateColumns: '1fr',
-            autoRows: '200px',
-            isLazy: true,
-            children: children.map((child) => child.clone()),
-          }),
-          this.getSingleViewLayout(patternFrames, logExploration),
-        ],
-      }),
+      body: this.getSingleViewLayout(patternFrames, logExploration),
       loading: false,
     });
   }
@@ -303,16 +241,14 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     });
   }
 
-  private buildPatterns(patterns: LokiPattern[]): { children: SceneFlexItemLike[]; frames: PatternFrame[] } {
-    const children: SceneFlexItemLike[] = [];
+  private buildPatterns(patterns: LokiPattern[]): PatternFrame[] {
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     const appliedPatterns = sceneGraph.getAncestor(serviceScene, IndexScene).state.patterns;
-    const timeRange = sceneGraph.getTimeRange(this).state.value;
 
     let maxValue = -Infinity;
     let minValue = 0;
 
-    const frames: PatternFrame[] = patterns
+    return patterns
       .map((pat) => {
         const timeValues: number[] = [];
         const sampleValues: number[] = [];
@@ -368,46 +304,6 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
         };
       })
       .sort((a, b) => b.sum - a.sum);
-
-    for (let i = 0; i < frames.length; i++) {
-      children.push(this.buildPatternTimeseries(frames[i], timeRange, i, minValue, maxValue));
-    }
-
-    return { children, frames };
-  }
-
-  private buildPatternTimeseries(
-    patternFrame: PatternFrame,
-    timeRange: TimeRange,
-    index: number,
-    minValue: number,
-    maxValue: number
-  ) {
-    const { dataFrame, pattern, sum, status } = patternFrame;
-    const headerActions = buildPatternHeaderActions(status, pattern);
-    return PanelBuilders.timeseries()
-      .setTitle(`${pattern}`)
-      .setDescription(`The pattern \`${pattern}\` has been matched \`${sum}\` times in the given timerange.`)
-      .setOption('legend', { showLegend: false, sortBy: 'sum' })
-      .setData(
-        new SceneDataNode({
-          data: {
-            series: [dataFrame],
-            state: LoadingState.Done,
-            timeRange,
-          },
-        })
-      )
-      .setColor({ mode: 'fixed', fixedColor: getColorByIndex(index) })
-      .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
-      .setCustomFieldConfig('fillOpacity', 100)
-      .setCustomFieldConfig('lineWidth', 0)
-      .setCustomFieldConfig('pointSize', 0)
-      .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-      .setCustomFieldConfig('axisSoftMax', maxValue)
-      .setCustomFieldConfig('axisSoftMin', minValue)
-      .setHeaderActions(headerActions)
-      .build();
   }
 }
 
@@ -447,8 +343,6 @@ function getStyles(theme: GrafanaTheme2) {
     }),
   };
 }
-
-const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(600px, 1fr))';
 
 export function buildPatternsScene() {
   return new SceneFlexItem({
