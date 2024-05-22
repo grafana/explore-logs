@@ -165,6 +165,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
   private getSingleViewLayout(patternFrames: PatternFrame[], logExploration: IndexScene) {
     const appliedPatterns = sceneGraph.getAncestor(logExploration, IndexScene).state.patterns;
     const timeRange = sceneGraph.getTimeRange(this).state.value;
+    // @ts-ignore
     const timeSeries = PanelBuilders.timeseries()
       .setData(
         new SceneDataNode({
@@ -190,7 +191,8 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       .setTitle('Patterns')
       .setLinks([
         {
-          url: '',
+          url: '#',
+          targetBlank: false,
           onClick: (event) => {
             onPatternClick({
               pattern: event.origin.name,
@@ -201,7 +203,8 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
           title: 'Select',
         },
         {
-          url: '',
+          url: '#',
+          targetBlank: false,
           onClick: (event) => {
             onPatternClick({
               pattern: event.origin.name,
