@@ -92,7 +92,7 @@ test.describe('explore services breakdown page', () => {
 
     // Both exclude patterns should be visible
     await expect(page.getByText('Patterns', { exact: true })).not.toBeVisible();
-    await expect(page.getByText('Exclude patterns:', { exact: true })).toBeVisible();
+    await expect(page.getByText('Excluded patterns:', { exact: true })).toBeVisible();
     await expect(page.getByText('level=info < … g block" <_>')).toBeVisible();
     await expect(page.getByText('level=debug <_> calle … lectors/compactor')).toBeVisible();
 
@@ -101,7 +101,7 @@ test.describe('explore services breakdown page', () => {
 
     await firstIncludeButton.click();
     await expect(page.getByText('Patterns', { exact: true })).toBeVisible();
-    await expect(page.getByText('Exclude patterns:', { exact: true })).not.toBeVisible();
+    await expect(page.getByText('Excluded patterns:', { exact: true })).not.toBeVisible();
     await expect(page.getByText('level=info < … g block" <_>')).toBeVisible();
   });
 
