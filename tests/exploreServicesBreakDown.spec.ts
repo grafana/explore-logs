@@ -91,7 +91,7 @@ test.describe('explore services breakdown page', () => {
     await secondExcludeButton.click();
 
     // Both exclude patterns should be visible
-    await expect(page.getByText('Patterns', { exact: true })).not.toBeVisible();
+    await expect(page.getByText('Pattern', { exact: true })).not.toBeVisible();
     await expect(page.getByText('Excluded patterns:', { exact: true })).toBeVisible();
     await expect(page.getByText('level=info <_> calle … ompleting block" <_>')).toBeVisible();
     await expect(page.getByText('level=debug <_> call … ectors/compactor <_>')).toBeVisible();
@@ -100,7 +100,7 @@ test.describe('explore services breakdown page', () => {
     await page.getByLabel('Tab Patterns').click();
 
     await firstIncludeButton.click();
-    await expect(page.getByText('Patterns', { exact: true })).toBeVisible();
+    await expect(page.getByText('Pattern', { exact: true })).toBeVisible();
     await expect(page.getByText('Excluded patterns:', { exact: true })).not.toBeVisible();
     await expect(page.getByText('level=info <_> caller=flush.go:253 msg="completing block" <_>')).toBeVisible();
   });
