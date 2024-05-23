@@ -53,8 +53,8 @@ test.describe('explore services breakdown page', () => {
     // Should see the logs panel full of patterns
     await expect(page.getByTestId('data-testid search-logs')).toBeVisible();
     // Pattern filter should be added
-    await expect(page.getByText('Patterns', { exact: true })).toBeVisible();
-    await expect(page.getByText('level=info < … g block" <_>')).toBeVisible();
+    await expect(page.getByText('Pattern', { exact: true })).toBeVisible();
+    await expect(page.getByText('level=info <_> caller=flush.go:253 msg="completing block" <_>')).toBeVisible();
   });
 
   test('Should add multiple exclude patterns, which are replaced by include pattern', async ({ page }) => {
@@ -91,18 +91,18 @@ test.describe('explore services breakdown page', () => {
     await secondExcludeButton.click();
 
     // Both exclude patterns should be visible
-    await expect(page.getByText('Patterns', { exact: true })).not.toBeVisible();
-    await expect(page.getByText('Exclude patterns:', { exact: true })).toBeVisible();
-    await expect(page.getByText('level=info < … g block" <_>')).toBeVisible();
-    await expect(page.getByText('level=debug <_> calle … lectors/compactor')).toBeVisible();
+    await expect(page.getByText('Pattern', { exact: true })).not.toBeVisible();
+    await expect(page.getByText('Excluded patterns:', { exact: true })).toBeVisible();
+    await expect(page.getByText('level=info <_> calle … ompleting block" <_>')).toBeVisible();
+    await expect(page.getByText('level=debug <_> call … ectors/compactor <_>')).toBeVisible();
 
     // Back to patterns to include a pattern instead
     await page.getByLabel('Tab Patterns').click();
 
     await firstIncludeButton.click();
-    await expect(page.getByText('Patterns', { exact: true })).toBeVisible();
-    await expect(page.getByText('Exclude patterns:', { exact: true })).not.toBeVisible();
-    await expect(page.getByText('level=info < … g block" <_>')).toBeVisible();
+    await expect(page.getByText('Pattern', { exact: true })).toBeVisible();
+    await expect(page.getByText('Excluded patterns:', { exact: true })).not.toBeVisible();
+    await expect(page.getByText('level=info <_> caller=flush.go:253 msg="completing block" <_>')).toBeVisible();
   });
 
   test('should update a filter and run new logs', async ({ page }) => {

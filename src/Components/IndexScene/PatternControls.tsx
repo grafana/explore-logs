@@ -34,11 +34,11 @@ export const PatternControls = ({ patterns, onRemove }: Props) => {
       {includePatterns.length > 0 && (
         <div className={styles.patternsContainer}>
           <Text variant="bodySmall" weight="bold">
-            {excludePatterns.length > 0 ? 'Include patterns' : 'Patterns'}
+            {excludePatterns.length > 0 ? 'Include pattern' : `Pattern${patterns.length > 1 ? 's' : ''}`}
           </Text>
           <div className={styles.patterns}>
             {includePatterns.map((p) => (
-              <PatternTag key={p.pattern} pattern={p.pattern} onRemove={() => onRemovePattern(p)} />
+              <PatternTag key={p.pattern} pattern={p.pattern} size="lg" onRemove={() => onRemovePattern(p)} />
             ))}
           </div>
         </div>
@@ -46,11 +46,16 @@ export const PatternControls = ({ patterns, onRemove }: Props) => {
       {excludePatterns.length > 0 && (
         <div className={styles.patternsContainer}>
           <Text variant="bodySmall" weight="bold">
-            Exclude patterns:
+            Excluded pattern{excludePatterns.length > 1 ? 's' : ''}:
           </Text>
           <div className={styles.patterns}>
             {excludePatterns.map((p) => (
-              <PatternTag key={p.pattern} pattern={p.pattern} onRemove={() => onRemovePattern(p)} />
+              <PatternTag
+                key={p.pattern}
+                pattern={p.pattern}
+                size={excludePatterns.length > 1 ? 'sm' : 'lg'}
+                onRemove={() => onRemovePattern(p)}
+              />
             ))}
           </div>
         </div>

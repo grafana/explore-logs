@@ -6,9 +6,12 @@ import React, { useState } from 'react';
 interface Props {
   onRemove(): void;
   pattern: string;
+  size?: PatternSize;
 }
 
-export const PatternTag = ({ onRemove, pattern }: Props) => {
+type PatternSize = 'sm' | 'lg';
+
+export const PatternTag = ({ onRemove, pattern, size = 'lg' }: Props) => {
   const styles = useStyles2(getStyles);
   const [expanded, setExpanded] = useState(false);
   return (
@@ -16,25 +19,34 @@ export const PatternTag = ({ onRemove, pattern }: Props) => {
       <Tag
         title={pattern}
         key={pattern}
-        name={expanded ? pattern : getPatternPreview(pattern)}
+        name={expanded ? pattern : getPatternPreview(pattern, size)}
         className={styles.tag}
       />
-      <Button variant="secondary" size="sm" className={styles.removeButton} onClick={onRemove}>
+      <Button
+        aria-label="Remove pattern"
+        variant="secondary"
+        size="sm"
+        className={styles.removeButton}
+        onClick={onRemove}
+      >
         <Icon name="times" />
       </Button>
     </div>
   );
 };
 
-const MAX_PATTERN_WIDTH = 25;
+const PREVIEW_WIDTH: Record<PatternSize, number> = {
+  sm: 50,
+  lg: Math.round(window.innerWidth / 8),
+};
 
-function getPatternPreview(pattern: string) {
+function getPatternPreview(pattern: string, size: PatternSize) {
   const length = pattern.length;
-  if (length < MAX_PATTERN_WIDTH) {
+  if (length < PREVIEW_WIDTH[size]) {
     return pattern;
   }
 
-  const substringLength = Math.round(length * 0.2);
+  const substringLength = Math.round(PREVIEW_WIDTH[size] * 0.4);
 
   return `${pattern.substring(0, substringLength)} … ${pattern.substring(length - substringLength)}`;
 }
