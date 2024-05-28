@@ -124,12 +124,15 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
           const existingPattern = appliedPatterns?.find(
             (appliedPattern) => appliedPattern.pattern === props.cell.row.original.pattern
           );
+          const hasAlreadyIncludePattern = appliedPatterns?.some((pattern) => pattern.type === 'include');
           if (existingPattern?.type !== 'include') {
             return (
               <Button
                 variant={'secondary'}
                 fill={'outline'}
                 size={'sm'}
+                disabled={hasAlreadyIncludePattern}
+                tooltip={hasAlreadyIncludePattern ? 'Only one include pattern is allowed' : undefined}
                 onClick={() => {
                   props.cell.row.original.includeLink();
                 }}

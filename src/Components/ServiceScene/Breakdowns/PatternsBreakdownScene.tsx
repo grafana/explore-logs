@@ -200,7 +200,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
               indexScene: logExploration,
             });
           },
-          title: 'Select',
+          title: 'Include',
         },
         {
           url: '#',
