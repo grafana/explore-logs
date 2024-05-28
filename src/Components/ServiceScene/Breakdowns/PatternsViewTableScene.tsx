@@ -28,6 +28,7 @@ interface WithCustomCellData {
   // samples: Array<[number, string]>,
   includeLink: () => void;
   excludeLink: () => void;
+  undoLink: () => void;
 }
 
 export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableSceneState> {
@@ -133,7 +134,22 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
                   props.cell.row.original.includeLink();
                 }}
               >
-                Select
+                Include
+              </Button>
+            );
+          }
+
+          if (existingPattern?.type === 'include') {
+            return (
+              <Button
+                variant={'secondary'}
+                fill={'outline'}
+                size={'sm'}
+                onClick={() => {
+                  props.cell.row.original.undoLink();
+                }}
+              >
+                Undo include
               </Button>
             );
           }
@@ -157,6 +173,19 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
                 onClick={() => props.cell.row.original.excludeLink()}
               >
                 Exclude
+              </Button>
+            );
+          }
+
+          if (existingPattern?.type === 'exclude') {
+            return (
+              <Button
+                variant={'secondary'}
+                fill={'outline'}
+                size={'sm'}
+                onClick={() => props.cell.row.original.undoLink()}
+              >
+                Undo exclude
               </Button>
             );
           }
@@ -194,6 +223,12 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
             onPatternClick({
               pattern: pattern.pattern,
               type: 'exclude',
+              indexScene: logExploration,
+            }),
+          undoLink: () =>
+            onPatternClick({
+              pattern: pattern.pattern,
+              type: 'undo',
               indexScene: logExploration,
             }),
         };
