@@ -57,7 +57,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByText('level=info <_> caller=flush.go:253 msg="completing block" <_>')).toBeVisible();
   });
 
-  test.only('Should add multiple exclude patterns, which are replaced by include pattern', async ({ page }) => {
+  test('Should add multiple exclude patterns, which are replaced by include pattern', async ({ page }) => {
     await page.getByLabel('Tab Patterns').click();
 
     const firstIncludeButton = page
