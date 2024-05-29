@@ -48,7 +48,7 @@ test.describe('explore services breakdown page', () => {
     const firstIncludeButton = page
       .getByRole('table')
       .getByRole('row', { name: /level=info <_> caller=flush\.go/ })
-      .getByText('Include');
+      .getByRole('button', { name: 'Include' });
     await firstIncludeButton.click();
     // Should see the logs panel full of patterns
     await expect(page.getByTestId('data-testid search-logs')).toBeVisible();
@@ -63,11 +63,11 @@ test.describe('explore services breakdown page', () => {
     const firstIncludeButton = page
       .getByRole('table')
       .getByRole('row', { name: /level=info <_> caller=flush\.go/ })
-      .getByText('Include');
+      .getByRole('button', { name: 'Include' });
     const firstExcludeButton = page
       .getByRole('table')
       .getByRole('row', { name: /level=info <_> caller=flush\.go/ })
-      .getByText('Exclude');
+      .getByRole('button', { name: 'Exclude' });
 
     await expect(firstIncludeButton).toBeVisible();
     await expect(firstExcludeButton).toBeVisible();
