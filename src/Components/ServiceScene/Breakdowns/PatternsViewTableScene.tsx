@@ -125,41 +125,28 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
             (appliedPattern) => appliedPattern.pattern === props.cell.row.original.pattern
           );
           const hasAlreadyIncludePattern = appliedPatterns?.some((pattern) => pattern.type === 'include');
-          if (existingPattern?.type !== 'include') {
-            return (
-              <Button
-                variant={'secondary'}
-                fill={'outline'}
-                size={'sm'}
-                tooltip={
-                  hasAlreadyIncludePattern
-                    ? 'Only 1 include pattern is allowed. The previously selected include pattern will be removed.'
-                    : undefined
-                }
-                onClick={() => {
-                  props.cell.row.original.includeLink();
-                }}
-              >
-                Include
-              </Button>
-            );
-          }
-
-          if (existingPattern?.type === 'include') {
-            return (
-              <Button
-                variant={'secondary'}
-                fill={'outline'}
-                size={'sm'}
-                onClick={() => {
+          const currentPatternIsIncluded = existingPattern?.type === 'include';
+          return (
+            <Button
+              variant={'secondary'}
+              fill={'outline'}
+              size={'sm'}
+              tooltip={
+                hasAlreadyIncludePattern && !currentPatternIsIncluded
+                  ? 'Only 1 include pattern is allowed. The previously selected include pattern will be removed.'
+                  : undefined
+              }
+              onClick={() => {
+                if (currentPatternIsIncluded) {
                   props.cell.row.original.undoLink();
-                }}
-              >
-                Undo include
-              </Button>
-            );
-          }
-          return <></>;
+                } else {
+                  props.cell.row.original.includeLink();
+                }
+              }}
+            >
+              {currentPatternIsIncluded ? 'Undo include' : 'Include'}
+            </Button>
+          );
         },
       },
       {
@@ -170,32 +157,23 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
           const existingPattern = appliedPatterns?.find(
             (appliedPattern) => appliedPattern.pattern === props.cell.row.original.pattern
           );
-          if (existingPattern?.type !== 'exclude') {
-            return (
-              <Button
-                variant={'secondary'}
-                fill={'outline'}
-                size={'sm'}
-                onClick={() => props.cell.row.original.excludeLink()}
-              >
-                Exclude
-              </Button>
-            );
-          }
-
-          if (existingPattern?.type === 'exclude') {
-            return (
-              <Button
-                variant={'secondary'}
-                fill={'outline'}
-                size={'sm'}
-                onClick={() => props.cell.row.original.undoLink()}
-              >
-                Undo exclude
-              </Button>
-            );
-          }
-          return <></>;
+          const currentPatternIsExcluded = existingPattern?.type === 'exclude';
+          return (
+            <Button
+              variant={'secondary'}
+              fill={'outline'}
+              size={'sm'}
+              onClick={() => {
+                if (currentPatternIsExcluded) {
+                  props.cell.row.original.undoLink();
+                } else {
+                  props.cell.row.original.excludeLink();
+                }
+              }}
+            >
+              {currentPatternIsExcluded ? 'Undo exclude' : 'Exclude'}
+            </Button>
+          );
         },
       },
     ];
