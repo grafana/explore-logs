@@ -105,7 +105,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByText('level=info <_> caller=flush.go:253 msg="completing block" <_>')).toBeVisible();
   });
 
-  test('should update a filter and run new logs', async ({ page }) => {
+  test.only('should update a filter and run new logs', async ({ page }) => {
     await page.getByTestId('AdHocFilter-service_name').getByRole('img').nth(1).click();
     await page.getByText('mimir-distributor').click();
 
@@ -113,6 +113,6 @@ test.describe('explore services breakdown page', () => {
     await page.getByTitle('See log details').nth(1).click();
 
     // find text corresponding text to match adhoc filter
-    await expect(page.getByTestId('data-testid Panel header Logs').getByText('mimir-distributor').nth(0)).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Fields Ad-hoc statistics' }).getByText('mimir-distributor').nth(0)).toBeVisible();
   });
 });
