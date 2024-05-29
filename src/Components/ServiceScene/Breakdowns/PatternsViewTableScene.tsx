@@ -131,7 +131,6 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
                 variant={'secondary'}
                 fill={'outline'}
                 size={'sm'}
-                // disabled={hasAlreadyIncludePattern}
                 tooltip={
                   hasAlreadyIncludePattern
                     ? 'Only 1 include pattern is allowed. The previously selected include pattern will be removed.'
