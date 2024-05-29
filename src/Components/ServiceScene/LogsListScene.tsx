@@ -42,7 +42,11 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         }),
         new SceneFlexItem({
           height: 'calc(100vh - 220px)',
-          body: PanelBuilders.logs().setOption('showLogContextToggle', true).setOption('showTime', true).build(),
+          body: PanelBuilders.logs()
+            .setOption('showLogContextToggle', true)
+            .setOption('showTime', true)
+            .setHoverHeader(true)
+            .build(),
         }),
       ],
     });
