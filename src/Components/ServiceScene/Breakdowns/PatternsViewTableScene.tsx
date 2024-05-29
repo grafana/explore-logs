@@ -14,8 +14,8 @@ import { Column, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
 import { CellProps } from 'react-table';
 import { css } from '@emotion/css';
 import { onPatternClick } from './FilterByPatternsButton';
+import { FilterButton } from '../../FilterButton';
 import { config } from '@grafana/runtime';
-import { FilterButton } from 'Components/FilterButton';
 
 export interface SingleViewTableSceneState extends SceneObjectState {
   patternFrames: PatternFrame[];

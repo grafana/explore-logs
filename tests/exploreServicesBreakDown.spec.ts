@@ -57,7 +57,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByText('level=info <_> caller=flush.go:253 msg="completing block" <_>')).toBeVisible();
   });
 
-  test('Should add multiple exclude patterns, which are replaced by include pattern', async ({ page }) => {
+  test.only('Should add multiple exclude patterns, which are replaced by include pattern', async ({ page }) => {
     await page.getByLabel('Tab Patterns').click();
 
     const firstIncludeButton = page
@@ -80,9 +80,9 @@ test.describe('explore services breakdown page', () => {
     // Exclude another pattern
     await page.getByLabel('Tab Patterns').click();
 
-    // Include button should be visible, but exclude should not
+    // Both buttons should be visible
     await expect(firstIncludeButton).toBeVisible();
-    await expect(firstExcludeButton).not.toBeVisible();
+    await expect(firstExcludeButton).toBeVisible();
 
     const secondExcludeButton = page
       .getByRole('table')

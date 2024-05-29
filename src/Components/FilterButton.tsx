@@ -17,16 +17,6 @@ export const FilterButton = (props: Props) => {
   return (
     <div className={styles.container}>
       <Button
-        icon="filter"
-        aria-label="filter"
-        fill="outline"
-        size="sm"
-        variant="secondary"
-        className={styles.iconButton}
-        onClick={onReset}
-        tooltip={'Reset'}
-      />
-      <Button
         variant={isIncluded ? 'primary' : 'secondary'}
         fill="outline"
         size="sm"
@@ -53,10 +43,6 @@ const getStyles = (theme: GrafanaTheme2, isIncluded: boolean, isExcluded: boolea
     container: css({
       display: 'flex',
       justifyContent: 'center',
-    }),
-    iconButton: css({
-      borderRight: 'none',
-      borderRadius: `${theme.shape.radius.default} 0 0 ${theme.shape.radius.default} `,
     }),
     includeButton: css({
       borderRadius: 0,
