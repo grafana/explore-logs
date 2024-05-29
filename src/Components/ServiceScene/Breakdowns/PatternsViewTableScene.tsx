@@ -124,18 +124,12 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
           const existingPattern = appliedPatterns?.find(
             (appliedPattern) => appliedPattern.pattern === props.cell.row.original.pattern
           );
-          const hasAlreadyIncludePattern = appliedPatterns?.some((pattern) => pattern.type === 'include');
           const currentPatternIsIncluded = existingPattern?.type === 'include';
           return (
             <Button
-              variant={'secondary'}
+              variant={currentPatternIsIncluded ? 'primary' : 'secondary'}
               fill={'outline'}
               size={'sm'}
-              tooltip={
-                hasAlreadyIncludePattern && !currentPatternIsIncluded
-                  ? 'Only 1 include pattern is allowed. The previously selected include pattern will be removed.'
-                  : undefined
-              }
               onClick={() => {
                 if (currentPatternIsIncluded) {
                   props.cell.row.original.undoLink();
@@ -144,7 +138,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
                 }
               }}
             >
-              {currentPatternIsIncluded ? 'Undo include' : 'Include'}
+              Include
             </Button>
           );
         },
@@ -160,7 +154,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
           const currentPatternIsExcluded = existingPattern?.type === 'exclude';
           return (
             <Button
-              variant={'secondary'}
+              variant={currentPatternIsExcluded ? 'primary' : 'secondary'}
               fill={'outline'}
               size={'sm'}
               onClick={() => {
@@ -171,7 +165,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
                 }
               }}
             >
-              {currentPatternIsExcluded ? 'Undo exclude' : 'Exclude'}
+              Exclude
             </Button>
           );
         },
