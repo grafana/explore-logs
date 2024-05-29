@@ -188,7 +188,6 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
         placement: 'right',
         width: 200,
       })
-      .setTitle('Patterns')
       .setLinks([
         {
           url: '#',
