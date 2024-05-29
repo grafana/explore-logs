@@ -72,7 +72,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
     const columns: Array<Column<WithCustomCellData>> = [
       {
         id: 'volume-samples',
-        header: 'Volume',
+        header: '',
         cell: (props: CellProps<WithCustomCellData>) => {
           const panelData: PanelData = {
             timeRange: timeRange,

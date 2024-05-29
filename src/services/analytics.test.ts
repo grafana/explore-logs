@@ -9,10 +9,7 @@ test('Reports an event with the expected name and properties', () => {
     USER_EVENTS_ACTIONS[USER_EVENTS_PAGES.service_details].open_in_explore_clicked,
     { query: '{a="b"}' }
   );
-  expect(reportInteraction).toHaveBeenCalledWith(
-    'grafana_grafana-lokiexplore-app_service_selection_open_in_explore_clicked',
-    {
-      query: '{a="b"}',
-    }
-  );
+  expect(reportInteraction).toHaveBeenCalledWith('grafana_lokiexplore_app_service_selection_open_in_explore_clicked', {
+    query: '{a="b"}',
+  });
 });
