@@ -10,11 +10,12 @@ import { PatternFrame, PatternsBreakdownScene } from './PatternsBreakdownScene';
 import React from 'react';
 import { AppliedPattern, IndexScene } from '../../IndexScene/IndexScene';
 import { DataFrame, LoadingState, PanelData } from '@grafana/data';
-import { Button, Column, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
+import { Column, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
 import { CellProps } from 'react-table';
 import { css } from '@emotion/css';
 import { onPatternClick } from './FilterByPatternsButton';
 import { config } from '@grafana/runtime';
+import { FilterButton } from 'Components/FilterButton';
 
 export interface SingleViewTableSceneState extends SceneObjectState {
   patternFrames: PatternFrame[];
@@ -124,49 +125,16 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
           const existingPattern = appliedPatterns?.find(
             (appliedPattern) => appliedPattern.pattern === props.cell.row.original.pattern
           );
-          const currentPatternIsIncluded = existingPattern?.type === 'include';
+          const isIncluded = existingPattern?.type === 'include';
+          const isExcluded = existingPattern?.type === 'exclude';
           return (
-            <Button
-              variant={currentPatternIsIncluded ? 'primary' : 'secondary'}
-              fill={'outline'}
-              size={'sm'}
-              onClick={() => {
-                if (currentPatternIsIncluded) {
-                  props.cell.row.original.undoLink();
-                } else {
-                  props.cell.row.original.includeLink();
-                }
-              }}
-            >
-              Include
-            </Button>
-          );
-        },
-      },
-      {
-        id: 'exclude',
-        header: undefined,
-        disableGrow: true,
-        cell: (props: CellProps<WithCustomCellData>) => {
-          const existingPattern = appliedPatterns?.find(
-            (appliedPattern) => appliedPattern.pattern === props.cell.row.original.pattern
-          );
-          const currentPatternIsExcluded = existingPattern?.type === 'exclude';
-          return (
-            <Button
-              variant={currentPatternIsExcluded ? 'primary' : 'secondary'}
-              fill={'outline'}
-              size={'sm'}
-              onClick={() => {
-                if (currentPatternIsExcluded) {
-                  props.cell.row.original.undoLink();
-                } else {
-                  props.cell.row.original.excludeLink();
-                }
-              }}
-            >
-              Exclude
-            </Button>
+            <FilterButton
+              isExcluded={isExcluded}
+              isIncluded={isIncluded}
+              onInclude={() => props.cell.row.original.includeLink()}
+              onExclude={() => props.cell.row.original.excludeLink()}
+              onReset={() => props.cell.row.original.undoLink()}
+            />
           );
         },
       },
