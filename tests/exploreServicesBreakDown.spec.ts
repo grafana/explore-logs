@@ -105,6 +105,31 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByText('level=info <_> caller=flush.go:253 msg="completing block" <_>')).toBeVisible();
   });
 
+  test('Should be able to undo exclude', async ({ page }) => {
+    await page.getByLabel('Tab Patterns').click();
+
+    const firstExcludeButton = page
+      .getByRole('table')
+      .getByRole('row', { name: /level=info <_> caller=flush\.go/ })
+      .getByText('Exclude');
+    
+      const firstUndoExcludeButton = page
+      .getByRole('table')
+      .getByRole('row', { name: /level=info <_> caller=flush\.go/ })
+      .getByText('Undo exclude');
+
+    await expect(firstExcludeButton).toBeVisible();
+
+    // Include pattern
+    await firstExcludeButton.click();
+    // Should see the logs panel full of patterns
+    await expect(page.getByTestId('data-testid search-logs')).toBeVisible();
+    // Go back to Patterns
+    await page.getByLabel('Tab Patterns').click();
+    // Undo exclude button should be visible
+    await expect(firstUndoExcludeButton).toBeVisible();
+  });
+
   test('should update a filter and run new logs', async ({ page }) => {
     await page.getByTestId('AdHocFilter-service_name').getByRole('img').nth(1).click();
     await page.getByText('mimir-distributor').click();
