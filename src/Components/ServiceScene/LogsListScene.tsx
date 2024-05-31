@@ -9,6 +9,7 @@ import {
   SceneObjectState,
 } from '@grafana/scenes';
 import { LineFilter } from './LineFilter';
+import { LogsVolumePanel } from './LogsVolumePanel';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -64,7 +65,16 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
 }
 
 export function buildLogsListScene() {
-  return new SceneFlexItem({
-    body: new LogsListScene({}),
+  return new SceneFlexLayout({
+    direction: 'column',
+    children: [
+      new SceneFlexItem({
+        height: 200,
+        body: new LogsVolumePanel({}),
+      }),
+      new SceneFlexItem({
+        body: new LogsListScene({}),
+      }),
+    ],
   });
 }
