@@ -34,7 +34,6 @@ export const USER_EVENTS_ACTIONS = {
   },
   [USER_EVENTS_PAGES.service_details]: {
     open_in_explore_clicked: 'open_in_explore_clicked',
-    share_exploration_clicked: 'share_exploration_clicked',
     // Selecting action view tab (logs/labels/fields/patterns). Props: newActionView, previousActionView
     action_view_changed: 'action_view_changed',
     // Clicking on "Add to filters" button in time series panels. Used in multiple views. The view type is passed as a parameter. Props: filterType, key, isFilterDuplicate, filtersLength

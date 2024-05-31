@@ -44,7 +44,6 @@ import { buildPatternsScene } from './Breakdowns/PatternsBreakdownScene';
 import { GiveFeedbackButton } from './GiveFeedbackButton';
 import { GoToExploreButton } from './GoToExploreButton';
 import { buildLogsListScene } from './LogsListScene';
-import { ShareExplorationButton } from './ShareExplorationButton';
 
 export interface LokiPattern {
   pattern: string;
@@ -385,7 +384,6 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
         <div className={styles.actions}>
           <Stack gap={2}>
             <GiveFeedbackButton />
-            <ShareExplorationButton exploration={exploration} />
             <GoToExploreButton exploration={exploration} />
           </Stack>
         </div>

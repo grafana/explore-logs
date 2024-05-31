@@ -9,11 +9,11 @@ import { getDataSource, getQueryExpr } from 'services/scenes';
 import { testIds } from 'services/testIds';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
-interface ShareExplorationButtonState {
+interface GoToExploreButtonState {
   exploration: IndexScene;
 }
 
-export const GoToExploreButton = ({ exploration }: ShareExplorationButtonState) => {
+export const GoToExploreButton = ({ exploration }: GoToExploreButtonState) => {
   const onClick = () => {
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
