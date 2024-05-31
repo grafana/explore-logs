@@ -17,7 +17,6 @@ import {
   SceneObjectUrlSyncConfig,
   SceneObjectUrlValues,
   SceneVariable,
-  SceneVariableSet,
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
@@ -49,7 +48,7 @@ import { buildLogsListScene } from './LogsListScene';
 import { LogsVolumePanel } from './LogsVolumePanel';
 import { ShareExplorationButton } from './ShareExplorationButton';
 
-interface LokiPattern {
+export interface LokiPattern {
   pattern: string;
   samples: Array<[number, string]>;
 }
@@ -85,9 +84,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   public constructor(state: MakeOptional<ServiceSceneState, 'body'>) {
     super({
       body: state.body ?? buildGraphScene(),
-      $variables:
-        state.$variables ??
-        new SceneVariableSet({ variables: [new CustomVariable({ name: VAR_LOGS_FORMAT, value: '' })] }),
       $data: getQueryRunner(buildLokiQuery(LOG_STREAM_SELECTOR_EXPR)),
       ...state,
     });
@@ -328,8 +324,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     const actionViewDef = actionViewsDefinitions.find((v) => v.value === actionView);
 
     if (actionViewDef && actionViewDef.value !== this.state.actionView) {
-      // reduce max height for main panel to reduce height flicker
-      body.state.children[0].setState({ maxHeight: MAIN_PANEL_MIN_HEIGHT });
       body.setState({
         children: [
           ...body.state.children.slice(0, 2),
@@ -340,12 +334,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
           }),
         ],
       });
-      // this is mainly to fix the logs panels height and set it to 2x the height of the log volume
-      body.state.children[body.state.children.length - 1].setState({ minHeight: MAIN_PANEL_MIN_HEIGHT * 2 });
       this.setState({ actionView: actionViewDef.value });
     } else {
-      // restore max height
-      body.state.children[0].setState({ maxHeight: MAIN_PANEL_MAX_HEIGHT });
       body.setState({ children: body.state.children.slice(0, 2) });
       this.setState({ actionView: undefined });
     }
@@ -443,16 +433,14 @@ function getStyles(theme: GrafanaTheme2) {
 }
 
 const MAIN_PANEL_MIN_HEIGHT = 200;
-const MAIN_PANEL_MAX_HEIGHT = '30%';
 
 function buildGraphScene() {
   return new SceneFlexLayout({
     direction: 'column',
-    $behaviors: [new behaviors.CursorSync({ key: 'metricCrosshairSync', sync: DashboardCursorSync.Crosshair })],
+    $behaviors: [new behaviors.CursorSync({ key: 'logsCrosshairSync', sync: DashboardCursorSync.Crosshair })],
     children: [
       new SceneFlexItem({
-        minHeight: MAIN_PANEL_MIN_HEIGHT,
-        maxHeight: MAIN_PANEL_MAX_HEIGHT,
+        height: MAIN_PANEL_MIN_HEIGHT,
         body: new LogsVolumePanel({}),
       }),
       new SceneFlexItem({

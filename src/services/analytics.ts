@@ -3,7 +3,7 @@ import pluginJson from '../plugin.json';
 
 // Helper function to create a unique interaction name for analytics
 const createInteractionName = (page: UserEventPagesType, action: string) => {
-  return `grafana_${pluginJson.id}_${page}_${action}`;
+  return `${pluginJson.id.replace(/-/g, '_')}_${page}_${action}`;
 };
 
 // Runs reportInteraction with a standardized interaction name

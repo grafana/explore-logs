@@ -29,6 +29,7 @@ import {
   VAR_LINE_FILTER,
   VAR_PATTERNS,
   explorationDS,
+  VAR_LOGS_FORMAT,
 } from 'services/variables';
 
 import { ServiceScene } from '../ServiceScene/ServiceScene';
@@ -36,7 +37,7 @@ import { ServiceSelectionComponent, StartingPointSelectedEvent } from '../Servic
 import { PatternControls } from './PatternControls';
 import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
 
-type LogExplorationMode = 'start' | 'logs';
+type LogExplorationMode = 'service_selection' | 'service_details';
 
 export interface AppliedPattern {
   pattern: string;
@@ -48,7 +49,7 @@ export interface IndexSceneState extends SceneObjectState {
   topScene?: SceneObject;
   controls: SceneObject[];
   body: LogExplorationScene;
-  // mode is the current mode of the index scene - it can be either 'start' for service selection or 'logs' for service
+  // mode is the current mode of the index scene - it can be either 'service_selection' or 'service_details'
   mode?: LogExplorationMode;
   initialFilters?: AdHocVariableFilter[];
   initialDS?: string;
@@ -112,18 +113,18 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   getUrlState() {
     return {
       mode: this.state.mode,
-      patterns: this.state.mode === 'start' ? '' : JSON.stringify(this.state.patterns),
+      patterns: this.state.mode === 'service_selection' ? '' : JSON.stringify(this.state.patterns),
     };
   }
 
   updateFromUrl(values: SceneObjectUrlValues) {
     const stateUpdate: Partial<IndexSceneState> = {};
     if (values.mode !== this.state.mode) {
-      const mode: LogExplorationMode = (values.mode as LogExplorationMode) ?? 'start';
+      const mode: LogExplorationMode = (values.mode as LogExplorationMode) ?? 'service_selection';
       stateUpdate.mode = mode;
       stateUpdate.topScene = getTopScene(mode);
     }
-    if (this.state.mode === 'start') {
+    if (this.state.mode === 'service_selection') {
       // Clear patterns on start
       stateUpdate.patterns = undefined;
     } else if (values.patterns && typeof values.patterns === 'string') {
@@ -134,7 +135,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
   private _handleStartingPointSelected(evt: StartingPointSelectedEvent) {
     this.setState({
-      mode: 'logs',
+      mode: 'service_details',
     });
   }
 }
@@ -176,7 +177,7 @@ export class LogExplorationScene extends SceneObjectBase {
 }
 
 function getTopScene(mode?: LogExplorationMode) {
-  if (mode === 'logs') {
+  if (mode === 'service_details') {
     return new ServiceScene({});
   }
   return new ServiceSelectionComponent({});
@@ -213,8 +214,8 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
     label: 'Filters',
     applyMode: 'manual',
     layout: 'vertical',
-    getTagKeysProvider: () => Promise.resolve({ values: [] }),
-    getTagValuesProvider: () => Promise.resolve({ values: [] }),
+    getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
+    getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
     expressionBuilder: renderLogQLFieldFilters,
     hide: VariableHide.hideLabel,
   });
@@ -244,6 +245,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
         hide: VariableHide.hideVariable,
       }),
       new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable }),
+      new CustomVariable({ name: VAR_LOGS_FORMAT, value: '', hide: VariableHide.hideVariable }),
     ],
   });
 }
