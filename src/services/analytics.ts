@@ -27,7 +27,7 @@ type UserEventActionType =
 
 export const USER_EVENTS_ACTIONS = {
   [USER_EVENTS_PAGES.service_selection]: {
-    // Searching for service using search input. Props: searchString
+    // Searching for service using search input. Props: searchQueryLength, containsLevel
     search_services_changed: 'search_services_changed',
     // Selecting service. Props: service
     service_selected: 'service_selected',
