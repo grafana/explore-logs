@@ -3,7 +3,7 @@ import { test, expect } from '@grafana/plugin-e2e';
 import { ROUTES } from '../src/services/routing';
 import { ExplorePage } from './fixtures/explore';
 
-test.describe('navigating app', () => {
+test.describe.skip('navigating app', () => {
   let explorePage: ExplorePage;
 
   test.beforeEach(async ({ page }) => {

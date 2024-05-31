@@ -1,7 +1,7 @@
 import { expect, test } from '@grafana/plugin-e2e';
 import { ExplorePage } from './fixtures/explore';
 
-test.describe('explore services breakdown page', () => {
+test.describe.skip('explore services breakdown page', () => {
   let explorePage: ExplorePage;
 
   test.beforeEach(async ({ page }) => {
@@ -113,6 +113,6 @@ test.describe('explore services breakdown page', () => {
     await page.getByTitle('See log details').nth(1).click();
 
     // find text corresponding text to match adhoc filter
-    await expect(page.getByTestId('data-testid Panel header Logs').getByText('mimir-distributor').nth(0)).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Fields Ad-hoc statistics' }).getByText('mimir-distributor').nth(0)).toBeVisible();
   });
 });

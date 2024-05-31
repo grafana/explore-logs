@@ -165,7 +165,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
   private getSingleViewLayout(patternFrames: PatternFrame[], logExploration: IndexScene) {
     const appliedPatterns = sceneGraph.getAncestor(logExploration, IndexScene).state.patterns;
     const timeRange = sceneGraph.getTimeRange(this).state.value;
-    // @ts-ignore
+
     const timeSeries = PanelBuilders.timeseries()
       .setData(
         new SceneDataNode({
@@ -226,7 +226,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       maxWidth: '100%',
       children: [
         new SceneFlexItem({
-          minHeight: 300,
+          minHeight: 200,
           maxWidth: '100%',
           body: timeSeries,
         }),
