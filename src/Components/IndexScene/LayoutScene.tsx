@@ -1,10 +1,11 @@
 import { GrafanaTheme2 } from '@grafana/data';
 import { SceneComponentProps, SceneObjectBase, VariableValueSelectors } from '@grafana/scenes';
-import { Badge, useStyles2 } from '@grafana/ui';
+import { useStyles2 } from '@grafana/ui';
 import React from 'react';
 import { PatternControls } from './PatternControls';
 import { AppliedPattern, IndexSceneState } from './IndexScene';
 import { css } from '@emotion/css';
+import { GiveFeedbackButton } from './GiveFeedbackButton';
 
 export class LayoutScene extends SceneObjectBase {
   static Component = ({ model }: SceneComponentProps<LayoutScene>) => {
@@ -31,7 +32,7 @@ export class LayoutScene extends SceneObjectBase {
                 )}
               </div>
               <div className={styles.controls}>
-                <Badge text={'Preview'} color={'blue'} icon={'rocket'} />
+                <GiveFeedbackButton />
                 {controls.map((control) =>
                   control instanceof VariableValueSelectors === false ? (
                     <control.Component key={control.state.key} model={control} />

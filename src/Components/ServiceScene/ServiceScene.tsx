@@ -41,7 +41,6 @@ import {
 import { buildFieldsBreakdownActionScene } from './Breakdowns/FieldsBreakdownScene';
 import { buildLabelBreakdownActionScene } from './Breakdowns/LabelBreakdownScene';
 import { buildPatternsScene } from './Breakdowns/PatternsBreakdownScene';
-import { GiveFeedbackButton } from './GiveFeedbackButton';
 import { GoToExploreButton } from './GoToExploreButton';
 import { buildLogsListScene } from './LogsListScene';
 
@@ -383,7 +382,6 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
       <Box paddingY={1}>
         <div className={styles.actions}>
           <Stack gap={2}>
-            <GiveFeedbackButton />
             <GoToExploreButton exploration={exploration} />
           </Stack>
         </div>
