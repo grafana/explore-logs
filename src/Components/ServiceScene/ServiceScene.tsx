@@ -432,8 +432,6 @@ function getStyles(theme: GrafanaTheme2) {
   };
 }
 
-// const MAIN_PANEL_MIN_HEIGHT = 200;
-
 function buildGraphScene() {
   return new SceneFlexLayout({
     direction: 'column',
