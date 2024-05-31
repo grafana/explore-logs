@@ -27,25 +27,27 @@ type UserEventActionType =
 
 export const USER_EVENTS_ACTIONS = {
   [USER_EVENTS_PAGES.service_selection]: {
+    // Searching for service using search input. Props: searchQueryLength, containsLevel
     search_services_changed: 'search_services_changed',
+    // Selecting service. Props: service
     service_selected: 'service_selected',
   },
   [USER_EVENTS_PAGES.service_details]: {
     open_in_explore_clicked: 'open_in_explore_clicked',
     share_exploration_clicked: 'share_exploration_clicked',
-    // Selecting action view tab (logs/labels/fields/patterns)
+    // Selecting action view tab (logs/labels/fields/patterns). Props: newActionView, previousActionView
     action_view_changed: 'action_view_changed',
-    // Clicking on "Add to filters" button in time series panels. Used in multiple views. The view type is passed as a parameter.
+    // Clicking on "Add to filters" button in time series panels. Used in multiple views. The view type is passed as a parameter. Props: filterType, key, isFilterDuplicate, filtersLength
     add_to_filters_in_breakdown_clicked: 'add_to_filters_in_breakdown_clicked',
-    // Clicking on "Select" button button in time series panels. Used in multiple views.The view type is passed as a parameter.
+    // Clicking on "Select" button button in time series panels. Used in multiple views.The view type is passed as a parameter. Props: field, previousField, view
     select_field_in_breakdown_clicked: 'select_field_in_breakdown_clicked',
-    // Changing layout type (e.g. single/grid/rows). Used in multiple views. The view type is passed as a parameter.
+    // Changing layout type (e.g. single/grid/rows). Used in multiple views. The view type is passed as a parameter. Props: layout, view
     layout_type_changed: 'layout_type_changed',
-    // Changing search string in logs
+    // Changing search string in logs. Props: searchQuery
     search_string_in_logs_changed: 'search_string_in_logs_changed',
-    // Removing a pattern (e.g. include/exclude) from the list
+    // Removing a pattern (e.g. include/exclude) from the list. Props: includePatternsLength, excludePatternsLength, type
     pattern_removed: 'pattern_removed',
-    // Selecting a pattern (e.g. include/exclude) from the list
+    // Selecting a pattern (e.g. include/exclude) from the list. Props: includePatternsLength, excludePatternsLength, type
     pattern_selected: 'pattern_selected',
   },
 } as const;
