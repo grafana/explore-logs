@@ -222,7 +222,6 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
 
     return new SceneFlexLayout({
       direction: 'column',
-      width: 'calc(100vw - 60px)',
       maxWidth: '100%',
       children: [
         new SceneFlexItem({

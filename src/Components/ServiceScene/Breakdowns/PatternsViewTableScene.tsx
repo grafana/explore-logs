@@ -54,7 +54,12 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
 
     return (
       <div className={renderStyles}>
-        <InteractiveTable columns={columns} data={tableData} getRowId={(r: WithCustomCellData) => r.pattern} />
+        <InteractiveTable
+          className={getTableStyles()}
+          columns={columns}
+          data={tableData}
+          getRowId={(r: WithCustomCellData) => r.pattern}
+        />
       </div>
     );
   }
@@ -205,9 +210,10 @@ const theme = config.theme2;
 
 const vizStyles = {
   tablePatternText: css({
-    width: 'calc(100vw - 640px)',
     minWidth: '200px',
     fontFamily: theme.typography.fontFamilyMonospace,
+    overflow: 'hidden',
+    overflowWrap: 'break-word',
   }),
   tableTimeSeriesWrap: css({
     width: '230px',
@@ -222,8 +228,18 @@ const vizStyles = {
   }),
 };
 
+const getTableStyles = () => {
+  return css({
+    width: '100%',
+    overflow: 'hidden',
+  });
+};
+
 const renderStyles = css({
-  maxWidth: 'calc(100vw - 31px)',
+  // mostly works, but still overflows on smaller viewports with long pattern text
+  maxWidth: 'calc(100vw - 34px)',
+  width: '100%',
   height: '470px',
   overflowY: 'scroll',
+  overflowX: 'hidden',
 });
