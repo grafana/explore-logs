@@ -10,10 +10,11 @@ import { PatternFrame, PatternsBreakdownScene } from './PatternsBreakdownScene';
 import React from 'react';
 import { AppliedPattern, IndexScene } from '../../IndexScene/IndexScene';
 import { DataFrame, LoadingState, PanelData } from '@grafana/data';
-import { Button, Column, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
+import { Column, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
 import { CellProps } from 'react-table';
 import { css } from '@emotion/css';
 import { onPatternClick } from './FilterByPatternsButton';
+import { FilterButton } from '../../FilterButton';
 import { config } from '@grafana/runtime';
 import { testIds } from '../../../services/testIds';
 
@@ -29,6 +30,7 @@ interface WithCustomCellData {
   // samples: Array<[number, string]>,
   includeLink: () => void;
   excludeLink: () => void;
+  undoLink: () => void;
 }
 
 export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableSceneState> {
@@ -124,44 +126,17 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
           const existingPattern = appliedPatterns?.find(
             (appliedPattern) => appliedPattern.pattern === props.cell.row.original.pattern
           );
-          if (existingPattern?.type !== 'include') {
-            return (
-              <Button
-                variant={'secondary'}
-                fill={'outline'}
-                size={'sm'}
-                onClick={() => {
-                  props.cell.row.original.includeLink();
-                }}
-              >
-                Select
-              </Button>
-            );
-          }
-          return <></>;
-        },
-      },
-      {
-        id: 'exclude',
-        header: undefined,
-        disableGrow: true,
-        cell: (props: CellProps<WithCustomCellData>) => {
-          const existingPattern = appliedPatterns?.find(
-            (appliedPattern) => appliedPattern.pattern === props.cell.row.original.pattern
+          const isIncluded = existingPattern?.type === 'include';
+          const isExcluded = existingPattern?.type === 'exclude';
+          return (
+            <FilterButton
+              isExcluded={isExcluded}
+              isIncluded={isIncluded}
+              onInclude={() => props.cell.row.original.includeLink()}
+              onExclude={() => props.cell.row.original.excludeLink()}
+              onReset={() => props.cell.row.original.undoLink()}
+            />
           );
-          if (existingPattern?.type !== 'exclude') {
-            return (
-              <Button
-                variant={'secondary'}
-                fill={'outline'}
-                size={'sm'}
-                onClick={() => props.cell.row.original.excludeLink()}
-              >
-                Exclude
-              </Button>
-            );
-          }
-          return <></>;
         },
       },
     ];
@@ -195,6 +170,12 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
             onPatternClick({
               pattern: pattern.pattern,
               type: 'exclude',
+              indexScene: logExploration,
+            }),
+          undoLink: () =>
+            onPatternClick({
+              pattern: pattern.pattern,
+              type: 'undo',
               indexScene: logExploration,
             }),
         };

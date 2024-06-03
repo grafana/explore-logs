@@ -4,7 +4,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'se
 
 export interface FilterByPatternsButtonState extends SceneObjectState {
   pattern: string;
-  type: 'exclude' | 'include';
+  type: 'exclude' | 'include' | 'undo';
 }
 
 export interface FilterByPatternsState extends FilterByPatternsButtonState {
@@ -27,7 +27,6 @@ export function onPatternClick(props: FilterByPatternsState) {
   const filteredPatterns = patterns.filter(
     (pat) => pat.pattern !== pattern && type !== 'include' && pat.type !== 'include'
   );
-
   // Analytics
   const includePatternsLength = filteredPatterns.filter((p) => p.type === 'include')?.length ?? 0;
   const excludePatternsLength = filteredPatterns.filter((p) => p.type === 'exclude')?.length ?? 0;
@@ -37,7 +36,15 @@ export function onPatternClick(props: FilterByPatternsState) {
     excludePatternsLength: excludePatternsLength + (type === 'exclude' ? 1 : 0),
   });
 
-  indexScene.setState({
-    patterns: [...filteredPatterns, { pattern: pattern, type: type }],
-  });
+  // If we have type undo, then we don't need to add the pattern
+  if (type === 'undo') {
+    indexScene.setState({
+      patterns: filteredPatterns,
+    });
+  } else {
+    // Otherwise, add the pattern
+    indexScene.setState({
+      patterns: [...filteredPatterns, { pattern: pattern, type: type }],
+    });
+  }
 }

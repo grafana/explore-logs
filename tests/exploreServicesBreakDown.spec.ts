@@ -50,7 +50,7 @@ test.describe('explore services breakdown page', () => {
       .getByTestId(testIds.patterns.tableWrapper)
       .getByRole('table')
       .getByRole('row').nth(2)
-      .getByText('Select');
+      .getByText('Include');
     await firstIncludeButton.click();
     // Should see the logs panel full of patterns
     await expect(page.getByTestId('data-testid search-logs')).toBeVisible();
@@ -65,7 +65,7 @@ test.describe('explore services breakdown page', () => {
       .getByTestId(testIds.patterns.tableWrapper)
       .getByRole('table')
       .getByRole('row').nth(2)
-      .getByText('Select');
+      .getByText('Include');
     const firstExcludeButton = page
       .getByTestId(testIds.patterns.tableWrapper)
       .getByRole('table')
@@ -83,9 +83,9 @@ test.describe('explore services breakdown page', () => {
     // Exclude another pattern
     await page.getByLabel('Tab Patterns').click();
 
-    // Include button should be visible, but exclude should not
+    // Both buttons should be visible
     await expect(firstIncludeButton).toBeVisible();
-    await expect(firstExcludeButton).not.toBeVisible();
+    await expect(firstExcludeButton).toBeVisible();
 
     const secondExcludeButton = page
       .getByTestId(testIds.patterns.tableWrapper)
