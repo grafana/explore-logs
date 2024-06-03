@@ -61,10 +61,10 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       ...state,
     });
 
-    this.addActivationHandler(this._onActivate.bind(this));
+    this.addActivationHandler(this.onActivate.bind(this));
   }
 
-  private _onActivate() {
+  private onActivate() {
     const variable = this.getVariable();
 
     variable.subscribeToState((newState, oldState) => {

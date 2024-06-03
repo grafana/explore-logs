@@ -16,10 +16,10 @@ export class LineFilter extends SceneObjectBase<LineFilterState> {
 
   constructor(state?: Partial<LineFilterState>) {
     super({ lineFilter: state?.lineFilter || '', ...state });
-    this.addActivationHandler(this._onActivate);
+    this.addActivationHandler(this.onActivate);
   }
 
-  private _onActivate = () => {
+  private onActivate = () => {
     const lineFilterValue = this.getVariable().getValue();
     if (!lineFilterValue) {
       return;
