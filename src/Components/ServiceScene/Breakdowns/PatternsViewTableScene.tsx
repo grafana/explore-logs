@@ -39,6 +39,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
     });
   }
 
+  // The component PatternTableViewSceneComponent contains hooks, eslint will complain if hooks are used within typescript class, so we work around this by defining the render method as a separate function
   public static Component = PatternTableViewSceneComponent;
 
   /**
