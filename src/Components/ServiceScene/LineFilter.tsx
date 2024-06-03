@@ -66,7 +66,7 @@ function LineFilterRenderer({ model }: SceneComponentProps<LineFilter>) {
   const { lineFilter } = model.useState();
 
   return (
-    <Field>
+    <Field className={styles.field}>
       <Input
         data-testid={testIds.exploreServiceBreakdown.search}
         value={lineFilter}
@@ -81,5 +81,9 @@ function LineFilterRenderer({ model }: SceneComponentProps<LineFilter>) {
 const styles = {
   input: css({
     width: '100%',
+  }),
+  field: css({
+    label: 'field',
+    marginBottom: 0,
   }),
 };

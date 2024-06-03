@@ -1,11 +1,10 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DashboardCursorSync, GrafanaTheme2, LoadingState } from '@grafana/data';
+import { GrafanaTheme2, LoadingState } from '@grafana/data';
 import { locationService } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
-  behaviors,
   CustomVariable,
   SceneComponentProps,
   SceneFlexItem,
@@ -45,7 +44,6 @@ import { buildPatternsScene } from './Breakdowns/PatternsBreakdownScene';
 import { GiveFeedbackButton } from './GiveFeedbackButton';
 import { GoToExploreButton } from './GoToExploreButton';
 import { buildLogsListScene } from './LogsListScene';
-import { LogsVolumePanel } from './LogsVolumePanel';
 import { ShareExplorationButton } from './ShareExplorationButton';
 
 export interface LokiPattern {
@@ -326,7 +324,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     if (actionViewDef && actionViewDef.value !== this.state.actionView) {
       body.setState({
         children: [
-          ...body.state.children.slice(0, 2),
+          ...body.state.children.slice(0, 1),
           actionViewDef.getScene((vals) => {
             if (actionViewDef.value === 'fields') {
               this.setState({ detectedFieldsCount: vals.length });
@@ -336,7 +334,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       });
       this.setState({ actionView: actionViewDef.value });
     } else {
-      body.setState({ children: body.state.children.slice(0, 2) });
+      body.setState({ children: body.state.children.slice(0, 1) });
       this.setState({ actionView: undefined });
     }
   }
@@ -358,23 +356,25 @@ export interface LogsActionBarState extends SceneObjectState {}
 
 export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
   public static Component = ({ model }: SceneComponentProps<LogsActionBar>) => {
-    const logsScene = sceneGraph.getAncestor(model, ServiceScene);
+    const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
     const styles = useStyles2(getStyles);
     const exploration = getExplorationFor(model);
-    const { actionView } = logsScene.useState();
+    const { actionView } = serviceScene.useState();
 
     const getCounter = (tab: ActionViewDefinition) => {
       switch (tab.value) {
         case 'fields':
           return (
-            logsScene.state.detectedFieldsCount ??
-            getUniqueFilters(logsScene, logsScene.state.detectedFields || []).length
+            serviceScene.state.detectedFieldsCount ??
+            getUniqueFilters(serviceScene, serviceScene.state.detectedFields || []).length
           );
         case 'patterns':
-          return logsScene.state.patterns?.length;
+          return serviceScene.state.patterns?.length;
         case 'labels':
-          return getUniqueFilters(logsScene, logsScene.state.labels?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? [])
-            .length;
+          return getUniqueFilters(
+            serviceScene,
+            serviceScene.state.labels?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []
+          ).length;
         default:
           return undefined;
       }
@@ -399,16 +399,16 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                 active={actionView === tab.value}
                 counter={getCounter(tab)}
                 onChangeTab={() => {
-                  if (tab.value !== logsScene.state.actionView) {
+                  if (tab.value !== serviceScene.state.actionView) {
                     reportAppInteraction(
                       USER_EVENTS_PAGES.service_details,
                       USER_EVENTS_ACTIONS.service_details.action_view_changed,
                       {
                         newActionView: tab.value,
-                        previousActionView: logsScene.state.actionView,
+                        previousActionView: serviceScene.state.actionView,
                       }
                     );
-                    logsScene.setActionView(tab.value);
+                    serviceScene.setActionView(tab.value);
                   }
                 }}
               />
@@ -432,17 +432,10 @@ function getStyles(theme: GrafanaTheme2) {
   };
 }
 
-const MAIN_PANEL_MIN_HEIGHT = 200;
-
 function buildGraphScene() {
   return new SceneFlexLayout({
     direction: 'column',
-    $behaviors: [new behaviors.CursorSync({ key: 'logsCrosshairSync', sync: DashboardCursorSync.Crosshair })],
     children: [
-      new SceneFlexItem({
-        height: MAIN_PANEL_MIN_HEIGHT,
-        body: new LogsVolumePanel({}),
-      }),
       new SceneFlexItem({
         ySizing: 'content',
         body: new LogsActionBar({}),
