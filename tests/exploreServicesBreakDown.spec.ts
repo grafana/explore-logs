@@ -1,7 +1,7 @@
 import { expect, test } from '@grafana/plugin-e2e';
 import { ExplorePage } from './fixtures/explore';
 
-test.describe.skip('explore services breakdown page', () => {
+test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;
 
   test.beforeEach(async ({ page }) => {
