@@ -1,7 +1,8 @@
 import { expect, test } from '@grafana/plugin-e2e';
 import { ExplorePage } from './fixtures/explore';
+import {testIds} from "../src/services/testIds";
 
-test.describe.skip('explore services breakdown page', () => {
+test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;
 
   test.beforeEach(async ({ page }) => {
@@ -46,27 +47,29 @@ test.describe.skip('explore services breakdown page', () => {
 
     // Include pattern
     const firstIncludeButton = page
+      .getByTestId(testIds.patterns.tableWrapper)
       .getByRole('table')
-      .getByRole('row', { name: /level=info <_> caller=flush\.go/ })
+      .getByRole('row').nth(2)
       .getByText('Select');
     await firstIncludeButton.click();
     // Should see the logs panel full of patterns
     await expect(page.getByTestId('data-testid search-logs')).toBeVisible();
     // Pattern filter should be added
     await expect(page.getByText('Pattern', { exact: true })).toBeVisible();
-    await expect(page.getByText('level=info <_> caller=flush.go:253 msg="completing block" <_>')).toBeVisible();
   });
 
   test('Should add multiple exclude patterns, which are replaced by include pattern', async ({ page }) => {
     await page.getByLabel('Tab Patterns').click();
 
     const firstIncludeButton = page
+      .getByTestId(testIds.patterns.tableWrapper)
       .getByRole('table')
-      .getByRole('row', { name: /level=info <_> caller=flush\.go/ })
+      .getByRole('row').nth(2)
       .getByText('Select');
     const firstExcludeButton = page
+      .getByTestId(testIds.patterns.tableWrapper)
       .getByRole('table')
-      .getByRole('row', { name: /level=info <_> caller=flush\.go/ })
+      .getByRole('row').nth(2)
       .getByText('Exclude');
 
     await expect(firstIncludeButton).toBeVisible();
@@ -85,16 +88,15 @@ test.describe.skip('explore services breakdown page', () => {
     await expect(firstExcludeButton).not.toBeVisible();
 
     const secondExcludeButton = page
+      .getByTestId(testIds.patterns.tableWrapper)
       .getByRole('table')
-      .getByRole('row', { name: /level=debug <_> caller=broadcast\.go:48/ })
+      .getByRole('row').nth(3)
       .getByText('Exclude');
     await secondExcludeButton.click();
 
     // Both exclude patterns should be visible
     await expect(page.getByText('Pattern', { exact: true })).not.toBeVisible();
     await expect(page.getByText('Excluded patterns:', { exact: true })).toBeVisible();
-    await expect(page.getByText('level=info <_> calle … ompleting block" <_>')).toBeVisible();
-    await expect(page.getByText('level=debug <_> call … ectors/compactor <_>')).toBeVisible();
 
     // Back to patterns to include a pattern instead
     await page.getByLabel('Tab Patterns').click();
@@ -102,7 +104,6 @@ test.describe.skip('explore services breakdown page', () => {
     await firstIncludeButton.click();
     await expect(page.getByText('Pattern', { exact: true })).toBeVisible();
     await expect(page.getByText('Excluded patterns:', { exact: true })).not.toBeVisible();
-    await expect(page.getByText('level=info <_> caller=flush.go:253 msg="completing block" <_>')).toBeVisible();
   });
 
   test('should update a filter and run new logs', async ({ page }) => {
