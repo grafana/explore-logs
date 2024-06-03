@@ -7,7 +7,7 @@ import {
   SceneObjectState,
 } from '@grafana/scenes';
 import { PatternFrame, PatternsBreakdownScene } from './PatternsBreakdownScene';
-import React from 'react';
+import React, { RefCallback } from 'react';
 import { AppliedPattern, IndexScene } from '../../IndexScene/IndexScene';
 import { DataFrame, LoadingState, PanelData } from '@grafana/data';
 import { Button, Column, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
@@ -16,6 +16,7 @@ import { css } from '@emotion/css';
 import { onPatternClick } from './FilterByPatternsButton';
 import { config } from '@grafana/runtime';
 import { testIds } from '../../../services/testIds';
+import { useMeasure } from 'react-use';
 
 export interface SingleViewTableSceneState extends SceneObjectState {
   patternFrames: PatternFrame[];
@@ -38,40 +39,16 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
     });
   }
 
-  public static Component({ model }: SceneComponentProps<PatternsViewTableScene>) {
-    const { patternFrames, appliedPatterns } = model.useState();
-
-    // Get state from parent
-    const parent = sceneGraph.getAncestor(model, PatternsBreakdownScene);
-    const { legendSyncPatterns } = parent.useState();
-
-    // Calculate total for percentages
-    const total = patternFrames.reduce((previousValue, frame) => {
-      return previousValue + frame.sum;
-    }, 0);
-
-    const tableData = model.buildTableData(patternFrames, legendSyncPatterns);
-    const columns = model.buildColumns(total, appliedPatterns);
-
-    return (
-      <div data-testid={testIds.patterns.tableWrapper} className={vizStyles.tableWrap}>
-        <InteractiveTable
-          className={vizStyles.table}
-          columns={columns}
-          data={tableData}
-          getRowId={(r: WithCustomCellData) => r.pattern}
-        />
-      </div>
-    );
-  }
+  public static Component = PatternTableViewSceneComponent;
 
   /**
    * Build columns for interactive table (wrapper for react-table v7)
    * @param total
+   * @param containerWidth
    * @param appliedPatterns
    * @protected
    */
-  protected buildColumns(total: number, appliedPatterns?: AppliedPattern[]) {
+  public buildColumns(total: number, containerWidth: number, appliedPatterns?: AppliedPattern[]) {
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     const columns: Array<Column<WithCustomCellData>> = [
       {
@@ -118,7 +95,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
         id: 'pattern',
         header: 'Pattern',
         cell: (props: CellProps<WithCustomCellData>) => {
-          return <div className={vizStyles.tablePatternText}>{props.cell.row.original.pattern}</div>;
+          return <div className={getTablePatternTextStyles(containerWidth)}>{props.cell.row.original.pattern}</div>;
         },
       },
       {
@@ -179,7 +156,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
    * @param legendSyncPatterns
    * @private
    */
-  private buildTableData(patternFrames: PatternFrame[], legendSyncPatterns: Set<string>): WithCustomCellData[] {
+  public buildTableData(patternFrames: PatternFrame[], legendSyncPatterns: Set<string>): WithCustomCellData[] {
     const logExploration = sceneGraph.getAncestor(this, IndexScene);
     return patternFrames
       .filter((patternFrame) => {
@@ -209,17 +186,33 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
 
 const theme = config.theme2;
 
-const vizStyles = {
-  tablePatternText: css({
+const getTablePatternTextStyles = (width: number) => {
+  if (width > 0) {
+    return css({
+      minWidth: '200px',
+      width: `calc(${width}px - 640px)`,
+      fontFamily: theme.typography.fontFamilyMonospace,
+      overflow: 'hidden',
+      overflowWrap: 'break-word',
+    });
+  }
+  return css({
     minWidth: '200px',
     fontFamily: theme.typography.fontFamilyMonospace,
     overflow: 'hidden',
     overflowWrap: 'break-word',
-  }),
+  });
+};
+
+const vizStyles = {
   tableTimeSeriesWrap: css({
     width: '230px',
   }),
   table: css({
+    width: '100%',
+    overflow: 'hidden',
+  }),
+  tableWrapWrap: css({
     width: '100%',
     overflow: 'hidden',
   }),
@@ -239,3 +232,34 @@ const vizStyles = {
     },
   }),
 };
+
+export function PatternTableViewSceneComponent({ model }: SceneComponentProps<PatternsViewTableScene>) {
+  const { patternFrames, appliedPatterns } = model.useState();
+
+  // Get state from parent
+  const parent = sceneGraph.getAncestor(model, PatternsBreakdownScene);
+  const { legendSyncPatterns } = parent.useState();
+
+  const [ref, { width }] = useMeasure();
+
+  // Calculate total for percentages
+  const total = patternFrames.reduce((previousValue, frame) => {
+    return previousValue + frame.sum;
+  }, 0);
+
+  const tableData = model.buildTableData(patternFrames, legendSyncPatterns);
+  const columns = model.buildColumns(total, width, appliedPatterns);
+
+  return (
+    <div ref={ref as RefCallback<HTMLDivElement>} className={vizStyles.tableWrapWrap}>
+      <div data-testid={testIds.patterns.tableWrapper} className={vizStyles.tableWrap}>
+        <InteractiveTable
+          className={vizStyles.table}
+          columns={columns}
+          data={tableData}
+          getRowId={(r: WithCustomCellData) => r.pattern}
+        />
+      </div>
+    </div>
+  );
+}
