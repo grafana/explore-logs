@@ -241,5 +241,4 @@ const renderStyles = css({
   width: '100%',
   height: '470px',
   overflowY: 'scroll',
-  overflowX: 'hidden',
 });
