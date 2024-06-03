@@ -193,7 +193,9 @@ const vizStyles = {
   }),
   tableWrapWrap: css({
     width: '100%',
-    overflow: 'hidden',
+    overflowX: 'hidden',
+    height: 'calc(100vh - 580px)',
+    minHeight: '470px',
   }),
   tableWrap: css({
     // mostly works, but still overflows (with horizontal scroll) on smaller viewports with long pattern text
