@@ -194,12 +194,11 @@ const vizStyles = {
   tableWrapWrap: css({
     width: '100%',
     overflowX: 'hidden',
+    // Need to define explicit height for overflowX
     height: 'calc(100vh - 580px)',
     minHeight: '470px',
   }),
   tableWrap: css({
-    // mostly works, but still overflows (with horizontal scroll) on smaller viewports with long pattern text
-    maxWidth: 'calc(100vw - 34px)',
     width: '100%',
   }),
   tableTimeSeries: css({
