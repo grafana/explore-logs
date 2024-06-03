@@ -5,8 +5,10 @@ import {
   AdHocFiltersVariable,
   CustomVariable,
   DataSourceVariable,
+  getUrlSyncManager,
   SceneComponentProps,
   SceneControlsSpacer,
+  sceneGraph,
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
@@ -17,22 +19,20 @@ import {
   SceneTimeRange,
   SceneVariableSet,
   VariableValueSelectors,
-  getUrlSyncManager,
-  sceneGraph,
 } from '@grafana/scenes';
 import {
+  explorationDS,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_FILTERS,
   VAR_LINE_FILTER,
-  VAR_PATTERNS,
-  explorationDS,
   VAR_LOGS_FORMAT,
+  VAR_PATTERNS,
 } from 'services/variables';
 
+import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
 import { ServiceScene } from '../ServiceScene/ServiceScene';
 import { ServiceSelectionComponent, StartingPointSelectedEvent } from '../ServiceSelectionScene/ServiceSelectionScene';
-import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
 import { LayoutScene } from './LayoutScene';
 
 type LogExplorationMode = 'service_selection' | 'service_details';
