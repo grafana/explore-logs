@@ -108,8 +108,12 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
       },
       {
         id: 'percent',
-        header: '%',
-        cell: (props) => <div>{((100 * props.cell.row.original.sum) / total).toFixed(1)}</div>,
+        header: 'Count',
+        cell: (props) => (
+          <div>
+            {props.cell.row.original.sum.toLocaleString()} ({((100 * props.cell.row.original.sum) / total).toFixed(0)}%)
+          </div>
+        ),
       },
       {
         id: 'pattern',
