@@ -16,6 +16,7 @@ import { css } from '@emotion/css';
 import { onPatternClick } from './FilterByPatternsButton';
 import { FilterButton } from '../../FilterButton';
 import { config } from '@grafana/runtime';
+import { testIds } from '../../../services/testIds';
 
 export interface SingleViewTableSceneState extends SceneObjectState {
   patternFrames: PatternFrame[];
@@ -55,7 +56,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
     const columns = model.buildColumns(total, appliedPatterns);
 
     return (
-      <div className={renderStyles}>
+      <div data-testid={testIds.patterns.tableWrapper} className={renderStyles}>
         <InteractiveTable columns={columns} data={tableData} getRowId={(r: WithCustomCellData) => r.pattern} />
       </div>
     );

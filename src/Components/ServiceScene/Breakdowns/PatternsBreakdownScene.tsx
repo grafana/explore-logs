@@ -58,7 +58,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       ...state,
     });
 
-    this.addActivationHandler(this._onActivate.bind(this));
+    this.addActivationHandler(this.onActivate.bind(this));
   }
 
   // parent render
@@ -114,7 +114,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     );
   };
 
-  private _onActivate() {
+  private onActivate() {
     this.updateBody();
     this._subs.add(
       sceneGraph.getAncestor(this, ServiceScene).subscribeToState((newState, prevState) => {

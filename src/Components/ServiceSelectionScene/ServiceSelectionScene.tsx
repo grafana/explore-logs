@@ -78,10 +78,10 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
       ...state,
     });
 
-    this.addActivationHandler(this._onActivate.bind(this));
+    this.addActivationHandler(this.onActivate.bind(this));
   }
 
-  private _onActivate() {
+  private onActivate() {
     // Clear all adhoc filters when the scene is activated, if there are any
     const variable = sceneGraph.lookupVariable(VAR_FILTERS, this);
     if (variable instanceof AdHocFiltersVariable && variable.state.filters.length > 0) {
