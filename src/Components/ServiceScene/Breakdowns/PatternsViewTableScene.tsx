@@ -9,7 +9,7 @@ import {
   SceneVariableSet,
 } from '@grafana/scenes';
 import { PatternFrame, PatternsBreakdownScene } from './PatternsBreakdownScene';
-import React, { ChangeEvent } from 'react';
+import React, { ChangeEvent, RefCallback } from 'react';
 import { AppliedPattern, IndexScene } from '../../IndexScene/IndexScene';
 import { DataFrame, LoadingState, PanelData } from '@grafana/data';
 import { Column, Input, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
@@ -22,11 +22,14 @@ import { testIds } from '../../../services/testIds';
 import { debounce } from 'lodash';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../../services/analytics';
 import { PATTERNS_TEXT_FILTER } from '../../../services/variables';
+import { useMeasure } from 'react-use';
+import { debouncedFuzzySearch } from '../../../services/uFuzzy';
 
 export interface SingleViewTableSceneState extends SceneObjectState {
   patternFrames: PatternFrame[];
   appliedPatterns?: AppliedPattern[];
   patternFilter?: string;
+  filteredPatterns?: string[];
 }
 
 interface WithCustomCellData {
@@ -40,6 +43,15 @@ interface WithCustomCellData {
 }
 
 export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableSceneState> {
+  // The component PatternTableViewSceneComponent contains hooks, eslint will complain if hooks are used within typescript class, so we work around this by defining the render method as a separate function
+  public static Component = PatternTableViewSceneComponent;
+  handleChange = debounce((e: ChangeEvent<HTMLInputElement>) => {
+    this.setState({
+      patternFilter: e.target.value,
+    });
+    this.updateVariable(e.target.value);
+  }, 350);
+
   constructor(state: SingleViewTableSceneState) {
     super({
       ...state,
@@ -49,69 +61,14 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
     });
   }
 
-  public static Component({ model }: SceneComponentProps<PatternsViewTableScene>) {
-    console.log('re-render', model.state.patternFilter);
-    const { patternFrames, appliedPatterns } = model.useState();
-
-    // Get state from parent
-    const parent = sceneGraph.getAncestor(model, PatternsBreakdownScene);
-    const { legendSyncPatterns } = parent.useState();
-
-    // Calculate total for percentages
-    const total = patternFrames.reduce((previousValue, frame) => {
-      return previousValue + frame.sum;
-    }, 0);
-
-    const tableData = model.buildTableData(patternFrames, legendSyncPatterns);
-    const columns = model.buildColumns(total, appliedPatterns);
-
-    return (
-      <div>
-        <div data-testid={testIds.patterns.searchWrapper}>
-          <Input onChange={model.handleChange} placeholder={'Search patterns'} />
-        </div>
-        <div data-testid={testIds.patterns.tableWrapper} className={renderStyles}>
-          <InteractiveTable columns={columns} data={tableData} getRowId={(r: WithCustomCellData) => r.pattern} />
-        </div>
-      </div>
-    );
-  }
-
-  handleChange = debounce((e: ChangeEvent<HTMLInputElement>) => {
-    this.setState({
-      patternFilter: e.target.value,
-    });
-    this.updateVariable(e.target.value);
-  }, 350);
-
-  private getVariable() {
-    const variable = sceneGraph.lookupVariable(PATTERNS_TEXT_FILTER, this);
-    if (!(variable instanceof CustomVariable)) {
-      throw new Error('Logs format variable not found');
-    }
-    return variable;
-  }
-
-  private updateVariable(search: string) {
-    const variable = this.getVariable();
-    variable.changeValueTo(`|= \`${search}\``);
-    reportAppInteraction(
-      USER_EVENTS_PAGES.service_details,
-      USER_EVENTS_ACTIONS.service_details.search_string_in_logs_changed,
-      {
-        searchQueryLength: search.length,
-        containsLevel: search.toLowerCase().includes('level'),
-      }
-    );
-  }
-
   /**
    * Build columns for interactive table (wrapper for react-table v7)
    * @param total
+   * @param containerWidth
    * @param appliedPatterns
    * @protected
    */
-  protected buildColumns(total: number, appliedPatterns?: AppliedPattern[]) {
+  public buildColumns(total: number, containerWidth: number, appliedPatterns?: AppliedPattern[]) {
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     const columns: Array<Column<WithCustomCellData>> = [
       {
@@ -158,7 +115,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
         id: 'pattern',
         header: 'Pattern',
         cell: (props: CellProps<WithCustomCellData>) => {
-          return <div className={vizStyles.tablePatternText}>{props.cell.row.original.pattern}</div>;
+          return <div className={getTablePatternTextStyles(containerWidth)}>{props.cell.row.original.pattern}</div>;
         },
       },
       {
@@ -186,56 +143,121 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
     return columns;
   }
 
+  onSearchResult(data: string[][]) {
+    console.log('onSearchResult', data);
+    if (!data[0].every((val, index) => val === this.state?.filteredPatterns?.[index])) {
+      this.setState({
+        filteredPatterns: data[0],
+      });
+    }
+  }
+
   /**
    * Filter visible patterns in table, and return cell data for InteractiveTable
    * @param patternFrames
    * @param legendSyncPatterns
    * @private
    */
-  private buildTableData(patternFrames: PatternFrame[], legendSyncPatterns: Set<string>): WithCustomCellData[] {
+  public buildTableData(patternFrames: PatternFrame[], legendSyncPatterns: Set<string>): WithCustomCellData[] {
     const logExploration = sceneGraph.getAncestor(this, IndexScene);
-    return patternFrames
-      .filter((patternFrame) => {
-        return legendSyncPatterns.size ? legendSyncPatterns.has(patternFrame.pattern) : true;
-      })
-      .map((pattern: PatternFrame) => {
-        return {
-          dataFrame: pattern.dataFrame,
-          pattern: pattern.pattern,
-          sum: pattern.sum,
-          includeLink: () =>
-            onPatternClick({
-              pattern: pattern.pattern,
-              type: 'include',
-              indexScene: logExploration,
-            }),
-          excludeLink: () =>
-            onPatternClick({
-              pattern: pattern.pattern,
-              type: 'exclude',
-              indexScene: logExploration,
-            }),
-          undoLink: () =>
-            onPatternClick({
-              pattern: pattern.pattern,
-              type: 'undo',
-              indexScene: logExploration,
-            }),
-        };
-      });
+
+    const filteredPatternFrames = patternFrames.filter((patternFrame) => {
+      if (this.state.patternFilter && this.state.filteredPatterns?.length) {
+        return this.state.filteredPatterns.find((pattern) => pattern === patternFrame.pattern);
+      }
+      return legendSyncPatterns.size ? legendSyncPatterns.has(patternFrame.pattern) : true;
+    });
+
+    // if(this.state.filteredPatterns){
+    //     // sort by index
+    //     filteredPatternFrames.sort((a, b) => {
+    //         return a
+    //     })
+    // }
+
+    return filteredPatternFrames.map((pattern: PatternFrame) => {
+      return {
+        dataFrame: pattern.dataFrame,
+        pattern: pattern.pattern,
+        sum: pattern.sum,
+        includeLink: () =>
+          onPatternClick({
+            pattern: pattern.pattern,
+            type: 'include',
+            indexScene: logExploration,
+          }),
+        excludeLink: () =>
+          onPatternClick({
+            pattern: pattern.pattern,
+            type: 'exclude',
+            indexScene: logExploration,
+          }),
+        undoLink: () =>
+          onPatternClick({
+            pattern: pattern.pattern,
+            type: 'undo',
+            indexScene: logExploration,
+          }),
+      };
+    });
+  }
+
+  private getVariable() {
+    const variable = sceneGraph.lookupVariable(PATTERNS_TEXT_FILTER, this);
+    if (!(variable instanceof CustomVariable)) {
+      throw new Error('Logs format variable not found');
+    }
+    return variable;
+  }
+
+  private updateVariable(search: string) {
+    const variable = this.getVariable();
+    variable.changeValueTo(`|= \`${search}\``);
+    reportAppInteraction(
+      USER_EVENTS_PAGES.service_details,
+      USER_EVENTS_ACTIONS.service_details.search_string_in_logs_changed,
+      {
+        searchQueryLength: search.length,
+        containsLevel: search.toLowerCase().includes('level'),
+      }
+    );
   }
 }
 
 const theme = config.theme2;
 
-const vizStyles = {
-  tablePatternText: css({
-    width: 'calc(100vw - 640px)',
+const getTablePatternTextStyles = (width: number) => {
+  if (width > 0) {
+    return css({
+      minWidth: '200px',
+      width: `calc(${width}px - 460px)`,
+      maxWidth: '100%',
+      fontFamily: theme.typography.fontFamilyMonospace,
+      overflow: 'hidden',
+      overflowWrap: 'break-word',
+    });
+  }
+  return css({
     minWidth: '200px',
     fontFamily: theme.typography.fontFamilyMonospace,
-  }),
+    overflow: 'hidden',
+    overflowWrap: 'break-word',
+  });
+};
+
+const vizStyles = {
   tableTimeSeriesWrap: css({
     width: '230px',
+  }),
+  tableWrapWrap: css({
+    width: '100%',
+    overflowX: 'hidden',
+    // Need to define explicit height for overflowX
+    height: 'calc(100vh - 580px)',
+    minHeight: '470px',
+  }),
+  tableWrap: css({
+    width: '100%',
   }),
   tableTimeSeries: css({
     height: '30px',
@@ -247,8 +269,43 @@ const vizStyles = {
   }),
 };
 
-const renderStyles = css({
-  maxWidth: 'calc(100vw - 31px)',
-  height: '470px',
-  overflowY: 'scroll',
-});
+export function PatternTableViewSceneComponent({ model }: SceneComponentProps<PatternsViewTableScene>) {
+  const { patternFrames, appliedPatterns, filteredPatterns } = model.useState();
+  console.log('render', filteredPatterns);
+
+  // Get state from parent
+  const parent = sceneGraph.getAncestor(model, PatternsBreakdownScene);
+  const { legendSyncPatterns } = parent.useState();
+
+  const [ref, { width }] = useMeasure();
+
+  // Calculate total for percentages
+  const total = patternFrames.reduce((previousValue, frame) => {
+    return previousValue + frame.sum;
+  }, 0);
+
+  // If search filter
+  if (model.state.patternFilter) {
+    debouncedFuzzySearch(
+      patternFrames.map((frame) => frame.pattern),
+      model.state.patternFilter,
+      model.onSearchResult.bind(model)
+    );
+  }
+
+  const tableData = model.buildTableData(patternFrames, legendSyncPatterns);
+  const columns = model.buildColumns(total, width, appliedPatterns);
+
+  return (
+    <div>
+      <div data-testid={testIds.patterns.searchWrapper}>
+        <Input onChange={model.handleChange} placeholder={'Search patterns'} />
+      </div>
+      <div className={vizStyles.tableWrapWrap} ref={ref as RefCallback<HTMLDivElement>}>
+        <div data-testid={testIds.patterns.tableWrapper} className={vizStyles.tableWrap}>
+          <InteractiveTable columns={columns} data={tableData} getRowId={(r: WithCustomCellData) => r.pattern} />
+        </div>
+      </div>
+    </div>
+  );
+}

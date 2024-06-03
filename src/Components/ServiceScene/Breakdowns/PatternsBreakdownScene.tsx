@@ -6,9 +6,9 @@ import {
   CustomVariable,
   PanelBuilders,
   SceneComponentProps,
+  SceneCSSGridLayout,
   SceneDataNode,
   SceneFlexItem,
-  SceneFlexLayout,
   sceneGraph,
   SceneObject,
   SceneObjectBase,
@@ -220,10 +220,9 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       extendPanelContext: (vizPanel, context) => this.extendTimeSeriesLegendBus(vizPanel, context),
     });
 
-    return new SceneFlexLayout({
-      direction: 'column',
-      width: 'calc(100vw - 60px)',
-      maxWidth: '100%',
+    return new SceneCSSGridLayout({
+      templateColumns: '100%',
+
       children: [
         new SceneFlexItem({
           minHeight: 200,
