@@ -172,7 +172,8 @@ const getTablePatternTextStyles = (width: number) => {
   if (width > 0) {
     return css({
       minWidth: '200px',
-      width: `calc(${width}px - 640px)`,
+      width: `calc(${width}px - 460px)`,
+      maxWidth: '100%',
       fontFamily: theme.typography.fontFamilyMonospace,
       overflow: 'hidden',
       overflowWrap: 'break-word',
@@ -190,10 +191,6 @@ const vizStyles = {
   tableTimeSeriesWrap: css({
     width: '230px',
   }),
-  table: css({
-    width: '100%',
-    overflow: 'hidden',
-  }),
   tableWrapWrap: css({
     width: '100%',
     overflow: 'hidden',
@@ -202,8 +199,6 @@ const vizStyles = {
     // mostly works, but still overflows (with horizontal scroll) on smaller viewports with long pattern text
     maxWidth: 'calc(100vw - 34px)',
     width: '100%',
-    height: '470px',
-    overflowY: 'scroll',
   }),
   tableTimeSeries: css({
     height: '30px',
@@ -233,14 +228,9 @@ export function PatternTableViewSceneComponent({ model }: SceneComponentProps<Pa
   const columns = model.buildColumns(total, width, appliedPatterns);
 
   return (
-    <div ref={ref as RefCallback<HTMLDivElement>} className={vizStyles.tableWrapWrap}>
+    <div className={vizStyles.tableWrapWrap} ref={ref as RefCallback<HTMLDivElement>}>
       <div data-testid={testIds.patterns.tableWrapper} className={vizStyles.tableWrap}>
-        <InteractiveTable
-          className={vizStyles.table}
-          columns={columns}
-          data={tableData}
-          getRowId={(r: WithCustomCellData) => r.pattern}
-        />
+        <InteractiveTable columns={columns} data={tableData} getRowId={(r: WithCustomCellData) => r.pattern} />
       </div>
     </div>
   );
