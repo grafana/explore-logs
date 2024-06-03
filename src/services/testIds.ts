@@ -12,4 +12,7 @@ export const testIds = {
     search: 'data-testid search-logs',
     openExplore: 'data-testid open-explore',
   },
+  patterns: {
+    tableWrapper: 'data-testid table-wrapper',
+  },
 };

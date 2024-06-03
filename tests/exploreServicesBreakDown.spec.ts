@@ -1,5 +1,6 @@
 import { expect, test } from '@grafana/plugin-e2e';
 import { ExplorePage } from './fixtures/explore';
+import {testIds} from "../src/services/testIds";
 
 test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;
@@ -46,6 +47,7 @@ test.describe('explore services breakdown page', () => {
 
     // Include pattern
     const firstIncludeButton = page
+      .getByTestId(testIds.patterns.tableWrapper)
       .getByRole('table')
       .getByRole('row', { name: /level=info <_> caller=flush\.go/ })
       .getByText('Select');
@@ -61,10 +63,12 @@ test.describe('explore services breakdown page', () => {
     await page.getByLabel('Tab Patterns').click();
 
     const firstIncludeButton = page
+      .getByTestId(testIds.patterns.tableWrapper)
       .getByRole('table')
       .getByRole('row', { name: /level=info <_> caller=flush\.go/ })
       .getByText('Select');
     const firstExcludeButton = page
+      .getByTestId(testIds.patterns.tableWrapper)
       .getByRole('table')
       .getByRole('row', { name: /level=info <_> caller=flush\.go/ })
       .getByText('Exclude');
@@ -85,6 +89,7 @@ test.describe('explore services breakdown page', () => {
     await expect(firstExcludeButton).not.toBeVisible();
 
     const secondExcludeButton = page
+      .getByTestId(testIds.patterns.tableWrapper)
       .getByRole('table')
       .getByRole('row', { name: /level=debug <_> caller=broadcast\.go:48/ })
       .getByText('Exclude');
