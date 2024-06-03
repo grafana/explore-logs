@@ -1,26 +1,32 @@
 import {
+  CustomVariable,
   PanelBuilders,
   SceneComponentProps,
   SceneDataNode,
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
+  SceneVariableSet,
 } from '@grafana/scenes';
 import { PatternFrame, PatternsBreakdownScene } from './PatternsBreakdownScene';
-import React from 'react';
+import React, { ChangeEvent } from 'react';
 import { AppliedPattern, IndexScene } from '../../IndexScene/IndexScene';
 import { DataFrame, LoadingState, PanelData } from '@grafana/data';
-import { Column, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
+import { Column, Input, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
 import { CellProps } from 'react-table';
 import { css } from '@emotion/css';
 import { onPatternClick } from './FilterByPatternsButton';
 import { FilterButton } from '../../FilterButton';
 import { config } from '@grafana/runtime';
 import { testIds } from '../../../services/testIds';
+import { debounce } from 'lodash';
+import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../../services/analytics';
+import { PATTERNS_TEXT_FILTER } from '../../../services/variables';
 
 export interface SingleViewTableSceneState extends SceneObjectState {
   patternFrames: PatternFrame[];
   appliedPatterns?: AppliedPattern[];
+  patternFilter?: string;
 }
 
 interface WithCustomCellData {
@@ -37,10 +43,14 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
   constructor(state: SingleViewTableSceneState) {
     super({
       ...state,
+      $variables: new SceneVariableSet({
+        variables: [new CustomVariable({ name: PATTERNS_TEXT_FILTER, value: state.patternFilter ?? '' })],
+      }),
     });
   }
 
   public static Component({ model }: SceneComponentProps<PatternsViewTableScene>) {
+    console.log('re-render', model.state.patternFilter);
     const { patternFrames, appliedPatterns } = model.useState();
 
     // Get state from parent
@@ -56,9 +66,42 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
     const columns = model.buildColumns(total, appliedPatterns);
 
     return (
-      <div data-testid={testIds.patterns.tableWrapper} className={renderStyles}>
-        <InteractiveTable columns={columns} data={tableData} getRowId={(r: WithCustomCellData) => r.pattern} />
+      <div>
+        <div data-testid={testIds.patterns.searchWrapper}>
+          <Input onChange={model.handleChange} placeholder={'Search patterns'} />
+        </div>
+        <div data-testid={testIds.patterns.tableWrapper} className={renderStyles}>
+          <InteractiveTable columns={columns} data={tableData} getRowId={(r: WithCustomCellData) => r.pattern} />
+        </div>
       </div>
+    );
+  }
+
+  handleChange = debounce((e: ChangeEvent<HTMLInputElement>) => {
+    this.setState({
+      patternFilter: e.target.value,
+    });
+    this.updateVariable(e.target.value);
+  }, 350);
+
+  private getVariable() {
+    const variable = sceneGraph.lookupVariable(PATTERNS_TEXT_FILTER, this);
+    if (!(variable instanceof CustomVariable)) {
+      throw new Error('Logs format variable not found');
+    }
+    return variable;
+  }
+
+  private updateVariable(search: string) {
+    const variable = this.getVariable();
+    variable.changeValueTo(`|= \`${search}\``);
+    reportAppInteraction(
+      USER_EVENTS_PAGES.service_details,
+      USER_EVENTS_ACTIONS.service_details.search_string_in_logs_changed,
+      {
+        searchQueryLength: search.length,
+        containsLevel: search.toLowerCase().includes('level'),
+      }
     );
   }
 

@@ -13,6 +13,7 @@ export const testIds = {
     openExplore: 'data-testid open-explore',
   },
   patterns: {
-    tableWrapper: 'data-testid table-wrapper',
+    tableWrapper: 'data-testid patterns-table-wrapper',
+    searchWrapper: 'data-testid patterns-search-wrapper',
   },
 };
