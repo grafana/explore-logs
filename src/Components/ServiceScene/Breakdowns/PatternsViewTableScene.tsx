@@ -236,7 +236,7 @@ const getTableStyles = () => {
 };
 
 const renderStyles = css({
-  // mostly works, but still overflows on smaller viewports with long pattern text
+  // mostly works, but still overflows (with horizontal scroll) on smaller viewports with long pattern text
   maxWidth: 'calc(100vw - 34px)',
   width: '100%',
   height: '470px',
