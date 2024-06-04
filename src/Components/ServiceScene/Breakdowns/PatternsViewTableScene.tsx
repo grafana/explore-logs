@@ -6,8 +6,8 @@ import {
   SceneObjectBase,
   SceneObjectState,
 } from '@grafana/scenes';
-import { PatternFrame, PatternsBreakdownScene } from './PatternsBreakdownScene';
-import React, { RefCallback } from 'react';
+import { PatternFrame } from './PatternsBreakdownScene';
+import React from 'react';
 import { AppliedPattern, IndexScene } from '../../IndexScene/IndexScene';
 import { DataFrame, LoadingState, PanelData } from '@grafana/data';
 import { Column, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
@@ -17,7 +17,7 @@ import { onPatternClick } from './FilterByPatternsButton';
 import { FilterButton } from '../../FilterButton';
 import { config } from '@grafana/runtime';
 import { testIds } from '../../../services/testIds';
-import { useMeasure } from 'react-use';
+import { PatternsFrameScene } from './PatternsFrameScene';
 
 export interface SingleViewTableSceneState extends SceneObjectState {
   patternFrames: PatternFrame[];
@@ -41,17 +41,15 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
     });
   }
 
-  // The component PatternTableViewSceneComponent contains hooks, eslint will complain if hooks are used within typescript class, so we work around this by defining the render method as a separate function
   public static Component = PatternTableViewSceneComponent;
 
   /**
    * Build columns for interactive table (wrapper for react-table v7)
    * @param total
-   * @param containerWidth
    * @param appliedPatterns
    * @protected
    */
-  public buildColumns(total: number, containerWidth: number, appliedPatterns?: AppliedPattern[]) {
+  public buildColumns(total: number, appliedPatterns?: AppliedPattern[]) {
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     const columns: Array<Column<WithCustomCellData>> = [
       {
@@ -103,7 +101,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
         id: 'pattern',
         header: 'Pattern',
         cell: (props: CellProps<WithCustomCellData>) => {
-          return <div className={getTablePatternTextStyles(containerWidth)}>{props.cell.row.original.pattern}</div>;
+          return <div className={getTablePatternTextStyles()}>{props.cell.row.original.pattern}</div>;
         },
       },
       {
@@ -173,17 +171,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
 
 const theme = config.theme2;
 
-const getTablePatternTextStyles = (width: number) => {
-  if (width > 0) {
-    return css({
-      minWidth: '200px',
-      width: `calc(${width}px - 485px)`,
-      maxWidth: '100%',
-      fontFamily: theme.typography.fontFamilyMonospace,
-      overflow: 'hidden',
-      overflowWrap: 'break-word',
-    });
-  }
+const getTablePatternTextStyles = () => {
   return css({
     minWidth: '200px',
     fontFamily: theme.typography.fontFamilyMonospace,
@@ -208,7 +196,7 @@ const vizStyles = {
     minHeight: '470px',
   }),
   tableWrap: css({
-    width: '100%',
+    // width: '100%',
   }),
   tableTimeSeries: css({
     height: '30px',
@@ -224,10 +212,8 @@ export function PatternTableViewSceneComponent({ model }: SceneComponentProps<Pa
   const { patternFrames, appliedPatterns } = model.useState();
 
   // Get state from parent
-  const parent = sceneGraph.getAncestor(model, PatternsBreakdownScene);
+  const parent = sceneGraph.getAncestor(model, PatternsFrameScene);
   const { legendSyncPatterns } = parent.useState();
-
-  const [ref, { width }] = useMeasure();
 
   // Calculate total for percentages
   const total = patternFrames.reduce((previousValue, frame) => {
@@ -235,13 +221,11 @@ export function PatternTableViewSceneComponent({ model }: SceneComponentProps<Pa
   }, 0);
 
   const tableData = model.buildTableData(patternFrames, legendSyncPatterns);
-  const columns = model.buildColumns(total, width, appliedPatterns);
+  const columns = model.buildColumns(total, appliedPatterns);
 
   return (
-    <div className={vizStyles.tableWrapWrap} ref={ref as RefCallback<HTMLDivElement>}>
-      <div data-testid={testIds.patterns.tableWrapper} className={vizStyles.tableWrap}>
-        <InteractiveTable columns={columns} data={tableData} getRowId={(r: WithCustomCellData) => r.pattern} />
-      </div>
+    <div data-testid={testIds.patterns.tableWrapper} className={vizStyles.tableWrap}>
+      <InteractiveTable columns={columns} data={tableData} getRowId={(r: WithCustomCellData) => r.pattern} />
     </div>
   );
 }
