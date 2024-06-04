@@ -131,6 +131,20 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     );
   }
 
+  getFilteredPatternFrames(patternFrames: PatternFrame[]): PatternFrame[] {
+    if (patternFrames.length) {
+      const filteredPatternFrames = patternFrames.filter((patternFrame) => {
+        if (this.state.filteredPatterns?.length) {
+          return this.state.filteredPatterns.find((pattern) => pattern === patternFrame.pattern);
+        }
+        return false;
+      });
+      return filteredPatternFrames;
+    }
+
+    return patternFrames;
+  }
+
   private async updateBody() {
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     const lokiPatterns = serviceScene.state.patterns;

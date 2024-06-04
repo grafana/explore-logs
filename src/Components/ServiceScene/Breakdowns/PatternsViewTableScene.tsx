@@ -1,15 +1,13 @@
 import {
-  CustomVariable,
   PanelBuilders,
   SceneComponentProps,
   SceneDataNode,
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
-  SceneVariableSet,
 } from '@grafana/scenes';
 import { PatternFrame, PatternsBreakdownScene } from './PatternsBreakdownScene';
-import React, { ChangeEvent, RefCallback } from 'react';
+import React, { RefCallback } from 'react';
 import { AppliedPattern, IndexScene } from '../../IndexScene/IndexScene';
 import { DataFrame, LoadingState, PanelData } from '@grafana/data';
 import { Column, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
@@ -19,17 +17,11 @@ import { onPatternClick } from './FilterByPatternsButton';
 import { FilterButton } from '../../FilterButton';
 import { config } from '@grafana/runtime';
 import { testIds } from '../../../services/testIds';
-import { debounce } from 'lodash';
-import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../../services/analytics';
-import { PATTERNS_TEXT_FILTER } from '../../../services/variables';
 import { useMeasure } from 'react-use';
-import { debouncedFuzzySearch } from '../../../services/uFuzzy';
 
 export interface SingleViewTableSceneState extends SceneObjectState {
   patternFrames: PatternFrame[];
   appliedPatterns?: AppliedPattern[];
-  patternFilter?: string;
-  filteredPatterns?: string[];
 }
 
 interface WithCustomCellData {
@@ -45,19 +37,10 @@ interface WithCustomCellData {
 export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableSceneState> {
   // The component PatternTableViewSceneComponent contains hooks, eslint will complain if hooks are used within typescript class, so we work around this by defining the render method as a separate function
   public static Component = PatternTableViewSceneComponent;
-  handleChange = debounce((e: ChangeEvent<HTMLInputElement>) => {
-    this.setState({
-      patternFilter: e.target.value,
-    });
-    this.updateVariable(e.target.value);
-  }, 350);
 
   constructor(state: SingleViewTableSceneState) {
     super({
       ...state,
-      $variables: new SceneVariableSet({
-        variables: [new CustomVariable({ name: PATTERNS_TEXT_FILTER, value: state.patternFilter ?? '' })],
-      }),
     });
   }
 
@@ -148,15 +131,6 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
     return columns;
   }
 
-  onSearchResult(data: string[][]) {
-    console.log('onSearchResult', data);
-    if (!data[0].every((val, index) => val === this.state?.filteredPatterns?.[index])) {
-      this.setState({
-        filteredPatterns: data[0],
-      });
-    }
-  }
-
   /**
    * Filter visible patterns in table, and return cell data for InteractiveTable
    * @param patternFrames
@@ -167,18 +141,8 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
     const logExploration = sceneGraph.getAncestor(this, IndexScene);
 
     const filteredPatternFrames = patternFrames.filter((patternFrame) => {
-      if (this.state.patternFilter && this.state.filteredPatterns?.length) {
-        return this.state.filteredPatterns.find((pattern) => pattern === patternFrame.pattern);
-      }
       return legendSyncPatterns.size ? legendSyncPatterns.has(patternFrame.pattern) : true;
     });
-
-    // if(this.state.filteredPatterns){
-    //     // sort by index
-    //     filteredPatternFrames.sort((a, b) => {
-    //         return a
-    //     })
-    // }
 
     return filteredPatternFrames.map((pattern: PatternFrame) => {
       return {
@@ -205,27 +169,6 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
           }),
       };
     });
-  }
-
-  private getVariable() {
-    const variable = sceneGraph.lookupVariable(PATTERNS_TEXT_FILTER, this);
-    if (!(variable instanceof CustomVariable)) {
-      throw new Error('Logs format variable not found');
-    }
-    return variable;
-  }
-
-  private updateVariable(search: string) {
-    const variable = this.getVariable();
-    variable.changeValueTo(`|= \`${search}\``);
-    reportAppInteraction(
-      USER_EVENTS_PAGES.service_details,
-      USER_EVENTS_ACTIONS.service_details.search_string_in_logs_changed,
-      {
-        searchQueryLength: search.length,
-        containsLevel: search.toLowerCase().includes('level'),
-      }
-    );
   }
 }
 
@@ -283,25 +226,29 @@ export function PatternTableViewSceneComponent({ model }: SceneComponentProps<Pa
 
   // Get state from parent
   const parent = sceneGraph.getAncestor(model, PatternsBreakdownScene);
-  const { legendSyncPatterns } = parent.useState();
+  const { legendSyncPatterns, filteredPatterns } = parent.useState();
+
+  let framesActual: PatternFrame[] = patternFrames;
+
+  if (parent.state.patternFrames) {
+    const filteredPatternFrames = parent.state.patternFrames.filter((patternFrame) => {
+      if (parent.state.filteredPatterns?.length) {
+        return filteredPatterns?.find((pattern) => pattern === patternFrame.pattern);
+      }
+      return false;
+    });
+
+    framesActual = filteredPatternFrames;
+  }
 
   const [ref, { width }] = useMeasure();
 
   // Calculate total for percentages
-  const total = patternFrames.reduce((previousValue, frame) => {
+  const total = framesActual.reduce((previousValue, frame) => {
     return previousValue + frame.sum;
   }, 0);
 
-  // If search filter
-  if (model.state.patternFilter) {
-    debouncedFuzzySearch(
-      patternFrames.map((frame) => frame.pattern),
-      model.state.patternFilter,
-      model.onSearchResult.bind(model)
-    );
-  }
-
-  const tableData = model.buildTableData(patternFrames, legendSyncPatterns);
+  const tableData = model.buildTableData(framesActual, legendSyncPatterns);
   const columns = model.buildColumns(total, width, appliedPatterns);
 
   return (
