@@ -51,7 +51,6 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
 
   // parent render
   public static Component = ({ model }: SceneComponentProps<PatternsFrameScene>) => {
-    console.log('PatternsFrameScene render');
     const { body, loading } = model.useState();
     const logsByServiceScene = sceneGraph.getAncestor(model, ServiceScene);
     const { patterns } = logsByServiceScene.useState();
