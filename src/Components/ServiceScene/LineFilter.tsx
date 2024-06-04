@@ -1,6 +1,6 @@
 import { css } from '@emotion/css';
 import { CustomVariable, SceneComponentProps, SceneObjectBase, SceneObjectState, sceneGraph } from '@grafana/scenes';
-import { Field, Input } from '@grafana/ui';
+import { Field, Icon, Input } from '@grafana/ui';
 import { debounce } from 'lodash';
 import React, { ChangeEvent } from 'react';
 import { VAR_LINE_FILTER } from 'services/variables';
@@ -72,7 +72,8 @@ function LineFilterRenderer({ model }: SceneComponentProps<LineFilter>) {
         value={lineFilter}
         className={styles.input}
         onChange={model.handleChange}
-        placeholder="Search"
+        prefix={<Icon name="search" />}
+        placeholder="Search in log lines"
       />
     </Field>
   );
