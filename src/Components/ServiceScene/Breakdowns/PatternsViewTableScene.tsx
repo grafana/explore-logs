@@ -91,8 +91,13 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
       },
       {
         id: 'percent',
-        header: '%',
-        cell: (props) => <div>{((100 * props.cell.row.original.sum) / total).toFixed(1)}</div>,
+        header: 'Count',
+        sortType: 'number',
+        cell: (props) => (
+          <div className={vizStyles.countText}>
+            {props.cell.row.original.sum.toLocaleString()} ({((100 * props.cell.row.original.sum) / total).toFixed(0)}%)
+          </div>
+        ),
       },
       {
         id: 'pattern',
@@ -172,7 +177,7 @@ const getTablePatternTextStyles = (width: number) => {
   if (width > 0) {
     return css({
       minWidth: '200px',
-      width: `calc(${width}px - 460px)`,
+      width: `calc(${width}px - 485px)`,
       maxWidth: '100%',
       fontFamily: theme.typography.fontFamilyMonospace,
       overflow: 'hidden',
@@ -188,8 +193,12 @@ const getTablePatternTextStyles = (width: number) => {
 };
 
 const vizStyles = {
+  countText: css({
+    textAlign: 'right',
+  }),
   tableTimeSeriesWrap: css({
     width: '230px',
+    pointerEvents: 'none',
   }),
   tableWrapWrap: css({
     width: '100%',
