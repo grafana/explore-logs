@@ -12,7 +12,7 @@ import { PatternFrame, PatternsBreakdownScene } from './PatternsBreakdownScene';
 import React, { ChangeEvent, RefCallback } from 'react';
 import { AppliedPattern, IndexScene } from '../../IndexScene/IndexScene';
 import { DataFrame, LoadingState, PanelData } from '@grafana/data';
-import { Column, Input, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
+import { Column, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
 import { CellProps } from 'react-table';
 import { css } from '@emotion/css';
 import { onPatternClick } from './FilterByPatternsButton';
@@ -279,8 +279,7 @@ const vizStyles = {
 };
 
 export function PatternTableViewSceneComponent({ model }: SceneComponentProps<PatternsViewTableScene>) {
-  const { patternFrames, appliedPatterns, filteredPatterns } = model.useState();
-  console.log('render', filteredPatterns);
+  const { patternFrames, appliedPatterns } = model.useState();
 
   // Get state from parent
   const parent = sceneGraph.getAncestor(model, PatternsBreakdownScene);
@@ -306,14 +305,9 @@ export function PatternTableViewSceneComponent({ model }: SceneComponentProps<Pa
   const columns = model.buildColumns(total, width, appliedPatterns);
 
   return (
-    <div>
-      <div data-testid={testIds.patterns.searchWrapper}>
-        <Input onChange={model.handleChange} placeholder={'Search patterns'} />
-      </div>
-      <div className={vizStyles.tableWrapWrap} ref={ref as RefCallback<HTMLDivElement>}>
-        <div data-testid={testIds.patterns.tableWrapper} className={vizStyles.tableWrap}>
-          <InteractiveTable columns={columns} data={tableData} getRowId={(r: WithCustomCellData) => r.pattern} />
-        </div>
+    <div className={vizStyles.tableWrapWrap} ref={ref as RefCallback<HTMLDivElement>}>
+      <div data-testid={testIds.patterns.tableWrapper} className={vizStyles.tableWrap}>
+        <InteractiveTable columns={columns} data={tableData} getRowId={(r: WithCustomCellData) => r.pattern} />
       </div>
     </div>
   );

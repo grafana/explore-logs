@@ -26,6 +26,7 @@ import { onPatternClick } from './FilterByPatternsButton';
 import { IndexScene } from '../../IndexScene/IndexScene';
 import { PatternsViewTableScene } from './PatternsViewTableScene';
 import { config } from '@grafana/runtime';
+import { PatternsViewTextSearch } from './PatternsViewTextSearch';
 
 const palette = config.theme2.visualization.palette;
 
@@ -36,6 +37,9 @@ export interface PatternsBreakdownSceneState extends SceneObjectState {
   error?: string;
   blockingMessage?: string;
   legendSyncPatterns: Set<string>;
+  patternFrames?: PatternFrame[];
+  //@todo define in child, and update patternFrames? Or do we need a copy of both filtered/unfiltered in this class state?
+  filteredPatterns?: string[];
 }
 
 export type PatternFrame = {
@@ -63,7 +67,9 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
 
   // parent render
   public static Component = ({ model }: SceneComponentProps<PatternsBreakdownScene>) => {
-    const { body, loading, blockingMessage } = model.useState();
+    const { body, loading, blockingMessage, filteredPatterns } = model.useState();
+
+    console.log('parent render', filteredPatterns);
     const logsByServiceScene = sceneGraph.getAncestor(model, ServiceScene);
     const { patterns } = logsByServiceScene.useState();
     const styles = useStyles2(getStyles);
@@ -137,6 +143,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     const logExploration = sceneGraph.getAncestor(this, IndexScene);
 
     this.setState({
+      patternFrames,
       body: this.getSingleViewLayout(patternFrames, logExploration),
       loading: false,
     });
@@ -222,8 +229,10 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
 
     return new SceneCSSGridLayout({
       templateColumns: '100%',
+      autoRows: 'auto',
 
       children: [
+        new PatternsViewTextSearch({}),
         new SceneFlexItem({
           minHeight: 200,
           maxWidth: '100%',
