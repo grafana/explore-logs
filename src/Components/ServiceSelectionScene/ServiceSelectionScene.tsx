@@ -195,7 +195,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
           new SceneCSSGridLayout({
             children,
             isLazy: true,
-            templateColumns: 'repeat(auto-fit, minmax(500px, 1fr) minmax(300px, 70%))',
+            templateColumns: 'repeat(auto-fit, minmax(500px, 1fr) minmax(300px, 70vw))',
             autoRows: '200px',
             md: {
               templateColumns: '1fr',
