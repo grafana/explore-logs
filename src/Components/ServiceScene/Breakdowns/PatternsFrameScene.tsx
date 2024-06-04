@@ -19,6 +19,7 @@ import { onPatternClick } from './FilterByPatternsButton';
 import { IndexScene } from '../../IndexScene/IndexScene';
 import { PatternsViewTableScene } from './PatternsViewTableScene';
 import { config } from '@grafana/runtime';
+import { css } from '@emotion/css';
 
 const palette = config.theme2.visualization.palette;
 
@@ -54,7 +55,11 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
     const { body, loading } = model.useState();
     const logsByServiceScene = sceneGraph.getAncestor(model, ServiceScene);
     const { patterns } = logsByServiceScene.useState();
-    return <>{!loading && patterns && patterns.length > 0 && <>{body && <body.Component model={body} />}</>}</>;
+    return (
+      <div className={styles.container}>
+        {!loading && patterns && patterns.length > 0 && <>{body && <body.Component model={body} />}</>}
+      </div>
+    );
   };
 
   private onActivate() {
@@ -74,8 +79,6 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
     if (!lokiPatterns) {
       return;
     }
-
-    console.log('udpateBody');
 
     const logExploration = sceneGraph.getAncestor(this, IndexScene);
 
@@ -188,3 +191,9 @@ export function overrideToFixedColor(key: keyof typeof palette): FieldColor {
     fixedColor: palette[key] as string,
   };
 }
+
+const styles = {
+  container: css({
+    width: '100%',
+  }),
+};
