@@ -1,7 +1,6 @@
-import { css } from '@emotion/css';
 import React from 'react';
 
-import { ConfigOverrideRule, DataFrame, FieldColor, GrafanaTheme2, LoadingState } from '@grafana/data';
+import { ConfigOverrideRule, DataFrame, FieldColor, LoadingState } from '@grafana/data';
 import {
   PanelBuilders,
   SceneComponentProps,
@@ -14,7 +13,7 @@ import {
   SceneObjectState,
   VizPanel,
 } from '@grafana/scenes';
-import { LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode, useStyles2 } from '@grafana/ui';
+import { LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode } from '@grafana/ui';
 import { ServiceScene } from '../ServiceScene';
 import { onPatternClick } from './FilterByPatternsButton';
 import { IndexScene } from '../../IndexScene/IndexScene';
@@ -55,12 +54,7 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
     const { body, loading } = model.useState();
     const logsByServiceScene = sceneGraph.getAncestor(model, ServiceScene);
     const { patterns } = logsByServiceScene.useState();
-    const styles = useStyles2(getStyles);
-    return (
-      <div className={styles.container}>
-        {!loading && patterns && patterns.length > 0 && <>{body && <body.Component model={body} />}</>}
-      </div>
-    );
+    return <>{!loading && patterns && patterns.length > 0 && <>{body && <body.Component model={body} />}</>}</>;
   };
 
   private onActivate() {
@@ -186,13 +180,6 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
       ],
     });
   }
-}
-
-function getStyles(theme: GrafanaTheme2) {
-  return {
-    content: css({}),
-    container: css({}),
-  };
 }
 
 export function overrideToFixedColor(key: keyof typeof palette): FieldColor {
