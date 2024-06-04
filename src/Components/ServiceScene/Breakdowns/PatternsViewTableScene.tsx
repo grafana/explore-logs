@@ -193,6 +193,7 @@ const vizStyles = {
   }),
   tableTimeSeriesWrap: css({
     width: '230px',
+    pointerEvents: 'none',
   }),
   tableTimeSeries: css({
     height: '30px',
