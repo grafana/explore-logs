@@ -50,7 +50,7 @@ export class LineFilter extends SceneObjectBase<LineFilterState> {
 
   updateVariable = debounce((search: string) => {
     const variable = this.getVariable();
-    variable.changeValueTo(`|= \`${search}\``);
+    variable.changeValueTo(`|~ \`(?i)${search}\``);
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.search_string_in_logs_changed,
