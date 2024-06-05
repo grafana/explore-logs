@@ -20,9 +20,9 @@ import {
   SceneVariableSet,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import { Button, DrawStyle, Field, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
+import { Alert, Button, DrawStyle, Field, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { DetectedLabelsResponse, getLabelValueScene } from 'services/fields';
+import { DetectedLabel, DetectedLabelsResponse, getLabelValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { PLUGIN_ID } from 'services/routing';
@@ -39,7 +39,7 @@ export interface LabelBreakdownSceneState extends SceneObjectState {
   labels: Array<SelectableValue<string>>;
   value?: string;
   loading?: boolean;
-  error?: string;
+  error?: boolean;
   blockingMessage?: string;
 }
 
@@ -104,22 +104,30 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
 
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
+    let detectedLabels: DetectedLabel[] | undefined = undefined;
 
-    const { detectedLabels } = await ds.getResource<DetectedLabelsResponse>(
-      'detected_labels',
-      {
-        query: filters.state.filterExpression,
-        start: timeRange.from.utc().toISOString(),
-        end: timeRange.to.utc().toISOString(),
-      },
-      {
-        headers: {
-          'X-Query-Tags': `Source=${PLUGIN_ID}`,
+    try {
+      const response = await ds.getResource<DetectedLabelsResponse>(
+        'detected_labels',
+        {
+          query: filters.state.filterExpression,
+          start: timeRange.from.utc().toISOString(),
+          end: timeRange.to.utc().toISOString(),
         },
-      }
-    );
+        {
+          headers: {
+            'X-Query-Tags': `Source=${PLUGIN_ID}`,
+          },
+        }
+      );
+      detectedLabels = response?.detectedLabels;
+    } catch (error) {
+      console.error(error);
+      this.setState({ loading: false, error: true });
+    }
 
     if (!detectedLabels || !Array.isArray(detectedLabels)) {
+      this.setState({ loading: false, error: true });
       return;
     }
 
@@ -134,6 +142,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       value: String(variable.state.value),
       labels: options, // this now includes "all"
       blockingMessage: undefined,
+      error: false,
     };
 
     stateUpdate.body = variable.hasAllValue() ? buildLabelsLayout(options) : buildLabelValuesLayout(variable);
@@ -161,7 +170,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   };
 
   public static Component = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
-    const { labels, body, loading, value, blockingMessage } = model.useState();
+    const { labels, body, loading, value, blockingMessage, error } = model.useState();
     const styles = useStyles2(getStyles);
 
     return (
@@ -174,6 +183,11 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
                   <FieldSelector options={labels} value={value} onChange={model.onChange} />
                 </Field>
               </div>
+            )}
+            {error && (
+              <Alert title="">
+                The labels are not available at this moment. Try using a different time range or check again later.
+              </Alert>
             )}
             {body instanceof LayoutSwitcher && (
               <div className={styles.controlsRight}>
