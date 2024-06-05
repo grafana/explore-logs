@@ -145,7 +145,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
     }
 
     try {
-      const serviceSearch = service ? `.+${service}.+` : '.+';
+      const serviceSearch = service ? `(?i).*${service}.*` : '.+';
       const volumeResponse = await ds.getResource!(
         'index/volume',
         {
