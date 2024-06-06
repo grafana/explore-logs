@@ -61,6 +61,8 @@ jobs:
         run: yarn server:ci
       - name: Install Playwright Browsers
         run: npx playwright install chromium --with-deps
+      - name: Wait for docker
+        run: sleep 60
       - name: Run e2e tests
         id: run-tests
         run: yarn e2e
