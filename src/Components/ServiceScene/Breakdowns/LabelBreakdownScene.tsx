@@ -185,7 +185,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
               </div>
             )}
             {error && (
-              <Alert title="">
+              <Alert title="" severity="warning">
                 The labels are not available at this moment. Try using a different time range or check again later.
               </Alert>
             )}
