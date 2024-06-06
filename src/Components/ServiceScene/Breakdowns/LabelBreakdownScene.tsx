@@ -20,7 +20,7 @@ import {
   SceneVariableSet,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import { Alert, Button, DrawStyle, Field, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
+import { Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { DetectedLabel, DetectedLabelsResponse, getLabelValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
@@ -30,7 +30,6 @@ import { getLabelOptions, getLokiDatasource } from 'services/scenes';
 import { ALL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR, VAR_FILTERS, VAR_LABEL_GROUP_BY } from 'services/variables';
 import { AddToFiltersButton } from './AddToFiltersButton';
 import { ByFrameRepeater } from './ByFrameRepeater';
-import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
 
@@ -170,31 +169,18 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   };
 
   public static Component = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
-    const { labels, body, loading, value, blockingMessage, error } = model.useState();
+    const { body, loading, blockingMessage, error } = model.useState();
     const styles = useStyles2(getStyles);
 
     return (
       <div className={styles.container}>
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
-          <div className={styles.controls}>
-            {!loading && labels.length > 0 && (
-              <div className={styles.controlsLeft}>
-                <Field label="By label">
-                  <FieldSelector options={labels} value={value} onChange={model.onChange} />
-                </Field>
-              </div>
-            )}
-            {error && (
-              <Alert title="" severity="warning">
-                The labels are not available at this moment. Try using a different time range or check again later.
-              </Alert>
-            )}
-            {body instanceof LayoutSwitcher && (
-              <div className={styles.controlsRight}>
-                <body.Selector model={body} />
-              </div>
-            )}
-          </div>
+          <div className={styles.controls}>{body instanceof LayoutSwitcher && <body.Selector model={body} />}</div>
+          {error && (
+            <Alert title="" severity="warning">
+              The labels are not available at this moment. Try using a different time range or check again later.
+            </Alert>
+          )}
           <div className={styles.content}>{body && <body.Component model={body} />}</div>
         </StatusWrapper>
       </div>
@@ -218,20 +204,8 @@ function getStyles(theme: GrafanaTheme2) {
     controls: css({
       flexGrow: 0,
       display: 'flex',
-      alignItems: 'top',
+      justifyContent: 'end',
       gap: theme.spacing(2),
-    }),
-    controlsRight: css({
-      flexGrow: 0,
-      display: 'flex',
-      justifyContent: 'flex-end',
-    }),
-    controlsLeft: css({
-      display: 'flex',
-      justifyContent: 'flex-left',
-      justifyItems: 'left',
-      width: '100%',
-      flexDirection: 'column',
     }),
   };
 }

@@ -19,7 +19,7 @@ import {
   SceneVariableSet,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import { Button, DrawStyle, Field, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
+import { Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getLabelValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
@@ -29,7 +29,6 @@ import { ALL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR, VAR_FIELD_GROUP_BY, VAR_F
 import { ServiceScene } from '../ServiceScene';
 import { AddToFiltersButton } from './AddToFiltersButton';
 import { ByFrameRepeater } from './ByFrameRepeater';
-import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
 
@@ -224,26 +223,13 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   };
 
   public static Component = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
-    const { fields, body, loading, value, blockingMessage } = model.useState();
+    const { body, loading, blockingMessage } = model.useState();
     const styles = useStyles2(getStyles);
 
     return (
       <div className={styles.container}>
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
-          <div className={styles.controls}>
-            {!loading && fields.length > 0 && (
-              <div className={styles.controlsLeft}>
-                <Field label="By field">
-                  <FieldSelector options={fields} value={value} onChange={model.onChange} />
-                </Field>
-              </div>
-            )}
-            {body instanceof LayoutSwitcher && (
-              <div className={styles.controlsRight}>
-                <body.Selector model={body} />
-              </div>
-            )}
-          </div>
+          <div className={styles.controls}>{body instanceof LayoutSwitcher && <body.Selector model={body} />}</div>
           <div className={styles.content}>{body && <body.Component model={body} />}</div>
         </StatusWrapper>
       </div>
@@ -267,20 +253,8 @@ function getStyles(theme: GrafanaTheme2) {
     controls: css({
       flexGrow: 0,
       display: 'flex',
-      alignItems: 'top',
+      justifyContent: 'end',
       gap: theme.spacing(2),
-    }),
-    controlsRight: css({
-      flexGrow: 0,
-      display: 'flex',
-      justifyContent: 'flex-end',
-    }),
-    controlsLeft: css({
-      display: 'flex',
-      justifyContent: 'flex-left',
-      justifyItems: 'left',
-      width: '100%',
-      flexDirection: 'column',
     }),
   };
 }
