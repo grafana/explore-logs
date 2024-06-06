@@ -9,6 +9,7 @@ import {
   SceneCSSGridLayout,
   SceneDataNode,
   SceneFlexItem,
+  SceneFlexLayout,
   sceneGraph,
   SceneObject,
   SceneObjectBase,
@@ -332,8 +333,12 @@ function getStyles(theme: GrafanaTheme2) {
 }
 
 export function buildPatternsScene() {
-  return new SceneFlexItem({
-    body: new PatternsBreakdownScene({}),
+  return new SceneFlexLayout({
+    children: [
+      new SceneFlexItem({
+        body: new PatternsBreakdownScene({}),
+      }),
+    ],
   });
 }
 
