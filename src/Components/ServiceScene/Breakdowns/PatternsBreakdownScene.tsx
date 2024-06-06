@@ -226,8 +226,6 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       autoRows: '200px',
       children: [
         new SceneFlexItem({
-          height: 200,
-          maxWidth: '100%',
           body: timeSeries,
         }),
         new PatternsViewTableScene({
