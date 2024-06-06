@@ -133,6 +133,8 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
         placement: 'right',
         width: 200,
       })
+      .setHoverHeader(true)
+      .setUnit('short')
       .setLinks([
         {
           url: '#',
@@ -167,7 +169,8 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
 
     return new SceneCSSGridLayout({
       templateColumns: '100%',
-      templateRows: 'auto',
+      // templateRows: 'auto',
+      autoRows: '200px',
 
       children: [
         new SceneFlexItem({
@@ -194,5 +197,9 @@ export function overrideToFixedColor(key: keyof typeof palette): FieldColor {
 const styles = {
   container: css({
     width: '100%',
+    // Hide header on hover hack
+    '.show-on-hover': {
+      display: 'none',
+    },
   }),
 };

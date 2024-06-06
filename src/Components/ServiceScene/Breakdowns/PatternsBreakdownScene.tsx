@@ -163,21 +163,13 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
               name: 'time',
               type: FieldType.time,
               values: timeValues,
-              config: {
-                custom: {
-                  axisPlacement: 'hidden',
-                },
-              },
+              config: {},
             },
             {
               name: pat.pattern,
               type: FieldType.number,
               values: sampleValues,
-              config: {
-                custom: {
-                  axisPlacement: 'hidden',
-                },
-              },
+              config: {},
             },
           ],
           length: pat.samples.length,

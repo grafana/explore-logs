@@ -10,9 +10,9 @@ import { PatternFrame } from './PatternsBreakdownScene';
 import React from 'react';
 import { AppliedPattern, IndexScene } from '../../IndexScene/IndexScene';
 import { DataFrame, LoadingState, PanelData } from '@grafana/data';
-import { Column, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
+import { AxisPlacement, Column, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
 import { CellProps } from 'react-table';
-import { css } from '@emotion/css';
+import { css, cx } from '@emotion/css';
 import { onPatternClick } from './FilterByPatternsButton';
 import { FilterButton } from '../../FilterButton';
 import { config } from '@grafana/runtime';
@@ -75,6 +75,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
               legend: true,
               tooltip: true,
             })
+            .setCustomFieldConfig('axisPlacement', AxisPlacement.Hidden)
             .setDisplayMode('transparent')
             .build();
 
@@ -88,12 +89,22 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
         },
       },
       {
-        id: 'percent',
+        id: 'count',
         header: 'Count',
         sortType: 'number',
         cell: (props) => (
-          <div className={vizStyles.countText}>
-            {props.cell.row.original.sum.toLocaleString()} ({((100 * props.cell.row.original.sum) / total).toFixed(0)}%)
+          <div className={vizStyles.countTextWrap}>
+            <div>{props.cell.row.original.sum.toLocaleString()}</div>
+          </div>
+        ),
+      },
+      {
+        id: 'percent',
+        header: '%',
+        sortType: 'number',
+        cell: (props) => (
+          <div className={vizStyles.countTextWrap}>
+            <div>{((100 * props.cell.row.original.sum) / total).toFixed(0)}%</div>
           </div>
         ),
       },
@@ -101,7 +112,11 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
         id: 'pattern',
         header: 'Pattern',
         cell: (props: CellProps<WithCustomCellData>) => {
-          return <div className={getTablePatternTextStyles()}>{props.cell.row.original.pattern}</div>;
+          return (
+            <div className={cx(getTablePatternTextStyles(), vizStyles.tablePatternTextDefault)}>
+              {props.cell.row.original.pattern}
+            </div>
+          );
         },
       },
       {
@@ -179,10 +194,19 @@ const getTablePatternTextStyles = () => {
     overflowWrap: 'break-word',
   });
 };
-
 const vizStyles = {
-  countText: css({
+  tablePatternTextDefault: css({
+    fontFamily: theme.typography.fontFamilyMonospace,
+    minWidth: '200px',
+    maxWidth: '100%',
+    overflow: 'hidden',
+    overflowWrap: 'break-word',
+    fontSize: theme.typography.bodySmall.fontSize,
+    wordBreak: 'break-word',
+  }),
+  countTextWrap: css({
     textAlign: 'right',
+    fontSize: theme.typography.bodySmall.fontSize,
   }),
   tableTimeSeriesWrap: css({
     width: '230px',
@@ -206,10 +230,6 @@ const vizStyles = {
   tableTimeSeries: css({
     height: '30px',
     overflow: 'hidden',
-    // Hide header on hover hack
-    '.show-on-hover': {
-      display: 'none',
-    },
   }),
 };
 
