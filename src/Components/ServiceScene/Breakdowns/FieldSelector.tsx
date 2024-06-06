@@ -57,7 +57,7 @@ export function FieldSelector({ options, value, onChange, label }: Props) {
 function getStyles(theme: GrafanaTheme2) {
   return {
     select: css({
-      maxWidth: theme.spacing(16),
+      maxWidth: theme.spacing(64),
     }),
   };
 }
