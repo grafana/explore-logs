@@ -340,8 +340,8 @@ function createListOfServicesToQuery(services: string[], ds: string, searchStrin
   }
 
   const servicesToQuery = services.filter((service) => service.toLowerCase().includes(searchString.toLowerCase()));
-  const favoriteServicesToQuery = getFavoriteServicesFromStorage(ds).filter((service) =>
-    service.toLowerCase().includes(searchString.toLowerCase())
+  const favoriteServicesToQuery = getFavoriteServicesFromStorage(ds).filter(
+    (service) => service.toLowerCase().includes(searchString.toLowerCase()) && servicesToQuery.includes(service)
   );
 
   // Deduplicate
