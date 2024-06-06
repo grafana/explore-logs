@@ -35,6 +35,7 @@ import { buildLokiQuery } from 'services/query';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
+import { NoVolumeError } from './NoVolumeError';
 
 export const SERVICE_NAME = 'service_name';
 
@@ -49,6 +50,8 @@ interface ServiceSelectionComponentState extends SceneObjectState {
   searchServicesString: string;
   // List of services to be shown in the body
   servicesToQuery?: string[];
+  // in case the volume api errors out
+  volumeApiError?: boolean;
 }
 
 export class StartingPointSelectedEvent extends BusEventBase {
@@ -114,6 +117,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
         this.setState({
           servicesToQuery,
         });
+        this.getServicesByVolume(newState.searchServicesString);
       }
 
       // When servicesToQuery is changed, update the body and render the panels with the new services
@@ -130,7 +134,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
   }
 
   // Run to fetch services by volume
-  private async getServicesByVolume() {
+  private async getServicesByVolume(service?: string) {
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     this.setState({
       isServicesByVolumeLoading: true,
@@ -141,10 +145,11 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
     }
 
     try {
+      const serviceSearch = service ? `(?i).*${service}.*` : '.+';
       const volumeResponse = await ds.getResource!(
         'index/volume',
         {
-          query: `{${SERVICE_NAME}=~".+"}`,
+          query: `{${SERVICE_NAME}=~"${serviceSearch}"}`,
           from: timeRange.from.utc().toISOString(),
           to: timeRange.to.utc().toISOString(),
         },
@@ -166,12 +171,14 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
         .map(([serviceName]) => serviceName); // Extract service names
 
       this.setState({
+        volumeApiError: false,
         servicesByVolume,
         isServicesByVolumeLoading: false,
       });
     } catch (error) {
       console.log(`Failed to fetch top services:`, error);
       this.setState({
+        volumeApiError: true,
         servicesByVolume: [],
         isServicesByVolumeLoading: false,
       });
@@ -279,7 +286,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
 
   public static Component = ({ model }: SceneComponentProps<ServiceSelectionComponent>) => {
     const styles = useStyles2(getStyles);
-    const { isServicesByVolumeLoading, servicesByVolume, servicesToQuery, body } = model.useState();
+    const { isServicesByVolumeLoading, servicesByVolume, servicesToQuery, body, volumeApiError } = model.useState();
 
     // searchQuery is used to keep track of the search query in input field
     const [searchQuery, setSearchQuery] = useState('');
@@ -310,7 +317,8 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
             />
           </Field>
           {/** If we don't have any servicesByVolume, volume endpoint is probably not enabled */}
-          {!isServicesByVolumeLoading && !servicesByVolume?.length && <ConfigureVolumeError />}
+          {!isServicesByVolumeLoading && volumeApiError && <ConfigureVolumeError />}
+          {!isServicesByVolumeLoading && !volumeApiError && !servicesByVolume?.length && <NoVolumeError />}
           {!isServicesByVolumeLoading && servicesToQuery && servicesToQuery.length > 0 && (
             <div className={styles.body}>
               <body.Component model={body} />
