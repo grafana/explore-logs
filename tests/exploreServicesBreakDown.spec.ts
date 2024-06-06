@@ -95,14 +95,14 @@ test.describe('explore services breakdown page', () => {
     await secondExcludeButton.click();
 
     // Both exclude patterns should be visible
-    await expect(page.getByText('Pattern', { exact: true })).not.toBeVisible();
+    await expect(page.getByText('Included patterns', { exact: true })).not.toBeVisible();
     await expect(page.getByText('Excluded patterns:', { exact: true })).toBeVisible();
 
     // Back to patterns to include a pattern instead
     await page.getByLabel('Tab Patterns').click();
 
     await firstIncludeButton.click();
-    await expect(page.getByText('Pattern', { exact: true })).toBeVisible();
+    await expect(page.getByText('Included patterns', { exact: true })).toBeVisible();
     await expect(page.getByText('Excluded patterns:', { exact: true })).not.toBeVisible();
   });
 

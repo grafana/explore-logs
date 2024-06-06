@@ -34,7 +34,7 @@ export const PatternControls = ({ patterns, onRemove }: Props) => {
       {includePatterns.length > 0 && (
         <div className={styles.patternsContainer}>
           <Text variant="bodySmall" weight="bold">
-            {excludePatterns.length > 0 ? 'Include pattern' : `Pattern${patterns.length > 1 ? 's' : ''}`}
+            Included pattern{patterns.length > 1 ? 's' : ''}
           </Text>
           <div className={styles.patterns}>
             {includePatterns.map((p) => (
