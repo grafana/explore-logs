@@ -188,15 +188,20 @@ const vizStyles = {
     width: '230px',
     pointerEvents: 'none',
   }),
-  tableWrapWrap: css({
-    width: '100%',
-    overflowX: 'hidden',
-    // Need to define explicit height for overflowX
-    height: 'calc(100vh - 580px)',
-    minHeight: '470px',
-  }),
   tableWrap: css({
-    // width: '100%',
+    // Override interactive table style
+    '> div': {
+      // Need to define explicit height for overflowX
+      height: 'calc(100vh - 450px)',
+      minHeight: '470px',
+    },
+    // Make table headers sticky
+    th: {
+      top: 0,
+      position: 'sticky',
+      backgroundColor: theme.colors.background.canvas,
+      zIndex: theme.zIndex.navbarFixed,
+    },
   }),
   tableTimeSeries: css({
     height: '30px',
