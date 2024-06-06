@@ -36,6 +36,8 @@ export function onPatternClick(props: FilterByPatternsState) {
     excludePatternsLength: excludePatternsLength + (type === 'exclude' ? 1 : 0),
   });
 
+  console.log('filteredPatterns', filteredPatterns);
+
   // If we have type undo, then we don't need to add the pattern
   if (type === 'undo') {
     indexScene.setState({

@@ -188,6 +188,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
         placement: 'right',
         width: 200,
       })
+      .setUnit('short')
       .setLinks([
         {
           url: '#',
@@ -222,10 +223,10 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
 
     return new SceneCSSGridLayout({
       templateColumns: '100%',
-
+      autoRows: '200px',
       children: [
         new SceneFlexItem({
-          minHeight: 200,
+          height: 200,
           maxWidth: '100%',
           body: timeSeries,
         }),
@@ -268,21 +269,13 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
               name: 'time',
               type: FieldType.time,
               values: timeValues,
-              config: {
-                custom: {
-                  axisPlacement: 'hidden',
-                },
-              },
+              config: {},
             },
             {
               name: pat.pattern,
               type: FieldType.number,
               values: sampleValues,
-              config: {
-                custom: {
-                  axisPlacement: 'hidden',
-                },
-              },
+              config: {},
             },
           ],
           length: pat.samples.length,
