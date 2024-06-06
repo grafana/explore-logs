@@ -96,7 +96,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
         sortType: 'number',
         cell: (props) => (
           <div className={vizStyles.countTextWrap}>
-            <div className={vizStyles.countText}>{props.cell.row.original.sum.toLocaleString()}</div>
+            <div>{props.cell.row.original.sum.toLocaleString()}</div>
           </div>
         ),
       },
@@ -106,7 +106,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
         sortType: 'number',
         cell: (props) => (
           <div className={vizStyles.countTextWrap}>
-            <div className={vizStyles.countPercent}>{((100 * props.cell.row.original.sum) / total).toFixed(0)}%</div>
+            <div>{((100 * props.cell.row.original.sum) / total).toFixed(0)}%</div>
           </div>
         ),
       },
@@ -191,6 +191,7 @@ const theme = config.theme2;
 const getTablePatternTextStyles = (width: number) => {
   if (width > 0) {
     return css({
+      // the widths of the other columns is mostly static, and they take up about 525px, this will get cleaned up in #392
       width: `calc(${width}px - 525px)`,
     });
   }
@@ -204,13 +205,11 @@ const vizStyles = {
     maxWidth: '100%',
     overflow: 'hidden',
     overflowWrap: 'break-word',
-    fontSize: '12px',
+    fontSize: theme.typography.bodySmall.fontSize,
   }),
-  countPercent: css({}),
-  countText: css({}),
   countTextWrap: css({
     textAlign: 'right',
-    fontSize: '12px',
+    fontSize: theme.typography.bodySmall.fontSize,
   }),
   tableTimeSeriesWrap: css({
     width: '230px',
