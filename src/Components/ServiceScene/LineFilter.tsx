@@ -24,7 +24,7 @@ export class LineFilter extends SceneObjectBase<LineFilterState> {
     if (!lineFilterValue) {
       return;
     }
-    const matches = lineFilterValue.toString().match(/`(.+)`/);
+    const matches = lineFilterValue.toString().match(/`\(\?i\)(.+)`/);
     if (!matches || matches.length !== 2) {
       return;
     }
