@@ -27,7 +27,7 @@ import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { PLUGIN_ID } from 'services/routing';
 import { getLabelOptions, getLokiDatasource } from 'services/scenes';
-import { ALL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR, VAR_FILTERS, VAR_LABEL_GROUP_BY } from 'services/variables';
+import { LOG_STREAM_SELECTOR_EXPR, VAR_FILTERS, VAR_LABEL_GROUP_BY } from 'services/variables';
 import { AddToFiltersButton } from './AddToFiltersButton';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { LayoutSwitcher } from './LayoutSwitcher';
@@ -90,7 +90,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
 
   private onReferencedVariableValueChanged() {
     const variable = this.getVariable();
-    variable.changeValueTo(ALL_VARIABLE_VALUE);
+    variable.changeValueTo('');
     this.updateBody(variable);
   }
 
@@ -215,7 +215,7 @@ function buildLabelsLayout(options: Array<SelectableValue<string>>) {
 
   for (const option of options) {
     const { value: optionValue } = option;
-    if (optionValue === ALL_VARIABLE_VALUE || !optionValue) {
+    if (!optionValue) {
       continue;
     }
 

@@ -25,7 +25,7 @@ import { getLabelValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { getUniqueFilters } from 'services/scenes';
-import { ALL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR, VAR_FIELD_GROUP_BY, VAR_FILTERS } from 'services/variables';
+import { LOG_STREAM_SELECTOR_EXPR, VAR_FIELD_GROUP_BY, VAR_FILTERS } from 'services/variables';
 import { ServiceScene } from '../ServiceScene';
 import { AddToFiltersButton } from './AddToFiltersButton';
 import { ByFrameRepeater } from './ByFrameRepeater';
@@ -94,7 +94,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
     this.setState({
       fields: [
-        { label: 'All', value: ALL_VARIABLE_VALUE },
         ...getUniqueFilters(logsScene, logsScene.state.detectedFields || []).map((f) => ({
           label: f,
           value: f,
@@ -116,7 +115,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   private onReferencedVariableValueChanged() {
     const variable = this.getVariable();
-    variable.changeValueTo(ALL_VARIABLE_VALUE);
+    variable.changeValueTo('');
     this.updateBody(variable);
   }
 
@@ -125,7 +124,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     const fields = this.state.fields.filter((f) => f.value !== field);
     this.setState({ fields });
 
-    this.state.changeFields?.(fields.filter((f) => f.value !== ALL_VARIABLE_VALUE).map((f) => f.value!));
+    this.state.changeFields?.(fields.map((f) => f.value!));
   }
 
   private async updateBody(variable: CustomVariable) {
@@ -142,10 +141,9 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   private buildAllLayout(options: Array<SelectableValue<string>>) {
     const children: SceneFlexItemLike[] = [];
-
     for (const option of options) {
       const { value: optionValue } = option;
-      if (optionValue === ALL_VARIABLE_VALUE || !optionValue) {
+      if (!optionValue) {
         continue;
       }
 

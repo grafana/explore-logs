@@ -176,7 +176,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
         isServicesByVolumeLoading: false,
       });
     } catch (error) {
-      console.log(`Failed to fetch top services:`, error);
+      console.error(`Failed to fetch top services:`, error);
       this.setState({
         volumeApiError: true,
         servicesByVolume: [],

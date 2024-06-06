@@ -16,5 +16,4 @@ export const VAR_LINE_FILTER_EXPR = '${lineFilter}';
 export const LOG_STREAM_SELECTOR_EXPR = `${VAR_FILTERS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_FIELDS_EXPR} ${VAR_LINE_FILTER_EXPR}`;
 export const explorationDS = { uid: VAR_DATASOURCE_EXPR };
 
-export const ALL_VARIABLE_VALUE = '$__all';
 export const LEVEL_VARIABLE_VALUE = 'detected_level';

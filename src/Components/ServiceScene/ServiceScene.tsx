@@ -28,7 +28,6 @@ import { buildLokiQuery } from 'services/query';
 import { EXPLORATIONS_ROUTE, PLUGIN_ID } from 'services/routing';
 import { getExplorationFor, getLokiDatasource, getUniqueFilters } from 'services/scenes';
 import {
-  ALL_VARIABLE_VALUE,
   LEVEL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE,
@@ -234,7 +233,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
     const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
-    const excludeLabels = [ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE];
+    const excludeLabels = [LEVEL_VARIABLE_VALUE];
 
     const { data } = await ds.getResource(
       'patterns',
@@ -369,10 +368,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
         case 'patterns':
           return serviceScene.state.patterns?.length;
         case 'labels':
-          return getUniqueFilters(
-            serviceScene,
-            serviceScene.state.labels?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []
-          ).length;
+          return getUniqueFilters(serviceScene, serviceScene.state.labels ?? []).length;
         default:
           return undefined;
       }
