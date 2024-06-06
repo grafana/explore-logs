@@ -10,7 +10,7 @@ import { PatternFrame, PatternsBreakdownScene } from './PatternsBreakdownScene';
 import React, { RefCallback } from 'react';
 import { AppliedPattern, IndexScene } from '../../IndexScene/IndexScene';
 import { DataFrame, LoadingState, PanelData } from '@grafana/data';
-import { Column, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
+import { AxisPlacement, Column, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
 import { CellProps } from 'react-table';
 import { css } from '@emotion/css';
 import { onPatternClick } from './FilterByPatternsButton';
@@ -77,6 +77,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
               legend: true,
               tooltip: true,
             })
+            .setCustomFieldConfig('axisPlacement', AxisPlacement.Hidden)
             .setDisplayMode('transparent')
             .build();
 
