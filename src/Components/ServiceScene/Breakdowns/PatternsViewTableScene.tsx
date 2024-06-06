@@ -12,7 +12,7 @@ import { AppliedPattern, IndexScene } from '../../IndexScene/IndexScene';
 import { DataFrame, LoadingState, PanelData } from '@grafana/data';
 import { AxisPlacement, Column, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
 import { CellProps } from 'react-table';
-import { css } from '@emotion/css';
+import { css, cx } from '@emotion/css';
 import { onPatternClick } from './FilterByPatternsButton';
 import { FilterButton } from '../../FilterButton';
 import { config } from '@grafana/runtime';
@@ -91,12 +91,22 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
         },
       },
       {
-        id: 'percent',
+        id: 'count',
         header: 'Count',
         sortType: 'number',
         cell: (props) => (
-          <div className={vizStyles.countText}>
-            {props.cell.row.original.sum.toLocaleString()} ({((100 * props.cell.row.original.sum) / total).toFixed(0)}%)
+          <div className={vizStyles.countTextWrap}>
+            <div>{props.cell.row.original.sum.toLocaleString()}</div>
+          </div>
+        ),
+      },
+      {
+        id: 'percent',
+        header: '%',
+        sortType: 'number',
+        cell: (props) => (
+          <div className={vizStyles.countTextWrap}>
+            <div>{((100 * props.cell.row.original.sum) / total).toFixed(0)}%</div>
           </div>
         ),
       },
@@ -104,7 +114,11 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
         id: 'pattern',
         header: 'Pattern',
         cell: (props: CellProps<WithCustomCellData>) => {
-          return <div className={getTablePatternTextStyles(containerWidth)}>{props.cell.row.original.pattern}</div>;
+          return (
+            <div className={cx(getTablePatternTextStyles(containerWidth), vizStyles.tablePatternTextDefault)}>
+              {props.cell.row.original.pattern}
+            </div>
+          );
         },
       },
       {
@@ -177,25 +191,25 @@ const theme = config.theme2;
 const getTablePatternTextStyles = (width: number) => {
   if (width > 0) {
     return css({
-      minWidth: '200px',
-      width: `calc(${width}px - 485px)`,
-      maxWidth: '100%',
-      fontFamily: theme.typography.fontFamilyMonospace,
-      overflow: 'hidden',
-      overflowWrap: 'break-word',
+      // the widths of the other columns is mostly static, and they take up about 525px, this will get cleaned up in #392
+      width: `calc(${width}px - 525px)`,
     });
   }
-  return css({
-    minWidth: '200px',
-    fontFamily: theme.typography.fontFamilyMonospace,
-    overflow: 'hidden',
-    overflowWrap: 'break-word',
-  });
+  return null;
 };
 
 const vizStyles = {
-  countText: css({
+  tablePatternTextDefault: css({
+    fontFamily: theme.typography.fontFamilyMonospace,
+    minWidth: '200px',
+    maxWidth: '100%',
+    overflow: 'hidden',
+    overflowWrap: 'break-word',
+    fontSize: theme.typography.bodySmall.fontSize,
+  }),
+  countTextWrap: css({
     textAlign: 'right',
+    fontSize: theme.typography.bodySmall.fontSize,
   }),
   tableTimeSeriesWrap: css({
     width: '230px',
