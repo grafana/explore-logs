@@ -20,7 +20,7 @@ import {
   SceneVariableSet,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import { Alert, Button, DrawStyle, Field, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
+import { Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { DetectedLabel, DetectedLabelsResponse, getLabelValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
@@ -177,24 +177,16 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       <div className={styles.container}>
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
           <div className={styles.controls}>
-            {!loading && labels.length > 0 && (
-              <div className={styles.controlsLeft}>
-                <Field label="By label">
-                  <FieldSelector options={labels} value={value} onChange={model.onChange} />
-                </Field>
-              </div>
-            )}
-            {error && (
-              <Alert title="" severity="warning">
-                The labels are not available at this moment. Try using a different time range or check again later.
-              </Alert>
-            )}
-            {body instanceof LayoutSwitcher && (
-              <div className={styles.controlsRight}>
-                <body.Selector model={body} />
-              </div>
+            {body instanceof LayoutSwitcher && <body.Selector model={body} />}
+            {!loading && value !== ALL_VARIABLE_VALUE && (
+              <FieldSelector label="Label" options={labels} value={value} onChange={model.onChange} />
             )}
           </div>
+          {error && (
+            <Alert title="" severity="warning">
+              The labels are not available at this moment. Try using a different time range or check again later.
+            </Alert>
+          )}
           <div className={styles.content}>{body && <body.Component model={body} />}</div>
         </StatusWrapper>
       </div>
@@ -219,19 +211,9 @@ function getStyles(theme: GrafanaTheme2) {
       flexGrow: 0,
       display: 'flex',
       alignItems: 'top',
+      justifyContent: 'space-between',
+      flexDirection: 'row-reverse',
       gap: theme.spacing(2),
-    }),
-    controlsRight: css({
-      flexGrow: 0,
-      display: 'flex',
-      justifyContent: 'flex-end',
-    }),
-    controlsLeft: css({
-      display: 'flex',
-      justifyContent: 'flex-left',
-      justifyItems: 'left',
-      width: '100%',
-      flexDirection: 'column',
     }),
   };
 }
