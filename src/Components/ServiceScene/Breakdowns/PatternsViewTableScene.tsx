@@ -91,12 +91,21 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
         },
       },
       {
-        id: 'percent',
+        id: 'count',
         header: 'Count',
         sortType: 'number',
         cell: (props) => (
           <div className={vizStyles.countTextWrap}>
             <div className={vizStyles.countText}>{props.cell.row.original.sum.toLocaleString()}</div>
+          </div>
+        ),
+      },
+      {
+        id: 'percent',
+        header: '%',
+        sortType: 'number',
+        cell: (props) => (
+          <div className={vizStyles.countTextWrap}>
             <div className={vizStyles.countPercent}>{((100 * props.cell.row.original.sum) / total).toFixed(0)}%</div>
           </div>
         ),
@@ -182,7 +191,7 @@ const theme = config.theme2;
 const getTablePatternTextStyles = (width: number) => {
   if (width > 0) {
     return css({
-      width: `calc(${width}px - 485px)`,
+      width: `calc(${width}px - 525px)`,
     });
   }
   return null;
@@ -197,12 +206,8 @@ const vizStyles = {
     overflowWrap: 'break-word',
     fontSize: '12px',
   }),
-  countPercent: css({
-    fontStyle: 'italic',
-  }),
-  countText: css({
-    fontWeight: 'bold',
-  }),
+  countPercent: css({}),
+  countText: css({}),
   countTextWrap: css({
     textAlign: 'right',
     fontSize: '12px',
