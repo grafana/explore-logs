@@ -5,6 +5,7 @@ import {
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
+  SceneVariables,
 } from '@grafana/scenes';
 import { PatternFrame } from './PatternsBreakdownScene';
 import React from 'react';
@@ -18,6 +19,10 @@ import { FilterButton } from '../../FilterButton';
 import { config } from '@grafana/runtime';
 import { testIds } from '../../../services/testIds';
 import { PatternsFrameScene } from './PatternsFrameScene';
+import { PatternsLogsSampleScene } from './PatternsLogsSampleScene';
+import { getExplorationFor } from '../../../services/scenes';
+
+// import {InteractiveTable} from "../../InteractiveTable/InteractiveTable";
 
 export interface SingleViewTableSceneState extends SceneObjectState {
   patternFrames: PatternFrame[];
@@ -36,9 +41,7 @@ interface WithCustomCellData {
 
 export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableSceneState> {
   constructor(state: SingleViewTableSceneState) {
-    super({
-      ...state,
-    });
+    super(state);
   }
 
   public static Component = PatternTableViewSceneComponent;
@@ -182,6 +185,21 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
         };
       });
   }
+
+  public getViz(pattern: string) {
+    const index = getExplorationFor(this);
+    const variables: SceneVariables = sceneGraph.getVariables(index);
+    console.log('variables', variables);
+
+    return new PatternsLogsSampleScene({
+      pattern: pattern,
+      // queryRunner: queryRunner,
+      // @todo why does cloning break the query?
+      // @todo why does not cloning work, but breaks everything else?
+      // $variables: variables
+      $variables: variables,
+    });
+  }
 }
 
 const theme = config.theme2;
@@ -211,6 +229,9 @@ const vizStyles = {
   tableTimeSeriesWrap: css({
     width: '230px',
     pointerEvents: 'none',
+  }),
+  link: css({
+    textDecoration: 'underline',
   }),
   tableWrap: css({
     // Override interactive table style
@@ -248,9 +269,22 @@ export function PatternTableViewSceneComponent({ model }: SceneComponentProps<Pa
   const tableData = model.buildTableData(patternFrames, legendSyncPatterns);
   const columns = model.buildColumns(total, appliedPatterns);
 
+  // const IndexScene = sceneGraph.getAncestor()
+  // You cannot interpolate variables within a scene renderer!
+  // You cannot instantiate scene classes within a renderer
+
   return (
     <div data-testid={testIds.patterns.tableWrapper} className={vizStyles.tableWrap}>
-      <InteractiveTable columns={columns} data={tableData} getRowId={(r: WithCustomCellData) => r.pattern} />
+      {/*<expandedRow.Component model={expandedRow}/>*/}
+      <InteractiveTable
+        columns={columns}
+        data={tableData}
+        getRowId={(r: WithCustomCellData) => r.pattern}
+        renderExpandedRow={(row) => {
+          const expandedRow = model.getViz(row.pattern);
+          return <expandedRow.Component model={expandedRow} />;
+        }}
+      />
     </div>
   );
 }
