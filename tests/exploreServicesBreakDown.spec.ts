@@ -40,7 +40,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
   });
 
-  test('should select an include pattern field in default single view, update filters, open log panel', async ({
+  test('should select an include pattern field in default single view, update filters, not open log panel', async ({
     page,
   }) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
@@ -52,8 +52,9 @@ test.describe('explore services breakdown page', () => {
       .getByRole('row').nth(2)
       .getByTestId(testIds.exploreServiceDetails.buttonFilterInclude);
     await firstIncludeButton.click();
-    // Should see the logs panel full of patterns
-    await expect(page.getByTestId(testIds.exploreServiceDetails.searchLogs)).toBeVisible();
+    // Should not open logs panel and should stay in patterns tab as we allow multiple  patterns
+    await expect(page.getByTestId(testIds.exploreServiceDetails.searchLogs)).not.toBeVisible();
+    await expect(page.getByTestId(testIds.patterns.tableWrapper)).toBeVisible();
     // Pattern filter should be added
     await expect(page.getByTestId(testIds.patterns.buttonIncludedPattern)).toBeVisible();
   });
@@ -77,11 +78,6 @@ test.describe('explore services breakdown page', () => {
 
     // Include pattern
     await firstExcludeButton.click();
-    // Should see the logs panel full of patterns
-    await expect(page.getByTestId(testIds.exploreServiceDetails.searchLogs)).toBeVisible();
-
-    // Exclude another pattern
-    await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
 
     // Both buttons should be visible
     await expect(firstIncludeButton).toBeVisible();
@@ -98,8 +94,6 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId(testIds.patterns.buttonIncludedPattern)).not.toBeVisible();
     await expect(page.getByTestId(testIds.patterns.buttonExcludedPattern)).toBeVisible();
 
-    // Back to patterns to include a pattern instead
-    await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
 
     await firstIncludeButton.click();
     // Include and exclude patterns should be visible
@@ -126,11 +120,7 @@ test.describe('explore services breakdown page', () => {
 
     // Include pattern
     await firstIncludeButton.click();
-    // Should see the logs panel full of patterns
-    await expect(page.getByTestId(testIds.exploreServiceDetails.searchLogs)).toBeVisible();
 
-    // Include another pattern
-    await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
 
     // Both buttons should be visible
     await expect(firstIncludeButton).toBeVisible();

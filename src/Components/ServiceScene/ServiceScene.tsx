@@ -182,7 +182,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
     this.updatePatterns();
     this.updateLabels();
-    locationService.partial({ actionView: 'logs' });
+    // For patterns, we don't want to reload to logs as we allow users to select multiple patterns
+    if (variable.state.name !== VAR_PATTERNS) {
+      locationService.partial({ actionView: 'logs' });
+    }
   }
 
   private getLogsFormatVariable() {
