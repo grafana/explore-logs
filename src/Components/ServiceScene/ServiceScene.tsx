@@ -403,10 +403,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
         case 'patterns':
           return serviceScene.state.patterns?.length;
         case 'labels':
-          return getUniqueFilters(
-            serviceScene,
-            serviceScene.state.labels?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []
-          ).length;
+          return getUniqueFilters(serviceScene, serviceScene.state.labels ?? []).length;
         default:
           return undefined;
       }
