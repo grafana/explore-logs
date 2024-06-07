@@ -49,9 +49,6 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
 
   public static Component = ({ model }: SceneComponentProps<LogsVolumePanel>) => {
     const { panel } = model.useState();
-
-    console.log('render panel');
-
     if (!panel) {
       return;
     }

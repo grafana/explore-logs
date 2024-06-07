@@ -72,8 +72,6 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
 export function buildLogsListScene() {
   return new SceneFlexLayout({
     direction: 'column',
-
-    // ySizing: '',
     children: [
       new SceneFlexItem({
         minHeight: 200,
