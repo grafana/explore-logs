@@ -19,6 +19,9 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
   }
 
   private onActivate() {
+    // @todo why is this an orphan, how do I manually set a parent?
+    console.log('this.parent', this.parent);
+    console.log('this.parent.parent', this.parent?.parent);
     if (!this.state.body) {
       const query = buildLokiQuery(LOG_STREAM_SELECTOR_EXPR);
       console.log('query', query);
