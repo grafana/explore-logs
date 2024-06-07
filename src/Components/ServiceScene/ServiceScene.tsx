@@ -68,6 +68,8 @@ export interface ServiceSceneState extends SceneObjectState {
   patterns?: LokiPattern[];
 
   detectedFieldsCount?: number;
+
+  loading?: boolean;
 }
 
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
@@ -81,6 +83,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     super({
       body: state.body ?? buildGraphScene(),
       $data: getQueryRunner(buildLokiQuery(LOG_STREAM_SELECTOR_EXPR)),
+      loading: true,
       ...state,
     });
 
@@ -142,15 +145,15 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       this.setActionView('logs');
     }
 
-    const unsubs: Unsubscribable[] = [];
-
     this.setEmptyFiltersRedirection();
 
-    const dataUnsub = this.state.$data?.subscribeToState(() => {
-      this.updateFields();
-    });
-    if (dataUnsub) {
-      unsubs.push(dataUnsub);
+    const unsubs: Unsubscribable[] = [];
+    if (this.state.$data) {
+      unsubs.push(
+        this.state.$data?.subscribeToState(() => {
+          this.updateFields();
+        })
+      );
     }
 
     this.updateLabels();
@@ -215,13 +218,24 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         if (JSON.stringify(detectedFields) !== JSON.stringify(this.state.detectedFields)) {
           this.setState({
             detectedFields,
+            loading: false,
           });
         }
         const newType = res.type ? ` | ${res.type}` : '';
         if (variable.getValue() !== newType) {
           variable.changeValueTo(newType);
         }
+      } else {
+        this.setState({
+          detectedFields: [],
+          loading: false,
+        });
       }
+    } else if (newState.data?.state === LoadingState.Error) {
+      this.setState({
+        detectedFields: [],
+        loading: false,
+      });
     }
   }
 
