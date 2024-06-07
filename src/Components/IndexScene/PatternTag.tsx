@@ -2,6 +2,7 @@ import { css } from '@emotion/css';
 import { Button, Icon, Tag, useStyles2 } from '@grafana/ui';
 import { GrafanaTheme2 } from '@grafana/data';
 import React, { useState } from 'react';
+import { testIds } from 'services/testIds';
 
 interface Props {
   onRemove(): void;
@@ -24,6 +25,7 @@ export const PatternTag = ({ onRemove, pattern, size = 'lg' }: Props) => {
       />
       <Button
         aria-label="Remove pattern"
+        data-testid={testIds.exploreServiceDetails.buttonRemovePattern}
         variant="secondary"
         size="sm"
         className={styles.removeButton}
