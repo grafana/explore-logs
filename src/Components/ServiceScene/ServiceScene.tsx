@@ -177,10 +177,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
     this.updatePatterns();
     this.updateLabels();
-    if (variable.state.name === VAR_PATTERNS) {
-    } else {
-      locationService.partial({ actionView: 'logs' });
-    }
+    locationService.partial({ actionView: 'logs' });
   }
 
   private getLogsFormatVariable() {

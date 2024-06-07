@@ -55,7 +55,7 @@ test.describe('explore services breakdown page', () => {
     // Should see the logs panel full of patterns
     await expect(page.getByTestId('data-testid search-logs')).toBeVisible();
     // Pattern filter should be added
-    await expect(page.getByText('Pattern', { exact: true })).toBeVisible();
+    await expect(page.getByText('Included pattern', { exact: true })).toBeVisible();
   });
 
   test('Should add multiple exclude patterns, which are replaced by include pattern', async ({ page }) => {
@@ -104,6 +104,43 @@ test.describe('explore services breakdown page', () => {
     await firstIncludeButton.click();
     await expect(page.getByText('Included patterns', { exact: true })).toBeVisible();
     await expect(page.getByText('Excluded patterns:', { exact: true })).not.toBeVisible();
+  });
+
+  test('Should add multiple include patterns', async ({ page }) => {
+    await page.getByLabel('Tab Patterns').click();
+
+    const firstIncludeButton = page
+      .getByTestId(testIds.patterns.tableWrapper)
+      .getByRole('table')
+      .getByRole('row').nth(2)
+      .getByText('Include');
+    const secondIncludeButton = page
+      .getByTestId(testIds.patterns.tableWrapper)
+      .getByRole('table')
+      .getByRole('row').nth(3)
+      .getByText('Include');
+
+    await expect(firstIncludeButton).toBeVisible();
+    await expect(secondIncludeButton).toBeVisible();
+
+    // Include pattern
+    await firstIncludeButton.click();
+    // Should see the logs panel full of patterns
+    await expect(page.getByTestId('data-testid search-logs')).toBeVisible();
+
+    // Include another pattern
+    await page.getByLabel('Tab Patterns').click();
+
+    // Both buttons should be visible
+    await expect(firstIncludeButton).toBeVisible();
+    await expect(secondIncludeButton).toBeVisible();
+
+    await secondIncludeButton.click();
+
+    // Both include patterns should be visible
+    await expect(page.getByText('Included patterns', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('Remove pattern').nth(0)).toBeVisible();
+    await expect(page.getByLabel('Remove pattern').nth(1)).toBeVisible();
   });
 
   test('should update a filter and run new logs', async ({ page }) => {
