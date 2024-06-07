@@ -3,7 +3,17 @@ import { useResizeObserver } from '@react-aria/utils';
 import React, { useEffect, useRef, useState } from 'react';
 
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
-import { Select, RadioButtonGroup, useStyles2, useTheme2, measureText, InlineField } from '@grafana/ui';
+import {
+  Select,
+  RadioButtonGroup,
+  useStyles2,
+  useTheme2,
+  measureText,
+  InlineField,
+  Stack,
+  IconButton,
+} from '@grafana/ui';
+import { ALL_VARIABLE_VALUE } from 'services/variables';
 
 type Props = {
   options: Array<SelectableValue<string>>;
@@ -46,9 +56,21 @@ export function FieldSelector({ options, value, onChange, label }: Props) {
       {useHorizontalLabelSelector ? (
         <RadioButtonGroup {...{ options, value, onChange }} />
       ) : (
-        <InlineField label={label}>
-          <Select {...{ options, value }} onChange={(selected) => onChange(selected.value)} className={styles.select} />
-        </InlineField>
+        <Stack>
+          <InlineField label={label}>
+            <Select
+              {...{ options, value }}
+              onChange={(selected) => onChange(selected.value)}
+              className={styles.select}
+            />
+          </InlineField>
+          <IconButton
+            variant="secondary"
+            name="times"
+            aria-label="See all"
+            onClick={() => onChange(ALL_VARIABLE_VALUE)}
+          />
+        </Stack>
       )}
     </div>
   );
