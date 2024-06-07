@@ -28,7 +28,7 @@ describe('PatternControls', () => {
   test('Displays the applied pattern', () => {
     render(<PatternControls patterns={[{ pattern: patterns[0], type: 'include' }]} onRemove={jest.fn()} />);
 
-    expect(screen.getByText('Pattern')).toBeInTheDocument();
+    expect(screen.getByText('Included pattern')).toBeInTheDocument();
     expect(screen.getByText(patterns[0])).toBeInTheDocument();
   });
 
