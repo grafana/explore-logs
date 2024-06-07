@@ -43,6 +43,7 @@ import { buildLabelBreakdownActionScene } from './Breakdowns/LabelBreakdownScene
 import { buildPatternsScene } from './Breakdowns/PatternsBreakdownScene';
 import { GoToExploreButton } from './GoToExploreButton';
 import { buildLogsListScene } from './LogsListScene';
+import { testIds } from 'services/testIds';
 
 export interface LokiPattern {
   pattern: string;
@@ -54,6 +55,7 @@ export type ActionViewType = 'logs' | 'labels' | 'patterns' | 'fields';
 interface ActionViewDefinition {
   displayName: string;
   value: ActionViewType;
+  testId: string;
   getScene: (changeFields: (f: string[]) => void) => SceneObject;
 }
 
@@ -358,10 +360,25 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 }
 
 const actionViewsDefinitions: ActionViewDefinition[] = [
-  { displayName: 'Logs', value: 'logs', getScene: buildLogsListScene },
-  { displayName: 'Labels', value: 'labels', getScene: buildLabelBreakdownActionScene },
-  { displayName: 'Detected fields', value: 'fields', getScene: buildFieldsBreakdownActionScene },
-  { displayName: 'Patterns', value: 'patterns', getScene: buildPatternsScene },
+  { displayName: 'Logs', value: 'logs', getScene: buildLogsListScene, testId: testIds.exploreServiceDetails.tabLogs },
+  {
+    displayName: 'Labels',
+    value: 'labels',
+    getScene: buildLabelBreakdownActionScene,
+    testId: testIds.exploreServiceDetails.tabLabels,
+  },
+  {
+    displayName: 'Detected fields',
+    value: 'fields',
+    getScene: buildFieldsBreakdownActionScene,
+    testId: testIds.exploreServiceDetails.tabDetectedFields,
+  },
+  {
+    displayName: 'Patterns',
+    value: 'patterns',
+    getScene: buildPatternsScene,
+    testId: testIds.exploreServiceDetails.tabPatterns,
+  },
 ];
 
 export interface LogsActionBarState extends SceneObjectState {}
@@ -404,6 +421,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
           {actionViewsDefinitions.map((tab, index) => {
             return (
               <Tab
+                data-testid={tab.testId}
                 key={index}
                 label={tab.displayName}
                 active={actionView === tab.value}

@@ -68,7 +68,7 @@ function LineFilterRenderer({ model }: SceneComponentProps<LineFilter>) {
   return (
     <Field className={styles.field}>
       <Input
-        data-testid={testIds.exploreServiceBreakdown.search}
+        data-testid={testIds.exploreServiceDetails.searchLogs}
         value={lineFilter}
         className={styles.input}
         onChange={model.handleChange}

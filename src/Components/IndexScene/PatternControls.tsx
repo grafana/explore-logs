@@ -5,6 +5,7 @@ import { PatternTag } from './PatternTag';
 import { css } from '@emotion/css';
 import { useStyles2, Text } from '@grafana/ui';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
+import { testIds } from 'services/testIds';
 
 type Props = {
   patterns: AppliedPattern[] | undefined;
@@ -33,7 +34,7 @@ export const PatternControls = ({ patterns, onRemove }: Props) => {
     <div>
       {includePatterns.length > 0 && (
         <div className={styles.patternsContainer}>
-          <Text variant="bodySmall" weight="bold">
+          <Text variant="bodySmall" weight="bold" data-testid={testIds.patterns.buttonIncludedPattern}>
             Included pattern{patterns.length > 1 ? 's' : ''}
           </Text>
           <div className={styles.patterns}>
@@ -45,7 +46,7 @@ export const PatternControls = ({ patterns, onRemove }: Props) => {
       )}
       {excludePatterns.length > 0 && (
         <div className={styles.patternsContainer}>
-          <Text variant="bodySmall" weight="bold">
+          <Text variant="bodySmall" weight="bold" data-testid={testIds.patterns.buttonExcludedPattern}>
             Excluded pattern{excludePatterns.length > 1 ? 's' : ''}:
           </Text>
           <div className={styles.patterns}>

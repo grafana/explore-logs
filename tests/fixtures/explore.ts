@@ -13,9 +13,9 @@ export class ExplorePage {
   constructor(public readonly page: Page) {
     this.firstServicePageSelect = this.page.getByText('Select').first();
     this.logVolumeGraph = this.page.getByText('Log volume');
-    this.servicesSearch = this.page.getByTestId(testIds.exploreService.search);
-    this.serviceBreakdownSearch = this.page.getByTestId(testIds.exploreServiceBreakdown.search);
-    this.serviceBreakdownOpenExplore = this.page.getByTestId(testIds.exploreServiceBreakdown.openExplore);
+    this.servicesSearch = this.page.getByTestId(testIds.exploreServiceSearch.search);
+    this.serviceBreakdownSearch = this.page.getByTestId(testIds.exploreServiceDetails.searchLogs);
+    this.serviceBreakdownOpenExplore = this.page.getByTestId(testIds.exploreServiceDetails.openExplore);
   }
 
   async gotoServices() {

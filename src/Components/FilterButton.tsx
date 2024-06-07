@@ -2,6 +2,7 @@ import { css } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
 import { Button, useStyles2 } from '@grafana/ui';
 import React from 'react';
+import { testIds } from 'services/testIds';
 
 type Props = {
   onInclude: () => void;
@@ -22,6 +23,7 @@ export const FilterButton = (props: Props) => {
         size="sm"
         className={styles.includeButton}
         onClick={isIncluded ? onReset : onInclude}
+        data-testid={testIds.exploreServiceDetails.buttonFilterInclude}
       >
         Include
       </Button>
@@ -31,6 +33,7 @@ export const FilterButton = (props: Props) => {
         size="sm"
         className={styles.excludeButton}
         onClick={isExcluded ? onReset : onExclude}
+        data-testid={testIds.exploreServiceDetails.buttonFilterExclude}
       >
         Exclude
       </Button>
