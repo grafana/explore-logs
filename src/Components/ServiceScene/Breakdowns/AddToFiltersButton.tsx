@@ -47,7 +47,7 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
         },
       ];
     }
-    // Only add the unique filters
+
     variable.setState({
       filters,
       hide: VariableHide.hideLabel,
