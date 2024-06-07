@@ -28,7 +28,6 @@ import { buildLokiQuery } from 'services/query';
 import { PLUGIN_ID } from 'services/routing';
 import { getLabelOptions, getLokiDatasource } from 'services/scenes';
 import { ALL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR, VAR_FILTERS, VAR_LABEL_GROUP_BY } from 'services/variables';
-import { AddToFiltersButton } from './AddToFiltersButton';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
@@ -392,7 +391,7 @@ export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
     getBreakdownSceneFor(this).onChange(this.state.labelName);
   };
 
-  public static Component = ({ model }: SceneComponentProps<AddToFiltersButton>) => {
+  public static Component = ({ model }: SceneComponentProps<SelectLabelAction>) => {
     return (
       <Button variant="secondary" size="sm" onClick={model.onClick}>
         Select
