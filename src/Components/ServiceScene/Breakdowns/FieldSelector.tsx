@@ -1,18 +1,8 @@
 import { css } from '@emotion/css';
-import { useResizeObserver } from '@react-aria/utils';
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
 
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
-import {
-  Select,
-  RadioButtonGroup,
-  useStyles2,
-  useTheme2,
-  measureText,
-  InlineField,
-  Stack,
-  IconButton,
-} from '@grafana/ui';
+import { Select, useStyles2, InlineField, Stack, IconButton } from '@grafana/ui';
 import { ALL_VARIABLE_VALUE } from 'services/variables';
 
 type Props = {
@@ -24,54 +14,19 @@ type Props = {
 
 export function FieldSelector({ options, value, onChange, label }: Props) {
   const styles = useStyles2(getStyles);
-  const theme = useTheme2();
-
-  const [labelSelectorRequiredWidth, setLabelSelectorRequiredWidth] = useState<number>(0);
-  const [availableWidth, setAvailableWidth] = useState<number>(0);
-
-  const useHorizontalLabelSelector = availableWidth > labelSelectorRequiredWidth;
-
-  const controlsContainer = useRef<HTMLDivElement>(null);
-
-  useResizeObserver({
-    ref: controlsContainer,
-    onResize: () => {
-      const element = controlsContainer.current;
-      if (element) {
-        setAvailableWidth(element.clientWidth);
-      }
-    },
-  });
-
-  useEffect(() => {
-    const { fontSize } = theme.typography;
-    const text = options.map((option) => option.label || option.value || '').join(' ');
-    const textWidth = measureText(text, fontSize).width;
-    const additionalWidthPerItem = 32;
-    setLabelSelectorRequiredWidth(textWidth + additionalWidthPerItem * options.length);
-  }, [options, theme]);
-
   return (
-    <div ref={controlsContainer}>
-      {useHorizontalLabelSelector ? (
-        <RadioButtonGroup {...{ options, value, onChange }} />
-      ) : (
-        <Stack>
-          <InlineField label={label}>
-            <Select
-              {...{ options, value }}
-              onChange={(selected) => onChange(selected.value)}
-              className={styles.select}
-            />
-          </InlineField>
-          <IconButton
-            variant="secondary"
-            name="times"
-            aria-label="See all"
-            onClick={() => onChange(ALL_VARIABLE_VALUE)}
-          />
-        </Stack>
-      )}
+    <div>
+      <Stack>
+        <InlineField label={label}>
+          <Select {...{ options, value }} onChange={(selected) => onChange(selected.value)} className={styles.select} />
+        </InlineField>
+        <IconButton
+          variant="secondary"
+          name="times"
+          aria-label="See all"
+          onClick={() => onChange(ALL_VARIABLE_VALUE)}
+        />
+      </Stack>
     </div>
   );
 }
