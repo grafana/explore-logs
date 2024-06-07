@@ -177,7 +177,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
           <div className={styles.controls}>
             {body instanceof LayoutSwitcher && <body.Selector model={body} />}
-            {!loading && value !== ALL_VARIABLE_VALUE && (
+            {!loading && labels.length > 0 && (
               <FieldSelector label="Label" options={labels} value={value} onChange={model.onChange} />
             )}
           </div>
