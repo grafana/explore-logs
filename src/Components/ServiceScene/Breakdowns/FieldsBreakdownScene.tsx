@@ -94,6 +94,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
     this.setState({
       fields: [
+        { label: 'All', value: ALL_VARIABLE_VALUE },
         ...getUniqueFilters(logsScene, logsScene.state.detectedFields || []).map((f) => ({
           label: f,
           value: f,
@@ -262,7 +263,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
           <div className={styles.controls}>
             {body instanceof LayoutSwitcher && <body.Selector model={body} />}
-            {!loading && value !== ALL_VARIABLE_VALUE && fields.length > 0 && (
+            {!loading && value !== ALL_VARIABLE_VALUE && (
               <FieldSelector label="Field" options={fields} value={value} onChange={model.onChange} />
             )}
           </div>

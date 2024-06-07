@@ -11,6 +11,7 @@ import {
   VAR_DATASOURCE_EXPR,
   LOG_STREAM_SELECTOR_EXPR,
   VAR_FILTERS,
+  ALL_VARIABLE_VALUE,
   LEVEL_VARIABLE_VALUE,
   VAR_FIELDS,
 } from './variables';
@@ -54,7 +55,7 @@ export function getLabelOptions(sceneObject: SceneObject, allOptions: string[]) 
     levelOption.push({ label: LEVEL_VARIABLE_VALUE, value: LEVEL_VARIABLE_VALUE });
   }
 
-  return [...levelOption, ...labelOptions];
+  return [{ label: 'All', value: ALL_VARIABLE_VALUE }, ...levelOption, ...labelOptions];
 }
 
 /**
