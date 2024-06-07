@@ -19,7 +19,7 @@ import {
   SceneVariableSet,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import { Button, DrawStyle, Field, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
+import { Alert, Button, DrawStyle, Field, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getLabelValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
@@ -101,6 +101,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
           value: f,
         })),
       ],
+      loading: logsScene.state.loading,
     });
 
     this.updateBody(variable);
@@ -131,14 +132,45 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   private async updateBody(variable: CustomVariable) {
     const stateUpdate: Partial<FieldsBreakdownSceneState> = {
-      loading: false,
       value: String(variable.state.value),
       blockingMessage: undefined,
     };
 
-    stateUpdate.body = variable.hasAllValue() ? this.buildAllLayout(this.state.fields) : buildNormalLayout(variable);
+    if (this.state.loading === false && this.state.fields.length === 1) {
+      stateUpdate.body = this.buildEmptyLayout();
+    } else {
+      stateUpdate.body = variable.hasAllValue() ? this.buildAllLayout(this.state.fields) : buildNormalLayout(variable);
+    }
 
     this.setState(stateUpdate);
+  }
+
+  private buildEmptyLayout() {
+    return new SceneFlexLayout({
+      direction: 'column',
+      children: [
+        new SceneFlexItem({
+          body: new SceneReactObject({
+            reactNode: (
+              <div>
+                <Alert title="" severity="warning">
+                  No detected fields. Please{' '}
+                  <a
+                    className={emptyStateStyles.link}
+                    href="https://forms.gle/1sYWCTPvD72T1dPH9"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    let us know
+                  </a>{' '}
+                  if you think this is a mistake.
+                </Alert>
+              </div>
+            ),
+          }),
+        }),
+      ],
+    });
   }
 
   private buildAllLayout(options: Array<SelectableValue<string>>) {
@@ -250,6 +282,12 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     );
   };
 }
+
+const emptyStateStyles = {
+  link: css({
+    textDecoration: 'underline',
+  }),
+};
 
 function getStyles(theme: GrafanaTheme2) {
   return {
