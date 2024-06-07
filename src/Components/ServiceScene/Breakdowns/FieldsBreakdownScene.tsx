@@ -263,7 +263,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
           <div className={styles.controls}>
             {body instanceof LayoutSwitcher && <body.Selector model={body} />}
-            {!loading && fields.length > 0 && (
+            {!loading && fields.length > 1 && (
               <FieldSelector label="Field" options={fields} value={value} onChange={model.onChange} />
             )}
           </div>
