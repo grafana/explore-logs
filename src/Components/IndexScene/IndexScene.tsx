@@ -96,8 +96,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
       const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
       if (patternsVariable instanceof CustomVariable) {
-        const patternsLine =
-          newState.patterns?.map((p) => `${p.type === 'include' ? '|> ' : '!> '} \`${p.pattern}\``)?.join(' ') || '';
+        const patternsLine = renderPatternFilters(newState.patterns ?? []);
         patternsVariable.changeValueTo(patternsLine);
       }
     });
@@ -221,4 +220,23 @@ export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
 
 function renderFilter(filter: AdHocVariableFilter) {
   return `${filter.key}${filter.operator}\`${filter.value}\``;
+}
+
+export function renderPatternFilters(patterns: AppliedPattern[]) {
+  const excludePatterns = patterns.filter((pattern) => pattern.type === 'exclude');
+  const excludePatternsLine = excludePatterns
+    .map((p) => `!> \`${p.pattern}\``)
+    .join(' ')
+    .trim();
+
+  const includePatterns = patterns.filter((pattern) => pattern.type === 'include');
+  let includePatternsLine = '';
+  if (includePatterns.length > 0) {
+    if (includePatterns.length === 1) {
+      includePatternsLine = `|> \`${includePatterns[0].pattern}\``;
+    } else {
+      includePatternsLine = `|>  ${includePatterns.map((p) => `\`${p.pattern}\``).join(' or ')}`;
+    }
+  }
+  return `${excludePatternsLine} ${includePatternsLine}`.trim();
 }
