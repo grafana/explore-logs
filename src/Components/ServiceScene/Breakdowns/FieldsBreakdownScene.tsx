@@ -154,7 +154,16 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
             reactNode: (
               <div>
                 <Alert title="" severity="warning">
-                  No detected fields. Please contact us if you think this is a mistake.
+                  No detected fields. Please{' '}
+                  <a
+                    className={emptyStateStyles.link}
+                    href="https://forms.gle/1sYWCTPvD72T1dPH9"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    let us know
+                  </a>{' '}
+                  if you think this is a mistake.
                 </Alert>
               </div>
             ),
@@ -273,6 +282,12 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     );
   };
 }
+
+const emptyStateStyles = {
+  link: css({
+    textDecoration: 'underline',
+  }),
+};
 
 function getStyles(theme: GrafanaTheme2) {
   return {
