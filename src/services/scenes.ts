@@ -51,6 +51,7 @@ export function getLabelOptions(sceneObject: SceneObject, allOptions: string[]) 
   }));
 
   const levelOption = [];
+  // We are adding LEVEL_VARIABLE_VALUE which is structured metadata, but we want to show it as a label
   if (!allOptions.includes(LEVEL_VARIABLE_VALUE)) {
     levelOption.push({ label: LEVEL_VARIABLE_VALUE, value: LEVEL_VARIABLE_VALUE });
   }

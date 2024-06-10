@@ -11,6 +11,7 @@ import {
 import { Button } from '@grafana/ui';
 import { VariableHide } from '@grafana/schema';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
+import { LEVEL_VARIABLE_VALUE, VAR_FIELDS } from 'services/variables';
 
 export interface AddToFiltersButtonState extends SceneObjectState {
   frame: DataFrame;
@@ -19,16 +20,23 @@ export interface AddToFiltersButtonState extends SceneObjectState {
 
 export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState> {
   public onClick = () => {
-    const variable = sceneGraph.lookupVariable(this.state.variableName, this);
-    if (!(variable instanceof AdHocFiltersVariable)) {
-      return;
-    }
-
     const labels = this.state.frame.fields[1]?.labels ?? {};
     if (Object.keys(labels).length !== 1) {
       return;
     }
     const labelName = Object.keys(labels)[0];
+
+    let variableName = this.state.variableName;
+    // If the variable is a level variable, we need to use the VAR_FIELDS variable
+    // as that one is detected field
+    if (labelName === LEVEL_VARIABLE_VALUE) {
+      variableName = VAR_FIELDS;
+    }
+
+    const variable = sceneGraph.lookupVariable(variableName, this);
+    if (!(variable instanceof AdHocFiltersVariable)) {
+      return;
+    }
 
     // Check if the filter is already there
     const isFilterDuplicate = variable.state.filters.some((f) => {
