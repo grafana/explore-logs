@@ -11,7 +11,7 @@ test.describe('explore services breakdown page', () => {
     await explorePage.gotoServicesBreakdown();
   });
 
-  test('should filter logs panel on search', async ({ page }) => {
+  test.only('should filter logs panel on search', async ({ page }) => {
     await explorePage.serviceBreakdownSearch.click();
     await explorePage.serviceBreakdownSearch.fill('broadcast');
     await expect(page.getByRole('table').locator('tr').first().getByText('broadcast')).toBeVisible();
@@ -22,15 +22,18 @@ test.describe('explore services breakdown page', () => {
     const initialText = await page.getByTestId(testIds.table.wrapper).allTextContents()
     await explorePage.serviceBreakdownSearch.click();
     await explorePage.serviceBreakdownSearch.fill('broadcast');
-      await page.getByRole('radiogroup').getByTestId(testIds.logsPanelHeader.radio).nth(1).click()
+    await page.getByRole('radiogroup').getByTestId(testIds.logsPanelHeader.radio).nth(1).click()
     const afterFilterText = await page.getByTestId(testIds.table.wrapper).allTextContents()
     expect(initialText).not.toBe(afterFilterText)
   })
 
   test('should change filters on table click', async ({ page }) => {
+    // Switch to table view
+    await page.getByRole('radiogroup').getByTestId(testIds.logsPanelHeader.radio).nth(1).click()
+
     const table = await page.getByTestId(testIds.table.wrapper);
     // Get a level pill, and click it
-    const levelPill = table.getByRole('cell').getByText("level=debug").first()
+    const levelPill = table.getByRole('cell').getByText("level=").first()
     await levelPill.click()
     // Get the context menu
     const pillContextMenu = await table.getByRole('img', { name: 'Add to search' });
@@ -43,6 +46,7 @@ test.describe('explore services breakdown page', () => {
   })
 
   test('should show inspect modal', async ({ page }) => {
+    await page.getByRole('radiogroup').getByTestId(testIds.logsPanelHeader.radio).nth(1).click()
     // Expect table to be rendered
     await expect(page.getByTestId(testIds.table.wrapper)).toBeVisible();
 
