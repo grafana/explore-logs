@@ -24,9 +24,7 @@ export function onPatternClick(props: FilterByPatternsState) {
   const { patterns = [] } = indexScene.state;
 
   // Remove the pattern if it's already there
-  const filteredPatterns = patterns.filter(
-    (pat) => pat.pattern !== pattern && type !== 'include' && pat.type !== 'include'
-  );
+  const filteredPatterns = patterns.filter((pat) => pat.pattern !== pattern);
   // Analytics
   const includePatternsLength = filteredPatterns.filter((p) => p.type === 'include')?.length ?? 0;
   const excludePatternsLength = filteredPatterns.filter((p) => p.type === 'exclude')?.length ?? 0;

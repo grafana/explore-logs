@@ -43,6 +43,7 @@ import { buildLabelBreakdownActionScene } from './Breakdowns/LabelBreakdownScene
 import { buildPatternsScene } from './Breakdowns/PatternsBreakdownScene';
 import { GoToExploreButton } from './GoToExploreButton';
 import { buildLogsListScene } from './LogsListScene';
+import { testIds } from 'services/testIds';
 import { PageScene } from './PageScene';
 
 export interface LokiPattern {
@@ -55,6 +56,7 @@ export type ActionViewType = 'logs' | 'labels' | 'patterns' | 'fields';
 interface ActionViewDefinition {
   displayName: string;
   value: ActionViewType;
+  testId: string;
   getScene: (changeFields: (f: string[]) => void) => SceneObject;
 }
 
@@ -69,6 +71,8 @@ export interface ServiceSceneState extends SceneObjectState {
   patterns?: LokiPattern[];
 
   detectedFieldsCount?: number;
+
+  loading?: boolean;
 }
 
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
@@ -82,6 +86,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     super({
       body: state.body ?? buildGraphScene(),
       $data: getQueryRunner(buildLokiQuery(LOG_STREAM_SELECTOR_EXPR)),
+      loading: true,
       ...state,
     });
 
@@ -143,15 +148,15 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       this.setActionView('logs');
     }
 
-    const unsubs: Unsubscribable[] = [];
-
     this.setEmptyFiltersRedirection();
 
-    const dataUnsub = this.state.$data?.subscribeToState(() => {
-      this.updateFields();
-    });
-    if (dataUnsub) {
-      unsubs.push(dataUnsub);
+    const unsubs: Unsubscribable[] = [];
+    if (this.state.$data) {
+      unsubs.push(
+        this.state.$data?.subscribeToState(() => {
+          this.updateFields();
+        })
+      );
     }
 
     this.updateLabels();
@@ -178,7 +183,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
     this.updatePatterns();
     this.updateLabels();
-    locationService.partial({ actionView: 'logs' });
+    // For patterns, we don't want to reload to logs as we allow users to select multiple patterns
+    if (variable.state.name !== VAR_PATTERNS) {
+      locationService.partial({ actionView: 'logs' });
+    }
   }
 
   private getLogsFormatVariable() {
@@ -216,13 +224,24 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         if (JSON.stringify(detectedFields) !== JSON.stringify(this.state.detectedFields)) {
           this.setState({
             detectedFields,
+            loading: false,
           });
         }
         const newType = res.type ? ` | ${res.type}` : '';
         if (variable.getValue() !== newType) {
           variable.changeValueTo(newType);
         }
+      } else {
+        this.setState({
+          detectedFields: [],
+          loading: false,
+        });
       }
+    } else if (newState.data?.state === LoadingState.Error) {
+      this.setState({
+        detectedFields: [],
+        loading: false,
+      });
     }
   }
 
@@ -349,21 +368,25 @@ const actionViewsDefinitions: ActionViewDefinition[] = [
     displayName: 'Logs',
     value: 'logs',
     getScene: () => new PageScene({ body: buildLogsListScene(), title: 'Logs' }),
+    testId: testIds.exploreServiceDetails.tabLogs,
   },
   {
     displayName: 'Labels',
     value: 'labels',
     getScene: () => new PageScene({ body: buildLabelBreakdownActionScene(), title: 'Labels' }),
+    testId: testIds.exploreServiceDetails.tabLabels,
   },
   {
     displayName: 'Detected fields',
     value: 'fields',
     getScene: (f) => new PageScene({ body: buildFieldsBreakdownActionScene(f), title: 'Detected fields' }),
+    testId: testIds.exploreServiceDetails.tabDetectedFields,
   },
   {
     displayName: 'Patterns',
     value: 'patterns',
     getScene: () => new PageScene({ body: buildPatternsScene(), title: 'Patterns' }),
+    testId: testIds.exploreServiceDetails.tabPatterns,
   },
 ];
 
@@ -407,6 +430,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
           {actionViewsDefinitions.map((tab, index) => {
             return (
               <Tab
+                data-testid={tab.testId}
                 key={index}
                 label={tab.displayName}
                 active={actionView === tab.value}
