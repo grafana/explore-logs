@@ -28,17 +28,17 @@ interface LogLinePillProps {
 const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
   pill: css({
     flex: '0 1 auto',
-    marginLeft: '5px',
-    marginRight: '5px',
-    padding: '2px 5px',
+    marginLeft: theme.spacing(0.5),
+    marginRight: theme.spacing(0.5),
+    padding: `${theme.spacing(0.25)} ${theme.spacing(0.25)}`,
     position: 'relative',
     display: 'inline-flex',
     flexDirection: 'column',
-    marginTop: '4px',
+    marginTop: theme.spacing(0.5),
   }),
   activePill: css({}),
   valueWrap: css({
-    padding: '0 3px',
+    padding: `0 ${theme.spacing(0.5)}`,
     border: `1px solid ${theme.colors.background.secondary}`,
     boxShadow: `-2px 2px 5px 0px ${theme.colors.background.secondary}`,
     backgroundColor: bgColor ?? 'transparent',
