@@ -19,11 +19,6 @@ export interface PatternsViewTextSearchState extends SceneObjectState {
 
 export class PatternsViewTextSearch extends SceneObjectBase<PatternsViewTextSearchState> {
   public static Component = PatternTextSearchComponent;
-  public handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    this.setState({
-      patternFilter: e.target.value,
-    });
-  };
 
   constructor(state: PatternsViewTextSearchState) {
     super({
@@ -37,6 +32,9 @@ export class PatternsViewTextSearch extends SceneObjectBase<PatternsViewTextSear
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
+  /**
+   * On click callback to clear current text search
+   */
   public clearSearch = () => {
     this.setState({
       patternFilter: undefined,
@@ -44,8 +42,39 @@ export class PatternsViewTextSearch extends SceneObjectBase<PatternsViewTextSear
   };
 
   /**
-   * @todo do we want to set parent filtered frames, or just have one?
-   * Currently uncalled
+   * Search input onchange callback
+   * @param e
+   */
+  public handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
+    this.setState({
+      patternFilter: e.target.value,
+    });
+  };
+
+  /**
+   * Activation handler
+   * @private
+   */
+  private onActivate() {
+    this._subs.add(
+      this.subscribeToState((newState, prevState) => {
+        if (newState.patternFilter !== prevState.patternFilter) {
+          const parent = sceneGraph.getAncestor(this, PatternsBreakdownScene);
+          if (parent.state.patternFrames) {
+            debouncedFuzzySearch(
+              parent.state.patternFrames.map((frame) => frame.pattern),
+              this.state.patternFilter ?? '',
+              this.onSearchResult
+            );
+          }
+        }
+      })
+    );
+  }
+
+  /**
+   * Sets the patterns filtered by string match
+   * @param patterns
    */
   setFilteredPatterns(patterns: string[]) {
     const parent = sceneGraph.getAncestor(this, PatternsBreakdownScene);
@@ -63,39 +92,29 @@ export class PatternsViewTextSearch extends SceneObjectBase<PatternsViewTextSear
     }
   }
 
-  onSearchResult(data: string[][]) {
+  /**
+   * Fuzzy search callback
+   * @param data
+   */
+  onSearchResult = (data: string[][]) => {
     const parent = sceneGraph.getAncestor(this, PatternsBreakdownScene);
     // If we have a search string
     if (this.state.patternFilter) {
       this.setFilteredPatterns(data[0]);
     } else if (parent.state.filteredPatterns && !this.state.patternFilter) {
       // Wipe the parent filtered state
-      this.onEmptySearch();
+      this.setEmptySearch();
     }
-  }
+  };
 
-  onEmptySearch() {
+  /**
+   * Wipes filtered patterns when search string is empty
+   */
+  private setEmptySearch() {
     const parent = sceneGraph.getAncestor(this, PatternsBreakdownScene);
     parent.setState({
       filteredPatterns: undefined,
     });
-  }
-
-  private onActivate() {
-    this._subs.add(
-      this.subscribeToState((newState, prevState) => {
-        if (newState.patternFilter !== prevState.patternFilter) {
-          const parent = sceneGraph.getAncestor(this, PatternsBreakdownScene);
-          if (parent.state.patternFrames) {
-            debouncedFuzzySearch(
-              parent.state.patternFrames.map((frame) => frame.pattern),
-              this.state.patternFilter ?? '',
-              this.onSearchResult.bind(this)
-            );
-          }
-        }
-      })
-    );
   }
 }
 
@@ -118,7 +137,7 @@ export function PatternTextSearchComponent({ model }: SceneComponentProps<Patter
         suffix={<Icon onClick={model.clearSearch} className={styles.icon} name={'x'} />}
         prefix={<Icon name="search" />}
         className={styles.input}
-        onChange={model.handleChange}
+        onChange={model.handleSearchChange}
         placeholder={'Search patterns'}
         value={patternFilter ?? ''}
       />
