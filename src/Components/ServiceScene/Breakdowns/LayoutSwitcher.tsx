@@ -21,7 +21,7 @@ export class LayoutSwitcher extends SceneObjectBase<LayoutSwitcherState> {
     const { active, options } = model.useState();
 
     return (
-      <Field label="View">
+      <Field>
         <RadioButtonGroup options={options} value={active} onChange={model.onLayoutChange} />
       </Field>
     );
