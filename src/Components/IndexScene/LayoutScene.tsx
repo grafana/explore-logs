@@ -98,7 +98,7 @@ function getStyles(theme: GrafanaTheme2) {
         '& > div': {
           // the 'service_name' filter wrapper
           '&:nth-child(2) > div': {
-            gap: 0,
+            gap: theme.spacing(2),
           },
           // The actual inputs container
           '& > div': {
