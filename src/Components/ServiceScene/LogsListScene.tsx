@@ -12,12 +12,12 @@ import {
   SceneTimeRangeLike,
 } from '@grafana/scenes';
 import { LineFilter } from './LineFilter';
-import { AdHocVariableFilter, TimeRange } from '@grafana/data';
 import { SelectedTableRow } from '../Table/LogLineCellComponent';
 import { LogsTableScene } from './LogsTableScene';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 import { LogsVolumePanel } from './LogsVolumePanel';
 import { css } from '@emotion/css';
+import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -26,16 +26,6 @@ export interface LogsListSceneState extends SceneObjectState {
   urlColumns?: string[];
   selectedLine?: SelectedTableRow;
   $timeRange?: SceneTimeRangeLike;
-}
-
-// Values/callbacks passed into react table component from scene
-export interface TablePanelProps {
-  filters: AdHocVariableFilter[];
-  addFilter: (filter: AdHocVariableFilter) => void;
-  selectedLine?: SelectedTableRow;
-  timeRange?: TimeRange;
-  urlColumns?: string[];
-  setUrlColumns: (columns: string[]) => void;
 }
 
 export type LogsVisualizationType = 'logs' | 'table';
@@ -127,6 +117,14 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     this.setState({
       visualizationType: type,
     });
+
+    reportAppInteraction(
+      USER_EVENTS_PAGES.service_details,
+      USER_EVENTS_ACTIONS.service_details.logs_visualization_toggle,
+      {
+        visualisationType: type,
+      }
+    );
     localStorage.setItem(VISUALIZATION_TYPE_LOCALSTORAGE_KEY, type);
   };
 
