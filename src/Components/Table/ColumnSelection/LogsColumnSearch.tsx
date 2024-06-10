@@ -6,8 +6,8 @@ import { Field, Input, useTheme2 } from '@grafana/ui';
 
 import { useTableColumnContext } from 'Components/Table/Context/TableColumnsContext';
 import { FieldNameMetaStore } from 'Components/Table/TableTypes';
-import { debouncedFuzzySearch } from 'Components/Table/uFuzzy/uFuzzy';
 import { reportInteraction } from '@grafana/runtime';
+import { debouncedFuzzySearch } from '../Search/search';
 
 function getStyles(theme: GrafanaTheme2) {
   return {
