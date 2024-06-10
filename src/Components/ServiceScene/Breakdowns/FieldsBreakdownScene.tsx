@@ -402,8 +402,12 @@ function getLabelValue(frame: DataFrame) {
 }
 
 export function buildFieldsBreakdownActionScene(changeFieldNumber: (n: string[]) => void) {
-  return new SceneFlexItem({
-    body: new FieldsBreakdownScene({ changeFields: changeFieldNumber }),
+  return new SceneFlexLayout({
+    children: [
+      new SceneFlexItem({
+        body: new FieldsBreakdownScene({ changeFields: changeFieldNumber }),
+      }),
+    ],
   });
 }
 

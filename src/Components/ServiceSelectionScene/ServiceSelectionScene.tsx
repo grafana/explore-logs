@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import { debounce } from 'lodash';
 import React, { useCallback, useState } from 'react';
-import { BusEventBase, DashboardCursorSync, GrafanaTheme2, TimeRange } from '@grafana/data';
+import { BusEventBase, DashboardCursorSync, GrafanaTheme2, PageLayoutType, TimeRange } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   behaviors,
@@ -36,6 +36,7 @@ import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'se
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
 import { NoVolumeError } from './NoVolumeError';
+import { PluginPage } from '@grafana/runtime';
 
 export const SERVICE_NAME = 'service_name';
 
@@ -298,34 +299,36 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
       [model]
     );
     return (
-      <div className={styles.container}>
-        <div className={styles.bodyWrapper}>
-          <div>
-            {/** When services fetched, show how many services are we showing */}
-            {isServicesByVolumeLoading && (
-              <LoadingPlaceholder text={'Loading services'} className={styles.loadingText} />
-            )}
-            {!isServicesByVolumeLoading && <>Showing {servicesToQuery?.length ?? 0} services</>}
-          </div>
-          <Field className={styles.searchField}>
-            <Input
-              data-testid={testIds.exploreServiceSearch.search}
-              value={searchQuery}
-              prefix={<Icon name="search" />}
-              placeholder="Search services"
-              onChange={onSearchChange}
-            />
-          </Field>
-          {/** If we don't have any servicesByVolume, volume endpoint is probably not enabled */}
-          {!isServicesByVolumeLoading && volumeApiError && <ConfigureVolumeError />}
-          {!isServicesByVolumeLoading && !volumeApiError && !servicesByVolume?.length && <NoVolumeError />}
-          {!isServicesByVolumeLoading && servicesToQuery && servicesToQuery.length > 0 && (
-            <div className={styles.body}>
-              <body.Component model={body} />
+      <PluginPage pageNav={{ text: 'Services' }} layout={PageLayoutType.Custom}>
+        <div className={styles.container}>
+          <div className={styles.bodyWrapper}>
+            <div>
+              {/** When services fetched, show how many services are we showing */}
+              {isServicesByVolumeLoading && (
+                <LoadingPlaceholder text={'Loading services'} className={styles.loadingText} />
+              )}
+              {!isServicesByVolumeLoading && <>Showing {servicesToQuery?.length ?? 0} services</>}
             </div>
-          )}
+            <Field className={styles.searchField}>
+              <Input
+                data-testid={testIds.exploreServiceSearch.search}
+                value={searchQuery}
+                prefix={<Icon name="search" />}
+                placeholder="Search services"
+                onChange={onSearchChange}
+              />
+            </Field>
+            {/** If we don't have any servicesByVolume, volume endpoint is probably not enabled */}
+            {!isServicesByVolumeLoading && volumeApiError && <ConfigureVolumeError />}
+            {!isServicesByVolumeLoading && !volumeApiError && !servicesByVolume?.length && <NoVolumeError />}
+            {!isServicesByVolumeLoading && servicesToQuery && servicesToQuery.length > 0 && (
+              <div className={styles.body}>
+                <body.Component model={body} />
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </PluginPage>
     );
   };
 }
