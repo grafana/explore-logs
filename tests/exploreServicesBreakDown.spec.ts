@@ -19,7 +19,7 @@ test.describe('explore services breakdown page', () => {
 
   test('should select a label, update filters, open in explore', async ({ page }) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
-    await page.getByLabel('detected_level').click();
+    await page.getByLabel('Select detected_level').click();
     await page.getByTestId('data-testid Panel header info').getByRole('button', { name: 'Include' }).click();
     await expect(
       page.getByTestId('data-testid Dashboard template variables submenu Label detected_level')
@@ -142,6 +142,8 @@ test.describe('explore services breakdown page', () => {
     await page.getByTitle('See log details').nth(1).click();
 
     // find text corresponding text to match adhoc filter
-    await expect(page.getByRole('cell', { name: 'Fields Ad-hoc statistics' }).getByText('mimir-distributor').nth(0)).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'Fields Ad-hoc statistics' }).getByText('mimir-distributor').nth(0)
+    ).toBeVisible();
   });
 });
