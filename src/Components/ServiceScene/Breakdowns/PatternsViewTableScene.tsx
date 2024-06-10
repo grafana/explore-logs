@@ -3,9 +3,9 @@ import {
   SceneComponentProps,
   SceneDataNode,
   sceneGraph,
+  SceneObject,
   SceneObjectBase,
   SceneObjectState,
-  SceneVariables,
 } from '@grafana/scenes';
 import { PatternFrame } from './PatternsBreakdownScene';
 import React from 'react';
@@ -19,15 +19,15 @@ import { FilterButton } from '../../FilterButton';
 import { config } from '@grafana/runtime';
 import { testIds } from '../../../services/testIds';
 import { PatternsFrameScene } from './PatternsFrameScene';
-import { PatternsLogsSampleScene } from './PatternsLogsSampleScene';
-import { getExplorationFor } from '../../../services/scenes';
+import { PatternsTableExpandedRow } from './PatternsTableExpandedRow';
 
 export interface SingleViewTableSceneState extends SceneObjectState {
   patternFrames: PatternFrame[];
   appliedPatterns?: AppliedPattern[];
+  expandedRows?: SceneObject[];
 }
 
-interface WithCustomCellData {
+export interface PatternsTableCellData {
   pattern: string;
   dataFrame: DataFrame;
   sum: number;
@@ -52,11 +52,11 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
    */
   public buildColumns(total: number, appliedPatterns?: AppliedPattern[]) {
     const timeRange = sceneGraph.getTimeRange(this).state.value;
-    const columns: Array<Column<WithCustomCellData>> = [
+    const columns: Array<Column<PatternsTableCellData>> = [
       {
         id: 'volume-samples',
         header: '',
-        cell: (props: CellProps<WithCustomCellData>) => {
+        cell: (props: CellProps<PatternsTableCellData>) => {
           const panelData: PanelData = {
             timeRange: timeRange,
             series: [props.cell.row.original.dataFrame],
@@ -112,7 +112,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
       {
         id: 'pattern',
         header: 'Pattern',
-        cell: (props: CellProps<WithCustomCellData>) => {
+        cell: (props: CellProps<PatternsTableCellData>) => {
           return (
             <div className={cx(getTablePatternTextStyles(), vizStyles.tablePatternTextDefault)}>
               {props.cell.row.original.pattern}
@@ -124,7 +124,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
         id: 'include',
         header: undefined,
         disableGrow: true,
-        cell: (props: CellProps<WithCustomCellData>) => {
+        cell: (props: CellProps<PatternsTableCellData>) => {
           const existingPattern = appliedPatterns?.find(
             (appliedPattern) => appliedPattern.pattern === props.cell.row.original.pattern
           );
@@ -151,7 +151,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
    * @param legendSyncPatterns
    * @private
    */
-  public buildTableData(patternFrames: PatternFrame[], legendSyncPatterns: Set<string>): WithCustomCellData[] {
+  public buildTableData(patternFrames: PatternFrame[], legendSyncPatterns: Set<string>): PatternsTableCellData[] {
     const logExploration = sceneGraph.getAncestor(this, IndexScene);
     return patternFrames
       .filter((patternFrame) => {
@@ -182,22 +182,6 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
             }),
         };
       });
-  }
-
-  public getViz(pattern: string) {
-    const index = getExplorationFor(this);
-    const variables: SceneVariables = sceneGraph.getVariables(index);
-    console.log('variables', variables);
-
-    return new PatternsLogsSampleScene({
-      pattern: pattern,
-      // @todo why does cloning break the query?
-      // @todo why does not cloning work, but breaks everything else?
-      // If we don't clone, we get the scenes parent mismatch warning, but then this panel that we render interpolates variables in the query runner correctly, but other variables all over the app are broken
-      $variables: variables,
-      // If we do clone, we don't get the scenes warning, but this panel doesn't interpolate variables as expected
-      // $variables: variables.clone(),
-    });
   }
 }
 
@@ -268,18 +252,13 @@ export function PatternTableViewSceneComponent({ model }: SceneComponentProps<Pa
   const tableData = model.buildTableData(patternFrames, legendSyncPatterns);
   const columns = model.buildColumns(total, appliedPatterns);
 
-  // You cannot instantiate scene classes within a renderer
-  // Then how are we going to get a scenes viz that needs to interpolate variables within a react callback? Is this not currently supported by scenes?
   return (
     <div data-testid={testIds.patterns.tableWrapper} className={vizStyles.tableWrap}>
       <InteractiveTable
         columns={columns}
         data={tableData}
-        getRowId={(r: WithCustomCellData) => r.pattern}
-        renderExpandedRow={(row) => {
-          const expandedRow = model.getViz(row.pattern);
-          return <expandedRow.Component model={expandedRow} />;
-        }}
+        getRowId={(r: PatternsTableCellData) => r.pattern}
+        renderExpandedRow={(row) => <PatternsTableExpandedRow tableViz={model} row={row} />}
       />
     </div>
   );
