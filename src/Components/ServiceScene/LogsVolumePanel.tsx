@@ -14,10 +14,10 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
   constructor(state: LogsVolumePanelState) {
     super(state);
 
-    this.addActivationHandler(this._onActivate.bind(this));
+    this.addActivationHandler(this.onActivate.bind(this));
   }
 
-  private _onActivate() {
+  private onActivate() {
     if (!this.state.panel) {
       this.setState({
         panel: this.getVizPanel(),
@@ -49,7 +49,6 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
 
   public static Component = ({ model }: SceneComponentProps<LogsVolumePanel>) => {
     const { panel } = model.useState();
-
     if (!panel) {
       return;
     }

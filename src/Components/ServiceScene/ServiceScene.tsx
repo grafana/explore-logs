@@ -1,11 +1,10 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DashboardCursorSync, GrafanaTheme2, LoadingState } from '@grafana/data';
+import { GrafanaTheme2, LoadingState } from '@grafana/data';
 import { locationService } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
-  behaviors,
   CustomVariable,
   SceneComponentProps,
   SceneFlexItem,
@@ -42,11 +41,10 @@ import {
 import { buildFieldsBreakdownActionScene } from './Breakdowns/FieldsBreakdownScene';
 import { buildLabelBreakdownActionScene } from './Breakdowns/LabelBreakdownScene';
 import { buildPatternsScene } from './Breakdowns/PatternsBreakdownScene';
-import { GiveFeedbackButton } from './GiveFeedbackButton';
 import { GoToExploreButton } from './GoToExploreButton';
 import { buildLogsListScene } from './LogsListScene';
-import { LogsVolumePanel } from './LogsVolumePanel';
-import { ShareExplorationButton } from './ShareExplorationButton';
+import { testIds } from 'services/testIds';
+import { PageScene } from './PageScene';
 
 export interface LokiPattern {
   pattern: string;
@@ -58,6 +56,7 @@ export type ActionViewType = 'logs' | 'labels' | 'patterns' | 'fields';
 interface ActionViewDefinition {
   displayName: string;
   value: ActionViewType;
+  testId: string;
   getScene: (changeFields: (f: string[]) => void) => SceneObject;
 }
 
@@ -72,6 +71,8 @@ export interface ServiceSceneState extends SceneObjectState {
   patterns?: LokiPattern[];
 
   detectedFieldsCount?: number;
+
+  loading?: boolean;
 }
 
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
@@ -85,10 +86,11 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     super({
       body: state.body ?? buildGraphScene(),
       $data: getQueryRunner(buildLokiQuery(LOG_STREAM_SELECTOR_EXPR)),
+      loading: true,
       ...state,
     });
 
-    this.addActivationHandler(this._onActivate.bind(this));
+    this.addActivationHandler(this.onActivate.bind(this));
   }
 
   private getFiltersVariable(): AdHocFiltersVariable {
@@ -141,20 +143,20 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     locationService.push(`${EXPLORATIONS_ROUTE}?${newParams}`);
   }
 
-  private _onActivate() {
+  private onActivate() {
     if (this.state.actionView === undefined) {
       this.setActionView('logs');
     }
 
-    const unsubs: Unsubscribable[] = [];
-
     this.setEmptyFiltersRedirection();
 
-    const dataUnsub = this.state.$data?.subscribeToState(() => {
-      this.updateFields();
-    });
-    if (dataUnsub) {
-      unsubs.push(dataUnsub);
+    const unsubs: Unsubscribable[] = [];
+    if (this.state.$data) {
+      unsubs.push(
+        this.state.$data?.subscribeToState(() => {
+          this.updateFields();
+        })
+      );
     }
 
     this.updateLabels();
@@ -181,7 +183,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
     this.updatePatterns();
     this.updateLabels();
-    locationService.partial({ actionView: 'logs' });
+    // For patterns, we don't want to reload to logs as we allow users to select multiple patterns
+    if (variable.state.name !== VAR_PATTERNS) {
+      locationService.partial({ actionView: 'logs' });
+    }
   }
 
   private getLogsFormatVariable() {
@@ -219,13 +224,24 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         if (JSON.stringify(detectedFields) !== JSON.stringify(this.state.detectedFields)) {
           this.setState({
             detectedFields,
+            loading: false,
           });
         }
         const newType = res.type ? ` | ${res.type}` : '';
         if (variable.getValue() !== newType) {
           variable.changeValueTo(newType);
         }
+      } else {
+        this.setState({
+          detectedFields: [],
+          loading: false,
+        });
       }
+    } else if (newState.data?.state === LoadingState.Error) {
+      this.setState({
+        detectedFields: [],
+        loading: false,
+      });
     }
   }
 
@@ -326,7 +342,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     if (actionViewDef && actionViewDef.value !== this.state.actionView) {
       body.setState({
         children: [
-          ...body.state.children.slice(0, 2),
+          ...body.state.children.slice(0, 1),
           actionViewDef.getScene((vals) => {
             if (actionViewDef.value === 'fields') {
               this.setState({ detectedFieldsCount: vals.length });
@@ -336,7 +352,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       });
       this.setState({ actionView: actionViewDef.value });
     } else {
-      body.setState({ children: body.state.children.slice(0, 2) });
+      body.setState({ children: body.state.children.slice(0, 1) });
       this.setState({ actionView: undefined });
     }
   }
@@ -348,33 +364,55 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 }
 
 const actionViewsDefinitions: ActionViewDefinition[] = [
-  { displayName: 'Logs', value: 'logs', getScene: buildLogsListScene },
-  { displayName: 'Labels', value: 'labels', getScene: buildLabelBreakdownActionScene },
-  { displayName: 'Detected fields', value: 'fields', getScene: buildFieldsBreakdownActionScene },
-  { displayName: 'Patterns', value: 'patterns', getScene: buildPatternsScene },
+  {
+    displayName: 'Logs',
+    value: 'logs',
+    getScene: () => new PageScene({ body: buildLogsListScene(), title: 'Logs' }),
+    testId: testIds.exploreServiceDetails.tabLogs,
+  },
+  {
+    displayName: 'Labels',
+    value: 'labels',
+    getScene: () => new PageScene({ body: buildLabelBreakdownActionScene(), title: 'Labels' }),
+    testId: testIds.exploreServiceDetails.tabLabels,
+  },
+  {
+    displayName: 'Detected fields',
+    value: 'fields',
+    getScene: (f) => new PageScene({ body: buildFieldsBreakdownActionScene(f), title: 'Detected fields' }),
+    testId: testIds.exploreServiceDetails.tabDetectedFields,
+  },
+  {
+    displayName: 'Patterns',
+    value: 'patterns',
+    getScene: () => new PageScene({ body: buildPatternsScene(), title: 'Patterns' }),
+    testId: testIds.exploreServiceDetails.tabPatterns,
+  },
 ];
 
 export interface LogsActionBarState extends SceneObjectState {}
 
 export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
   public static Component = ({ model }: SceneComponentProps<LogsActionBar>) => {
-    const logsScene = sceneGraph.getAncestor(model, ServiceScene);
+    const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
     const styles = useStyles2(getStyles);
     const exploration = getExplorationFor(model);
-    const { actionView } = logsScene.useState();
+    const { actionView } = serviceScene.useState();
 
     const getCounter = (tab: ActionViewDefinition) => {
       switch (tab.value) {
         case 'fields':
           return (
-            logsScene.state.detectedFieldsCount ??
-            getUniqueFilters(logsScene, logsScene.state.detectedFields || []).length
+            serviceScene.state.detectedFieldsCount ??
+            getUniqueFilters(serviceScene, serviceScene.state.detectedFields || []).length
           );
         case 'patterns':
-          return logsScene.state.patterns?.length;
+          return serviceScene.state.patterns?.length;
         case 'labels':
-          return getUniqueFilters(logsScene, logsScene.state.labels?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? [])
-            .length;
+          return getUniqueFilters(
+            serviceScene,
+            serviceScene.state.labels?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []
+          ).length;
         default:
           return undefined;
       }
@@ -384,8 +422,6 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
       <Box paddingY={1}>
         <div className={styles.actions}>
           <Stack gap={2}>
-            <GiveFeedbackButton />
-            <ShareExplorationButton exploration={exploration} />
             <GoToExploreButton exploration={exploration} />
           </Stack>
         </div>
@@ -394,21 +430,22 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
           {actionViewsDefinitions.map((tab, index) => {
             return (
               <Tab
+                data-testid={tab.testId}
                 key={index}
                 label={tab.displayName}
                 active={actionView === tab.value}
                 counter={getCounter(tab)}
                 onChangeTab={() => {
-                  if (tab.value !== logsScene.state.actionView) {
+                  if (tab.value !== serviceScene.state.actionView) {
                     reportAppInteraction(
                       USER_EVENTS_PAGES.service_details,
                       USER_EVENTS_ACTIONS.service_details.action_view_changed,
                       {
                         newActionView: tab.value,
-                        previousActionView: logsScene.state.actionView,
+                        previousActionView: serviceScene.state.actionView,
                       }
                     );
-                    logsScene.setActionView(tab.value);
+                    serviceScene.setActionView(tab.value);
                   }
                 }}
               />
@@ -432,17 +469,10 @@ function getStyles(theme: GrafanaTheme2) {
   };
 }
 
-const MAIN_PANEL_MIN_HEIGHT = 200;
-
 function buildGraphScene() {
   return new SceneFlexLayout({
     direction: 'column',
-    $behaviors: [new behaviors.CursorSync({ key: 'logsCrosshairSync', sync: DashboardCursorSync.Crosshair })],
     children: [
-      new SceneFlexItem({
-        height: MAIN_PANEL_MIN_HEIGHT,
-        body: new LogsVolumePanel({}),
-      }),
       new SceneFlexItem({
         ySizing: 'content',
         body: new LogsActionBar({}),

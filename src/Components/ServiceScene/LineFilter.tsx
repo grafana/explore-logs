@@ -1,6 +1,6 @@
 import { css } from '@emotion/css';
 import { CustomVariable, SceneComponentProps, SceneObjectBase, SceneObjectState, sceneGraph } from '@grafana/scenes';
-import { Field, Input } from '@grafana/ui';
+import { Field, Icon, Input } from '@grafana/ui';
 import { debounce } from 'lodash';
 import React, { ChangeEvent } from 'react';
 import { VAR_LINE_FILTER } from 'services/variables';
@@ -16,15 +16,15 @@ export class LineFilter extends SceneObjectBase<LineFilterState> {
 
   constructor(state?: Partial<LineFilterState>) {
     super({ lineFilter: state?.lineFilter || '', ...state });
-    this.addActivationHandler(this._onActivate);
+    this.addActivationHandler(this.onActivate);
   }
 
-  private _onActivate = () => {
+  private onActivate = () => {
     const lineFilterValue = this.getVariable().getValue();
     if (!lineFilterValue) {
       return;
     }
-    const matches = lineFilterValue.toString().match(/`(.+)`/);
+    const matches = lineFilterValue.toString().match(/`\(\?i\)(.+)`/);
     if (!matches || matches.length !== 2) {
       return;
     }
@@ -50,7 +50,7 @@ export class LineFilter extends SceneObjectBase<LineFilterState> {
 
   updateVariable = debounce((search: string) => {
     const variable = this.getVariable();
-    variable.changeValueTo(`|= \`${search}\``);
+    variable.changeValueTo(`|~ \`(?i)${search}\``);
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.search_string_in_logs_changed,
@@ -66,13 +66,14 @@ function LineFilterRenderer({ model }: SceneComponentProps<LineFilter>) {
   const { lineFilter } = model.useState();
 
   return (
-    <Field>
+    <Field className={styles.field}>
       <Input
-        data-testid={testIds.exploreServiceBreakdown.search}
+        data-testid={testIds.exploreServiceDetails.searchLogs}
         value={lineFilter}
         className={styles.input}
         onChange={model.handleChange}
-        placeholder="Search"
+        prefix={<Icon name="search" />}
+        placeholder="Search in log lines"
       />
     </Field>
   );
@@ -81,5 +82,9 @@ function LineFilterRenderer({ model }: SceneComponentProps<LineFilter>) {
 const styles = {
   input: css({
     width: '100%',
+  }),
+  field: css({
+    label: 'field',
+    marginBottom: 0,
   }),
 };

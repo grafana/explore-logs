@@ -5,6 +5,7 @@ import { PatternTag } from './PatternTag';
 import { css } from '@emotion/css';
 import { useStyles2, Text } from '@grafana/ui';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
+import { testIds } from 'services/testIds';
 
 type Props = {
   patterns: AppliedPattern[] | undefined;
@@ -33,24 +34,29 @@ export const PatternControls = ({ patterns, onRemove }: Props) => {
     <div>
       {includePatterns.length > 0 && (
         <div className={styles.patternsContainer}>
-          <Text variant="bodySmall" weight="bold">
-            {excludePatterns.length > 0 ? 'Include patterns' : 'Patterns'}
+          <Text variant="bodySmall" weight="bold" data-testid={testIds.patterns.buttonIncludedPattern}>
+            Included pattern{patterns.length > 1 ? 's' : ''}
           </Text>
           <div className={styles.patterns}>
             {includePatterns.map((p) => (
-              <PatternTag key={p.pattern} pattern={p.pattern} onRemove={() => onRemovePattern(p)} />
+              <PatternTag key={p.pattern} pattern={p.pattern} size="lg" onRemove={() => onRemovePattern(p)} />
             ))}
           </div>
         </div>
       )}
       {excludePatterns.length > 0 && (
         <div className={styles.patternsContainer}>
-          <Text variant="bodySmall" weight="bold">
-            Exclude patterns:
+          <Text variant="bodySmall" weight="bold" data-testid={testIds.patterns.buttonExcludedPattern}>
+            Excluded pattern{excludePatterns.length > 1 ? 's' : ''}:
           </Text>
           <div className={styles.patterns}>
             {excludePatterns.map((p) => (
-              <PatternTag key={p.pattern} pattern={p.pattern} onRemove={() => onRemovePattern(p)} />
+              <PatternTag
+                key={p.pattern}
+                pattern={p.pattern}
+                size={excludePatterns.length > 1 ? 'sm' : 'lg'}
+                onRemove={() => onRemovePattern(p)}
+              />
             ))}
           </div>
         </div>

@@ -16,6 +16,8 @@ import { AdHocVariableFilter, TimeRange } from '@grafana/data';
 import { SelectedTableRow } from '../Table/LogLineCellComponent';
 import { LogsTableScene } from './LogsTableScene';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
+import { LogsVolumePanel } from './LogsVolumePanel';
+import { css } from '@emotion/css';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -47,11 +49,10 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   constructor(state: Partial<LogsListSceneState>) {
     super({
       ...state,
-      visualizationType:
-        (localStorage.getItem(VISUALIZATION_TYPE_LOCALSTORAGE_KEY) as LogsVisualizationType) ?? 'table',
+      visualizationType: (localStorage.getItem(VISUALIZATION_TYPE_LOCALSTORAGE_KEY) as LogsVisualizationType) ?? 'logs',
     });
 
-    this.addActivationHandler(this._onActivate.bind(this));
+    this.addActivationHandler(this.onActivate.bind(this));
   }
 
   getUrlState() {
@@ -92,7 +93,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     }
   }
 
-  public _onActivate() {
+  public onActivate() {
     if (!this.state.panel) {
       this.setState({
         panel: this.getVizPanel(),
@@ -110,6 +111,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
 
   private getLogsPanel() {
     const visualizationType = this.state.visualizationType;
+
     return new SceneFlexItem({
       height: 'calc(100vh - 220px)',
       body: PanelBuilders.logs()
@@ -155,12 +157,36 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       return;
     }
 
-    return <panel.Component model={panel} />;
+    return (
+      <div className={styles.panelWrapper}>
+        <panel.Component model={panel} />
+      </div>
+    );
   };
 }
 
 export function buildLogsListScene() {
-  return new SceneFlexItem({
-    body: new LogsListScene({}),
+  return new SceneFlexLayout({
+    direction: 'column',
+    children: [
+      new SceneFlexItem({
+        minHeight: 200,
+        body: new LogsVolumePanel({}),
+      }),
+      new SceneFlexItem({
+        minHeight: '470px',
+        height: 'calc(100vh - 500px)',
+        body: new LogsListScene({}),
+      }),
+    ],
   });
 }
+
+const styles = {
+  panelWrapper: css({
+    // If you use hover-header without any header options we must manually hide the remnants, or it shows up as a 1px line in the top-right corner of the viz
+    '.show-on-hover': {
+      display: 'none',
+    },
+  }),
+};

@@ -5,12 +5,24 @@ export const testIds = {
     apiUrl: 'data-testid ac-api-url',
     submit: 'data-testid ac-submit-form',
   },
-  exploreService: {
+  exploreServiceSearch: {
     search: 'data-testid search-services',
   },
-  exploreServiceBreakdown: {
-    search: 'data-testid search-logs',
+  exploreServiceDetails: {
+    searchLogs: 'data-testid search-logs',
     openExplore: 'data-testid open-explore',
+    tabPatterns: 'data-testid tab-patterns',
+    tabLogs: 'data-testid tab-logs',
+    tabDetectedFields: 'data-testid tab-detected-fields',
+    tabLabels: 'data-testid tab-labels',
+    buttonRemovePattern: 'data-testid button-remove-pattern',
+    buttonFilterInclude: 'data-testid button-filter-include',
+    buttonFilterExclude: 'data-testid button-filter-exclude',
+  },
+  patterns: {
+    tableWrapper: 'data-testid table-wrapper',
+    buttonIncludedPattern: 'data-testid button-included-pattern',
+    buttonExcludedPattern: 'data-testid button-excluded-pattern',
   },
   logsPanelHeader: {
     radio: 'data-testid radio-button',

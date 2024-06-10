@@ -1,6 +1,6 @@
 import { expect, test } from '@grafana/plugin-e2e';
 import { ExplorePage } from './fixtures/explore';
-import {testIds} from "../src/services/testIds";
+import { testIds } from "../src/services/testIds";
 
 test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;
@@ -14,7 +14,6 @@ test.describe('explore services breakdown page', () => {
   test('should filter logs panel on search', async ({ page }) => {
     await explorePage.serviceBreakdownSearch.click();
     await explorePage.serviceBreakdownSearch.fill('broadcast');
-    await page.getByRole('radiogroup').getByTestId(testIds.logsPanelHeader.radio).nth(0).click()
     await expect(page.getByRole('table').locator('tr').first().getByText('broadcast')).toBeVisible();
     await expect(page).toHaveURL(/broadcast/);
   });
@@ -23,6 +22,7 @@ test.describe('explore services breakdown page', () => {
     const initialText = await page.getByTestId(testIds.table.wrapper).allTextContents()
     await explorePage.serviceBreakdownSearch.click();
     await explorePage.serviceBreakdownSearch.fill('broadcast');
+      await page.getByRole('radiogroup').getByTestId(testIds.logsPanelHeader.radio).nth(1).click()
     const afterFilterText = await page.getByTestId(testIds.table.wrapper).allTextContents()
     expect(initialText).not.toBe(afterFilterText)
   })
@@ -51,9 +51,9 @@ test.describe('explore services breakdown page', () => {
   });
 
   test('should select a label, update filters, open in explore', async ({ page }) => {
-    await page.getByLabel('Tab Labels').click();
-    await page.getByLabel('detected_level').click();
-    await page.getByTestId('data-testid Panel header info').getByRole('button', { name: 'Add to filters' }).click();
+    await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
+    await page.getByLabel('Select detected_level').click();
+    await page.getByTestId('data-testid Panel header info').getByRole('button', { name: 'Include' }).click();
     await expect(
       page.getByTestId('data-testid Dashboard template variables submenu Label detected_level')
     ).toBeVisible();
@@ -64,79 +64,107 @@ test.describe('explore services breakdown page', () => {
   });
 
   test('should select a detected field, update filters, open log panel', async ({ page }) => {
-    await page.getByLabel('Tab Detected fields').click();
+    await page.getByTestId(testIds.exploreServiceDetails.tabDetectedFields).click();
     await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
-    await page.getByRole('button', { name: 'Add to filters' }).nth(0).click();
+    await page.getByRole('button', { name: 'Include' }).nth(0).click();
     // Should see the logs panel full of errors
-    await expect(page.getByTestId('data-testid search-logs')).toBeVisible();
+    await expect(page.getByTestId(testIds.exploreServiceDetails.searchLogs)).toBeVisible();
     // Adhoc err filter should be added
     await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
   });
 
-  test('should select an include pattern field in default single view, update filters, open log panel', async ({
+  test('should select an include pattern field in default single view, update filters, not open log panel', async ({
     page,
   }) => {
-    await page.getByLabel('Tab Patterns').click();
+    await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
 
     // Include pattern
     const firstIncludeButton = page
+      .getByTestId(testIds.patterns.tableWrapper)
       .getByRole('table')
-      .getByRole('row', { name: /level=info <_> caller=flush\.go/ })
-      .getByText('Select');
+      .getByRole('row').nth(2)
+      .getByTestId(testIds.exploreServiceDetails.buttonFilterInclude);
     await firstIncludeButton.click();
-    // Should see the logs panel full of patterns
-    await expect(page.getByTestId('data-testid search-logs')).toBeVisible();
+    // Should not open logs panel and should stay in patterns tab as we allow multiple  patterns
+    await expect(page.getByTestId(testIds.exploreServiceDetails.searchLogs)).not.toBeVisible();
+    await expect(page.getByTestId(testIds.patterns.tableWrapper)).toBeVisible();
     // Pattern filter should be added
-    await expect(page.getByText('Patterns', { exact: true })).toBeVisible();
-    await expect(page.getByText('level=info < … g block" <_>')).toBeVisible();
+    await expect(page.getByTestId(testIds.patterns.buttonIncludedPattern)).toBeVisible();
   });
 
   test('Should add multiple exclude patterns, which are replaced by include pattern', async ({ page }) => {
-    await page.getByLabel('Tab Patterns').click();
+    await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
 
     const firstIncludeButton = page
+      .getByTestId(testIds.patterns.tableWrapper)
       .getByRole('table')
-      .getByRole('row', { name: /level=info <_> caller=flush\.go/ })
-      .getByText('Select');
+      .getByRole('row').nth(2)
+      .getByTestId(testIds.exploreServiceDetails.buttonFilterInclude);
     const firstExcludeButton = page
+      .getByTestId(testIds.patterns.tableWrapper)
       .getByRole('table')
-      .getByRole('row', { name: /level=info <_> caller=flush\.go/ })
-      .getByText('Exclude');
+      .getByRole('row').nth(2)
+      .getByTestId(testIds.exploreServiceDetails.buttonFilterExclude);
 
     await expect(firstIncludeButton).toBeVisible();
     await expect(firstExcludeButton).toBeVisible();
 
     // Include pattern
     await firstExcludeButton.click();
-    // Should see the logs panel full of patterns
-    await expect(page.getByTestId('data-testid search-logs')).toBeVisible();
 
-    // Exclude another pattern
-    await page.getByLabel('Tab Patterns').click();
-
-    // Include button should be visible, but exclude should not
+    // Both buttons should be visible
     await expect(firstIncludeButton).toBeVisible();
-    await expect(firstExcludeButton).not.toBeVisible();
+    await expect(firstExcludeButton).toBeVisible();
 
     const secondExcludeButton = page
+      .getByTestId(testIds.patterns.tableWrapper)
       .getByRole('table')
-      .getByRole('row', { name: /level=debug <_> caller=broadcast\.go:48/ })
-      .getByText('Exclude');
+      .getByRole('row').nth(3)
+      .getByTestId(testIds.exploreServiceDetails.buttonFilterExclude);
     await secondExcludeButton.click();
 
     // Both exclude patterns should be visible
-    await expect(page.getByText('Patterns', { exact: true })).not.toBeVisible();
-    await expect(page.getByText('Exclude patterns:', { exact: true })).toBeVisible();
-    await expect(page.getByText('level=info < … g block" <_>')).toBeVisible();
-    await expect(page.getByText('level=debug <_> calle … lectors/compactor')).toBeVisible();
+    await expect(page.getByTestId(testIds.patterns.buttonIncludedPattern)).not.toBeVisible();
+    await expect(page.getByTestId(testIds.patterns.buttonExcludedPattern)).toBeVisible();
 
-    // Back to patterns to include a pattern instead
-    await page.getByLabel('Tab Patterns').click();
 
     await firstIncludeButton.click();
-    await expect(page.getByText('Patterns', { exact: true })).toBeVisible();
-    await expect(page.getByText('Exclude patterns:', { exact: true })).not.toBeVisible();
-    await expect(page.getByText('level=info < … g block" <_>')).toBeVisible();
+    // Include and exclude patterns should be visible
+    await expect(page.getByTestId(testIds.patterns.buttonIncludedPattern)).toBeVisible();
+    await expect(page.getByTestId(testIds.patterns.buttonExcludedPattern)).toBeVisible();
+  });
+
+  test('Should add multiple include patterns', async ({ page }) => {
+    await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
+
+    const firstIncludeButton = page
+      .getByTestId(testIds.patterns.tableWrapper)
+      .getByRole('table')
+      .getByRole('row').nth(2)
+      .getByTestId(testIds.exploreServiceDetails.buttonFilterInclude);
+    const secondIncludeButton = page
+      .getByTestId(testIds.patterns.tableWrapper)
+      .getByRole('table')
+      .getByRole('row').nth(3)
+      .getByTestId(testIds.exploreServiceDetails.buttonFilterInclude);
+
+    await expect(firstIncludeButton).toBeVisible();
+    await expect(secondIncludeButton).toBeVisible();
+
+    // Include pattern
+    await firstIncludeButton.click();
+
+
+    // Both buttons should be visible
+    await expect(firstIncludeButton).toBeVisible();
+    await expect(secondIncludeButton).toBeVisible();
+
+    await secondIncludeButton.click();
+
+    // Both include patterns should be visible
+    await expect(page.getByTestId(testIds.patterns.buttonIncludedPattern)).toBeVisible();
+    await expect(page.getByTestId(testIds.exploreServiceDetails.buttonRemovePattern).nth(0)).toBeVisible();
+    await expect(page.getByTestId(testIds.exploreServiceDetails.buttonRemovePattern).nth(1)).toBeVisible();
   });
 
   test('should update a filter and run new logs', async ({ page }) => {
@@ -144,10 +172,11 @@ test.describe('explore services breakdown page', () => {
     await page.getByText('mimir-distributor').click();
 
     // open logs panel
-    await page.getByRole('radiogroup').getByTestId(testIds.logsPanelHeader.radio).nth(0).click()
     await page.getByTitle('See log details').nth(1).click();
 
     // find text corresponding text to match adhoc filter
-    await expect(page.getByTestId('data-testid Panel header Logs').getByText('mimir-distributor').nth(0)).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'Fields Ad-hoc statistics' }).getByText('mimir-distributor').nth(0)
+    ).toBeVisible();
   });
 });

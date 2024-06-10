@@ -20,15 +20,14 @@ import {
   SceneVariableSet,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import { Button, DrawStyle, Field, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
+import { Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { DetectedLabelsResponse, getLabelValueScene } from 'services/fields';
+import { DetectedLabel, DetectedLabelsResponse, getLabelValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { PLUGIN_ID } from 'services/routing';
 import { getLabelOptions, getLokiDatasource } from 'services/scenes';
 import { ALL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR, VAR_FILTERS, VAR_LABEL_GROUP_BY } from 'services/variables';
-import { AddToFiltersButton } from './AddToFiltersButton';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
@@ -39,7 +38,7 @@ export interface LabelBreakdownSceneState extends SceneObjectState {
   labels: Array<SelectableValue<string>>;
   value?: string;
   loading?: boolean;
-  error?: string;
+  error?: boolean;
   blockingMessage?: string;
 }
 
@@ -61,10 +60,10 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       ...state,
     });
 
-    this.addActivationHandler(this._onActivate.bind(this));
+    this.addActivationHandler(this.onActivate.bind(this));
   }
 
-  private _onActivate() {
+  private onActivate() {
     const variable = this.getVariable();
 
     variable.subscribeToState((newState, oldState) => {
@@ -104,22 +103,30 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
 
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
+    let detectedLabels: DetectedLabel[] | undefined = undefined;
 
-    const { detectedLabels } = await ds.getResource<DetectedLabelsResponse>(
-      'detected_labels',
-      {
-        query: filters.state.filterExpression,
-        start: timeRange.from.utc().toISOString(),
-        end: timeRange.to.utc().toISOString(),
-      },
-      {
-        headers: {
-          'X-Query-Tags': `Source=${PLUGIN_ID}`,
+    try {
+      const response = await ds.getResource<DetectedLabelsResponse>(
+        'detected_labels',
+        {
+          query: filters.state.filterExpression,
+          start: timeRange.from.utc().toISOString(),
+          end: timeRange.to.utc().toISOString(),
         },
-      }
-    );
+        {
+          headers: {
+            'X-Query-Tags': `Source=${PLUGIN_ID}`,
+          },
+        }
+      );
+      detectedLabels = response?.detectedLabels;
+    } catch (error) {
+      console.error(error);
+      this.setState({ loading: false, error: true });
+    }
 
     if (!detectedLabels || !Array.isArray(detectedLabels)) {
+      this.setState({ loading: false, error: true });
       return;
     }
 
@@ -134,6 +141,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       value: String(variable.state.value),
       labels: options, // this now includes "all"
       blockingMessage: undefined,
+      error: false,
     };
 
     stateUpdate.body = variable.hasAllValue() ? buildLabelsLayout(options) : buildLabelValuesLayout(variable);
@@ -161,26 +169,23 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   };
 
   public static Component = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
-    const { labels, body, loading, value, blockingMessage } = model.useState();
+    const { labels, body, loading, value, blockingMessage, error } = model.useState();
     const styles = useStyles2(getStyles);
 
     return (
       <div className={styles.container}>
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
           <div className={styles.controls}>
+            {body instanceof LayoutSwitcher && <body.Selector model={body} />}
             {!loading && labels.length > 0 && (
-              <div className={styles.controlsLeft}>
-                <Field label="By label">
-                  <FieldSelector options={labels} value={value} onChange={model.onChange} />
-                </Field>
-              </div>
-            )}
-            {body instanceof LayoutSwitcher && (
-              <div className={styles.controlsRight}>
-                <body.Selector model={body} />
-              </div>
+              <FieldSelector label="Label" options={labels} value={value} onChange={model.onChange} />
             )}
           </div>
+          {error && (
+            <Alert title="" severity="warning">
+              The labels are not available at this moment. Try using a different time range or check again later.
+            </Alert>
+          )}
           <div className={styles.content}>{body && <body.Component model={body} />}</div>
         </StatusWrapper>
       </div>
@@ -205,19 +210,9 @@ function getStyles(theme: GrafanaTheme2) {
       flexGrow: 0,
       display: 'flex',
       alignItems: 'top',
+      justifyContent: 'space-between',
+      flexDirection: 'row-reverse',
       gap: theme.spacing(2),
-    }),
-    controlsRight: css({
-      flexGrow: 0,
-      display: 'flex',
-      justifyContent: 'flex-end',
-    }),
-    controlsLeft: css({
-      display: 'flex',
-      justifyContent: 'flex-left',
-      justifyItems: 'left',
-      width: '100%',
-      flexDirection: 'column',
     }),
   };
 }
@@ -365,8 +360,12 @@ function getLabelValue(frame: DataFrame) {
 }
 
 export function buildLabelBreakdownActionScene() {
-  return new SceneFlexItem({
-    body: new LabelBreakdownScene({}),
+  return new SceneFlexLayout({
+    children: [
+      new SceneFlexItem({
+        body: new LabelBreakdownScene({}),
+      }),
+    ],
   });
 }
 
@@ -378,9 +377,9 @@ export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
     getBreakdownSceneFor(this).onChange(this.state.labelName);
   };
 
-  public static Component = ({ model }: SceneComponentProps<AddToFiltersButton>) => {
+  public static Component = ({ model }: SceneComponentProps<SelectLabelAction>) => {
     return (
-      <Button variant="secondary" size="sm" onClick={model.onClick}>
+      <Button variant="secondary" size="sm" onClick={model.onClick} aria-label={`Select ${model.useState().labelName}`}>
         Select
       </Button>
     );

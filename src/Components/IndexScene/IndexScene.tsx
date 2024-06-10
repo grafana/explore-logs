@@ -1,13 +1,14 @@
-import { css } from '@emotion/css';
 import React from 'react';
 
-import { AdHocVariableFilter, GrafanaTheme2, SelectableValue, VariableHide } from '@grafana/data';
+import { AdHocVariableFilter, SelectableValue, VariableHide } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   CustomVariable,
   DataSourceVariable,
+  getUrlSyncManager,
   SceneComponentProps,
   SceneControlsSpacer,
+  sceneGraph,
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
@@ -18,24 +19,21 @@ import {
   SceneTimeRange,
   SceneVariableSet,
   VariableValueSelectors,
-  getUrlSyncManager,
-  sceneGraph,
 } from '@grafana/scenes';
-import { Badge, useStyles2 } from '@grafana/ui';
 import {
+  explorationDS,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_FILTERS,
   VAR_LINE_FILTER,
-  VAR_PATTERNS,
-  explorationDS,
   VAR_LOGS_FORMAT,
+  VAR_PATTERNS,
 } from 'services/variables';
 
+import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
 import { ServiceScene } from '../ServiceScene/ServiceScene';
 import { ServiceSelectionComponent, StartingPointSelectedEvent } from '../ServiceSelectionScene/ServiceSelectionScene';
-import { PatternControls } from './PatternControls';
-import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
+import { LayoutScene } from './LayoutScene';
 
 type LogExplorationMode = 'service_selection' | 'service_details';
 
@@ -45,10 +43,10 @@ export interface AppliedPattern {
 }
 
 export interface IndexSceneState extends SceneObjectState {
-  // topScene is the scene that is displayed in the main body of the index scene - it can be either the service selection or service scene
-  topScene?: SceneObject;
+  // contentScene is the scene that is displayed in the main body of the index scene - it can be either the service selection or service scene
+  contentScene?: SceneObject;
   controls: SceneObject[];
-  body: LogExplorationScene;
+  body: LayoutScene;
   // mode is the current mode of the index scene - it can be either 'service_selection' or 'service_details'
   mode?: LogExplorationMode;
   initialFilters?: AdHocVariableFilter[];
@@ -70,23 +68,22 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
         new SceneTimePicker({}),
         new SceneRefreshPicker({}),
       ],
-      body: new LogExplorationScene({}),
+      body: new LayoutScene({}),
       ...state,
     });
 
-    this.addActivationHandler(this._onActivate.bind(this));
+    this.addActivationHandler(this.onActivate.bind(this));
   }
 
   static Component = ({ model }: SceneComponentProps<IndexScene>) => {
     const { body } = model.useState();
-    const styles = useStyles2(getStyles);
 
-    return <div className={styles.bodyContainer}> {body && <body.Component model={body} />} </div>;
+    return <body.Component model={body} />;
   };
 
-  public _onActivate() {
-    if (!this.state.topScene) {
-      this.setState({ topScene: getTopScene(this.state.mode) });
+  public onActivate() {
+    if (!this.state.contentScene) {
+      this.setState({ contentScene: getContentScene(this.state.mode) });
     }
 
     // Some scene elements publish this
@@ -94,13 +91,12 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
     this.subscribeToState((newState, oldState) => {
       if (newState.mode !== oldState.mode) {
-        this.setState({ topScene: getTopScene(newState.mode) });
+        this.setState({ contentScene: getContentScene(newState.mode) });
       }
 
       const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
       if (patternsVariable instanceof CustomVariable) {
-        const patternsLine =
-          newState.patterns?.map((p) => `${p.type === 'include' ? '|> ' : '!> '} \`${p.pattern}\``)?.join(' ') || '';
+        const patternsLine = renderPatternFilters(newState.patterns ?? []);
         patternsVariable.changeValueTo(patternsLine);
       }
     });
@@ -122,7 +118,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     if (values.mode !== this.state.mode) {
       const mode: LogExplorationMode = (values.mode as LogExplorationMode) ?? 'service_selection';
       stateUpdate.mode = mode;
-      stateUpdate.topScene = getTopScene(mode);
+      stateUpdate.contentScene = getContentScene(mode);
     }
     if (this.state.mode === 'service_selection') {
       // Clear patterns on start
@@ -140,43 +136,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   }
 }
 
-export class LogExplorationScene extends SceneObjectBase {
-  static Component = ({ model }: SceneComponentProps<LogExplorationScene>) => {
-    const logExploration = sceneGraph.getAncestor(model, IndexScene);
-    const { controls, topScene, patterns } = logExploration.useState();
-    const styles = useStyles2(getStyles);
-    return (
-      <div className={styles.container}>
-        {controls && (
-          <div className={styles.controlsContainer}>
-            <div className={styles.filters}>
-              {controls.map((control) =>
-                control instanceof VariableValueSelectors ? (
-                  <control.Component key={control.state.key} model={control} />
-                ) : null
-              )}
-            </div>
-            <div className={styles.controls}>
-              <Badge text={'Preview'} color={'blue'} icon={'rocket'} />
-              {controls.map((control) =>
-                control instanceof VariableValueSelectors === false ? (
-                  <control.Component key={control.state.key} model={control} />
-                ) : null
-              )}
-            </div>
-          </div>
-        )}
-        <PatternControls
-          patterns={patterns}
-          onRemove={(patterns: AppliedPattern[]) => logExploration.setState({ patterns })}
-        />
-        <div className={styles.body}>{topScene && <topScene.Component model={topScene} />}</div>
-      </div>
-    );
-  };
-}
-
-function getTopScene(mode?: LogExplorationMode) {
+function getContentScene(mode?: LogExplorationMode) {
   if (mode === 'service_details') {
     return new ServiceScene({});
   }
@@ -262,91 +222,21 @@ function renderFilter(filter: AdHocVariableFilter) {
   return `${filter.key}${filter.operator}\`${filter.value}\``;
 }
 
-function getStyles(theme: GrafanaTheme2) {
-  return {
-    bodyContainer: css({
-      flexGrow: 1,
-      display: 'flex',
-      minHeight: '100%',
-      flexDirection: 'column',
-    }),
-    container: css({
-      flexGrow: 1,
-      display: 'flex',
-      gap: theme.spacing(2),
-      minHeight: '100%',
-      flexDirection: 'column',
-      padding: theme.spacing(2),
-      maxWidth: '100vw',
-    }),
-    body: css({
-      flexGrow: 1,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: theme.spacing(1),
-    }),
-    controlsContainer: css({
-      display: 'flex',
-      gap: theme.spacing(2),
-      justifyContent: 'space-between',
-      alignItems: 'flex-start',
-    }),
-    filters: css({
-      display: 'flex',
-      gap: theme.spacing(2),
-      width: 'calc(100% - 450)',
-      flexWrap: 'wrap',
-      alignItems: 'flex-end',
-      '& + div[data-testid="data-testid Dashboard template variables submenu Label Filters"]:empty': {
-        visibility: 'hidden',
-      },
+export function renderPatternFilters(patterns: AppliedPattern[]) {
+  const excludePatterns = patterns.filter((pattern) => pattern.type === 'exclude');
+  const excludePatternsLine = excludePatterns
+    .map((p) => `!> \`${p.pattern}\``)
+    .join(' ')
+    .trim();
 
-      //@todo not like this
-      // The filter variables container: i.e. services, filters
-      '&:first-child': {
-        // The wrapper of each filter
-        '& > div': {
-          // the 'service_name' filter wrapper
-          '&:nth-child(2) > div': {
-            gap: 0,
-          },
-          // The actual inputs container
-          '& > div': {
-            flexWrap: 'wrap',
-            // wrapper around all inputs
-            '& > div': {
-              maxWidth: '380px',
-
-              // Wrapper around each input: i.e. label name, binary operator, value
-              '& > div': {
-                // These inputs need to flex, otherwise the value takes all of available space and they look broken
-                flex: '1 0 auto',
-
-                // The value input needs to shrink when the parent component is at max width
-                '&:nth-child(3)': {
-                  flex: '0 1 auto',
-                },
-              },
-            },
-          },
-        },
-      },
-
-      ['div >[title="Add filter"]']: {
-        border: 0,
-        visibility: 'hidden',
-        width: 0,
-        padding: 0,
-        margin: 0,
-      },
-    }),
-    controls: css({
-      display: 'flex',
-      paddingTop: theme.spacing(3),
-      gap: theme.spacing(1),
-    }),
-    rotateIcon: css({
-      svg: { transform: 'rotate(180deg)' },
-    }),
-  };
+  const includePatterns = patterns.filter((pattern) => pattern.type === 'include');
+  let includePatternsLine = '';
+  if (includePatterns.length > 0) {
+    if (includePatterns.length === 1) {
+      includePatternsLine = `|> \`${includePatterns[0].pattern}\``;
+    } else {
+      includePatternsLine = `|>  ${includePatterns.map((p) => `\`${p.pattern}\``).join(' or ')}`;
+    }
+  }
+  return `${excludePatternsLine} ${includePatternsLine}`.trim();
 }

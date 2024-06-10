@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import { debounce } from 'lodash';
 import React, { useCallback, useState } from 'react';
-import { BusEventBase, DashboardCursorSync, GrafanaTheme2, TimeRange } from '@grafana/data';
+import { BusEventBase, DashboardCursorSync, GrafanaTheme2, PageLayoutType, TimeRange } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   behaviors,
@@ -35,6 +35,8 @@ import { buildLokiQuery } from 'services/query';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
+import { NoVolumeError } from './NoVolumeError';
+import { PluginPage } from '@grafana/runtime';
 
 export const SERVICE_NAME = 'service_name';
 
@@ -49,6 +51,8 @@ interface ServiceSelectionComponentState extends SceneObjectState {
   searchServicesString: string;
   // List of services to be shown in the body
   servicesToQuery?: string[];
+  // in case the volume api errors out
+  volumeApiError?: boolean;
 }
 
 export class StartingPointSelectedEvent extends BusEventBase {
@@ -78,10 +82,10 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
       ...state,
     });
 
-    this.addActivationHandler(this._onActivate.bind(this));
+    this.addActivationHandler(this.onActivate.bind(this));
   }
 
-  private _onActivate() {
+  private onActivate() {
     // Clear all adhoc filters when the scene is activated, if there are any
     const variable = sceneGraph.lookupVariable(VAR_FILTERS, this);
     if (variable instanceof AdHocFiltersVariable && variable.state.filters.length > 0) {
@@ -114,6 +118,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
         this.setState({
           servicesToQuery,
         });
+        this.getServicesByVolume(newState.searchServicesString);
       }
 
       // When servicesToQuery is changed, update the body and render the panels with the new services
@@ -130,7 +135,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
   }
 
   // Run to fetch services by volume
-  private async getServicesByVolume() {
+  private async getServicesByVolume(service?: string) {
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     this.setState({
       isServicesByVolumeLoading: true,
@@ -141,10 +146,11 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
     }
 
     try {
+      const serviceSearch = service ? `(?i).*${service}.*` : '.+';
       const volumeResponse = await ds.getResource!(
         'index/volume',
         {
-          query: `{${SERVICE_NAME}=~".+"}`,
+          query: `{${SERVICE_NAME}=~"${serviceSearch}"}`,
           from: timeRange.from.utc().toISOString(),
           to: timeRange.to.utc().toISOString(),
         },
@@ -166,12 +172,14 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
         .map(([serviceName]) => serviceName); // Extract service names
 
       this.setState({
+        volumeApiError: false,
         servicesByVolume,
         isServicesByVolumeLoading: false,
       });
     } catch (error) {
       console.log(`Failed to fetch top services:`, error);
       this.setState({
+        volumeApiError: true,
         servicesByVolume: [],
         isServicesByVolumeLoading: false,
       });
@@ -195,7 +203,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
           new SceneCSSGridLayout({
             children,
             isLazy: true,
-            templateColumns: 'repeat(auto-fit, minmax(500px, 1fr) minmax(300px, 70%))',
+            templateColumns: 'repeat(auto-fit, minmax(500px, 1fr) minmax(300px, 70vw))',
             autoRows: '200px',
             md: {
               templateColumns: '1fr',
@@ -279,7 +287,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
 
   public static Component = ({ model }: SceneComponentProps<ServiceSelectionComponent>) => {
     const styles = useStyles2(getStyles);
-    const { isServicesByVolumeLoading, servicesByVolume, servicesToQuery, body } = model.useState();
+    const { isServicesByVolumeLoading, servicesByVolume, servicesToQuery, body, volumeApiError } = model.useState();
 
     // searchQuery is used to keep track of the search query in input field
     const [searchQuery, setSearchQuery] = useState('');
@@ -291,33 +299,36 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
       [model]
     );
     return (
-      <div className={styles.container}>
-        <div className={styles.bodyWrapper}>
-          <div>
-            {/** When services fetched, show how many services are we showing */}
-            {isServicesByVolumeLoading && (
-              <LoadingPlaceholder text={'Loading services'} className={styles.loadingText} />
-            )}
-            {!isServicesByVolumeLoading && <>Showing {servicesToQuery?.length ?? 0} services</>}
-          </div>
-          <Field className={styles.searchField}>
-            <Input
-              data-testid={testIds.exploreService.search}
-              value={searchQuery}
-              prefix={<Icon name="search" />}
-              placeholder="Search services"
-              onChange={onSearchChange}
-            />
-          </Field>
-          {/** If we don't have any servicesByVolume, volume endpoint is probably not enabled */}
-          {!isServicesByVolumeLoading && !servicesByVolume?.length && <ConfigureVolumeError />}
-          {!isServicesByVolumeLoading && servicesToQuery && servicesToQuery.length > 0 && (
-            <div className={styles.body}>
-              <body.Component model={body} />
+      <PluginPage pageNav={{ text: 'Services' }} layout={PageLayoutType.Custom}>
+        <div className={styles.container}>
+          <div className={styles.bodyWrapper}>
+            <div>
+              {/** When services fetched, show how many services are we showing */}
+              {isServicesByVolumeLoading && (
+                <LoadingPlaceholder text={'Loading services'} className={styles.loadingText} />
+              )}
+              {!isServicesByVolumeLoading && <>Showing {servicesToQuery?.length ?? 0} services</>}
             </div>
-          )}
+            <Field className={styles.searchField}>
+              <Input
+                data-testid={testIds.exploreServiceSearch.search}
+                value={searchQuery}
+                prefix={<Icon name="search" />}
+                placeholder="Search services"
+                onChange={onSearchChange}
+              />
+            </Field>
+            {/** If we don't have any servicesByVolume, volume endpoint is probably not enabled */}
+            {!isServicesByVolumeLoading && volumeApiError && <ConfigureVolumeError />}
+            {!isServicesByVolumeLoading && !volumeApiError && !servicesByVolume?.length && <NoVolumeError />}
+            {!isServicesByVolumeLoading && servicesToQuery && servicesToQuery.length > 0 && (
+              <div className={styles.body}>
+                <body.Component model={body} />
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </PluginPage>
     );
   };
 }
@@ -332,8 +343,8 @@ function createListOfServicesToQuery(services: string[], ds: string, searchStrin
   }
 
   const servicesToQuery = services.filter((service) => service.toLowerCase().includes(searchString.toLowerCase()));
-  const favoriteServicesToQuery = getFavoriteServicesFromStorage(ds).filter((service) =>
-    service.toLowerCase().includes(searchString.toLowerCase())
+  const favoriteServicesToQuery = getFavoriteServicesFromStorage(ds).filter(
+    (service) => service.toLowerCase().includes(searchString.toLowerCase()) && servicesToQuery.includes(service)
   );
 
   // Deduplicate
