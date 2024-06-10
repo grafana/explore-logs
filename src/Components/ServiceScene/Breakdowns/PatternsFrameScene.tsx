@@ -99,6 +99,7 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
 
     this.setState({
       body: this.getSingleViewLayout(patternFrames, logExploration),
+      legendSyncPatterns: new Set(),
       loading: false,
     });
   }
