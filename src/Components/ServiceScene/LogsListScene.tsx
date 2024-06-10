@@ -118,19 +118,17 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         .setTitle('Logs')
         .setOption('showLogContextToggle', true)
         .setOption('showTime', true)
-        .setHeaderActions(
-          <LogsPanelHeaderActions vizType={visualizationType} onChange={this.setVisualizationType.bind(this)} />
-        )
+        .setHeaderActions(<LogsPanelHeaderActions vizType={visualizationType} onChange={this.setVisualizationType} />)
         .build(),
     });
   }
 
-  public setVisualizationType(type: LogsVisualizationType) {
+  public setVisualizationType = (type: LogsVisualizationType) => {
     this.setState({
       visualizationType: type,
     });
     localStorage.setItem(VISUALIZATION_TYPE_LOCALSTORAGE_KEY, type);
-  }
+  };
 
   private getVizPanel() {
     return new SceneFlexLayout({

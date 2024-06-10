@@ -51,12 +51,7 @@ export class LogsTableScene extends SceneObjectBase {
         <PanelChrome
           loadingState={data?.state}
           title={'Logs'}
-          actions={
-            <LogsPanelHeaderActions
-              vizType={visualizationType}
-              onChange={parentModel.setVisualizationType.bind(parentModel)}
-            />
-          }
+          actions={<LogsPanelHeaderActions vizType={visualizationType} onChange={parentModel.setVisualizationType} />}
         >
           {data?.series[0] && (
             <TableProvider
