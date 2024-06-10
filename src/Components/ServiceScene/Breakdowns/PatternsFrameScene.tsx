@@ -20,14 +20,16 @@ import { IndexScene } from '../../IndexScene/IndexScene';
 import { PatternsViewTableScene } from './PatternsViewTableScene';
 import { config } from '@grafana/runtime';
 import { css } from '@emotion/css';
+import { PatternsBreakdownScene } from './PatternsBreakdownScene';
 
 const palette = config.theme2.visualization.palette;
 
 export interface PatternsFrameSceneState extends SceneObjectState {
   body?: SceneObject;
   loading?: boolean;
-  patternFrames: PatternFrame[];
+  patternFrames?: PatternFrame[];
   legendSyncPatterns: Set<string>;
+  patternFilter?: string;
 }
 
 export type PatternFrame = {
@@ -38,7 +40,7 @@ export type PatternFrame = {
 };
 
 export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState> {
-  constructor(state: { patternFrames: PatternFrame[] }) {
+  constructor(state: { patternFrames?: PatternFrame[] }) {
     super({
       loading: true,
       ...state,
@@ -62,27 +64,41 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
   };
 
   private onActivate() {
-    this.updateBody();
+    const parent = sceneGraph.getAncestor(this, PatternsBreakdownScene);
+    this.updateBody(parent.state.patternFrames);
+
+    // If the patterns have changed, recalculate the dataframes
     this._subs.add(
       sceneGraph.getAncestor(this, ServiceScene).subscribeToState((newState, prevState) => {
         if (newState.patterns !== prevState.patterns) {
-          this.updateBody();
+          this.updateBody(parent.state.patternFrames);
+        }
+      })
+    );
+
+    // If the text search results have changed, update the components to use the filtered dataframe
+    this._subs.add(
+      sceneGraph.getAncestor(this, PatternsBreakdownScene).subscribeToState((newState, prevState) => {
+        if (newState.filteredPatterns && newState.filteredPatterns !== prevState.filteredPatterns) {
+          this.updateBody(newState.filteredPatterns);
+        } else {
+          this.updateBody(newState.patternFrames);
         }
       })
     );
   }
 
-  private async updateBody() {
+  private async updateBody(patternFrames?: PatternFrame[]) {
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     const lokiPatterns = serviceScene.state.patterns;
-    if (!lokiPatterns) {
+    if (!lokiPatterns || !patternFrames) {
       return;
     }
 
     const logExploration = sceneGraph.getAncestor(this, IndexScene);
 
     this.setState({
-      body: this.getSingleViewLayout(this.state.patternFrames, logExploration),
+      body: this.getSingleViewLayout(patternFrames, logExploration),
       loading: false,
     });
   }
