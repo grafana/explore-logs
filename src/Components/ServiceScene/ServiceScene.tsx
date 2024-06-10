@@ -44,6 +44,7 @@ import { buildPatternsScene } from './Breakdowns/PatternsBreakdownScene';
 import { GoToExploreButton } from './GoToExploreButton';
 import { buildLogsListScene } from './LogsListScene';
 import { testIds } from 'services/testIds';
+import { PageScene } from './PageScene';
 
 export interface LokiPattern {
   pattern: string;
@@ -363,23 +364,28 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 }
 
 const actionViewsDefinitions: ActionViewDefinition[] = [
-  { displayName: 'Logs', value: 'logs', getScene: buildLogsListScene, testId: testIds.exploreServiceDetails.tabLogs },
+  {
+    displayName: 'Logs',
+    value: 'logs',
+    getScene: () => new PageScene({ body: buildLogsListScene(), title: 'Logs' }),
+    testId: testIds.exploreServiceDetails.tabLogs,
+  },
   {
     displayName: 'Labels',
     value: 'labels',
-    getScene: buildLabelBreakdownActionScene,
+    getScene: () => new PageScene({ body: buildLabelBreakdownActionScene(), title: 'Labels' }),
     testId: testIds.exploreServiceDetails.tabLabels,
   },
   {
     displayName: 'Detected fields',
     value: 'fields',
-    getScene: buildFieldsBreakdownActionScene,
+    getScene: (f) => new PageScene({ body: buildFieldsBreakdownActionScene(f), title: 'Detected fields' }),
     testId: testIds.exploreServiceDetails.tabDetectedFields,
   },
   {
     displayName: 'Patterns',
     value: 'patterns',
-    getScene: buildPatternsScene,
+    getScene: () => new PageScene({ body: buildPatternsScene(), title: 'Patterns' }),
     testId: testIds.exploreServiceDetails.tabPatterns,
   },
 ];
