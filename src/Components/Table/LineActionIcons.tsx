@@ -76,7 +76,7 @@ export function LineActionIcons(props: { rowIndex: number; value: unknown }) {
             variant="secondary"
             fill="text"
             size="md"
-            tooltip="Copy link to logline"
+            tooltip="Copy link to log line"
             tooltipPlacement="top"
             tabIndex={0}
             getText={() => {
