@@ -36,7 +36,7 @@ export const GoToExploreButton = ({ exploration }: GoToExploreButtonState) => {
 
   return (
     <ToolbarButton
-      data-testid={testIds.exploreServiceBreakdown.openExplore}
+      data-testid={testIds.exploreServiceDetails.openExplore}
       variant={'canvas'}
       icon={'compass'}
       onClick={onClick}

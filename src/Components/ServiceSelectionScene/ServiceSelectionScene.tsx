@@ -309,7 +309,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
           </div>
           <Field className={styles.searchField}>
             <Input
-              data-testid={testIds.exploreService.search}
+              data-testid={testIds.exploreServiceSearch.search}
               value={searchQuery}
               prefix={<Icon name="search" />}
               placeholder="Search services"
