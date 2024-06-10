@@ -379,8 +379,12 @@ function getLabelValue(frame: DataFrame) {
 }
 
 export function buildLabelBreakdownActionScene() {
-  return new SceneFlexItem({
-    body: new LabelBreakdownScene({}),
+  return new SceneFlexLayout({
+    children: [
+      new SceneFlexItem({
+        body: new LabelBreakdownScene({}),
+      }),
+    ],
   });
 }
 
