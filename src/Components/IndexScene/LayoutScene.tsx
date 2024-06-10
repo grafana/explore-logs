@@ -96,10 +96,6 @@ function getStyles(theme: GrafanaTheme2) {
       '&:first-child': {
         // The wrapper of each filter
         '& > div': {
-          // the 'service_name' filter wrapper
-          '&:nth-child(2) > div': {
-            gap: theme.spacing(2),
-          },
           // The actual inputs container
           '& > div': {
             flexWrap: 'wrap',
@@ -124,7 +120,7 @@ function getStyles(theme: GrafanaTheme2) {
 
       ['div >[title="Add filter"]']: {
         border: 0,
-        visibility: 'hidden',
+        display: 'none',
         width: 0,
         padding: 0,
         margin: 0,
