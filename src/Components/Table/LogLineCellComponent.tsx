@@ -154,7 +154,7 @@ export const LogLineCellComponent = (props: Props) => {
           {/* Labels */}
           {isAuto && hasLabels && <>{labels}</>}
           {bodyState === LogLineState.labels && hasLabels && <>{labels}</>}
-          {bodyState === LogLineState.labels && !hasLabels && <RawLogLineText value={'No unique labels'} />}
+          {bodyState === LogLineState.labels && !hasLabels && <RawLogLineText value={value} />}
 
           {/* Raw log line*/}
           {isAuto && !hasLabels && <RawLogLineText value={value} />}
