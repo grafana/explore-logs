@@ -110,11 +110,15 @@ export const DefaultCellComponent = (props: CustomCellRendererProps & DefaultCel
               if (api.openMenu) {
                 return (
                   <div className={styles.linkWrapper} onClick={api.openMenu}>
-                    {renderLink(value)}
+                    <>{value}</>
                   </div>
                 );
               } else {
-                return <div className={styles.linkWrapper}>{renderLink(value)}</div>;
+                return (
+                  <div className={styles.linkWrapper}>
+                    <>{value}</>
+                  </div>
+                );
               }
             }}
           </DataLinksContextMenu>
@@ -122,11 +126,4 @@ export const DefaultCellComponent = (props: CustomCellRendererProps & DefaultCel
       </div>
     </DefaultCellWrapComponent>
   );
-};
-
-export const renderLink = (value: string | unknown | ReactElement) => {
-  if (value !== null) {
-    return <>{value}</>;
-  }
-  return undefined;
 };
