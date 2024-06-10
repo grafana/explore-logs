@@ -42,62 +42,62 @@ export class PatternsViewTextSearch extends SceneObjectBase<PatternsViewTextSear
    * @todo do we want to set parent filtered frames, or just have one?
    * Currently uncalled
    */
-  setFilteredPatterns() {
-    const parent = sceneGraph.getAncestor(this, PatternsBreakdownScene);
-    if (parent.state.patternFrames) {
-      const filteredPatternFrames = parent.state.patternFrames.filter((patternFrame) => {
-        if (this.state.patternFilter && parent.state.filteredPatterns?.length) {
-          return parent.state.filteredPatterns.find((pattern) => pattern === patternFrame.pattern);
-        }
-        return false;
-      });
-      parent.setState({
-        patternFrames: filteredPatternFrames,
-      });
-    }
-  }
+  // setFilteredPatterns() {
+  //   const parent = sceneGraph.getAncestor(this, PatternsBreakdownScene);
+  //   if (parent.state.patternFrames) {
+  //     const filteredPatternFrames = parent.state.patternFrames.filter((patternFrame) => {
+  //       if (this.state.patternFilter && parent.state.filteredPatterns?.length) {
+  //         return parent.state.filteredPatterns.find((pattern) => pattern === patternFrame.pattern);
+  //       }
+  //       return false;
+  //     });
+  //     parent.setState({
+  //       patternFrames: filteredPatternFrames,
+  //     });
+  //   }
+  // }
 
-  onSearchResult(data: string[][]) {
-    console.log('onSearchResult', data);
-    console.log('searchString', this.state.patternFilter);
-    const parent = sceneGraph.getAncestor(this, PatternsBreakdownScene);
-    // If we have a search string
-    if (this.state.patternFilter) {
-      // And the results are different then what is already set in the parent state
-      if (!data[0].every((val, index) => val === parent.state?.filteredPatterns?.[index])) {
-        // Set the parent state
-        parent.setState({
-          filteredPatterns: data[0],
-        });
-        console.log('we set the parent state');
-        // If search results are empty, but we have patterns set on parent
-      } else if (!data[0].length && parent.state?.filteredPatterns) {
-        // Clear them
-        parent.setState({
-          filteredPatterns: undefined,
-        });
-        console.log('Cleared parent data (no results)');
-      } else if (parent.state?.filteredPatterns !== undefined) {
-        console.log('We didnt set parent state, we already made this change');
-      }
-      // If we don't have a search string, and the parent still has filtered patterns in state
-    } else if (parent.state.filteredPatterns) {
-      console.log('we cleared the parent state because the search box is empty');
-      // Wipe the parent filtered state
-      parent.setState({
-        filteredPatterns: undefined,
-      });
-    } else {
-      console.log('nothing to clear, but no results');
-    }
-  }
+  // onSearchResult(data: string[][]) {
+  //   console.log('onSearchResult', data);
+  //   console.log('searchString', this.state.patternFilter);
+  //   const parent = sceneGraph.getAncestor(this, PatternsBreakdownScene);
+  //   // If we have a search string
+  //   if (this.state.patternFilter) {
+  //     // And the results are different then what is already set in the parent state
+  //     if (!data[0].every((val, index) => val === parent.state?.filteredPatterns?.[index])) {
+  //       // Set the parent state
+  //       parent.setState({
+  //         filteredPatterns: data[0],
+  //       });
+  //       console.log('we set the parent state');
+  //       // If search results are empty, but we have patterns set on parent
+  //     } else if (!data[0].length && parent.state?.filteredPatterns) {
+  //       // Clear them
+  //       parent.setState({
+  //         filteredPatterns: undefined,
+  //       });
+  //       console.log('Cleared parent data (no results)');
+  //     } else if (parent.state?.filteredPatterns !== undefined) {
+  //       console.log('We didnt set parent state, we already made this change');
+  //     }
+  //     // If we don't have a search string, and the parent still has filtered patterns in state
+  //   } else if (parent.state.filteredPatterns) {
+  //     console.log('we cleared the parent state because the search box is empty');
+  //     // Wipe the parent filtered state
+  //     parent.setState({
+  //       filteredPatterns: undefined,
+  //     });
+  //   } else {
+  //     console.log('nothing to clear, but no results');
+  //   }
+  // }
 
-  onEmptySearch() {
-    const parent = sceneGraph.getAncestor(this, PatternsBreakdownScene);
-    parent.setState({
-      filteredPatterns: [],
-    });
-  }
+  // onEmptySearch() {
+  //   const parent = sceneGraph.getAncestor(this, PatternsBreakdownScene);
+  //   parent.setState({
+  //     filteredPatterns: [],
+  //   });
+  // }
 
   private getVariable() {
     const variable = sceneGraph.lookupVariable(PATTERNS_TEXT_FILTER, this);
