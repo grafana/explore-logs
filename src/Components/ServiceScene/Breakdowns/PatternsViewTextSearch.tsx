@@ -10,8 +10,8 @@ import React, { ChangeEvent } from 'react';
 import { Field, Icon, Input } from '@grafana/ui';
 import { css } from '@emotion/css';
 import { PATTERNS_TEXT_FILTER } from '../../../services/variables';
-import { debouncedFuzzySearch } from '../../../services/uFuzzy';
 import { PatternsBreakdownScene } from './PatternsBreakdownScene';
+import { debouncedFuzzySearch } from '../../../services/search';
 
 export interface PatternsViewTextSearchState extends SceneObjectState {
   patternFilter?: string;
