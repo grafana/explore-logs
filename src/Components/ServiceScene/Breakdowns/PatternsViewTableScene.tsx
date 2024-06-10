@@ -22,8 +22,6 @@ import { PatternsFrameScene } from './PatternsFrameScene';
 import { PatternsLogsSampleScene } from './PatternsLogsSampleScene';
 import { getExplorationFor } from '../../../services/scenes';
 
-// import {InteractiveTable} from "../../InteractiveTable/InteractiveTable";
-
 export interface SingleViewTableSceneState extends SceneObjectState {
   patternFrames: PatternFrame[];
   appliedPatterns?: AppliedPattern[];
@@ -193,11 +191,12 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
 
     return new PatternsLogsSampleScene({
       pattern: pattern,
-      // queryRunner: queryRunner,
       // @todo why does cloning break the query?
       // @todo why does not cloning work, but breaks everything else?
-      // $variables: variables
+      // If we don't clone, we get the scenes parent mismatch warning, but then this panel that we render interpolates variables in the query runner correctly, but other variables all over the app are broken
       $variables: variables,
+      // If we do clone, we don't get the scenes warning, but this panel doesn't interpolate variables as expected
+      // $variables: variables.clone(),
     });
   }
 }
@@ -269,13 +268,10 @@ export function PatternTableViewSceneComponent({ model }: SceneComponentProps<Pa
   const tableData = model.buildTableData(patternFrames, legendSyncPatterns);
   const columns = model.buildColumns(total, appliedPatterns);
 
-  // const IndexScene = sceneGraph.getAncestor()
-  // You cannot interpolate variables within a scene renderer!
   // You cannot instantiate scene classes within a renderer
-
+  // Then how are we going to get a scenes viz that needs to interpolate variables within a react callback? Is this not currently supported by scenes?
   return (
     <div data-testid={testIds.patterns.tableWrapper} className={vizStyles.tableWrap}>
-      {/*<expandedRow.Component model={expandedRow}/>*/}
       <InteractiveTable
         columns={columns}
         data={tableData}

@@ -19,9 +19,9 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
   }
 
   private onActivate() {
-    // @todo why is this an orphan, how do I manually set a parent?
-    console.log('this.parent', this.parent);
-    console.log('this.parent.parent', this.parent?.parent);
+    // @todo why does this scene have no parents?
+    console.log('this.parent', this.parent); // undefined
+    console.log('this.parent.parent', this.parent?.parent); // undefined
     if (!this.state.body) {
       const query = buildLokiQuery(LOG_STREAM_SELECTOR_EXPR);
       console.log('query', query);
@@ -30,6 +30,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
       this.setState({
         $variables: this.state.$variables,
         body: PanelBuilders.logs()
+          .setVariables(this.state.$variables)
           .setTitle(this.state.pattern)
           .setOption('showLogContextToggle', true)
           .setOption('showTime', true)
