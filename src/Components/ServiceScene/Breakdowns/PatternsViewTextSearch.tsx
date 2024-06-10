@@ -119,7 +119,6 @@ export class PatternsViewTextSearch extends SceneObjectBase<PatternsViewTextSear
 }
 
 const styles = {
-  input: css({}),
   field: css({
     label: 'field',
     marginBottom: 0,
@@ -136,7 +135,6 @@ export function PatternTextSearchComponent({ model }: SceneComponentProps<Patter
       <Input
         suffix={<Icon onClick={model.clearSearch} className={styles.icon} name={'x'} />}
         prefix={<Icon name="search" />}
-        className={styles.input}
         onChange={model.handleSearchChange}
         placeholder={'Search patterns'}
         value={patternFilter ?? ''}
