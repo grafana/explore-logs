@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { AddToFiltersButton } from './AddToFiltersButton';
 import { FieldType, createDataFrame } from '@grafana/data';
 import userEvent from '@testing-library/user-event';
-import { sceneGraph } from '@grafana/scenes';
+import { AdHocFiltersVariable, sceneGraph } from '@grafana/scenes';
 import { LEVEL_VARIABLE_VALUE, VAR_FIELDS } from 'services/variables';
 
 describe('AddToFiltersButton', () => {
@@ -29,9 +29,9 @@ describe('AddToFiltersButton', () => {
       }),
       variableName: 'testVariableName',
     });
-    const lookup = jest.spyOn(sceneGraph, 'lookupVariable');
+    const lookup = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(new AdHocFiltersVariable({}));
     render(<button.Component model={button} />);
-    userEvent.click(screen.getByRole('button', { name: 'Add to filters' }));
+    userEvent.click(screen.getByRole('button', { name: 'Include' }));
     await waitFor(async () => expect(lookup).toHaveBeenCalledWith('testVariableName', expect.anything()));
   });
 
@@ -57,9 +57,9 @@ describe('AddToFiltersButton', () => {
       }),
       variableName: 'testVariableName',
     });
-    const lookup = jest.spyOn(sceneGraph, 'lookupVariable');
+    const lookup = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(new AdHocFiltersVariable({}));
     render(<button.Component model={button} />);
-    userEvent.click(screen.getByRole('button', { name: 'Add to filters' }));
+    userEvent.click(screen.getByRole('button', { name: 'Include' }));
     await waitFor(async () => expect(lookup).toHaveBeenCalledWith(VAR_FIELDS, expect.anything()));
   });
 });
