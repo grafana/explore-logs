@@ -10,7 +10,8 @@ import {
 import React from 'react';
 import { getQueryRunner } from '../../../services/panel';
 import { buildLokiQuery } from '../../../services/query';
-import { LOG_STREAM_SELECTOR_EXPR } from '../../../services/variables';
+import { LOG_STREAM_SELECTOR_EXPR, VAR_PATTERNS_EXPR } from '../../../services/variables';
+import { AppliedPattern, renderPatternFilters } from '../../IndexScene/IndexScene';
 
 interface PatternsLogsSampleSceneState extends SceneObjectState {
   pattern: string;
@@ -28,16 +29,21 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
   private onActivate() {
     if (!this.state.body) {
       const query = buildLokiQuery(LOG_STREAM_SELECTOR_EXPR);
+      const pendingPattern: AppliedPattern = {
+        pattern: this.state.pattern,
+        type: 'include',
+      };
+
+      const patternsLine = renderPatternFilters([pendingPattern]);
+      query.expr = query.expr.replace(VAR_PATTERNS_EXPR, patternsLine);
 
       this.setState({
-        $variables: this.state.$variables,
         body: new SceneFlexLayout({
           height: 300,
           children: [
             new SceneFlexItem({
-              width: 'calc(100% - 80px)',
+              width: '100%',
               body: PanelBuilders.logs()
-                .setVariables(this.state.$variables)
                 .setHoverHeader(true)
                 .setOption('showLogContextToggle', true)
                 .setOption('showTime', true)
