@@ -21,11 +21,17 @@ import {
 } from '@grafana/scenes';
 import { Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { getLabelValueScene } from 'services/fields';
+import { getFilterBreakdownValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { getUniqueFilters } from 'services/scenes';
-import { ALL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR, VAR_FIELD_GROUP_BY, VAR_FILTERS } from 'services/variables';
+import {
+  ALL_VARIABLE_VALUE,
+  LOG_STREAM_SELECTOR_EXPR,
+  VAR_FIELDS,
+  VAR_FIELD_GROUP_BY,
+  VAR_FILTERS,
+} from 'services/variables';
 import { ServiceScene } from '../ServiceScene';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
@@ -359,9 +365,10 @@ function buildNormalLayout(variable: CustomVariable) {
           ],
           isLazy: true,
         }),
-        getLayoutChild: getLabelValueScene(
+        getLayoutChild: getFilterBreakdownValueScene(
           getLabelValue,
-          query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line
+          query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
+          VAR_FIELDS
         ),
       }),
       new ByFrameRepeater({
@@ -377,9 +384,10 @@ function buildNormalLayout(variable: CustomVariable) {
           ],
           isLazy: true,
         }),
-        getLayoutChild: getLabelValueScene(
+        getLayoutChild: getFilterBreakdownValueScene(
           getLabelValue,
-          query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line
+          query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
+          VAR_FIELDS
         ),
       }),
     ],

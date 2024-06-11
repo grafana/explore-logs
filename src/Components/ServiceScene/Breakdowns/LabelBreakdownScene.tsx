@@ -22,7 +22,7 @@ import {
 } from '@grafana/scenes';
 import { Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { DetectedLabel, DetectedLabelsResponse, getLabelValueScene } from 'services/fields';
+import { DetectedLabel, DetectedLabelsResponse, getFilterBreakdownValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { PLUGIN_ID } from 'services/routing';
@@ -318,9 +318,10 @@ function buildLabelValuesLayout(variable: CustomVariable) {
             }),
           ],
         }),
-        getLayoutChild: getLabelValueScene(
+        getLayoutChild: getFilterBreakdownValueScene(
           getLabelValue,
-          query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line
+          query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
+          VAR_FILTERS
         ),
       }),
       new ByFrameRepeater({
@@ -335,9 +336,10 @@ function buildLabelValuesLayout(variable: CustomVariable) {
             }),
           ],
         }),
-        getLayoutChild: getLabelValueScene(
+        getLayoutChild: getFilterBreakdownValueScene(
           getLabelValue,
-          query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line
+          query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
+          VAR_FILTERS
         ),
       }),
     ],
