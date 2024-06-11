@@ -5,7 +5,8 @@ import { Field, GrafanaTheme2 } from '@grafana/data';
 import { ClickOutsideWrapper, Icon, Popover, useTheme2 } from '@grafana/ui';
 
 import { useTableHeaderContext } from 'Components/Table/Context/TableHeaderContext';
-import { DATAPLANE_BODY_NAME } from '../../services/logsFrame';
+import { useQueryContext } from './Context/QueryContext';
+import { getBodyName } from '../../services/logsFrame';
 
 export interface LogsTableHeaderProps extends PropsWithChildren<CustomHeaderRendererProps> {
   fieldIndex: number;
@@ -57,9 +58,10 @@ const getStyles = (theme: GrafanaTheme2, isFirstColumn: boolean, isLine: boolean
 
 export const LogsTableHeader = (props: LogsTableHeaderProps) => {
   const { setHeaderMenuActive, isHeaderMenuActive } = useTableHeaderContext();
+  const { logsFrame } = useQueryContext();
   const referenceElement = useRef<HTMLButtonElement | null>(null);
   const theme = useTheme2();
-  const styles = getStyles(theme, props.fieldIndex === 0, props.field.name === DATAPLANE_BODY_NAME);
+  const styles = getStyles(theme, props.fieldIndex === 0, props.field.name === getBodyName(logsFrame));
 
   return (
     <span className={styles.wrapper}>
