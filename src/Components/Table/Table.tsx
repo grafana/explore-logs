@@ -12,7 +12,6 @@ import {
   Field,
   FieldType,
   FieldWithIndex,
-  GrafanaTheme2,
   Labels,
   MappingType,
   transformDataFrame,
@@ -35,7 +34,7 @@ import { CustomHeaderRendererProps } from 'Components/Table/LogsTableHeader';
 import { FieldName, FieldNameMeta, FieldNameMetaStore } from 'Components/Table/TableTypes';
 import { guessLogsFieldTypeForValue } from 'Components/Table/TableWrap';
 import { LogsTableHeaderWrap } from 'Components/Table/LogsTableHeaderWrap';
-import { DATAPLANE_BODY_NAME, DATAPLANE_ID_NAME, LogsFrame } from '../../services/logsFrame';
+import { getBodyName, getIdName, LogsFrame } from '../../services/logsFrame';
 import { useQueryContext } from './Context/QueryContext';
 import { testIds } from '../../services/testIds';
 
@@ -47,7 +46,7 @@ interface Props {
   labels: Labels[];
 }
 
-const getStyles = (theme: GrafanaTheme2) => ({
+const getStyles = () => ({
   section: css({
     position: 'relative',
   }),
@@ -75,7 +74,7 @@ function TableAndContext(props: { data: DataFrame; height: number; width: number
 export const Table = (props: Props) => {
   const { height, timeZone, logsFrame, width, labels } = props;
   const theme = useTheme2();
-  const styles = getStyles(theme);
+  const styles = getStyles();
 
   const [tableFrame, setTableFrame] = useState<DataFrame | undefined>(undefined);
   const { columns, visible, setVisible, setFilteredColumns, setColumns } = useTableColumnContext();
@@ -134,8 +133,8 @@ export const Table = (props: Props) => {
                 />
               </TableHeaderContextProvider>
             ),
-            width: getInitialFieldWidth(field, index, columns, width, frameWithOverrides.fields.length),
-            cellOptions: getTableCellOptions(field, index, labels),
+            width: getInitialFieldWidth(field, index, columns, width, frameWithOverrides.fields.length, logsFrame),
+            cellOptions: getTableCellOptions(field, index, labels, logsFrame),
             ...field.config.custom,
           },
           // This sets the individual field value as filterable
@@ -200,7 +199,7 @@ export const Table = (props: Props) => {
     return <></>;
   }
 
-  const idField = logsFrame.raw.fields.find((field) => field.name === DATAPLANE_ID_NAME);
+  const idField = logsFrame.raw.fields.find((field) => field.name === getIdName(logsFrame));
   const lineIndex = idField?.values.findIndex((v) => v === selectedLine?.id);
 
   return (
@@ -382,9 +381,10 @@ export function getExtractFieldsTransform(dataFrame: DataFrame) {
 function getTableCellOptions(
   field: Field,
   fieldIndex: number,
-  labels: Labels[]
+  labels: Labels[],
+  logsFrame: LogsFrame
 ): TableCustomCellOptions | TableColoredBackgroundCellOptions {
-  if (field.name === DATAPLANE_BODY_NAME) {
+  if (field.name === getBodyName(logsFrame)) {
     return {
       cellComponent: (props) => (
         <LogLineCellComponent {...props} fieldIndex={fieldIndex} labels={labels[props.rowIndex]} />
@@ -404,7 +404,8 @@ function getInitialFieldWidth(
   fieldIndex: number,
   columns: FieldNameMetaStore,
   tableWidth: number,
-  numberOfFields: number
+  numberOfFields: number,
+  logsFrame: LogsFrame
 ): number | undefined {
   const minWidth = 90;
 
@@ -433,7 +434,7 @@ function getInitialFieldWidth(
     return Math.min(Math.max(maxLength * 6.5 + 95 + extraPadding, minWidth + extraPadding), maxWidth);
   }
 
-  if (field.name === DATAPLANE_BODY_NAME) {
+  if (field.name === getBodyName(logsFrame)) {
     return undefined;
   }
 

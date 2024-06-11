@@ -5,8 +5,9 @@ import { LogLineState, useTableColumnContext } from 'Components/Table/Context/Ta
 import { Icon } from '@grafana/ui';
 import React, { useCallback } from 'react';
 import { Field } from '@grafana/data';
-import { DATAPLANE_BODY_NAME } from '../../services/logsFrame';
+import { getBodyName } from '../../services/logsFrame';
 import { css, cx } from '@emotion/css';
+import { useQueryContext } from './Context/QueryContext';
 
 export function LogsTableHeaderWrap(props: {
   headerProps: LogsTableHeaderProps;
@@ -18,6 +19,7 @@ export function LogsTableHeaderWrap(props: {
 }) {
   const { setHeaderMenuActive } = useTableHeaderContext();
   const { columns, setColumns, bodyState, setBodyState } = useTableColumnContext();
+  const { logsFrame } = useQueryContext();
   const styles = getStyles();
 
   const hideColumn = useCallback(
@@ -45,7 +47,7 @@ export function LogsTableHeaderWrap(props: {
     [columns, setColumns]
   );
 
-  const isBodyField = props.headerProps.field.name === DATAPLANE_BODY_NAME;
+  const isBodyField = props.headerProps.field.name === getBodyName(logsFrame);
 
   return (
     <LogsTableHeader {...props.headerProps}>
