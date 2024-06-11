@@ -1,6 +1,6 @@
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import { ActiveFieldMeta, FieldNameMetaStore } from 'Components/Table/TableTypes';
-import { DATAPLANE_BODY_NAME, DATAPLANE_TIMESTAMP_NAME, LogsFrame } from '../../../services/logsFrame';
+import { getBodyName, getTimeName, LogsFrame } from '../../../services/logsFrame';
 
 type TableColumnsContextType = {
   // the current list of labels from the dataframe combined with UI metadata
@@ -35,17 +35,21 @@ const TableColumnsContext = createContext<TableColumnsContextType>({
   setBodyState: () => {},
 });
 
-function setDefaultColumns(columns: FieldNameMetaStore, handleSetColumns: (newColumns: FieldNameMetaStore) => void) {
+function setDefaultColumns(
+  columns: FieldNameMetaStore,
+  handleSetColumns: (newColumns: FieldNameMetaStore) => void,
+  logsFrame: LogsFrame
+) {
   const pendingColumns = { ...columns };
 
-  pendingColumns[DATAPLANE_TIMESTAMP_NAME] = {
+  pendingColumns[getTimeName(logsFrame)] = {
     index: 0,
     active: true,
     type: 'TIME_FIELD',
     percentOfLinesWithLabel: 100,
     cardinality: Infinity,
   };
-  pendingColumns[DATAPLANE_BODY_NAME] = {
+  pendingColumns[getBodyName(logsFrame)] = {
     index: 1,
     active: true,
     type: 'BODY_FIELD',
@@ -119,7 +123,7 @@ export const TableColumnContextProvider = ({
 
       // If we're missing all fields, the user must have removed the last column, let's revert back to the default state
       if (activeFields.length === 0) {
-        setDefaultColumns(columns, handleSetColumns);
+        setDefaultColumns(columns, handleSetColumns, logsFrame);
       }
 
       // Reset any local search state

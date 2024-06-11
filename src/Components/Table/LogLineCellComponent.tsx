@@ -13,7 +13,7 @@ import { Scroller } from 'Components/Table/Scroller';
 import { css } from '@emotion/css';
 import { LineActionIcons } from 'Components/Table/LineActionIcons';
 import { RawLogLineText } from 'Components/Table/RawLogLineText';
-import { DATAPLANE_BODY_NAME } from '../../services/logsFrame';
+import { getBodyName } from '../../services/logsFrame';
 
 export type SelectedTableRow = {
   row: number;
@@ -51,7 +51,7 @@ export const LogLineCellComponent = (props: Props) => {
   const renderLabels = (labels: Labels) => {
     const columnLabelNames = Object.keys(columns);
     const labelNames = columnLabelNames
-      .filter((name) => name !== DATAPLANE_BODY_NAME)
+      .filter((name) => name !== getBodyName(logsFrame))
       .sort((a, b) => {
         // Sort level first
         if (a === 'level') {
