@@ -24,4 +24,11 @@ export const testIds = {
     buttonIncludedPattern: 'data-testid button-included-pattern',
     buttonExcludedPattern: 'data-testid button-excluded-pattern',
   },
+  logsPanelHeader: {
+    radio: 'data-testid radio-button',
+  },
+  table: {
+    wrapper: 'data-testid table-wrapper',
+    inspectLine: 'data-testid inspect',
+  },
 };
