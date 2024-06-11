@@ -22,7 +22,7 @@ import { TableCellHeight, TableColoredBackgroundCellOptions } from '@grafana/sch
 import { Drawer, Table as GrafanaTable, TableCellDisplayMode, TableCustomCellOptions, useTheme2 } from '@grafana/ui';
 
 import { TableCellContextProvider } from 'Components/Table/Context/TableCellContext';
-import { useTableColumnContext } from 'Components/Table/Context/TableColumnsContext';
+import { LogLineState, useTableColumnContext } from 'Components/Table/Context/TableColumnsContext';
 import { TableHeaderContextProvider } from 'Components/Table/Context/TableHeaderContext';
 import {
   ColumnSelectionDrawerWrap,
@@ -62,7 +62,7 @@ function TableAndContext(props: { data: DataFrame; height: number; width: number
   return (
     <GrafanaTable
       initialRowIndex={props.selectedLine}
-      cellHeight={TableCellHeight.Sm}
+      cellHeight={TableCellHeight.Auto}
       data={props.data}
       height={props.height}
       width={props.width}
@@ -77,7 +77,7 @@ export const Table = (props: Props) => {
   const styles = getStyles();
 
   const [tableFrame, setTableFrame] = useState<DataFrame | undefined>(undefined);
-  const { columns, visible, setVisible, setFilteredColumns, setColumns } = useTableColumnContext();
+  const { columns, visible, setVisible, setFilteredColumns, setColumns, bodyState } = useTableColumnContext();
 
   const { selectedLine } = useQueryContext();
 
@@ -104,6 +104,25 @@ export const Table = (props: Props) => {
           overrides: [],
         },
       });
+
+      let fieldWidthMap = new Map();
+      let maxWidth: { index?: number; width: number } = { index: undefined, width: -Infinity };
+      // Need to know total width
+      for (const [index, field] of frameWithOverrides.fields.entries()) {
+        const fieldWidth = getInitialFieldWidth(
+          field,
+          index,
+          columns,
+          width,
+          frameWithOverrides.fields.length,
+          logsFrame
+        );
+        fieldWidthMap.set(index, fieldWidth);
+        if (fieldWidth && maxWidth?.width < fieldWidth) {
+          maxWidth.index = index;
+          maxWidth.width = fieldWidth;
+        }
+      }
 
       // `getLinks` and `applyFieldOverrides` are taken from TableContainer.tsx
       for (const [index, field] of frameWithOverrides.fields.entries()) {
@@ -133,7 +152,7 @@ export const Table = (props: Props) => {
                 />
               </TableHeaderContextProvider>
             ),
-            width: getInitialFieldWidth(field, index, columns, width, frameWithOverrides.fields.length, logsFrame),
+            width: fieldWidthMap.get(index),
             cellOptions: getTableCellOptions(field, index, labels, logsFrame),
             ...field.config.custom,
           },
@@ -141,6 +160,14 @@ export const Table = (props: Props) => {
           // filterable: isFieldFilterable(field, logsFrame?.bodyField.name ?? '', logsFrame?.timeField.name ?? ''),
           filterable: true,
         };
+
+        if (field.name === logsFrame.bodyField.name && bodyState === LogLineState.text) {
+          field.config.custom.cellOptions = {
+            ...field.config.custom.cellOptions,
+            wrapText: true,
+            type: 'auto',
+          };
+        }
       }
 
       return frameWithOverrides;
@@ -148,7 +175,7 @@ export const Table = (props: Props) => {
     // This function is building the table dataframe that will be transformed, even though the components within the dataframe (cells, headers) can mutate the dataframe!
     // If we try to update the dataframe whenever the columns are changed (which are rebuilt using this dataframe after being transformed), react will infinitely update frame -> columns -> frame -> ...
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [timeZone, theme, labels]
+    [timeZone, theme, labels, bodyState]
   );
 
   // prepare dataFrame
