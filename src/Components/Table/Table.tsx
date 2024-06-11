@@ -67,7 +67,7 @@ function TableAndContext(props: {
 }) {
   return (
     <GrafanaTable
-      initialSortBy={[{ displayName: getTimeName(props.logsFrame) }]}
+      initialSortBy={[{ displayName: getTimeName(props.logsFrame), desc: true }]}
       initialRowIndex={props.selectedLine}
       cellHeight={TableCellHeight.Sm}
       data={props.data}
