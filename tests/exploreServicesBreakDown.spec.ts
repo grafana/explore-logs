@@ -81,6 +81,8 @@ test.describe('explore services breakdown page', () => {
     page
   }) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
+
+    // Get the cell within the second row
     const patternTextCell = page
         .getByTestId(testIds.patterns.tableWrapper)
         .getByRole('table')
@@ -89,21 +91,30 @@ test.describe('explore services breakdown page', () => {
         .getByRole('cell')
         .nth(3)
 
+    // Assert the target row is visible
+    await expect(patternTextCell).toBeVisible()
+
+    // Count all of the rows in the table before filtering
     const countOfAllRows = await page
         .getByTestId(testIds.patterns.tableWrapper)
         .getByRole('table')
         .getByRole('row')
         .count()
 
-    await expect(patternTextCell).toBeVisible()
+    // Get the full pattern from the cell
     const searchText = await patternTextCell.textContent() as string;
     expect(searchText).not.toBeUndefined()
 
+    // Get the input
     const patternSearchInput = page.getByPlaceholder('Search patterns');
+
+    // Set the content
     await patternSearchInput.fill(searchText)
 
+    // Expect input is visible
     await expect(patternSearchInput).toBeVisible()
 
+    // Get the first row after filtering
     const patternTextCellAfterFilter = page
         .getByTestId(testIds.patterns.tableWrapper)
         .getByRole('table')
@@ -117,6 +128,7 @@ test.describe('explore services breakdown page', () => {
     await expect(patternTextCellAfterFilter).toBeVisible()
     expect(await patternTextCellAfterFilter.textContent()).toBeDefined()
 
+    // Count the rows after filtering
     const countOfAllRowsAfterFilter = await page
         .getByTestId(testIds.patterns.tableWrapper)
         .getByRole('table')
@@ -131,7 +143,6 @@ test.describe('explore services breakdown page', () => {
     // Assert the viz was filtered as well
     const legendIconsCount = await page.getByTestId('series-icon').count()
     expect(legendIconsCount).toBe(countOfAllRowsAfterFilter)
-
   });
 
     test('should select an include pattern field in default single view, update filters, not open log panel', async ({
