@@ -92,6 +92,7 @@ export function parseDataplaneLogsFrame(frame: DataFrame): LogsFrame | null {
   };
 }
 
+// Copied from https://github.com/grafana/grafana/blob/main/public/app/features/logs/legacyLogsFrame.ts
 export function parseLegacyLogsFrame(frame: DataFrame): LogsFrame | null {
   const cache = new FieldCache(frame);
   const timeField = cache.getFirstFieldOfType(FieldType.time);
