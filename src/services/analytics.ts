@@ -36,7 +36,7 @@ export const USER_EVENTS_ACTIONS = {
     open_in_explore_clicked: 'open_in_explore_clicked',
     // Selecting action view tab (logs/labels/fields/patterns). Props: newActionView, previousActionView
     action_view_changed: 'action_view_changed',
-    // Clicking on "Add to filters" button in time series panels. Used in multiple views. The view type is passed as a parameter. Props: filterType, key, isFilterDuplicate, filtersLength
+    // Clicking on "Include" button in time series panels. Used in multiple views. The view type is passed as a parameter. Props: filterType, key, isFilterDuplicate, filtersLength
     add_to_filters_in_breakdown_clicked: 'add_to_filters_in_breakdown_clicked',
     // Clicking on "Select" button button in time series panels. Used in multiple views.The view type is passed as a parameter. Props: field, previousField, view
     select_field_in_breakdown_clicked: 'select_field_in_breakdown_clicked',
@@ -48,5 +48,7 @@ export const USER_EVENTS_ACTIONS = {
     pattern_removed: 'pattern_removed',
     // Selecting a pattern (e.g. include/exclude) from the list. Props: includePatternsLength, excludePatternsLength, type
     pattern_selected: 'pattern_selected',
+    // Toggling between logs/table view
+    logs_visualization_toggle: 'logs_visualization_toggle',
   },
 } as const;

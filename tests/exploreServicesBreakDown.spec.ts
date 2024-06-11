@@ -7,6 +7,7 @@ test.describe('explore services breakdown page', () => {
 
   test.beforeEach(async ({ page }) => {
     explorePage = new ExplorePage(page);
+    await page.evaluate(() => window.localStorage.clear());
     await explorePage.gotoServicesBreakdown();
   });
 
@@ -17,10 +18,46 @@ test.describe('explore services breakdown page', () => {
     await expect(page).toHaveURL(/broadcast/);
   });
 
+  test('should filter table panel on text search', async ({ page }) => {
+    const initialText = await page.getByTestId(testIds.table.wrapper).allTextContents()
+    await explorePage.serviceBreakdownSearch.click();
+    await explorePage.serviceBreakdownSearch.fill('broadcast');
+    await page.getByRole('radiogroup').getByTestId(testIds.logsPanelHeader.radio).nth(1).click()
+    const afterFilterText = await page.getByTestId(testIds.table.wrapper).allTextContents()
+    expect(initialText).not.toBe(afterFilterText)
+  })
+
+  test('should change filters on table click', async ({ page }) => {
+    // Switch to table view
+    await page.getByRole('radiogroup').getByTestId(testIds.logsPanelHeader.radio).nth(1).click()
+
+    const table = await page.getByTestId(testIds.table.wrapper);
+    // Get a level pill, and click it
+    const levelPill = table.getByRole('cell').getByText("level=").first()
+    await levelPill.click()
+    // Get the context menu
+    const pillContextMenu = await table.getByRole('img', { name: 'Add to search' });
+    // Assert menu is open
+    await expect(pillContextMenu).toBeVisible()
+    // Click the filter button
+    await pillContextMenu.click()
+    // New level filter should be added
+    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label level')).toBeVisible()
+  })
+
+  test('should show inspect modal', async ({ page }) => {
+    await page.getByRole('radiogroup').getByTestId(testIds.logsPanelHeader.radio).nth(1).click()
+    // Expect table to be rendered
+    await expect(page.getByTestId(testIds.table.wrapper)).toBeVisible();
+
+    await page.getByTestId(testIds.table.inspectLine).last().click();
+    await expect(page.getByRole('dialog', { name: 'Inspect value' })).toBeVisible()
+  });
+
   test('should select a label, update filters, open in explore', async ({ page }) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
-    await page.getByLabel('detected_level').click();
-    await page.getByTestId('data-testid Panel header info').getByRole('button', { name: 'Add to filters' }).click();
+    await page.getByLabel('Select detected_level').click();
+    await page.getByTestId('data-testid Panel header info').getByRole('button', { name: 'Include' }).click();
     await expect(
       page.getByTestId('data-testid Dashboard template variables submenu Label detected_level')
     ).toBeVisible();
@@ -33,7 +70,7 @@ test.describe('explore services breakdown page', () => {
   test('should select a detected field, update filters, open log panel', async ({ page }) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabDetectedFields).click();
     await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
-    await page.getByRole('button', { name: 'Add to filters' }).nth(0).click();
+    await page.getByRole('button', { name: 'Include' }).nth(0).click();
     // Should see the logs panel full of errors
     await expect(page.getByTestId(testIds.exploreServiceDetails.searchLogs)).toBeVisible();
     // Adhoc err filter should be added
@@ -142,6 +179,8 @@ test.describe('explore services breakdown page', () => {
     await page.getByTitle('See log details').nth(1).click();
 
     // find text corresponding text to match adhoc filter
-    await expect(page.getByRole('cell', { name: 'Fields Ad-hoc statistics' }).getByText('mimir-distributor').nth(0)).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'Fields Ad-hoc statistics' }).getByText('mimir-distributor').nth(0)
+    ).toBeVisible();
   });
 });

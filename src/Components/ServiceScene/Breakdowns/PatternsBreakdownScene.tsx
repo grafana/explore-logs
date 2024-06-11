@@ -6,6 +6,7 @@ import {
   CustomVariable,
   SceneComponentProps,
   SceneFlexItem,
+  SceneFlexLayout,
   sceneGraph,
   SceneObject,
   SceneObjectBase,
@@ -76,14 +77,21 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
           {!loading && patterns?.length === 0 && (
             <GrotError>
               <div>
-                Sorry, we could not detect any patterns.
                 <p>
-                  Check back later or reachout to the{' '}
+                  <strong>
+                    Sorry, we could not detect any patterns.
+                  </strong>
+                </p>
+                <p>
+                  Check back later or reach out to the team in the{' '}
                   <TextLink href="https://slack.grafana.com/" external>
                     Grafana Labs community Slack channel
                   </TextLink>
                 </p>
-                Patterns let you detect similar log lines and add or exclude them from your search.
+                <p>
+                  Patterns let you detect similar log lines to include
+                  or exclude from your search.
+                </p>
               </div>
             </GrotError>
           )}
@@ -228,7 +236,11 @@ function getStyles(theme: GrafanaTheme2) {
 }
 
 export function buildPatternsScene() {
-  return new SceneFlexItem({
-    body: new PatternsBreakdownScene({}),
+  return new SceneFlexLayout({
+    children: [
+      new SceneFlexItem({
+        body: new PatternsBreakdownScene({}),
+      }),
+    ],
   });
 }
