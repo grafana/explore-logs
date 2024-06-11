@@ -3,7 +3,7 @@ import { DrawStyle, StackingMode } from '@grafana/ui';
 import { PanelBuilders, SceneCSSGridItem, SceneDataNode } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
 import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
-import { VAR_FIELDS } from './variables';
+import { VAR_FIELDS, VAR_FILTERS } from './variables';
 import { setLeverColorOverrides } from './panel';
 
 export type DetectedLabel = {
@@ -38,7 +38,11 @@ export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
   return result;
 }
 
-export function getLabelValueScene(getTitle: (df: DataFrame) => string, style: DrawStyle) {
+export function getFilterBreakdownValueScene(
+  getTitle: (df: DataFrame) => string,
+  style: DrawStyle,
+  variableName: typeof VAR_FIELDS | typeof VAR_FILTERS
+) {
   return (data: PanelData, frame: DataFrame, frameIndex: number) => {
     const panel = PanelBuilders.timeseries() //
       .setOption('legend', { showLegend: false })
@@ -47,7 +51,7 @@ export function getLabelValueScene(getTitle: (df: DataFrame) => string, style: D
       .setData(new SceneDataNode({ data: { ...data, series: [frame] } }))
       .setColor({ mode: 'fixed', fixedColor: getColorByIndex(frameIndex) })
       .setOverrides(setLeverColorOverrides)
-      .setHeaderActions(new AddToFiltersButton({ frame, variableName: VAR_FIELDS }));
+      .setHeaderActions(new AddToFiltersButton({ frame, variableName }));
 
     if (style === DrawStyle.Bars) {
       panel

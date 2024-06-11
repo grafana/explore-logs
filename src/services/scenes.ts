@@ -51,6 +51,7 @@ export function getLabelOptions(sceneObject: SceneObject, allOptions: string[]) 
   }));
 
   const levelOption = [];
+  // We are adding LEVEL_VARIABLE_VALUE which is structured metadata, but we want to show it as a label
   if (!allOptions.includes(LEVEL_VARIABLE_VALUE)) {
     levelOption.push({ label: LEVEL_VARIABLE_VALUE, value: LEVEL_VARIABLE_VALUE });
   }
@@ -90,4 +91,20 @@ export async function getLokiDatasource(sceneObject: SceneObject) {
     | DataSourceWithBackend
     | undefined;
   return ds;
+}
+
+export function getAdHocFiltersVariable(variableName: string, sceneObject: SceneObject) {
+  const variable = sceneGraph.lookupVariable(variableName, sceneObject);
+
+  if (!variable) {
+    console.warn(`Could not get AdHocFiltersVariable ${variableName}. Variable not found.`);
+    return null;
+  }
+  if (!(variable instanceof AdHocFiltersVariable)) {
+    console.warn(
+      `Could not get AdHocFiltersVariable ${variableName}. Variable is not an instance of AdHocFiltersVariable`
+    );
+    return null;
+  }
+  return variable;
 }
