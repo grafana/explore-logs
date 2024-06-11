@@ -1,17 +1,12 @@
 import React from 'react';
 
 import { DataFrame } from '@grafana/data';
-import {
-  SceneObjectState,
-  SceneObjectBase,
-  SceneComponentProps,
-  sceneGraph,
-  AdHocFiltersVariable,
-} from '@grafana/scenes';
+import { SceneObjectState, SceneObjectBase, SceneComponentProps } from '@grafana/scenes';
 import { VariableHide } from '@grafana/schema';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
 import { LEVEL_VARIABLE_VALUE, VAR_FIELDS } from 'services/variables';
 import { FilterButton } from 'Components/FilterButton';
+import { getAdHocFiltersVariable } from 'services/scenes';
 
 export interface AddToFiltersButtonState extends SceneObjectState {
   frame: DataFrame;
@@ -34,8 +29,8 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
     if (selectedFilter.name === LEVEL_VARIABLE_VALUE) {
       variableName = VAR_FIELDS;
     }
-    const variable = sceneGraph.lookupVariable(variableName, this);
-    if (!(variable instanceof AdHocFiltersVariable)) {
+    const variable = getAdHocFiltersVariable(variableName, this);
+    if (!variable) {
       return;
     }
 
@@ -85,9 +80,9 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
     if (filter.name === LEVEL_VARIABLE_VALUE) {
       variableName = VAR_FIELDS;
     }
-    const variable = sceneGraph.lookupVariable(variableName, this);
-    if (!(variable instanceof AdHocFiltersVariable)) {
-      return;
+    const variable = getAdHocFiltersVariable(variableName, this);
+    if (!variable) {
+      return false;
     }
 
     // Check if the filter is already there
