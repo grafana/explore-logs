@@ -77,7 +77,64 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
   });
 
-  test('should select an include pattern field in default single view, update filters, not open log panel', async ({
+  test('should search patterns by text', async ({
+    page
+  }) => {
+    await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
+    const patternTextCell = page
+        .getByTestId(testIds.patterns.tableWrapper)
+        .getByRole('table')
+        .getByRole('row')
+        .nth(2)
+        .getByRole('cell')
+        .nth(3)
+
+    const countOfAllRows = await page
+        .getByTestId(testIds.patterns.tableWrapper)
+        .getByRole('table')
+        .getByRole('row')
+        .count()
+
+    await expect(patternTextCell).toBeVisible()
+    const searchText = await patternTextCell.textContent() as string;
+    expect(searchText).not.toBeUndefined()
+
+    const patternSearchInput = page.getByPlaceholder('Search patterns');
+    await patternSearchInput.fill(searchText)
+
+    await expect(patternSearchInput).toBeVisible()
+
+    const patternTextCellAfterFilter = page
+        .getByTestId(testIds.patterns.tableWrapper)
+        .getByRole('table')
+        .getByRole('row')
+        // First row is header?
+        .nth(1)
+        .getByRole('cell')
+        .nth(3)
+
+    // Assert that the visible row has the desired search string
+    await expect(patternTextCellAfterFilter).toBeVisible()
+    expect(await patternTextCellAfterFilter.textContent()).toBeDefined()
+
+    const countOfAllRowsAfterFilter = await page
+        .getByTestId(testIds.patterns.tableWrapper)
+        .getByRole('table')
+        .getByRole('row')
+        // Header takes up a row
+        .count() - 1
+
+    // Assert count should always be 1 unless one pattern contains another
+    expect(countOfAllRowsAfterFilter).toBeGreaterThanOrEqual(1)
+    expect(countOfAllRows).toBeGreaterThan(countOfAllRowsAfterFilter)
+
+    // Assert the viz was filtered as well
+    const legendIconsCount = await page.getByTestId('series-icon').count()
+    expect(legendIconsCount).toBe(countOfAllRowsAfterFilter)
+
+  });
+
+    test('should select an include pattern field in default single view, update filters, not open log panel', async ({
     page,
   }) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
