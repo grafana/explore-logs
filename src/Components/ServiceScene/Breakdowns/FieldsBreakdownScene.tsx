@@ -1,5 +1,5 @@
 import { css } from '@emotion/css';
-import React from 'react';
+import React, { ChangeEvent } from 'react';
 
 import { DataFrame, GrafanaTheme2, SelectableValue } from '@grafana/data';
 import {
@@ -19,7 +19,7 @@ import {
   SceneVariableSet,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import { Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
+import { Alert, Button, DrawStyle, Icon, Input, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getFilterBreakdownValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
@@ -46,6 +46,7 @@ export interface FieldsBreakdownSceneState extends SceneObjectState {
   loading?: boolean;
   error?: string;
   blockingMessage?: string;
+  valueFilter: string;
 
   changeFields?: (n: string[]) => void;
 }
@@ -65,6 +66,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         }),
       fields: state.fields ?? [],
       loading: true,
+      valueFilter: '',
       ...state,
     });
 
@@ -241,7 +243,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     });
   }
 
-  public onChange = (value?: string) => {
+  public onFieldSelectorChange = (value?: string) => {
     if (!value) {
       return;
     }
@@ -260,8 +262,12 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     variable.changeValueTo(value);
   };
 
+  private onValueFilterChange(event: ChangeEvent<HTMLInputElement>) {
+    this.setState({ valueFilter: event.target.value });
+  }
+
   public static Component = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
-    const { fields, body, loading, value, blockingMessage } = model.useState();
+    const { fields, body, loading, value, blockingMessage, valueFilter } = model.useState();
     const styles = useStyles2(getStyles);
 
     return (
@@ -269,8 +275,16 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
           <div className={styles.controls}>
             {body instanceof LayoutSwitcher && <body.Selector model={body} />}
+            {!loading && value && (
+              <Input
+                value={valueFilter}
+                onChange={model.onValueFilterChange}
+                prefix={<Icon name="search" />}
+                placeholder="Search for value"
+              />
+            )}
             {!loading && fields.length > 1 && (
-              <FieldSelector label="Field" options={fields} value={value} onChange={model.onChange} />
+              <FieldSelector label="Field" options={fields} value={value} onChange={model.onFieldSelectorChange} />
             )}
           </div>
           <div className={styles.content}>{body && <body.Component model={body} />}</div>
@@ -424,7 +438,7 @@ interface SelectLabelActionState extends SceneObjectState {
 }
 export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
   public onClick = () => {
-    getFieldsBreakdownSceneFor(this).onChange(this.state.labelName);
+    getFieldsBreakdownSceneFor(this).onFieldSelectorChange(this.state.labelName);
   };
 
   public static Component = ({ model }: SceneComponentProps<SelectLabelAction>) => {
