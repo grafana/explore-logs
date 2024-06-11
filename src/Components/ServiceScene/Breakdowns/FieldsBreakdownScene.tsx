@@ -19,7 +19,7 @@ import {
   SceneVariableSet,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import { Alert, Button, DrawStyle, Field, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
+import { Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getFilterBreakdownValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
@@ -33,7 +33,6 @@ import {
   VAR_FILTERS,
 } from 'services/variables';
 import { ServiceScene } from '../ServiceScene';
-import { AddToFiltersButton } from './AddToFiltersButton';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
@@ -269,17 +268,9 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       <div className={styles.container}>
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
           <div className={styles.controls}>
-            {!loading && fields.length > 0 && (
-              <div className={styles.controlsLeft}>
-                <Field label="By field">
-                  <FieldSelector options={fields} value={value} onChange={model.onChange} />
-                </Field>
-              </div>
-            )}
-            {body instanceof LayoutSwitcher && (
-              <div className={styles.controlsRight}>
-                <body.Selector model={body} />
-              </div>
+            {body instanceof LayoutSwitcher && <body.Selector model={body} />}
+            {!loading && fields.length > 1 && (
+              <FieldSelector label="Field" options={fields} value={value} onChange={model.onChange} />
             )}
           </div>
           <div className={styles.content}>{body && <body.Component model={body} />}</div>
@@ -312,19 +303,9 @@ function getStyles(theme: GrafanaTheme2) {
       flexGrow: 0,
       display: 'flex',
       alignItems: 'top',
+      justifyContent: 'space-between',
+      flexDirection: 'row-reverse',
       gap: theme.spacing(2),
-    }),
-    controlsRight: css({
-      flexGrow: 0,
-      display: 'flex',
-      justifyContent: 'flex-end',
-    }),
-    controlsLeft: css({
-      display: 'flex',
-      justifyContent: 'flex-left',
-      justifyItems: 'left',
-      width: '100%',
-      flexDirection: 'column',
     }),
   };
 }
@@ -446,9 +427,9 @@ export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
     getFieldsBreakdownSceneFor(this).onChange(this.state.labelName);
   };
 
-  public static Component = ({ model }: SceneComponentProps<AddToFiltersButton>) => {
+  public static Component = ({ model }: SceneComponentProps<SelectLabelAction>) => {
     return (
-      <Button variant="secondary" size="sm" onClick={model.onClick}>
+      <Button variant="secondary" size="sm" onClick={model.onClick} aria-label={`Select ${model.useState().labelName}`}>
         Select
       </Button>
     );
