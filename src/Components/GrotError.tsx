@@ -41,7 +41,7 @@ export const GrotError = ({ children }: React.PropsWithChildren<Props>) => {
         />
       </div>
       <div className={styles.text}>
-        <Text textAlignment="center" color="primary" element="p">
+        <Text textAlignment="center" color="primary" element="span">
           {children ? children : 'An error occurred'}
         </Text>
       </div>
