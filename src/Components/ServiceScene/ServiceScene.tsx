@@ -19,14 +19,13 @@ import {
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
-import { renderLogQLLabelFilters } from 'Components/IndexScene/IndexScene';
 import { Unsubscribable } from 'rxjs';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { DetectedLabelsResponse, extractParserAndFieldsFromDataFrame } from 'services/fields';
 import { getQueryRunner } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { EXPLORATIONS_ROUTE, PLUGIN_ID } from 'services/routing';
-import { getExplorationFor, getLokiDatasource, getUniqueFilters } from 'services/scenes';
+import { getExplorationFor, getLokiDatasource, getPatternExpr, getUniqueFilters } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
   LEVEL_VARIABLE_VALUE,
@@ -252,22 +251,12 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
 
     const timeRange = sceneGraph.getTimeRange(this).state.value;
-    const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
-    const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
-    const excludeLabels = [ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE];
+    const exploration = getExplorationFor(this);
 
     const { data } = await ds.getResource(
       'patterns',
       {
-        query: renderLogQLLabelFilters([
-          // this will only be the service name for now
-          ...filters.state.filters,
-          // only include fields that are an indexed label
-          ...fields.state.filters.filter(
-            // we manually add level as a label, but it'll be structured metadata mostly, so we skip it here
-            (field) => this.state.labels?.includes(field.key) && !excludeLabels.includes(field.key)
-          ),
-        ]),
+        query: getPatternExpr(exploration),
         start: timeRange.from.utc().toISOString(),
         end: timeRange.to.utc().toISOString(),
       },

@@ -10,7 +10,7 @@ import {
 import React from 'react';
 import { getQueryRunner } from '../../../services/panel';
 import { buildLokiQuery } from '../../../services/query';
-import { LOG_STREAM_SELECTOR_EXPR, VAR_PATTERNS_EXPR } from '../../../services/variables';
+import { PATTERNS_SAMPLE_SELECTOR_EXPR, VAR_PATTERNS_EXPR } from '../../../services/variables';
 import { AppliedPattern, renderPatternFilters } from '../../IndexScene/IndexScene';
 
 interface PatternsLogsSampleSceneState extends SceneObjectState {
@@ -28,7 +28,13 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
 
   private onActivate() {
     if (!this.state.body) {
-      const query = buildLokiQuery(LOG_STREAM_SELECTOR_EXPR);
+      // We can query with the entire query context, but that will mean that some panels return no data, even though we're returning a pattern, because the patterns only take indexed labels
+      // @todo do we want to return no-data because the user already has filters applied that will make this pattern not helpful for the current query?
+      // Or do we want to show a sample of the pattern that shows up in the table, even though the user could have already filtered that out with line filters or detected fields?
+      // const query = buildLokiQuery(LOG_STREAM_SELECTOR_EXPR);
+
+      // Currently preventing no-data when the user has active line-filters or detected fields in the query by only adding the interpolated indexed labels to the query!
+      const query = buildLokiQuery(PATTERNS_SAMPLE_SELECTOR_EXPR);
       const pendingPattern: AppliedPattern = {
         pattern: this.state.pattern,
         type: 'include',

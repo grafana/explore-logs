@@ -14,6 +14,7 @@ import {
   ALL_VARIABLE_VALUE,
   LEVEL_VARIABLE_VALUE,
   VAR_FIELDS,
+  VAR_FILTERS_EXPR,
 } from './variables';
 import { EXPLORATIONS_ROUTE } from './routing';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
@@ -36,6 +37,10 @@ export function getDataSource(exploration: IndexScene) {
 
 export function getQueryExpr(exploration: IndexScene) {
   return sceneGraph.interpolate(exploration, LOG_STREAM_SELECTOR_EXPR).replace(/\s+/g, ' ');
+}
+
+export function getPatternExpr(exploration: IndexScene) {
+  return sceneGraph.interpolate(exploration, VAR_FILTERS_EXPR).replace(/\s+/g, ' ');
 }
 
 export function getColorByIndex(index: number) {
