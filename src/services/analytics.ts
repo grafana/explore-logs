@@ -48,5 +48,7 @@ export const USER_EVENTS_ACTIONS = {
     pattern_removed: 'pattern_removed',
     // Selecting a pattern (e.g. include/exclude) from the list. Props: includePatternsLength, excludePatternsLength, type
     pattern_selected: 'pattern_selected',
+    // Toggling between logs/table view
+    logs_visualization_toggle: 'logs_visualization_toggle',
   },
 } as const;
