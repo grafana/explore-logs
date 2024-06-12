@@ -161,12 +161,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
   });
 
   filterVariable._getOperators = () => {
-    return [
-      {
-        label: '=',
-        value: '=',
-      },
-    ];
+    return operators;
   };
 
   const fieldsVariable = new AdHocFiltersVariable({
