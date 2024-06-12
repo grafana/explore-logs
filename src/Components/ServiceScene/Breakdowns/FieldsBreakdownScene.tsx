@@ -280,7 +280,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
           <div className={styles.controls}>
             {body instanceof LayoutSwitcher && <body.Selector model={body} />}
-            {!loading && value && (
+            {!loading && value !== ALL_VARIABLE_VALUE && (
               <SearchInput
                 value={valueFilter}
                 onChange={model.onValueFilterChange}
