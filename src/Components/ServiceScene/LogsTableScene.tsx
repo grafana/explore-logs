@@ -22,10 +22,6 @@ export class LogsTableScene extends SceneObjectBase {
     const timeRange = sceneGraph.getTimeRange(model);
     const { value: timeRangeValue } = timeRange.useState();
 
-    // Get Fields
-    const fields = sceneGraph.lookupVariable(VAR_FIELDS, model) as AdHocFiltersVariable;
-    const { filters } = fields.useState();
-
     // Define callback function to update filters in react
     const addFilter = (filter: AdHocVariableFilter) => {
       // Need list of indexed filters
@@ -69,7 +65,6 @@ export class LogsTableScene extends SceneObjectBase {
           {data?.series[0] && (
             <TableProvider
               panelWrap={panelWrap}
-              filters={filters}
               addFilter={addFilter}
               timeRange={timeRangeValue}
               selectedLine={selectedLine}
