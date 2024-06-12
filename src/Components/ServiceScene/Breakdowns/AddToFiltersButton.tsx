@@ -13,7 +13,7 @@ export interface AddToFiltersButtonState extends SceneObjectState {
   variableName: string;
 }
 
-type FilterType = 'include' | 'reset';
+type FilterType = 'include' | 'reset' | 'exclude';
 
 export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState> {
   public onClick = (type: FilterType) => {
@@ -39,13 +39,13 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
       return f.key !== selectedFilter.name && f.value !== selectedFilter.value;
     });
 
-    // If type is include, then add the filter
-    if (type === 'include') {
+    // If type is included or excluded, then add the filter
+    if (type === 'include' || type === 'exclude') {
       filters = [
         ...filters,
         {
           key: selectedFilter.name,
-          operator: '=',
+          operator: type === 'include' ? '=' : '!=',
           value: selectedFilter.value,
         },
       ];
@@ -68,10 +68,10 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
     );
   };
 
-  isIncluded = () => {
+  isSelected = () => {
     const filter = getFilter(this.state.frame);
     if (!filter) {
-      return;
+      return { isIncluded: false, isExcluded: false };
     }
 
     let variableName = this.state.variableName;
@@ -82,23 +82,33 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
     }
     const variable = getAdHocFiltersVariable(variableName, this);
     if (!variable) {
-      return false;
+      return { isIncluded: false, isExcluded: false };
     }
 
     // Check if the filter is already there
-    return variable.state.filters.some((f) => {
+    const filterInSelectedFilters = variable.state.filters.find((f) => {
       return f.key === filter.name && f.value === filter.value;
     });
+
+    if (!filterInSelectedFilters) {
+      return { isIncluded: false, isExcluded: false };
+    }
+
+    return {
+      isIncluded: filterInSelectedFilters.operator === '=',
+      isExcluded: filterInSelectedFilters.operator === '!=',
+    };
   };
 
   public static Component = ({ model }: SceneComponentProps<AddToFiltersButton>) => {
-    const isIncluded = model.isIncluded();
+    const { isIncluded, isExcluded } = model.isSelected();
     return (
       <FilterButton
-        isIncluded={!!isIncluded}
+        isIncluded={isIncluded}
+        isExcluded={isExcluded}
         onInclude={() => model.onClick('include')}
         onReset={() => model.onClick('reset')}
-        onlyIncluded
+        onExclude={() => model.onClick('exclude')}
       />
     );
   };

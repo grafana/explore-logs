@@ -44,19 +44,17 @@ export function getColorByIndex(index: number) {
 }
 
 export function getLabelOptions(sceneObject: SceneObject, allOptions: string[]) {
-  const filteredOptions = getUniqueFilters(sceneObject, allOptions);
+  // We are adding LEVEL_VARIABLE_VALUE which is structured metadata, but we want to show it as a label
+  // We need to add it before filtering unique values to make sure it is included in the list,
+  // but also to exclude it if it is already in filters
+  const options = [LEVEL_VARIABLE_VALUE, ...allOptions];
+  const filteredOptions = getUniqueFilters(sceneObject, options);
   const labelOptions: Array<SelectableValue<string>> = filteredOptions.map((label) => ({
     label,
     value: String(label),
   }));
 
-  const levelOption = [];
-  // We are adding LEVEL_VARIABLE_VALUE which is structured metadata, but we want to show it as a label
-  if (!allOptions.includes(LEVEL_VARIABLE_VALUE)) {
-    levelOption.push({ label: LEVEL_VARIABLE_VALUE, value: LEVEL_VARIABLE_VALUE });
-  }
-
-  return [{ label: 'All', value: ALL_VARIABLE_VALUE }, ...levelOption, ...labelOptions];
+  return [{ label: 'All', value: ALL_VARIABLE_VALUE }, ...labelOptions];
 }
 
 /**
