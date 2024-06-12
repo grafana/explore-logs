@@ -16,7 +16,7 @@ export function fuzzySearch(haystack: string[], query: string, dispatcher: (data
   let matchesSet: Set<string> = new Set();
   if (idxs && order) {
     /**
-     * get the fuzzy matches for hilighting
+     * get the fuzzy matches for highlighting
      * @param part
      * @param matched
      */
@@ -38,7 +38,7 @@ export function fuzzySearch(haystack: string[], query: string, dispatcher: (data
 
     dispatcher([haystackOrder, [...matchesSet]]);
   } else if (!query) {
-    dispatcher([[], []]);
+    dispatcher([]);
   }
 }
 
