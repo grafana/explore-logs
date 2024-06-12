@@ -54,7 +54,7 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     this.unfilteredChildren = newChildren;
   }
 
-  public filterFrame = (filterFn: FrameFilterCallback) => {
+  public filterFrames = (filterFn: FrameFilterCallback) => {
     const data = sceneGraph.getData(this).state.data;
     if (!data) {
       return;

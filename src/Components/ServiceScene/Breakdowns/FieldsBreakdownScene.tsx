@@ -278,7 +278,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   private filterValues(filter: string) {
     this.state.body?.forEachChild((child) => {
       if (child instanceof ByFrameRepeater) {
-        child.filterFrame((frame: DataFrame) => getLabelValue(frame).includes(filter));
+        child.filterFrames((frame: DataFrame) => getLabelValue(frame).includes(filter));
       }
     });
   }
