@@ -16,6 +16,8 @@ interface ByFrameRepeaterState extends SceneObjectState {
   getLayoutChild(data: PanelData, frame: DataFrame, frameIndex: number): SceneFlexItem;
 }
 
+type FrameFilterCallback = (f: DataFrame) => boolean;
+
 export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
   public constructor(state: ByFrameRepeaterState) {
     super(state);
@@ -37,15 +39,25 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     });
   }
 
-  private performRepeat(data: PanelData) {
+  private performRepeat(data: PanelData, filterFn: FrameFilterCallback = () => true) {
     const newChildren: SceneFlexItem[] = [];
 
     for (let seriesIndex = 0; seriesIndex < data.series.length; seriesIndex++) {
+      if (!filterFn(data.series[seriesIndex])) {
+        continue;
+      }
       const layoutChild = this.state.getLayoutChild(data, data.series[seriesIndex], seriesIndex);
       newChildren.push(layoutChild);
     }
 
     this.state.body.setState({ children: newChildren });
+  }
+
+  public filterFrame(filterFn: FrameFilterCallback) {
+    const data = sceneGraph.getData(this);
+    if (data.state.data) {
+      this.performRepeat(data.state.data, filterFn);
+    }
   }
 
   public static Component = ({ model }: SceneComponentProps<SceneByFrameRepeater>) => {
