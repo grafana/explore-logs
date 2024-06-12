@@ -19,7 +19,7 @@ import {
   SceneVariableSet,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import { Alert, Button, DrawStyle, Icon, Input, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
+import { Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getFilterBreakdownValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
@@ -37,6 +37,7 @@ import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
+import { SearchInput } from './SearchInput';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -262,9 +263,13 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     variable.changeValueTo(value);
   };
 
-  private onValueFilterChange(event: ChangeEvent<HTMLInputElement>) {
+  public onValueFilterChange = (event: ChangeEvent<HTMLInputElement>) => {
     this.setState({ valueFilter: event.target.value });
-  }
+  };
+
+  public clearValueFilter = () => {
+    this.setState({ valueFilter: '' });
+  };
 
   public static Component = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
     const { fields, body, loading, value, blockingMessage, valueFilter } = model.useState();
@@ -276,10 +281,10 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
           <div className={styles.controls}>
             {body instanceof LayoutSwitcher && <body.Selector model={body} />}
             {!loading && value && (
-              <Input
+              <SearchInput
                 value={valueFilter}
                 onChange={model.onValueFilterChange}
-                prefix={<Icon name="search" />}
+                onClear={model.clearValueFilter}
                 placeholder="Search for value"
               />
             )}
