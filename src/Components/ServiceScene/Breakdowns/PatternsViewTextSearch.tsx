@@ -6,7 +6,7 @@ import { PatternsBreakdownScene } from './PatternsBreakdownScene';
 import { debouncedFuzzySearch } from '../../../services/search';
 
 export interface PatternsViewTextSearchState extends SceneObjectState {
-  patternFilter?: string;
+  patternFilter: string;
 }
 
 export class PatternsViewTextSearch extends SceneObjectBase<PatternsViewTextSearchState> {
@@ -15,7 +15,7 @@ export class PatternsViewTextSearch extends SceneObjectBase<PatternsViewTextSear
   constructor(state?: Partial<PatternsViewTextSearchState>) {
     super({
       ...state,
-      patternFilter: state?.patternFilter,
+      patternFilter: state?.patternFilter ?? '',
     });
 
     this.addActivationHandler(this.onActivate.bind(this));
@@ -26,7 +26,7 @@ export class PatternsViewTextSearch extends SceneObjectBase<PatternsViewTextSear
    */
   public clearSearch = () => {
     this.setState({
-      patternFilter: undefined,
+      patternFilter: '',
     });
   };
 
@@ -52,7 +52,7 @@ export class PatternsViewTextSearch extends SceneObjectBase<PatternsViewTextSear
           if (parent.state.patternFrames) {
             debouncedFuzzySearch(
               parent.state.patternFrames.map((frame) => frame.pattern),
-              this.state.patternFilter ?? '',
+              this.state.patternFilter,
               this.onSearchResult
             );
           }
@@ -126,7 +126,7 @@ export function PatternTextSearchComponent({ model }: SceneComponentProps<Patter
         prefix={<Icon name="search" />}
         onChange={model.handleSearchChange}
         placeholder={'Search patterns'}
-        value={patternFilter ?? ''}
+        value={patternFilter}
       />
     </Field>
   );
