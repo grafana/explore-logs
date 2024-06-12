@@ -138,7 +138,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this.state.changeFields?.(fields.filter((f) => f.value !== ALL_VARIABLE_VALUE).map((f) => f.value!));
   }
 
-  private async updateBody(variable: CustomVariable) {
+  private updateBody(variable: CustomVariable = this.getVariable()) {
     const stateUpdate: Partial<FieldsBreakdownSceneState> = {
       value: String(variable.state.value),
       blockingMessage: undefined,
@@ -267,11 +267,21 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   public onValueFilterChange = (event: ChangeEvent<HTMLInputElement>) => {
     this.setState({ valueFilter: event.target.value });
+    this.filterValues(event.target.value);
   };
 
   public clearValueFilter = () => {
     this.setState({ valueFilter: '' });
+    this.filterValues('');
   };
+
+  private filterValues(filter: string) {
+    this.state.body?.forEachChild((child) => {
+      if (child instanceof ByFrameRepeater) {
+        child.filterFrame((frame: DataFrame) => getLabelValue(frame).includes(filter));
+      }
+    });
+  }
 
   public static Component = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
     const { fields, body, loading, value, blockingMessage, valueFilter } = model.useState();
