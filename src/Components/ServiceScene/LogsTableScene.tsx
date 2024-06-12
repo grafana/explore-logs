@@ -1,12 +1,13 @@
 import { AdHocFiltersVariable, SceneComponentProps, sceneGraph, SceneObjectBase } from '@grafana/scenes';
 import { LogsListScene } from './LogsListScene';
-import { VAR_FIELDS } from '../../services/variables';
+import { VAR_FIELDS, VAR_FILTERS } from '../../services/variables';
 import { AdHocVariableFilter } from '@grafana/data';
 import { TableProvider } from '../Table/TableProvider';
 import React, { useRef } from 'react';
 import { PanelChrome } from '@grafana/ui';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 import { css } from '@emotion/css';
+import { ServiceScene } from './ServiceScene';
 
 export class LogsTableScene extends SceneObjectBase {
   public static Component = ({ model }: SceneComponentProps<LogsTableScene>) => {
@@ -22,16 +23,28 @@ export class LogsTableScene extends SceneObjectBase {
     const { value: timeRangeValue } = timeRange.useState();
 
     // Get Fields
-    const fields = sceneGraph.lookupVariable(VAR_FIELDS, model)! as AdHocFiltersVariable;
+    const fields = sceneGraph.lookupVariable(VAR_FIELDS, model) as AdHocFiltersVariable;
     const { filters } = fields.useState();
 
     // Define callback function to update filters in react
     const addFilter = (filter: AdHocVariableFilter) => {
-      const fields = sceneGraph.lookupVariable(VAR_FIELDS, model)! as AdHocFiltersVariable;
-      const filters = fields.state.filters;
-      fields.setState({
-        filters: [...filters, filter],
-      });
+      // Need list of indexed filters
+      const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
+      const existingIndexedLabels = serviceScene.state.labels?.find((label) => label === filter.key);
+
+      if (existingIndexedLabels) {
+        const indexed = sceneGraph.lookupVariable(VAR_FILTERS, model) as AdHocFiltersVariable;
+        const filters = indexed.state.filters;
+        indexed.setState({
+          filters: [...filters, filter],
+        });
+      } else {
+        const fields = sceneGraph.lookupVariable(VAR_FIELDS, model) as AdHocFiltersVariable;
+        const filters = fields.state.filters;
+        fields.setState({
+          filters: [...filters, filter],
+        });
+      }
     };
 
     // Get reference to panel wrapper so table knows how much space it can use to render
