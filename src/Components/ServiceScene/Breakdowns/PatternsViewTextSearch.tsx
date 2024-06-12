@@ -125,7 +125,7 @@ export function PatternTextSearchComponent({ model }: SceneComponentProps<Patter
         suffix={<Icon onClick={model.clearSearch} className={styles.icon} name={'x'} />}
         prefix={<Icon name="search" />}
         onChange={model.handleSearchChange}
-        placeholder={'Search patterns'}
+        placeholder="Search patterns"
         value={patternFilter}
       />
     </Field>
