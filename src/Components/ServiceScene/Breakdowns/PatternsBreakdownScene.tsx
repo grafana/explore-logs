@@ -107,6 +107,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     this.setBody();
 
+    // If the patterns exist already, update the dataframe
     if (serviceScene.state.patterns) {
       this.updatePatternFrames(serviceScene.state.patterns);
     }
@@ -149,8 +150,6 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       patternFrames,
       loading: false,
     });
-
-    return patternFrames;
   }
 
   private buildPatterns(patterns: LokiPattern[]): PatternFrame[] {
