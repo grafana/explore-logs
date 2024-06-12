@@ -34,7 +34,7 @@ import { CustomHeaderRendererProps } from 'Components/Table/LogsTableHeader';
 import { FieldName, FieldNameMeta, FieldNameMetaStore } from 'Components/Table/TableTypes';
 import { guessLogsFieldTypeForValue } from 'Components/Table/TableWrap';
 import { LogsTableHeaderWrap } from 'Components/Table/LogsTableHeaderWrap';
-import { getBodyName, getIdName, LogsFrame } from '../../services/logsFrame';
+import { getBodyName, getIdName, getTimeName, LogsFrame } from '../../services/logsFrame';
 import { useQueryContext } from './Context/QueryContext';
 import { testIds } from '../../services/testIds';
 
@@ -58,9 +58,16 @@ const getStyles = () => ({
   }),
 });
 
-function TableAndContext(props: { data: DataFrame; height: number; width: number; selectedLine?: number }) {
+function TableAndContext(props: {
+  data: DataFrame;
+  height: number;
+  width: number;
+  selectedLine?: number;
+  logsFrame: LogsFrame;
+}) {
   return (
     <GrafanaTable
+      initialSortBy={[{ displayName: getTimeName(props.logsFrame), desc: true }]}
       initialRowIndex={props.selectedLine}
       cellHeight={TableCellHeight.Sm}
       data={props.data}
@@ -220,6 +227,7 @@ export const Table = (props: Props) => {
         <TableCellContextProvider>
           <ScrollSync horizontal={true} vertical={false} proportional={false}>
             <TableAndContext
+              logsFrame={logsFrame}
               selectedLine={lineIndex ?? selectedLine?.row}
               data={tableFrame}
               height={height}

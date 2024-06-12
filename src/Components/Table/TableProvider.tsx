@@ -10,7 +10,6 @@ interface TableProviderProps {
   dataFrame: DataFrame;
   setUrlColumns: (columns: string[]) => void;
   urlColumns: string[];
-  filters: AdHocVariableFilter[];
   addFilter: (filter: AdHocVariableFilter) => void;
   selectedLine?: SelectedTableRow;
   timeRange?: TimeRange;
@@ -21,7 +20,6 @@ export const TableProvider = ({
   dataFrame,
   setUrlColumns,
   urlColumns,
-  filters,
   addFilter,
   selectedLine,
   timeRange,
@@ -37,13 +35,7 @@ export const TableProvider = ({
   }
 
   return (
-    <QueryContextProvider
-      filters={filters}
-      addFilter={addFilter}
-      selectedLine={selectedLine}
-      timeRange={timeRange}
-      logsFrame={logsFrame}
-    >
+    <QueryContextProvider addFilter={addFilter} selectedLine={selectedLine} timeRange={timeRange} logsFrame={logsFrame}>
       <TableWrap setUrlColumns={setUrlColumns} urlColumns={urlColumns} panelWrap={panelWrap} />
     </QueryContextProvider>
   );

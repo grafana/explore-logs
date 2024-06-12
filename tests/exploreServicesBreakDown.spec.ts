@@ -67,6 +67,17 @@ test.describe('explore services breakdown page', () => {
     await expect(page1.getByText('{service_name=`tempo-distributor`}')).toBeVisible();
   });
 
+  test('should exclude a label, update filters, open log panel', async ({ page }) => {
+    await page.getByTestId(testIds.exploreServiceDetails.tabDetectedFields).click();
+    await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
+    await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
+    await expect(page.getByTestId(testIds.exploreServiceDetails.searchLogs)).toBeVisible();
+    // Adhoc err filter should be added
+    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
+    await expect(page.getByText('!=')).toBeVisible();
+  });
+
+
   test('should select a detected field, update filters, open log panel', async ({ page }) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabDetectedFields).click();
     await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
@@ -172,7 +183,7 @@ test.describe('explore services breakdown page', () => {
   });
 
   test('should update a filter and run new logs', async ({ page }) => {
-    await page.getByTestId('AdHocFilter-service_name').getByRole('img').nth(1).click();
+    await page.getByTestId('AdHocFilter-service_name').getByRole('img').nth(2).click();
     await page.getByText('mimir-distributor').click();
 
     // open logs panel

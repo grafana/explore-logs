@@ -8,16 +8,13 @@ type Props = {
   onInclude: () => void;
   onReset: () => void;
   isIncluded: boolean;
-  // temporary fix for the case when we want to show only include button (without exclude button)
-  onlyIncluded?: boolean;
-  // these are optional in case we want to show only included button
-  onExclude?: () => void;
-  isExcluded?: boolean;
+  onExclude: () => void;
+  isExcluded: boolean;
 };
 
 export const FilterButton = (props: Props) => {
-  const { isExcluded, isIncluded, onInclude, onExclude, onReset, onlyIncluded } = props;
-  const styles = useStyles2(getStyles, isIncluded, isExcluded, onlyIncluded);
+  const { isExcluded, isIncluded, onInclude, onExclude, onReset } = props;
+  const styles = useStyles2(getStyles, isIncluded, isExcluded);
   return (
     <div className={styles.container}>
       <Button
@@ -28,30 +25,23 @@ export const FilterButton = (props: Props) => {
         onClick={isIncluded ? onReset : onInclude}
         data-testid={testIds.exploreServiceDetails.buttonFilterInclude}
       >
-        {isIncluded && onlyIncluded ? 'Undo include' : 'Include'}
+        Include
       </Button>
-      {!onlyIncluded && (
-        <Button
-          variant={isExcluded ? 'primary' : 'secondary'}
-          fill="outline"
-          size="sm"
-          className={styles.excludeButton}
-          onClick={isExcluded ? onReset : onExclude}
-          data-testid={testIds.exploreServiceDetails.buttonFilterExclude}
-        >
-          Exclude
-        </Button>
-      )}
+      <Button
+        variant={isExcluded ? 'primary' : 'secondary'}
+        fill="outline"
+        size="sm"
+        className={styles.excludeButton}
+        onClick={isExcluded ? onReset : onExclude}
+        data-testid={testIds.exploreServiceDetails.buttonFilterExclude}
+      >
+        Exclude
+      </Button>
     </div>
   );
 };
 
-const getStyles = (
-  theme: GrafanaTheme2,
-  isIncluded: boolean,
-  isExcluded: boolean | undefined,
-  onlyIncluded: boolean | undefined
-) => {
+const getStyles = (theme: GrafanaTheme2, isIncluded: boolean, isExcluded: boolean) => {
   return {
     container: css({
       display: 'flex',
@@ -59,7 +49,7 @@ const getStyles = (
     }),
     includeButton: css({
       borderRadius: 0,
-      borderRight: isIncluded || onlyIncluded ? undefined : 'none',
+      borderRight: isIncluded ? undefined : 'none',
     }),
     excludeButton: css({
       borderRadius: `0 ${theme.shape.radius.default} ${theme.shape.radius.default} 0`,
