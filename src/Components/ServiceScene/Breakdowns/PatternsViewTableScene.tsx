@@ -9,7 +9,7 @@ import {
 import { PatternFrame } from './PatternsBreakdownScene';
 import React from 'react';
 import { AppliedPattern, IndexScene } from '../../IndexScene/IndexScene';
-import { DataFrame, LoadingState, PanelData } from '@grafana/data';
+import { DataFrame, LoadingState, PanelData, scaledUnits } from '@grafana/data';
 import { AxisPlacement, Column, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
 import { CellProps } from 'react-table';
 import { css, cx } from '@emotion/css';
@@ -19,6 +19,9 @@ import { config } from '@grafana/runtime';
 import { testIds } from '../../../services/testIds';
 import { PatternsFrameScene } from './PatternsFrameScene';
 
+// copied from from grafana repository packages/grafana-data/src/valueFormats/categories.ts
+// that is used in Grafana codebase for "short" units
+const SCALED_UNITS = ['', ' K', ' Mil', ' Bil', ' Tri', ' Quadr', ' Quint', ' Sext', ' Sept'];
 export interface SingleViewTableSceneState extends SceneObjectState {
   patternFrames: PatternFrame[];
   appliedPatterns?: AppliedPattern[];
@@ -92,11 +95,18 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
         id: 'count',
         header: 'Count',
         sortType: 'number',
-        cell: (props) => (
-          <div className={vizStyles.countTextWrap}>
-            <div>{props.cell.row.original.sum.toLocaleString()}</div>
-          </div>
-        ),
+        cell: (props) => {
+          const value = scaledUnits(1000, SCALED_UNITS)(props.cell.row.original.sum);
+          return (
+            <div className={vizStyles.countTextWrap}>
+              <div>
+                {value.prefix ?? ''}
+                {value.text}
+                {value.suffix ?? ''}
+              </div>
+            </div>
+          );
+        },
       },
       {
         id: 'percent',
