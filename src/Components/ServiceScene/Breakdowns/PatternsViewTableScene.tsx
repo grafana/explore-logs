@@ -20,6 +20,7 @@ import { testIds } from '../../../services/testIds';
 import { PatternsFrameScene } from './PatternsFrameScene';
 
 export interface SingleViewTableSceneState extends SceneObjectState {
+  // The local copy of the pattern frames, the parent breakdown scene decides if we get the filtered subset or not, in this scene we just present the data
   patternFrames: PatternFrame[] | undefined;
 }
 

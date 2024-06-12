@@ -27,8 +27,9 @@ export interface PatternsBreakdownSceneState extends SceneObjectState {
   loading?: boolean;
   error?: string;
   blockingMessage?: string;
-  // The dataframe built from the patterns
+  // The dataframe built from the patterns that we get back from the loki Patterns API
   patternFrames?: PatternFrame[];
+
   // Subset of patternFrames, undefined if empty, empty array if search results returned nothing (no data)
   filteredPatterns?: PatternFrame[];
   patternFilter: string;
