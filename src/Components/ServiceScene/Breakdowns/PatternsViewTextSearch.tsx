@@ -2,12 +2,10 @@ import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState } fr
 import React, { ChangeEvent } from 'react';
 import { Field, Icon, Input } from '@grafana/ui';
 import { css } from '@emotion/css';
-import { PatternsBreakdownScene } from './PatternsBreakdownScene';
-import { debouncedFuzzySearch } from '../../../services/search';
+import { PatternFrame, PatternsBreakdownScene } from './PatternsBreakdownScene';
+import { debouncedFuzzySearch, fuzzySearch } from '../../../services/search';
 
-export interface PatternsViewTextSearchState extends SceneObjectState {
-  patternFilter: string;
-}
+export interface PatternsViewTextSearchState extends SceneObjectState {}
 
 export class PatternsViewTextSearch extends SceneObjectBase<PatternsViewTextSearchState> {
   public static Component = PatternTextSearchComponent;
@@ -15,7 +13,6 @@ export class PatternsViewTextSearch extends SceneObjectBase<PatternsViewTextSear
   constructor(state?: Partial<PatternsViewTextSearchState>) {
     super({
       ...state,
-      patternFilter: state?.patternFilter ?? '',
     });
 
     this.addActivationHandler(this.onActivate.bind(this));
@@ -25,7 +22,8 @@ export class PatternsViewTextSearch extends SceneObjectBase<PatternsViewTextSear
    * On click callback to clear current text search
    */
   public clearSearch = () => {
-    this.setState({
+    const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
+    patternsBreakdownScene.setState({
       patternFilter: '',
     });
   };
@@ -35,7 +33,8 @@ export class PatternsViewTextSearch extends SceneObjectBase<PatternsViewTextSear
    * @param e
    */
   public handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
-    this.setState({
+    const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
+    patternsBreakdownScene.setState({
       patternFilter: e.target.value,
     });
   };
@@ -45,17 +44,36 @@ export class PatternsViewTextSearch extends SceneObjectBase<PatternsViewTextSear
    * @private
    */
   private onActivate() {
+    const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
     this._subs.add(
-      this.subscribeToState((newState, prevState) => {
+      patternsBreakdownScene.subscribeToState((newState, prevState) => {
         if (newState.patternFilter !== prevState.patternFilter) {
-          const parent = sceneGraph.getAncestor(this, PatternsBreakdownScene);
-          if (parent.state.patternFrames) {
+          const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
+          if (patternsBreakdownScene.state.patternFrames) {
             debouncedFuzzySearch(
-              parent.state.patternFrames.map((frame) => frame.pattern),
-              this.state.patternFilter,
+              patternsBreakdownScene.state.patternFrames.map((frame) => frame.pattern),
+              patternsBreakdownScene.state.patternFilter,
               this.onSearchResult
             );
           }
+        }
+      })
+    );
+
+    this._subs.add(
+      patternsBreakdownScene.subscribeToState((newState, prevState) => {
+        // If we have a search string, but no filtered patterns, run the search
+        if (
+          newState.patternFilter &&
+          !newState.filteredPatterns &&
+          newState.patternFrames &&
+          JSON.stringify(newState.filteredPatterns) !== JSON.stringify(prevState.filteredPatterns)
+        ) {
+          fuzzySearch(
+            newState.patternFrames.map((frame) => frame.pattern),
+            newState.patternFilter,
+            this.onSearchResult
+          );
         }
       })
     );
@@ -64,18 +82,21 @@ export class PatternsViewTextSearch extends SceneObjectBase<PatternsViewTextSear
   /**
    * Sets the patterns filtered by string match
    * @param patterns
+   * @param patternFramesOverride
    */
-  setFilteredPatterns(patterns: string[]) {
-    const parent = sceneGraph.getAncestor(this, PatternsBreakdownScene);
-    if (parent.state.patternFrames) {
-      const filteredPatternFrames = parent.state.patternFrames.filter((patternFrame) => {
-        if (this.state.patternFilter && parent.state.patternFrames?.length) {
+  setFilteredPatterns(patterns: string[], patternFramesOverride?: PatternFrame[]) {
+    const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
+    const patternFrames = patternFramesOverride ?? patternsBreakdownScene.state.patternFrames;
+
+    if (patternFrames) {
+      const filteredPatternFrames = patternFrames.filter((patternFrame) => {
+        if (patternsBreakdownScene.state.patternFilter && patternFrames?.length) {
           return patterns.find((pattern) => pattern === patternFrame.pattern);
         }
         return false;
       });
 
-      parent.setState({
+      patternsBreakdownScene.setState({
         filteredPatterns: filteredPatternFrames,
       });
     }
@@ -86,11 +107,11 @@ export class PatternsViewTextSearch extends SceneObjectBase<PatternsViewTextSear
    * @param data
    */
   onSearchResult = (data: string[][]) => {
-    const parent = sceneGraph.getAncestor(this, PatternsBreakdownScene);
+    const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
     // If we have a search string
-    if (this.state.patternFilter) {
+    if (patternsBreakdownScene.state.patternFilter) {
       this.setFilteredPatterns(data[0]);
-    } else if (parent.state.filteredPatterns && !this.state.patternFilter) {
+    } else if (patternsBreakdownScene.state.filteredPatterns && !patternsBreakdownScene.state.patternFilter) {
       // Wipe the parent filtered state
       this.setEmptySearch();
     }
@@ -118,7 +139,8 @@ const styles = {
 };
 
 export function PatternTextSearchComponent({ model }: SceneComponentProps<PatternsViewTextSearch>) {
-  const { patternFilter } = model.useState();
+  const patternsBreakdownScene = sceneGraph.getAncestor(model, PatternsBreakdownScene);
+  const { patternFilter } = patternsBreakdownScene.useState();
   return (
     <Field className={styles.field}>
       <Input

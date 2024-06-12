@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { ConfigOverrideRule, DataFrame, FieldColor, LoadingState } from '@grafana/data';
+import { ConfigOverrideRule, FieldColor, LoadingState } from '@grafana/data';
 import {
   PanelBuilders,
   SceneComponentProps,
@@ -18,27 +18,18 @@ import { IndexScene } from '../../IndexScene/IndexScene';
 import { PatternsViewTableScene } from './PatternsViewTableScene';
 import { config } from '@grafana/runtime';
 import { css } from '@emotion/css';
-import { PatternsBreakdownScene } from './PatternsBreakdownScene';
+import { PatternFrame, PatternsBreakdownScene } from './PatternsBreakdownScene';
 
 const palette = config.theme2.visualization.palette;
 
 export interface PatternsFrameSceneState extends SceneObjectState {
   body?: SceneCSSGridLayout;
   loading?: boolean;
-  patternFrames?: PatternFrame[];
   legendSyncPatterns: Set<string>;
-  patternFilter?: string;
 }
 
-export type PatternFrame = {
-  dataFrame: DataFrame;
-  pattern: string;
-  sum: number;
-  status?: 'include' | 'exclude';
-};
-
 export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState> {
-  constructor(state: Partial<PatternsFrameSceneState>) {
+  constructor(state?: Partial<PatternsFrameSceneState>) {
     super({
       loading: true,
       ...state,
@@ -61,14 +52,20 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
   };
 
   private onActivate() {
-    const parent = sceneGraph.getAncestor(this, PatternsBreakdownScene);
-    this.updateBody(parent.state.patternFrames);
+    this.updateBody();
 
     // If the patterns have changed, recalculate the dataframes
     this._subs.add(
       sceneGraph.getAncestor(this, ServiceScene).subscribeToState((newState, prevState) => {
         if (JSON.stringify(newState.patterns) !== JSON.stringify(prevState.patterns)) {
+          const parent = sceneGraph.getAncestor(this, PatternsBreakdownScene);
           this.updatePatterns(parent.state.patternFrames);
+
+          // In order to keep the search state from clearing, we need to clear the filtered state
+          const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
+          patternsBreakdownScene.setState({
+            filteredPatterns: undefined,
+          });
         }
       })
     );
@@ -76,13 +73,17 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
     // If the text search results have changed, update the components to use the filtered dataframe
     this._subs.add(
       sceneGraph.getAncestor(this, PatternsBreakdownScene).subscribeToState((newState, prevState) => {
+        const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
         if (
           newState.filteredPatterns &&
           JSON.stringify(newState.filteredPatterns) !== JSON.stringify(prevState.filteredPatterns)
         ) {
-          this.updatePatterns(parent.state.filteredPatterns);
+          this.updatePatterns(patternsBreakdownScene.state.filteredPatterns);
         } else {
-          this.updatePatterns(parent.state.patternFrames);
+          // If there is no search string, clear the state
+          if (!patternsBreakdownScene.state.patternFilter) {
+            this.updatePatterns(patternsBreakdownScene.state.patternFrames);
+          }
         }
       })
     );
@@ -96,25 +97,27 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
           $data: this.getTimeseriesDataNode(patternFrames),
         });
       }
-
       if (child instanceof PatternsViewTableScene) {
         child.setState({
-          patternFrames: patternFrames,
+          patternFrames,
         });
       }
     });
   }
 
-  private async updateBody(patternFrames?: PatternFrame[]) {
-    console.log('updateBody');
+  private async updateBody() {
+    const parent = sceneGraph.getAncestor(this, PatternsBreakdownScene);
+    const patternFrames = parent.state.patternFrames;
+
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     const lokiPatterns = serviceScene.state.patterns;
     if (!lokiPatterns || !patternFrames) {
+      console.warn('Failed to update PatternsFrameScene body');
       return;
     }
 
     this.setState({
-      body: this.getSingleViewLayout(patternFrames),
+      body: this.getSingleViewLayout(),
       legendSyncPatterns: new Set(),
       loading: false,
     });
@@ -140,9 +143,15 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
     };
   }
 
-  private getSingleViewLayout(patternFrames: PatternFrame[]) {
-    const logExploration = sceneGraph.getAncestor(this, IndexScene);
-    const appliedPatterns = sceneGraph.getAncestor(logExploration, IndexScene).state.patterns;
+  private getSingleViewLayout() {
+    const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
+    const patternFrames = patternsBreakdownScene.state.patternFrames;
+
+    if (!patternFrames) {
+      console.warn('Failed to set getSingleViewLayout');
+      return;
+    }
+
     const timeSeries = this.getTimeSeries(patternFrames);
 
     return new SceneCSSGridLayout({
@@ -154,7 +163,6 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
         timeSeries,
         new PatternsViewTableScene({
           patternFrames,
-          appliedPatterns,
         }),
       ],
     });

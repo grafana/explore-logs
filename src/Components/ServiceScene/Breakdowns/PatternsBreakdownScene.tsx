@@ -31,6 +31,7 @@ export interface PatternsBreakdownSceneState extends SceneObjectState {
   patternFrames?: PatternFrame[];
   // Subset of patternFrames, undefined if empty, empty array if search results returned nothing (no data)
   filteredPatterns?: PatternFrame[];
+  patternFilter: string;
 }
 
 export type PatternFrame = {
@@ -40,8 +41,6 @@ export type PatternFrame = {
   status?: 'include' | 'exclude';
 };
 
-const PATTERNS_FRAME_SCENE_KEY = 'PatternsFrameSceneKey';
-
 export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSceneState> {
   constructor(state: Partial<PatternsBreakdownSceneState>) {
     super({
@@ -50,6 +49,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
         new SceneVariableSet({
           variables: [new CustomVariable({ name: VAR_LABEL_GROUP_BY, defaultToAll: true, includeAll: true })],
         }),
+      patternFilter: '',
       loading: true,
       ...state,
     });
@@ -104,70 +104,43 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
   };
 
   private onActivate() {
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
+    this.setBody();
+
+    if (serviceScene.state.patterns) {
+      this.updatePatternFrames(serviceScene.state.patterns);
+    }
+
     // Subscribe to changes from pattern API call
     this._subs.add(
-      sceneGraph.getAncestor(this, ServiceScene).subscribeToState((newState, prevState) => {
+      serviceScene.subscribeToState((newState, prevState) => {
         if (JSON.stringify(newState.patterns) !== JSON.stringify(prevState.patterns)) {
-          this.updatePatternFrames();
+          this.updatePatternFrames(newState.patterns);
         }
       })
     );
+  }
 
-    // Subscribe to changes on this state when the pattern response has been converted to a dataframe we need to build the UI
-    this._subs.add(
-      this.subscribeToState((newState, prevState) => {
-        if (
-          newState.patternFrames &&
-          JSON.stringify(newState.patternFrames) !== JSON.stringify(prevState.patternFrames)
-        ) {
-          // this.state.body?.forEachChild((child) => {
-          //   if(child instanceof SceneFlexItem){
-          //     if(child.state.body instanceof PatternsFrameScene){
-          //       console.log('PatternsFrameScene', child)
-          //       child.state.body.setState({
-          //         patternFrames: newState.patternFrames
-          //       })
-          //     }
-          //   }
-          // })
-          this.updateBody(newState);
-        }
-      })
-    );
-
-    // Fix bug when toggling between tabs
-    this.updatePatternFrames().then(() => {
-      this.updateBody(this.state);
+  private setBody() {
+    this.setState({
+      body: new SceneFlexLayout({
+        direction: 'column',
+        children: [
+          new SceneFlexItem({
+            ySizing: 'content',
+            body: new PatternsViewTextSearch(),
+          }),
+          new SceneFlexItem({
+            body: new PatternsFrameScene(),
+          }),
+        ],
+      }),
     });
   }
 
-  private updateBody(newState: PatternsBreakdownSceneState) {
-    if (newState.patternFrames?.length) {
-      this.setState({
-        body: new SceneFlexLayout({
-          direction: 'column',
-          children: [
-            new SceneFlexItem({
-              ySizing: 'content',
-              body: new PatternsViewTextSearch(),
-            }),
-            new SceneFlexItem({
-              key: PATTERNS_FRAME_SCENE_KEY,
-              body: new PatternsFrameScene({
-                patternFrames: newState.patternFrames,
-              }),
-            }),
-          ],
-        }),
-      });
-    }
-  }
-
-  private async updatePatternFrames() {
-    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
-    const lokiPatterns = serviceScene.state.patterns;
-
+  private updatePatternFrames(lokiPatterns?: LokiPattern[]) {
     if (!lokiPatterns) {
+      console.warn('failed to update pattern frames');
       return;
     }
 
@@ -176,6 +149,8 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       patternFrames,
       loading: false,
     });
+
+    return patternFrames;
   }
 
   private buildPatterns(patterns: LokiPattern[]): PatternFrame[] {

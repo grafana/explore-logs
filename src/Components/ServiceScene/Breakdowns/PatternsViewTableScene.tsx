@@ -20,8 +20,7 @@ import { testIds } from '../../../services/testIds';
 import { PatternsFrameScene } from './PatternsFrameScene';
 
 export interface SingleViewTableSceneState extends SceneObjectState {
-  patternFrames: PatternFrame[];
-  appliedPatterns?: AppliedPattern[];
+  patternFrames: PatternFrame[] | undefined;
 }
 
 interface WithCustomCellData {
@@ -234,12 +233,16 @@ const vizStyles = {
 };
 
 export function PatternTableViewSceneComponent({ model }: SceneComponentProps<PatternsViewTableScene>) {
-  const { patternFrames, appliedPatterns } = model.useState();
-  console.log('PatternTableViewSceneComponent', patternFrames);
+  const indexScene = sceneGraph.getAncestor(model, IndexScene);
+  const { patterns: appliedPatterns } = indexScene.useState();
 
   // Get state from parent
-  const parent = sceneGraph.getAncestor(model, PatternsFrameScene);
-  const { legendSyncPatterns } = parent.useState();
+  const patternsFrameScene = sceneGraph.getAncestor(model, PatternsFrameScene);
+  const { legendSyncPatterns } = patternsFrameScene.useState();
+
+  // Must use local patternFrames as the parent decides if we get the filtered or not
+  const { patternFrames: patternFramesRaw } = model.useState();
+  const patternFrames = patternFramesRaw ?? [];
 
   // Calculate total for percentages
   const total = patternFrames.reduce((previousValue, frame) => {
