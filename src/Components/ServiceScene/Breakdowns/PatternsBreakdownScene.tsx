@@ -8,13 +8,11 @@ import {
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
-  SceneObject,
   SceneObjectBase,
   SceneObjectState,
   SceneVariableSet,
 } from '@grafana/scenes';
 import { Text, TextLink, useStyles2 } from '@grafana/ui';
-import { LayoutSwitcher } from 'Components/ServiceScene/Breakdowns/LayoutSwitcher';
 import { StatusWrapper } from 'Components/ServiceScene/Breakdowns/StatusWrapper';
 import { GrotError } from 'Components/GrotError';
 import { VAR_LABEL_GROUP_BY } from 'services/variables';
@@ -24,7 +22,7 @@ import { PatternsFrameScene } from './PatternsFrameScene';
 import { PatternsViewTextSearch } from './PatternsViewTextSearch';
 
 export interface PatternsBreakdownSceneState extends SceneObjectState {
-  body?: SceneObject;
+  body?: SceneFlexLayout;
   value?: string;
   loading?: boolean;
   error?: string;
@@ -41,6 +39,8 @@ export type PatternFrame = {
   sum: number;
   status?: 'include' | 'exclude';
 };
+
+const PATTERNS_FRAME_SCENE_KEY = 'PatternsFrameSceneKey';
 
 export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSceneState> {
   constructor(state: Partial<PatternsBreakdownSceneState>) {
@@ -83,9 +83,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
             <GrotError>
               <div>
                 <p>
-                  <strong>
-                    Sorry, we could not detect any patterns.
-                  </strong>
+                  <strong>Sorry, we could not detect any patterns.</strong>
                 </p>
                 <p>
                   Check back later or reach out to the team in the{' '}
@@ -93,24 +91,12 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
                     Grafana Labs community Slack channel
                   </TextLink>
                 </p>
-                <p>
-                  Patterns let you detect similar log lines to include
-                  or exclude from your search.
-                </p>
+                <p>Patterns let you detect similar log lines to include or exclude from your search.</p>
               </div>
             </GrotError>
           )}
           {!loading && patterns && patterns.length > 0 && (
-            <>
-              <div className={styles.controls}>
-                {body instanceof LayoutSwitcher && (
-                  <div className={styles.controlsRight}>
-                    <body.Selector model={body} />
-                  </div>
-                )}
-              </div>
-              <div className={styles.content}>{body && <body.Component model={body} />}</div>
-            </>
+            <div className={styles.content}>{body && <body.Component model={body} />}</div>
           )}
         </StatusWrapper>
       </div>
@@ -134,6 +120,16 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
           newState.patternFrames &&
           JSON.stringify(newState.patternFrames) !== JSON.stringify(prevState.patternFrames)
         ) {
+          // this.state.body?.forEachChild((child) => {
+          //   if(child instanceof SceneFlexItem){
+          //     if(child.state.body instanceof PatternsFrameScene){
+          //       console.log('PatternsFrameScene', child)
+          //       child.state.body.setState({
+          //         patternFrames: newState.patternFrames
+          //       })
+          //     }
+          //   }
+          // })
           this.updateBody(newState);
         }
       })
@@ -156,6 +152,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
               body: new PatternsViewTextSearch(),
             }),
             new SceneFlexItem({
+              key: PATTERNS_FRAME_SCENE_KEY,
               body: new PatternsFrameScene({
                 patternFrames: newState.patternFrames,
               }),

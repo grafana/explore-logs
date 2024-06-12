@@ -235,6 +235,7 @@ const vizStyles = {
 
 export function PatternTableViewSceneComponent({ model }: SceneComponentProps<PatternsViewTableScene>) {
   const { patternFrames, appliedPatterns } = model.useState();
+  console.log('PatternTableViewSceneComponent', patternFrames);
 
   // Get state from parent
   const parent = sceneGraph.getAncestor(model, PatternsFrameScene);
