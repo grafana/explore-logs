@@ -7,7 +7,6 @@ export type Label = { name: string; values: string[]; indexed: boolean };
 
 export type QueryContextType = {
   logsFrame: LogsFrame | null;
-  filters: AdHocVariableFilter[];
   addFilter: (filter: AdHocVariableFilter) => void;
   selectedLine?: SelectedTableRow;
   timeRange?: TimeRange;
@@ -15,7 +14,6 @@ export type QueryContextType = {
 
 export const initialState = {
   logsFrame: null,
-  filters: [],
   addFilter: (filter: AdHocVariableFilter) => {},
   timeRange: undefined,
   selectedLine: undefined,
@@ -27,13 +25,11 @@ export const QueryContextProvider = ({
   children,
   logsFrame,
   addFilter,
-  filters,
   selectedLine,
   timeRange,
 }: {
   children: ReactNode;
   logsFrame: LogsFrame;
-  filters: AdHocVariableFilter[];
   addFilter: (filter: AdHocVariableFilter) => void;
   selectedLine?: SelectedTableRow;
   timeRange?: TimeRange;
@@ -45,7 +41,6 @@ export const QueryContextProvider = ({
         addFilter,
         selectedLine,
         timeRange,
-        filters,
       }}
     >
       {children}
