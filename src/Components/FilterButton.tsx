@@ -41,7 +41,7 @@ export const FilterButton = (props: Props) => {
   );
 };
 
-const getStyles = (theme: GrafanaTheme2, isIncluded: boolean, isExcluded: boolean | undefined) => {
+const getStyles = (theme: GrafanaTheme2, isIncluded: boolean, isExcluded: boolean) => {
   return {
     container: css({
       display: 'flex',

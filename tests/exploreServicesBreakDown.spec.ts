@@ -71,7 +71,6 @@ test.describe('explore services breakdown page', () => {
     await page.getByTestId(testIds.exploreServiceDetails.tabDetectedFields).click();
     await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
     await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
-    // Should see the logs panel full of errors
     await expect(page.getByTestId(testIds.exploreServiceDetails.searchLogs)).toBeVisible();
     // Adhoc err filter should be added
     await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
