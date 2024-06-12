@@ -146,7 +146,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
           children: [
             new SceneFlexItem({
               ySizing: 'content',
-              body: new PatternsViewTextSearch({}),
+              body: new PatternsViewTextSearch(),
             }),
             new SceneFlexItem({
               body: new PatternsFrameScene({

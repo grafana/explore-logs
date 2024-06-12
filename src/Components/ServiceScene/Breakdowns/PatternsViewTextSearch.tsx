@@ -1,15 +1,7 @@
-import {
-  CustomVariable,
-  SceneComponentProps,
-  sceneGraph,
-  SceneObjectBase,
-  SceneObjectState,
-  SceneVariableSet,
-} from '@grafana/scenes';
+import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import React, { ChangeEvent } from 'react';
 import { Field, Icon, Input } from '@grafana/ui';
 import { css } from '@emotion/css';
-import { PATTERNS_TEXT_FILTER } from '../../../services/variables';
 import { PatternsBreakdownScene } from './PatternsBreakdownScene';
 import { debouncedFuzzySearch } from '../../../services/search';
 
@@ -20,13 +12,10 @@ export interface PatternsViewTextSearchState extends SceneObjectState {
 export class PatternsViewTextSearch extends SceneObjectBase<PatternsViewTextSearchState> {
   public static Component = PatternTextSearchComponent;
 
-  constructor(state: PatternsViewTextSearchState) {
+  constructor(state?: Partial<PatternsViewTextSearchState>) {
     super({
       ...state,
-      patternFilter: state.patternFilter,
-      $variables: new SceneVariableSet({
-        variables: [new CustomVariable({ name: PATTERNS_TEXT_FILTER, value: state.patternFilter ?? '' })],
-      }),
+      patternFilter: state?.patternFilter,
     });
 
     this.addActivationHandler(this.onActivate.bind(this));
