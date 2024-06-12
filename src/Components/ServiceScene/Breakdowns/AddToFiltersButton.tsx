@@ -39,7 +39,7 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
       return f.key !== selectedFilter.name && f.value !== selectedFilter.value;
     });
 
-    // If type is include, then add the filter
+    // If type is included or excluded, then add the filter
     if (type === 'include' || type === 'exclude') {
       filters = [
         ...filters,
