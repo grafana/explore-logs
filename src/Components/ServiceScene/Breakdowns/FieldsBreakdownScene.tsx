@@ -147,7 +147,9 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     if (this.state.loading === false && this.state.fields.length === 1) {
       stateUpdate.body = this.buildEmptyLayout();
     } else {
-      stateUpdate.body = variable.hasAllValue() ? this.buildAllLayout(this.state.fields) : buildNormalLayout(variable);
+      stateUpdate.body = variable.hasAllValue()
+        ? this.buildFieldsLayout(this.state.fields)
+        : buildValuesLayout(variable);
     }
 
     this.setState(stateUpdate);
@@ -181,7 +183,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     });
   }
 
-  private buildAllLayout(options: Array<SelectableValue<string>>) {
+  private buildFieldsLayout(options: Array<SelectableValue<string>>) {
     const children: SceneFlexItemLike[] = [];
 
     for (const option of options) {
@@ -348,7 +350,7 @@ function getExpr(field: string) {
 
 const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
-function buildNormalLayout(variable: CustomVariable) {
+function buildValuesLayout(variable: CustomVariable) {
   const tagKey = variable.getValueText();
   const query = buildLokiQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
 
