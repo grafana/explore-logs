@@ -121,8 +121,8 @@ export class PatternsViewTextSearch extends SceneObjectBase<PatternsViewTextSear
    * Wipes filtered patterns when search string is empty
    */
   private setEmptySearch() {
-    const parent = sceneGraph.getAncestor(this, PatternsBreakdownScene);
-    parent.setState({
+    const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
+    patternsBreakdownScene.setState({
       filteredPatterns: undefined,
     });
   }

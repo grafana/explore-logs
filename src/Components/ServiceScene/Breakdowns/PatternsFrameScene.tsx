@@ -58,11 +58,10 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
     this._subs.add(
       sceneGraph.getAncestor(this, ServiceScene).subscribeToState((newState, prevState) => {
         if (JSON.stringify(newState.patterns) !== JSON.stringify(prevState.patterns)) {
-          const parent = sceneGraph.getAncestor(this, PatternsBreakdownScene);
-          this.updatePatterns(parent.state.patternFrames);
+          const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
+          this.updatePatterns(patternsBreakdownScene.state.patternFrames);
 
           // In order to keep the search state from clearing, we need to clear the filtered state
-          const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
           patternsBreakdownScene.setState({
             filteredPatterns: undefined,
           });
@@ -106,8 +105,8 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
   }
 
   private async updateBody() {
-    const parent = sceneGraph.getAncestor(this, PatternsBreakdownScene);
-    const patternFrames = parent.state.patternFrames;
+    const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
+    const patternFrames = patternsBreakdownScene.state.patternFrames;
 
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     const lokiPatterns = serviceScene.state.patterns;
@@ -156,7 +155,6 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
 
     return new SceneCSSGridLayout({
       templateColumns: '100%',
-      // templateRows: 'auto',
       autoRows: '200px',
 
       children: [
