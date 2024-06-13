@@ -22,6 +22,7 @@ import { DataFrame } from '@grafana/data';
 import { FilterType, addToFilters } from './Breakdowns/AddToFiltersButton';
 import { LabelType, getLabelTypeFromFrame } from 'services/fields';
 import { VAR_FIELDS, VAR_FILTERS } from 'services/variables';
+import { getAdHocFiltersVariable } from 'services/scenes';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -117,6 +118,15 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     this.handleLabelFilter(key, value, frame, 'exclude');
   };
 
+  public handleIsFilterLabelActive = (key: string) => {
+    const filters = getAdHocFiltersVariable(VAR_FILTERS, this);
+    const fields = getAdHocFiltersVariable(VAR_FIELDS, this);
+    return (
+      (filters && filters.state.filters.findIndex((filter) => filter.key === key) >= 0) ||
+      (fields && fields.state.filters.findIndex((filter) => filter.key === key) >= 0)
+    );
+  };
+
   private getLogsPanel() {
     const visualizationType = this.state.visualizationType;
 
@@ -130,6 +140,8 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         .setOption('onClickFilterLabel', this.handleLabelFilterClick)
         // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
         .setOption('onClickFilterOutLabel', this.handleLabelFilterOutClick)
+        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
+        .setOption('isFilterLabelActive', this.handleIsFilterLabelActive)
         .setHeaderActions(<LogsPanelHeaderActions vizType={visualizationType} onChange={this.setVisualizationType} />)
         .build(),
     });
