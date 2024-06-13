@@ -1,5 +1,5 @@
 import { css } from '@emotion/css';
-import React from 'react';
+import React, { ChangeEvent } from 'react';
 
 import { DataFrame, GrafanaTheme2, SelectableValue } from '@grafana/data';
 import {
@@ -32,6 +32,7 @@ import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
+import { SearchInput } from './SearchInput';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -40,6 +41,7 @@ export interface LabelBreakdownSceneState extends SceneObjectState {
   loading?: boolean;
   error?: boolean;
   blockingMessage?: string;
+  valueFilter: string;
 }
 
 export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneState> {
@@ -57,6 +59,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
         }),
       labels: state.labels ?? [],
       loading: true,
+      valueFilter: '',
       ...state,
     });
 
@@ -168,8 +171,26 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     variable.changeValueTo(value);
   };
 
+  public onValueFilterChange = (event: ChangeEvent<HTMLInputElement>) => {
+    this.setState({ valueFilter: event.target.value });
+    this.filterValues(event.target.value);
+  };
+
+  public clearValueFilter = () => {
+    this.setState({ valueFilter: '' });
+    this.filterValues('');
+  };
+
+  private filterValues(filter: string) {
+    this.state.body?.forEachChild((child) => {
+      if (child instanceof ByFrameRepeater) {
+        child.filterFrames((frame: DataFrame) => getLabelValue(frame).includes(filter));
+      }
+    });
+  }
+
   public static Component = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
-    const { labels, body, loading, value, blockingMessage, error } = model.useState();
+    const { labels, body, loading, value, blockingMessage, error, valueFilter } = model.useState();
     const styles = useStyles2(getStyles);
 
     return (
@@ -177,6 +198,14 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
           <div className={styles.controls}>
             {body instanceof LayoutSwitcher && <body.Selector model={body} />}
+            {!loading && value !== ALL_VARIABLE_VALUE && (
+              <SearchInput
+                value={valueFilter}
+                onChange={model.onValueFilterChange}
+                onClear={model.clearValueFilter}
+                placeholder="Search for value"
+              />
+            )}
             {!loading && labels.length > 0 && (
               <FieldSelector label="Label" options={labels} value={value} onChange={model.onChange} />
             )}
