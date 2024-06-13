@@ -24,7 +24,6 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'se
 import { getFilterBreakdownValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
-import { getUniqueFilters } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
@@ -101,7 +100,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this.setState({
       fields: [
         { label: 'All', value: ALL_VARIABLE_VALUE },
-        ...getUniqueFilters(logsScene, logsScene.state.detectedFields || []).map((f) => ({
+        ...(logsScene.state.detectedFields || []).map((f) => ({
           label: f,
           value: f,
         })),

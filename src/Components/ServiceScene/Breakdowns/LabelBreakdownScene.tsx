@@ -26,12 +26,13 @@ import { DetectedLabel, DetectedLabelsResponse, getFilterBreakdownValueScene } f
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { PLUGIN_ID } from 'services/routing';
-import { getLabelOptions, getLokiDatasource } from 'services/scenes';
+import { getLokiDatasource } from 'services/scenes';
 import { ALL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR, VAR_FILTERS, VAR_LABEL_GROUP_BY } from 'services/variables';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
+import { sortLabelsByCardinality, getLabelOptions } from 'services/labels';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -130,11 +131,8 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       return;
     }
 
-    const labels = detectedLabels
-      .filter((a) => a.cardinality > 1)
-      .sort((a, b) => a.cardinality - b.cardinality)
-      .map((l) => l.label);
-    const options = getLabelOptions(this, labels);
+    const labels = detectedLabels.sort((a, b) => sortLabelsByCardinality(a, b)).map((l) => l.label);
+    const options = getLabelOptions(labels);
 
     const stateUpdate: Partial<LabelBreakdownSceneState> = {
       loading: false,

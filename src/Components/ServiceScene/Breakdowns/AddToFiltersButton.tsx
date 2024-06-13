@@ -37,7 +37,7 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
 
     // In a case filter is already there, remove it
     let filters = variable.state.filters.filter((f) => {
-      return f.key !== selectedFilter.name && f.value !== selectedFilter.value;
+      return !(f.key === selectedFilter.name && f.value === selectedFilter.value);
     });
 
     // If type is included or excluded, then add the filter
