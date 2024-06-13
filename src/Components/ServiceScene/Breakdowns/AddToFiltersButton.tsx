@@ -7,6 +7,7 @@ import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'se
 import { LEVEL_VARIABLE_VALUE, VAR_FIELDS } from 'services/variables';
 import { FilterButton } from 'Components/FilterButton';
 import { getAdHocFiltersVariable } from 'services/scenes';
+import { FilterOp } from 'services/filters';
 
 export interface AddToFiltersButtonState extends SceneObjectState {
   frame: DataFrame;
@@ -36,7 +37,7 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
 
     // In a case filter is already there, remove it
     let filters = variable.state.filters.filter((f) => {
-      return f.key !== selectedFilter.name && f.value !== selectedFilter.value;
+      return !(f.key === selectedFilter.name && f.value === selectedFilter.value);
     });
 
     // If type is included or excluded, then add the filter
@@ -45,7 +46,7 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
         ...filters,
         {
           key: selectedFilter.name,
-          operator: type === 'include' ? '=' : '!=',
+          operator: type === 'include' ? FilterOp.Equal : FilterOp.NotEqual,
           value: selectedFilter.value,
         },
       ];
@@ -62,7 +63,7 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
       {
         filterType: this.state.variableName,
         key: selectedFilter.name,
-        action: filters.length === variable.state.filters.length ? 'added' : 'removed',
+        action: type,
         filtersLength: variable.state.filters.length,
       }
     );
@@ -95,8 +96,8 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
     }
 
     return {
-      isIncluded: filterInSelectedFilters.operator === '=',
-      isExcluded: filterInSelectedFilters.operator === '!=',
+      isIncluded: filterInSelectedFilters.operator === FilterOp.Equal,
+      isExcluded: filterInSelectedFilters.operator === FilterOp.NotEqual,
     };
   };
 
