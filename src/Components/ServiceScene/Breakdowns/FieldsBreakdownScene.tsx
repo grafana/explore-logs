@@ -89,16 +89,15 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         newState.value !== oldState.value ||
         newState.loading !== oldState.loading
       ) {
-        this.updateBody(variable);
+        this.updateBody();
       }
     });
 
     this.updateFields();
-    this.updateBody(variable);
+    this.updateBody();
   }
 
   private updateFields() {
-    const variable = this.getVariable();
     const logsScene = sceneGraph.getAncestor(this, ServiceScene);
 
     this.setState({
@@ -112,7 +111,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       loading: logsScene.state.loading,
     });
 
-    this.updateBody(variable);
+    this.updateBody();
   }
 
   private getVariable(): CustomVariable {
@@ -127,7 +126,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   private onReferencedVariableValueChanged() {
     const variable = this.getVariable();
     variable.changeValueTo(ALL_VARIABLE_VALUE);
-    this.updateBody(variable);
+    this.updateBody();
   }
 
   private hideField(field: string) {
@@ -138,7 +137,8 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this.state.changeFields?.(fields.filter((f) => f.value !== ALL_VARIABLE_VALUE).map((f) => f.value!));
   }
 
-  private updateBody(variable: CustomVariable = this.getVariable()) {
+  private updateBody() {
+    const variable = this.getVariable();
     const stateUpdate: Partial<FieldsBreakdownSceneState> = {
       value: String(variable.state.value),
       blockingMessage: undefined,
