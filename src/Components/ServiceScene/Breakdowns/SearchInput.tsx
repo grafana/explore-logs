@@ -11,7 +11,7 @@ export const SearchInput = ({ value, onChange, placeholder, onClear }: Props) =>
     <Input
       value={value}
       onChange={onChange}
-      suffix={value ? <Icon onClick={onClear} name={'x'} className={styles.clearIcon} /> : undefined}
+      suffix={value ? <Icon onClick={onClear} name="times" className={styles.clearIcon} /> : undefined}
       prefix={<Icon name="search" />}
       placeholder={placeholder}
     />
