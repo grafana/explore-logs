@@ -8,21 +8,21 @@ import { FieldsBreakdownScene } from './FieldsBreakdownScene';
 import { fuzzySearch } from '../../../services/search';
 
 export interface BreakdownSearchSceneState extends SceneObjectState {
-  valueFilter?: string;
+  filter?: string;
 }
 
 export class BreakdownSearchScene extends SceneObjectBase<BreakdownSearchSceneState> {
   constructor() {
     super({
-      valueFilter: '',
+      filter: '',
     });
   }
 
   public static Component = ({ model }: SceneComponentProps<BreakdownSearchScene>) => {
-    const { valueFilter } = model.useState();
+    const { filter } = model.useState();
     return (
       <SearchInput
-        value={valueFilter}
+        value={filter}
         onChange={model.onValueFilterChange}
         onClear={model.clearValueFilter}
         placeholder="Search for value"
@@ -31,12 +31,12 @@ export class BreakdownSearchScene extends SceneObjectBase<BreakdownSearchSceneSt
   };
 
   public onValueFilterChange = (event: ChangeEvent<HTMLInputElement>) => {
-    this.setState({ valueFilter: event.target.value });
+    this.setState({ filter: event.target.value });
     this.filterValues(event.target.value);
   };
 
   public clearValueFilter = () => {
-    this.setState({ valueFilter: '' });
+    this.setState({ filter: '' });
     this.filterValues('');
   };
 
