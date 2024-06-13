@@ -144,7 +144,7 @@ export function PatternTextSearchComponent({ model }: SceneComponentProps<Patter
   return (
     <Field className={styles.field}>
       <Input
-        suffix={<Icon onClick={model.clearSearch} className={styles.icon} name={'x'} />}
+        suffix={<Icon onClick={model.clearSearch} className={styles.icon} name={'times'} />}
         prefix={<Icon name="search" />}
         onChange={model.handleSearchChange}
         placeholder="Search patterns"
