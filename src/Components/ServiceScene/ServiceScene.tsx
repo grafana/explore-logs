@@ -46,6 +46,7 @@ import { buildLogsListScene } from './LogsListScene';
 import { testIds } from 'services/testIds';
 import { PageScene } from './PageScene';
 import { sortLabelsByCardinality } from 'services/filters';
+import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
 
 export interface LokiPattern {
   pattern: string;
@@ -111,6 +112,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
     variable.subscribeToState((newState) => {
       if (newState.filters.length === 0) {
+        this.redirectToStart();
+      }
+      // If we remove the service name filter, we should redirect to the start
+      if (!newState.filters.some((f) => f.key === SERVICE_NAME)) {
         this.redirectToStart();
       }
     });
