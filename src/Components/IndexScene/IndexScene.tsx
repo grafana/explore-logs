@@ -34,6 +34,7 @@ import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from
 import { ServiceScene } from '../ServiceScene/ServiceScene';
 import { ServiceSelectionComponent, StartingPointSelectedEvent } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LayoutScene } from './LayoutScene';
+import { FilterOp } from 'services/filters';
 
 type LogExplorationMode = 'service_selection' | 'service_details';
 
@@ -42,10 +43,6 @@ export interface AppliedPattern {
   type: 'include' | 'exclude';
 }
 
-export enum FilterOp {
-  Equal = '=',
-  NotEqual = '!=',
-}
 export interface IndexSceneState extends SceneObjectState {
   // contentScene is the scene that is displayed in the main body of the index scene - it can be either the service selection or service scene
   contentScene?: SceneObject;

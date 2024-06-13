@@ -1,7 +1,7 @@
 import { expect, test } from '@grafana/plugin-e2e';
 import { ExplorePage } from './fixtures/explore';
-import { testIds } from "../src/services/testIds";
-import { FilterOp } from '../src/Components/IndexScene/IndexScene';
+import { testIds } from '../src/services/testIds';
+import { FilterOp } from '../src/services/filters';
 
 test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;

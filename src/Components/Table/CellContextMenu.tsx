@@ -4,7 +4,7 @@ import { css } from '@emotion/css';
 import { GrafanaTheme2, LinkModel } from '@grafana/data';
 import { Icon, useTheme2 } from '@grafana/ui';
 import { useQueryContext } from './Context/QueryContext';
-import { FilterOp } from 'Components/IndexScene/IndexScene';
+import { FilterOp } from 'services/filters';
 
 interface Props {
   fieldType?: 'derived';

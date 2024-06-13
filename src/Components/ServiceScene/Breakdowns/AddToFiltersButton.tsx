@@ -7,7 +7,7 @@ import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'se
 import { LEVEL_VARIABLE_VALUE, VAR_FIELDS } from 'services/variables';
 import { FilterButton } from 'Components/FilterButton';
 import { getAdHocFiltersVariable } from 'services/scenes';
-import { FilterOp } from 'Components/IndexScene/IndexScene';
+import { FilterOp } from 'services/filters';
 
 export interface AddToFiltersButtonState extends SceneObjectState {
   frame: DataFrame;

@@ -45,7 +45,7 @@ import { GoToExploreButton } from './GoToExploreButton';
 import { buildLogsListScene } from './LogsListScene';
 import { testIds } from 'services/testIds';
 import { PageScene } from './PageScene';
-import { sortLabelsByCardinality } from 'services/labels';
+import { sortLabelsByCardinality } from 'services/filters';
 
 export interface LokiPattern {
   pattern: string;

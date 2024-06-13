@@ -13,7 +13,7 @@ import { addToFavoriteServicesInStorage } from 'services/store';
 import { VAR_DATASOURCE, VAR_FILTERS } from 'services/variables';
 import { SERVICE_NAME, StartingPointSelectedEvent } from './ServiceSelectionScene';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { FilterOp } from 'Components/IndexScene/IndexScene';
+import { FilterOp } from 'services/filters';
 
 export interface SelectServiceButtonState extends SceneObjectState {
   service: string;

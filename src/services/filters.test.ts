@@ -1,6 +1,6 @@
 import { SelectableValue } from '@grafana/data';
 import { DetectedLabel } from './fields';
-import { getLabelOptions, sortLabelsByCardinality } from './labels';
+import { getLabelOptions, sortLabelsByCardinality } from './filters';
 import { ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE } from './variables';
 
 describe('sortLabelsByCardinality', () => {

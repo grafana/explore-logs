@@ -32,7 +32,7 @@ import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
-import { sortLabelsByCardinality, getLabelOptions } from 'services/labels';
+import { sortLabelsByCardinality, getLabelOptions } from 'services/filters';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
