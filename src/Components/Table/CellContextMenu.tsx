@@ -67,19 +67,18 @@ export const CellContextMenu = (props: Props) => {
             >
               <Icon title={'Add to search'} size={'md'} name={'plus-circle'} />
             </div>
-            {/* commented out until filters have added support for negative filters*/}
-            {/*<div*/}
-            {/*  className={styles.menuItem}*/}
-            {/*  onClick={() => {*/}
-            {/*    addFilter({*/}
-            {/*      key: props.label,*/}
-            {/*      value: props.value,*/}
-            {/*      operator: FilterOp.NotEqual,*/}
-            {/*    });*/}
-            {/*  }}*/}
-            {/*>*/}
-            {/*  <Icon title={'Exclude from search'} size={'md'} name={'minus-circle'} />*/}
-            {/*</div>*/}
+            <div
+              className={styles.menuItem}
+              onClick={() => {
+                addFilter({
+                  key: props.label,
+                  value: props.value,
+                  operator: FilterOp.NotEqual,
+                });
+              }}
+            >
+              <Icon title={'Exclude from search'} size={'md'} name={'minus-circle'} />
+            </div>
           </>
         )}
 
