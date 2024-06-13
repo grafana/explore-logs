@@ -9,14 +9,14 @@ const uf = new uFuzzy({
   intraDel: 1,
 });
 
-export function fuzzySearch(haystack: string[], query: string, dispatcher: (data: string[][]) => void) {
-  const [idxs, info, order] = uf.search(haystack, query, 0);
+export function fuzzySearch(haystack: string[], query: string, callback: (data: string[][]) => void) {
+  const [idxs, info, order] = uf.search(haystack, query, 0, 1e5);
 
   let haystackOrder: string[] = [];
   let matchesSet: Set<string> = new Set();
   if (idxs && order) {
     /**
-     * get the fuzzy matches for hilighting
+     * get the fuzzy matches for highlighting
      * @param part
      * @param matched
      */
@@ -36,9 +36,9 @@ export function fuzzySearch(haystack: string[], query: string, dispatcher: (data
       haystackOrder.push(haystack[info.idx[infoIdx]]);
     }
 
-    dispatcher([haystackOrder, [...matchesSet]]);
+    callback([haystackOrder, [...matchesSet]]);
   } else if (!query) {
-    dispatcher([[], []]);
+    callback([]);
   }
 }
 
