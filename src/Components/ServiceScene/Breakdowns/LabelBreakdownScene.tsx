@@ -139,7 +139,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     const stateUpdate: Partial<LabelBreakdownSceneState> = {
       loading: false,
       value: String(variable.state.value),
-      labels: options, // this now includes "all"
+      labels: options, // this now includes "all" and possibly LEVEL_VARIABLE_VALUE structured metadata
       blockingMessage: undefined,
       error: false,
     };
