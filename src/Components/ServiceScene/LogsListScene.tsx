@@ -18,6 +18,7 @@ import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 import { LogsVolumePanel } from './LogsVolumePanel';
 import { css } from '@emotion/css';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
+import { DataFrame } from '@grafana/data';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -99,6 +100,14 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     });
   }
 
+  public handleLabelFilterClick = (key: string, value: string, frame?: DataFrame) => {
+    console.log(key, value, frame);
+  };
+
+  public handleLabelFilterOutClick = (key: string, value: string, frame?: DataFrame) => {
+    console.log(key, value, frame);
+  };
+
   private getLogsPanel() {
     const visualizationType = this.state.visualizationType;
 
@@ -108,6 +117,10 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         .setTitle('Logs')
         .setOption('showLogContextToggle', true)
         .setOption('showTime', true)
+        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
+        .setOption('onClickFilterLabel', this.handleLabelFilterClick)
+        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
+        .setOption('onClickFilterOutLabel', this.handleLabelFilterOutClick)
         .setHeaderActions(<LogsPanelHeaderActions vizType={visualizationType} onChange={this.setVisualizationType} />)
         .build(),
     });
