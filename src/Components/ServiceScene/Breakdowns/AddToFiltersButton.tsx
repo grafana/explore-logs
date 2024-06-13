@@ -14,7 +14,7 @@ export interface AddToFiltersButtonState extends SceneObjectState {
   variableName: string;
 }
 
-export type FilterType = 'include' | 'reset' | 'exclude';
+export type FilterType = 'include' | 'reset' | 'exclude' | 'toggle';
 
 export function addToFilters(
   key: string,
@@ -33,12 +33,19 @@ export function addToFilters(
     return !(filter.key === key && filter.value === value);
   });
 
-  if (operator === 'include' || operator === 'exclude') {
+  const filterExists = filters.length !== variable.state.filters.length;
+
+  /**
+   * Behaviors:
+   * - Add new include/exclude filter
+   * - Toggle: if the filter exists, remove it, otherwise add as include
+   */
+  if (operator === 'include' || operator === 'exclude' || (!filterExists && operator === 'toggle')) {
     filters = [
       ...filters,
       {
         key,
-        operator: operator === 'include' ? FilterOp.Equal : FilterOp.NotEqual,
+        operator: operator === 'exclude' ? FilterOp.NotEqual : FilterOp.Equal,
         value,
       },
     ];
