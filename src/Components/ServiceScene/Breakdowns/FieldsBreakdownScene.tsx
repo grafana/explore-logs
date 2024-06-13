@@ -102,7 +102,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this.setState({
       fields: [
         { label: 'All', value: ALL_VARIABLE_VALUE },
-        ...(logsScene.state.detectedFields || []).map((f) => ({
+        ...(logsScene.state.detectedFields ?? []).map((f) => ({
           label: f,
           value: f,
         })),
