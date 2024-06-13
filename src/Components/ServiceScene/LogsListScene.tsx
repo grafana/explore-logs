@@ -118,12 +118,12 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     this.handleLabelFilter(key, value, frame, 'exclude');
   };
 
-  public handleIsFilterLabelActive = (key: string) => {
+  public handleIsFilterLabelActive = (key: string, value: string) => {
     const filters = getAdHocFiltersVariable(VAR_FILTERS, this);
     const fields = getAdHocFiltersVariable(VAR_FIELDS, this);
     return (
-      (filters && filters.state.filters.findIndex((filter) => filter.key === key) >= 0) ||
-      (fields && fields.state.filters.findIndex((filter) => filter.key === key) >= 0)
+      (filters && filters.state.filters.findIndex((filter) => filter.key === key && filter.value === value) >= 0) ||
+      (fields && fields.state.filters.findIndex((filter) => filter.key === key && filter.value === value) >= 0)
     );
   };
 
