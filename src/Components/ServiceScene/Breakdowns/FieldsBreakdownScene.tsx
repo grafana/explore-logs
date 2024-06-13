@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
-import React, { ChangeEvent } from 'react';
+import React from 'react';
 
-import { DataFrame, GrafanaTheme2, SelectableValue } from '@grafana/data';
+import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import {
   CustomVariable,
   PanelBuilders,
@@ -28,8 +28,8 @@ import { getUniqueFilters } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
-  VAR_FIELDS,
   VAR_FIELD_GROUP_BY,
+  VAR_FIELDS,
   VAR_FILTERS,
 } from 'services/variables';
 import { ServiceScene } from '../ServiceScene';
@@ -37,17 +37,17 @@ import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
-import { SearchInput } from './SearchInput';
+import { BreakdownSearchScene, getLabelValue } from './BreakdownSearchScene';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
+  search?: BreakdownSearchScene;
   fields: Array<SelectableValue<string>>;
 
   value?: string;
   loading?: boolean;
   error?: string;
   blockingMessage?: string;
-  valueFilter: string;
 
   changeFields?: (n: string[]) => void;
 }
@@ -67,7 +67,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         }),
       fields: state.fields ?? [],
       loading: true,
-      valueFilter: '',
       ...state,
     });
 
@@ -151,6 +150,8 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         ? this.buildFieldsLayout(this.state.fields)
         : buildValuesLayout(variable);
     }
+
+    stateUpdate.search = new BreakdownSearchScene();
 
     this.setState(stateUpdate);
   }
@@ -265,26 +266,8 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     variable.changeValueTo(value);
   };
 
-  public onValueFilterChange = (event: ChangeEvent<HTMLInputElement>) => {
-    this.setState({ valueFilter: event.target.value });
-    this.filterValues(event.target.value);
-  };
-
-  public clearValueFilter = () => {
-    this.setState({ valueFilter: '' });
-    this.filterValues('');
-  };
-
-  private filterValues(filter: string) {
-    this.state.body?.forEachChild((child) => {
-      if (child instanceof ByFrameRepeater) {
-        child.filterFrames((frame: DataFrame) => getLabelValue(frame).includes(filter));
-      }
-    });
-  }
-
   public static Component = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
-    const { fields, body, loading, value, blockingMessage, valueFilter } = model.useState();
+    const { fields, body, loading, value, blockingMessage, search } = model.useState();
     const styles = useStyles2(getStyles);
 
     return (
@@ -292,13 +275,8 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
           <div className={styles.controls}>
             {body instanceof LayoutSwitcher && <body.Selector model={body} />}
-            {!loading && value !== ALL_VARIABLE_VALUE && (
-              <SearchInput
-                value={valueFilter}
-                onChange={model.onValueFilterChange}
-                onClear={model.clearValueFilter}
-                placeholder="Search for value"
-              />
+            {!loading && value !== ALL_VARIABLE_VALUE && search instanceof BreakdownSearchScene && (
+              <search.Component model={search} />
             )}
             {!loading && fields.length > 1 && (
               <FieldSelector label="Field" options={fields} value={value} onChange={model.onFieldSelectorChange} />
@@ -423,21 +401,6 @@ function buildValuesLayout(variable: CustomVariable) {
       }),
     ],
   });
-}
-
-function getLabelValue(frame: DataFrame) {
-  const labels = frame.fields[1]?.labels;
-
-  if (!labels) {
-    return 'No labels';
-  }
-
-  const keys = Object.keys(labels);
-  if (keys.length === 0) {
-    return 'No labels';
-  }
-
-  return labels[keys[0]];
 }
 
 export function buildFieldsBreakdownActionScene(changeFieldNumber: (n: string[]) => void) {
