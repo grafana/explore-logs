@@ -19,6 +19,9 @@ import { LogsVolumePanel } from './LogsVolumePanel';
 import { css } from '@emotion/css';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { DataFrame } from '@grafana/data';
+import { FilterType, addToFilters } from './Breakdowns/AddToFiltersButton';
+import { LabelType, getLabelTypeFromFrame } from 'services/fields';
+import { VAR_FIELDS, VAR_FILTERS } from 'services/variables';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -100,12 +103,18 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     });
   }
 
+  private handleLabelFilter(key: string, value: string, frame: DataFrame | undefined, operator: FilterType) {
+    const type = frame ? getLabelTypeFromFrame(key, frame) : LabelType.Parsed;
+    const variableName = type === LabelType.Indexed ? VAR_FILTERS : VAR_FIELDS;
+    addToFilters(key, value, operator, variableName, this);
+  }
+
   public handleLabelFilterClick = (key: string, value: string, frame?: DataFrame) => {
-    console.log(key, value, frame);
+    this.handleLabelFilter(key, value, frame, 'include');
   };
 
   public handleLabelFilterOutClick = (key: string, value: string, frame?: DataFrame) => {
-    console.log(key, value, frame);
+    this.handleLabelFilter(key, value, frame, 'exclude');
   };
 
   private getLogsPanel() {

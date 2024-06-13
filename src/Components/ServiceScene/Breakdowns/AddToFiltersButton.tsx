@@ -14,7 +14,7 @@ export interface AddToFiltersButtonState extends SceneObjectState {
   variableName: string;
 }
 
-type FilterType = 'include' | 'reset' | 'exclude';
+export type FilterType = 'include' | 'reset' | 'exclude';
 
 export function addToFilters(
   key: string,
