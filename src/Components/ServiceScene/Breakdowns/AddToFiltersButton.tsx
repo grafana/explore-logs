@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { DataFrame } from '@grafana/data';
-import { SceneObjectState, SceneObjectBase, SceneComponentProps } from '@grafana/scenes';
+import { SceneObjectState, SceneObjectBase, SceneComponentProps, SceneObject } from '@grafana/scenes';
 import { VariableHide } from '@grafana/schema';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
 import { LEVEL_VARIABLE_VALUE, VAR_FIELDS } from 'services/variables';
@@ -16,55 +16,66 @@ export interface AddToFiltersButtonState extends SceneObjectState {
 
 type FilterType = 'include' | 'reset' | 'exclude';
 
+export function addToFilters(
+  key: string,
+  value: string,
+  operator: FilterType,
+  variableName: string,
+  scene: SceneObject
+) {
+  const variable = getAdHocFiltersVariable(resolveVariableNameForField(key, variableName), scene);
+  if (!variable) {
+    return;
+  }
+
+  // If the filter exists, filter it
+  let filters = variable.state.filters.filter((filter) => {
+    return !(filter.key === key && filter.value === value);
+  });
+
+  if (operator === 'include' || operator === 'exclude') {
+    filters = [
+      ...filters,
+      {
+        key,
+        operator: operator === 'include' ? FilterOp.Equal : FilterOp.NotEqual,
+        value,
+      },
+    ];
+  }
+
+  variable.setState({
+    filters,
+    hide: VariableHide.hideLabel,
+  });
+}
+
+function resolveVariableNameForField(field: string, variableName: string) {
+  // If the field is LEVEL_VARIABLE_VALUE, we need to use the VAR_FIELDS variable as that one is for the detected level.
+  if (field === LEVEL_VARIABLE_VALUE) {
+    return VAR_FIELDS;
+  }
+  return variableName;
+}
+
 export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState> {
   public onClick = (type: FilterType) => {
-    const selectedFilter = getFilter(this.state.frame);
-    if (!selectedFilter) {
+    const filter = getFilter(this.state.frame);
+    if (!filter) {
       return;
     }
 
-    let variableName = this.state.variableName;
+    addToFilters(filter.name, filter.value, type, this.state.variableName, this);
 
-    // If the variable is a LEVEL_VARIABLE_VALUE, we need to use the VAR_FIELDS variable
-    // as that one is detected field
-    if (selectedFilter.name === LEVEL_VARIABLE_VALUE) {
-      variableName = VAR_FIELDS;
-    }
-    const variable = getAdHocFiltersVariable(variableName, this);
-    if (!variable) {
-      return;
-    }
-
-    // In a case filter is already there, remove it
-    let filters = variable.state.filters.filter((f) => {
-      return !(f.key === selectedFilter.name && f.value === selectedFilter.value);
-    });
-
-    // If type is included or excluded, then add the filter
-    if (type === 'include' || type === 'exclude') {
-      filters = [
-        ...filters,
-        {
-          key: selectedFilter.name,
-          operator: type === 'include' ? FilterOp.Equal : FilterOp.NotEqual,
-          value: selectedFilter.value,
-        },
-      ];
-    }
-
-    variable.setState({
-      filters,
-      hide: VariableHide.hideLabel,
-    });
-
+    const variable = getAdHocFiltersVariable(resolveVariableNameForField(filter.name, this.state.variableName), this);
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.add_to_filters_in_breakdown_clicked,
       {
         filterType: this.state.variableName,
-        key: selectedFilter.name,
+        key: filter.name,
         action: type,
-        filtersLength: variable.state.filters.length,
+        filtersLength: variable?.state.filters.length || 0,
       }
     );
   };
