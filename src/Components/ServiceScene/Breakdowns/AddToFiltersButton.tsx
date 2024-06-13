@@ -7,6 +7,7 @@ import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'se
 import { LEVEL_VARIABLE_VALUE, VAR_FIELDS } from 'services/variables';
 import { FilterButton } from 'Components/FilterButton';
 import { getAdHocFiltersVariable } from 'services/scenes';
+import { FilterOp } from 'Components/IndexScene/IndexScene';
 
 export interface AddToFiltersButtonState extends SceneObjectState {
   frame: DataFrame;
@@ -45,7 +46,7 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
         ...filters,
         {
           key: selectedFilter.name,
-          operator: type === 'include' ? '=' : '!=',
+          operator: type === 'include' ? FilterOp.Equal : FilterOp.NotEqual,
           value: selectedFilter.value,
         },
       ];
@@ -95,8 +96,8 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
     }
 
     return {
-      isIncluded: filterInSelectedFilters.operator === '=',
-      isExcluded: filterInSelectedFilters.operator === '!=',
+      isIncluded: filterInSelectedFilters.operator === FilterOp.Equal,
+      isExcluded: filterInSelectedFilters.operator === FilterOp.NotEqual,
     };
   };
 

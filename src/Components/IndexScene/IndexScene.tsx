@@ -42,6 +42,10 @@ export interface AppliedPattern {
   type: 'include' | 'exclude';
 }
 
+export enum FilterOp {
+  Equal = '=',
+  NotEqual = '!=',
+}
 export interface IndexSceneState extends SceneObjectState {
   // contentScene is the scene that is displayed in the main body of the index scene - it can be either the service selection or service scene
   contentScene?: SceneObject;
@@ -144,7 +148,7 @@ function getContentScene(mode?: LogExplorationMode) {
 }
 
 function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter[]) {
-  const operators = ['=', '!='].map<SelectableValue<string>>((value) => ({
+  const operators = [FilterOp.Equal, FilterOp.NotEqual].map<SelectableValue<string>>((value) => ({
     label: value,
     value,
   }));
@@ -161,6 +165,15 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
   });
 
   filterVariable._getOperators = () => {
+    // Only allow equal operator if there is only one filter
+    if (filterVariable.state.filters.length === 1) {
+      return [
+        {
+          label: FilterOp.Equal,
+          value: FilterOp.Equal,
+        },
+      ];
+    }
     return operators;
   };
 

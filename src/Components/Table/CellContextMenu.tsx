@@ -4,6 +4,7 @@ import { css } from '@emotion/css';
 import { GrafanaTheme2, LinkModel } from '@grafana/data';
 import { Icon, useTheme2 } from '@grafana/ui';
 import { useQueryContext } from './Context/QueryContext';
+import { FilterOp } from 'Components/IndexScene/IndexScene';
 
 interface Props {
   fieldType?: 'derived';
@@ -39,11 +40,6 @@ const getStyles = (theme: GrafanaTheme2, pillType: 'logPill' | 'column') => ({
     alignItems: 'center',
   }),
 });
-
-export enum FilterOp {
-  Equal = '=',
-  NotEqual = '!=',
-}
 
 export const CellContextMenu = (props: Props) => {
   const theme = useTheme2();

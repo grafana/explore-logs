@@ -1,6 +1,7 @@
 import { expect, test } from '@grafana/plugin-e2e';
 import { ExplorePage } from './fixtures/explore';
 import { testIds } from "../src/services/testIds";
+import { FilterOp } from '../src/Components/IndexScene/IndexScene';
 
 test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;
@@ -31,12 +32,12 @@ test.describe('explore services breakdown page', () => {
     // Switch to table view
     await page.getByRole('radiogroup').getByTestId(testIds.logsPanelHeader.radio).nth(1).click()
 
-    const table = await page.getByTestId(testIds.table.wrapper);
+    const table = page.getByTestId(testIds.table.wrapper);
     // Get a level pill, and click it
     const levelPill = table.getByRole('cell').getByText("level=").first()
     await levelPill.click()
     // Get the context menu
-    const pillContextMenu = await table.getByRole('img', { name: 'Add to search' });
+    const pillContextMenu = table.getByRole('img', { name: 'Add to search' });
     // Assert menu is open
     await expect(pillContextMenu).toBeVisible()
     // Click the filter button
@@ -74,7 +75,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId(testIds.exploreServiceDetails.searchLogs)).toBeVisible();
     // Adhoc err filter should be added
     await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
-    await expect(page.getByText('!=')).toBeVisible();
+    await expect(page.getByText(FilterOp.NotEqual)).toBeVisible();
   });
 
 

@@ -13,6 +13,7 @@ import { addToFavoriteServicesInStorage } from 'services/store';
 import { VAR_DATASOURCE, VAR_FILTERS } from 'services/variables';
 import { SERVICE_NAME, StartingPointSelectedEvent } from './ServiceSelectionScene';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
+import { FilterOp } from 'Components/IndexScene/IndexScene';
 
 export interface SelectServiceButtonState extends SceneObjectState {
   service: string;
@@ -38,7 +39,7 @@ export class SelectServiceButton extends SceneObjectBase<SelectServiceButtonStat
         ...variable.state.filters.filter((f) => f.key !== SERVICE_NAME),
         {
           key: SERVICE_NAME,
-          operator: '=',
+          operator: FilterOp.Equal,
           value: this.state.service,
         },
       ],
