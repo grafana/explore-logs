@@ -63,7 +63,7 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
       {
         filterType: this.state.variableName,
         key: selectedFilter.name,
-        action: filters.length === variable.state.filters.length ? 'added' : 'removed',
+        action: type,
         filtersLength: variable.state.filters.length,
       }
     );
