@@ -1,9 +1,10 @@
 import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import React, { ChangeEvent } from 'react';
-import { Field, Icon, Input } from '@grafana/ui';
+import { Field } from '@grafana/ui';
 import { css } from '@emotion/css';
 import { PatternFrame, PatternsBreakdownScene } from './PatternsBreakdownScene';
 import { debouncedFuzzySearch, fuzzySearch } from '../../../services/search';
+import { SearchInput } from './SearchInput';
 
 export interface PatternsViewTextSearchState extends SceneObjectState {}
 
@@ -143,12 +144,11 @@ export function PatternTextSearchComponent({ model }: SceneComponentProps<Patter
   const { patternFilter } = patternsBreakdownScene.useState();
   return (
     <Field className={styles.field}>
-      <Input
-        suffix={<Icon onClick={model.clearSearch} className={styles.icon} name={'times'} />}
-        prefix={<Icon name="search" />}
+      <SearchInput
         onChange={model.handleSearchChange}
-        placeholder="Search patterns"
+        onClear={model.clearSearch}
         value={patternFilter}
+        placeholder="Search patterns"
       />
     </Field>
   );
