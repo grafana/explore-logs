@@ -5,6 +5,10 @@ weight: 100
 cards:
   title_class: pt-0 lh-1
   items:
+    - title: Get started
+      href: ./get-started/
+      description: Get set up and take a tour of Explore Logs on your own data.
+      height: 24
     - title: Labels and Detected fields
       href: ./labels-and-detected-fields/
       description: Learn how Explore Logs uses Labels and Detected fields to build the point-and-click experience.
