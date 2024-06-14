@@ -1,13 +1,14 @@
 import React from 'react';
 
 import { AdHocVariableFilter, DataFrame } from '@grafana/data';
-import { SceneObjectState, SceneObjectBase, SceneComponentProps, SceneObject } from '@grafana/scenes';
+import { SceneObjectState, SceneObjectBase, SceneComponentProps, SceneObject, sceneGraph } from '@grafana/scenes';
 import { VariableHide } from '@grafana/schema';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
-import { LEVEL_VARIABLE_VALUE, VAR_FIELDS } from 'services/variables';
+import { LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_FILTERS } from 'services/variables';
 import { FilterButton } from 'Components/FilterButton';
 import { getAdHocFiltersVariable } from 'services/scenes';
 import { FilterOp } from 'services/filters';
+import { ServiceScene } from '../ServiceScene';
 
 export interface AddToFiltersButtonState extends SceneObjectState {
   frame: DataFrame;
@@ -22,19 +23,26 @@ export interface AddToFiltersButtonState extends SceneObjectState {
  */
 export type FilterType = 'include' | 'clear' | 'exclude' | 'toggle';
 
-export function addAdHocFilter(filter: AdHocVariableFilter, variableName: string, scene: SceneObject) {
+export function addAdHocFilter(filter: AdHocVariableFilter, scene: SceneObject, variableName?: string) {
   const type: FilterType = filter.operator === '=' ? 'toggle' : 'exclude';
-  addToFilters(filter.key, filter.value, type, variableName, scene);
+  addToFilters(filter.key, filter.value, type, scene, variableName);
 }
 
 export function addToFilters(
   key: string,
   value: string,
   operator: FilterType,
-  variableName: string,
-  scene: SceneObject
+  scene: SceneObject,
+  variableName?: string,
 ) {
-  const variable = getAdHocFiltersVariable(resolveVariableNameForField(key, variableName), scene);
+  // Special case: If the key is LEVEL_VARIABLE_VALUE, we need to use the VAR_FIELDS.
+  if (key === LEVEL_VARIABLE_VALUE) {
+    variableName = VAR_FIELDS;
+  } else if (!variableName) {
+    variableName = resolveVariableNameForField(key, scene);
+  }
+
+  const variable = getAdHocFiltersVariable(variableName, scene);
   if (!variable) {
     return;
   }
@@ -63,12 +71,10 @@ export function addToFilters(
   });
 }
 
-function resolveVariableNameForField(field: string, variableName: string) {
-  // If the field is LEVEL_VARIABLE_VALUE, we need to use the VAR_FIELDS variable as that one is for the detected level.
-  if (field === LEVEL_VARIABLE_VALUE) {
-    return VAR_FIELDS;
-  }
-  return variableName;
+function resolveVariableNameForField(field: string, scene: SceneObject) {
+  const serviceScene = sceneGraph.getAncestor(scene, ServiceScene);
+  const indexedLabel = serviceScene.state.labels?.find((label) => label === field);
+  return indexedLabel ? VAR_FILTERS : VAR_FIELDS;
 }
 
 export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState> {
@@ -78,9 +84,9 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
       return;
     }
 
-    addToFilters(filter.name, filter.value, type, this.state.variableName, this);
+    addToFilters(filter.name, filter.value, type, this, this.state.variableName);
 
-    const variable = getAdHocFiltersVariable(resolveVariableNameForField(filter.name, this.state.variableName), this);
+    /*const variable = getAdHocFiltersVariable(resolveVariableNameForField(filter.name, this.state.variableName), this);
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.add_to_filters_in_breakdown_clicked,
@@ -90,7 +96,7 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
         action: type,
         filtersLength: variable?.state.filters.length || 0,
       }
-    );
+    );*/
   };
 
   isSelected = () => {
