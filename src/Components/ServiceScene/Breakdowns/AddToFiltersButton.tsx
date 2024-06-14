@@ -33,16 +33,13 @@ export function addToFilters(
   value: string,
   operator: FilterType,
   scene: SceneObject,
-  variableName?: string,
+  variableName?: string
 ) {
-  // Special case: If the key is LEVEL_VARIABLE_VALUE, we need to use the VAR_FIELDS.
-  if (key === LEVEL_VARIABLE_VALUE) {
-    variableName = VAR_FIELDS;
-  } else if (!variableName) {
+  if (!variableName) {
     variableName = resolveVariableNameForField(key, scene);
   }
 
-  const variable = getAdHocFiltersVariable(variableName, scene);
+  const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableName), scene);
   if (!variable) {
     return;
   }
@@ -71,6 +68,14 @@ export function addToFilters(
   });
 }
 
+function validateVariableNameForField(field: string, variableName: string) {
+  // Special case: If the key is LEVEL_VARIABLE_VALUE, we need to use the VAR_FIELDS.
+  if (field === LEVEL_VARIABLE_VALUE) {
+    return VAR_FIELDS;
+  }
+  return variableName;
+}
+
 function resolveVariableNameForField(field: string, scene: SceneObject) {
   const serviceScene = sceneGraph.getAncestor(scene, ServiceScene);
   const indexedLabel = serviceScene.state.labels?.find((label) => label === field);
@@ -86,7 +91,7 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
 
     addToFilters(filter.name, filter.value, type, this, this.state.variableName);
 
-    /*const variable = getAdHocFiltersVariable(resolveVariableNameForField(filter.name, this.state.variableName), this);
+    const variable = getAdHocFiltersVariable(validateVariableNameForField(filter.name, this.state.variableName), this);
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.add_to_filters_in_breakdown_clicked,
@@ -96,7 +101,7 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
         action: type,
         filtersLength: variable?.state.filters.length || 0,
       }
-    );*/
+    );
   };
 
   isSelected = () => {
@@ -105,13 +110,7 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
       return { isIncluded: false, isExcluded: false };
     }
 
-    let variableName = this.state.variableName;
-    // If the variable is a LEVEL_VARIABLE_VALUE, we need to use the VAR_FIELDS variable
-    // as that one is detected field
-    if (filter.name === LEVEL_VARIABLE_VALUE) {
-      variableName = VAR_FIELDS;
-    }
-    const variable = getAdHocFiltersVariable(variableName, this);
+    const variable = getAdHocFiltersVariable(validateVariableNameForField(filter.name, this.state.variableName), this);
     if (!variable) {
       return { isIncluded: false, isExcluded: false };
     }
