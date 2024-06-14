@@ -136,8 +136,14 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     const filters = getAdHocFiltersVariable(VAR_FILTERS, this);
     const fields = getAdHocFiltersVariable(VAR_FIELDS, this);
     return (
-      (filters && filters.state.filters.findIndex((filter) => filter.key === key && filter.value === value) >= 0) ||
-      (fields && fields.state.filters.findIndex((filter) => filter.key === key && filter.value === value) >= 0)
+      (filters &&
+        filters.state.filters.findIndex(
+          (filter) => filter.operator === '=' && filter.key === key && filter.value === value
+        ) >= 0) ||
+      (fields &&
+        fields.state.filters.findIndex(
+          (filter) => filter.operator === '=' && filter.key === key && filter.value === value
+        ) >= 0)
     );
   };
 
