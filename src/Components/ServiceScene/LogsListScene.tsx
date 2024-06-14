@@ -105,7 +105,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   }
 
   private handleLabelFilter(key: string, value: string, frame: DataFrame | undefined, operator: FilterType) {
-    // NOOP. We need a way to let the user know why this is not possible.
+    // @TODO: NOOP. We need a way to let the user know why this is not possible.
     if (key === 'service_name') {
       return;
     }
