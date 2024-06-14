@@ -14,7 +14,13 @@ export interface AddToFiltersButtonState extends SceneObjectState {
   variableName: string;
 }
 
-export type FilterType = 'include' | 'reset' | 'exclude' | 'toggle';
+/**
+ * Filter types:
+ * - include/exclude: add a negative or positive filter
+ * - clear: remove filter if exists
+ * - toggle: if the filter does not exist, add as include; if exists, remove
+ */
+export type FilterType = 'include' | 'clear' | 'exclude' | 'toggle';
 
 export function addAdHocFilter(filter: AdHocVariableFilter, variableName: string, scene: SceneObject) {
   const type: FilterType = filter.operator === '=' ? 'toggle' : 'exclude';
@@ -40,11 +46,6 @@ export function addToFilters(
 
   const filterExists = filters.length !== variable.state.filters.length;
 
-  /**
-   * Behaviors:
-   * - Add new include/exclude filter
-   * - Toggle: if the filter exists, remove it, otherwise add as include
-   */
   if (operator === 'include' || operator === 'exclude' || (!filterExists && operator === 'toggle')) {
     filters = [
       ...filters,
@@ -131,7 +132,7 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
         isIncluded={isIncluded}
         isExcluded={isExcluded}
         onInclude={() => model.onClick('include')}
-        onReset={() => model.onClick('reset')}
+        onClear={() => model.onClick('clear')}
         onExclude={() => model.onClick('exclude')}
       />
     );
