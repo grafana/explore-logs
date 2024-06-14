@@ -70,7 +70,7 @@ export const DefaultCellComponent = (props: CustomCellRendererProps & DefaultCel
   if (typeof value === 'object') {
     value = JSON.stringify(props.value);
   } else {
-    value = field.values[props.fieldIndex];
+    value = field.values[props.rowIndex];
   }
 
   const renderValue = (value: string | unknown | ReactElement, label: string, displayValue: DisplayValue) => {

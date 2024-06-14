@@ -171,7 +171,6 @@ export const Table = (props: Props) => {
             };
           };
           field.display = displayProcessor;
-          console.log('field after changing', field);
         }
       }
 
