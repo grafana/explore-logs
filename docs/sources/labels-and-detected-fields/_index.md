@@ -12,6 +12,8 @@ weight: 800
 
 # Labels and Detected fields
 
+> Explore Logs is offered in Public Preview and is under active development. Subsequent updates are likely to incorporate significant changes that may impact existing functionality.
+
 Explore Logs shows you the volume of logs with specific Labels and Detected fields.
 
 Labels are attached to your log lines when they are collected from the source.

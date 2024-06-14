@@ -15,6 +15,8 @@ weight: 800
 
 # Log patterns
 
+> Explore Logs is offered in Public Preview and is under active development. Subsequent updates are likely to incorporate significant changes that may impact existing functionality.
+
 Log patterns allow you to work with groups of similar log lines. You can hide them if they're noise, or focus in on them if they're useful.
 
 Patterns are automatically extracted when your logs are ingested.
@@ -99,3 +101,7 @@ Pattern 1: `duration=<_> trace_id=<_> <_> /path/to/endpoint/<_>`
 Pattern 2: `user loaded: <_>`
 
 > **Did you know?** Since Loki 3.0, you can make queries using this simplified template format which is much faster than using regex.
+
+## What next?
+
+Learn about how [Log patterns]({{< relref "./patterns" >}}) can help you deal with different types of log lines in bulk.
