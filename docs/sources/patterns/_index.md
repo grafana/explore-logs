@@ -1,5 +1,5 @@
 ---
-description: Use Log patterns to detect and analyze different types of log lines.
+description: Use Log patterns to detect and analyze types of log lines.
 keywords:
   - Logs
   - Log Patterns
@@ -37,7 +37,11 @@ We've outlined the steps you'll need to take to perform these common use cases.
 
 ### Browse log volumes by type
 
+Explore Logs proactively visualizes your log volume data, broken down in various ways.
 
+At a glance you can immediately spot high or low volume spikes of specific labels, detected fields, and more.
+
+For example, if your HTTP service is suffering from a DDoS attack, the relevant graphs will clearly show the spikes. From here you can drill down to discover enough details about the attack to counter it.
 
 ### Targetted analysis
 
