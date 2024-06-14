@@ -58,7 +58,7 @@ To view only a specific set of patterns, perform the following steps:
 5. Select **Include**
 6. Go to the **Logs** tab and notice the filtered view
 
-### Hide noise
+### Hide noisy log lines
 
 To hide noisy log lines, perform the following steps:
 
