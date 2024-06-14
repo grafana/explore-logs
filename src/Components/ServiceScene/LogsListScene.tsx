@@ -111,7 +111,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     }
     const type = frame ? getLabelTypeFromFrame(key, frame) : LabelType.Parsed;
     const variableName = type === LabelType.Indexed ? VAR_FILTERS : VAR_FIELDS;
-    addToFilters(key, value, operator, variableName, this);
+    addToFilters(key, value, operator, this, variableName);
 
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
