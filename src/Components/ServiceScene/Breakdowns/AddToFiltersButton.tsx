@@ -24,7 +24,7 @@ export interface AddToFiltersButtonState extends SceneObjectState {
 export type FilterType = 'include' | 'clear' | 'exclude' | 'toggle';
 
 export function addAdHocFilter(filter: AdHocVariableFilter, scene: SceneObject, variableName?: string) {
-  const type: FilterType = filter.operator === '=' ? 'toggle' : 'exclude';
+  const type: FilterType = filter.operator === '=' ? 'include' : 'exclude';
   addToFilters(filter.key, filter.value, type, scene, variableName);
 }
 
