@@ -33,6 +33,10 @@ Explore Logs offers a queryless experience for browsing Loki logs. You can:
 
 ## Who is Explore Logs for?
 
-Explore Logs is for all engineers. Traditionally you'd need to learn LogQL and build a deep understanding of your systems in order to answer questions and get the most out of Loki. With Explore Logs, you get the same powerful insights without, just by clicking.
+Explore Logs is for all engineers. 
+
+Traditionally you'd need to learn LogQL and build a deep understanding of your systems in order to answer questions and get the most out of Loki. With Explore Logs, you get the same powerful insights, by just clicking.
+
+## What next?
 
 {{< docs/hero-simple key="hero" >}}
