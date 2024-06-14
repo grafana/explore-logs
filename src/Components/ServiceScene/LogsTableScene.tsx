@@ -1,4 +1,4 @@
-import { AdHocFiltersVariable, SceneComponentProps, sceneGraph, SceneObjectBase } from '@grafana/scenes';
+import { SceneComponentProps, sceneGraph, SceneObjectBase } from '@grafana/scenes';
 import { LogsListScene } from './LogsListScene';
 import { VAR_FIELDS, VAR_FILTERS } from '../../services/variables';
 import { AdHocVariableFilter } from '@grafana/data';
@@ -8,6 +8,7 @@ import { PanelChrome } from '@grafana/ui';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 import { css } from '@emotion/css';
 import { ServiceScene } from './ServiceScene';
+import { addAdHocFilter } from './Breakdowns/AddToFiltersButton';
 
 export class LogsTableScene extends SceneObjectBase {
   public static Component = ({ model }: SceneComponentProps<LogsTableScene>) => {
@@ -29,17 +30,9 @@ export class LogsTableScene extends SceneObjectBase {
       const existingIndexedLabels = serviceScene.state.labels?.find((label) => label === filter.key);
 
       if (existingIndexedLabels) {
-        const indexed = sceneGraph.lookupVariable(VAR_FILTERS, model) as AdHocFiltersVariable;
-        const filters = indexed.state.filters;
-        indexed.setState({
-          filters: [...filters, filter],
-        });
+        addAdHocFilter(filter, VAR_FILTERS, serviceScene);
       } else {
-        const fields = sceneGraph.lookupVariable(VAR_FIELDS, model) as AdHocFiltersVariable;
-        const filters = fields.state.filters;
-        fields.setState({
-          filters: [...filters, filter],
-        });
+        addAdHocFilter(filter, VAR_FIELDS, serviceScene);
       }
     };
 

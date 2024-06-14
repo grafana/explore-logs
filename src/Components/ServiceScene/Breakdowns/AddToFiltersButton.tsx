@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { DataFrame } from '@grafana/data';
+import { AdHocVariableFilter, DataFrame } from '@grafana/data';
 import { SceneObjectState, SceneObjectBase, SceneComponentProps, SceneObject } from '@grafana/scenes';
 import { VariableHide } from '@grafana/schema';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
@@ -15,6 +15,11 @@ export interface AddToFiltersButtonState extends SceneObjectState {
 }
 
 export type FilterType = 'include' | 'reset' | 'exclude' | 'toggle';
+
+export function addAdHocFilter(filter: AdHocVariableFilter, variableName: string, scene: SceneObject) {
+  const type: FilterType = filter.operator === '=' ? 'toggle' : 'exclude';
+  addToFilters(filter.key, filter.value, type, variableName, scene);
+}
 
 export function addToFilters(
   key: string,
