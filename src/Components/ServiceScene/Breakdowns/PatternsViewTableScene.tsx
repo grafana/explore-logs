@@ -147,7 +147,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
               isIncluded={isIncluded}
               onInclude={() => props.cell.row.original.includeLink()}
               onExclude={() => props.cell.row.original.excludeLink()}
-              onReset={() => props.cell.row.original.undoLink()}
+              onClear={() => props.cell.row.original.undoLink()}
             />
           );
         },
