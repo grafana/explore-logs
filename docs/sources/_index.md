@@ -17,10 +17,18 @@ cards:
 
 # Explore Logs documentation
 
-Explore Logs offers a query-less experience for browsing Loki logs without the need for writing complex queries. Discover or narrow down your search by using by volume and text patterns. Uncover related logs and and understand patterns—all with just a few clicks. No LogQL required! With Explore Logs, you can:
+> Explore Logs is offered in Public Preview and is under active development. Subsequent updates are likely to incorporate significant changes that may impact existing functionality.
 
-Easily find logs and log volumes for all of your services
-Effortlessly filter service logs based on their log volumes, labels, fields, or patterns.
-Automatically choose the best visualization for your log data based on its characteristics, without any manual setup.
+Explore Logs offers a queryless experience for browsing Loki logs. You can:
+
+* Drill into your data using volume and text patterns
+* Easily find logs and log volumes for all of your services
+* Effortlessly filter logs based on their labels, fields, or patterns
+* Uncover related logs and monitor changes over time
+* Browse automatic visualizations of your log data based on its characteristics
+
+## Who is Explore Logs for?
+
+Explore Logs is for all engineers. Traditionally you'd need to learn LogQL and build a deep understanding of your systems in order to answer questions and get the most out of Loki. With Explore Logs, you get the same powerful insights without, just by clicking.
 
 {{< docs/hero-simple key="hero" >}}
