@@ -15,9 +15,13 @@ weight: 800
 
 # Log patterns
 
-Log patterns allow you to work with groups of similar log lines. They are automatically extracted when your logs are ingested.
+Log patterns allow you to work with groups of similar log lines. You can hide them if they're noise, or focus in on them if they're useful.
+
+Patterns are automatically extracted when your logs are ingested.
 
 The Explore Logs app shows you the patterns alongside their log volumes. From this view, you can investigate spikes and drill down to view the logs.
+
+Patterns are ephemeral and can change over time as your logging evolves.
 
 ## More use cases
 
@@ -37,7 +41,7 @@ We've outlined the steps you'll need to take to perform these common use cases.
 
 ### Browse log volumes by type
 
-Explore Logs proactively visualizes your log volume data per detected pattern, broken down in various ways. At a glance you can immediately spot spikes.
+Explore Logs proactively visualizes your log volume data per detected pattern, broken down in various ways. At a glance you can immediately spot spikes or other changes.
 
 For example, if your HTTP service is suffering from a DDoS attack, the relevant graphs will clearly show the spikes. From here you can drill down to discover enough details about the attack to counter it.
 
@@ -69,9 +73,9 @@ You can repeat steps 4 and 5 to exclude multiple patterns.
 
 ## Pattern extraction
 
-Loki uses Drain (an online log template miner) to extract patterns from a stream of log lines.
+Loki extracts patterns from a stream of log lines.
 
-For example, if your services log lines like this:
+For example, if your service logs lines like this:
 
 ```
 duration=255ms trace_id=abc001 GET /path/to/endpoint/2
@@ -94,6 +98,4 @@ Pattern 1: `duration=<_> trace_id=<_> <_> /path/to/endpoint/<_>`
 
 Pattern 2: `user loaded: <_>`
 
-### View pattern log volumes
-
-Like Labels and Detected Fields, you can see the log volume of the patterns which allows you to understand the propoption 
+> **Did you know?** Since Loki 3.0, you can make queries using this simplified template format which is much faster than using regex.
