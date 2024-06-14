@@ -1,7 +1,5 @@
 ---
-aliases:
-  - /docs/explore-apps/logs/patterns
-description: 
+description: Use Log patterns to detect and analyze different types of log lines.
 keywords:
   - Logs
   - Log Patterns
