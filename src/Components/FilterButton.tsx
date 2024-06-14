@@ -6,14 +6,14 @@ import { testIds } from 'services/testIds';
 
 type Props = {
   onInclude: () => void;
-  onReset: () => void;
+  onClear: () => void;
   isIncluded: boolean;
   onExclude: () => void;
   isExcluded: boolean;
 };
 
 export const FilterButton = (props: Props) => {
-  const { isExcluded, isIncluded, onInclude, onExclude, onReset } = props;
+  const { isExcluded, isIncluded, onInclude, onExclude, onClear } = props;
   const styles = useStyles2(getStyles, isIncluded, isExcluded);
   return (
     <div className={styles.container}>
@@ -22,7 +22,7 @@ export const FilterButton = (props: Props) => {
         fill="outline"
         size="sm"
         className={styles.includeButton}
-        onClick={isIncluded ? onReset : onInclude}
+        onClick={isIncluded ? onClear : onInclude}
         data-testid={testIds.exploreServiceDetails.buttonFilterInclude}
       >
         Include
@@ -32,7 +32,7 @@ export const FilterButton = (props: Props) => {
         fill="outline"
         size="sm"
         className={styles.excludeButton}
-        onClick={isExcluded ? onReset : onExclude}
+        onClick={isExcluded ? onClear : onExclude}
         data-testid={testIds.exploreServiceDetails.buttonFilterExclude}
       >
         Exclude
