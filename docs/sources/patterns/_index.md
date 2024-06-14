@@ -37,9 +37,7 @@ We've outlined the steps you'll need to take to perform these common use cases.
 
 ### Browse log volumes by type
 
-Explore Logs proactively visualizes your log volume data, broken down in various ways.
-
-At a glance you can immediately spot high or low volume spikes of specific labels, detected fields, and more.
+Explore Logs proactively visualizes your log volume data per detected pattern, broken down in various ways. At a glance you can immediately spot spikes.
 
 For example, if your HTTP service is suffering from a DDoS attack, the relevant graphs will clearly show the spikes. From here you can drill down to discover enough details about the attack to counter it.
 
@@ -71,7 +69,7 @@ You can repeat steps 4 and 5 to exclude multiple patterns.
 
 ## Pattern extraction
 
-Loki uses Drain, an online log template miner, to extract patterns from a stream of log lines.
+Loki uses Drain (an online log template miner) to extract patterns from a stream of log lines.
 
 For example, if your services log lines like this:
 
@@ -96,3 +94,6 @@ Pattern 1: `duration=<_> trace_id=<_> <_> /path/to/endpoint/<_>`
 
 Pattern 2: `user loaded: <_>`
 
+### View pattern log volumes
+
+Like Labels and Detected Fields, you can see the log volume of the patterns which allows you to understand the propoption 
