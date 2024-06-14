@@ -1,5 +1,5 @@
 ---
-description: Explore Logs lets you answer observability questions without writing queries.
+description: Learn how breaking logs down by Labels and Detected fields can help you find the signal in the noise.
 keywords:
   - Logs
   - Explore
