@@ -9,6 +9,7 @@ import {
   DataFrame,
   DataFrameType,
   DataTransformerConfig,
+  DisplayProcessor,
   Field,
   FieldType,
   FieldWithIndex,
@@ -37,6 +38,7 @@ import { LogsTableHeaderWrap } from 'Components/Table/LogsTableHeaderWrap';
 import { getBodyName, getIdName, getTimeName, LogsFrame } from '../../services/logsFrame';
 import { useQueryContext } from './Context/QueryContext';
 import { testIds } from '../../services/testIds';
+import parse from 'parse-duration';
 
 interface Props {
   height: number;
@@ -148,6 +150,29 @@ export const Table = (props: Props) => {
           // filterable: isFieldFilterable(field, logsFrame?.bodyField.name ?? '', logsFrame?.timeField.name ?? ''),
           filterable: true,
         };
+
+        // @todo toggle on?
+        if (field.name === 'duration' && field.type === FieldType.string) {
+          field.type = FieldType.number;
+          const displayProcessor: DisplayProcessor = (v, decimals) => {
+            if (typeof v === 'string') {
+              const parsed = parse(v, 'ms');
+
+              const parsedString = parsed?.toFixed(decimals ?? 4) ?? '';
+              return {
+                numeric: parseFloat(parsedString),
+                text: parsedString,
+                suffix: 'ms',
+              };
+            }
+            return {
+              text: '',
+              numeric: 0,
+            };
+          };
+          field.display = displayProcessor;
+          console.log('field after changing', field);
+        }
       }
 
       return frameWithOverrides;

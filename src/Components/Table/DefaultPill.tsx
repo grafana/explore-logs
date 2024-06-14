@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { css, cx } from '@emotion/css';
 
-import { Field, FieldType, GrafanaTheme2 } from '@grafana/data';
+import { DisplayValue, Field, FieldType, GrafanaTheme2 } from '@grafana/data';
 import { useTheme2 } from '@grafana/ui';
 
 import { useTableCellContext } from 'Components/Table/Context/TableCellContext';
@@ -14,6 +14,7 @@ interface DefaultPillProps {
   value: string | unknown | ReactElement;
   rowIndex: number;
   field: Field;
+  displayValue: DisplayValue;
 }
 
 const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
@@ -48,7 +49,7 @@ const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
   }),
 });
 export const DefaultPill = (props: DefaultPillProps) => {
-  const { label, value } = props;
+  const { label, value, displayValue } = props;
   const theme = useTheme2();
   const { cellIndex } = useTableCellContext();
   let bgColor;
@@ -67,9 +68,14 @@ export const DefaultPill = (props: DefaultPillProps) => {
     <div className={cx(styles.pillWrap, isPillActive ? styles.activePillWrap : undefined)}>
       {!!value && (
         <>
-          <span className={styles.pill}>
-            <>{value}</>
-          </span>
+          {displayValue.text && (
+            <span className={styles.pill}>
+              <>
+                {displayValue.text}
+                {displayValue.suffix ? displayValue.suffix : null}
+              </>
+            </span>
+          )}
           {isPillActive && typeof value === 'string' && props.field.type !== FieldType.time && (
             <CellContextMenu label={props.label} value={value} pillType={'column'} />
           )}

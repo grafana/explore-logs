@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 import { Row } from 'react-table';
 import { css } from '@emotion/css';
 
-import { FieldType, formattedValueToString, GrafanaTheme2 } from '@grafana/data';
+import { DisplayValue, FieldType, GrafanaTheme2 } from '@grafana/data';
 import { CustomCellRendererProps, DataLinksContextMenu, getCellLinks, useTheme2 } from '@grafana/ui';
 
 import { useTableCellContext } from 'Components/Table/Context/TableCellContext';
@@ -67,15 +67,13 @@ export const DefaultCellComponent = (props: CustomCellRendererProps & DefaultCel
     return <></>;
   }
 
-  if (React.isValidElement(props.value)) {
-    value = props.value;
-  } else if (typeof value === 'object') {
+  if (typeof value === 'object') {
     value = JSON.stringify(props.value);
   } else {
-    value = formattedValueToString(displayValue);
+    value = field.values[props.fieldIndex];
   }
 
-  const renderValue = (value: string | unknown | ReactElement, label: string) => {
+  const renderValue = (value: string | unknown | ReactElement, label: string, displayValue: DisplayValue) => {
     return (
       <DefaultPill
         field={props.field}
@@ -83,6 +81,7 @@ export const DefaultCellComponent = (props: CustomCellRendererProps & DefaultCel
         showColumns={() => setVisible(true)}
         label={label}
         value={value}
+        displayValue={displayValue}
       />
     );
   };
@@ -102,7 +101,7 @@ export const DefaultCellComponent = (props: CustomCellRendererProps & DefaultCel
         {props.fieldIndex === 0 && <LineActionIcons value={value} rowIndex={props.rowIndex} />}
         <div className={styles.flexWrap}></div>
 
-        {!hasLinks && renderValue(value, field.name)}
+        {!hasLinks && renderValue(value, field.name, displayValue)}
 
         {hasLinks && field.getLinks && (
           <DataLinksContextMenu links={() => getCellLinks(field, row) ?? []}>
