@@ -81,4 +81,4 @@ curl -L https://github.com/grafana/explore-logs/raw/main/scripts/run.sh | sh
 
 This will download the https://github.com/grafana/explore-logs/blob/main/scripts/run.sh file and execute it. That shell file will download some configuration files into your `/tmp/explore-logs` directory and start the docker containers via `docker compose` from there.
 
-Once the docker container has started, navigate to http://localhost:3000/a/grafana-lokiexplore-app/explore in order to use Explore Logs.
+Once the docker container has started, navigate to http://localhost:3000/a/grafana-lokiexplore-app/explore to access Explore Logs.
