@@ -50,5 +50,7 @@ export const USER_EVENTS_ACTIONS = {
     pattern_selected: 'pattern_selected',
     // Toggling between logs/table view
     logs_visualization_toggle: 'logs_visualization_toggle',
+    // Filter (include, exclude) from log details
+    logs_detail_filter_applied: 'logs_detail_filter_applied',
   },
 } as const;

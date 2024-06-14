@@ -112,6 +112,16 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     const type = frame ? getLabelTypeFromFrame(key, frame) : LabelType.Parsed;
     const variableName = type === LabelType.Indexed ? VAR_FILTERS : VAR_FIELDS;
     addToFilters(key, value, operator, variableName, this);
+
+    reportAppInteraction(
+      USER_EVENTS_PAGES.service_details,
+      USER_EVENTS_ACTIONS.service_details.logs_detail_filter_applied,
+      {
+        filterType: variableName,
+        key,
+        action: operator,
+      }
+    );
   }
 
   public handleLabelFilterClick = (key: string, value: string, frame?: DataFrame) => {
