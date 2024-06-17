@@ -34,7 +34,6 @@ export interface PatternsTableCellData {
   pattern: string;
   dataFrame: DataFrame;
   sum: number;
-  // samples: Array<[number, string]>,
   includeLink: () => void;
   excludeLink: () => void;
   undoLink: () => void;

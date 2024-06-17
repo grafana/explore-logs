@@ -10,7 +10,7 @@ import {
 import React from 'react';
 import { getQueryRunner } from '../../../services/panel';
 import { buildLokiQuery } from '../../../services/query';
-import { PATTERNS_SAMPLE_SELECTOR_EXPR, VAR_PATTERNS_EXPR } from '../../../services/variables';
+import { LOG_STREAM_SELECTOR_EXPR, VAR_PATTERNS_EXPR } from '../../../services/variables';
 import { AppliedPattern, renderPatternFilters } from '../../IndexScene/IndexScene';
 
 interface PatternsLogsSampleSceneState extends SceneObjectState {
@@ -34,7 +34,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
       // const query = buildLokiQuery(LOG_STREAM_SELECTOR_EXPR);
 
       // Currently preventing no-data when the user has active line-filters or detected fields in the query by only adding the interpolated indexed labels to the query!
-      const query = buildLokiQuery(PATTERNS_SAMPLE_SELECTOR_EXPR);
+      const query = buildLokiQuery(LOG_STREAM_SELECTOR_EXPR);
       const pendingPattern: AppliedPattern = {
         pattern: this.state.pattern,
         type: 'include',
@@ -50,7 +50,9 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
             new SceneFlexItem({
               width: '100%',
               body: PanelBuilders.logs()
-                .setHoverHeader(true)
+                .setDescription(
+                  'Sample of this pattern with all active filters applied. If this panel returns no results then the active filters have already excluded logs matching this pattern for the current time range.'
+                )
                 .setOption('showLogContextToggle', true)
                 .setOption('showTime', true)
                 .setData(getQueryRunner(query))
