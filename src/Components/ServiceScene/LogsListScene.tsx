@@ -151,6 +151,13 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   public handleFilterStringClick = (value: string) => {
     if (this.lineFilterScene) {
       this.lineFilterScene.updateFilter(value);
+      reportAppInteraction(
+        USER_EVENTS_PAGES.service_details,
+        USER_EVENTS_ACTIONS.service_details.logs_popover_line_filter,
+        {
+          selectionLength: value.length,
+        }
+      );
     }
   };
 
