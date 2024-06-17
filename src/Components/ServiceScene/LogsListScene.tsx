@@ -147,6 +147,10 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     );
   };
 
+  public handleFilterStringClick(value: string) {
+    console.log(value);
+  }
+
   private getLogsPanel() {
     const visualizationType = this.state.visualizationType;
 
@@ -162,6 +166,8 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         .setOption('onClickFilterOutLabel', this.handleLabelFilterOutClick)
         // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
         .setOption('isFilterLabelActive', this.handleIsFilterLabelActive)
+        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
+        .setOption('onClickFilterString', this.handleFilterStringClick)
         .setHeaderActions(<LogsPanelHeaderActions vizType={visualizationType} onChange={this.setVisualizationType} />)
         .build(),
     });
