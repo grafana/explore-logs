@@ -4,6 +4,7 @@ import { css } from '@emotion/css';
 import { GrafanaTheme2, LinkModel } from '@grafana/data';
 import { Icon, useTheme2 } from '@grafana/ui';
 import { useQueryContext } from './Context/QueryContext';
+import { FilterOp } from 'services/filters';
 
 interface Props {
   fieldType?: 'derived';
@@ -40,11 +41,6 @@ const getStyles = (theme: GrafanaTheme2, pillType: 'logPill' | 'column') => ({
   }),
 });
 
-export enum FilterOp {
-  Equal = '=',
-  NotEqual = '!=',
-}
-
 export const CellContextMenu = (props: Props) => {
   const theme = useTheme2();
   const styles = getStyles(theme, props.pillType);
@@ -67,19 +63,18 @@ export const CellContextMenu = (props: Props) => {
             >
               <Icon title={'Add to search'} size={'md'} name={'plus-circle'} />
             </div>
-            {/* commented out until filters have added support for negative filters*/}
-            {/*<div*/}
-            {/*  className={styles.menuItem}*/}
-            {/*  onClick={() => {*/}
-            {/*    addFilter({*/}
-            {/*      key: props.label,*/}
-            {/*      value: props.value,*/}
-            {/*      operator: FilterOp.NotEqual,*/}
-            {/*    });*/}
-            {/*  }}*/}
-            {/*>*/}
-            {/*  <Icon title={'Exclude from search'} size={'md'} name={'minus-circle'} />*/}
-            {/*</div>*/}
+            <div
+              className={styles.menuItem}
+              onClick={() => {
+                addFilter({
+                  key: props.label,
+                  value: props.value,
+                  operator: FilterOp.NotEqual,
+                });
+              }}
+            >
+              <Icon title={'Exclude from search'} size={'md'} name={'minus-circle'} />
+            </div>
           </>
         )}
 

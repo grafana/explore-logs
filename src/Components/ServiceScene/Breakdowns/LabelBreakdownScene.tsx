@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DataFrame, GrafanaTheme2, SelectableValue } from '@grafana/data';
+import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   CustomVariable,
@@ -26,15 +26,18 @@ import { DetectedLabel, DetectedLabelsResponse, getFilterBreakdownValueScene } f
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { PLUGIN_ID } from 'services/routing';
-import { getLabelOptions, getLokiDatasource } from 'services/scenes';
+import { getLokiDatasource } from 'services/scenes';
 import { ALL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR, VAR_FILTERS, VAR_LABEL_GROUP_BY } from 'services/variables';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
+import { sortLabelsByCardinality, getLabelOptions } from 'services/filters';
+import { BreakdownSearchScene, getLabelValue } from './BreakdownSearchScene';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
-  body?: SceneObject;
+  body?: LayoutSwitcher;
+  search?: BreakdownSearchScene;
   labels: Array<SelectableValue<string>>;
   value?: string;
   loading?: boolean;
@@ -130,21 +133,20 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       return;
     }
 
-    const labels = detectedLabels
-      .filter((a) => a.cardinality > 1)
-      .sort((a, b) => a.cardinality - b.cardinality)
-      .map((l) => l.label);
-    const options = getLabelOptions(this, labels);
+    const labels = detectedLabels.sort((a, b) => sortLabelsByCardinality(a, b)).map((l) => l.label);
+    const options = getLabelOptions(labels);
 
     const stateUpdate: Partial<LabelBreakdownSceneState> = {
       loading: false,
       value: String(variable.state.value),
-      labels: options, // this now includes "all"
+      labels: options, // this now includes "all" and possibly LEVEL_VARIABLE_VALUE structured metadata
       blockingMessage: undefined,
       error: false,
     };
 
     stateUpdate.body = variable.hasAllValue() ? buildLabelsLayout(options) : buildLabelValuesLayout(variable);
+
+    stateUpdate.search = new BreakdownSearchScene();
 
     this.setState(stateUpdate);
   }
@@ -169,7 +171,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   };
 
   public static Component = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
-    const { labels, body, loading, value, blockingMessage, error } = model.useState();
+    const { labels, body, loading, value, blockingMessage, error, search } = model.useState();
     const styles = useStyles2(getStyles);
 
     return (
@@ -177,6 +179,9 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
           <div className={styles.controls}>
             {body instanceof LayoutSwitcher && <body.Selector model={body} />}
+            {!loading && value !== ALL_VARIABLE_VALUE && search instanceof BreakdownSearchScene && (
+              <search.Component model={search} />
+            )}
             {!loading && labels.length > 0 && (
               <FieldSelector label="Label" options={labels} value={value} onChange={model.onChange} />
             )}
@@ -344,21 +349,6 @@ function buildLabelValuesLayout(variable: CustomVariable) {
       }),
     ],
   });
-}
-
-function getLabelValue(frame: DataFrame) {
-  const labels = frame.fields[1]?.labels;
-
-  if (!labels) {
-    return 'No labels';
-  }
-
-  const keys = Object.keys(labels);
-  if (keys.length === 0) {
-    return 'No labels';
-  }
-
-  return labels[keys[0]];
 }
 
 export function buildLabelBreakdownActionScene() {

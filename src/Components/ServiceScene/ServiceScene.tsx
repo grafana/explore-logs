@@ -25,7 +25,7 @@ import { DetectedLabelsResponse, extractParserAndFieldsFromDataFrame } from 'ser
 import { getQueryRunner } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { EXPLORATIONS_ROUTE, PLUGIN_ID } from 'services/routing';
-import { getExplorationFor, getLokiDatasource, getPatternExpr, getUniqueFilters } from 'services/scenes';
+import { getExplorationFor, getLokiDatasource, getPatternExpr } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
   LEVEL_VARIABLE_VALUE,
@@ -44,6 +44,8 @@ import { GoToExploreButton } from './GoToExploreButton';
 import { buildLogsListScene } from './LogsListScene';
 import { testIds } from 'services/testIds';
 import { PageScene } from './PageScene';
+import { sortLabelsByCardinality } from 'services/filters';
+import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
 
 export interface LokiPattern {
   pattern: string;
@@ -109,6 +111,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
     variable.subscribeToState((newState) => {
       if (newState.filters.length === 0) {
+        this.redirectToStart();
+      }
+      // If we remove the service name filter, we should redirect to the start
+      if (!newState.filters.some((f) => f.key === SERVICE_NAME)) {
         this.redirectToStart();
       }
     });
@@ -295,10 +301,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       return;
     }
 
-    const labels = detectedLabels
-      .filter((a) => a.cardinality > 1)
-      .sort((a, b) => a.cardinality - b.cardinality)
-      .map((l) => l.label);
+    const labels = detectedLabels.sort((a, b) => sortLabelsByCardinality(a, b)).map((l) => l.label);
     if (!labels.includes(LEVEL_VARIABLE_VALUE)) {
       labels.unshift(LEVEL_VARIABLE_VALUE);
     }
@@ -393,15 +396,12 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
         case 'fields':
           return (
             serviceScene.state.detectedFieldsCount ??
-            getUniqueFilters(serviceScene, serviceScene.state.detectedFields || []).length
+            (serviceScene.state.detectedFields?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []).length
           );
         case 'patterns':
           return serviceScene.state.patterns?.length;
         case 'labels':
-          return getUniqueFilters(
-            serviceScene,
-            serviceScene.state.labels?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []
-          ).length;
+          return (serviceScene.state.labels?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []).length;
         default:
           return undefined;
       }

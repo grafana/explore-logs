@@ -1,5 +1,5 @@
-import { AdHocVariableFilter, SelectableValue, urlUtil } from '@grafana/data';
-import { DataSourceWithBackend, config, getDataSourceSrv } from '@grafana/runtime';
+import { urlUtil } from '@grafana/data';
+import { config, DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
   getUrlSyncManager,
@@ -7,15 +7,7 @@ import {
   SceneObject,
   SceneObjectUrlValues,
 } from '@grafana/scenes';
-import {
-  VAR_DATASOURCE_EXPR,
-  LOG_STREAM_SELECTOR_EXPR,
-  VAR_FILTERS,
-  ALL_VARIABLE_VALUE,
-  LEVEL_VARIABLE_VALUE,
-  VAR_FIELDS,
-  VAR_FILTERS_EXPR,
-} from './variables';
+import { LOG_STREAM_SELECTOR_EXPR, VAR_DATASOURCE_EXPR, VAR_FILTERS_EXPR } from './variables';
 import { EXPLORATIONS_ROUTE } from './routing';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
 
@@ -46,49 +38,6 @@ export function getPatternExpr(exploration: IndexScene) {
 export function getColorByIndex(index: number) {
   const visTheme = config.theme2.visualization;
   return visTheme.getColorByName(visTheme.palette[index % 8]);
-}
-
-export function getLabelOptions(sceneObject: SceneObject, allOptions: string[]) {
-  const filteredOptions = getUniqueFilters(sceneObject, allOptions);
-  const labelOptions: Array<SelectableValue<string>> = filteredOptions.map((label) => ({
-    label,
-    value: String(label),
-  }));
-
-  const levelOption = [];
-  // We are adding LEVEL_VARIABLE_VALUE which is structured metadata, but we want to show it as a label
-  if (!allOptions.includes(LEVEL_VARIABLE_VALUE)) {
-    levelOption.push({ label: LEVEL_VARIABLE_VALUE, value: LEVEL_VARIABLE_VALUE });
-  }
-
-  return [{ label: 'All', value: ALL_VARIABLE_VALUE }, ...levelOption, ...labelOptions];
-}
-
-/**
- * Given an array of label, or fields names, return those that are not already present in the filters.
- */
-export function getUniqueFilters(sceneObject: SceneObject, labelNames: string[]) {
-  const labelFilters = sceneGraph.lookupVariable(VAR_FILTERS, sceneObject) as AdHocFiltersVariable | null;
-  const fieldsFilters = sceneGraph.lookupVariable(VAR_FIELDS, sceneObject) as AdHocFiltersVariable | null;
-
-  const uniqueFilters: string[] = [];
-  let existingFilters: AdHocVariableFilter[] = [];
-
-  if (labelFilters) {
-    existingFilters = [...labelFilters.state.filters];
-  }
-  if (fieldsFilters) {
-    existingFilters = [...existingFilters, ...fieldsFilters.state.filters];
-  }
-
-  for (const label of labelNames) {
-    const filterExists = existingFilters.find((f) => f.key === label);
-    if (!filterExists) {
-      uniqueFilters.push(label);
-    }
-  }
-
-  return uniqueFilters;
 }
 
 export async function getLokiDatasource(sceneObject: SceneObject) {

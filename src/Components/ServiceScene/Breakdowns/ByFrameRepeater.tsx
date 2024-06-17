@@ -16,9 +16,15 @@ interface ByFrameRepeaterState extends SceneObjectState {
   getLayoutChild(data: PanelData, frame: DataFrame, frameIndex: number): SceneFlexItem;
 }
 
+type FrameFilterCallback = (frame: DataFrame) => boolean;
+type FrameIterateCallback = (frames: DataFrame[], seriesIndex: number) => void;
+
 export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
+  private unfilteredChildren: SceneFlexItem[];
   public constructor(state: ByFrameRepeaterState) {
     super(state);
+
+    this.unfilteredChildren = [];
 
     this.addActivationHandler(() => {
       const data = sceneGraph.getData(this);
@@ -46,7 +52,29 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     }
 
     this.state.body.setState({ children: newChildren });
+    this.unfilteredChildren = newChildren;
   }
+
+  public iterateFrames = (callback: FrameIterateCallback) => {
+    const data = sceneGraph.getData(this).state.data;
+    if (!data) {
+      return;
+    }
+    for (let seriesIndex = 0; seriesIndex < data.series.length; seriesIndex++) {
+      callback(data.series, seriesIndex);
+    }
+  };
+
+  public filterFrames = (filterFn: FrameFilterCallback) => {
+    const newChildren: SceneFlexItem[] = [];
+    this.iterateFrames((frames, seriesIndex) => {
+      if (filterFn(frames[seriesIndex])) {
+        newChildren.push(this.unfilteredChildren[seriesIndex]);
+      }
+    });
+
+    this.state.body.setState({ children: newChildren });
+  };
 
   public static Component = ({ model }: SceneComponentProps<SceneByFrameRepeater>) => {
     const { body } = model.useState();
