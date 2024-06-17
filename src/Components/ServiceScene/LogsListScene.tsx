@@ -244,5 +244,9 @@ const styles = {
     '.show-on-hover': {
       display: 'none',
     },
+    // A components withing the Logs viz sets contain, which creates a new containing block that is not body which breaks the popover menu
+    'section > div': css({
+      contain: 'none',
+    }),
   }),
 };
