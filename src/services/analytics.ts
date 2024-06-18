@@ -52,5 +52,7 @@ export const USER_EVENTS_ACTIONS = {
     logs_visualization_toggle: 'logs_visualization_toggle',
     // Filter (include, exclude) from log details
     logs_detail_filter_applied: 'logs_detail_filter_applied',
+    // Popover menu filter
+    logs_popover_line_filter: 'logs_popover_line_filter',
   },
 } as const;
