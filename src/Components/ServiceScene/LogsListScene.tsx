@@ -41,6 +41,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, {
     keys: ['urlColumns', 'selectedLine', 'visualizationType'],
   });
+  private lineFilterScene?: LineFilter = undefined;
   constructor(state: Partial<LogsListSceneState>) {
     super({
       ...state,
@@ -147,6 +148,19 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     );
   };
 
+  public handleFilterStringClick = (value: string) => {
+    if (this.lineFilterScene) {
+      this.lineFilterScene.updateFilter(value);
+      reportAppInteraction(
+        USER_EVENTS_PAGES.service_details,
+        USER_EVENTS_ACTIONS.service_details.logs_popover_line_filter,
+        {
+          selectionLength: value.length,
+        }
+      );
+    }
+  };
+
   private getLogsPanel() {
     const visualizationType = this.state.visualizationType;
 
@@ -162,6 +176,8 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         .setOption('onClickFilterOutLabel', this.handleLabelFilterOutClick)
         // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
         .setOption('isFilterLabelActive', this.handleIsFilterLabelActive)
+        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
+        .setOption('onClickFilterString', this.handleFilterStringClick)
         .setHeaderActions(<LogsPanelHeaderActions vizType={visualizationType} onChange={this.setVisualizationType} />)
         .build(),
     });
@@ -183,11 +199,12 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   };
 
   private getVizPanel() {
+    this.lineFilterScene = new LineFilter();
     return new SceneFlexLayout({
       direction: 'column',
       children: [
         new SceneFlexItem({
-          body: new LineFilter(),
+          body: this.lineFilterScene,
           ySizing: 'content',
         }),
         this.state.visualizationType === 'logs'
@@ -238,5 +255,9 @@ const styles = {
     '.show-on-hover': {
       display: 'none',
     },
+    // A components withing the Logs viz sets contain, which creates a new containing block that is not body which breaks the popover menu
+    'section > div': css({
+      contain: 'none',
+    }),
   }),
 };
