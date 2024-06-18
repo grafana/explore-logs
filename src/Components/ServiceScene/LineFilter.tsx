@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import { CustomVariable, SceneComponentProps, SceneObjectBase, SceneObjectState, sceneGraph } from '@grafana/scenes';
 import { Field } from '@grafana/ui';
-import { debounce } from 'lodash';
+import { debounce, escapeRegExp } from 'lodash';
 import React, { ChangeEvent } from 'react';
 import { VAR_LINE_FILTER } from 'services/variables';
 import { testIds } from 'services/testIds';
@@ -30,7 +30,7 @@ export class LineFilter extends SceneObjectBase<LineFilterState> {
       return;
     }
     this.setState({
-      lineFilter: matches[1],
+      lineFilter: matches[1].replace(/\\(.)/g, '$1'),
     });
   };
 
@@ -55,7 +55,7 @@ export class LineFilter extends SceneObjectBase<LineFilterState> {
 
   updateVariable = debounce((search: string) => {
     const variable = this.getVariable();
-    variable.changeValueTo(`|~ \`(?i)${search}\``);
+    variable.changeValueTo(`|~ \`(?i)${escapeRegExp(search)}\``);
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.search_string_in_logs_changed,
