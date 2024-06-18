@@ -40,7 +40,7 @@ import { PluginPage } from '@grafana/runtime';
 
 export const SERVICE_NAME = 'service_name';
 
-interface ServiceSelectionComponentState extends SceneObjectState {
+interface ServiceSelectionSceneState extends SceneObjectState {
   // The body of the component
   body: SceneCSSGridLayout;
   // We query volume endpoint to get list of all services and order them by volume
@@ -59,7 +59,7 @@ export class StartingPointSelectedEvent extends BusEventBase {
   public static type = 'start-point-selected-event';
 }
 
-export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionComponentState> {
+export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
     // We want to subscribe to changes in datasource variables and update the top services when the datasource changes
     variableNames: [VAR_DATASOURCE],
@@ -72,7 +72,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
     },
   });
 
-  constructor(state: Partial<ServiceSelectionComponentState>) {
+  constructor(state: Partial<ServiceSelectionSceneState>) {
     super({
       body: new SceneCSSGridLayout({ children: [] }),
       isServicesByVolumeLoading: false,
@@ -285,7 +285,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
     );
   }, 500);
 
-  public static Component = ({ model }: SceneComponentProps<ServiceSelectionComponent>) => {
+  public static Component = ({ model }: SceneComponentProps<ServiceSelectionScene>) => {
     const styles = useStyles2(getStyles);
     const { isServicesByVolumeLoading, servicesByVolume, servicesToQuery, body, volumeApiError } = model.useState();
 

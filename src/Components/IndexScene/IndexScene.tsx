@@ -32,7 +32,7 @@ import {
 
 import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
 import { ServiceScene } from '../ServiceScene/ServiceScene';
-import { ServiceSelectionComponent, StartingPointSelectedEvent } from '../ServiceSelectionScene/ServiceSelectionScene';
+import { ServiceSelectionScene, StartingPointSelectedEvent } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LayoutScene } from './LayoutScene';
 import { FilterOp } from 'services/filters';
 
@@ -141,7 +141,7 @@ function getContentScene(mode?: LogExplorationMode) {
   if (mode === 'service_details') {
     return new ServiceScene({});
   }
-  return new ServiceSelectionComponent({});
+  return new ServiceSelectionScene({});
 }
 
 function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter[]) {
