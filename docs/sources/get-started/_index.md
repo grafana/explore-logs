@@ -12,7 +12,9 @@ weight: 800
 
 # Get started with Explore Logs
 
-> Explore Logs is offered in Public Preview and is under active development. Subsequent updates are likely to incorporate significant changes that may impact existing functionality.
+{{% admonition type="caution" %}}
+Explore Metrics is currently in [public preview](/docs/release-life-cycle/). Grafana Labs offers limited support, and breaking changes might occur prior to the feature being made generally available.
+{{% /admonition %}}
 
 The best way to see what Explore Logs can do for you is to run it on your own data.
 

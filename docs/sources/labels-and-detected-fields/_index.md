@@ -12,7 +12,9 @@ weight: 800
 
 # Labels and Detected fields
 
-> Explore Logs is offered in Public Preview and is under active development. Subsequent updates are likely to incorporate significant changes that may impact existing functionality.
+{{% admonition type="caution" %}}
+Explore Metrics is currently in [public preview](/docs/release-life-cycle/). Grafana Labs offers limited support, and breaking changes might occur prior to the feature being made generally available.
+{{% /admonition %}}
 
 Explore Logs shows you the volume of logs with specific Labels and Detected fields.
 
