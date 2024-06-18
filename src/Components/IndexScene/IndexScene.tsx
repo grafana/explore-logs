@@ -42,6 +42,11 @@ export interface AppliedPattern {
   type: 'include' | 'exclude';
 }
 
+export interface SelectedPatternField {
+  pattern: string;
+  fieldIndex: number;
+}
+
 export interface IndexSceneState extends SceneObjectState {
   // contentScene is the scene that is displayed in the main body of the index scene - it can be either the service selection or service scene
   contentScene?: SceneObject;
@@ -52,6 +57,7 @@ export interface IndexSceneState extends SceneObjectState {
   initialFilters?: AdHocVariableFilter[];
   initialDS?: string;
   patterns?: AppliedPattern[];
+  selectedFields?: SelectedPatternField;
 }
 
 export class IndexScene extends SceneObjectBase<IndexSceneState> {

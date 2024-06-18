@@ -69,6 +69,7 @@ export interface ServiceSceneState extends SceneObjectState {
   detectedFields?: string[];
   labels?: string[];
   patterns?: LokiPattern[];
+  patternFieldValues?: string[];
 
   detectedFieldsCount?: number;
 
@@ -278,6 +279,18 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       }
     );
     this.setState({ patterns: data });
+  }
+
+  private async updateSelectedPatternField() {
+    const ds = await getLokiDatasource(this);
+    if (!ds) {
+      return;
+    }
+
+    const timeRange = sceneGraph.getTimeRange(this).state.value;
+    const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
+    const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
+    const excludeLabels = [ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE];
   }
 
   private async updateLabels() {
