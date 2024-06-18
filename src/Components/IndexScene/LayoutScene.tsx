@@ -117,6 +117,15 @@ function getStyles(theme: GrafanaTheme2) {
           },
         },
       },
+      // the `service_name` filter is a special case where we want to hide the operator
+      '[data-testid="AdHocFilter-service_name"]': {
+        'div[class*="input-wrapper"]:first-child': {
+          display: 'none',
+        },
+        'div[class*="input-wrapper"]:nth-child(2)': {
+          marginLeft: 0,
+        },
+      },
 
       ['div >[title="Add filter"]']: {
         border: 0,
