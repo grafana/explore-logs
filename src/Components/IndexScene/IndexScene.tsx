@@ -161,16 +161,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
     key: 'adhoc_service_filter',
   });
 
-  filterVariable._getOperators = () => {
-    // Only allow equal operator if there is only one filter
-    if (filterVariable.state.filters.length === 1) {
-      return [
-        {
-          label: FilterOp.Equal,
-          value: FilterOp.Equal,
-        },
-      ];
-    }
+  filterVariable._getOperators = function () {
     return operators;
   };
 
