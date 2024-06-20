@@ -79,6 +79,10 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
 
     context.onToggleSeriesVisibility = (level: string, mode: SeriesVisibilityChangeMode) => {
       originalOnToggleSeriesVisibility?.(level, mode);
+      // @TODO. We don't yet support filters with multiple values.
+      if (mode === SeriesVisibilityChangeMode.AppendToSelection) {
+        return;
+      }
       addToFilters(LEVEL_VARIABLE_VALUE, level, 'toggle', this);
       this.focusedLevel = this.focusedLevel === level ? '' : level;
     };
