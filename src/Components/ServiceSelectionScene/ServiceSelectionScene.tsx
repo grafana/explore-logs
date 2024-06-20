@@ -303,10 +303,16 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
   // Creates a layout with logs panel
   buildServiceLogsLayout = (service: string) => {
-    const serviceLevel = this.state.serviceLevel.get(service);
-    const levelFilter = serviceLevel
-      ? ` | logfmt | json | drop __error__, __error_details__ | level=\`${serviceLevel}\` or detected_level=\`${serviceLevel}\` `
-      : '';
+    let serviceLevel = this.state.serviceLevel.get(service);
+    let levelFilter = '';
+    if (serviceLevel) {
+      let operator = 'or';
+      if (serviceLevel === 'logs') {
+        serviceLevel = '';
+        operator = 'and';
+      }
+      levelFilter = ` | logfmt | json | drop __error__, __error_details__ | level=\`${serviceLevel}\` ${operator} detected_level=\`${serviceLevel}\` `;
+    }
     return new SceneCSSGridItem({
       $behaviors: [new behaviors.CursorSync({ sync: DashboardCursorSync.Off })],
       body: PanelBuilders.logs()
