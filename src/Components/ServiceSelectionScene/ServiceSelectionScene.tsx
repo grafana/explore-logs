@@ -309,7 +309,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     if (serviceLevel === 'logs') {
       serviceLevel = '';
     }
-    return ` | logfmt | json | drop __error__, __error_details__ | detected_level=\`${serviceLevel}\` `;
+    return ` | detected_level=\`${serviceLevel}\` `;
   };
 
   // Creates a layout with logs panel
