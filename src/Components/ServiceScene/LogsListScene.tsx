@@ -255,9 +255,13 @@ const styles = {
     '.show-on-hover': {
       display: 'none',
     },
-    // A components withing the Logs viz sets contain, which creates a new containing block that is not body which breaks the popover menu
-    'section > div': css({
+
+    // Hack to select internal div
+    'section > div[class$="panel-content"]': css({
+      // A components withing the Logs viz sets contain, which creates a new containing block that is not body which breaks the popover menu
       contain: 'none',
+      // Prevent overflow from spilling out of parent container
+      overflow: 'auto',
     }),
   }),
 };
