@@ -39,6 +39,7 @@ import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
 import { NoVolumeError } from './NoVolumeError';
 import { PluginPage } from '@grafana/runtime';
+import { toggleLevelFromFilter } from 'services/filters';
 
 export const SERVICE_NAME = 'service_name';
 
@@ -56,7 +57,7 @@ interface ServiceSelectionSceneState extends SceneObjectState {
   // in case the volume api errors out
   volumeApiError?: boolean;
   // Show logs of a certain level for a given service
-  serviceLevel: Map<string, string>;
+  serviceLevel: Map<string, string[]>;
 }
 
 export class StartingPointSelectedEvent extends BusEventBase {
@@ -83,7 +84,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       servicesByVolume: undefined,
       searchServicesString: '',
       servicesToQuery: undefined,
-      serviceLevel: new Map<string, string>(),
+      serviceLevel: new Map<string, string[]>(),
       ...state,
     });
 
@@ -248,11 +249,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     context.onToggleSeriesVisibility = (level: string, mode: SeriesVisibilityChangeMode) => {
       originalOnToggleSeriesVisibility?.(level, mode);
 
-      if (this.state.serviceLevel.get(service) === level) {
-        this.state.serviceLevel.delete(service);
-      } else {
-        this.state.serviceLevel.set(service, level);
-      }
+      const levels = toggleLevelFromFilter(level, this.state.serviceLevel.get(service), mode);
+      this.state.serviceLevel.set(service, levels);
+
+      console.log(level, mode, this.state.serviceLevel.get(service));
 
       this.updateServiceLogs(service);
     };
@@ -302,14 +302,17 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   }
 
   getLevelFilterForService = (service: string) => {
-    let serviceLevel = this.state.serviceLevel.get(service);
-    if (!serviceLevel) {
+    let serviceLevels = this.state.serviceLevel.get(service) || [];
+    if (serviceLevels.length === 0) {
       return '';
     }
-    if (serviceLevel === 'logs') {
-      serviceLevel = '';
-    }
-    return ` | detected_level=\`${serviceLevel}\` `;
+    const filters = serviceLevels.map((level) => {
+      if (level === 'logs') {
+        level = '';
+      }
+      return `detected_level=\`${level}\``;
+    });
+    return ` | ${filters.join(' or ')} `;
   };
 
   // Creates a layout with logs panel
