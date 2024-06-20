@@ -1,11 +1,12 @@
 import { css } from '@emotion/css';
 import { CustomVariable, SceneComponentProps, SceneObjectBase, SceneObjectState, sceneGraph } from '@grafana/scenes';
-import { Field, Icon, Input } from '@grafana/ui';
-import { debounce } from 'lodash';
+import { Field } from '@grafana/ui';
+import { debounce, escapeRegExp } from 'lodash';
 import React, { ChangeEvent } from 'react';
 import { VAR_LINE_FILTER } from 'services/variables';
 import { testIds } from 'services/testIds';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
+import { SearchInput } from './Breakdowns/SearchInput';
 
 interface LineFilterState extends SceneObjectState {
   lineFilter: string;
@@ -29,7 +30,7 @@ export class LineFilter extends SceneObjectBase<LineFilterState> {
       return;
     }
     this.setState({
-      lineFilter: matches[1],
+      lineFilter: matches[1].replace(/\\(.)/g, '$1'),
     });
   };
 
@@ -41,16 +42,20 @@ export class LineFilter extends SceneObjectBase<LineFilterState> {
     return variable;
   }
 
-  handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+  updateFilter(lineFilter: string) {
     this.setState({
-      lineFilter: e.target.value,
+      lineFilter,
     });
-    this.updateVariable(e.target.value);
+    this.updateVariable(lineFilter);
+  }
+
+  handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    this.updateFilter(e.target.value);
   };
 
   updateVariable = debounce((search: string) => {
     const variable = this.getVariable();
-    variable.changeValueTo(`|~ \`(?i)${search}\``);
+    variable.changeValueTo(`|~ \`(?i)${escapeRegExp(search)}\``);
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.search_string_in_logs_changed,
@@ -67,13 +72,15 @@ function LineFilterRenderer({ model }: SceneComponentProps<LineFilter>) {
 
   return (
     <Field className={styles.field}>
-      <Input
+      <SearchInput
         data-testid={testIds.exploreServiceDetails.searchLogs}
         value={lineFilter}
         className={styles.input}
         onChange={model.handleChange}
-        prefix={<Icon name="search" />}
         placeholder="Search in log lines"
+        onClear={() => {
+          model.updateFilter('');
+        }}
       />
     </Field>
   );
