@@ -301,18 +301,20 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     });
   }
 
+  getLevelFilterForService = (service: string) => {
+    let serviceLevel = this.state.serviceLevel.get(service);
+    if (!serviceLevel) {
+      return '';
+    }
+    if (serviceLevel === 'logs') {
+      serviceLevel = '';
+    }
+    return ` | logfmt | json | drop __error__, __error_details__ | detected_level=\`${serviceLevel}\` `;
+  };
+
   // Creates a layout with logs panel
   buildServiceLogsLayout = (service: string) => {
-    let serviceLevel = this.state.serviceLevel.get(service);
-    let levelFilter = '';
-    if (serviceLevel) {
-      let operator = 'or';
-      if (serviceLevel === 'logs') {
-        serviceLevel = '';
-        operator = 'and';
-      }
-      levelFilter = ` | logfmt | json | drop __error__, __error_details__ | level=\`${serviceLevel}\` ${operator} detected_level=\`${serviceLevel}\` `;
-    }
+    const levelFilter = this.getLevelFilterForService(service);
     return new SceneCSSGridItem({
       $behaviors: [new behaviors.CursorSync({ sync: DashboardCursorSync.Off })],
       body: PanelBuilders.logs()
