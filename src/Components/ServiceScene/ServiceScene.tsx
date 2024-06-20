@@ -1,11 +1,11 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import {GrafanaTheme2, LoadingState, PageLayoutType} from '@grafana/data';
+import { GrafanaTheme2, LoadingState } from '@grafana/data';
 import { locationService } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
-  CustomVariable, SceneAppPage,
+  CustomVariable,
   SceneComponentProps,
   SceneFlexItem,
   SceneFlexLayout,
@@ -25,7 +25,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'se
 import { DetectedLabelsResponse, extractParserAndFieldsFromDataFrame } from 'services/fields';
 import { getQueryRunner } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
-import {EXPLORATIONS_ROUTE, PLUGIN_ID, prefixRoute, ROUTES} from 'services/routing';
+import { EXPLORATIONS_ROUTE, PLUGIN_ID } from 'services/routing';
 import { getExplorationFor, getLokiDatasource } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
@@ -370,12 +370,7 @@ const actionViewsDefinitions: ActionViewDefinition[] = [
   {
     displayName: 'Logs',
     value: 'logs',
-    getScene: () => new SceneAppPage({
-      layout: PageLayoutType.Custom,
-      getScene: () => buildLogsListScene(),
-      title: 'Logs',
-      url: prefixRoute(ROUTES.Logs)
-    }),
+    getScene: () => new PageScene({ body: buildLogsListScene(), title: 'Logs' }),
     testId: testIds.exploreServiceDetails.tabLogs,
   },
   {

@@ -1,7 +1,6 @@
 import React from 'react';
 
 import {
-  EmbeddedScene,
   PanelBuilders,
   SceneComponentProps,
   SceneFlexItem,
@@ -20,8 +19,8 @@ import { LogsVolumePanel } from './LogsVolumePanel';
 import { css } from '@emotion/css';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { DataFrame } from '@grafana/data';
-import { FilterType, addToFilters } from './Breakdowns/AddToFiltersButton';
-import { LabelType, getLabelTypeFromFrame } from 'services/fields';
+import { addToFilters, FilterType } from './Breakdowns/AddToFiltersButton';
+import { getLabelTypeFromFrame, LabelType } from 'services/fields';
 import { VAR_FIELDS, VAR_FILTERS } from 'services/variables';
 import { getAdHocFiltersVariable } from 'services/scenes';
 
@@ -234,21 +233,19 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
 }
 
 export function buildLogsListScene() {
-  return new EmbeddedScene({
-    body: new SceneFlexLayout({
-      direction: 'column',
-      children: [
-        new SceneFlexItem({
-          minHeight: 200,
-          body: new LogsVolumePanel({}),
-        }),
-        new SceneFlexItem({
-          minHeight: '470px',
-          height: 'calc(100vh - 500px)',
-          body: new LogsListScene({}),
-        }),
-      ],
-    })
+  return new SceneFlexLayout({
+    direction: 'column',
+    children: [
+      new SceneFlexItem({
+        minHeight: 200,
+        body: new LogsVolumePanel({}),
+      }),
+      new SceneFlexItem({
+        minHeight: '470px',
+        height: 'calc(100vh - 500px)',
+        body: new LogsListScene({}),
+      }),
+    ],
   });
 }
 
