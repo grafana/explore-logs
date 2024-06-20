@@ -252,8 +252,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       const levels = toggleLevelFromFilter(level, this.state.serviceLevel.get(service), mode);
       this.state.serviceLevel.set(service, levels);
 
-      console.log(level, mode, this.state.serviceLevel.get(service));
-
       this.updateServiceLogs(service);
     };
   };
