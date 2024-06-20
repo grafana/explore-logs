@@ -39,7 +39,7 @@ import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
 import { NoVolumeError } from './NoVolumeError';
 import { PluginPage } from '@grafana/runtime';
-import { toggleLevelFromFilter } from 'services/filters';
+import { toggleLevelFromFilter } from 'services/levels';
 
 export const SERVICE_NAME = 'service_name';
 

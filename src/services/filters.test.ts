@@ -1,8 +1,7 @@
 import { SelectableValue } from '@grafana/data';
 import { DetectedLabel } from './fields';
-import { ALL_LEVELS, getLabelOptions, sortLabelsByCardinality, toggleLevelFromFilter } from './filters';
+import { getLabelOptions, sortLabelsByCardinality } from './filters';
 import { ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE } from './variables';
-import { SeriesVisibilityChangeMode } from '@grafana/ui';
 
 describe('sortLabelsByCardinality', () => {
   it('should move labels with cardinality 1 to the end', () => {
@@ -102,42 +101,5 @@ describe('getLabelOptions', () => {
     ];
 
     expect(getLabelOptions(labels)).toEqual(expectedOptions);
-  });
-});
-
-describe('toggleLevelFromFilter', () => {
-  describe('Visibility mode toggle selection', () => {
-    it('adds the level', () => {
-      expect(toggleLevelFromFilter('error', [], SeriesVisibilityChangeMode.ToggleSelection)).toEqual(['error']);
-      expect(toggleLevelFromFilter('error', undefined, SeriesVisibilityChangeMode.ToggleSelection)).toEqual(['error']);
-    });
-    it('adds the level if the filter was not empty', () => {
-      expect(toggleLevelFromFilter('error', ['info', 'debug'], SeriesVisibilityChangeMode.ToggleSelection)).toEqual([
-        'error',
-      ]);
-    });
-    it('removes the level if the filter contained only the same level', () => {
-      expect(toggleLevelFromFilter('error', ['error'], SeriesVisibilityChangeMode.ToggleSelection)).toEqual([]);
-    });
-  });
-  describe('Visibility mode append to selection', () => {
-    it('appends the label to other levels', () => {
-      expect(toggleLevelFromFilter('error', ['info'], SeriesVisibilityChangeMode.AppendToSelection)).toEqual([
-        'info',
-        'error',
-      ]);
-    });
-    it('removes the label if already present', () => {
-      expect(toggleLevelFromFilter('error', ['info', 'error'], SeriesVisibilityChangeMode.AppendToSelection)).toEqual([
-        'info',
-      ]);
-    });
-    it('appends all levels except the provided level if the filter was previously empty', () => {
-      const allButError = ALL_LEVELS.filter((level) => level !== 'error');
-      expect(toggleLevelFromFilter('error', [], SeriesVisibilityChangeMode.AppendToSelection)).toEqual(allButError);
-      expect(toggleLevelFromFilter('error', undefined, SeriesVisibilityChangeMode.AppendToSelection)).toEqual(
-        allButError
-      );
-    });
   });
 });
