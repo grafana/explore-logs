@@ -10,6 +10,7 @@ const DEFAULT_TIME_RANGE = { from: 'now-15m', to: 'now' };
 export function LogExplorationView() {
   const [isInitialized, setIsInitialized] = React.useState(false);
 
+  // useSceneApp always fails to cache, the entire app is being re-instantiated on every change to the url params
   const scene = useSceneApp(() => {
     return new SceneApp({
       pages: [
@@ -17,14 +18,13 @@ export function LogExplorationView() {
           title: 'Explore logs',
           url: EXPLORATIONS_ROUTE,
           layout: PageLayoutType.Custom,
-
-          getScene: () => {
-            return new EmbeddedScene({
+          getScene: () =>
+            new EmbeddedScene({
+              key: 'index-scene',
               body: new IndexScene({
                 $timeRange: new SceneTimeRange(DEFAULT_TIME_RANGE),
               }),
-            });
-          },
+            }),
         }),
       ],
     });
