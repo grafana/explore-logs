@@ -1,6 +1,7 @@
 import React from 'react';
 
 import {
+  EmbeddedScene,
   PanelBuilders,
   SceneComponentProps,
   SceneFlexItem,
@@ -216,19 +217,21 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
 }
 
 export function buildLogsListScene() {
-  return new SceneFlexLayout({
-    direction: 'column',
-    children: [
-      new SceneFlexItem({
-        minHeight: 200,
-        body: new LogsVolumePanel({}),
-      }),
-      new SceneFlexItem({
-        minHeight: '470px',
-        height: 'calc(100vh - 500px)',
-        body: new LogsListScene({}),
-      }),
-    ],
+  return new EmbeddedScene({
+    body: new SceneFlexLayout({
+      direction: 'column',
+      children: [
+        new SceneFlexItem({
+          minHeight: 200,
+          body: new LogsVolumePanel({}),
+        }),
+        new SceneFlexItem({
+          minHeight: '470px',
+          height: 'calc(100vh - 500px)',
+          body: new LogsListScene({}),
+        }),
+      ],
+    })
   });
 }
 
