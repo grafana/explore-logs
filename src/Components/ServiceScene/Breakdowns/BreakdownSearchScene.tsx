@@ -6,6 +6,7 @@ import { SearchInput } from './SearchInput';
 import { LabelBreakdownScene } from './LabelBreakdownScene';
 import { FieldsBreakdownScene } from './FieldsBreakdownScene';
 import { fuzzySearch } from '../../../services/search';
+import { getLabelValueFromDataFrame } from 'services/levels';
 
 export interface BreakdownSearchSceneState extends SceneObjectState {
   filter?: string;
@@ -70,16 +71,5 @@ export class BreakdownSearchScene extends SceneObjectBase<BreakdownSearchSceneSt
 }
 
 export function getLabelValue(frame: DataFrame) {
-  const labels = frame.fields[1]?.labels;
-
-  if (!labels) {
-    return 'No labels';
-  }
-
-  const keys = Object.keys(labels);
-  if (keys.length === 0) {
-    return 'No labels';
-  }
-
-  return labels[keys[0]];
+  return getLabelValueFromDataFrame(frame) ?? 'No labels';
 }

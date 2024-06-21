@@ -14,6 +14,7 @@ import {
   SceneObjectState,
   SceneVariable,
   VariableDependencyConfig,
+  VizPanel,
 } from '@grafana/scenes';
 import {
   DrawStyle,
@@ -39,7 +40,7 @@ import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
 import { NoVolumeError } from './NoVolumeError';
 import { PluginPage } from '@grafana/runtime';
-import { toggleLevelFromFilter } from 'services/levels';
+import { getLabelsFromSeries, toggleLevelFromFilter } from 'services/levels';
 
 export const SERVICE_NAME = 'service_name';
 
@@ -243,13 +244,15 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     });
   }
 
-  private extendTimeSeriesLegendBus = (service: string, context: PanelContext) => {
+  private extendTimeSeriesLegendBus = (service: string, context: PanelContext, panel: VizPanel) => {
     const originalOnToggleSeriesVisibility = context.onToggleSeriesVisibility;
 
     context.onToggleSeriesVisibility = (level: string, mode: SeriesVisibilityChangeMode) => {
       originalOnToggleSeriesVisibility?.(level, mode);
 
-      const levels = toggleLevelFromFilter(level, this.state.serviceLevel.get(service), mode);
+      const allLevels = getLabelsFromSeries(panel.state.$data?.state.data?.series ?? []);
+
+      const levels = toggleLevelFromFilter(level, this.state.serviceLevel.get(service), mode, allLevels);
       this.state.serviceLevel.set(service, levels);
 
       this.updateServiceLogs(service);
@@ -290,7 +293,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       .build();
 
     panel.setState({
-      extendPanelContext: (_, context) => this.extendTimeSeriesLegendBus(service, context),
+      extendPanelContext: (_, context) => this.extendTimeSeriesLegendBus(service, context, panel),
     });
 
     return new SceneCSSGridItem({
