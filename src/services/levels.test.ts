@@ -1,5 +1,6 @@
 import { SeriesVisibilityChangeMode } from '@grafana/ui';
-import { toggleLevelFromFilter } from './levels';
+import { getLabelsFromSeries, toggleLevelFromFilter } from './levels';
+import { FieldType, toDataFrame } from '@grafana/data';
 
 const ALL_LEVELS = ['logs', 'debug', 'info', 'warn', 'error', 'crit'];
 
@@ -44,5 +45,50 @@ describe('toggleLevelFromFilter', () => {
         toggleLevelFromFilter('error', undefined, SeriesVisibilityChangeMode.AppendToSelection, ALL_LEVELS)
       ).toEqual(allButError);
     });
+  });
+});
+
+describe('getLabelsFromSeries', () => {
+  const series = [
+    toDataFrame({
+      fields: [
+        { name: 'Time', type: FieldType.time, values: [0] },
+        {
+          name: 'Value',
+          type: FieldType.number,
+          values: [1],
+          labels: {
+            detected_level: 'error',
+          },
+        },
+      ],
+    }),
+    toDataFrame({
+      fields: [
+        { name: 'Time', type: FieldType.time, values: [0] },
+        {
+          name: 'Value',
+          type: FieldType.number,
+          values: [1],
+          labels: {
+            detected_level: 'warn',
+          },
+        },
+      ],
+    }),
+    toDataFrame({
+      fields: [
+        { name: 'Time', type: FieldType.time, values: [0] },
+        {
+          name: 'Value',
+          type: FieldType.number,
+          values: [1],
+          labels: {},
+        },
+      ],
+    }),
+  ];
+  it('returns the label value from time series', () => {
+    expect(getLabelsFromSeries(series)).toEqual(['error', 'warn', 'logs']);
   });
 });
