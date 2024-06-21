@@ -14,6 +14,7 @@ import {
   SceneObjectState,
   SceneVariable,
   VariableDependencyConfig,
+  VizPanel,
 } from '@grafana/scenes';
 import {
   DrawStyle,
@@ -22,6 +23,8 @@ import {
   Input,
   LegendDisplayMode,
   LoadingPlaceholder,
+  PanelContext,
+  SeriesVisibilityChangeMode,
   StackingMode,
   useStyles2,
 } from '@grafana/ui';
@@ -37,10 +40,11 @@ import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
 import { NoVolumeError } from './NoVolumeError';
 import { PluginPage } from '@grafana/runtime';
+import { getLabelsFromSeries, toggleLevelFromFilter } from 'services/levels';
 
 export const SERVICE_NAME = 'service_name';
 
-interface ServiceSelectionComponentState extends SceneObjectState {
+interface ServiceSelectionSceneState extends SceneObjectState {
   // The body of the component
   body: SceneCSSGridLayout;
   // We query volume endpoint to get list of all services and order them by volume
@@ -53,13 +57,15 @@ interface ServiceSelectionComponentState extends SceneObjectState {
   servicesToQuery?: string[];
   // in case the volume api errors out
   volumeApiError?: boolean;
+  // Show logs of a certain level for a given service
+  serviceLevel: Map<string, string[]>;
 }
 
 export class StartingPointSelectedEvent extends BusEventBase {
   public static type = 'start-point-selected-event';
 }
 
-export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionComponentState> {
+export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
     // We want to subscribe to changes in datasource variables and update the top services when the datasource changes
     variableNames: [VAR_DATASOURCE],
@@ -72,13 +78,14 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
     },
   });
 
-  constructor(state: Partial<ServiceSelectionComponentState>) {
+  constructor(state: Partial<ServiceSelectionSceneState>) {
     super({
       body: new SceneCSSGridLayout({ children: [] }),
       isServicesByVolumeLoading: false,
       servicesByVolume: undefined,
       searchServicesString: '',
       servicesToQuery: undefined,
+      serviceLevel: new Map<string, string[]>(),
       ...state,
     });
 
@@ -216,45 +223,102 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
     }
   }
 
+  /**
+   * Redraws service logs after toggling level visibility.
+   */
+  private updateServiceLogs(service: string) {
+    if (!this.state.body) {
+      this.updateBody();
+      return;
+    }
+    const serviceIndex = this.state.servicesToQuery?.indexOf(service);
+    if (serviceIndex === undefined || serviceIndex < 0) {
+      return;
+    }
+    this.state.body.forEachChild((scene) => {
+      if (scene instanceof SceneCSSGridLayout) {
+        let newChildren = [...scene.state.children];
+        newChildren.splice(serviceIndex * 2 + 1, 1, this.buildServiceLogsLayout(service));
+        scene.setState({ children: newChildren });
+      }
+    });
+  }
+
+  private extendTimeSeriesLegendBus = (service: string, context: PanelContext, panel: VizPanel) => {
+    const originalOnToggleSeriesVisibility = context.onToggleSeriesVisibility;
+
+    context.onToggleSeriesVisibility = (level: string, mode: SeriesVisibilityChangeMode) => {
+      originalOnToggleSeriesVisibility?.(level, mode);
+
+      const allLevels = getLabelsFromSeries(panel.state.$data?.state.data?.series ?? []);
+
+      const levels = toggleLevelFromFilter(level, this.state.serviceLevel.get(service), mode, allLevels);
+      this.state.serviceLevel.set(service, levels);
+
+      this.updateServiceLogs(service);
+    };
+  };
+
   // Creates a layout with timeseries panel
   buildServiceLayout(service: string, timeRange: TimeRange) {
     let splitDuration;
     if (timeRange.to.diff(timeRange.from, 'hours') >= 4 && timeRange.to.diff(timeRange.from, 'hours') <= 26) {
       splitDuration = '2h';
     }
-    return new SceneCSSGridItem({
-      $behaviors: [new behaviors.CursorSync({ key: 'serviceCrosshairSync', sync: DashboardCursorSync.Crosshair })],
-      body: PanelBuilders.timeseries()
-        // If service was previously selected, we show it in the title
-        .setTitle(service)
-        .setData(
-          getQueryRunner(
-            buildLokiQuery(
-              `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`,
-              { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`, splitDuration, refId: `ts-${service}` }
-            )
+    const panel = PanelBuilders.timeseries()
+      // If service was previously selected, we show it in the title
+      .setTitle(service)
+      .setData(
+        getQueryRunner(
+          buildLokiQuery(
+            `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`,
+            { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`, splitDuration, refId: `ts-${service}` }
           )
         )
-        .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
-        .setCustomFieldConfig('fillOpacity', 100)
-        .setCustomFieldConfig('lineWidth', 0)
-        .setCustomFieldConfig('pointSize', 0)
-        .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-        .setUnit('short')
-        .setOverrides(setLeverColorOverrides)
-        .setOption('legend', {
-          showLegend: true,
-          calcs: ['sum'],
-          placement: 'right',
-          displayMode: LegendDisplayMode.Table,
-        })
-        .setHeaderActions(new SelectServiceButton({ service }))
-        .build(),
+      )
+      .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
+      .setCustomFieldConfig('fillOpacity', 100)
+      .setCustomFieldConfig('lineWidth', 0)
+      .setCustomFieldConfig('pointSize', 0)
+      .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+      .setUnit('short')
+      .setOverrides(setLeverColorOverrides)
+      .setOption('legend', {
+        showLegend: true,
+        calcs: ['sum'],
+        placement: 'right',
+        displayMode: LegendDisplayMode.Table,
+      })
+      .setHeaderActions(new SelectServiceButton({ service }))
+      .build();
+
+    panel.setState({
+      extendPanelContext: (_, context) => this.extendTimeSeriesLegendBus(service, context, panel),
+    });
+
+    return new SceneCSSGridItem({
+      $behaviors: [new behaviors.CursorSync({ key: 'serviceCrosshairSync', sync: DashboardCursorSync.Crosshair })],
+      body: panel,
     });
   }
 
+  getLevelFilterForService = (service: string) => {
+    let serviceLevels = this.state.serviceLevel.get(service) || [];
+    if (serviceLevels.length === 0) {
+      return '';
+    }
+    const filters = serviceLevels.map((level) => {
+      if (level === 'logs') {
+        level = '';
+      }
+      return `detected_level=\`${level}\``;
+    });
+    return ` | ${filters.join(' or ')} `;
+  };
+
   // Creates a layout with logs panel
-  buildServiceLogsLayout(service: string) {
+  buildServiceLogsLayout = (service: string) => {
+    const levelFilter = this.getLevelFilterForService(service);
     return new SceneCSSGridItem({
       $behaviors: [new behaviors.CursorSync({ sync: DashboardCursorSync.Off })],
       body: PanelBuilders.logs()
@@ -262,14 +326,17 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
         .setHoverHeader(true)
         .setData(
           getQueryRunner(
-            buildLokiQuery(`{${SERVICE_NAME}=\`${service}\`}`, { maxLines: 100, refId: `logs-${service}` })
+            buildLokiQuery(`{${SERVICE_NAME}=\`${service}\`}${levelFilter}`, {
+              maxLines: 100,
+              refId: `logs-${service}`,
+            })
           )
         )
         .setOption('showTime', true)
         .setOption('enableLogDetails', false)
         .build(),
     });
-  }
+  };
 
   // We could also run model.setState in component, but it is recommended to implement the state-modifying methods in the scene object
   public onSearchServicesChange = debounce((serviceString: string) => {
@@ -285,7 +352,7 @@ export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionC
     );
   }, 500);
 
-  public static Component = ({ model }: SceneComponentProps<ServiceSelectionComponent>) => {
+  public static Component = ({ model }: SceneComponentProps<ServiceSelectionScene>) => {
     const styles = useStyles2(getStyles);
     const { isServicesByVolumeLoading, servicesByVolume, servicesToQuery, body, volumeApiError } = model.useState();
 
