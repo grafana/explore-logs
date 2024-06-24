@@ -26,6 +26,9 @@ const defaultQueryParams = {
   supportingQueryType: PLUGIN_ID,
 };
 
+/**
+ * Build an optimized base query expression.
+ */
 export function buildBaseQueryExpression(sceneObject: SceneObject) {
   let expr = '';
 
