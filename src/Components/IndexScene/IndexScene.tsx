@@ -72,7 +72,6 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       body: new LayoutScene({}),
       ...state,
     });
-    console.log('indexscene render');
 
     this.addActivationHandler(this.onActivate.bind(this));
   }

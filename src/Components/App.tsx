@@ -6,7 +6,6 @@ const PluginPropsContext = React.createContext<AppRootProps | null>(null);
 
 export class App extends React.PureComponent<AppRootProps> {
   render() {
-    console.log('whole app render');
     return (
       <PluginPropsContext.Provider value={this.props}>
         <LogExplorationView />

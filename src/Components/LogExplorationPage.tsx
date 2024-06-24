@@ -4,30 +4,30 @@ import { EmbeddedScene, getUrlSyncManager, SceneApp, SceneAppPage, SceneTimeRang
 import { IndexScene } from './IndexScene/IndexScene';
 import { EXPLORATIONS_ROUTE } from '../services/routing';
 import { PageLayoutType } from '@grafana/data';
+import { config } from '@grafana/runtime';
+import { Redirect } from 'react-router-dom';
 
 const DEFAULT_TIME_RANGE = { from: 'now-15m', to: 'now' };
 
+const getSceneApp = () =>
+  new SceneApp({
+    pages: [
+      new SceneAppPage({
+        title: 'Explore logs',
+        url: EXPLORATIONS_ROUTE,
+        layout: PageLayoutType.Custom,
+        getScene: () =>
+          new EmbeddedScene({
+            body: new IndexScene({
+              $timeRange: new SceneTimeRange(DEFAULT_TIME_RANGE),
+            }),
+          }),
+      }),
+    ],
+  });
+
 export function LogExplorationView() {
   const [isInitialized, setIsInitialized] = React.useState(false);
-
-  console.log('LogExplorationView render');
-
-  const getSceneApp = () =>
-    new SceneApp({
-      pages: [
-        new SceneAppPage({
-          title: 'Explore logs',
-          url: EXPLORATIONS_ROUTE,
-          layout: PageLayoutType.Custom,
-          getScene: () =>
-            new EmbeddedScene({
-              body: new IndexScene({
-                $timeRange: new SceneTimeRange(DEFAULT_TIME_RANGE),
-              }),
-            }),
-        }),
-      ],
-    });
 
   // useSceneApp always fails to cache, the entire app is being re-instantiated on every change to the url params
   const scene = useSceneApp(getSceneApp);
@@ -38,6 +38,12 @@ export function LogExplorationView() {
       setIsInitialized(true);
     }
   }, [scene, isInitialized]);
+
+  const userPermissions = config.bootData.user.permissions;
+  const canUseApp = userPermissions?.['grafana-lokiexplore-app:read'] || userPermissions?.['datasources:explore'];
+  if (!canUseApp) {
+    return <Redirect to="/" />;
+  }
 
   if (!isInitialized) {
     return null;
