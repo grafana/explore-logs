@@ -48,8 +48,6 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       visualizationType: (localStorage.getItem(VISUALIZATION_TYPE_LOCALSTORAGE_KEY) as LogsVisualizationType) ?? 'logs',
     });
 
-    console.log('LogsListScene init', this.state);
-
     this.addActivationHandler(this.onActivate.bind(this));
   }
 

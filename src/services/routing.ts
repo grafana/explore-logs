@@ -54,16 +54,16 @@ export function prefixRoute(route: string): string {
 }
 
 // For redirect back to service, we just want to keep datasource, and timerange
-export const SERVICE_URL_KEYS = ['var-ds', 'from', 'to'];
+export const SERVICE_URL_KEYS = ['from', 'to', `var-${VAR_DATASOURCE}`];
 //@todo why patterns and var-patterns?
 export const DRILLDOWN_URL_KEYS = [
   'from',
   'patterns',
   'to',
   'mode',
-  'actionView',
   'urlColumns',
   'visualizationType',
+  `var-${VAR_DATASOURCE}`,
   `var-${VAR_FILTERS}`,
   `var-${VAR_FIELDS}`,
   `var-${VAR_PATTERNS}`,

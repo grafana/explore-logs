@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import { debounce } from 'lodash';
 import React, { useCallback, useState } from 'react';
-import { BusEventBase, DashboardCursorSync, GrafanaTheme2, TimeRange } from '@grafana/data';
+import { DashboardCursorSync, GrafanaTheme2, TimeRange } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   behaviors,
@@ -52,13 +52,6 @@ interface ServiceSelectionComponentState extends SceneObjectState {
   servicesToQuery?: string[];
   // in case the volume api errors out
   volumeApiError?: boolean;
-}
-
-/**
- * @todo remove, replace with routes
- */
-export class StartingPointSelectedEvent extends BusEventBase {
-  public static type = 'start-point-selected-event';
 }
 
 export class ServiceSelectionComponent extends SceneObjectBase<ServiceSelectionComponentState> {

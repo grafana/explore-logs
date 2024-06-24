@@ -32,10 +32,11 @@ import {
 
 import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
 import { ServiceScene } from '../ServiceScene/ServiceScene';
-import { ServiceSelectionComponent, StartingPointSelectedEvent } from '../ServiceSelectionScene/ServiceSelectionScene';
+import { ServiceSelectionComponent } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LayoutScene } from './LayoutScene';
 import { FilterOp } from 'services/filters';
 import { SLUGS } from '../../services/routing';
+import { getSlug } from '../Pages';
 
 export type LogExplorationMode = 'service_selection' | 'service_details';
 
@@ -49,16 +50,13 @@ export interface IndexSceneState extends SceneObjectState {
   contentScene?: SceneObject;
   controls: SceneObject[];
   body: LayoutScene;
-  // mode is the current mode of the index scene - it can be either 'service_selection' or 'service_details'
-  mode?: LogExplorationMode;
   initialFilters?: AdHocVariableFilter[];
   initialDS?: string;
   patterns?: AppliedPattern[];
-  breakdownView?: SLUGS;
 }
 
 export class IndexScene extends SceneObjectBase<IndexSceneState> {
-  protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['mode', 'patterns', 'actionView'] });
+  protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['patterns'] });
 
   public constructor(state: Partial<IndexSceneState>) {
     super({
@@ -86,18 +84,10 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
   public onActivate() {
     if (!this.state.contentScene) {
-      console.log('activate content scene', this.state.mode, this.state.breakdownView);
-      this.setState({ contentScene: getContentScene(this.state.mode, this.state.breakdownView) });
+      this.setState({ contentScene: getContentScene() });
     }
 
-    // Some scene elements publish this
-    this.subscribeToEvent(StartingPointSelectedEvent, this._handleStartingPointSelected.bind(this));
-
     this.subscribeToState((newState, oldState) => {
-      if (newState.mode !== oldState.mode) {
-        this.setState({ contentScene: getContentScene(newState.mode, this.state.breakdownView) });
-      }
-
       const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
       if (patternsVariable instanceof CustomVariable) {
         const patternsLine = renderPatternFilters(newState.patterns ?? []);
@@ -112,54 +102,30 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
   getUrlState() {
     return {
-      mode: this.state.mode,
-      patterns: this.state.mode === 'service_selection' ? '' : JSON.stringify(this.state.patterns),
-      actionView: this.state.breakdownView,
+      patterns: JSON.stringify(this.state.patterns),
     };
   }
 
+  // @todo Need to move patterns up to parent? Because we don't revert back to the default view (logs) after changing patterns, variables can get cached to breakdown views that aren't added in the url.
   updateFromUrl(values: SceneObjectUrlValues) {
     const stateUpdate: Partial<IndexSceneState> = {};
-    if (values.mode !== this.state.mode) {
-      const view = (values.actionView as SLUGS | undefined) ?? this.state.breakdownView;
-      if (view) {
-        stateUpdate.mode = 'service_details';
-        stateUpdate.breakdownView = view;
-      } else {
-        stateUpdate.mode = 'service_selection';
-      }
 
-      console.log('updateFromUrl', stateUpdate);
-
-      stateUpdate.contentScene = getContentScene(stateUpdate.mode, stateUpdate.breakdownView);
-    }
-    if (stateUpdate.mode === 'service_selection') {
-      // Clear patterns on start
-      stateUpdate.patterns = undefined;
-    } else if (values.patterns && typeof values.patterns === 'string') {
+    if (values.patterns && typeof values.patterns === 'string') {
       stateUpdate.patterns = JSON.parse(values.patterns) as AppliedPattern[];
+      console.log('updating patterns', stateUpdate.patterns);
     }
 
-    console.log('SETTING URL STATE', stateUpdate);
-    console.log('CURRENT STATE', this.state);
     this.setState(stateUpdate);
-  }
-
-  private _handleStartingPointSelected(evt: StartingPointSelectedEvent) {
-    this.setState({
-      mode: 'service_details',
-    });
   }
 }
 
-function getContentScene(mode?: LogExplorationMode, actionView?: SLUGS) {
-  console.log('getContentScene', mode, actionView);
-  if (mode === 'service_details') {
-    return new ServiceScene({ actionView });
+function getContentScene() {
+  const slug = getSlug();
+  if (slug === SLUGS.explore) {
+    return new ServiceSelectionComponent({});
   }
 
-  console.log('Select service view');
-  return new ServiceSelectionComponent({});
+  return new ServiceScene({});
 }
 
 function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter[]) {

@@ -16,16 +16,14 @@ import {
   SLUGS,
 } from '../services/routing';
 import { PageLayoutType } from '@grafana/data';
-import { IndexScene, LogExplorationMode } from './IndexScene/IndexScene';
+import { IndexScene } from './IndexScene/IndexScene';
 import { locationService } from '@grafana/runtime';
 
-function getServicesScene(mode: LogExplorationMode, actionView?: SLUGS) {
+function getServicesScene() {
   const DEFAULT_TIME_RANGE = { from: 'now-15m', to: 'now' };
   return new EmbeddedScene({
     body: new IndexScene({
       $timeRange: new SceneTimeRange(DEFAULT_TIME_RANGE),
-      mode,
-      breakdownView: actionView,
     }),
   });
 }
@@ -39,7 +37,7 @@ export function makeIndexPage() {
     layout: PageLayoutType.Custom,
     preserveUrlKeys: SERVICE_URL_KEYS,
     routePath: prefixRoute(SLUGS.explore),
-    getScene: () => getServicesScene('service_selection'),
+    getScene: () => getServicesScene(),
     drilldowns: [
       {
         routePath: ROUTE_DEFINITIONS.logs,
@@ -71,7 +69,8 @@ export function makeRedirectPage(to: SLUGS) {
     hideFromBreadcrumbs: true,
     $behaviors: [
       () => {
-        locationService.push(prefixRoute(to));
+        // Replace instead of push as we don't want the user to navigate back to the redirect page
+        locationService.replace(prefixRoute(to));
       },
     ],
   });
@@ -99,7 +98,7 @@ export function makeBreakdownPage(
     url: ROUTES[slug](service),
     preserveUrlKeys: DRILLDOWN_URL_KEYS,
     getParentPage: () => parent,
-    getScene: () => getServicesScene('service_details', slug),
+    getScene: () => getServicesScene(),
   });
 }
 

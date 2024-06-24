@@ -13,7 +13,6 @@ import {
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
-  SceneObjectUrlValues,
   SceneVariable,
   VariableDependencyConfig,
 } from '@grafana/scenes';
@@ -52,9 +51,7 @@ export interface LokiPattern {
   samples: Array<[number, string]>;
 }
 
-export type ActionViewType = 'logs' | 'labels' | 'patterns' | 'fields';
-
-interface ActionViewDefinition {
+interface BreakdownViewDefinition {
   displayName: string;
   value: SLUGS;
   testId: string;
@@ -65,7 +62,6 @@ type MakeOptional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
 export interface ServiceSceneState extends SceneObjectState {
   body: SceneFlexLayout;
-  actionView?: SLUGS;
 
   detectedFields?: string[];
   labels?: string[];
@@ -89,8 +85,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       loading: true,
       ...state,
     });
-
-    console.log('SERVICE_SCENE INIT', this.state);
 
     this.addActivationHandler(this.onActivate.bind(this));
   }
@@ -124,7 +118,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
   private redirectToStart() {
     // Redirect to root with updated params, which will trigger history push back to index route, preventing empty page or empty service query bugs
-    locationService.push(buildServicesUrl(ROUTES.explore()));
+    locationService.replace(buildServicesUrl(ROUTES.explore()));
   }
 
   private onActivate() {
@@ -296,26 +290,9 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
   }
 
-  // getUrlState() {
-  //   return { actionView: this.state.actionView };
-  // }
-
-  updateFromUrl(values: SceneObjectUrlValues) {
-    // if (typeof values.actionView === 'string') {
-    //   if (this.state.actionView !== values.actionView) {
-    //     const actionViewDef = breakdownViewsDefinitions.find((v) => v.value === values.actionView);
-    //     if (actionViewDef) {
-    //       this.setActionView(actionViewDef.value);
-    //     }
-    //   }
-    // } else if (values.actionView === null) {
-    //   this.setActionView(undefined);
-    // }
-  }
-
-  public setBreakdownView(actionView?: SLUGS) {
+  public setBreakdownView(breakdownView?: SLUGS) {
     const { body } = this.state;
-    const breakdownViewDef = breakdownViewsDefinitions.find((v) => v.value === actionView);
+    const breakdownViewDef = breakdownViewsDefinitions.find((v) => v.value === breakdownView);
 
     if (breakdownViewDef) {
       body.setState({
@@ -328,7 +305,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
           }),
         ],
       });
-      this.setState({ actionView: breakdownViewDef.value });
     } else {
       console.error('not setting breakdown view');
     }
@@ -340,7 +316,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   };
 }
 
-const breakdownViewsDefinitions: ActionViewDefinition[] = [
+const breakdownViewsDefinitions: BreakdownViewDefinition[] = [
   {
     displayName: 'Logs',
     value: SLUGS.logs,
@@ -374,9 +350,9 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
     const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
     const styles = useStyles2(getStyles);
     const exploration = getExplorationFor(model);
-    const { actionView } = serviceScene.useState();
+    const currentBreakdownViewSlug = getSlug();
 
-    const getCounter = (tab: ActionViewDefinition) => {
+    const getCounter = (tab: BreakdownViewDefinition) => {
       switch (tab.value) {
         case 'fields':
           return (
@@ -407,20 +383,20 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                 data-testid={tab.testId}
                 key={index}
                 label={tab.displayName}
-                active={actionView === tab.value}
+                active={currentBreakdownViewSlug === tab.value}
                 counter={getCounter(tab)}
                 onChangeTab={() => {
-                  if (tab.value !== serviceScene.state.actionView) {
+                  if (tab.value !== currentBreakdownViewSlug) {
                     reportAppInteraction(
                       USER_EVENTS_PAGES.service_details,
                       USER_EVENTS_ACTIONS.service_details.action_view_changed,
                       {
                         newActionView: tab.value,
-                        previousActionView: serviceScene.state.actionView,
+                        previousActionView: currentBreakdownViewSlug,
                       }
                     );
                     if (tab.value) {
-                      // @todo Should we get the service from the url instead?
+                      // @todo Should we get the service from the url instead of the state?
                       const variable = serviceScene.getFiltersVariable();
                       const service = variable.state.filters.find((f) => f.key === SERVICE_NAME);
 
