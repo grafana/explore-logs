@@ -23,14 +23,8 @@ import { Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getFilterBreakdownValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
-import { buildLokiQuery } from 'services/query';
-import {
-  ALL_VARIABLE_VALUE,
-  LOG_STREAM_SELECTOR_EXPR,
-  VAR_FIELD_GROUP_BY,
-  VAR_FIELDS,
-  VAR_FILTERS,
-} from 'services/variables';
+import { buildBaseQueryExpression, buildLokiQuery } from 'services/query';
+import { ALL_VARIABLE_VALUE, VAR_FIELD_GROUP_BY, VAR_FIELDS, VAR_LABELS } from 'services/variables';
 import { ServiceScene } from '../ServiceScene';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
@@ -53,7 +47,7 @@ export interface FieldsBreakdownSceneState extends SceneObjectState {
 
 export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
-    variableNames: [VAR_FILTERS],
+    variableNames: [VAR_LABELS],
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
   });
 
@@ -146,8 +140,8 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       stateUpdate.body = this.buildEmptyLayout();
     } else {
       stateUpdate.body = variable.hasAllValue()
-        ? this.buildFieldsLayout(this.state.fields)
-        : buildValuesLayout(variable);
+        ? this.buildFieldsLayout(this, this.state.fields)
+        : buildValuesLayout(this, variable);
     }
 
     stateUpdate.search = new BreakdownSearchScene();
@@ -183,7 +177,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     });
   }
 
-  private buildFieldsLayout(options: Array<SelectableValue<string>>) {
+  private buildFieldsLayout(sceneObject: SceneObject, options: Array<SelectableValue<string>>) {
     const children: SceneFlexItemLike[] = [];
 
     for (const option of options) {
@@ -192,7 +186,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         continue;
       }
 
-      const query = buildLokiQuery(getExpr(optionValue), {
+      const query = buildLokiQuery(getExpr(sceneObject, optionValue), {
         legendFormat: `{{${optionValue}}}`,
         refId: optionValue,
       });
@@ -324,22 +318,24 @@ function isAvgField(field: string) {
   return avgFields.includes(field);
 }
 
-function getExpr(field: string) {
+function getExpr(sceneObject: SceneObject, field: string) {
   if (isAvgField(field)) {
     return (
-      `avg_over_time(${LOG_STREAM_SELECTOR_EXPR} | unwrap ` +
+      `avg_over_time(${buildBaseQueryExpression(sceneObject)} | unwrap ` +
       (field === 'duration' ? `duration` : field === 'bytes' ? `bytes` : ``) +
       `(${field}) [$__auto]) by ()`
     );
   }
-  return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${field}!=""   [$__auto]))`;
+  return `sum by (${field}) (count_over_time(${buildBaseQueryExpression(
+    sceneObject
+  )} | drop __error__ | ${field}!="" [$__auto]))`;
 }
 
 const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
-function buildValuesLayout(variable: CustomVariable) {
+function buildValuesLayout(sceneObject: SceneObject, variable: CustomVariable) {
   const tagKey = variable.getValueText();
-  const query = buildLokiQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
+  const query = buildLokiQuery(getExpr(sceneObject, tagKey), { legendFormat: `{{${tagKey}}}` });
 
   return new LayoutSwitcher({
     $data: getQueryRunner(query),
