@@ -8,17 +8,18 @@ import {
 } from '@grafana/scenes';
 import { PatternFrame } from './PatternsBreakdownScene';
 import React from 'react';
-import { AppliedPattern, IndexScene } from '../../IndexScene/IndexScene';
+import { AppliedPattern, IndexScene } from '../../../IndexScene/IndexScene';
 import { DataFrame, LoadingState, PanelData } from '@grafana/data';
-import { AxisPlacement, Column, InteractiveTable, Toggletip, TooltipDisplayMode } from '@grafana/ui';
+import { AxisPlacement, Column, InteractiveTable, TooltipDisplayMode } from '@grafana/ui';
 import { CellProps } from 'react-table';
 import { css, cx } from '@emotion/css';
-import { onPatternClick } from './FilterByPatternsButton';
-import { FilterButton } from '../../FilterButton';
+import { onPatternClick } from '../FilterByPatternsButton';
+import { FilterButton } from '../../../FilterButton';
 import { config } from '@grafana/runtime';
-import { testIds } from '../../../services/testIds';
+import { testIds } from '../../../../services/testIds';
 import { PatternsFrameScene } from './PatternsFrameScene';
-import { onPatternFieldClick } from './PatternsFieldsButton';
+import { PatternNameLabel } from './PatternNameLabel';
+import { getExplorationFor } from 'services/scenes';
 
 export interface SingleViewTableSceneState extends SceneObjectState {
   patternFrames: PatternFrame[];
@@ -30,7 +31,6 @@ interface WithCustomCellData {
   dataFrame: DataFrame;
   sum: number;
   // samples: Array<[number, string]>,
-  fieldLink: (index: number) => void;
   includeLink: () => void;
   excludeLink: () => void;
   undoLink: () => void;
@@ -114,34 +114,9 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
         id: 'pattern',
         header: 'Pattern',
         cell: (props: CellProps<WithCustomCellData>) => {
-          function fields(): number[] {
-            const pattern = props.cell.row.original.pattern;
-            const substring = '<_>';
-            let index = pattern.indexOf(substring);
-            const indices = [];
-
-            while (index !== -1) {
-              indices.push(index);
-              index = pattern.indexOf(substring, index + 1);
-            }
-
-            return indices;
-          }
-
           return (
             <div className={cx(getTablePatternTextStyles(), vizStyles.tablePatternTextDefault)}>
-              {props.cell.row.original.pattern.split('<_>').map((part, index) => {
-                return (
-                  <span key={index}>
-                    {part}
-                    {index !== fields().length && (
-                      <Toggletip content={<span>{index}</span>} onOpen={() => props.cell.row.original.fieldLink(index)}>
-                        <span style={{ cursor: 'pointer', textDecoration: 'underline' }}>&lt;_&gt;</span>
-                      </Toggletip>
-                    )}
-                  </span>
-                );
-              })}
+              <PatternNameLabel exploration={getExplorationFor(this)} pattern={props.cell.row.original.pattern} />
             </div>
           );
         },
@@ -206,13 +181,6 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
               type: 'undo',
               indexScene: logExploration,
             }),
-          fieldLink: (index: number) => {
-            onPatternFieldClick({
-              pattern: pattern.pattern,
-              fieldIndex: index,
-              indexScene: logExploration,
-            });
-          },
         };
       });
   }

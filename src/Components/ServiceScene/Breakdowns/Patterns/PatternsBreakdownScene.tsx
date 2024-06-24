@@ -18,8 +18,8 @@ import { LayoutSwitcher } from 'Components/ServiceScene/Breakdowns/LayoutSwitche
 import { StatusWrapper } from 'Components/ServiceScene/Breakdowns/StatusWrapper';
 import { GrotError } from 'Components/GrotError';
 import { VAR_LABEL_GROUP_BY } from 'services/variables';
-import { LokiPattern, ServiceScene } from '../ServiceScene';
-import { IndexScene } from '../../IndexScene/IndexScene';
+import { LokiPattern, ServiceScene } from '../../ServiceScene';
+import { IndexScene } from '../../../IndexScene/IndexScene';
 import { PatternsFrameScene } from './PatternsFrameScene';
 
 export interface PatternsBreakdownSceneState extends SceneObjectState {

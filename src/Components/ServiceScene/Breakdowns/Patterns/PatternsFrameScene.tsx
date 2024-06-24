@@ -14,9 +14,9 @@ import {
   VizPanel,
 } from '@grafana/scenes';
 import { LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode } from '@grafana/ui';
-import { ServiceScene } from '../ServiceScene';
-import { onPatternClick } from './FilterByPatternsButton';
-import { IndexScene } from '../../IndexScene/IndexScene';
+import { ServiceScene } from '../../ServiceScene';
+import { onPatternClick } from '../FilterByPatternsButton';
+import { IndexScene } from '../../../IndexScene/IndexScene';
 import { PatternsViewTableScene } from './PatternsViewTableScene';
 import { config } from '@grafana/runtime';
 import { css } from '@emotion/css';

@@ -40,7 +40,7 @@ import {
 } from 'services/variables';
 import { buildFieldsBreakdownActionScene } from './Breakdowns/FieldsBreakdownScene';
 import { buildLabelBreakdownActionScene } from './Breakdowns/LabelBreakdownScene';
-import { buildPatternsScene } from './Breakdowns/PatternsBreakdownScene';
+import { buildPatternsScene } from './Breakdowns/Patterns/PatternsBreakdownScene';
 import { GoToExploreButton } from './GoToExploreButton';
 import { buildLogsListScene } from './LogsListScene';
 import { testIds } from 'services/testIds';
@@ -279,18 +279,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       }
     );
     this.setState({ patterns: data });
-  }
-
-  private async updateSelectedPatternField() {
-    const ds = await getLokiDatasource(this);
-    if (!ds) {
-      return;
-    }
-
-    const timeRange = sceneGraph.getTimeRange(this).state.value;
-    const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
-    const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
-    const excludeLabels = [ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE];
   }
 
   private async updateLabels() {
