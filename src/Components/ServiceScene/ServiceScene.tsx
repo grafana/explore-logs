@@ -25,7 +25,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'se
 import { DetectedLabelsResponse, extractParserAndFieldsFromDataFrame } from 'services/fields';
 import { getQueryRunner } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
-import { EXPLORATIONS_ROUTE, PLUGIN_ID } from 'services/routing';
+import { PLUGIN_BASE_URL, PLUGIN_ID } from 'services/routing';
 import { getExplorationFor, getLokiDatasource } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
@@ -146,7 +146,9 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     if (ds) {
       newParams.set('var-ds', ds);
     }
-    locationService.push(`${EXPLORATIONS_ROUTE}?${newParams}`);
+
+    // Redirect to root with updated params, which will trigger redirect back to index route, preventing empty page or empty service query bugs
+    locationService.push(`${PLUGIN_BASE_URL}?${newParams}`);
   }
 
   private onActivate() {

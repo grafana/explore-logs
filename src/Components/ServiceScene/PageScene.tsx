@@ -17,6 +17,7 @@ export class PageScene extends SceneObjectBase<PageSceneState> {
   public static Component = ({ model }: SceneComponentProps<PageScene>) => {
     const { body, title } = model.useState();
     return (
+      //@todo needs to be fixed, competes with scenes breadcrumb management
       <PluginPage pageNav={{ text: title }} layout={PageLayoutType.Custom}>
         <body.Component model={body} />
       </PluginPage>
