@@ -7,6 +7,7 @@ import { VAR_FILTERS } from 'services/variables';
 import { buildLokiQuery } from 'services/query';
 import { PatternFieldLabelStats } from './PatternFieldLabelStats';
 import { LogLabelStatsModel, TimeRange } from '@grafana/data';
+import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 
 interface PatternNameLabelProps {
   exploration: IndexScene;
@@ -24,6 +25,7 @@ export const PatternNameLabel = ({ exploration, pattern }: PatternNameLabelProps
   const previousTimeRangeRef = useRef<TimeRange>();
 
   const handleClick = async () => {
+    reportAppInteraction(USER_EVENTS_PAGES.service_details, USER_EVENTS_ACTIONS.service_details.pattern_field_clicked);
     const query = constructQuery(
       pattern,
       patternIndices,
