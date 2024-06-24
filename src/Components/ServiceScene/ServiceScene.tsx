@@ -69,7 +69,6 @@ export interface ServiceSceneState extends SceneObjectState {
   detectedFields?: string[];
   labels?: string[];
   patterns?: LokiPattern[];
-  patternFieldValues?: string[];
 
   detectedFieldsCount?: number;
 
