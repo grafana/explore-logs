@@ -1,6 +1,6 @@
 import type { Page, Locator } from '@playwright/test';
 import pluginJson from '../../src/plugin.json';
-import { ROUTES } from '../../src/services/routing';
+import { SLUGS } from '../../src/services/routing';
 import { testIds } from '../../src/services/testIds';
 
 export class ExplorePage {
@@ -19,7 +19,7 @@ export class ExplorePage {
   }
 
   async gotoServices() {
-    await this.page.goto(`/a/${pluginJson.id}/${ROUTES.Explore}`);
+    await this.page.goto(`/a/${pluginJson.id}/${SLUGS.explore}`);
   }
 
   async addServiceName() {
@@ -28,7 +28,7 @@ export class ExplorePage {
 
   async gotoServicesBreakdown() {
     await this.page.goto(
-      `/a/${pluginJson.id}/${ROUTES.Explore}?mode=service_details&var-patterns=&var-filters=service_name%7C%3D%7Ctempo-distributor&actionView=logs&var-logsFormat=%20%7C%20logfmt`
+      `/a/${pluginJson.id}/${SLUGS.explore}?mode=service_details&var-patterns=&var-filters=service_name%7C%3D%7Ctempo-distributor&actionView=logs&var-logsFormat=%20%7C%20logfmt`
     );
   }
 }

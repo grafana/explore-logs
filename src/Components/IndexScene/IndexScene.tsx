@@ -35,8 +35,9 @@ import { ServiceScene } from '../ServiceScene/ServiceScene';
 import { ServiceSelectionComponent, StartingPointSelectedEvent } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LayoutScene } from './LayoutScene';
 import { FilterOp } from 'services/filters';
+import { SLUGS } from '../../services/routing';
 
-type LogExplorationMode = 'service_selection' | 'service_details';
+export type LogExplorationMode = 'service_selection' | 'service_details';
 
 export interface AppliedPattern {
   pattern: string;
@@ -53,10 +54,11 @@ export interface IndexSceneState extends SceneObjectState {
   initialFilters?: AdHocVariableFilter[];
   initialDS?: string;
   patterns?: AppliedPattern[];
+  breakdownView?: SLUGS;
 }
 
 export class IndexScene extends SceneObjectBase<IndexSceneState> {
-  protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['mode', 'patterns'] });
+  protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['mode', 'patterns', 'actionView'] });
 
   public constructor(state: Partial<IndexSceneState>) {
     super({
@@ -84,7 +86,8 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
   public onActivate() {
     if (!this.state.contentScene) {
-      this.setState({ contentScene: getContentScene(this.state.mode) });
+      console.log('activate content scene', this.state.mode, this.state.breakdownView);
+      this.setState({ contentScene: getContentScene(this.state.mode, this.state.breakdownView) });
     }
 
     // Some scene elements publish this
@@ -92,7 +95,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
     this.subscribeToState((newState, oldState) => {
       if (newState.mode !== oldState.mode) {
-        this.setState({ contentScene: getContentScene(newState.mode) });
+        this.setState({ contentScene: getContentScene(newState.mode, this.state.breakdownView) });
       }
 
       const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
@@ -111,22 +114,34 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     return {
       mode: this.state.mode,
       patterns: this.state.mode === 'service_selection' ? '' : JSON.stringify(this.state.patterns),
+      actionView: this.state.breakdownView,
     };
   }
 
   updateFromUrl(values: SceneObjectUrlValues) {
     const stateUpdate: Partial<IndexSceneState> = {};
     if (values.mode !== this.state.mode) {
-      const mode: LogExplorationMode = (values.mode as LogExplorationMode) ?? 'service_selection';
-      stateUpdate.mode = mode;
-      stateUpdate.contentScene = getContentScene(mode);
+      const view = (values.actionView as SLUGS | undefined) ?? this.state.breakdownView;
+      if (view) {
+        stateUpdate.mode = 'service_details';
+        stateUpdate.breakdownView = view;
+      } else {
+        stateUpdate.mode = 'service_selection';
+      }
+
+      console.log('updateFromUrl', stateUpdate);
+
+      stateUpdate.contentScene = getContentScene(stateUpdate.mode, stateUpdate.breakdownView);
     }
-    if (this.state.mode === 'service_selection') {
+    if (stateUpdate.mode === 'service_selection') {
       // Clear patterns on start
       stateUpdate.patterns = undefined;
     } else if (values.patterns && typeof values.patterns === 'string') {
       stateUpdate.patterns = JSON.parse(values.patterns) as AppliedPattern[];
     }
+
+    console.log('SETTING URL STATE', stateUpdate);
+    console.log('CURRENT STATE', this.state);
     this.setState(stateUpdate);
   }
 
@@ -137,10 +152,13 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   }
 }
 
-function getContentScene(mode?: LogExplorationMode) {
+function getContentScene(mode?: LogExplorationMode, actionView?: SLUGS) {
+  console.log('getContentScene', mode, actionView);
   if (mode === 'service_details') {
-    return new ServiceScene({});
+    return new ServiceScene({ actionView });
   }
+
+  console.log('Select service view');
   return new ServiceSelectionComponent({});
 }
 

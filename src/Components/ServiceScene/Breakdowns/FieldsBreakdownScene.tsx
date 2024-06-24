@@ -229,7 +229,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         { value: 'grid', label: 'Grid' },
         { value: 'rows', label: 'Rows' },
       ],
-      actionView: 'fields',
       active: 'grid',
       layouts: [
         new SceneCSSGridLayout({
@@ -343,7 +342,6 @@ function buildValuesLayout(variable: CustomVariable) {
 
   return new LayoutSwitcher({
     $data: getQueryRunner(query),
-    actionView: 'fields',
     options: [
       { value: 'single', label: 'Single' },
       { value: 'grid', label: 'Grid' },

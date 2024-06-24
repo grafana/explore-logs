@@ -1,34 +1,14 @@
 import React, { useEffect } from 'react';
 
-import { EmbeddedScene, getUrlSyncManager, SceneApp, SceneAppPage, SceneTimeRange, useSceneApp } from '@grafana/scenes';
-import { IndexScene } from './IndexScene/IndexScene';
-import { EXPLORATIONS_ROUTE, ROUTES } from '../services/routing';
-import { PageLayoutType } from '@grafana/data';
+import { getUrlSyncManager, SceneApp, useSceneApp } from '@grafana/scenes';
 import { config } from '@grafana/runtime';
 import { Redirect } from 'react-router-dom';
-import { makeRedirectPage } from './Pages';
-
-const DEFAULT_TIME_RANGE = { from: 'now-15m', to: 'now' };
-
-function makeIndexPage() {
-  return new SceneAppPage({
-    // Top level breadcrumb
-    title: 'Logs',
-    url: EXPLORATIONS_ROUTE,
-    layout: PageLayoutType.Custom,
-
-    getScene: () =>
-      new EmbeddedScene({
-        body: new IndexScene({
-          $timeRange: new SceneTimeRange(DEFAULT_TIME_RANGE),
-        }),
-      }),
-  });
-}
+import { makeIndexPage, makeRedirectPage } from './Pages';
+import { SLUGS } from '../services/routing';
 
 const getSceneApp = () =>
   new SceneApp({
-    pages: [makeIndexPage(), makeRedirectPage(ROUTES.Explore)],
+    pages: [makeIndexPage(), makeRedirectPage(SLUGS.explore)],
   });
 
 export function LogExplorationView() {

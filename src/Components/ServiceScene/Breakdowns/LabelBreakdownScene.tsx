@@ -254,7 +254,6 @@ function buildLabelsLayout(options: Array<SelectableValue<string>>) {
       { value: 'rows', label: 'Rows' },
     ],
     active: 'grid',
-    actionView: 'labels',
     layouts: [
       new SceneCSSGridLayout({
         templateColumns: GRID_TEMPLATE_COLUMNS,
@@ -300,7 +299,6 @@ function buildLabelValuesLayout(variable: CustomVariable) {
       { value: 'rows', label: 'Rows' },
     ],
     active: 'grid',
-    actionView: 'labels',
     layouts: [
       new SceneFlexLayout({
         direction: 'column',

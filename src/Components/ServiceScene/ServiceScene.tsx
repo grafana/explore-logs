@@ -13,7 +13,6 @@ import {
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
-  SceneObjectUrlSyncConfig,
   SceneObjectUrlValues,
   SceneVariable,
   VariableDependencyConfig,
@@ -25,7 +24,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'se
 import { DetectedLabelsResponse, extractParserAndFieldsFromDataFrame } from 'services/fields';
 import { getQueryRunner } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
-import { PLUGIN_BASE_URL, PLUGIN_ID } from 'services/routing';
+import { buildBreakdownUrl, buildServicesUrl, PLUGIN_ID, ROUTES, SLUGS } from 'services/routing';
 import { getExplorationFor, getLokiDatasource } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
@@ -34,7 +33,6 @@ import {
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_FILTERS,
-  VAR_LINE_FILTER,
   VAR_LOGS_FORMAT,
   VAR_PATTERNS,
 } from 'services/variables';
@@ -47,6 +45,7 @@ import { testIds } from 'services/testIds';
 import { PageScene } from './PageScene';
 import { sortLabelsByCardinality } from 'services/filters';
 import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
+import { getSlug } from '../Pages';
 
 export interface LokiPattern {
   pattern: string;
@@ -57,7 +56,7 @@ export type ActionViewType = 'logs' | 'labels' | 'patterns' | 'fields';
 
 interface ActionViewDefinition {
   displayName: string;
-  value: ActionViewType;
+  value: SLUGS;
   testId: string;
   getScene: (changeFields: (f: string[]) => void) => SceneObject;
 }
@@ -66,7 +65,7 @@ type MakeOptional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
 export interface ServiceSceneState extends SceneObjectState {
   body: SceneFlexLayout;
-  actionView?: string;
+  actionView?: SLUGS;
 
   detectedFields?: string[];
   labels?: string[];
@@ -78,7 +77,6 @@ export interface ServiceSceneState extends SceneObjectState {
 }
 
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
-  protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['actionView'] });
   protected _variableDependency = new VariableDependencyConfig(this, {
     variableNames: [VAR_DATASOURCE, VAR_FILTERS, VAR_FIELDS, VAR_PATTERNS],
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
@@ -92,11 +90,14 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       ...state,
     });
 
+    console.log('SERVICE_SCENE INIT', this.state);
+
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
-  private getFiltersVariable(): AdHocFiltersVariable {
+  public getFiltersVariable(): AdHocFiltersVariable {
     const variable = sceneGraph.lookupVariable(VAR_FILTERS, this)!;
+
     if (!(variable instanceof AdHocFiltersVariable)) {
       throw new Error('Filters variable not found');
     }
@@ -122,40 +123,12 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private redirectToStart() {
-    const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
-    fields.setState({ filters: [] });
-    const lineFilter = sceneGraph.lookupVariable(VAR_LINE_FILTER, this);
-    if (lineFilter instanceof CustomVariable) {
-      lineFilter.changeValueTo('');
-    }
-
-    // Use locationService to do the redirect and allow the users to start afresh,
-    // potentially getting them unstuck of any leakage produced by subscribers, listeners,
-    // variables, etc.,  without having to do a full reload.
-    const params = locationService.getSearch();
-    const newParams = new URLSearchParams();
-    const from = params.get('from');
-    if (from) {
-      newParams.set('from', from);
-    }
-    const to = params.get('to');
-    if (to) {
-      newParams.set('to', to);
-    }
-    const ds = params.get('var-ds');
-    if (ds) {
-      newParams.set('var-ds', ds);
-    }
-
-    // Redirect to root with updated params, which will trigger redirect back to index route, preventing empty page or empty service query bugs
-    locationService.push(`${PLUGIN_BASE_URL}?${newParams}`);
+    // Redirect to root with updated params, which will trigger history push back to index route, preventing empty page or empty service query bugs
+    locationService.push(buildServicesUrl(ROUTES.explore()));
   }
 
   private onActivate() {
-    if (this.state.actionView === undefined) {
-      this.setActionView('logs');
-    }
-
+    this.setBreakdownView(getSlug());
     this.setEmptyFiltersRedirection();
 
     const unsubs: Unsubscribable[] = [];
@@ -193,7 +166,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.updateLabels();
     // For patterns, we don't want to reload to logs as we allow users to select multiple patterns
     if (variable.state.name !== VAR_PATTERNS) {
-      locationService.partial({ actionView: 'logs' });
+      locationService.push(buildBreakdownUrl(SLUGS.logs));
     }
   }
 
@@ -323,42 +296,41 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
   }
 
-  getUrlState() {
-    return { actionView: this.state.actionView };
-  }
+  // getUrlState() {
+  //   return { actionView: this.state.actionView };
+  // }
 
   updateFromUrl(values: SceneObjectUrlValues) {
-    if (typeof values.actionView === 'string') {
-      if (this.state.actionView !== values.actionView) {
-        const actionViewDef = actionViewsDefinitions.find((v) => v.value === values.actionView);
-        if (actionViewDef) {
-          this.setActionView(actionViewDef.value);
-        }
-      }
-    } else if (values.actionView === null) {
-      this.setActionView(undefined);
-    }
+    // if (typeof values.actionView === 'string') {
+    //   if (this.state.actionView !== values.actionView) {
+    //     const actionViewDef = breakdownViewsDefinitions.find((v) => v.value === values.actionView);
+    //     if (actionViewDef) {
+    //       this.setActionView(actionViewDef.value);
+    //     }
+    //   }
+    // } else if (values.actionView === null) {
+    //   this.setActionView(undefined);
+    // }
   }
 
-  public setActionView(actionView?: ActionViewType) {
+  public setBreakdownView(actionView?: SLUGS) {
     const { body } = this.state;
-    const actionViewDef = actionViewsDefinitions.find((v) => v.value === actionView);
+    const breakdownViewDef = breakdownViewsDefinitions.find((v) => v.value === actionView);
 
-    if (actionViewDef && actionViewDef.value !== this.state.actionView) {
+    if (breakdownViewDef) {
       body.setState({
         children: [
           ...body.state.children.slice(0, 1),
-          actionViewDef.getScene((vals) => {
-            if (actionViewDef.value === 'fields') {
+          breakdownViewDef.getScene((vals) => {
+            if (breakdownViewDef.value === 'fields') {
               this.setState({ detectedFieldsCount: vals.length });
             }
           }),
         ],
       });
-      this.setState({ actionView: actionViewDef.value });
+      this.setState({ actionView: breakdownViewDef.value });
     } else {
-      body.setState({ children: body.state.children.slice(0, 1) });
-      this.setState({ actionView: undefined });
+      console.error('not setting breakdown view');
     }
   }
 
@@ -368,28 +340,28 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   };
 }
 
-const actionViewsDefinitions: ActionViewDefinition[] = [
+const breakdownViewsDefinitions: ActionViewDefinition[] = [
   {
     displayName: 'Logs',
-    value: 'logs',
+    value: SLUGS.logs,
     getScene: () => new PageScene({ body: buildLogsListScene(), title: 'Logs' }),
     testId: testIds.exploreServiceDetails.tabLogs,
   },
   {
     displayName: 'Labels',
-    value: 'labels',
+    value: SLUGS.labels,
     getScene: () => new PageScene({ body: buildLabelBreakdownActionScene(), title: 'Labels' }),
     testId: testIds.exploreServiceDetails.tabLabels,
   },
   {
     displayName: 'Detected fields',
-    value: 'fields',
+    value: SLUGS.fields,
     getScene: (f) => new PageScene({ body: buildFieldsBreakdownActionScene(f), title: 'Detected fields' }),
     testId: testIds.exploreServiceDetails.tabDetectedFields,
   },
   {
     displayName: 'Patterns',
-    value: 'patterns',
+    value: SLUGS.patterns,
     getScene: () => new PageScene({ body: buildPatternsScene(), title: 'Patterns' }),
     testId: testIds.exploreServiceDetails.tabPatterns,
   },
@@ -429,7 +401,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
         </div>
 
         <TabsBar>
-          {actionViewsDefinitions.map((tab, index) => {
+          {breakdownViewsDefinitions.map((tab, index) => {
             return (
               <Tab
                 data-testid={tab.testId}
@@ -447,7 +419,20 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                         previousActionView: serviceScene.state.actionView,
                       }
                     );
-                    serviceScene.setActionView(tab.value);
+                    if (tab.value) {
+                      // @todo Should we get the service from the url instead?
+                      const variable = serviceScene.getFiltersVariable();
+                      const service = variable.state.filters.find((f) => f.key === SERVICE_NAME);
+
+                      if (service?.value) {
+                        const url = buildBreakdownUrl(ROUTES[tab.value](service?.value));
+                        locationService.push(url);
+                      } else {
+                        console.error('failed to build url');
+                      }
+                    } else {
+                      console.error('failed to navigate');
+                    }
                   }
                 }}
               />
