@@ -24,13 +24,12 @@ import { Unsubscribable } from 'rxjs';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { DetectedLabelsResponse, extractParserAndFieldsFromDataFrame } from 'services/fields';
 import { getQueryRunner } from 'services/panel';
-import { buildLokiQuery } from 'services/query';
+import { buildBaseQueryExpression, buildLokiQuery } from 'services/query';
 import { EXPLORATIONS_ROUTE, PLUGIN_ID } from 'services/routing';
 import { getExplorationFor, getLokiDatasource } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
   LEVEL_VARIABLE_VALUE,
-  LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_LABELS,
@@ -87,7 +86,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   public constructor(state: MakeOptional<ServiceSceneState, 'body'>) {
     super({
       body: state.body ?? buildGraphScene(),
-      $data: getQueryRunner(buildLokiQuery(LOG_STREAM_SELECTOR_EXPR)),
       loading: true,
       ...state,
     });
@@ -150,20 +148,29 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private onActivate() {
+    const unsubs: Unsubscribable[] = [];
+
+    const queryRunner = getQueryRunner(buildLokiQuery(buildBaseQueryExpression(this)));
+    unsubs.push(
+      queryRunner.subscribeToState((newState, oldState) => {
+        // update fields, if the query runner got a new loadingstate different from the old one, and it's done or errored
+        if (
+          newState.data?.state &&
+          newState.data?.state !== oldState.data?.state &&
+          [LoadingState.Done, LoadingState.Error].includes(newState.data?.state)
+        ) {
+          this.updateFields();
+        }
+      })
+    );
+    this.setState({
+      $data: queryRunner,
+    });
     if (this.state.actionView === undefined) {
       this.setActionView('logs');
     }
 
     this.setEmptyFiltersRedirection();
-
-    const unsubs: Unsubscribable[] = [];
-    if (this.state.$data) {
-      unsubs.push(
-        this.state.$data?.subscribeToState(() => {
-          this.updateFields();
-        })
-      );
-    }
 
     this.updateLabels();
     this.updatePatterns();
