@@ -10,6 +10,8 @@ const DEFAULT_TIME_RANGE = { from: 'now-15m', to: 'now' };
 export function LogExplorationView() {
   const [isInitialized, setIsInitialized] = React.useState(false);
 
+  console.log('LogExplorationView render');
+
   const getSceneApp = () =>
     new SceneApp({
       pages: [
@@ -19,7 +21,6 @@ export function LogExplorationView() {
           layout: PageLayoutType.Custom,
           getScene: () =>
             new EmbeddedScene({
-              key: 'index-scene',
               body: new IndexScene({
                 $timeRange: new SceneTimeRange(DEFAULT_TIME_RANGE),
               }),
