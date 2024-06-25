@@ -32,11 +32,11 @@ import {
 
 import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
 import { ServiceScene } from '../ServiceScene/ServiceScene';
-import { ServiceSelectionComponent } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LayoutScene } from './LayoutScene';
 import { FilterOp } from 'services/filters';
 import { SLUGS } from '../../services/routing';
 import { getSlug } from '../Pages';
+import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
 
 export type LogExplorationMode = 'service_selection' | 'service_details';
 
@@ -122,7 +122,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 function getContentScene() {
   const slug = getSlug();
   if (slug === SLUGS.explore) {
-    return new ServiceSelectionComponent({});
+    return new ServiceSelectionScene({});
   }
 
   return new ServiceScene({});
