@@ -42,6 +42,7 @@ export function makeIndexPage() {
       {
         routePath: ROUTE_DEFINITIONS.logs,
         getPage: (routeMatch, parent) => makeBreakdownPage(routeMatch, parent, SLUGS.logs),
+        defaultRoute: true,
       },
       {
         routePath: ROUTE_DEFINITIONS.labels,
@@ -69,8 +70,7 @@ export function makeRedirectPage(to: SLUGS) {
     hideFromBreadcrumbs: true,
     $behaviors: [
       () => {
-        // Replace instead of push as we don't want the user to navigate back to the redirect page
-        locationService.replace(prefixRoute(to));
+        locationService.push(prefixRoute(to));
       },
     ],
   });
@@ -97,6 +97,7 @@ export function makeBreakdownPage(
     layout: PageLayoutType.Custom,
     url: ROUTES[slug](service),
     preserveUrlKeys: DRILLDOWN_URL_KEYS,
+
     getParentPage: () => parent,
     getScene: () => getServicesScene(),
   });

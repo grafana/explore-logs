@@ -58,15 +58,15 @@ export const SERVICE_URL_KEYS = ['from', 'to', `var-${VAR_DATASOURCE}`];
 //@todo why patterns and var-patterns?
 export const DRILLDOWN_URL_KEYS = [
   'from',
-  'patterns',
   'to',
   'mode',
   'urlColumns',
   'visualizationType',
+  VAR_PATTERNS,
+  `var-${VAR_PATTERNS}`,
   `var-${VAR_DATASOURCE}`,
   `var-${VAR_FILTERS}`,
   `var-${VAR_FIELDS}`,
-  `var-${VAR_PATTERNS}`,
   `var-${VAR_FIELD_GROUP_BY}`,
   `var-${VAR_LABEL_GROUP_BY}`,
   `var-${VAR_DATASOURCE}`,

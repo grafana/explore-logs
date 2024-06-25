@@ -41,7 +41,6 @@ import { buildPatternsScene } from './Breakdowns/PatternsBreakdownScene';
 import { GoToExploreButton } from './GoToExploreButton';
 import { buildLogsListScene } from './LogsListScene';
 import { testIds } from 'services/testIds';
-import { PageScene } from './PageScene';
 import { sortLabelsByCardinality } from 'services/filters';
 import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
 import { getSlug } from '../Pages';
@@ -118,7 +117,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
   private redirectToStart() {
     // Redirect to root with updated params, which will trigger history push back to index route, preventing empty page or empty service query bugs
-    locationService.replace(buildServicesUrl(ROUTES.explore()));
+    locationService.push(buildServicesUrl(ROUTES.explore()));
   }
 
   private onActivate() {
@@ -152,16 +151,21 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       this.redirectToStart();
       return;
     }
+
     const filterVariable = this.getFiltersVariable();
     if (filterVariable.state.filters.length === 0) {
       return;
     }
-    this.updatePatterns();
-    this.updateLabels();
-    // For patterns, we don't want to reload to logs as we allow users to select multiple patterns
-    if (variable.state.name !== VAR_PATTERNS) {
-      locationService.push(buildBreakdownUrl(SLUGS.logs));
-    }
+    Promise.all([this.updatePatterns(), this.updateLabels()])
+      .finally(() => {
+        // For patterns, we don't want to reload to logs as we allow users to select multiple patterns
+        if (variable.state.name !== VAR_PATTERNS) {
+          locationService.push(buildBreakdownUrl(SLUGS.logs));
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to update', err);
+      });
   }
 
   private getLogsFormatVariable() {
@@ -320,25 +324,25 @@ const breakdownViewsDefinitions: BreakdownViewDefinition[] = [
   {
     displayName: 'Logs',
     value: SLUGS.logs,
-    getScene: () => new PageScene({ body: buildLogsListScene(), title: 'Logs' }),
+    getScene: () => buildLogsListScene(),
     testId: testIds.exploreServiceDetails.tabLogs,
   },
   {
     displayName: 'Labels',
     value: SLUGS.labels,
-    getScene: () => new PageScene({ body: buildLabelBreakdownActionScene(), title: 'Labels' }),
+    getScene: () => buildLabelBreakdownActionScene(),
     testId: testIds.exploreServiceDetails.tabLabels,
   },
   {
     displayName: 'Detected fields',
     value: SLUGS.fields,
-    getScene: (f) => new PageScene({ body: buildFieldsBreakdownActionScene(f), title: 'Detected fields' }),
+    getScene: (f) => buildFieldsBreakdownActionScene(f),
     testId: testIds.exploreServiceDetails.tabDetectedFields,
   },
   {
     displayName: 'Patterns',
     value: SLUGS.patterns,
-    getScene: () => new PageScene({ body: buildPatternsScene(), title: 'Patterns' }),
+    getScene: () => buildPatternsScene(),
     testId: testIds.exploreServiceDetails.tabPatterns,
   },
 ];
@@ -396,7 +400,6 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                       }
                     );
                     if (tab.value) {
-                      // @todo Should we get the service from the url instead of the state?
                       const variable = serviceScene.getFiltersVariable();
                       const service = variable.state.filters.find((f) => f.key === SERVICE_NAME);
 
@@ -404,7 +407,8 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                         const url = buildBreakdownUrl(ROUTES[tab.value](service?.value));
                         locationService.push(url);
                       } else {
-                        console.error('failed to build url');
+                        console.warn('no service found, redirecting...');
+                        locationService.replace(buildServicesUrl(ROUTES.explore()));
                       }
                     } else {
                       console.error('failed to navigate');

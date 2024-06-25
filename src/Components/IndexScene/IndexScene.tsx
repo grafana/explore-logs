@@ -37,6 +37,8 @@ import { FilterOp } from 'services/filters';
 import { SLUGS } from '../../services/routing';
 import { getSlug } from '../Pages';
 import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
+import { LoadingPlaceholder } from '@grafana/ui';
+import { locationService } from '@grafana/runtime';
 
 export type LogExplorationMode = 'service_selection' | 'service_details';
 
@@ -49,7 +51,7 @@ export interface IndexSceneState extends SceneObjectState {
   // contentScene is the scene that is displayed in the main body of the index scene - it can be either the service selection or service scene
   contentScene?: SceneObject;
   controls: SceneObject[];
-  body: LayoutScene;
+  body?: LayoutScene;
   initialFilters?: AdHocVariableFilter[];
   initialDS?: string;
   patterns?: AppliedPattern[];
@@ -69,7 +71,8 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
         new SceneTimePicker({}),
         new SceneRefreshPicker({}),
       ],
-      body: new LayoutScene({}),
+      // Need to clear patterns state when the class in constructed
+      patterns: [],
       ...state,
     });
 
@@ -78,26 +81,65 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
   static Component = ({ model }: SceneComponentProps<IndexScene>) => {
     const { body } = model.useState();
+    if (body) {
+      return <body.Component model={body} />;
+    }
 
-    return <body.Component model={body} />;
+    return <LoadingPlaceholder text={'Loading...'} />;
   };
 
   public onActivate() {
+    const stateUpdate: Partial<IndexSceneState> = {};
+    stateUpdate.body = new LayoutScene({});
+
     if (!this.state.contentScene) {
-      this.setState({ contentScene: getContentScene() });
+      stateUpdate.contentScene = getContentScene();
     }
 
-    this.subscribeToState((newState, oldState) => {
-      const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
-      if (patternsVariable instanceof CustomVariable) {
-        const patternsLine = renderPatternFilters(newState.patterns ?? []);
-        patternsVariable.changeValueTo(patternsLine);
-      }
-    });
+    this.setState(stateUpdate);
+    const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
+    if (patternsVariable instanceof CustomVariable) {
+      this.updatePatterns(this.state, patternsVariable);
+    }
+
+    const fieldsVariable = sceneGraph.lookupVariable(VAR_FIELDS, this);
+    if (fieldsVariable instanceof AdHocFiltersVariable) {
+      this.syncFieldsWithUrl(fieldsVariable);
+    }
+
+    this._subs.add(
+      this.subscribeToState((newState) => {
+        const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
+        if (patternsVariable instanceof CustomVariable) {
+          this.updatePatterns(newState, patternsVariable);
+        }
+      })
+    );
 
     return () => {
       getUrlSyncManager().cleanUp(this);
     };
+  }
+
+  /**
+   * @todo why do we need to manually sync fields, but nothing else?
+   * @param fieldsVariable
+   * @private
+   */
+  private syncFieldsWithUrl(fieldsVariable: AdHocFiltersVariable) {
+    const location = locationService.getLocation();
+    const search = new URLSearchParams(location.search);
+    const filtersFromUrl = search.get('var-fields');
+
+    // If the filters aren't in the URL, then they're coming from the cache, set the state to sync with url
+    if (filtersFromUrl === null) {
+      fieldsVariable.setState({ filters: [] });
+    }
+  }
+
+  private updatePatterns(newState: IndexSceneState, patternsVariable: CustomVariable) {
+    const patternsLine = renderPatternFilters(newState.patterns ?? []);
+    patternsVariable.changeValueTo(patternsLine);
   }
 
   getUrlState() {
@@ -106,13 +148,11 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     };
   }
 
-  // @todo Need to move patterns up to parent? Because we don't revert back to the default view (logs) after changing patterns, variables can get cached to breakdown views that aren't added in the url.
   updateFromUrl(values: SceneObjectUrlValues) {
     const stateUpdate: Partial<IndexSceneState> = {};
 
     if (values.patterns && typeof values.patterns === 'string') {
       stateUpdate.patterns = JSON.parse(values.patterns) as AppliedPattern[];
-      console.log('updating patterns', stateUpdate.patterns);
     }
 
     this.setState(stateUpdate);
@@ -179,6 +219,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
       dsVariable,
       filterVariable,
       fieldsVariable,
+      // @todo where is patterns being added to the url? Why do we have var-patterns and patterns?
       new CustomVariable({
         name: VAR_PATTERNS,
         value: '',

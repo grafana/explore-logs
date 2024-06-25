@@ -29,7 +29,7 @@ export class ExplorePage {
   //@todo fix with new urls
   async gotoServicesBreakdown() {
     await this.page.goto(
-      `/a/${pluginJson.id}/${SLUGS.explore}?mode=service_details&var-patterns=&var-filters=service_name%7C%3D%7Ctempo-distributor&actionView=logs&var-logsFormat=%20%7C%20logfmt`
+      `/a/${pluginJson.id}/${SLUGS.explore}?mode=service_details&patterns=&var-filters=service_name%7C%3D%7Ctempo-distributor&actionView=logs&var-logsFormat=%20%7C%20logfmt`
     );
   }
 }

@@ -14,7 +14,6 @@ const getSceneApp = () =>
 export function LogExplorationView() {
   const [isInitialized, setIsInitialized] = React.useState(false);
 
-  // useSceneApp always fails to cache, the entire app is being re-instantiated on every change to the url params
   const scene = useSceneApp(getSceneApp);
 
   useEffect(() => {
