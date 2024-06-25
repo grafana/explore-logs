@@ -93,11 +93,10 @@ export function makeBreakdownPage(
 ): SceneAppPage {
   const { service } = extractServiceFromRoute(routeMatch);
   return new SceneAppPage({
-    title: slug,
+    title: slugToBreadcrumbTitle(slug),
     layout: PageLayoutType.Custom,
     url: ROUTES[slug](service),
     preserveUrlKeys: DRILLDOWN_URL_KEYS,
-
     getParentPage: () => parent,
     getScene: () => getServicesScene(),
   });
@@ -112,4 +111,12 @@ export function getSlug() {
 export function extractServiceFromRoute(routeMatch: SceneRouteMatch<{ service: string }>): { service: string } {
   const service = routeMatch.params.service;
   return { service };
+}
+
+function slugToBreadcrumbTitle(slug: SLUGS) {
+  if (slug === 'fields') {
+    return 'Detected fields';
+  }
+  // capitalize first letter
+  return slug.charAt(0).toUpperCase() + slug.slice(1);
 }
