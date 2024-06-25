@@ -1,48 +1,38 @@
 import React from 'react';
 
-import { ConfigOverrideRule, DataFrame, FieldColor, LoadingState } from '@grafana/data';
+import { ConfigOverrideRule, FieldColor, LoadingState } from '@grafana/data';
 import {
   PanelBuilders,
   SceneComponentProps,
   SceneCSSGridLayout,
   SceneDataNode,
-  SceneFlexItem,
   sceneGraph,
-  SceneObject,
   SceneObjectBase,
   SceneObjectState,
   VizPanel,
 } from '@grafana/scenes';
 import { LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode } from '@grafana/ui';
 import { ServiceScene } from '../../ServiceScene';
-import { onPatternClick } from '../FilterByPatternsButton';
+import { onPatternClick } from './FilterByPatternsButton';
 import { IndexScene } from '../../../IndexScene/IndexScene';
 import { PatternsViewTableScene } from './PatternsViewTableScene';
 import { config } from '@grafana/runtime';
 import { css } from '@emotion/css';
+import { PatternFrame, PatternsBreakdownScene } from './PatternsBreakdownScene';
 
 const palette = config.theme2.visualization.palette;
 
 export interface PatternsFrameSceneState extends SceneObjectState {
-  body?: SceneObject;
+  body?: SceneCSSGridLayout;
   loading?: boolean;
-  patternFrames: PatternFrame[];
   legendSyncPatterns: Set<string>;
 }
 
-export type PatternFrame = {
-  dataFrame: DataFrame;
-  pattern: string;
-  sum: number;
-  status?: 'include' | 'exclude';
-};
-
 export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState> {
-  constructor(state: { patternFrames: PatternFrame[] }) {
+  constructor(state?: Partial<PatternsFrameSceneState>) {
     super({
       loading: true,
       ...state,
-      patternFrames: state.patternFrames,
       legendSyncPatterns: new Set(),
     });
 
@@ -63,26 +53,71 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
 
   private onActivate() {
     this.updateBody();
+
+    // If the patterns have changed, recalculate the dataframes
     this._subs.add(
       sceneGraph.getAncestor(this, ServiceScene).subscribeToState((newState, prevState) => {
-        if (newState.patterns !== prevState.patterns) {
-          this.updateBody();
+        if (JSON.stringify(newState.patterns) !== JSON.stringify(prevState.patterns)) {
+          const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
+          this.updatePatterns(patternsBreakdownScene.state.patternFrames);
+
+          // In order to keep the search state from clearing, we need to clear the filtered state
+          patternsBreakdownScene.setState({
+            filteredPatterns: undefined,
+          });
+        }
+      })
+    );
+
+    // If the text search results have changed, update the components to use the filtered dataframe
+    this._subs.add(
+      sceneGraph.getAncestor(this, PatternsBreakdownScene).subscribeToState((newState, prevState) => {
+        const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
+        if (
+          newState.filteredPatterns &&
+          JSON.stringify(newState.filteredPatterns) !== JSON.stringify(prevState.filteredPatterns)
+        ) {
+          this.updatePatterns(patternsBreakdownScene.state.filteredPatterns);
+        } else {
+          // If there is no search string, clear the state
+          if (!patternsBreakdownScene.state.patternFilter) {
+            this.updatePatterns(patternsBreakdownScene.state.patternFrames);
+          }
         }
       })
     );
   }
 
+  private async updatePatterns(patternFrames: PatternFrame[] = []) {
+    // CSS Grid doesn't need rebuilding, just the children need the updated dataframe
+    this.state.body?.forEachChild((child) => {
+      if (child instanceof VizPanel) {
+        child.setState({
+          $data: this.getTimeseriesDataNode(patternFrames),
+        });
+      }
+      if (child instanceof PatternsViewTableScene) {
+        child.setState({
+          patternFrames,
+        });
+      }
+    });
+  }
+
   private async updateBody() {
+    const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
+    const patternFrames = patternsBreakdownScene.state.patternFrames;
+
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     const lokiPatterns = serviceScene.state.patterns;
-    if (!lokiPatterns) {
+    if (!lokiPatterns || !patternFrames) {
+      console.warn('Failed to update PatternsFrameScene body');
       return;
     }
 
-    const logExploration = sceneGraph.getAncestor(this, IndexScene);
-
     this.setState({
-      body: this.getSingleViewLayout(this.state.patternFrames, logExploration),
+      body: this.getSingleViewLayout(),
+      legendSyncPatterns: new Set(),
       loading: false,
     });
   }
@@ -107,25 +142,35 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
     };
   }
 
-  private getSingleViewLayout(patternFrames: PatternFrame[], logExploration: IndexScene) {
-    const appliedPatterns = sceneGraph.getAncestor(logExploration, IndexScene).state.patterns;
-    const timeRange = sceneGraph.getTimeRange(this).state.value;
+  private getSingleViewLayout() {
+    const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
+    const patternFrames = patternsBreakdownScene.state.patternFrames;
+
+    if (!patternFrames) {
+      console.warn('Failed to set getSingleViewLayout');
+      return;
+    }
+
+    const timeSeries = this.getTimeSeries(patternFrames);
+
+    return new SceneCSSGridLayout({
+      templateColumns: '100%',
+      autoRows: '200px',
+
+      children: [
+        timeSeries,
+        new PatternsViewTableScene({
+          patternFrames,
+        }),
+      ],
+    });
+  }
+
+  private getTimeSeries(patternFrames: PatternFrame[]) {
+    const logExploration = sceneGraph.getAncestor(this, IndexScene);
 
     const timeSeries = PanelBuilders.timeseries()
-      .setData(
-        new SceneDataNode({
-          data: {
-            series: patternFrames.map((patternFrame, seriesIndex) => {
-              // Mutating the dataframe config here means that we don't need to update the colors in the table view
-              const dataFrame = patternFrame.dataFrame;
-              dataFrame.fields[1].config.color = overrideToFixedColor(seriesIndex);
-              return dataFrame;
-            }),
-            state: LoadingState.Done,
-            timeRange: timeRange,
-          },
-        })
-      )
+      .setData(this.getTimeseriesDataNode(patternFrames))
       .setOption('legend', {
         asTable: true,
         showLegend: true,
@@ -167,22 +212,23 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
       extendPanelContext: (vizPanel, context) => this.extendTimeSeriesLegendBus(vizPanel, context),
     });
 
-    return new SceneCSSGridLayout({
-      templateColumns: '100%',
-      // templateRows: 'auto',
-      autoRows: '200px',
+    return timeSeries;
+  }
 
-      children: [
-        new SceneFlexItem({
-          minHeight: 200,
-          maxWidth: '100%',
-          body: timeSeries,
+  private getTimeseriesDataNode(patternFrames: PatternFrame[]) {
+    const timeRange = sceneGraph.getTimeRange(this).state.value;
+
+    return new SceneDataNode({
+      data: {
+        series: patternFrames.map((patternFrame, seriesIndex) => {
+          // Mutating the dataframe config here means that we don't need to update the colors in the table view
+          const dataFrame = patternFrame.dataFrame;
+          dataFrame.fields[1].config.color = overrideToFixedColor(seriesIndex);
+          return dataFrame;
         }),
-        new PatternsViewTableScene({
-          patternFrames,
-          appliedPatterns,
-        }),
-      ],
+        state: LoadingState.Done,
+        timeRange: timeRange,
+      },
     });
   }
 }

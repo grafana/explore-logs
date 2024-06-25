@@ -34,6 +34,7 @@ import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from
 import { ServiceScene } from '../ServiceScene/ServiceScene';
 import { ServiceSelectionComponent, StartingPointSelectedEvent } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LayoutScene } from './LayoutScene';
+import { FilterOp } from 'services/filters';
 
 type LogExplorationMode = 'service_selection' | 'service_details';
 
@@ -144,7 +145,7 @@ function getContentScene(mode?: LogExplorationMode) {
 }
 
 function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter[]) {
-  const operators = ['=', '!='].map<SelectableValue<string>>((value) => ({
+  const operators = [FilterOp.Equal, FilterOp.NotEqual].map<SelectableValue<string>>((value) => ({
     label: value,
     value,
   }));
@@ -161,12 +162,16 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
   });
 
   filterVariable._getOperators = () => {
-    return [
-      {
-        label: '=',
-        value: '=',
-      },
-    ];
+    // Only allow equal operator if there is only one filter
+    if (filterVariable.state.filters.length === 1) {
+      return [
+        {
+          label: FilterOp.Equal,
+          value: FilterOp.Equal,
+        },
+      ];
+    }
+    return operators;
   };
 
   const fieldsVariable = new AdHocFiltersVariable({

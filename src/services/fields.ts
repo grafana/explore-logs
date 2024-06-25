@@ -67,3 +67,27 @@ export function getFilterBreakdownValueScene(
     });
   };
 }
+
+// copied from public/app/plugins/datasource/loki/types.ts
+export enum LabelType {
+  Indexed = 'I',
+  StructuredMetadata = 'S',
+  Parsed = 'P',
+}
+
+export function getLabelTypeFromFrame(labelKey: string, frame: DataFrame, index = 0): null | LabelType {
+  const typeField = frame.fields.find((field) => field.name === 'labelTypes')?.values[index];
+  if (!typeField) {
+    return null;
+  }
+  switch (typeField[labelKey]) {
+    case 'I':
+      return LabelType.Indexed;
+    case 'S':
+      return LabelType.StructuredMetadata;
+    case 'P':
+      return LabelType.Parsed;
+    default:
+      return null;
+  }
+}

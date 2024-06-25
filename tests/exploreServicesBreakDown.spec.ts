@@ -1,6 +1,7 @@
 import { expect, test } from '@grafana/plugin-e2e';
 import { ExplorePage } from './fixtures/explore';
-import { testIds } from "../src/services/testIds";
+import { testIds } from '../src/services/testIds';
+import { FilterOp } from '../src/services/filters';
 
 test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;
@@ -31,12 +32,12 @@ test.describe('explore services breakdown page', () => {
     // Switch to table view
     await page.getByRole('radiogroup').getByTestId(testIds.logsPanelHeader.radio).nth(1).click()
 
-    const table = await page.getByTestId(testIds.table.wrapper);
+    const table = page.getByTestId(testIds.table.wrapper);
     // Get a level pill, and click it
     const levelPill = table.getByRole('cell').getByText("level=").first()
     await levelPill.click()
     // Get the context menu
-    const pillContextMenu = await table.getByRole('img', { name: 'Add to search' });
+    const pillContextMenu = table.getByRole('img', { name: 'Add to search' });
     // Assert menu is open
     await expect(pillContextMenu).toBeVisible()
     // Click the filter button
@@ -67,6 +68,17 @@ test.describe('explore services breakdown page', () => {
     await expect(page1.getByText('{service_name=`tempo-distributor`}')).toBeVisible();
   });
 
+  test('should exclude a label, update filters, open log panel', async ({ page }) => {
+    await page.getByTestId(testIds.exploreServiceDetails.tabDetectedFields).click();
+    await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
+    await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
+    await expect(page.getByTestId(testIds.exploreServiceDetails.searchLogs)).toBeVisible();
+    // Adhoc err filter should be added
+    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
+    await expect(page.getByText(FilterOp.NotEqual)).toBeVisible();
+  });
+
+
   test('should select a detected field, update filters, open log panel', async ({ page }) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabDetectedFields).click();
     await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
@@ -77,7 +89,75 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
   });
 
-  test('should select an include pattern field in default single view, update filters, not open log panel', async ({
+  test('should search patterns by text', async ({
+    page
+  }) => {
+    await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
+
+    // Get the cell within the second row
+    const patternTextCell = page
+        .getByTestId(testIds.patterns.tableWrapper)
+        .getByRole('table')
+        .getByRole('row')
+        .nth(2)
+        .getByRole('cell')
+        .nth(3)
+
+    // Assert the target row is visible
+    await expect(patternTextCell).toBeVisible()
+
+    // Count all of the rows in the table before filtering
+    const countOfAllRows = await page
+        .getByTestId(testIds.patterns.tableWrapper)
+        .getByRole('table')
+        .getByRole('row')
+        .count()
+
+    // Get the full pattern from the cell
+    const searchText = await patternTextCell.textContent() as string;
+    expect(searchText).not.toBeUndefined()
+
+    // Get the input
+    const patternSearchInput = page.getByPlaceholder('Search patterns');
+
+    // Set the content
+    await patternSearchInput.fill(searchText)
+
+    // Expect input is visible
+    await expect(patternSearchInput).toBeVisible()
+
+    // Get the first row after filtering
+    const patternTextCellAfterFilter = page
+        .getByTestId(testIds.patterns.tableWrapper)
+        .getByRole('table')
+        .getByRole('row')
+        // First row is header?
+        .nth(1)
+        .getByRole('cell')
+        .nth(3)
+
+    // Assert that the visible row has the desired search string
+    await expect(patternTextCellAfterFilter).toBeVisible()
+    expect(await patternTextCellAfterFilter.textContent()).toBeDefined()
+
+    // Count the rows after filtering
+    const countOfAllRowsAfterFilter = await page
+        .getByTestId(testIds.patterns.tableWrapper)
+        .getByRole('table')
+        .getByRole('row')
+        // Header takes up a row
+        .count() - 1
+
+    // Assert count should always be 1 unless one pattern contains another
+    expect(countOfAllRowsAfterFilter).toBeGreaterThanOrEqual(1)
+    expect(countOfAllRows).toBeGreaterThan(countOfAllRowsAfterFilter)
+
+    // Assert the viz was filtered as well
+    const legendIconsCount = await page.getByTestId('series-icon').count()
+    expect(legendIconsCount).toBe(countOfAllRowsAfterFilter)
+  });
+
+    test('should select an include pattern field in default single view, update filters, not open log panel', async ({
     page,
   }) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
@@ -172,7 +252,7 @@ test.describe('explore services breakdown page', () => {
   });
 
   test('should update a filter and run new logs', async ({ page }) => {
-    await page.getByTestId('AdHocFilter-service_name').getByRole('img').nth(1).click();
+    await page.getByTestId('AdHocFilter-service_name').getByRole('img').nth(2).click();
     await page.getByText('mimir-distributor').click();
 
     // open logs panel

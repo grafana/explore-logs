@@ -8,26 +8,31 @@ import {
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
-  SceneObject,
   SceneObjectBase,
   SceneObjectState,
   SceneVariableSet,
 } from '@grafana/scenes';
 import { Text, TextLink, useStyles2 } from '@grafana/ui';
-import { LayoutSwitcher } from 'Components/ServiceScene/Breakdowns/LayoutSwitcher';
 import { StatusWrapper } from 'Components/ServiceScene/Breakdowns/StatusWrapper';
 import { GrotError } from 'Components/GrotError';
 import { VAR_LABEL_GROUP_BY } from 'services/variables';
 import { LokiPattern, ServiceScene } from '../../ServiceScene';
 import { IndexScene } from '../../../IndexScene/IndexScene';
 import { PatternsFrameScene } from './PatternsFrameScene';
+import { PatternsViewTextSearch } from './PatternsViewTextSearch';
 
 export interface PatternsBreakdownSceneState extends SceneObjectState {
-  body?: SceneObject;
+  body?: SceneFlexLayout;
   value?: string;
   loading?: boolean;
   error?: string;
   blockingMessage?: string;
+  // The dataframe built from the patterns that we get back from the loki Patterns API
+  patternFrames?: PatternFrame[];
+
+  // Subset of patternFrames, undefined if empty, empty array if search results returned nothing (no data)
+  filteredPatterns?: PatternFrame[];
+  patternFilter: string;
 }
 
 export type PatternFrame = {
@@ -45,6 +50,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
         new SceneVariableSet({
           variables: [new CustomVariable({ name: VAR_LABEL_GROUP_BY, defaultToAll: true, includeAll: true })],
         }),
+      patternFilter: '',
       loading: true,
       ...state,
     });
@@ -77,28 +83,21 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
           {!loading && patterns?.length === 0 && (
             <GrotError>
               <div>
-                Sorry, we could not detect any patterns.
                 <p>
-                  Check back later or reachout to the{' '}
+                  <strong>Sorry, we could not detect any patterns.</strong>
+                </p>
+                <p>
+                  Check back later or reach out to the team in the{' '}
                   <TextLink href="https://slack.grafana.com/" external>
                     Grafana Labs community Slack channel
                   </TextLink>
                 </p>
-                Patterns let you detect similar log lines and add or exclude them from your search.
+                <p>Patterns let you detect similar log lines to include or exclude from your search.</p>
               </div>
             </GrotError>
           )}
           {!loading && patterns && patterns.length > 0 && (
-            <>
-              <div className={styles.controls}>
-                {body instanceof LayoutSwitcher && (
-                  <div className={styles.controlsRight}>
-                    <body.Selector model={body} />
-                  </div>
-                )}
-              </div>
-              <div className={styles.content}>{body && <body.Component model={body} />}</div>
-            </>
+            <div className={styles.content}>{body && <body.Component model={body} />}</div>
           )}
         </StatusWrapper>
       </div>
@@ -106,29 +105,50 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
   };
 
   private onActivate() {
-    this.updateBody();
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
+    this.setBody();
+
+    // If the patterns exist already, update the dataframe
+    if (serviceScene.state.patterns) {
+      this.updatePatternFrames(serviceScene.state.patterns);
+    }
+
+    // Subscribe to changes from pattern API call
     this._subs.add(
-      sceneGraph.getAncestor(this, ServiceScene).subscribeToState((newState, prevState) => {
-        if (newState.patterns !== prevState.patterns) {
-          this.updateBody();
+      serviceScene.subscribeToState((newState, prevState) => {
+        if (JSON.stringify(newState.patterns) !== JSON.stringify(prevState.patterns)) {
+          this.updatePatternFrames(newState.patterns);
         }
       })
     );
   }
 
-  private async updateBody() {
-    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
-    const lokiPatterns = serviceScene.state.patterns;
+  private setBody() {
+    this.setState({
+      body: new SceneFlexLayout({
+        direction: 'column',
+        children: [
+          new SceneFlexItem({
+            ySizing: 'content',
+            body: new PatternsViewTextSearch(),
+          }),
+          new SceneFlexItem({
+            body: new PatternsFrameScene(),
+          }),
+        ],
+      }),
+    });
+  }
+
+  private updatePatternFrames(lokiPatterns?: LokiPattern[]) {
     if (!lokiPatterns) {
+      console.warn('failed to update pattern frames');
       return;
     }
 
     const patternFrames = this.buildPatterns(lokiPatterns);
-
     this.setState({
-      body: new PatternsFrameScene({
-        patternFrames,
-      }),
+      patternFrames,
       loading: false,
     });
   }

@@ -18,6 +18,11 @@ import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 import { LogsVolumePanel } from './LogsVolumePanel';
 import { css } from '@emotion/css';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
+import { DataFrame } from '@grafana/data';
+import { FilterType, addToFilters } from './Breakdowns/AddToFiltersButton';
+import { LabelType, getLabelTypeFromFrame } from 'services/fields';
+import { VAR_FIELDS, VAR_FILTERS } from 'services/variables';
+import { getAdHocFiltersVariable } from 'services/scenes';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -99,6 +104,49 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     });
   }
 
+  private handleLabelFilter(key: string, value: string, frame: DataFrame | undefined, operator: FilterType) {
+    // @TODO: NOOP. We need a way to let the user know why this is not possible.
+    if (key === 'service_name') {
+      return;
+    }
+    const type = frame ? getLabelTypeFromFrame(key, frame) : LabelType.Parsed;
+    const variableName = type === LabelType.Indexed ? VAR_FILTERS : VAR_FIELDS;
+    addToFilters(key, value, operator, this, variableName);
+
+    reportAppInteraction(
+      USER_EVENTS_PAGES.service_details,
+      USER_EVENTS_ACTIONS.service_details.logs_detail_filter_applied,
+      {
+        filterType: variableName,
+        key,
+        action: operator,
+      }
+    );
+  }
+
+  public handleLabelFilterClick = (key: string, value: string, frame?: DataFrame) => {
+    this.handleLabelFilter(key, value, frame, 'toggle');
+  };
+
+  public handleLabelFilterOutClick = (key: string, value: string, frame?: DataFrame) => {
+    this.handleLabelFilter(key, value, frame, 'exclude');
+  };
+
+  public handleIsFilterLabelActive = (key: string, value: string) => {
+    const filters = getAdHocFiltersVariable(VAR_FILTERS, this);
+    const fields = getAdHocFiltersVariable(VAR_FIELDS, this);
+    return (
+      (filters &&
+        filters.state.filters.findIndex(
+          (filter) => filter.operator === '=' && filter.key === key && filter.value === value
+        ) >= 0) ||
+      (fields &&
+        fields.state.filters.findIndex(
+          (filter) => filter.operator === '=' && filter.key === key && filter.value === value
+        ) >= 0)
+    );
+  };
+
   private getLogsPanel() {
     const visualizationType = this.state.visualizationType;
 
@@ -108,6 +156,12 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         .setTitle('Logs')
         .setOption('showLogContextToggle', true)
         .setOption('showTime', true)
+        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
+        .setOption('onClickFilterLabel', this.handleLabelFilterClick)
+        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
+        .setOption('onClickFilterOutLabel', this.handleLabelFilterOutClick)
+        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
+        .setOption('isFilterLabelActive', this.handleIsFilterLabelActive)
         .setHeaderActions(<LogsPanelHeaderActions vizType={visualizationType} onChange={this.setVisualizationType} />)
         .build(),
     });

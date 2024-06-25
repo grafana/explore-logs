@@ -1,6 +1,6 @@
 {
   "name": "grafana-lokiexplore-app",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Query less exploration of log data stored in Loki",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
@@ -74,7 +74,7 @@
     "@emotion/css": "^11.10.6",
     "@grafana/data": "^11.0.0",
     "@grafana/runtime": "^11.0.0",
-    "@grafana/scenes": "4.5.5",
+    "@grafana/scenes": "4.32.0",
     "@grafana/ui": "^11.0.0",
     "@playwright/test": "^1.43.1",
     "@types/react-table": "^7.7.20",

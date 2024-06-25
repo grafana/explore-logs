@@ -1,12 +1,12 @@
-import { AdHocFiltersVariable, SceneComponentProps, sceneGraph, SceneObjectBase } from '@grafana/scenes';
+import { SceneComponentProps, sceneGraph, SceneObjectBase } from '@grafana/scenes';
 import { LogsListScene } from './LogsListScene';
-import { VAR_FIELDS } from '../../services/variables';
 import { AdHocVariableFilter } from '@grafana/data';
 import { TableProvider } from '../Table/TableProvider';
 import React, { useRef } from 'react';
 import { PanelChrome } from '@grafana/ui';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 import { css } from '@emotion/css';
+import { addAdHocFilter } from './Breakdowns/AddToFiltersButton';
 
 export class LogsTableScene extends SceneObjectBase {
   public static Component = ({ model }: SceneComponentProps<LogsTableScene>) => {
@@ -21,17 +21,9 @@ export class LogsTableScene extends SceneObjectBase {
     const timeRange = sceneGraph.getTimeRange(model);
     const { value: timeRangeValue } = timeRange.useState();
 
-    // Get Fields
-    const fields = sceneGraph.lookupVariable(VAR_FIELDS, model)! as AdHocFiltersVariable;
-    const { filters } = fields.useState();
-
     // Define callback function to update filters in react
     const addFilter = (filter: AdHocVariableFilter) => {
-      const fields = sceneGraph.lookupVariable(VAR_FIELDS, model)! as AdHocFiltersVariable;
-      const filters = fields.state.filters;
-      fields.setState({
-        filters: [...filters, filter],
-      });
+      addAdHocFilter(filter, parentModel);
     };
 
     // Get reference to panel wrapper so table knows how much space it can use to render
@@ -56,7 +48,6 @@ export class LogsTableScene extends SceneObjectBase {
           {data?.series[0] && (
             <TableProvider
               panelWrap={panelWrap}
-              filters={filters}
               addFilter={addFilter}
               timeRange={timeRangeValue}
               selectedLine={selectedLine}
