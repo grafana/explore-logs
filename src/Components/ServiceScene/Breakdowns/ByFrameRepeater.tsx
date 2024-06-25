@@ -10,6 +10,7 @@ import {
   SceneByFrameRepeater,
   SceneLayout,
 } from '@grafana/scenes';
+import { SortCriteriaChanged } from './SortByScene';
 
 interface ByFrameRepeaterState extends SceneObjectState {
   body: SceneLayout;
@@ -29,6 +30,8 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     this.addActivationHandler(() => {
       const data = sceneGraph.getData(this);
 
+      this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange);
+
       this._subs.add(
         data.subscribeToState((data) => {
           if (data.data?.state === LoadingState.Done) {
@@ -42,6 +45,10 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
       }
     });
   }
+
+  private handleSortByChange = (event: SortCriteriaChanged) => {
+    console.log(event);
+  };
 
   private getSortedSeries(data: PanelData) {
     const reducer = fieldReducers.get(ReducerID.stdDev);
