@@ -63,7 +63,7 @@ function getStyles(theme: GrafanaTheme2) {
     container: css({
       flexGrow: 1,
       display: 'flex',
-      gap: theme.spacing(2),
+      gap: theme.spacing(1),
       minHeight: '100%',
       flexDirection: 'column',
       padding: theme.spacing(2),
@@ -115,6 +115,15 @@ function getStyles(theme: GrafanaTheme2) {
               },
             },
           },
+        },
+      },
+      // the `service_name` filter is a special case where we want to hide the operator
+      '[data-testid="AdHocFilter-service_name"]': {
+        'div[class*="input-wrapper"]:first-child': {
+          display: 'none',
+        },
+        'div[class*="input-wrapper"]:nth-child(2)': {
+          marginLeft: 0,
         },
       },
 

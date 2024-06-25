@@ -419,9 +419,9 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
     };
 
     return (
-      <Box paddingY={1}>
+      <Box paddingY={0}>
         <div className={styles.actions}>
-          <Stack gap={2}>
+          <Stack gap={1}>
             <GoToExploreButton exploration={exploration} />
           </Stack>
         </div>
