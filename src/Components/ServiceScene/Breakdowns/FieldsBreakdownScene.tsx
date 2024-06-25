@@ -37,12 +37,12 @@ import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
 import { BreakdownSearchScene, getLabelValue } from './BreakdownSearchScene';
-import { SortByScene } from './SortByScene';
+import { SortByScene, SortCriteriaChanged } from './SortByScene';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
-  search?: BreakdownSearchScene;
-  sort?: SortByScene;
+  search: BreakdownSearchScene;
+  sort: SortByScene;
   fields: Array<SelectableValue<string>>;
 
   value?: string;
@@ -66,10 +66,11 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         new SceneVariableSet({
           variables: [new CustomVariable({ name: VAR_FIELD_GROUP_BY, defaultToAll: true, includeAll: true })],
         }),
-      fields: state.fields ?? [],
       loading: true,
       sort: new SortByScene({ target: 'fields' }),
+      search: new BreakdownSearchScene(),
       ...state,
+      fields: state.fields ?? [],
     });
 
     this.addActivationHandler(this.onActivate.bind(this));
@@ -77,6 +78,8 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   private onActivate() {
     const variable = this.getVariable();
+
+    this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange);
 
     sceneGraph.getAncestor(this, ServiceScene)!.subscribeToState((newState, oldState) => {
       if (newState.detectedFields !== oldState.detectedFields) {
@@ -138,6 +141,8 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this.state.changeFields?.(fields.filter((f) => f.value !== ALL_VARIABLE_VALUE).map((f) => f.value!));
   }
 
+  private handleSortByChange(event: SortCriteriaChanged) {}
+
   private updateBody() {
     const variable = this.getVariable();
     const stateUpdate: Partial<FieldsBreakdownSceneState> = {
@@ -152,8 +157,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         ? this.buildFieldsLayout(this.state.fields)
         : buildValuesLayout(variable);
     }
-
-    stateUpdate.search = new BreakdownSearchScene();
 
     this.setState(stateUpdate);
   }
@@ -279,8 +282,8 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
             {body instanceof LayoutSwitcher && <body.Selector model={body} />}
             {!loading && value !== ALL_VARIABLE_VALUE && (
               <>
-                {sort && <sort.Component model={sort} />}
-                {search && <search.Component model={search} />}
+                <sort.Component model={sort} />
+                <search.Component model={search} />
               </>
             )}
             {!loading && fields.length > 1 && (
