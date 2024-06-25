@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { LoadingState, PanelData, DataFrame, doStandardCalcs, fieldReducers, ReducerID } from '@grafana/data';
+import { LoadingState, PanelData, DataFrame, fieldReducers, ReducerID } from '@grafana/data';
 import {
   SceneObjectState,
   SceneFlexItem,
@@ -43,26 +43,25 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     });
   }
 
-  private performRepeat(data: PanelData) {
-    const newChildren: SceneFlexItem[] = [];
-
+  private getSortedSeries(data: PanelData) {
     const reducer = fieldReducers.get(ReducerID.stdDev);
 
     const fieldCalcs = data.series.map((dataFrame) => ({
-      calcs: doStandardCalcs(dataFrame.fields[1], true, true),
       stdDev: reducer.reduce?.(dataFrame.fields[1], true, true) ?? { stdDev: 0, variance: 0 },
       field: dataFrame,
     }));
 
-    fieldCalcs.sort((a, b) => {
-      if (b.calcs.allIsNull || b.calcs.allIsZero) {
-        return -1;
-      }
-      return b.stdDev.stdDev - a.stdDev.stdDev;
-    });
+    fieldCalcs.sort((a, b) => b.stdDev.stdDev - a.stdDev.stdDev);
 
-    for (let seriesIndex = 0; seriesIndex < fieldCalcs.length; seriesIndex++) {
-      const layoutChild = this.state.getLayoutChild(data, fieldCalcs[seriesIndex].field, seriesIndex);
+    return fieldCalcs.map(({ field }) => field);
+  }
+
+  private performRepeat(data: PanelData) {
+    const newChildren: SceneFlexItem[] = [];
+    const sortedSeries = this.getSortedSeries(data);
+
+    for (let seriesIndex = 0; seriesIndex < sortedSeries.length; seriesIndex++) {
+      const layoutChild = this.state.getLayoutChild(data, sortedSeries[seriesIndex], seriesIndex);
       newChildren.push(layoutChild);
     }
 
@@ -75,8 +74,9 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     if (!data) {
       return;
     }
-    for (let seriesIndex = 0; seriesIndex < data.series.length; seriesIndex++) {
-      callback(data.series, seriesIndex);
+    const sortedSeries = this.getSortedSeries(data);
+    for (let seriesIndex = 0; seriesIndex < sortedSeries.length; seriesIndex++) {
+      callback(sortedSeries, seriesIndex);
     }
   };
 
