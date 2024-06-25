@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { GrafanaTheme2, SelectableValue } from '@grafana/data';
+import { GrafanaTheme2, ReducerID, SelectableValue } from '@grafana/data';
 import {
   CustomVariable,
   PanelBuilders,
@@ -38,6 +38,7 @@ import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
 import { BreakdownSearchScene, getLabelValue } from './BreakdownSearchScene';
 import { SortByScene, SortCriteriaChanged } from './SortByScene';
+import { getSortByPreference } from 'services/store';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -141,7 +142,11 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this.state.changeFields?.(fields.filter((f) => f.value !== ALL_VARIABLE_VALUE).map((f) => f.value!));
   }
 
-  private handleSortByChange(event: SortCriteriaChanged) {}
+  private handleSortByChange = (event: SortCriteriaChanged) => {
+    if (this.state.body instanceof LayoutSwitcher && this.state.body.state.layouts[1] instanceof ByFrameRepeater) {
+      this.state.body.state.layouts[1].sort(event.sortBy, event.direction);
+    }
+  };
 
   private updateBody() {
     const variable = this.getVariable();
@@ -350,6 +355,8 @@ function buildValuesLayout(variable: CustomVariable) {
   const tagKey = variable.getValueText();
   const query = buildLokiQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
 
+  const { sortBy, direction } = getSortByPreference('fields', ReducerID.stdDev, 'desc');
+
   return new LayoutSwitcher({
     $data: getQueryRunner(query),
     actionView: 'fields',
@@ -387,6 +394,8 @@ function buildValuesLayout(variable: CustomVariable) {
           query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
           VAR_FIELDS
         ),
+        sortBy,
+        direction,
       }),
       new ByFrameRepeater({
         body: new SceneCSSGridLayout({
@@ -406,6 +415,8 @@ function buildValuesLayout(variable: CustomVariable) {
           query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
           VAR_FIELDS
         ),
+        sortBy,
+        direction,
       }),
     ],
   });

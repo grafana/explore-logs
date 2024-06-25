@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { LoadingState, PanelData, DataFrame, fieldReducers, ReducerID } from '@grafana/data';
+import { LoadingState, PanelData, DataFrame, fieldReducers } from '@grafana/data';
 import {
   SceneObjectState,
   SceneFlexItem,
@@ -10,7 +10,6 @@ import {
   SceneByFrameRepeater,
   SceneLayout,
 } from '@grafana/scenes';
-import { SortCriteriaChanged } from './SortByScene';
 
 interface ByFrameRepeaterState extends SceneObjectState {
   body: SceneLayout;
@@ -22,15 +21,18 @@ type FrameIterateCallback = (frames: DataFrame[], seriesIndex: number) => void;
 
 export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
   private unfilteredChildren: SceneFlexItem[];
-  public constructor(state: ByFrameRepeaterState) {
+  private sortBy: string;
+  private direction: string;
+  public constructor({ sortBy, direction, ...state }: ByFrameRepeaterState & { sortBy: string; direction: string }) {
     super(state);
+
+    this.sortBy = sortBy;
+    this.direction = direction;
 
     this.unfilteredChildren = [];
 
     this.addActivationHandler(() => {
       const data = sceneGraph.getData(this);
-
-      this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange);
 
       this._subs.add(
         data.subscribeToState((data) => {
@@ -46,19 +48,34 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     });
   }
 
-  private handleSortByChange = (event: SortCriteriaChanged) => {
-    console.log(event);
+  public sort = (sortBy: string, direction: string) => {
+    const data = sceneGraph.getData(this);
+    this.sortBy = sortBy;
+    this.direction = direction;
+    if (data.state.data) {
+      this.performRepeat(data.state.data);
+    }
   };
 
   private getSortedSeries(data: PanelData) {
-    const reducer = fieldReducers.get(ReducerID.stdDev);
+    const reducer = fieldReducers.get(this.sortBy);
 
     const fieldCalcs = data.series.map((dataFrame) => ({
-      stdDev: reducer.reduce?.(dataFrame.fields[1], true, true) ?? { stdDev: 0, variance: 0 },
+      reducerValue: reducer.reduce?.(dataFrame.fields[1], true, true) ?? {},
       field: dataFrame,
     }));
 
-    fieldCalcs.sort((a, b) => b.stdDev.stdDev - a.stdDev.stdDev);
+    fieldCalcs.sort((a, b) => {
+      // reducerValue will be a Record<ReducerID, number> or an empty object {}
+      if (a.reducerValue[this.sortBy] && b.reducerValue[this.sortBy]) {
+        return b.reducerValue[this.sortBy] - a.reducerValue[this.sortBy];
+      }
+      return 0;
+    });
+
+    if (this.direction === 'asc') {
+      fieldCalcs.reverse();
+    }
 
     return fieldCalcs.map(({ field }) => field);
   }
