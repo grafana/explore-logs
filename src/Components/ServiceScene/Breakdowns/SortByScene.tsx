@@ -33,9 +33,27 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
   public static Component = ({ model }: SceneComponentProps<SortByScene>) => {
     const { criteria } = model.useState();
     return (
-      <InlineField label="Sort by">
-        <Select onChange={() => {}} options={criteria}></Select>
-      </InlineField>
+      <>
+        <InlineField>
+          <Select
+            onChange={() => {}}
+            placeholder=""
+            options={[
+              {
+                label: 'Asc',
+                value: 'asc',
+              },
+              {
+                label: 'Desc',
+                value: 'desc',
+              },
+            ]}
+          ></Select>
+        </InlineField>
+        <InlineField label="Sort by">
+          <Select onChange={() => {}} options={criteria}></Select>
+        </InlineField>
+      </>
     );
   };
 }
