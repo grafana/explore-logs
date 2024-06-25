@@ -37,10 +37,12 @@ import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
 import { BreakdownSearchScene, getLabelValue } from './BreakdownSearchScene';
+import { SortByScene } from './SortByScene';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
   search?: BreakdownSearchScene;
+  sort?: SortByScene;
   fields: Array<SelectableValue<string>>;
 
   value?: string;
@@ -66,6 +68,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         }),
       fields: state.fields ?? [],
       loading: true,
+      sort: new SortByScene({ target: 'fields' }),
       ...state,
     });
 
@@ -266,7 +269,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   };
 
   public static Component = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
-    const { fields, body, loading, value, blockingMessage, search } = model.useState();
+    const { fields, body, loading, value, blockingMessage, search, sort } = model.useState();
     const styles = useStyles2(getStyles);
 
     return (
@@ -274,8 +277,11 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
           <div className={styles.controls}>
             {body instanceof LayoutSwitcher && <body.Selector model={body} />}
-            {!loading && value !== ALL_VARIABLE_VALUE && search instanceof BreakdownSearchScene && (
-              <search.Component model={search} />
+            {!loading && value !== ALL_VARIABLE_VALUE && (
+              <>
+                {sort && <sort.Component model={sort} />}
+                {search && <search.Component model={search} />}
+              </>
             )}
             {!loading && fields.length > 1 && (
               <FieldSelector label="Field" options={fields} value={value} onChange={model.onFieldSelectorChange} />
