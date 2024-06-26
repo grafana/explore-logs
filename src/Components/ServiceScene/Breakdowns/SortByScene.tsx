@@ -68,14 +68,18 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
             ]}
           ></Select>
         </InlineField>
-        <InlineField label="Sort by" htmlFor="sort-by-criteria">
+        <InlineField
+          label="Sort by"
+          htmlFor="sort-by-criteria"
+          tooltip="Calculate a derived quantity from the values in your time series and sort by this criteria. Defaults to standard deviation."
+        >
           <StatsPicker
             placeholder="Choose criteria"
             stats={[sortBy]}
             allowMultiple={false}
             onChange={model.onCriteriaChange}
             defaultStat={ReducerID.stdDev}
-            width={12}
+            width={17}
             inputId="sort-by-criteria"
           />
         </InlineField>
