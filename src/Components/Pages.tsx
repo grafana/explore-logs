@@ -92,6 +92,7 @@ export function makeBreakdownPage(
   slug: SLUGS
 ): SceneAppPage {
   const { service } = extractServiceFromRoute(routeMatch);
+
   return new SceneAppPage({
     title: slugToBreadcrumbTitle(slug),
     layout: PageLayoutType.Custom,

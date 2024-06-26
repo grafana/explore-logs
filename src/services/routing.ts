@@ -62,6 +62,7 @@ export const DRILLDOWN_URL_KEYS = [
   'mode',
   'urlColumns',
   'visualizationType',
+  `selectedLine`,
   VAR_PATTERNS,
   `var-${VAR_PATTERNS}`,
   `var-${VAR_DATASOURCE}`,
