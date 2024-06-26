@@ -1,5 +1,6 @@
 import { test, expect } from '@grafana/plugin-e2e';
 import { ExplorePage } from './fixtures/explore';
+import {testIds} from "../src/services/testIds";
 
 test.describe('explore services page', () => {
   let explorePage: ExplorePage;

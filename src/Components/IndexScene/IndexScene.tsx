@@ -34,11 +34,11 @@ import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from
 import { ServiceScene } from '../ServiceScene/ServiceScene';
 import { LayoutScene } from './LayoutScene';
 import { FilterOp } from 'services/filters';
+import { SLUGS } from '../../services/routing';
 import { getSlug } from '../Pages';
 import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { locationService } from '@grafana/runtime';
-import { SLUGS } from '../../services/routes';
 
 export type LogExplorationMode = 'service_selection' | 'service_details';
 
