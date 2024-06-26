@@ -6,18 +6,11 @@ import {
   SceneRouteMatch,
   SceneTimeRange,
 } from '@grafana/scenes';
-import {
-  DRILLDOWN_URL_KEYS,
-  PLUGIN_BASE_URL,
-  prefixRoute,
-  ROUTE_DEFINITIONS,
-  ROUTES,
-  SERVICE_URL_KEYS,
-  SLUGS,
-} from '../services/routing';
+import { PLUGIN_BASE_URL, prefixRoute } from '../services/routing';
 import { PageLayoutType } from '@grafana/data';
 import { IndexScene } from './IndexScene/IndexScene';
 import { locationService } from '@grafana/runtime';
+import { DRILLDOWN_URL_KEYS, ROUTE_DEFINITIONS, ROUTES, SERVICE_URL_KEYS, SLUGS } from '../services/routes';
 
 function getServicesScene() {
   const DEFAULT_TIME_RANGE = { from: 'now-15m', to: 'now' };

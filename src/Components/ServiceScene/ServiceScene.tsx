@@ -23,7 +23,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'se
 import { DetectedLabelsResponse, extractParserAndFieldsFromDataFrame } from 'services/fields';
 import { getQueryRunner } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
-import { buildBreakdownUrl, buildServicesUrl, PLUGIN_ID, ROUTES, SLUGS } from 'services/routing';
+import { PLUGIN_ID } from 'services/routing';
 import { getExplorationFor, getLokiDatasource } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
@@ -44,6 +44,7 @@ import { testIds } from 'services/testIds';
 import { sortLabelsByCardinality } from 'services/filters';
 import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
 import { getSlug } from '../Pages';
+import { buildBreakdownUrl, buildServicesUrl, ROUTES, SLUGS } from '../../services/routes';
 
 export interface LokiPattern {
   pattern: string;

@@ -4,7 +4,7 @@ import { getUrlSyncManager, SceneApp, useSceneApp } from '@grafana/scenes';
 import { config } from '@grafana/runtime';
 import { Redirect } from 'react-router-dom';
 import { makeIndexPage, makeRedirectPage } from './Pages';
-import { SLUGS } from '../services/routing';
+import { SLUGS } from '../services/routes';
 
 const getSceneApp = () =>
   new SceneApp({

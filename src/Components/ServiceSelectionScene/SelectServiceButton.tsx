@@ -15,7 +15,7 @@ import { SERVICE_NAME } from './ServiceSelectionScene';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { FilterOp } from 'services/filters';
 import { locationService } from '@grafana/runtime';
-import { buildBreakdownUrl, ROUTES } from '../../services/routing';
+import { buildBreakdownUrl, ROUTES } from '../../services/routes';
 
 export interface SelectServiceButtonState extends SceneObjectState {
   service: string;

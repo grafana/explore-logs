@@ -8,8 +8,8 @@ import {
   SceneObjectUrlValues,
 } from '@grafana/scenes';
 import { VAR_DATASOURCE_EXPR, LOG_STREAM_SELECTOR_EXPR } from './variables';
-import { EXPLORATIONS_ROUTE } from './routing';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
+import { ROUTES } from './routes';
 
 export function getExplorationFor(model: SceneObject): IndexScene {
   return sceneGraph.getAncestor(model, IndexScene);
@@ -20,7 +20,7 @@ export function getUrlForExploration(exploration: IndexScene) {
 }
 
 export function getUrlForValues(values: SceneObjectUrlValues) {
-  return urlUtil.renderUrl(EXPLORATIONS_ROUTE, values);
+  return urlUtil.renderUrl(ROUTES.explore(), values);
 }
 
 export function getDataSource(exploration: IndexScene) {
