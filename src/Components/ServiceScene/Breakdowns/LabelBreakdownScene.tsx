@@ -108,6 +108,15 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     if (this.state.body instanceof LayoutSwitcher && this.state.body.state.layouts[1] instanceof ByFrameRepeater) {
       this.state.body.state.layouts[1].sort(event.sortBy, event.direction);
     }
+    reportAppInteraction(
+      USER_EVENTS_PAGES.service_details,
+      USER_EVENTS_ACTIONS.service_details.value_breakdown_sort_change,
+      {
+        target: 'labels',
+        criteria: event.sortBy,
+        direction: event.direction,
+      }
+    );
   };
 
   private async updateBody(variable: CustomVariable) {

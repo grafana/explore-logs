@@ -146,6 +146,15 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     if (this.state.body instanceof LayoutSwitcher && this.state.body.state.layouts[1] instanceof ByFrameRepeater) {
       this.state.body.state.layouts[1].sort(event.sortBy, event.direction);
     }
+    reportAppInteraction(
+      USER_EVENTS_PAGES.service_details,
+      USER_EVENTS_ACTIONS.service_details.value_breakdown_sort_change,
+      {
+        target: 'fields',
+        criteria: event.sortBy,
+        direction: event.direction,
+      }
+    );
   };
 
   private updateBody() {
