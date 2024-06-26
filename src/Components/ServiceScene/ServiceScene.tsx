@@ -351,27 +351,27 @@ export interface LogsActionBarState extends SceneObjectState {}
 
 export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
   public static Component = ({ model }: SceneComponentProps<LogsActionBar>) => {
-    const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
     const styles = useStyles2(getStyles);
     const exploration = getExplorationFor(model);
     const currentBreakdownViewSlug = getSlug();
 
-    const getCounter = (tab: BreakdownViewDefinition) => {
+    const getCounter = (tab: BreakdownViewDefinition, state: ServiceSceneState) => {
       switch (tab.value) {
         case 'fields':
           return (
-            serviceScene.state.detectedFieldsCount ??
-            (serviceScene.state.detectedFields?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []).length
+            state.detectedFieldsCount ?? (state.detectedFields?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []).length
           );
         case 'patterns':
-          return serviceScene.state.patterns?.length;
+          return state.patterns?.length;
         case 'labels':
-          return (serviceScene.state.labels?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []).length;
+          return (state.labels?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []).length;
         default:
           return undefined;
       }
     };
 
+    const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
+    const { loading, ...state } = serviceScene.useState();
     return (
       <Box paddingY={0}>
         <div className={styles.actions}>
@@ -388,7 +388,8 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                 key={index}
                 label={tab.displayName}
                 active={currentBreakdownViewSlug === tab.value}
-                counter={getCounter(tab)}
+                counter={getCounter(tab, state)}
+                icon={loading ? 'spinner' : undefined}
                 onChangeTab={() => {
                   if (tab.value !== currentBreakdownViewSlug) {
                     reportAppInteraction(
@@ -400,6 +401,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                       }
                     );
                     if (tab.value) {
+                      // @todo useState
                       const variable = serviceScene.getFiltersVariable();
                       const service = variable.state.filters.find((f) => f.key === SERVICE_NAME);
 
