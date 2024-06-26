@@ -12,7 +12,7 @@ test.describe('explore services breakdown page', () => {
     await explorePage.gotoServicesBreakdown();
   });
 
-  test.only('should filter logs panel on search', async ({ page }) => {
+  test('should filter logs panel on search', async ({ page }) => {
     await explorePage.serviceBreakdownSearch.click();
     await explorePage.serviceBreakdownSearch.fill('broadcast');
     await expect(page.getByRole('table').locator('tr').first().getByText('broadcast')).toBeVisible();
