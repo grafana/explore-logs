@@ -59,14 +59,17 @@ export function addLastUsedDataSourceToStorage(dsKey: string) {
 }
 
 export function getSortByPreference(target: string, defaultSortBy: string, defaultDirection: 'desc' | 'asc') {
-  const preference = localStorage.getItem(`sort_${target}_by`);
-  if (!preference) {
+  const preference = localStorage.getItem(`sort_${target}_by`) ?? '';
+  const parts = preference.split('.');
+  if (!parts[0] || !parts[1]) {
     return { sortBy: defaultSortBy, direction: defaultDirection };
   }
-  const parts = preference.split('.');
   return { sortBy: parts[0], direction: parts[1] };
 }
 
 export function setSortByPreference(target: string, sortBy: string, direction: string) {
-  return localStorage.setItem(`sort_${target}_by`, `${sortBy}.${direction}`);
+  // Prevent storing empty values
+  if (sortBy && direction) {
+    localStorage.setItem(`sort_${target}_by`, `${sortBy}.${direction}`);
+  }
 }

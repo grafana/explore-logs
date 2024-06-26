@@ -29,6 +29,9 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
   }
 
   public onCriteriaChange = (criteria: string[]) => {
+    if (!criteria.length) {
+      return;
+    }
     this.setState({ sortBy: criteria[0] });
     setSortByPreference(this.state.target, criteria[0], this.state.direction);
     this.publishEvent(new SortCriteriaChanged(criteria[0], this.state.direction), true);
