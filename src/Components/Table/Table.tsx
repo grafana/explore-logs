@@ -155,7 +155,7 @@ export const Table = (props: Props) => {
     // This function is building the table dataframe that will be transformed, even though the components within the dataframe (cells, headers) can mutate the dataframe!
     // If we try to update the dataframe whenever the columns are changed (which are rebuilt using this dataframe after being transformed), react will infinitely update frame -> columns -> frame -> ...
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [timeZone, theme, labels]
+    [timeZone, theme, labels, width, replace, setVisible]
   );
 
   // prepare dataFrame
