@@ -50,6 +50,7 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
         <InlineField>
           <Select
             onChange={model.onDirectionChange}
+            aria-label="Sort direction"
             placeholder=""
             value={direction}
             options={[
@@ -64,7 +65,7 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
             ]}
           ></Select>
         </InlineField>
-        <InlineField label="Sort by">
+        <InlineField label="Sort by" htmlFor="sort-by-criteria">
           <StatsPicker
             placeholder="Choose criteria"
             stats={[sortBy]}
@@ -72,6 +73,7 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
             onChange={model.onCriteriaChange}
             defaultStat={ReducerID.stdDev}
             width={12}
+            inputId="sort-by-criteria"
           />
         </InlineField>
       </>

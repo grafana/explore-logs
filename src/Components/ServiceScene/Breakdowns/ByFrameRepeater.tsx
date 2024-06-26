@@ -59,8 +59,6 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
 
   private getSortedSeries(data: PanelData) {
     const reducer = fieldReducers.get(this.sortBy);
-    // Turns StdDev into stdDev, Variance into variance
-    const valueAttribute = this.sortBy.charAt(0).toLowerCase() + this.sortBy.slice(1);
 
     const fieldCalcs = data.series.map((dataFrame) => ({
       value: reducer.reduce?.(dataFrame.fields[1], true, true) ?? doStandardCalcs(dataFrame.fields[1], true, true),
@@ -69,8 +67,8 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
 
     fieldCalcs.sort((a, b) => {
       // reducerValue will be a Record<ReducerID, number> or an empty object {}
-      if (a.value[valueAttribute] !== undefined && b.value[valueAttribute] !== undefined) {
-        return b.value[valueAttribute] - a.value[valueAttribute];
+      if (a.value[this.sortBy] !== undefined && b.value[this.sortBy] !== undefined) {
+        return b.value[this.sortBy] - a.value[this.sortBy];
       }
       return 0;
     });
