@@ -92,6 +92,7 @@ export function LineActionIcons(props: { rowIndex: number; value: unknown }) {
                 searchParams.set(UrlParameterType.To, timeRange.to.toISOString());
                 searchParams.set(UrlParameterType.SelectedLine, JSON.stringify(selectedLine));
 
+                // @todo can encoding + as %20 break other stuff? Can label names or values have + in them that we don't want encoded? Should we just update values?
                 // + encoding for whitespace is for application/x-www-form-urlencoded, which appears to be the default encoding for URLSearchParams, replacing + with %20 to keep urls meant for the browser from breaking
                 const searchString = searchParams.toString().replace(/\+/g, '%20');
                 return window.location.origin + window.location.pathname + '?' + searchString;

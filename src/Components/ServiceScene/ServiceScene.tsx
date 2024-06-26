@@ -388,7 +388,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                 key={index}
                 label={tab.displayName}
                 active={currentBreakdownViewSlug === tab.value}
-                counter={getCounter(tab, state)}
+                counter={!loading ? getCounter(tab, state) : undefined}
                 icon={loading ? 'spinner' : undefined}
                 onChangeTab={() => {
                   if (tab.value !== currentBreakdownViewSlug) {
@@ -401,7 +401,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                       }
                     );
                     if (tab.value) {
-                      // @todo useState
+                      const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
                       const variable = serviceScene.getFiltersVariable();
                       const service = variable.state.filters.find((f) => f.key === SERVICE_NAME);
 
