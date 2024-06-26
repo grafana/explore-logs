@@ -1,6 +1,5 @@
 import pluginJson from '../src/plugin.json';
 import { test, expect } from '@grafana/plugin-e2e';
-import { SLUGS } from '../src/services/routing';
 import { ExplorePage } from './fixtures/explore';
 
 test.describe('navigating app', () => {
@@ -12,7 +11,7 @@ test.describe('navigating app', () => {
   });
 
   test('explore page should render successfully', async ({ page }) => {
-    await page.goto(`/a/${pluginJson.id}/${SLUGS.explore}`);
+    await page.goto(`/a/${pluginJson.id}/explore`);
     await expect(page.getByText('Data source')).toBeVisible();
   });
 
@@ -20,6 +19,6 @@ test.describe('navigating app', () => {
     await explorePage.gotoServicesBreakdown();
     await page.getByTestId('data-testid Toggle menu').click();
     await page.getByTestId('data-testid navigation mega-menu').getByRole('link', { name: 'Logs' }).click();
-    await expect(page).toHaveURL(/mode=service_selection/);
+    await expect(page).toHaveURL(/a\/grafana\-lokiexplore\-app\/explore\?patterns\=%5B%5D&var\-fields\=&var\-ds\=gdev\-loki&var\-patterns\=&var\-lineFilter\=&var\-logsFormat\=/);
   });
 });
