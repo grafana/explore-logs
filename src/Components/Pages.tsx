@@ -8,6 +8,7 @@ import {
 } from '@grafana/scenes';
 import {
   DRILLDOWN_URL_KEYS,
+  navigateToIndex,
   PLUGIN_BASE_URL,
   prefixRoute,
   ROUTE_DEFINITIONS,
@@ -56,21 +57,25 @@ export function makeIndexPage() {
         routePath: ROUTE_DEFINITIONS.fields,
         getPage: (routeMatch, parent) => makeBreakdownPage(routeMatch, parent, SLUGS.fields),
       },
+      {
+        routePath: '*',
+        getPage: () => makeRedirectPage(),
+      },
     ],
   });
 }
 
-// Redirect page
-export function makeRedirectPage(to: SLUGS) {
+// Redirect page back to index
+export function makeRedirectPage() {
   return new SceneAppPage({
     title: '',
     url: PLUGIN_BASE_URL,
     getScene: makeEmptyScene(),
-    preserveUrlKeys: SERVICE_URL_KEYS,
     hideFromBreadcrumbs: true,
+    routePath: '*',
     $behaviors: [
       () => {
-        locationService.push(prefixRoute(to));
+        navigateToIndex();
       },
     ],
   });

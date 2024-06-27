@@ -4,11 +4,10 @@ import { getUrlSyncManager, SceneApp, useSceneApp } from '@grafana/scenes';
 import { config } from '@grafana/runtime';
 import { Redirect } from 'react-router-dom';
 import { makeIndexPage, makeRedirectPage } from './Pages';
-import { SLUGS } from '../services/routing';
 
 const getSceneApp = () =>
   new SceneApp({
-    pages: [makeIndexPage(), makeRedirectPage(SLUGS.explore)],
+    pages: [makeIndexPage(), makeRedirectPage()],
   });
 
 export function LogExplorationView() {

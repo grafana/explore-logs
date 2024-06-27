@@ -10,6 +10,7 @@ import {
   VAR_LOGS_FORMAT,
   VAR_PATTERNS,
 } from './variables';
+import { locationService } from '@grafana/runtime';
 
 export const PLUGIN_ID = pluginJson.id;
 export const PLUGIN_BASE_URL = `/a/${PLUGIN_ID}`;
@@ -75,7 +76,33 @@ export const DRILLDOWN_URL_KEYS = [
   `var-${VAR_LINE_FILTER}`,
 ];
 
-export function buildBreakdownUrl(path: string, extraQueryParams?: UrlQueryMap): string {
+export function navigateToIndex() {
+  const location = locationService.getLocation();
+  const serviceUrl = buildServicesUrl(ROUTES.explore());
+  const currentUrl = location.pathname + location.search;
+
+  if (serviceUrl === currentUrl) {
+    return;
+  }
+
+  locationService.push(serviceUrl);
+}
+
+export function navigateToBreakdown(path: SLUGS | string, extraQueryParams?: UrlQueryMap) {
+  const location = locationService.getLocation();
+  const pathParts = location.pathname.split('/');
+  const currentSlug = pathParts[pathParts.length - 1];
+  const breakdownUrl = buildBreakdownUrl(path, extraQueryParams);
+
+  if (breakdownUrl === currentSlug + location.search) {
+    // Url did not change, don't add an event to browser history
+    return;
+  }
+
+  locationService.push(breakdownUrl);
+}
+
+export function buildBreakdownUrl(path: SLUGS | string, extraQueryParams?: UrlQueryMap): string {
   return urlUtil.renderUrl(path, buildBreakdownRoute(extraQueryParams));
 }
 

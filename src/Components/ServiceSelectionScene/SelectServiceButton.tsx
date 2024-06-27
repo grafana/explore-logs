@@ -14,8 +14,7 @@ import { VAR_DATASOURCE, VAR_FILTERS } from 'services/variables';
 import { SERVICE_NAME } from './ServiceSelectionScene';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { FilterOp } from 'services/filters';
-import { locationService } from '@grafana/runtime';
-import { buildBreakdownUrl, ROUTES } from '../../services/routing';
+import { navigateToBreakdown, ROUTES } from '../../services/routing';
 
 export interface SelectServiceButtonState extends SceneObjectState {
   service: string;
@@ -49,9 +48,7 @@ export class SelectServiceButton extends SceneObjectBase<SelectServiceButtonStat
     });
     const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue();
     addToFavoriteServicesInStorage(ds, this.state.service);
-    locationService.push(buildBreakdownUrl(ROUTES.logs(this.state.service)));
-
-    // this.publishEvent(new StartingPointSelectedEvent(), true);
+    navigateToBreakdown(ROUTES.logs(this.state.service));
   };
 
   public static Component = ({ model }: SceneComponentProps<SelectServiceButton>) => {

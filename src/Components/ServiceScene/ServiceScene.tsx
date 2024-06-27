@@ -2,7 +2,6 @@ import { css } from '@emotion/css';
 import React from 'react';
 
 import { GrafanaTheme2, LoadingState } from '@grafana/data';
-import { locationService } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
   CustomVariable,
@@ -23,7 +22,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'se
 import { DetectedLabelsResponse, extractParserAndFieldsFromDataFrame } from 'services/fields';
 import { getQueryRunner } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
-import { buildBreakdownUrl, buildServicesUrl, PLUGIN_ID, ROUTES, SLUGS } from 'services/routing';
+import { navigateToBreakdown, navigateToIndex, PLUGIN_ID, SLUGS } from 'services/routing';
 import { getExplorationFor, getLokiDatasource } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
@@ -117,7 +116,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
   private redirectToStart() {
     // Redirect to root with updated params, which will trigger history push back to index route, preventing empty page or empty service query bugs
-    locationService.push(buildServicesUrl(ROUTES.explore()));
+    navigateToIndex();
   }
 
   private onActivate() {
@@ -160,7 +159,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       .finally(() => {
         // For patterns, we don't want to reload to logs as we allow users to select multiple patterns
         if (variable.state.name !== VAR_PATTERNS) {
-          locationService.push(buildBreakdownUrl(SLUGS.logs));
+          navigateToBreakdown(SLUGS.logs);
         }
       })
       .catch((err) => {
@@ -406,14 +405,10 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                       const service = variable.state.filters.find((f) => f.key === SERVICE_NAME);
 
                       if (service?.value) {
-                        const url = buildBreakdownUrl(ROUTES[tab.value](service?.value));
-                        locationService.push(url);
+                        navigateToBreakdown(tab.value);
                       } else {
-                        console.warn('no service found, redirecting...');
-                        locationService.replace(buildServicesUrl(ROUTES.explore()));
+                        navigateToIndex();
                       }
-                    } else {
-                      console.error('failed to navigate');
                     }
                   }
                 }}
