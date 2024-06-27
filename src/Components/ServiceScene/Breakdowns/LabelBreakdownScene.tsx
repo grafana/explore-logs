@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { GrafanaTheme2, SelectableValue } from '@grafana/data';
+import { GrafanaTheme2, ReducerID, SelectableValue } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   CustomVariable,
@@ -34,10 +34,13 @@ import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
 import { getLabelOptions, sortLabelsByCardinality } from 'services/filters';
 import { BreakdownSearchScene, getLabelValue } from './BreakdownSearchScene';
+import { getSortByPreference } from 'services/store';
+import { SortByScene, SortCriteriaChanged } from './SortByScene';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
-  search?: BreakdownSearchScene;
+  search: BreakdownSearchScene;
+  sort: SortByScene;
   labels: Array<SelectableValue<string>>;
   value?: string;
   loading?: boolean;
@@ -53,6 +56,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
 
   constructor(state: Partial<LabelBreakdownSceneState>) {
     super({
+      ...state,
       $variables:
         state.$variables ??
         new SceneVariableSet({
@@ -60,13 +64,16 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
         }),
       labels: state.labels ?? [],
       loading: true,
-      ...state,
+      sort: new SortByScene({ target: 'labels' }),
+      search: new BreakdownSearchScene(),
     });
 
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
   private onActivate() {
+    this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange);
+
     const variable = this.getVariable();
 
     variable.subscribeToState((newState, oldState) => {
@@ -96,6 +103,21 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     variable.changeValueTo(ALL_VARIABLE_VALUE);
     this.updateBody(variable);
   }
+
+  private handleSortByChange = (event: SortCriteriaChanged) => {
+    if (this.state.body instanceof LayoutSwitcher && this.state.body.state.layouts[1] instanceof ByFrameRepeater) {
+      this.state.body.state.layouts[1].sort(event.sortBy, event.direction);
+    }
+    reportAppInteraction(
+      USER_EVENTS_PAGES.service_details,
+      USER_EVENTS_ACTIONS.service_details.value_breakdown_sort_change,
+      {
+        target: 'labels',
+        criteria: event.sortBy,
+        direction: event.direction,
+      }
+    );
+  };
 
   private async updateBody(variable: CustomVariable) {
     const ds = await getLokiDatasource(this);
@@ -171,7 +193,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   };
 
   public static Component = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
-    const { labels, body, loading, value, blockingMessage, error, search } = model.useState();
+    const { labels, body, loading, value, blockingMessage, error, search, sort } = model.useState();
     const styles = useStyles2(getStyles);
 
     return (
@@ -179,8 +201,11 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
           <div className={styles.controls}>
             {body instanceof LayoutSwitcher && <body.Selector model={body} />}
-            {!loading && value !== ALL_VARIABLE_VALUE && search instanceof BreakdownSearchScene && (
-              <search.Component model={search} />
+            {!loading && value !== ALL_VARIABLE_VALUE && (
+              <>
+                <sort.Component model={sort} />
+                <search.Component model={search} />
+              </>
             )}
             {!loading && labels.length > 0 && (
               <FieldSelector label="Label" options={labels} value={value} onChange={model.onChange} />
@@ -290,6 +315,7 @@ function buildLabelValuesLayout(variable: CustomVariable) {
     .setTitle(variable.getValueText());
 
   const body = bodyOpts.build();
+  const { sortBy, direction } = getSortByPreference('labels', ReducerID.stdDev, 'desc');
 
   return new LayoutSwitcher({
     $data: getQueryRunner(query),
@@ -326,6 +352,8 @@ function buildLabelValuesLayout(variable: CustomVariable) {
           query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
           VAR_FILTERS
         ),
+        sortBy,
+        direction,
       }),
       new ByFrameRepeater({
         body: new SceneCSSGridLayout({
@@ -344,6 +372,8 @@ function buildLabelValuesLayout(variable: CustomVariable) {
           query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
           VAR_FILTERS
         ),
+        sortBy,
+        direction,
       }),
     ],
   });
