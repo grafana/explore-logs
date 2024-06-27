@@ -57,3 +57,19 @@ export function getLastUsedDataSourceFromStorage(): string | undefined {
 export function addLastUsedDataSourceToStorage(dsKey: string) {
   localStorage.setItem(DS_LOCALSTORAGE_KEY, dsKey);
 }
+
+export function getSortByPreference(target: string, defaultSortBy: string, defaultDirection: 'desc' | 'asc') {
+  const preference = localStorage.getItem(`sort_${target}_by`) ?? '';
+  const parts = preference.split('.');
+  if (!parts[0] || !parts[1]) {
+    return { sortBy: defaultSortBy, direction: defaultDirection };
+  }
+  return { sortBy: parts[0], direction: parts[1] };
+}
+
+export function setSortByPreference(target: string, sortBy: string, direction: string) {
+  // Prevent storing empty values
+  if (sortBy && direction) {
+    localStorage.setItem(`sort_${target}_by`, `${sortBy}.${direction}`);
+  }
+}
