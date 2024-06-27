@@ -40,8 +40,6 @@ import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelection
 import { LoadingPlaceholder } from '@grafana/ui';
 import { locationService } from '@grafana/runtime';
 
-export type LogExplorationMode = 'service_selection' | 'service_details';
-
 export interface AppliedPattern {
   pattern: string;
   type: 'include' | 'exclude';
