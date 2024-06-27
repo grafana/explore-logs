@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { GrafanaTheme2, SelectableValue } from '@grafana/data';
+import { GrafanaTheme2, ReducerID, SelectableValue } from '@grafana/data';
 import {
   CustomVariable,
   PanelBuilders,
@@ -37,10 +37,13 @@ import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
 import { BreakdownSearchScene, getLabelValue } from './BreakdownSearchScene';
+import { SortByScene, SortCriteriaChanged } from './SortByScene';
+import { getSortByPreference } from 'services/store';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
-  search?: BreakdownSearchScene;
+  search: BreakdownSearchScene;
+  sort: SortByScene;
   fields: Array<SelectableValue<string>>;
 
   value?: string;
@@ -64,9 +67,11 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         new SceneVariableSet({
           variables: [new CustomVariable({ name: VAR_FIELD_GROUP_BY, defaultToAll: true, includeAll: true })],
         }),
-      fields: state.fields ?? [],
       loading: true,
+      sort: new SortByScene({ target: 'fields' }),
+      search: new BreakdownSearchScene(),
       ...state,
+      fields: state.fields ?? [],
     });
 
     this.addActivationHandler(this.onActivate.bind(this));
@@ -74,6 +79,8 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   private onActivate() {
     const variable = this.getVariable();
+
+    this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange);
 
     sceneGraph.getAncestor(this, ServiceScene)!.subscribeToState((newState, oldState) => {
       if (newState.detectedFields !== oldState.detectedFields) {
@@ -135,6 +142,21 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this.state.changeFields?.(fields.filter((f) => f.value !== ALL_VARIABLE_VALUE).map((f) => f.value!));
   }
 
+  private handleSortByChange = (event: SortCriteriaChanged) => {
+    if (this.state.body instanceof LayoutSwitcher && this.state.body.state.layouts[1] instanceof ByFrameRepeater) {
+      this.state.body.state.layouts[1].sort(event.sortBy, event.direction);
+    }
+    reportAppInteraction(
+      USER_EVENTS_PAGES.service_details,
+      USER_EVENTS_ACTIONS.service_details.value_breakdown_sort_change,
+      {
+        target: 'fields',
+        criteria: event.sortBy,
+        direction: event.direction,
+      }
+    );
+  };
+
   private updateBody() {
     const variable = this.getVariable();
     const stateUpdate: Partial<FieldsBreakdownSceneState> = {
@@ -149,8 +171,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         ? this.buildFieldsLayout(this.state.fields)
         : buildValuesLayout(variable);
     }
-
-    stateUpdate.search = new BreakdownSearchScene();
 
     this.setState(stateUpdate);
   }
@@ -266,7 +286,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   };
 
   public static Component = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
-    const { fields, body, loading, value, blockingMessage, search } = model.useState();
+    const { fields, body, loading, value, blockingMessage, search, sort } = model.useState();
     const styles = useStyles2(getStyles);
 
     return (
@@ -274,8 +294,11 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
           <div className={styles.controls}>
             {body instanceof LayoutSwitcher && <body.Selector model={body} />}
-            {!loading && value !== ALL_VARIABLE_VALUE && search instanceof BreakdownSearchScene && (
-              <search.Component model={search} />
+            {!loading && value !== ALL_VARIABLE_VALUE && (
+              <>
+                <sort.Component model={sort} />
+                <search.Component model={search} />
+              </>
             )}
             {!loading && fields.length > 1 && (
               <FieldSelector label="Field" options={fields} value={value} onChange={model.onFieldSelectorChange} />
@@ -341,6 +364,8 @@ function buildValuesLayout(variable: CustomVariable) {
   const tagKey = variable.getValueText();
   const query = buildLokiQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
 
+  const { sortBy, direction } = getSortByPreference('fields', ReducerID.stdDev, 'desc');
+
   return new LayoutSwitcher({
     $data: getQueryRunner(query),
     actionView: 'fields',
@@ -378,6 +403,8 @@ function buildValuesLayout(variable: CustomVariable) {
           query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
           VAR_FIELDS
         ),
+        sortBy,
+        direction,
       }),
       new ByFrameRepeater({
         body: new SceneCSSGridLayout({
@@ -397,6 +424,8 @@ function buildValuesLayout(variable: CustomVariable) {
           query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
           VAR_FIELDS
         ),
+        sortBy,
+        direction,
       }),
     ],
   });
