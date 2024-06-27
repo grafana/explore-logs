@@ -469,11 +469,7 @@ function isAvgField(field: string) {
 
 function getExpr(field: string) {
   if (isAvgField(field)) {
-    return (
-      `avg_over_time(${LOG_STREAM_SELECTOR_EXPR} | unwrap ` +
-      (field === 'duration' ? `duration` : field === 'bytes' ? `bytes` : ``) +
-      `(${field}) [$__auto]) by ()`
-    );
+    return `avg_over_time(${LOG_STREAM_SELECTOR_EXPR} | unwrap  ${unwrapField(field)} [$__auto]) by ()`;
   }
   return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${field}!=""   [$__auto]))`;
 }
@@ -490,35 +486,38 @@ function getFieldExpr(field: string, aggregation: string | undefined, by: string
         `,`
       )}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${field}!="" [$__auto]))`;
     case AggregationTypes.sum.value:
-      return (
-        `sum by (${by.join(`,`)}) (${aggregation}(${LOG_STREAM_SELECTOR_EXPR} | unwrap ` +
-        (field === 'duration' ? `duration` : field === 'bytes' ? `bytes` : ``) +
-        `(${field}) [$__auto]))`
-      );
+      return `sum by (${by.join(`,`)}) (${aggregation}(${LOG_STREAM_SELECTOR_EXPR} | unwrap  ${unwrapField(
+        field
+      )} [$__auto]))`;
     case AggregationTypes.avg.value:
     case AggregationTypes.min.value:
     case AggregationTypes.max.value:
-      return (
-        `${aggregation}(${LOG_STREAM_SELECTOR_EXPR} | unwrap ` +
-        (field === 'duration' ? `duration` : field === 'bytes' ? `bytes` : ``) +
-        `(${field}) [$__auto]) by (${by.join(`,`)})`
-      );
+      return `${aggregation}(${LOG_STREAM_SELECTOR_EXPR} | unwrap  ${unwrapField(field)} [$__auto]) by (${by.join(
+        `,`
+      )})`;
     case AggregationTypes.rate.value:
-      return (
-        `sum by (${by.join(`,`)}) (${aggregation}(${LOG_STREAM_SELECTOR_EXPR} | unwrap ` +
-        (field === 'duration' ? `duration` : field === 'bytes' ? `bytes` : ``) +
-        `(${field}) [$__auto])) `
-      );
+      return `sum by (${by.join(`,`)}) (${aggregation}(${LOG_STREAM_SELECTOR_EXPR} | unwrap  ${unwrapField(
+        field
+      )} [$__auto])) `;
     case AggregationTypes.p50.value:
     case AggregationTypes.p75.value:
     case AggregationTypes.p90.value:
-      return (
-        `quantile_over_time(${aggregation}, ${LOG_STREAM_SELECTOR_EXPR} | unwrap ` +
-        (field === 'duration' ? `duration` : field === 'bytes' ? `bytes` : ``) +
-        `(${field}) [$__auto]) by (${by.join(`,`)})`
-      );
+      return `quantile_over_time(${aggregation}, ${LOG_STREAM_SELECTOR_EXPR} | unwrap ${unwrapField(
+        field
+      )} [$__auto]) by (${by.join(`,`)})`;
   }
   return ``;
+}
+
+function unwrapField(field: string): string {
+  if (field.includes('duration')) {
+    return `duration(${field})`;
+  }
+
+  if (field.includes('bytes')) {
+    return `bytes(${field})`;
+  }
+  return `${field}`;
 }
 
 function buildValuesLayout(variable: CustomVariable, aggregation: string | undefined, by: string[]) {
@@ -527,6 +526,7 @@ function buildValuesLayout(variable: CustomVariable, aggregation: string | undef
   console.log(expr);
   console.log(by);
   const query = buildLokiQuery(expr, { legendFormat: `{{${tagKey}}}` });
+  console.log(query);
 
   return new LayoutSwitcher({
     $data: getQueryRunner(query),
