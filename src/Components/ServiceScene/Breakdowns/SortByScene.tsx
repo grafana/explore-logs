@@ -79,7 +79,7 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
             allowMultiple={false}
             onChange={model.onCriteriaChange}
             defaultStat={ReducerID.stdDev}
-            width={17}
+            width={18}
             inputId="sort-by-criteria"
           />
         </InlineField>
