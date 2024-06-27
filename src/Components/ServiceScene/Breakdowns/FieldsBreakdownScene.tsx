@@ -202,6 +202,9 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     const aggregate = this.getAggregateVariable();
     const by = this.getByVariable();
     console.log(by.state.value);
+    // todo query samples of that field data to discover types, units, etc...
+    // for status code or word we count per word.
+    // for duration we quantile or avg
     const stateUpdate: Partial<FieldsBreakdownSceneState> = {
       value: String(variable.state.value),
       aggregationValue: String(aggregate.state.value),
@@ -214,7 +217,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     } else {
       stateUpdate.body = variable.hasAllValue()
         ? this.buildFieldsLayout(this.state.fields)
-        : buildValuesLayout(variable, stateUpdate.aggregationValue, stateUpdate.byValue ?? []);
+        : buildValuesLayout(variable, stateUpdate.aggregationValue ?? '', stateUpdate.byValue ?? []);
     }
 
     stateUpdate.search = new BreakdownSearchScene();
@@ -520,13 +523,11 @@ function unwrapField(field: string): string {
   return `${field}`;
 }
 
-function buildValuesLayout(variable: CustomVariable, aggregation: string | undefined, by: string[]) {
+function buildValuesLayout(variable: CustomVariable, aggregation: string, by: string[]) {
   const tagKey = variable.getValueText();
   const expr = getFieldExpr(tagKey, aggregation, by);
-  console.log(expr);
-  console.log(by);
-  const query = buildLokiQuery(expr, { legendFormat: `{{${tagKey}}}` });
-  console.log(query);
+  const legends = aggregation === AggregationTypes.count.value ? [tagKey, ...by] : by;
+  const query = buildLokiQuery(expr, { legendFormat: `${legends.map((v) => `{{${v}}}`).join(' - ')}` });
 
   return new LayoutSwitcher({
     $data: getQueryRunner(query),

@@ -41,6 +41,9 @@ export function getLabelValueFromDataFrame(frame: DataFrame) {
   if (keys.length === 0) {
     return null;
   }
+  if (keys.length === 1) {
+    return labels[keys[0]];
+  }
 
-  return labels[keys[0]];
+  return `{${keys.map((key) => `${key}="${labels[key]}"`).join(', ')}}`;
 }
