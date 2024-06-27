@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { LoadingState, PanelData, DataFrame } from '@grafana/data';
+import { LoadingState, PanelData, DataFrame, fieldReducers, doStandardCalcs } from '@grafana/data';
 import {
   SceneObjectState,
   SceneFlexItem,
@@ -21,8 +21,13 @@ type FrameIterateCallback = (frames: DataFrame[], seriesIndex: number) => void;
 
 export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
   private unfilteredChildren: SceneFlexItem[];
-  public constructor(state: ByFrameRepeaterState) {
+  private sortBy: string;
+  private direction: string;
+  public constructor({ sortBy, direction, ...state }: ByFrameRepeaterState & { sortBy: string; direction: string }) {
     super(state);
+
+    this.sortBy = sortBy;
+    this.direction = direction;
 
     this.unfilteredChildren = [];
 
@@ -43,11 +48,50 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     });
   }
 
+  public sort = (sortBy: string, direction: string) => {
+    const data = sceneGraph.getData(this);
+    // Do not re-calculate when only the direction changes
+    if (sortBy === this.sortBy && this.direction !== direction) {
+      this.direction = direction;
+      this.state.body.setState({ children: this.state.body.state.children.reverse() });
+      return;
+    }
+    this.sortBy = sortBy;
+    this.direction = direction;
+    if (data.state.data) {
+      this.performRepeat(data.state.data);
+    }
+  };
+
+  private getSortedSeries(data: PanelData) {
+    const reducer = fieldReducers.get(this.sortBy);
+
+    const fieldCalcs = data.series.map((dataFrame) => ({
+      value: reducer.reduce?.(dataFrame.fields[1], true, true) ?? doStandardCalcs(dataFrame.fields[1], true, true),
+      field: dataFrame,
+    }));
+
+    fieldCalcs.sort((a, b) => {
+      // reducerValue will be a Record<ReducerID, number> or an empty object {}
+      if (a.value[this.sortBy] !== undefined && b.value[this.sortBy] !== undefined) {
+        return b.value[this.sortBy] - a.value[this.sortBy];
+      }
+      return 0;
+    });
+
+    if (this.direction === 'asc') {
+      fieldCalcs.reverse();
+    }
+
+    return fieldCalcs.map(({ field }) => field);
+  }
+
   private performRepeat(data: PanelData) {
     const newChildren: SceneFlexItem[] = [];
+    const sortedSeries = this.getSortedSeries(data);
 
-    for (let seriesIndex = 0; seriesIndex < data.series.length; seriesIndex++) {
-      const layoutChild = this.state.getLayoutChild(data, data.series[seriesIndex], seriesIndex);
+    for (let seriesIndex = 0; seriesIndex < sortedSeries.length; seriesIndex++) {
+      const layoutChild = this.state.getLayoutChild(data, sortedSeries[seriesIndex], seriesIndex);
       newChildren.push(layoutChild);
     }
 
@@ -60,8 +104,9 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     if (!data) {
       return;
     }
-    for (let seriesIndex = 0; seriesIndex < data.series.length; seriesIndex++) {
-      callback(data.series, seriesIndex);
+    const sortedSeries = this.getSortedSeries(data);
+    for (let seriesIndex = 0; seriesIndex < sortedSeries.length; seriesIndex++) {
+      callback(sortedSeries, seriesIndex);
     }
   };
 
