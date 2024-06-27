@@ -1,5 +1,5 @@
 import { css } from '@emotion/css';
-import React from 'react';
+import React, { useState } from 'react';
 
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import {
@@ -19,7 +19,7 @@ import {
   SceneVariableSet,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import { Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
+import { Alert, Button, DrawStyle, IconButton, LoadingPlaceholder, Stack, StackingMode, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getFilterBreakdownValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
@@ -27,7 +27,9 @@ import { buildLokiQuery } from 'services/query';
 import {
   ALL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
+  VAR_FIELD_AGGREGATE_BY,
   VAR_FIELD_GROUP_BY,
+  VAR_FIELD_GROUPBY_BY,
   VAR_FIELDS,
   VAR_FILTERS,
 } from 'services/variables';
@@ -37,12 +39,17 @@ import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
 import { BreakdownSearchScene, getLabelValue } from './BreakdownSearchScene';
+import { AggregationTypes, BreakdownAggrSelector } from './BreakdownAggrSelectorScene';
+import { BreakdownAggrBySelector } from './BreakdownAggrBySelectorScene';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
   search?: BreakdownSearchScene;
   fields: Array<SelectableValue<string>>;
 
+  aggregationValue?: string;
+  byValue?: string[];
+  byOptions: Array<{ value: string; label: string }>;
   value?: string;
   loading?: boolean;
   error?: string;
@@ -62,10 +69,15 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       $variables:
         state.$variables ??
         new SceneVariableSet({
-          variables: [new CustomVariable({ name: VAR_FIELD_GROUP_BY, defaultToAll: true, includeAll: true })],
+          variables: [
+            new CustomVariable({ name: VAR_FIELD_GROUP_BY, defaultToAll: true, includeAll: true }),
+            new CustomVariable({ name: VAR_FIELD_AGGREGATE_BY, defaultToAll: true, includeAll: true }),
+            new CustomVariable({ name: VAR_FIELD_GROUPBY_BY, value: [], includeAll: false, isMulti: true }),
+          ],
         }),
       fields: state.fields ?? [],
       loading: true,
+      byOptions: [],
       ...state,
     });
 
@@ -74,7 +86,8 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   private onActivate() {
     const variable = this.getVariable();
-
+    const aggregate = this.getAggregateVariable();
+    const by = this.getByVariable();
     sceneGraph.getAncestor(this, ServiceScene)!.subscribeToState((newState, oldState) => {
       if (newState.detectedFields !== oldState.detectedFields) {
         this.updateFields();
@@ -82,6 +95,24 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     });
 
     variable.subscribeToState((newState, oldState) => {
+      if (
+        newState.options !== oldState.options ||
+        newState.value !== oldState.value ||
+        newState.loading !== oldState.loading
+      ) {
+        this.updateBody();
+      }
+    });
+    aggregate.subscribeToState((newState, oldState) => {
+      if (
+        newState.options !== oldState.options ||
+        newState.value !== oldState.value ||
+        newState.loading !== oldState.loading
+      ) {
+        this.updateBody();
+      }
+    });
+    by.subscribeToState((newState, oldState) => {
       if (
         newState.options !== oldState.options ||
         newState.value !== oldState.value ||
@@ -107,6 +138,18 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         })),
       ],
       loading: logsScene.state.loading,
+      byOptions: [
+        ...(logsScene.state.labels?.map((label) => ({ value: label, label: label })) ?? []),
+        ...(logsScene.state.detectedFields ?? []).map((f) => ({ value: f ?? '', label: f ?? '' })),
+      ]
+        .filter((f) => f.value !== ALL_VARIABLE_VALUE && f.value !== '')
+        .reduce((acc, current) => {
+          if (!acc.find((item) => item.label === current.label)) {
+            acc.push(current);
+          }
+          return acc;
+        }, [] as Array<{ value: string; label: string }>)
+        .sort((a, b) => a.label.localeCompare(b.label)),
     });
 
     this.updateBody();
@@ -114,6 +157,24 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   private getVariable(): CustomVariable {
     const variable = sceneGraph.lookupVariable(VAR_FIELD_GROUP_BY, this)!;
+    if (!(variable instanceof CustomVariable)) {
+      throw new Error('Group by variable not found');
+    }
+
+    return variable;
+  }
+
+  private getAggregateVariable(): CustomVariable {
+    const variable = sceneGraph.lookupVariable(VAR_FIELD_AGGREGATE_BY, this)!;
+    if (!(variable instanceof CustomVariable)) {
+      throw new Error('Group by variable not found');
+    }
+
+    return variable;
+  }
+
+  private getByVariable(): CustomVariable {
+    const variable = sceneGraph.lookupVariable(VAR_FIELD_GROUPBY_BY, this)!;
     if (!(variable instanceof CustomVariable)) {
       throw new Error('Group by variable not found');
     }
@@ -136,9 +197,15 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   }
 
   private updateBody() {
+    console.log('updating body');
     const variable = this.getVariable();
+    const aggregate = this.getAggregateVariable();
+    const by = this.getByVariable();
+    console.log(by.state.value);
     const stateUpdate: Partial<FieldsBreakdownSceneState> = {
       value: String(variable.state.value),
+      aggregationValue: String(aggregate.state.value),
+      byValue: (by.state.value ?? []) as string[],
       blockingMessage: undefined,
     };
 
@@ -147,7 +214,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     } else {
       stateUpdate.body = variable.hasAllValue()
         ? this.buildFieldsLayout(this.state.fields)
-        : buildValuesLayout(variable);
+        : buildValuesLayout(variable, stateUpdate.aggregationValue, stateUpdate.byValue ?? []);
     }
 
     stateUpdate.search = new BreakdownSearchScene();
@@ -265,23 +332,99 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     variable.changeValueTo(value);
   };
 
+  public onAggregationSelectorChange = (value: SelectableValue<string>) => {
+    if (!value) {
+      return;
+    }
+
+    const variable = this.getAggregateVariable();
+    // reportAppInteraction(
+    //   USER_EVENTS_PAGES.service_details,
+    //   USER_EVENTS_ACTIONS.service_details.select_field_in_breakdown_clicked,
+    //   {
+    //     field: value,
+    //     previousField: variable.getValueText(),
+    //     view: 'fields',
+    //   }
+    // );
+
+    variable.changeValueTo(value.value ?? '');
+  };
+
+  public onBySelectorChange = (value: string[]) => {
+    const variable = this.getByVariable();
+    // reportAppInteraction(
+    //   USER_EVENTS_PAGES.service_details,
+    //   USER_EVENTS_ACTIONS.service_details.select_field_in_breakdown_clicked,
+    //   {
+    //     field: value,
+    //     previousField: variable.getValueText(),
+    //     view: 'fields',
+    //   }
+    // );
+    // Log the type of `value`
+    variable.changeValueTo(value ?? []);
+  };
+
   public static Component = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
-    const { fields, body, loading, value, blockingMessage, search } = model.useState();
+    const { fields, body, loading, value, blockingMessage, search, aggregationValue, byValue, byOptions } =
+      model.useState();
     const styles = useStyles2(getStyles);
+    const [isMetricsVisible, setIsMetricsVisible] = useState(false);
 
     return (
       <div className={styles.container}>
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
-          <div className={styles.controls}>
-            {body instanceof LayoutSwitcher && <body.Selector model={body} />}
-            {!loading && value !== ALL_VARIABLE_VALUE && search instanceof BreakdownSearchScene && (
-              <search.Component model={search} />
+          <Stack direction={'column'} gap={2}>
+            <Stack>
+              {value !== ALL_VARIABLE_VALUE && (
+                <IconButton
+                  name="graph-bar"
+                  aria-label="More aggregations"
+                  tooltip="Discover more aggregations for this field"
+                  tooltipPlacement="top-end"
+                  onClick={() => setIsMetricsVisible(!isMetricsVisible)}
+                />
+              )}
+              {!loading && fields.length > 1 && (
+                <FieldSelector label="Field" options={fields} value={value} onChange={model.onFieldSelectorChange} />
+              )}
+              {!loading && value !== ALL_VARIABLE_VALUE && search instanceof BreakdownSearchScene && (
+                <search.Component model={search} />
+              )}
+              {body instanceof LayoutSwitcher && <body.Selector model={body} className={styles.gridControls} />}
+            </Stack>
+            {isMetricsVisible && (
+              <Stack alignItems={'center'}>
+                {!loading && value !== ALL_VARIABLE_VALUE && (
+                  <>
+                    <div style={{ flexGrow: 0, flexShrink: 1, flexBasis: 'auto' }}>
+                      <span>└</span>
+                    </div>
+                    <div style={{ flexGrow: 0, flexShrink: 1, flexBasis: 'auto' }}>
+                      <BreakdownAggrSelector
+                        aggregation={aggregationValue}
+                        onAggregationChange={model.onAggregationSelectorChange}
+                      />
+                    </div>
+                  </>
+                )}
+                {!loading && value !== ALL_VARIABLE_VALUE && (
+                  <>
+                    <div style={{ flexGrow: 0, flexShrink: 1, flexBasis: 'auto' }}>
+                      <span> by </span>
+                    </div>
+                    <div style={{ flexGrow: 0, flexShrink: 1, flexBasis: 'auto' }}>
+                      <BreakdownAggrBySelector by={byValue} onChange={model.onBySelectorChange} options={byOptions} />
+                    </div>
+                  </>
+                )}
+              </Stack>
             )}
-            {!loading && fields.length > 1 && (
-              <FieldSelector label="Field" options={fields} value={value} onChange={model.onFieldSelectorChange} />
-            )}
-          </div>
-          <div className={styles.content}>{body && <body.Component model={body} />}</div>
+            <Stack>
+              <div className={styles.content}>{body && <body.Component model={body} />}</div>
+            </Stack>
+          </Stack>
         </StatusWrapper>
       </div>
     );
@@ -307,13 +450,13 @@ function getStyles(theme: GrafanaTheme2) {
       display: 'flex',
       paddingTop: theme.spacing(0),
     }),
-    controls: css({
+    gridControls: css({
+      marginBottom: 0,
+    }),
+    queryControls: css({
       flexGrow: 0,
-      display: 'flex',
-      alignItems: 'top',
-      justifyContent: 'space-between',
-      flexDirection: 'row-reverse',
-      gap: theme.spacing(2),
+      flexShrink: 1,
+      flexBasis: 'auto',
     }),
   };
 }
@@ -337,9 +480,53 @@ function getExpr(field: string) {
 
 const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
-function buildValuesLayout(variable: CustomVariable) {
+function getFieldExpr(field: string, aggregation: string | undefined, by: string[]): string {
+  if (!aggregation) {
+    return '';
+  }
+  switch (aggregation ?? '') {
+    case AggregationTypes.count.value:
+      return `sum by (${[field, ...by].join(
+        `,`
+      )}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${field}!="" [$__auto]))`;
+    case AggregationTypes.sum.value:
+      return (
+        `sum by (${by.join(`,`)}) (${aggregation}(${LOG_STREAM_SELECTOR_EXPR} | unwrap ` +
+        (field === 'duration' ? `duration` : field === 'bytes' ? `bytes` : ``) +
+        `(${field}) [$__auto]))`
+      );
+    case AggregationTypes.avg.value:
+    case AggregationTypes.min.value:
+    case AggregationTypes.max.value:
+      return (
+        `${aggregation}(${LOG_STREAM_SELECTOR_EXPR} | unwrap ` +
+        (field === 'duration' ? `duration` : field === 'bytes' ? `bytes` : ``) +
+        `(${field}) [$__auto]) by (${by.join(`,`)})`
+      );
+    case AggregationTypes.rate.value:
+      return (
+        `sum by (${by.join(`,`)}) (${aggregation}(${LOG_STREAM_SELECTOR_EXPR} | unwrap ` +
+        (field === 'duration' ? `duration` : field === 'bytes' ? `bytes` : ``) +
+        `(${field}) [$__auto])) `
+      );
+    case AggregationTypes.p50.value:
+    case AggregationTypes.p75.value:
+    case AggregationTypes.p90.value:
+      return (
+        `quantile_over_time(${aggregation}, ${LOG_STREAM_SELECTOR_EXPR} | unwrap ` +
+        (field === 'duration' ? `duration` : field === 'bytes' ? `bytes` : ``) +
+        `(${field}) [$__auto]) by (${by.join(`,`)})`
+      );
+  }
+  return ``;
+}
+
+function buildValuesLayout(variable: CustomVariable, aggregation: string | undefined, by: string[]) {
   const tagKey = variable.getValueText();
-  const query = buildLokiQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
+  const expr = getFieldExpr(tagKey, aggregation, by);
+  console.log(expr);
+  console.log(by);
+  const query = buildLokiQuery(expr, { legendFormat: `{{${tagKey}}}` });
 
   return new LayoutSwitcher({
     $data: getQueryRunner(query),

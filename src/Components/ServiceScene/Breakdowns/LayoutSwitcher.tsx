@@ -17,11 +17,11 @@ export interface LayoutSwitcherState extends SceneObjectState {
 export type LayoutType = 'single' | 'grid' | 'rows';
 
 export class LayoutSwitcher extends SceneObjectBase<LayoutSwitcherState> {
-  public Selector({ model }: { model: LayoutSwitcher }) {
+  public Selector({ model, className }: { model: LayoutSwitcher; className?: string }) {
     const { active, options } = model.useState();
 
     return (
-      <Field>
+      <Field className={className}>
         <RadioButtonGroup options={options} value={active} onChange={model.onLayoutChange} />
       </Field>
     );

@@ -21,6 +21,7 @@ export class BreakdownSearchScene extends SceneObjectBase<BreakdownSearchSceneSt
 
   public static Component = ({ model }: SceneComponentProps<BreakdownSearchScene>) => {
     const { filter } = model.useState();
+
     return (
       <SearchInput
         value={filter}
