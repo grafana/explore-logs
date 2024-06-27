@@ -220,9 +220,10 @@ export const Table = (props: Props) => {
       .filter((key) => columns[key].active)
       .find((key) => key === fieldDisplayName);
 
-    if (key) {
+    if (key && width > 0) {
       const map = { ...columnWidthMap };
       map[key] = width;
+      console.log('update map', map);
       setColumnWidthMap(map);
     }
   };
