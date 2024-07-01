@@ -19,6 +19,12 @@ test.describe('explore services breakdown page', () => {
     await expect(page).toHaveURL(/broadcast/);
   });
 
+  test('logs panel should have panel-content class suffix', async ({ page }) => {
+    await explorePage.serviceBreakdownSearch.click();
+    await explorePage.serviceBreakdownSearch.fill('broadcast');
+    await expect(page.getByTestId('data-testid Panel header Logs').locator('[class$="panel-content"]')).toBeVisible();
+  });
+
   test('should filter table panel on text search', async ({ page }) => {
     const initialText = await page.getByTestId(testIds.table.wrapper).allTextContents()
     await explorePage.serviceBreakdownSearch.click();
@@ -254,6 +260,9 @@ test.describe('explore services breakdown page', () => {
   test('should update a filter and run new logs', async ({ page }) => {
     await page.getByTestId('AdHocFilter-service_name').getByRole('img').nth(1).click();
     await page.getByText('mimir-distributor').click();
+
+    // Assert the panel is done loading before going on
+    await expect(page.getByTestId(testIds.logsPanelHeader.header).getByLabel('Panel loading bar')).not.toBeVisible()
 
     // open logs panel
     await page.getByTitle('See log details').nth(1).click();

@@ -54,5 +54,7 @@ export const USER_EVENTS_ACTIONS = {
     logs_detail_filter_applied: 'logs_detail_filter_applied',
     // Popover menu filter
     logs_popover_line_filter: 'logs_popover_line_filter',
+    // Value breakdown sort change
+    value_breakdown_sort_change: 'value_breakdown_sort_change',
   },
 } as const;

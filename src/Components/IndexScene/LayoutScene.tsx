@@ -63,7 +63,7 @@ function getStyles(theme: GrafanaTheme2) {
     container: css({
       flexGrow: 1,
       display: 'flex',
-      gap: theme.spacing(2),
+      gap: theme.spacing(1),
       minHeight: '100%',
       flexDirection: 'column',
       padding: theme.spacing(2),
