@@ -25,6 +25,7 @@ export const testIds = {
     buttonExcludedPattern: 'data-testid button-excluded-pattern',
   },
   logsPanelHeader: {
+    header: 'data-testid Panel header Logs',
     radio: 'data-testid radio-button',
   },
   table: {

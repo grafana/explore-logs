@@ -261,6 +261,9 @@ test.describe('explore services breakdown page', () => {
     await page.getByTestId('AdHocFilter-service_name').getByRole('img').nth(1).click();
     await page.getByText('mimir-distributor').click();
 
+    // Assert the panel is done loading before going on
+    await expect(page.getByTestId(testIds.logsPanelHeader.header).getByLabel('Panel loading bar')).not.toBeVisible()
+
     // open logs panel
     await page.getByTitle('See log details').nth(1).click();
 
