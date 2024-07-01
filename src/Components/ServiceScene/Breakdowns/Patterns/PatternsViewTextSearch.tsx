@@ -3,8 +3,8 @@ import React, { ChangeEvent } from 'react';
 import { Field } from '@grafana/ui';
 import { css } from '@emotion/css';
 import { PatternFrame, PatternsBreakdownScene } from './PatternsBreakdownScene';
-import { debouncedFuzzySearch, fuzzySearch } from '../../../services/search';
-import { SearchInput } from './SearchInput';
+import { debouncedFuzzySearch, fuzzySearch } from '../../../../services/search';
+import { SearchInput } from '../SearchInput';
 
 export interface PatternsViewTextSearchState extends SceneObjectState {}
 

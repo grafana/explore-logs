@@ -8,16 +8,18 @@ import {
 } from '@grafana/scenes';
 import { PatternFrame } from './PatternsBreakdownScene';
 import React from 'react';
-import { AppliedPattern, IndexScene } from '../../IndexScene/IndexScene';
+import { AppliedPattern, IndexScene } from '../../../IndexScene/IndexScene';
 import { DataFrame, GrafanaTheme2, LoadingState, PanelData, scaledUnits } from '@grafana/data';
 import { AxisPlacement, Column, InteractiveTable, TooltipDisplayMode, useTheme2 } from '@grafana/ui';
 import { CellProps } from 'react-table';
 import { css, cx } from '@emotion/css';
 import { onPatternClick } from './FilterByPatternsButton';
-import { FilterButton } from '../../FilterButton';
+import { FilterButton } from '../../../FilterButton';
 import { config } from '@grafana/runtime';
-import { testIds } from '../../../services/testIds';
+import { testIds } from '../../../../services/testIds';
 import { PatternsFrameScene } from './PatternsFrameScene';
+import { PatternNameLabel } from './PatternNameLabel';
+import { getExplorationFor } from 'services/scenes';
 
 // copied from from grafana repository packages/grafana-data/src/valueFormats/categories.ts
 // that is used in Grafana codebase for "short" units
@@ -126,7 +128,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
         cell: (props: CellProps<WithCustomCellData>) => {
           return (
             <div className={cx(getTablePatternTextStyles(), styles.tablePatternTextDefault)}>
-              {props.cell.row.original.pattern}
+              <PatternNameLabel exploration={getExplorationFor(this)} pattern={props.cell.row.original.pattern} />
             </div>
           );
         },
