@@ -33,10 +33,12 @@ export default defineConfig<PluginOptions>({
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
 
-    video: {
-      mode: 'on-first-retry',
-    }
+    // Turn on when debugging local tests
+    // video: {
+    //   mode: 'on',
+    // }
   },
+  expect: { timeout: 15000 },
 
   /* Configure projects for major browsers */
   projects: [
