@@ -1,4 +1,4 @@
-import { css, cx } from '@emotion/css';
+import { css } from '@emotion/css';
 import React from 'react';
 
 import { GrafanaTheme2 } from '@grafana/data';
@@ -53,19 +53,18 @@ export const PatternFieldLabelStatsRow = ({ active, count, proportion, value }: 
   const style = useStyles2(getStyles);
   const percent = `${Math.round(proportion * 100)}%`;
   const barStyle = { width: percent };
-  const className = active ? cx([style.logsStatsRow, style.logsStatsRowActive]) : cx([style.logsStatsRow]);
 
   return (
-    <div className={className}>
-      <div className={cx([style.logsStatsRowLabel])}>
-        <div className={cx([style.logsStatsRowValue])} title={value}>
+    <div className={active ? `${style.logsStatsRow} ${style.logsStatsRowActive}` : style.logsStatsRow}>
+      <div className={style.logsStatsRowLabel}>
+        <div className={style.logsStatsRowValue} title={value}>
           {value}
         </div>
-        <div className={cx([style.logsStatsRowCount])}>{count}</div>
-        <div className={cx([style.logsStatsRowPercent])}>{percent}</div>
+        <div className={style.logsStatsRowCount}>{count}</div>
+        <div className={style.logsStatsRowPercent}>{percent}</div>
       </div>
-      <div className={cx([style.logsStatsRowBar])}>
-        <div className={cx([style.logsStatsRowInnerBar])} style={barStyle} />
+      <div className={style.logsStatsRowBar}>
+        <div className={style.logsStatsRowInnerBar} style={barStyle} />
       </div>
     </div>
   );
