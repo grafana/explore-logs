@@ -24,7 +24,7 @@ import {
   explorationDS,
   VAR_DATASOURCE,
   VAR_FIELDS,
-  VAR_FILTERS,
+  VAR_LABELS,
   VAR_LINE_FILTER,
   VAR_LOGS_FORMAT,
   VAR_PATTERNS,
@@ -150,8 +150,8 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
     value,
   }));
 
-  const filterVariable = new AdHocFiltersVariable({
-    name: VAR_FILTERS,
+  const labelsVariable = new AdHocFiltersVariable({
+    name: VAR_LABELS,
     datasource: explorationDS,
     layout: 'vertical',
     label: 'Service',
@@ -161,7 +161,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
     key: 'adhoc_service_filter',
   });
 
-  filterVariable._getOperators = function () {
+  labelsVariable._getOperators = function () {
     return operators;
   };
 
@@ -193,7 +193,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
   return new SceneVariableSet({
     variables: [
       dsVariable,
-      filterVariable,
+      labelsVariable,
       fieldsVariable,
       new CustomVariable({
         name: VAR_PATTERNS,

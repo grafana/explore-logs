@@ -5,10 +5,12 @@ import { config } from '@grafana/runtime';
 import { sceneGraph } from '@grafana/scenes';
 import { ToolbarButton } from '@grafana/ui';
 
-import { getDataSource, getQueryExpr } from 'services/scenes';
+import { getDataSource } from 'services/scenes';
 import { testIds } from 'services/testIds';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
+import { buildBaseQueryExpression } from 'services/query';
+
 interface GoToExploreButtonState {
   exploration: IndexScene;
 }
@@ -20,7 +22,7 @@ export const GoToExploreButton = ({ exploration }: GoToExploreButtonState) => {
       USER_EVENTS_ACTIONS.service_details.open_in_explore_clicked
     );
     const datasource = getDataSource(exploration);
-    const expr = getQueryExpr(exploration).replace(/\s+/g, ' ').trimEnd();
+    const expr = buildBaseQueryExpression(exploration).replace(/\s+/g, ' ').trimEnd();
     const timeRange = sceneGraph.getTimeRange(exploration).state.value;
     const exploreState = JSON.stringify({
       ['loki-explore']: {

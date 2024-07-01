@@ -24,16 +24,15 @@ import { Unsubscribable } from 'rxjs';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { DetectedLabelsResponse, extractParserAndFieldsFromDataFrame } from 'services/fields';
 import { getQueryRunner } from 'services/panel';
-import { buildLokiQuery } from 'services/query';
+import { buildBaseQueryExpression, buildLokiQuery } from 'services/query';
 import { EXPLORATIONS_ROUTE, PLUGIN_ID } from 'services/routing';
 import { getExplorationFor, getLokiDatasource } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
   LEVEL_VARIABLE_VALUE,
-  LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE,
   VAR_FIELDS,
-  VAR_FILTERS,
+  VAR_LABELS,
   VAR_LINE_FILTER,
   VAR_LOGS_FORMAT,
   VAR_PATTERNS,
@@ -80,14 +79,13 @@ export interface ServiceSceneState extends SceneObjectState {
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['actionView'] });
   protected _variableDependency = new VariableDependencyConfig(this, {
-    variableNames: [VAR_DATASOURCE, VAR_FILTERS, VAR_FIELDS, VAR_PATTERNS],
+    variableNames: [VAR_DATASOURCE, VAR_LABELS, VAR_FIELDS, VAR_PATTERNS],
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
   });
 
   public constructor(state: MakeOptional<ServiceSceneState, 'body'>) {
     super({
       body: state.body ?? buildGraphScene(),
-      $data: getQueryRunner(buildLokiQuery(LOG_STREAM_SELECTOR_EXPR)),
       loading: true,
       ...state,
     });
@@ -96,7 +94,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private getFiltersVariable(): AdHocFiltersVariable {
-    const variable = sceneGraph.lookupVariable(VAR_FILTERS, this)!;
+    const variable = sceneGraph.lookupVariable(VAR_LABELS, this)!;
     if (!(variable instanceof AdHocFiltersVariable)) {
       throw new Error('Filters variable not found');
     }
@@ -150,20 +148,29 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private onActivate() {
+    const unsubs: Unsubscribable[] = [];
+
+    const queryRunner = getQueryRunner(buildLokiQuery(buildBaseQueryExpression(this)));
+    unsubs.push(
+      queryRunner.subscribeToState((newState, oldState) => {
+        // update fields, if the query runner got a new loadingstate different from the old one, and it's done or errored
+        if (
+          newState.data?.state &&
+          newState.data?.state !== oldState.data?.state &&
+          [LoadingState.Done, LoadingState.Error].includes(newState.data?.state)
+        ) {
+          this.updateFields();
+        }
+      })
+    );
+    this.setState({
+      $data: queryRunner,
+    });
     if (this.state.actionView === undefined) {
       this.setActionView('logs');
     }
 
     this.setEmptyFiltersRedirection();
-
-    const unsubs: Unsubscribable[] = [];
-    if (this.state.$data) {
-      unsubs.push(
-        this.state.$data?.subscribeToState(() => {
-          this.updateFields();
-        })
-      );
-    }
 
     this.updateLabels();
     this.updatePatterns();
@@ -258,7 +265,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
 
     const timeRange = sceneGraph.getTimeRange(this).state.value;
-    const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
+    const filters = sceneGraph.lookupVariable(VAR_LABELS, this)! as AdHocFiltersVariable;
     const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
     const excludeLabels = [ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE];
 
@@ -293,7 +300,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       return;
     }
     const timeRange = sceneGraph.getTimeRange(this).state.value;
-    const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
+    const filters = sceneGraph.lookupVariable(VAR_LABELS, this)! as AdHocFiltersVariable;
     const { detectedLabels } = await ds.getResource<DetectedLabelsResponse>(
       'detected_labels',
       {

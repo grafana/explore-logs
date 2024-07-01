@@ -3,7 +3,7 @@ import { DrawStyle, StackingMode } from '@grafana/ui';
 import { PanelBuilders, SceneCSSGridItem, SceneDataNode } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
 import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
-import { VAR_FIELDS, VAR_FILTERS } from './variables';
+import { VAR_FIELDS, VAR_LABELS } from './variables';
 import { setLeverColorOverrides } from './panel';
 
 export type DetectedLabel = {
@@ -41,7 +41,7 @@ export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
 export function getFilterBreakdownValueScene(
   getTitle: (df: DataFrame) => string,
   style: DrawStyle,
-  variableName: typeof VAR_FIELDS | typeof VAR_FILTERS
+  variableName: typeof VAR_FIELDS | typeof VAR_LABELS
 ) {
   return (data: PanelData, frame: DataFrame, frameIndex: number) => {
     const panel = PanelBuilders.timeseries() //

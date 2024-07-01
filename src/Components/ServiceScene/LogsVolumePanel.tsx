@@ -3,8 +3,8 @@ import React from 'react';
 import { PanelBuilders, SceneComponentProps, SceneObjectBase, SceneObjectState, VizPanel } from '@grafana/scenes';
 import { DrawStyle, LegendDisplayMode, StackingMode } from '@grafana/ui';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
-import { buildLokiQuery } from 'services/query';
-import { LEVEL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR } from 'services/variables';
+import { buildBaseQueryExpression, buildLokiQuery } from 'services/query';
+import { LEVEL_VARIABLE_VALUE } from 'services/variables';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
@@ -33,7 +33,9 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       .setData(
         getQueryRunner(
           buildLokiQuery(
-            `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ [$__auto]))`,
+            `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time(${buildBaseQueryExpression(
+              this
+            )} | drop __error__ [$__auto]))`,
             { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}` }
           )
         )
