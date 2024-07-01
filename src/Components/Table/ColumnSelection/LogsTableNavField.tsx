@@ -31,6 +31,11 @@ function getStyles(theme: GrafanaTheme2) {
       justifyContent: 'space-between',
       width: '100%',
     }),
+    customWidthWrap: css({
+      fontSize: theme.typography.bodySmall.fontSize,
+      cursor: 'pointer',
+    }),
+    customWidthIcon: css({}),
     // Hide text that overflows, had to select elements within the Checkbox component, so this is a bit fragile
     checkboxLabel: css({
       '> span': {
@@ -50,6 +55,8 @@ export function LogsTableNavField(props: {
   labels: Record<string, FieldNameMeta>;
   draggable?: boolean;
   showCount?: boolean;
+  setColumnWidthMap?: (map: Record<string, number>) => void;
+  columnWidthMap?: Record<string, number>;
 }): React.JSX.Element | null {
   const theme = useTheme2();
   const styles = getStyles(theme);
@@ -71,6 +78,19 @@ export function LogsTableNavField(props: {
                 {props.labels[props.label]?.cardinality}{' '}
                 {props.labels[props.label]?.cardinality === 1 ? 'value' : 'values'}
               </div>
+            </div>
+          )}
+          {props.columnWidthMap && props.setColumnWidthMap && props.columnWidthMap?.[props.label] !== undefined && (
+            <div
+              onClick={() => {
+                const { [props.label]: omit, ...map } = { ...props.columnWidthMap };
+                props?.setColumnWidthMap?.(map);
+              }}
+              title={'Clear column width override'}
+              className={styles.customWidthWrap}
+            >
+              Width: {props.columnWidthMap?.[props.label]}
+              <Icon className={styles.customWidthIcon} name={'x'} />
             </div>
           )}
         </div>

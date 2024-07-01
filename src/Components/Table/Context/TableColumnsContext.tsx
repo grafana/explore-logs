@@ -16,6 +16,8 @@ type TableColumnsContextType = {
   setVisible: (v: boolean) => void;
   bodyState: LogLineState;
   setBodyState: (s: LogLineState) => void;
+  setColumnWidthMap(map: Record<string, number>): void;
+  columnWidthMap: Record<string, number>;
 };
 
 export enum LogLineState {
@@ -25,6 +27,8 @@ export enum LogLineState {
 }
 
 const TableColumnsContext = createContext<TableColumnsContextType>({
+  columnWidthMap: {},
+  setColumnWidthMap: () => {},
   columns: {},
   filteredColumns: {},
   setColumns: () => {},
@@ -74,6 +78,7 @@ export const TableColumnContextProvider = ({
   const [bodyState, setBodyState] = useState<LogLineState>(LogLineState.auto);
   const [filteredColumns, setFilteredColumns] = useState<FieldNameMetaStore | undefined>(undefined);
   const [visible, setVisible] = useState(false);
+  const [columnWidthMap, setColumnWidthMap] = useState<Record<string, number>>({});
 
   const getActiveColumns = (columns: FieldNameMetaStore): string[] => {
     let activeColumns: string[] = [];
@@ -134,6 +139,8 @@ export const TableColumnContextProvider = ({
   return (
     <TableColumnsContext.Provider
       value={{
+        setColumnWidthMap,
+        columnWidthMap,
         bodyState,
         setBodyState,
         setFilteredColumns,
