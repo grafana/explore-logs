@@ -63,6 +63,7 @@ export function getQueryRunner(query: LokiQuery) {
       $data: new SceneQueryRunner({
         datasource: explorationDS,
         queries: [query],
+        minInterval: '10s',
       }),
       transformations: [sortLevelTransformation],
     });
@@ -71,5 +72,6 @@ export function getQueryRunner(query: LokiQuery) {
   return new SceneQueryRunner({
     datasource: explorationDS,
     queries: [query],
+    minInterval: '10s',
   });
 }
