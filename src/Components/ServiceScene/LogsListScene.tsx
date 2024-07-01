@@ -232,14 +232,13 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   };
 }
 
-export function buildLogsListScene() {
+export function buildLogsListScene(collapsed: boolean) {
   return new SceneFlexLayout({
     direction: 'column',
+    ySizing: 'content',
+
     children: [
-      new SceneFlexItem({
-        minHeight: 200,
-        body: new LogsVolumePanel({}),
-      }),
+      new LogsVolumePanel({collapsed}),
       new SceneFlexItem({
         minHeight: '470px',
         height: 'calc(100vh - 500px)',
