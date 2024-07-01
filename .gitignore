@@ -39,3 +39,6 @@ ci/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# generator go vendoring
+generator/vendor/

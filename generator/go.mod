@@ -5,7 +5,6 @@ go 1.22
 toolchain go1.22.0
 
 require (
-	bou.ke/monkey v1.0.2
 	github.com/brianvoe/gofakeit v3.18.0+incompatible
 	github.com/brianvoe/gofakeit/v7 v7.0.2
 	github.com/grafana/loki-client-go v0.0.0-20230116142646-e7494d0ef70c
