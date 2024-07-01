@@ -19,10 +19,11 @@ import { LogsVolumePanel } from './LogsVolumePanel';
 import { css } from '@emotion/css';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { DataFrame } from '@grafana/data';
-import { FilterType, addToFilters } from './Breakdowns/AddToFiltersButton';
-import { LabelType, getLabelTypeFromFrame } from 'services/fields';
+import { addToFilters, FilterType } from './Breakdowns/AddToFiltersButton';
+import { getLabelTypeFromFrame, LabelType } from 'services/fields';
 import { VAR_FIELDS, VAR_FILTERS } from 'services/variables';
 import { getAdHocFiltersVariable } from 'services/scenes';
+import { locationService } from '@grafana/runtime';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -90,6 +91,9 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   }
 
   public onActivate() {
+    const searchParams = new URLSearchParams(locationService.getLocation().search);
+    this.setStateFromUrl(searchParams);
+
     if (!this.state.panel) {
       this.setState({
         panel: this.getVizPanel(),
@@ -103,6 +107,28 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         });
       }
     });
+  }
+
+  private setStateFromUrl(searchParams: URLSearchParams) {
+    const state: Partial<LogsListSceneState> = {};
+    const selectedLineUrl = searchParams.get('selectedLine');
+    const urlColumnsUrl = searchParams.get('urlColumns');
+    const vizTypeUrl = searchParams.get('visualizationType');
+
+    if (selectedLineUrl) {
+      state.selectedLine = JSON.parse(selectedLineUrl);
+    }
+    if (urlColumnsUrl) {
+      state.urlColumns = JSON.parse(urlColumnsUrl);
+    }
+    if (vizTypeUrl) {
+      state.visualizationType = JSON.parse(vizTypeUrl);
+    }
+
+    // If state is saved in url on activation, save to scene state
+    if (Object.keys(state).length) {
+      this.setState(state);
+    }
   }
 
   private handleLabelFilter(key: string, value: string, frame: DataFrame | undefined, operator: FilterType) {

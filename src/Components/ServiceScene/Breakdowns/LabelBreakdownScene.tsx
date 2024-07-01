@@ -32,7 +32,7 @@ import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
-import { sortLabelsByCardinality, getLabelOptions } from 'services/filters';
+import { getLabelOptions, sortLabelsByCardinality } from 'services/filters';
 import { BreakdownSearchScene, getLabelValue } from './BreakdownSearchScene';
 import { getSortByPreference } from 'services/store';
 import { SortByScene, SortCriteriaChanged } from './SortByScene';
@@ -279,7 +279,6 @@ function buildLabelsLayout(options: Array<SelectableValue<string>>) {
       { value: 'rows', label: 'Rows' },
     ],
     active: 'grid',
-    actionView: 'labels',
     layouts: [
       new SceneCSSGridLayout({
         templateColumns: GRID_TEMPLATE_COLUMNS,
@@ -326,7 +325,6 @@ function buildLabelValuesLayout(variable: CustomVariable) {
       { value: 'rows', label: 'Rows' },
     ],
     active: 'grid',
-    actionView: 'labels',
     layouts: [
       new SceneFlexLayout({
         direction: 'column',
