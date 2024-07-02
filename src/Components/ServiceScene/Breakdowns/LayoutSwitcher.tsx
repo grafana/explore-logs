@@ -4,7 +4,7 @@ import { SelectableValue } from '@grafana/data';
 import { SceneComponentProps, SceneObject, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { Field, RadioButtonGroup } from '@grafana/ui';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
-import { getSlug } from '../../Pages';
+import { getSlug } from '../../../services/routing';
 
 export interface LayoutSwitcherState extends SceneObjectState {
   active: LayoutType;

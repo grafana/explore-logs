@@ -8,17 +8,17 @@ import {
 } from '@grafana/scenes';
 import {
   DRILLDOWN_URL_KEYS,
+  extractServiceFromRoute,
   navigateToIndex,
   PLUGIN_BASE_URL,
   prefixRoute,
   ROUTE_DEFINITIONS,
   ROUTES,
   SERVICE_URL_KEYS,
-  SLUGS,
+  PageSlugs,
 } from '../services/routing';
 import { PageLayoutType } from '@grafana/data';
 import { IndexScene } from './IndexScene/IndexScene';
-import { locationService } from '@grafana/runtime';
 
 function getServicesScene() {
   const DEFAULT_TIME_RANGE = { from: 'now-15m', to: 'now' };
@@ -34,28 +34,28 @@ export function makeIndexPage() {
   return new SceneAppPage({
     // Top level breadcrumb
     title: 'Logs',
-    url: prefixRoute(SLUGS.explore),
+    url: prefixRoute(PageSlugs.explore),
     layout: PageLayoutType.Custom,
     preserveUrlKeys: SERVICE_URL_KEYS,
-    routePath: prefixRoute(SLUGS.explore),
+    routePath: prefixRoute(PageSlugs.explore),
     getScene: () => getServicesScene(),
     drilldowns: [
       {
         routePath: ROUTE_DEFINITIONS.logs,
-        getPage: (routeMatch, parent) => makeBreakdownPage(routeMatch, parent, SLUGS.logs),
+        getPage: (routeMatch, parent) => makeBreakdownPage(routeMatch, parent, PageSlugs.logs),
         defaultRoute: true,
       },
       {
         routePath: ROUTE_DEFINITIONS.labels,
-        getPage: (routeMatch, parent) => makeBreakdownPage(routeMatch, parent, SLUGS.labels),
+        getPage: (routeMatch, parent) => makeBreakdownPage(routeMatch, parent, PageSlugs.labels),
       },
       {
         routePath: ROUTE_DEFINITIONS.patterns,
-        getPage: (routeMatch, parent) => makeBreakdownPage(routeMatch, parent, SLUGS.patterns),
+        getPage: (routeMatch, parent) => makeBreakdownPage(routeMatch, parent, PageSlugs.patterns),
       },
       {
         routePath: ROUTE_DEFINITIONS.fields,
-        getPage: (routeMatch, parent) => makeBreakdownPage(routeMatch, parent, SLUGS.fields),
+        getPage: (routeMatch, parent) => makeBreakdownPage(routeMatch, parent, PageSlugs.fields),
       },
       {
         routePath: '*',
@@ -94,7 +94,7 @@ function makeEmptyScene(): (routeMatch: SceneRouteMatch) => EmbeddedScene {
 export function makeBreakdownPage(
   routeMatch: SceneRouteMatch<{ service: string }>,
   parent: SceneAppPageLike,
-  slug: SLUGS
+  slug: PageSlugs
 ): SceneAppPage {
   const { service } = extractServiceFromRoute(routeMatch);
 
@@ -108,18 +108,7 @@ export function makeBreakdownPage(
   });
 }
 
-export function getSlug() {
-  const location = locationService.getLocation();
-  const slug = location.pathname.slice(location.pathname.lastIndexOf('/') + 1, location.pathname.length);
-  return slug as SLUGS;
-}
-
-export function extractServiceFromRoute(routeMatch: SceneRouteMatch<{ service: string }>): { service: string } {
-  const service = routeMatch.params.service;
-  return { service };
-}
-
-function slugToBreadcrumbTitle(slug: SLUGS) {
+function slugToBreadcrumbTitle(slug: PageSlugs) {
   if (slug === 'fields') {
     return 'Detected fields';
   }

@@ -11,11 +11,12 @@ import {
   VAR_PATTERNS,
 } from './variables';
 import { locationService } from '@grafana/runtime';
+import { SceneRouteMatch } from '@grafana/scenes';
 
 export const PLUGIN_ID = pluginJson.id;
 export const PLUGIN_BASE_URL = `/a/${PLUGIN_ID}`;
 
-export enum SLUGS {
+export enum PageSlugs {
   explore = 'explore',
   logs = 'logs',
   labels = 'labels',
@@ -32,22 +33,25 @@ export function decodeParameter(parameter: string): string {
 }
 
 export const ROUTES = {
-  explore: () => prefixRoute(SLUGS.explore),
-  logs: (service: string) => prefixRoute(`${SLUGS.explore}/service/${encodeParameter(service)}/${SLUGS.logs}`),
-  fields: (service: string) => prefixRoute(`${SLUGS.explore}/service/${encodeParameter(service)}/${SLUGS.fields}`),
-  patterns: (service: string) => prefixRoute(`${SLUGS.explore}/service/${encodeParameter(service)}/${SLUGS.patterns}`),
-  labels: (service: string) => prefixRoute(`${SLUGS.explore}/service/${encodeParameter(service)}/${SLUGS.labels}`),
+  explore: () => prefixRoute(PageSlugs.explore),
+  logs: (service: string) => prefixRoute(`${PageSlugs.explore}/service/${encodeParameter(service)}/${PageSlugs.logs}`),
+  fields: (service: string) =>
+    prefixRoute(`${PageSlugs.explore}/service/${encodeParameter(service)}/${PageSlugs.fields}`),
+  patterns: (service: string) =>
+    prefixRoute(`${PageSlugs.explore}/service/${encodeParameter(service)}/${PageSlugs.patterns}`),
+  labels: (service: string) =>
+    prefixRoute(`${PageSlugs.explore}/service/${encodeParameter(service)}/${PageSlugs.labels}`),
 };
 
-export const ROUTE_DEFINITIONS: Record<keyof typeof SLUGS, string> = {
-  explore: prefixRoute(SLUGS.explore),
-  logs: prefixRoute(`${SLUGS.explore}/service/:service/${SLUGS.logs}`),
-  fields: prefixRoute(`${SLUGS.explore}/service/:service/${SLUGS.fields}`),
-  patterns: prefixRoute(`${SLUGS.explore}/service/:service/${SLUGS.patterns}`),
-  labels: prefixRoute(`${SLUGS.explore}/service/:service/${SLUGS.labels}`),
+export const ROUTE_DEFINITIONS: Record<keyof typeof PageSlugs, string> = {
+  explore: prefixRoute(PageSlugs.explore),
+  logs: prefixRoute(`${PageSlugs.explore}/service/:service/${PageSlugs.logs}`),
+  fields: prefixRoute(`${PageSlugs.explore}/service/:service/${PageSlugs.fields}`),
+  patterns: prefixRoute(`${PageSlugs.explore}/service/:service/${PageSlugs.patterns}`),
+  labels: prefixRoute(`${PageSlugs.explore}/service/:service/${PageSlugs.labels}`),
 };
 
-export const EXPLORATIONS_ROUTE = `${PLUGIN_BASE_URL}/${SLUGS.explore}`;
+export const EXPLORATIONS_ROUTE = `${PLUGIN_BASE_URL}/${PageSlugs.explore}`;
 
 // Prefixes the route with the base URL of the plugin
 export function prefixRoute(route: string): string {
@@ -88,7 +92,7 @@ export function navigateToIndex() {
   locationService.push(serviceUrl);
 }
 
-export function navigateToBreakdown(path: SLUGS | string, extraQueryParams?: UrlQueryMap) {
+export function navigateToBreakdown(path: PageSlugs | string, extraQueryParams?: UrlQueryMap) {
   const location = locationService.getLocation();
   const pathParts = location.pathname.split('/');
   const currentSlug = pathParts[pathParts.length - 1];
@@ -102,7 +106,7 @@ export function navigateToBreakdown(path: SLUGS | string, extraQueryParams?: Url
   locationService.push(breakdownUrl);
 }
 
-export function buildBreakdownUrl(path: SLUGS | string, extraQueryParams?: UrlQueryMap): string {
+export function buildBreakdownUrl(path: PageSlugs | string, extraQueryParams?: UrlQueryMap): string {
   return urlUtil.renderUrl(path, buildBreakdownRoute(extraQueryParams));
 }
 
@@ -121,6 +125,17 @@ export function buildBreakdownRoute(extraQueryParams?: UrlQueryMap): UrlQueryMap
 
 export function buildServicesUrl(path: string, extraQueryParams?: UrlQueryMap): string {
   return urlUtil.renderUrl(path, buildServicesRoute(extraQueryParams));
+}
+
+export function getSlug() {
+  const location = locationService.getLocation();
+  const slug = location.pathname.slice(location.pathname.lastIndexOf('/') + 1, location.pathname.length);
+  return slug as PageSlugs;
+}
+
+export function extractServiceFromRoute(routeMatch: SceneRouteMatch<{ service: string }>): { service: string } {
+  const service = routeMatch.params.service;
+  return { service };
 }
 
 export function buildServicesRoute(extraQueryParams?: UrlQueryMap): UrlQueryMap {

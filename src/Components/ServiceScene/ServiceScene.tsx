@@ -22,7 +22,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'se
 import { DetectedLabelsResponse, extractParserAndFieldsFromDataFrame } from 'services/fields';
 import { getQueryRunner } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
-import { navigateToBreakdown, navigateToIndex, PLUGIN_ID, SLUGS } from 'services/routing';
+import { getSlug, navigateToBreakdown, navigateToIndex, PLUGIN_ID, PageSlugs } from 'services/routing';
 import { getExplorationFor, getLokiDatasource } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
@@ -42,7 +42,6 @@ import { buildLogsListScene } from './LogsListScene';
 import { testIds } from 'services/testIds';
 import { sortLabelsByCardinality } from 'services/filters';
 import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
-import { getSlug } from '../Pages';
 
 export interface LokiPattern {
   pattern: string;
@@ -51,7 +50,7 @@ export interface LokiPattern {
 
 interface BreakdownViewDefinition {
   displayName: string;
-  value: SLUGS;
+  value: PageSlugs;
   testId: string;
   getScene: (changeFields: (f: string[]) => void) => SceneObject;
 }
@@ -159,7 +158,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       .finally(() => {
         // For patterns, we don't want to reload to logs as we allow users to select multiple patterns
         if (variable.state.name !== VAR_PATTERNS) {
-          navigateToBreakdown(SLUGS.logs);
+          navigateToBreakdown(PageSlugs.logs);
         }
       })
       .catch((err) => {
@@ -293,7 +292,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
   }
 
-  public setBreakdownView(breakdownView?: SLUGS) {
+  public setBreakdownView(breakdownView?: PageSlugs) {
     const { body } = this.state;
     const breakdownViewDef = breakdownViewsDefinitions.find((v) => v.value === breakdownView);
 
@@ -322,25 +321,25 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 const breakdownViewsDefinitions: BreakdownViewDefinition[] = [
   {
     displayName: 'Logs',
-    value: SLUGS.logs,
+    value: PageSlugs.logs,
     getScene: () => buildLogsListScene(),
     testId: testIds.exploreServiceDetails.tabLogs,
   },
   {
     displayName: 'Labels',
-    value: SLUGS.labels,
+    value: PageSlugs.labels,
     getScene: () => buildLabelBreakdownActionScene(),
     testId: testIds.exploreServiceDetails.tabLabels,
   },
   {
     displayName: 'Detected fields',
-    value: SLUGS.fields,
+    value: PageSlugs.fields,
     getScene: (f) => buildFieldsBreakdownActionScene(f),
     testId: testIds.exploreServiceDetails.tabDetectedFields,
   },
   {
     displayName: 'Patterns',
-    value: SLUGS.patterns,
+    value: PageSlugs.patterns,
     getScene: () => buildPatternsScene(),
     testId: testIds.exploreServiceDetails.tabPatterns,
   },

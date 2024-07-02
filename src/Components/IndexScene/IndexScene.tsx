@@ -34,8 +34,7 @@ import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from
 import { ServiceScene } from '../ServiceScene/ServiceScene';
 import { LayoutScene } from './LayoutScene';
 import { FilterOp } from 'services/filters';
-import { SLUGS } from '../../services/routing';
-import { getSlug } from '../Pages';
+import { getSlug, PageSlugs } from '../../services/routing';
 import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { locationService } from '@grafana/runtime';
@@ -159,7 +158,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
 function getContentScene() {
   const slug = getSlug();
-  if (slug === SLUGS.explore) {
+  if (slug === PageSlugs.explore) {
     return new ServiceSelectionScene({});
   }
 
