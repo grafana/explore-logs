@@ -71,6 +71,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       // Need to clear patterns state when the class in constructed
       patterns: [],
       ...state,
+      body: new LayoutScene({}),
     });
 
     this.addActivationHandler(this.onActivate.bind(this));
@@ -87,7 +88,6 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
   public onActivate() {
     const stateUpdate: Partial<IndexSceneState> = {};
-    stateUpdate.body = new LayoutScene({});
 
     if (!this.state.contentScene) {
       stateUpdate.contentScene = getContentScene();
