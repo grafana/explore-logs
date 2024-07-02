@@ -16,7 +16,7 @@ weight: 800
 # Log patterns
 
 {{% admonition type="caution" %}}
-Explore Metrics is currently in [public preview](/docs/release-life-cycle/). Grafana Labs offers limited support, and breaking changes might occur prior to the feature being made generally available.
+Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafana Labs offers limited support, and breaking changes might occur prior to the feature being made generally available.
 {{% /admonition %}}
 
 Log patterns allow you to work with groups of similar log lines. You can hide them if they're noise, or focus in on them if they're useful.

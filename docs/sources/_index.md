@@ -22,7 +22,7 @@ cards:
 # Explore Logs documentation
 
 {{% admonition type="caution" %}}
-Explore Metrics is currently in [public preview](/docs/release-life-cycle/). Grafana Labs offers limited support, and breaking changes might occur prior to the feature being made generally available.
+Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafana Labs offers limited support, and breaking changes might occur prior to the feature being made generally available.
 {{% /admonition %}}
 
 Explore Logs offers a queryless experience for browsing Loki logs. You can:
@@ -39,4 +39,9 @@ Explore Logs offers a queryless experience for browsing Loki logs. You can:
 
 Explore Logs is for all engineers. 
 
-Traditionally you'd need to learn LogQL and build a deep understanding of your systems in order to answer questions and get the most out of Loki. With Explore Logs, you get the same powerful insights, by just clicking.
+Traditionally you'd need to learn LogQL and build a deep understanding of your systems in order to answer questions and get the most out of Loki. With Explore Logs, you get the same powerful insights, by just clicking around.
+
+## What next?
+
+Dive into the [Get started with Explore Logs]({{< relref "./get-started" >}}) article to learn how to set up Explore Logs and take a tour of the feature on your own data. 
+
