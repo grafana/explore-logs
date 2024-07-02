@@ -7,7 +7,7 @@ cards:
   items:
     - title: Get started
       href: ./get-started/
-      description: Get set up and take a tour of Explore Logs on your own data.
+      description: Install Explore Logs and take a tour of Explore Logs using your own data.
       height: 24
     - title: Labels and Detected fields
       href: ./labels-and-detected-fields/
