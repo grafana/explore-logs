@@ -12,7 +12,7 @@ interface LayoutSceneState extends SceneObjectState {
   interceptDismissed: boolean;
 }
 
-const interceptBannerStorageKey = 'interceptBannerStorageKeyss';
+const interceptBannerStorageKey = 'interceptBannerStorageKey';
 
 export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
   constructor(state: Partial<LayoutSceneState>) {
