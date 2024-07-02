@@ -1,7 +1,7 @@
 # Explore Logs
 
 Explore Logs offers a query-less experience for browsing Loki logs without the need for writing complex queries.
-Discover or narrow down your search by using by volume and text patterns. Uncover related logs and understand
+Discover or narrow down your search using by volume and text patterns. Uncover related logs and understand
 patterns—all with just a few clicks.
 
 ## Requirements
