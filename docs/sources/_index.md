@@ -43,5 +43,5 @@ Traditionally you'd need to learn LogQL and build a deep understanding of your s
 
 ## What next?
 
-Dive into the [Get started with Explore Logs]({{< relref "./get-started" >}}) article to learn how to set up Explore Logs and take a tour of the feature on your own data. 
+Dive into the [Get started with Explore Logs]({{< relref "../get-started" >}}) article to learn how to set up Explore Logs and take a tour of the feature on your own data. 
 

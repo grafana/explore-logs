@@ -55,23 +55,23 @@ If you know the kind of log line you're looking for, Log patterns are an easy wa
 
 To view only a specific set of patterns, perform the following steps:
 
-1. Go to **Explore > Logs**
+1. In the main menu, select **Explore** > **Logs**
 2. Select the relevant **Service**
-3. Open the **Patterns** tab
+3. Click the **Patterns** tab
 4. Identify a pattern that matches the type of logs you're interested in
-5. Select **Include**
-6. Go to the **Logs** tab and notice the filtered view
+5. Click the **Include** button.
+6. Return to the **Logs** tab and notice the filtered view.
 
 ### Hide noisy log lines
 
 To hide noisy log lines, perform the following steps:
 
-1. Go to **Explore > Logs**
-2. Select the relevant **Service**
-3. Open the **Patterns** tab
-4. Identify a pattern that represents noise in the logs
-5. Select **Exclude**
-6. Go to the **Logs** tab and notice the noise has been removed
+1. In the main menu, select **Explore** > **Logs**
+2. Select the relevant **Service**.
+3. Open the **Patterns** tab.
+4. Identify a pattern that represents noise in the logs that you want to remove.
+5. Click the **Exclude** button to exclude that pattern.
+6. Return to the **Logs** tab and notice the noisy pattern has been removed.
 
 You can repeat steps 4 and 5 to exclude multiple patterns.
 
@@ -104,6 +104,6 @@ Pattern 2: `user loaded: <_>`
 
 > **Did you know?** Since Loki 3.0, you can make queries using this simplified template format which is much faster than using regex.
 
-## What next?
+## What next?
 
-Learn about how [Log patterns]({{< relref "./patterns" >}}) can help you deal with different types of log lines in bulk.
+Learn about how [Log patterns]({{< relref "../patterns" >}}) can help you deal with different types of log lines in bulk.

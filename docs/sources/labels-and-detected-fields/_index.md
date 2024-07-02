@@ -7,7 +7,7 @@ keywords:
   - Analysis
 menuTitle: Labels and detected fields
 title: Labels and detected fields
-weight: 800
+weight: 300
 ---
 
 # Labels and Detected fields
@@ -30,16 +30,16 @@ This experience is useful for understanding the traits of your system, and for s
 
 To explore labels with your own data, follow these steps:
 
-1. Open **Explore Logs**
+1. In the main menu, select **Explore > Logs**.
 2. Select a **Service** and click **Select**
-3. Click on the **Labels** tab
-4. Browse the labels detected for this service
-5. Look for an interesting value and click **Select**
+3. Click the **Labels** tab.
+4. Browse the labels detected for this service.
+5. Look for an interesting label and click the **Select** button.
 
 You will see a selection of visualizations showing the volume of each one.
 
-You can repeat the same steps in the **Detected fields** tab to see fields that were automatically extracted from your log lines.
+If you do not see any labels, ensure your collector is properly configured to attach them. Alternatively, you can repeat the same steps in the **Detected fields** tab to see fields that were extracted from your log lines.
 
-## What next?
+## What next?
 
-Learn about how [Log patterns]({{< relref "./patterns" >}}) can help you deal with different types of log lines in bulk.
+Learn about how [Log patterns]({{< relref "../patterns" >}}) can help you deal with different types of log lines in bulk.
