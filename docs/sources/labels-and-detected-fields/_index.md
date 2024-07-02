@@ -31,10 +31,10 @@ This experience is useful for understanding the traits of your system, and for s
 To explore labels with your own data, follow these steps:
 
 1. In the main menu, select **Explore > Logs**.
-2. Select a **Service** and click **Select**
-3. Click the **Labels** tab.
-4. Browse the labels detected for this service.
-5. Look for an interesting label and click the **Select** button.
+1. Click the **Select** button for the service you want to explore.
+1. Click the **Labels** tab.
+1. Browse the labels detected for this service.
+1. Look for an interesting label and click the **Select** button.
 
 You will see a selection of visualizations showing the volume of each one.
 
