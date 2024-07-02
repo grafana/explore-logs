@@ -95,6 +95,7 @@ export const TableColumnContextProvider = ({
     (newColumns: FieldNameMetaStore) => {
       if (newColumns) {
         const columns = removeExtraColumns(newColumns);
+
         setColumns(columns);
 
         // Sync react state update with scenes url management
