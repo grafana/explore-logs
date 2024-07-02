@@ -3,6 +3,7 @@ import {
   SceneComponentProps,
   SceneDataNode,
   sceneGraph,
+  SceneObject,
   SceneObjectBase,
   SceneObjectState,
 } from '@grafana/scenes';
@@ -18,6 +19,7 @@ import { FilterButton } from '../../FilterButton';
 import { config } from '@grafana/runtime';
 import { testIds } from '../../../services/testIds';
 import { PatternsFrameScene } from './PatternsFrameScene';
+import { PatternsTableExpandedRow } from './PatternsTableExpandedRow';
 
 // copied from from grafana repository packages/grafana-data/src/valueFormats/categories.ts
 // that is used in Grafana codebase for "short" units
@@ -25,13 +27,13 @@ const SCALED_UNITS = ['', ' K', ' Mil', ' Bil', ' Tri', ' Quadr', ' Quint', ' Se
 export interface SingleViewTableSceneState extends SceneObjectState {
   // The local copy of the pattern frames, the parent breakdown scene decides if we get the filtered subset or not, in this scene we just present the data
   patternFrames: PatternFrame[] | undefined;
+  expandedRows?: SceneObject[];
 }
 
-interface WithCustomCellData {
+export interface PatternsTableCellData {
   pattern: string;
   dataFrame: DataFrame;
   sum: number;
-  // samples: Array<[number, string]>,
   includeLink: () => void;
   excludeLink: () => void;
   undoLink: () => void;
@@ -39,9 +41,7 @@ interface WithCustomCellData {
 
 export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableSceneState> {
   constructor(state: SingleViewTableSceneState) {
-    super({
-      ...state,
-    });
+    super(state);
   }
 
   public static Component = PatternTableViewSceneComponent;
@@ -56,11 +56,11 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
   public buildColumns(total: number, appliedPatterns: AppliedPattern[] | undefined, theme: GrafanaTheme2) {
     const styles = getColumnStyles(theme);
     const timeRange = sceneGraph.getTimeRange(this).state.value;
-    const columns: Array<Column<WithCustomCellData>> = [
+    const columns: Array<Column<PatternsTableCellData>> = [
       {
         id: 'volume-samples',
         header: '',
-        cell: (props: CellProps<WithCustomCellData>) => {
+        cell: (props: CellProps<PatternsTableCellData>) => {
           const panelData: PanelData = {
             timeRange: timeRange,
             series: [props.cell.row.original.dataFrame],
@@ -123,7 +123,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
       {
         id: 'pattern',
         header: 'Pattern',
-        cell: (props: CellProps<WithCustomCellData>) => {
+        cell: (props: CellProps<PatternsTableCellData>) => {
           return (
             <div className={cx(getTablePatternTextStyles(), styles.tablePatternTextDefault)}>
               {props.cell.row.original.pattern}
@@ -135,7 +135,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
         id: 'include',
         header: undefined,
         disableGrow: true,
-        cell: (props: CellProps<WithCustomCellData>) => {
+        cell: (props: CellProps<PatternsTableCellData>) => {
           const existingPattern = appliedPatterns?.find(
             (appliedPattern) => appliedPattern.pattern === props.cell.row.original.pattern
           );
@@ -162,7 +162,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
    * @param legendSyncPatterns
    * @private
    */
-  public buildTableData(patternFrames: PatternFrame[], legendSyncPatterns: Set<string>): WithCustomCellData[] {
+  public buildTableData(patternFrames: PatternFrame[], legendSyncPatterns: Set<string>): PatternsTableCellData[] {
     const logExploration = sceneGraph.getAncestor(this, IndexScene);
     return patternFrames
       .filter((patternFrame) => {
@@ -209,6 +209,9 @@ const getTablePatternTextStyles = () => {
 
 const getTableStyles = (theme: GrafanaTheme2) => {
   return {
+    link: css({
+      textDecoration: 'underline',
+    }),
     tableWrap: css({
       // Override interactive table style
       '> div': {
@@ -276,7 +279,12 @@ export function PatternTableViewSceneComponent({ model }: SceneComponentProps<Pa
 
   return (
     <div data-testid={testIds.patterns.tableWrapper} className={styles.tableWrap}>
-      <InteractiveTable columns={columns} data={tableData} getRowId={(r: WithCustomCellData) => r.pattern} />
+      <InteractiveTable
+        columns={columns}
+        data={tableData}
+        getRowId={(r: PatternsTableCellData) => r.pattern}
+        renderExpandedRow={(row) => <PatternsTableExpandedRow tableViz={model} row={row} />}
+      />
     </div>
   );
 }
