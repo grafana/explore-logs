@@ -15,7 +15,7 @@ cards:
       height: 24
     - title: Log patterns
       href: ./patterns/
-      description: Use automatic log grouping to remove noise and find needles.
+      description: Learn how you can use automatic log grouping to remove noise and find hard to locate logs.
       height: 24
 ---
 
