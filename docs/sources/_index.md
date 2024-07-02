@@ -11,7 +11,7 @@ cards:
       height: 24
     - title: Labels and Detected fields
       href: ./labels-and-detected-fields/
-      description: Learn how Explore Logs uses Labels and Detected fields to build the point-and-click experience.
+      description: Learn how Explore Logs uses labels and detected fields to help you explore your Loki logs.
       height: 24
     - title: Log patterns
       href: ./patterns/
