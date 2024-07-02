@@ -20,7 +20,7 @@ export function InterceptBanner(props: { interceptDismissed: boolean; onRemove: 
           <br />
 
           <div>
-            We&rsquo;re looking for help in shaping the future of Logs Explore. If you have any suggestions or issues,
+            We&rsquo;re looking for help in shaping the future of Logs Explore. If you have any issues or suggestions,
             please let us know on{' '}
             <a className="external-link" href="https://github.com/grafana/explore-logs/issues/new">
               GitHub
