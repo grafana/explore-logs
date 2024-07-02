@@ -79,6 +79,7 @@
     "@grafana/ui": "^11.0.0",
     "@playwright/test": "^1.43.1",
     "@types/react-table": "^7.7.20",
+    "grafana-scenes-ml": "grafana/scenes-ml",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-router-dom": "^5.2.0",
