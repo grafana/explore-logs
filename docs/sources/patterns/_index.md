@@ -10,7 +10,7 @@ keywords:
   - Analysis
 menuTitle: Log patterns
 title: Log patterns
-weight: 800
+weight: 400
 ---
 
 # Log patterns
@@ -55,10 +55,10 @@ If you know the kind of log line you're looking for, Log patterns are an easy wa
 
 To view only a specific set of patterns, perform the following steps:
 
-1. In the main menu, select **Explore** > **Logs**
-2. Select the relevant **Service**
-3. Click the **Patterns** tab
-4. Identify a pattern that matches the type of logs you're interested in
+1. In the main menu, select **Explore** > **Logs**.
+2. Select the relevant **Service**.
+3. Click the **Patterns** tab.
+4. Identify a pattern that matches the type of logs you're interested in viewing.
 5. Click the **Include** button.
 6. Return to the **Logs** tab and notice the filtered view.
 
@@ -66,7 +66,7 @@ To view only a specific set of patterns, perform the following steps:
 
 To hide noisy log lines, perform the following steps:
 
-1. In the main menu, select **Explore** > **Logs**
+1. In the main menu, select **Explore** > **Logs**.
 2. Select the relevant **Service**.
 3. Open the **Patterns** tab.
 4. Identify a pattern that represents noise in the logs that you want to remove.

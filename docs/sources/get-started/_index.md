@@ -7,7 +7,7 @@ keywords:
   - Analysis
 menuTitle: Get started
 title: Get started with Explore Logs
-weight: 800
+weight: 200
 ---
 
 # Get started with Explore Logs
@@ -65,7 +65,7 @@ Explore Logs is already available in Grafana Cloud.
 To access Explore Logs:
 
 1. Open your Grafana stack in a web browser
-1. In the primary navigation on the left hand side of the screen, click **Explore > Logs**
+1. In the main menu, select **Explore** > **Logs**.
 
 ### Install via environment variable
 

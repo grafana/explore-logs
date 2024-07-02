@@ -30,7 +30,7 @@ This experience is useful for understanding the traits of your system, and for s
 
 To explore labels with your own data, follow these steps:
 
-1. In the main menu, select **Explore > Logs**.
+1. In the main menu, select **Explore** > **Logs**.
 1. Click the **Select** button for the service you want to explore.
 1. Click the **Labels** tab.
 1. Browse the labels detected for this service.
