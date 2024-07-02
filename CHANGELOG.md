@@ -1,5 +1,3 @@
 # Changelog
 
-## 1.0.0 (Unreleased)
-
-Initial release.
+View [releases](https://github.com/grafana/explore-logs/releases/) on GitHub for up-to-date changelog information.
