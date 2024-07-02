@@ -1,19 +1,41 @@
 import { GrafanaTheme2 } from '@grafana/data';
-import { SceneComponentProps, SceneObjectBase, VariableValueSelectors } from '@grafana/scenes';
+import { SceneComponentProps, SceneObjectBase, SceneObjectState, VariableValueSelectors } from '@grafana/scenes';
 import { useStyles2 } from '@grafana/ui';
 import React from 'react';
 import { PatternControls } from './PatternControls';
 import { AppliedPattern, IndexSceneState } from './IndexScene';
 import { css } from '@emotion/css';
 import { GiveFeedbackButton } from './GiveFeedbackButton';
+import { InterceptBanner } from './InterceptBanner';
 
-export class LayoutScene extends SceneObjectBase {
+interface LayoutSceneState extends SceneObjectState {
+  interceptDismissed: boolean;
+}
+
+const interceptBannerStorageKey = 'interceptBannerStorageKeyss';
+
+export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
+  constructor(state: Partial<LayoutSceneState>) {
+    super({
+      ...state,
+      interceptDismissed: !!localStorage.getItem(interceptBannerStorageKey),
+    });
+  }
+
+  public dismiss() {
+    this.setState({
+      interceptDismissed: true,
+    });
+    localStorage.setItem(interceptBannerStorageKey, 'true');
+  }
+
   static Component = ({ model }: SceneComponentProps<LayoutScene>) => {
     if (!model.parent) {
       return null;
     }
 
     const { controls, contentScene, patterns } = model.parent.useState() as IndexSceneState;
+    const { interceptDismissed } = model.useState();
     if (!contentScene) {
       return null;
     }
@@ -21,6 +43,12 @@ export class LayoutScene extends SceneObjectBase {
     const styles = useStyles2(getStyles);
     return (
       <div className={styles.bodyContainer}>
+        <InterceptBanner
+          interceptDismissed={interceptDismissed}
+          onRemove={() => {
+            model.dismiss();
+          }}
+        />
         <div className={styles.container}>
           {controls && (
             <div className={styles.controlsContainer}>
