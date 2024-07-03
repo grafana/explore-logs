@@ -7,47 +7,35 @@ export function InterceptBanner(props: { interceptDismissed: boolean; onRemove: 
       {!props.interceptDismissed && (
         <Alert
           severity={'info'}
-          title={'Explore logs is under active development in a preview state.'}
+          title={"Welcome to Explore Logs (preview) - we're in active development so please expect things to change."}
           onRemove={props.onRemove}
         >
           <div>
-            Watch this{' '}
+            Check out our{' '}
             <a className="external-link" href="#">
-              quick video
+              video
+            </a>
+            , dive into our{' '}
+            <a className="external-link" href="#">
+              Get started doc
+            </a>
+            , or see{' '}
+            <a className={'external-link'} href="https://github.com/grafana/explore-logs/releases">
+              recent changes
+            </a>
+            .<br />
+            Help us shape the future of the app.{' '}
+            <a className={'external-link'} href="https://forms.gle/1sYWCTPvD72T1dPH9">
+              Send us feedback
             </a>{' '}
-            to learn how Explore Logs can help investigate your Loki logs without writing a single query!
-          </div>
-          <br />
-
-          <div>
-            We&rsquo;re looking for help in shaping the future of Logs Explore. If you have any issues or suggestions,
-            please let us know on{' '}
-            <a className="external-link" href="https://github.com/grafana/explore-logs/issues/new">
+            or engage with us on{' '}
+            <a
+              className={'external-link'}
+              href="https://github.com/grafana/explore-logs/?tab=readme-ov-file#explore-logs"
+            >
               GitHub
             </a>
             .
-          </div>
-
-          <div>
-            Check out the{' '}
-            <a
-              href="https://github.com/grafana/explore-logs?tab=readme-ov-file#explore-logs"
-              className="external-link"
-              target="_blank"
-              rel="noreferrer"
-            >
-              docs
-            </a>{' '}
-            or{' '}
-            <a
-              href="https://github.com/grafana/explore-logs/releases"
-              className="external-link"
-              target="_blank"
-              rel="noreferrer"
-            >
-              recent changes
-            </a>{' '}
-            to learn more.
           </div>
         </Alert>
       )}
