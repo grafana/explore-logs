@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import { ActionMeta, Icon, InlineField, InputActionMeta, Select, useStyles2 } from '@grafana/ui';
+import { testIds } from '../../../services/testIds';
 
 type FieldSelectorProps = {
   options: Array<SelectableValue<string>>;
@@ -43,6 +44,7 @@ export function ServiceFieldSelector({ options, value, onChange, label, selectOp
   return (
     <InlineField grow={true} label={label}>
       <Select
+        data-testid={testIds.exploreServiceSearch.search}
         placeholder={'Search services'}
         options={allOptions}
         isClearable={true}
