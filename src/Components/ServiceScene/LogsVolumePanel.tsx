@@ -1,26 +1,65 @@
 import React from 'react';
 
-import { PanelBuilders, SceneComponentProps, SceneObjectBase, SceneObjectState, VizPanel } from '@grafana/scenes';
+import { doStandardCalcs, LoadingState } from '@grafana/data';
+import {
+  PanelBuilders,
+  SceneComponentProps,
+  sceneGraph,
+  SceneObjectBase,
+  SceneObjectState,
+  VizPanel,
+} from '@grafana/scenes';
 import { DrawStyle, LegendDisplayMode, StackingMode } from '@grafana/ui';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { LEVEL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR } from 'services/variables';
+import { ServiceScene } from './ServiceScene';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
+  totalLogCount?: number;
 }
 
 export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
   constructor(state: LogsVolumePanelState) {
-    super(state);
+    super({
+      $data: getQueryRunner(
+        buildLokiQuery(
+          `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ [$__auto]))`,
+          { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}` }
+        )
+      ),
+      ...state,
+    });
 
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
   private onActivate() {
     if (!this.state.panel) {
+      this.state.$data?.getResultsStream().subscribe((data) => {
+        if (data.data.state === LoadingState.Done) {
+          // once we have the log volume, calculate the total number of logs
+          const fieldCalcs = data.data.series.map((dataFrame) => ({
+            value: doStandardCalcs(dataFrame.fields[1], true, true),
+            frame: dataFrame,
+          }));
+          const totalLogs = fieldCalcs.reduce((acc, { value, frame }) => {
+            acc += value.sum;
+            return acc;
+          }, 0);
+
+          const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
+          serviceScene.setState({
+            logsCount: totalLogs,
+          });
+        }
+      });
+
+      const panel = this.getVizPanel();
+
       this.setState({
-        panel: this.getVizPanel(),
+        panel,
       });
     }
   }
@@ -30,14 +69,6 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       .setTitle('Log volume')
       .setOption('legend', { showLegend: true, calcs: ['sum'], displayMode: LegendDisplayMode.List })
       .setUnit('short')
-      .setData(
-        getQueryRunner(
-          buildLokiQuery(
-            `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ [$__auto]))`,
-            { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}` }
-          )
-        )
-      )
       .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
       .setCustomFieldConfig('fillOpacity', 100)
       .setCustomFieldConfig('lineWidth', 0)

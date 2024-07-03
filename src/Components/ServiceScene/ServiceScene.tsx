@@ -64,7 +64,7 @@ export interface ServiceSceneState extends SceneObjectState {
   patterns?: LokiPattern[];
 
   fieldsCount?: number;
-
+  logsCount?: number;
   loading?: boolean;
 }
 
@@ -354,6 +354,8 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
 
     const getCounter = (tab: BreakdownViewDefinition, state: ServiceSceneState) => {
       switch (tab.value) {
+        case 'logs':
+          return state.logsCount;
         case 'fields':
           return state.fieldsCount ?? (state.fields?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []).length;
         case 'patterns':
