@@ -83,7 +83,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange);
 
     sceneGraph.getAncestor(this, ServiceScene)!.subscribeToState((newState, oldState) => {
-      if (newState.detectedFields !== oldState.detectedFields) {
+      if (newState.fields !== oldState.fields) {
         this.updateFields();
       }
     });
@@ -108,7 +108,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this.setState({
       fields: [
         { label: 'All', value: ALL_VARIABLE_VALUE },
-        ...(logsScene.state.detectedFields ?? []).map((f) => ({
+        ...(logsScene.state.fields ?? []).map((f) => ({
           label: f,
           value: f,
         })),
@@ -184,7 +184,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
             reactNode: (
               <div>
                 <Alert title="" severity="warning">
-                  No detected fields. Please{' '}
+                  We did not find any fields for the given timerange. Please{' '}
                   <a
                     className={emptyStateStyles.link}
                     href="https://forms.gle/1sYWCTPvD72T1dPH9"

@@ -60,7 +60,7 @@ Once the docker container started, navigate to http://localhost:3000/a/grafana-l
    - By clicking and dragging the time range you want to see on any time series visualization.
 5. Services are shown based on the volume of logs, and you can search for the service you want through the Search service input.
 6. Select the service you would like to explore. This takes you to the Service page.
-7. Filter logs based on strings, labels, detected fields, or detected patterns.
+7. Filter logs based on strings, labels, fields, or detected patterns.
 
 <img src="src/img/service_logs.png" alt="app"/>
 
