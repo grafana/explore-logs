@@ -483,7 +483,6 @@ function getStyles(theme: GrafanaTheme2) {
     }),
     searchField: css({
       marginTop: theme.spacing(1),
-      label: 'search-field',
     }),
   };
 }
