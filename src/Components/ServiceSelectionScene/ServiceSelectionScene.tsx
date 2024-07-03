@@ -31,7 +31,7 @@ import {
 import { getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
 import { testIds } from 'services/testIds';
-import { LEVEL_VARIABLE_VALUE, VAR_DATASOURCE, VAR_FILTERS } from 'services/variables';
+import { LEVEL_VARIABLE_VALUE, VAR_DATASOURCE, VAR_LABELS } from 'services/variables';
 import { SelectServiceButton } from './SelectServiceButton';
 import { PLUGIN_ID } from 'services/routing';
 import { buildLokiQuery } from 'services/query';
@@ -90,7 +90,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
   private onActivate() {
     // Clear all adhoc filters when the scene is activated, if there are any
-    const variable = sceneGraph.lookupVariable(VAR_FILTERS, this);
+    const variable = sceneGraph.lookupVariable(VAR_LABELS, this);
     if (variable instanceof AdHocFiltersVariable && variable.state.filters.length > 0) {
       variable.setState({
         filters: [],
