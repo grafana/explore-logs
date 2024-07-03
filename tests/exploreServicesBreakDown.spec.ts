@@ -75,7 +75,7 @@ test.describe('explore services breakdown page', () => {
   });
 
   test('should exclude a label, update filters, open log panel', async ({ page }) => {
-    await page.getByTestId(testIds.exploreServiceDetails.tabDetectedFields).click();
+    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
     await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
     await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
     await expect(page.getByTestId(testIds.exploreServiceDetails.searchLogs)).toBeVisible();
@@ -85,8 +85,8 @@ test.describe('explore services breakdown page', () => {
   });
 
 
-  test('should select a detected field, update filters, open log panel', async ({ page }) => {
-    await page.getByTestId(testIds.exploreServiceDetails.tabDetectedFields).click();
+  test('should select a field, update filters, open log panel', async ({ page }) => {
+    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
     await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
     await page.getByRole('button', { name: 'Include' }).nth(0).click();
     // Should see the logs panel full of errors

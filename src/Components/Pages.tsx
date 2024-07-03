@@ -109,9 +109,6 @@ export function makeBreakdownPage(
 }
 
 function slugToBreadcrumbTitle(slug: PageSlugs) {
-  if (slug === 'fields') {
-    return 'Detected fields';
-  }
   // capitalize first letter
   return slug.charAt(0).toUpperCase() + slug.slice(1);
 }

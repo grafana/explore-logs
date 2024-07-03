@@ -4,7 +4,7 @@ import { AdHocVariableFilter, DataFrame } from '@grafana/data';
 import { SceneObjectState, SceneObjectBase, SceneComponentProps, SceneObject, sceneGraph } from '@grafana/scenes';
 import { VariableHide } from '@grafana/schema';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
-import { LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_FILTERS } from 'services/variables';
+import { LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS } from 'services/variables';
 import { FilterButton } from 'Components/FilterButton';
 import { getAdHocFiltersVariable } from 'services/scenes';
 import { FilterOp } from 'services/filters';
@@ -79,7 +79,7 @@ function validateVariableNameForField(field: string, variableName: string) {
 function resolveVariableNameForField(field: string, scene: SceneObject) {
   const serviceScene = sceneGraph.getAncestor(scene, ServiceScene);
   const indexedLabel = serviceScene.state.labels?.find((label) => label === field);
-  return indexedLabel ? VAR_FILTERS : VAR_FIELDS;
+  return indexedLabel ? VAR_LABELS : VAR_FIELDS;
 }
 
 export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState> {

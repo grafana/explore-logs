@@ -1,5 +1,5 @@
 import { css } from '@emotion/css';
-import { debounce } from 'lodash';
+import { debounce, escapeRegExp } from 'lodash';
 import React, { useCallback, useState } from 'react';
 import { DashboardCursorSync, GrafanaTheme2, TimeRange } from '@grafana/data';
 import {
@@ -31,7 +31,7 @@ import {
 import { getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
 import { testIds } from 'services/testIds';
-import { LEVEL_VARIABLE_VALUE, VAR_DATASOURCE, VAR_FILTERS } from 'services/variables';
+import { LEVEL_VARIABLE_VALUE, VAR_DATASOURCE, VAR_LABELS } from 'services/variables';
 import { SelectServiceButton } from './SelectServiceButton';
 import { PLUGIN_ID } from 'services/routing';
 import { buildLokiQuery } from 'services/query';
@@ -40,6 +40,7 @@ import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
 import { NoVolumeError } from './NoVolumeError';
 import { getLabelsFromSeries, toggleLevelFromFilter } from 'services/levels';
+import { isFetchError } from '@grafana/runtime';
 
 export const SERVICE_NAME = 'service_name';
 
@@ -89,7 +90,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
   private onActivate() {
     // Clear all adhoc filters when the scene is activated, if there are any
-    const variable = sceneGraph.lookupVariable(VAR_FILTERS, this);
+    const variable = sceneGraph.lookupVariable(VAR_LABELS, this);
     if (variable instanceof AdHocFiltersVariable && variable.state.filters.length > 0) {
       variable.setState({
         filters: [],
@@ -148,11 +149,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     }
 
     try {
-      const serviceSearch = service ? `(?i).*${service}.*` : '.+';
-      const volumeResponse = await ds.getResource!(
+      const serviceSearch = service ? `(?i).*${escapeRegExp(service)}.*` : '.+';
+      const volumeResponse = await ds.getResource(
         'index/volume',
         {
-          query: `{${SERVICE_NAME}=~"${serviceSearch}"}`,
+          query: `{${SERVICE_NAME}=~\`${serviceSearch}\`}`,
           from: timeRange.from.utc().toISOString(),
           to: timeRange.to.utc().toISOString(),
         },
@@ -180,8 +181,9 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       });
     } catch (error) {
       console.log(`Failed to fetch top services:`, error);
+      const volumeApiError = isFetchError(error) && error.data.message?.includes('parse error') ? false : true;
       this.setState({
-        volumeApiError: true,
+        volumeApiError,
         servicesByVolume: [],
         isServicesByVolumeLoading: false,
       });
