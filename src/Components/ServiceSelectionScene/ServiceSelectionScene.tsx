@@ -354,7 +354,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     // searchQuery is used to keep track of the search query in input field
     const [searchQuery, setSearchQuery] = useState('');
     const onSearchChange = (serviceName: string | undefined) => {
-      // console.log('onChange', serviceName)
       setSearchQuery(serviceName ?? '');
       model.onSearchServicesChange(serviceName ?? '');
     };
@@ -377,7 +376,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
               }}
               label="Service"
               options={
-                servicesByVolume?.map((serviceName) => ({
+                servicesToQuery?.map((serviceName) => ({
                   value: serviceName,
                   label: serviceName,
                 })) ?? []
