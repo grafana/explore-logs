@@ -94,6 +94,13 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         filters: [],
       });
     }
+
+    // Reset search after routing back
+    if (this.state.searchServicesString) {
+      this.setState({
+        searchServicesString: '',
+      });
+    }
     // On activation, fetch services by volume
     this.getServicesByVolume();
     this.subscribeToState((newState, oldState) => {
