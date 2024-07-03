@@ -29,7 +29,7 @@ import {
   LOG_STREAM_SELECTOR_EXPR,
   VAR_FIELD_GROUP_BY,
   VAR_FIELDS,
-  VAR_FILTERS,
+  VAR_LABELS,
 } from 'services/variables';
 import { ServiceScene } from '../ServiceScene';
 import { ByFrameRepeater } from './ByFrameRepeater';
@@ -56,7 +56,7 @@ export interface FieldsBreakdownSceneState extends SceneObjectState {
 
 export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
-    variableNames: [VAR_FILTERS],
+    variableNames: [VAR_LABELS],
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
   });
 

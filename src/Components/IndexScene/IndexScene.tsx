@@ -21,10 +21,10 @@ import {
   VariableValueSelectors,
 } from '@grafana/scenes';
 import {
-  explorationDS,
+  EXPLORATION_DS,
   VAR_DATASOURCE,
   VAR_FIELDS,
-  VAR_FILTERS,
+  VAR_LABELS,
   VAR_LINE_FILTER,
   VAR_LOGS_FORMAT,
   VAR_PATTERNS,
@@ -38,6 +38,7 @@ import { getSlug, PageSlugs } from '../../services/routing';
 import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { locationService } from '@grafana/runtime';
+import { renderPatternFilters, renderLogQLStreamSelector, renderLogQLFieldFilters } from 'services/query';
 
 export interface AppliedPattern {
   pattern: string;
@@ -171,18 +172,18 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
     value,
   }));
 
-  const filterVariable = new AdHocFiltersVariable({
-    name: VAR_FILTERS,
-    datasource: explorationDS,
+  const labelVariable = new AdHocFiltersVariable({
+    name: VAR_LABELS,
+    datasource: EXPLORATION_DS,
     layout: 'vertical',
     label: 'Service',
     filters: initialFilters ?? [],
-    expressionBuilder: renderLogQLLabelFilters,
+    expressionBuilder: renderLogQLStreamSelector,
     hide: VariableHide.hideLabel,
     key: 'adhoc_service_filter',
   });
 
-  filterVariable._getOperators = function () {
+  labelVariable._getOperators = function () {
     return operators;
   };
 
@@ -214,7 +215,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
   return new SceneVariableSet({
     variables: [
       dsVariable,
-      filterVariable,
+      labelVariable,
       fieldsVariable,
       // @todo where is patterns being added to the url? Why do we have var-patterns and patterns?
       new CustomVariable({
@@ -226,35 +227,4 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
       new CustomVariable({ name: VAR_LOGS_FORMAT, value: '', hide: VariableHide.hideVariable }),
     ],
   });
-}
-
-export function renderLogQLLabelFilters(filters: AdHocVariableFilter[]) {
-  return '{' + filters.map((filter) => renderFilter(filter)).join(', ') + '}';
-}
-
-export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
-  return filters.map((filter) => `| ${renderFilter(filter)}`).join(' ');
-}
-
-function renderFilter(filter: AdHocVariableFilter) {
-  return `${filter.key}${filter.operator}\`${filter.value}\``;
-}
-
-export function renderPatternFilters(patterns: AppliedPattern[]) {
-  const excludePatterns = patterns.filter((pattern) => pattern.type === 'exclude');
-  const excludePatternsLine = excludePatterns
-    .map((p) => `!> \`${p.pattern}\``)
-    .join(' ')
-    .trim();
-
-  const includePatterns = patterns.filter((pattern) => pattern.type === 'include');
-  let includePatternsLine = '';
-  if (includePatterns.length > 0) {
-    if (includePatterns.length === 1) {
-      includePatternsLine = `|> \`${includePatterns[0].pattern}\``;
-    } else {
-      includePatternsLine = `|>  ${includePatterns.map((p) => `\`${p.pattern}\``).join(' or ')}`;
-    }
-  }
-  return `${excludePatternsLine} ${includePatternsLine}`.trim();
 }

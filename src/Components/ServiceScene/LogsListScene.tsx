@@ -21,7 +21,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '..
 import { DataFrame } from '@grafana/data';
 import { addToFilters, FilterType } from './Breakdowns/AddToFiltersButton';
 import { getLabelTypeFromFrame, LabelType } from 'services/fields';
-import { VAR_FIELDS, VAR_FILTERS } from 'services/variables';
+import { VAR_FIELDS, VAR_LABELS } from 'services/variables';
 import { getAdHocFiltersVariable } from 'services/scenes';
 import { locationService } from '@grafana/runtime';
 
@@ -137,7 +137,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       return;
     }
     const type = frame ? getLabelTypeFromFrame(key, frame) : LabelType.Parsed;
-    const variableName = type === LabelType.Indexed ? VAR_FILTERS : VAR_FIELDS;
+    const variableName = type === LabelType.Indexed ? VAR_LABELS : VAR_FIELDS;
     addToFilters(key, value, operator, this, variableName);
 
     reportAppInteraction(
@@ -160,7 +160,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   };
 
   public handleIsFilterLabelActive = (key: string, value: string) => {
-    const filters = getAdHocFiltersVariable(VAR_FILTERS, this);
+    const filters = getAdHocFiltersVariable(VAR_LABELS, this);
     const fields = getAdHocFiltersVariable(VAR_FIELDS, this);
     return (
       (filters &&

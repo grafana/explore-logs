@@ -1,3 +1,5 @@
+import { AdHocVariableFilter } from '@grafana/data';
+import { AppliedPattern } from 'Components/IndexScene/IndexScene';
 import { PLUGIN_ID } from './routing';
 
 export type LokiQuery = {
@@ -23,3 +25,34 @@ const defaultQueryParams = {
   editorMode: 'code',
   supportingQueryType: PLUGIN_ID,
 };
+
+export function renderLogQLStreamSelector(filters: AdHocVariableFilter[]) {
+  return '{' + filters.map((filter) => renderFilter(filter)).join(', ') + '}';
+}
+
+export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
+  return filters.map((filter) => `| ${renderFilter(filter)}`).join(' ');
+}
+
+function renderFilter(filter: AdHocVariableFilter) {
+  return `${filter.key}${filter.operator}\`${filter.value}\``;
+}
+
+export function renderPatternFilters(patterns: AppliedPattern[]) {
+  const excludePatterns = patterns.filter((pattern) => pattern.type === 'exclude');
+  const excludePatternsLine = excludePatterns
+    .map((p) => `!> \`${p.pattern}\``)
+    .join(' ')
+    .trim();
+
+  const includePatterns = patterns.filter((pattern) => pattern.type === 'include');
+  let includePatternsLine = '';
+  if (includePatterns.length > 0) {
+    if (includePatterns.length === 1) {
+      includePatternsLine = `|> \`${includePatterns[0].pattern}\``;
+    } else {
+      includePatternsLine = `|>  ${includePatterns.map((p) => `\`${p.pattern}\``).join(' or ')}`;
+    }
+  }
+  return `${excludePatternsLine} ${includePatternsLine}`.trim();
+}
