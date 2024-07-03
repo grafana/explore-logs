@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { LoadingState, PanelData, DataFrame, fieldReducers, doStandardCalcs } from '@grafana/data';
+import { LoadingState, PanelData, DataFrame, FieldType, fieldReducers, doStandardCalcs } from '@grafana/data';
 import {
   SceneObjectState,
   SceneFlexItem,
@@ -10,6 +10,7 @@ import {
   SceneByFrameRepeater,
   SceneLayout,
 } from '@grafana/scenes';
+import { ChangepointDetector } from '@bsull/augurs';
 
 interface ByFrameRepeaterState extends SceneObjectState {
   body: SceneLayout;
@@ -20,6 +21,7 @@ type FrameFilterCallback = (frame: DataFrame) => boolean;
 type FrameIterateCallback = (frames: DataFrame[], seriesIndex: number) => void;
 
 export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
+  public changepointDetector = ChangepointDetector.defaultArgpcp();
   private unfilteredChildren: SceneFlexItem[];
   private sortBy: string;
   private direction: string;
@@ -63,28 +65,42 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     }
   };
 
-  private getSortedSeries(data: PanelData) {
-    const reducer = fieldReducers.get(this.sortBy);
+  private getSortedSeries = (data: PanelData) => {
+    const reducer = (dataFrame: DataFrame) => {
+      if (this.sortBy === 'changepoint') {
+        return this.changePointsValue(dataFrame);
+      }
+      const fieldReducer = fieldReducers.get(this.sortBy);
+      const value =
+        fieldReducer.reduce?.(dataFrame.fields[1], true, true) ?? doStandardCalcs(dataFrame.fields[1], true, true);
+      return value[this.sortBy] ?? 0;
+    };
 
-    const fieldCalcs = data.series.map((dataFrame) => ({
-      value: reducer.reduce?.(dataFrame.fields[1], true, true) ?? doStandardCalcs(dataFrame.fields[1], true, true),
-      field: dataFrame,
+    const seriesCalcs = data.series.map((dataFrame) => ({
+      value: reducer(dataFrame),
+      dataFrame: dataFrame,
     }));
 
-    fieldCalcs.sort((a, b) => {
-      // reducerValue will be a Record<ReducerID, number> or an empty object {}
-      if (a.value[this.sortBy] !== undefined && b.value[this.sortBy] !== undefined) {
-        return b.value[this.sortBy] - a.value[this.sortBy];
+    seriesCalcs.sort((a, b) => {
+      if (a.value && b.value) {
+        return b.value - a.value;
       }
       return 0;
     });
 
     if (this.direction === 'asc') {
-      fieldCalcs.reverse();
+      seriesCalcs.reverse();
     }
 
-    return fieldCalcs.map(({ field }) => field);
-  }
+    return seriesCalcs.map(({ dataFrame }) => dataFrame);
+  };
+
+  private changePointsValue = (data: DataFrame) => {
+    const fields = data.fields.filter((f) => f.type === FieldType.number);
+    const values = new Float64Array(fields[0].values);
+    const points = this.changepointDetector.detectChangepoints(values);
+    return points.indices.length;
+  };
 
   private performRepeat(data: PanelData) {
     const newChildren: SceneFlexItem[] = [];
