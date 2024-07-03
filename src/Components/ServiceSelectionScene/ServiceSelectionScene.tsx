@@ -1,6 +1,6 @@
 import { css } from '@emotion/css';
 import { debounce, escapeRegExp } from 'lodash';
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import { DashboardCursorSync, GrafanaTheme2, TimeRange } from '@grafana/data';
 import {
   AdHocFiltersVariable,
@@ -19,8 +19,6 @@ import {
 import {
   DrawStyle,
   Field,
-  Icon,
-  Input,
   LegendDisplayMode,
   LoadingPlaceholder,
   PanelContext,
@@ -30,9 +28,8 @@ import {
 } from '@grafana/ui';
 import { getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
-import { testIds } from 'services/testIds';
 import { LEVEL_VARIABLE_VALUE, VAR_DATASOURCE, VAR_LABELS } from 'services/variables';
-import { SelectServiceButton } from './SelectServiceButton';
+import { selectService, SelectServiceButton } from './SelectServiceButton';
 import { PLUGIN_ID } from 'services/routing';
 import { buildLokiQuery } from 'services/query';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
@@ -41,6 +38,7 @@ import { ConfigureVolumeError } from './ConfigureVolumeError';
 import { NoVolumeError } from './NoVolumeError';
 import { getLabelsFromSeries, toggleLevelFromFilter } from 'services/levels';
 import { isFetchError } from '@grafana/runtime';
+import { AsyncFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
 
 export const SERVICE_NAME = 'service_name';
 
@@ -355,13 +353,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
     // searchQuery is used to keep track of the search query in input field
     const [searchQuery, setSearchQuery] = useState('');
-    const onSearchChange = useCallback(
-      (e: React.FormEvent<HTMLInputElement>) => {
-        setSearchQuery(e.currentTarget.value);
-        model.onSearchServicesChange(e.currentTarget.value);
-      },
-      [model]
-    );
+    const onSearchChange = (serviceName: string | undefined) => {
+      // console.log('onChange', serviceName)
+      setSearchQuery(serviceName ?? '');
+      model.onSearchServicesChange(serviceName ?? '');
+    };
     return (
       <div className={styles.container}>
         <div className={styles.bodyWrapper}>
@@ -373,12 +369,19 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
             {!isServicesByVolumeLoading && <>Showing {servicesToQuery?.length ?? 0} services</>}
           </div>
           <Field className={styles.searchField}>
-            <Input
-              data-testid={testIds.exploreServiceSearch.search}
+            <AsyncFieldSelector
               value={searchQuery}
-              prefix={<Icon name="search" />}
-              placeholder="Search services"
               onChange={onSearchChange}
+              selectOption={(value: string) => {
+                selectService(value, model);
+              }}
+              label="Service"
+              options={
+                servicesByVolume?.map((serviceName) => ({
+                  value: serviceName,
+                  label: serviceName,
+                })) ?? []
+              }
             />
           </Field>
           {/** If we don't have any servicesByVolume, volume endpoint is probably not enabled */}
@@ -481,6 +484,7 @@ function getStyles(theme: GrafanaTheme2) {
     }),
     searchField: css({
       marginTop: theme.spacing(1),
+      label: 'search-field',
     }),
   };
 }

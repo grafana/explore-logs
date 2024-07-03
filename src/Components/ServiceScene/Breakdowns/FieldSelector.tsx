@@ -2,16 +2,20 @@ import { css } from '@emotion/css';
 import React, { useState } from 'react';
 
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
-import { Select, useStyles2, InlineField, Icon } from '@grafana/ui';
+import { ActionMeta, AsyncSelect, Icon, InlineField, InputActionMeta, Select, useStyles2 } from '@grafana/ui';
 
-type Props = {
+type FieldSelectorProps = {
   options: Array<SelectableValue<string>>;
   value?: string;
   onChange: (label: string | undefined) => void;
   label: string;
 };
 
-export function FieldSelector({ options, value, onChange, label }: Props) {
+type AsyncFieldSelectorProps = {
+  selectOption: (value: string) => void;
+} & FieldSelectorProps;
+
+export function FieldSelector({ options, value, onChange, label }: FieldSelectorProps) {
   const styles = useStyles2(getStyles);
   const [selected, setSelected] = useState(false);
   return (
@@ -28,11 +32,75 @@ export function FieldSelector({ options, value, onChange, label }: Props) {
   );
 }
 
+export function AsyncFieldSelector({ options, value, onChange, label, selectOption }: AsyncFieldSelectorProps) {
+  const styles = useStyles2(getStyles);
+  const [selected, setSelected] = useState(false);
+  const [customOption, setCustomOption] = useState<SelectableValue<string>>();
+  const allOptions = customOption ? [customOption, ...options] : options;
+  const selectedOption = allOptions?.find((opt) => opt.value === value);
+
+  return (
+    <InlineField grow={true} label={label}>
+      <AsyncSelect
+        placeholder={'Search services'}
+        options={allOptions}
+        isClearable={true}
+        value={value}
+        onOpenMenu={() => setSelected(true)}
+        onCloseMenu={() => setSelected(false)}
+        allowCustomValue={true}
+        className={styles.asyncSelect}
+        prefix={selected || selectedOption?.__isNew__ ? undefined : <Icon name={'search'} />}
+        onChange={(value: SelectableValue<string>, actionMeta: ActionMeta) => {
+          // Custom added value
+          if (value?.__isNew__) {
+            setCustomOption({ ...value, icon: 'filter' });
+            return onChange(value.value);
+          }
+
+          // If the user clears the search
+          if (actionMeta.action === 'clear') {
+            return onChange('');
+          }
+
+          // Select the service is the value is not a custom filter
+          if (actionMeta.action === 'select-option' && value.value && !value.__isNew__) {
+            selectOption(value.value);
+          }
+        }}
+        onInputChange={(value: string | undefined, actionMeta: InputActionMeta) => {
+          // Grafana/grafana doesn't have types from react-select, but we need the prevInput to add custom value when user clicks off with active search string
+          const meta = actionMeta as InputActionMeta & { prevInputValue: string };
+
+          // The user is typing
+          if (meta.action === 'input-change') {
+            return onChange(value);
+          }
+
+          // the user closed the menu, with text in search box
+          if (meta.action === 'menu-close' && meta.prevInputValue) {
+            setCustomOption({
+              value: meta.prevInputValue,
+              label: meta.prevInputValue,
+              icon: 'filter',
+              __isNew__: true,
+            });
+            return onChange(meta.prevInputValue);
+          }
+        }}
+      />
+    </InlineField>
+  );
+}
+
 function getStyles(theme: GrafanaTheme2) {
   return {
     select: css({
       maxWidth: theme.spacing(64),
       minWidth: theme.spacing(20),
+    }),
+    asyncSelect: css({
+      maxWidth: theme.spacing(54.5),
     }),
   };
 }
