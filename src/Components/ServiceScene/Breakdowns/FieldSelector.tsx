@@ -2,7 +2,7 @@ import { css } from '@emotion/css';
 import React, { useState } from 'react';
 
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
-import { ActionMeta, AsyncSelect, Icon, InlineField, InputActionMeta, Select, useStyles2 } from '@grafana/ui';
+import { ActionMeta, Icon, InlineField, InputActionMeta, Select, useStyles2 } from '@grafana/ui';
 
 type FieldSelectorProps = {
   options: Array<SelectableValue<string>>;
@@ -32,16 +32,17 @@ export function FieldSelector({ options, value, onChange, label }: FieldSelector
   );
 }
 
-export function AsyncFieldSelector({ options, value, onChange, label, selectOption }: AsyncFieldSelectorProps) {
+export function ServiceFieldSelector({ options, value, onChange, label, selectOption }: AsyncFieldSelectorProps) {
   const styles = useStyles2(getStyles);
   const [selected, setSelected] = useState(false);
   const [customOption, setCustomOption] = useState<SelectableValue<string>>();
-  const allOptions = customOption ? [customOption, ...options] : options;
+  const allOptions =
+    customOption && value && customOption.value?.includes(value) ? [customOption, ...options] : options;
   const selectedOption = allOptions?.find((opt) => opt.value === value);
 
   return (
     <InlineField grow={true} label={label}>
-      <AsyncSelect
+      <Select
         placeholder={'Search services'}
         options={allOptions}
         isClearable={true}

@@ -38,7 +38,7 @@ import { ConfigureVolumeError } from './ConfigureVolumeError';
 import { NoVolumeError } from './NoVolumeError';
 import { getLabelsFromSeries, toggleLevelFromFilter } from 'services/levels';
 import { isFetchError } from '@grafana/runtime';
-import { AsyncFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
+import { ServiceFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
 
 export const SERVICE_NAME = 'service_name';
 
@@ -369,7 +369,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
             {!isServicesByVolumeLoading && <>Showing {servicesToQuery?.length ?? 0} services</>}
           </div>
           <Field className={styles.searchField}>
-            <AsyncFieldSelector
+            <ServiceFieldSelector
               value={searchQuery}
               onChange={onSearchChange}
               selectOption={(value: string) => {
