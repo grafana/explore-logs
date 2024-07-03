@@ -60,11 +60,11 @@ type MakeOptional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 export interface ServiceSceneState extends SceneObjectState {
   body: SceneFlexLayout;
 
-  detectedFields?: string[];
+  fields?: string[];
   labels?: string[];
   patterns?: LokiPattern[];
 
-  detectedFieldsCount?: number;
+  fieldsCount?: number;
 
   loading?: boolean;
 }
@@ -197,10 +197,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       const frame = newState.data?.series[0];
       if (frame) {
         const res = extractParserAndFieldsFromDataFrame(frame);
-        const detectedFields = res.fields.filter((f) => !disabledFields.includes(f)).sort((a, b) => a.localeCompare(b));
-        if (JSON.stringify(detectedFields) !== JSON.stringify(this.state.detectedFields)) {
+        const fields = res.fields.filter((f) => !disabledFields.includes(f)).sort((a, b) => a.localeCompare(b));
+        if (JSON.stringify(fields) !== JSON.stringify(this.state.fields)) {
           this.setState({
-            detectedFields,
+            fields: fields,
             loading: false,
           });
         }
@@ -210,13 +210,13 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         }
       } else {
         this.setState({
-          detectedFields: [],
+          fields: [],
           loading: false,
         });
       }
     } else if (newState.data?.state === LoadingState.Error) {
       this.setState({
-        detectedFields: [],
+        fields: [],
         loading: false,
       });
     }
@@ -302,7 +302,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
           ...body.state.children.slice(0, 1),
           breakdownViewDef.getScene((vals) => {
             if (breakdownViewDef.value === 'fields') {
-              this.setState({ detectedFieldsCount: vals.length });
+              this.setState({ fieldsCount: vals.length });
             }
           }),
         ],
@@ -332,10 +332,10 @@ const breakdownViewsDefinitions: BreakdownViewDefinition[] = [
     testId: testIds.exploreServiceDetails.tabLabels,
   },
   {
-    displayName: 'Detected fields',
+    displayName: 'Fields',
     value: PageSlugs.fields,
     getScene: (f) => buildFieldsBreakdownActionScene(f),
-    testId: testIds.exploreServiceDetails.tabDetectedFields,
+    testId: testIds.exploreServiceDetails.tabFields,
   },
   {
     displayName: 'Patterns',
@@ -356,9 +356,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
     const getCounter = (tab: BreakdownViewDefinition, state: ServiceSceneState) => {
       switch (tab.value) {
         case 'fields':
-          return (
-            state.detectedFieldsCount ?? (state.detectedFields?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []).length
-          );
+          return state.fieldsCount ?? (state.fields?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []).length;
         case 'patterns':
           return state.patterns?.length;
         case 'labels':
