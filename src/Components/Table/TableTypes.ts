@@ -15,7 +15,7 @@ export type GenericMeta = {
   type?: 'BODY_FIELD' | 'TIME_FIELD' | 'LINK_FIELD';
   cardinality: number;
   maxLength?: number;
-  detectedFieldType?: FieldType;
+  fieldType?: FieldType;
 };
 
 export type FieldNameMeta = (ActiveFieldMeta | InactiveFieldMeta) & GenericMeta;
