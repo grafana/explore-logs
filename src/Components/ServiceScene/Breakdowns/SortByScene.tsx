@@ -22,7 +22,7 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
   public sortingOptions = [
     {
       value: 'changepoint',
-      label: 'Automatic',
+      label: 'Auto',
       description: 'Best-effort identification of the most relevant time series',
     },
     {
