@@ -40,6 +40,7 @@ import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
 import { NoVolumeError } from './NoVolumeError';
 import { getLabelsFromSeries, toggleLevelFromFilter } from 'services/levels';
+import { isFetchError } from '@grafana/runtime';
 
 export const SERVICE_NAME = 'service_name';
 
@@ -180,8 +181,9 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       });
     } catch (error) {
       console.log(`Failed to fetch top services:`, error);
+      const volumeApiError = isFetchError(error) && error.data.message?.includes('parse error') ? false : true;
       this.setState({
-        volumeApiError: true,
+        volumeApiError,
         servicesByVolume: [],
         isServicesByVolumeLoading: false,
       });
