@@ -2,7 +2,6 @@ import { css } from '@emotion/css';
 import React from 'react';
 
 import { GrafanaTheme2, LoadingState } from '@grafana/data';
-import { locationService } from '@grafana/runtime';
 import {
   AdHocFiltersVariable,
   CustomVariable,
@@ -13,8 +12,6 @@ import {
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
-  SceneObjectUrlSyncConfig,
-  SceneObjectUrlValues,
   SceneVariable,
   VariableDependencyConfig,
 } from '@grafana/scenes';
@@ -25,7 +22,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'se
 import { DetectedLabelsResponse, extractParserAndFieldsFromDataFrame } from 'services/fields';
 import { getQueryRunner } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
-import { EXPLORATIONS_ROUTE, PLUGIN_ID } from 'services/routing';
+import { getSlug, navigateToBreakdown, navigateToIndex, PLUGIN_ID, PageSlugs } from 'services/routing';
 import { getExplorationFor, getLokiDatasource } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
@@ -34,7 +31,6 @@ import {
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_FILTERS,
-  VAR_LINE_FILTER,
   VAR_LOGS_FORMAT,
   VAR_PATTERNS,
 } from 'services/variables';
@@ -44,7 +40,6 @@ import { buildPatternsScene } from './Breakdowns/PatternsBreakdownScene';
 import { GoToExploreButton } from './GoToExploreButton';
 import { buildLogsListScene } from './LogsListScene';
 import { testIds } from 'services/testIds';
-import { PageScene } from './PageScene';
 import { sortLabelsByCardinality } from 'services/filters';
 import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
 
@@ -53,11 +48,9 @@ export interface LokiPattern {
   samples: Array<[number, string]>;
 }
 
-export type ActionViewType = 'logs' | 'labels' | 'patterns' | 'fields';
-
-interface ActionViewDefinition {
+interface BreakdownViewDefinition {
   displayName: string;
-  value: ActionViewType;
+  value: PageSlugs;
   testId: string;
   getScene: (changeFields: (f: string[]) => void) => SceneObject;
 }
@@ -66,7 +59,6 @@ type MakeOptional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
 export interface ServiceSceneState extends SceneObjectState {
   body: SceneFlexLayout;
-  actionView?: string;
 
   detectedFields?: string[];
   labels?: string[];
@@ -78,7 +70,6 @@ export interface ServiceSceneState extends SceneObjectState {
 }
 
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
-  protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['actionView'] });
   protected _variableDependency = new VariableDependencyConfig(this, {
     variableNames: [VAR_DATASOURCE, VAR_FILTERS, VAR_FIELDS, VAR_PATTERNS],
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
@@ -95,8 +86,9 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
-  private getFiltersVariable(): AdHocFiltersVariable {
+  public getFiltersVariable(): AdHocFiltersVariable {
     const variable = sceneGraph.lookupVariable(VAR_FILTERS, this)!;
+
     if (!(variable instanceof AdHocFiltersVariable)) {
       throw new Error('Filters variable not found');
     }
@@ -122,38 +114,12 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private redirectToStart() {
-    const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
-    fields.setState({ filters: [] });
-    const lineFilter = sceneGraph.lookupVariable(VAR_LINE_FILTER, this);
-    if (lineFilter instanceof CustomVariable) {
-      lineFilter.changeValueTo('');
-    }
-
-    // Use locationService to do the redirect and allow the users to start afresh,
-    // potentially getting them unstuck of any leakage produced by subscribers, listeners,
-    // variables, etc.,  without having to do a full reload.
-    const params = locationService.getSearch();
-    const newParams = new URLSearchParams();
-    const from = params.get('from');
-    if (from) {
-      newParams.set('from', from);
-    }
-    const to = params.get('to');
-    if (to) {
-      newParams.set('to', to);
-    }
-    const ds = params.get('var-ds');
-    if (ds) {
-      newParams.set('var-ds', ds);
-    }
-    locationService.push(`${EXPLORATIONS_ROUTE}?${newParams}`);
+    // Redirect to root with updated params, which will trigger history push back to index route, preventing empty page or empty service query bugs
+    navigateToIndex();
   }
 
   private onActivate() {
-    if (this.state.actionView === undefined) {
-      this.setActionView('logs');
-    }
-
+    this.setBreakdownView(getSlug());
     this.setEmptyFiltersRedirection();
 
     const unsubs: Unsubscribable[] = [];
@@ -183,16 +149,21 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       this.redirectToStart();
       return;
     }
+
     const filterVariable = this.getFiltersVariable();
     if (filterVariable.state.filters.length === 0) {
       return;
     }
-    this.updatePatterns();
-    this.updateLabels();
-    // For patterns, we don't want to reload to logs as we allow users to select multiple patterns
-    if (variable.state.name !== VAR_PATTERNS) {
-      locationService.partial({ actionView: 'logs' });
-    }
+    Promise.all([this.updatePatterns(), this.updateLabels()])
+      .finally(() => {
+        // For patterns, we don't want to reload to logs as we allow users to select multiple patterns
+        if (variable.state.name !== VAR_PATTERNS) {
+          navigateToBreakdown(PageSlugs.logs);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to update', err);
+      });
   }
 
   private getLogsFormatVariable() {
@@ -321,42 +292,23 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
   }
 
-  getUrlState() {
-    return { actionView: this.state.actionView };
-  }
-
-  updateFromUrl(values: SceneObjectUrlValues) {
-    if (typeof values.actionView === 'string') {
-      if (this.state.actionView !== values.actionView) {
-        const actionViewDef = actionViewsDefinitions.find((v) => v.value === values.actionView);
-        if (actionViewDef) {
-          this.setActionView(actionViewDef.value);
-        }
-      }
-    } else if (values.actionView === null) {
-      this.setActionView(undefined);
-    }
-  }
-
-  public setActionView(actionView?: ActionViewType) {
+  public setBreakdownView(breakdownView?: PageSlugs) {
     const { body } = this.state;
-    const actionViewDef = actionViewsDefinitions.find((v) => v.value === actionView);
+    const breakdownViewDef = breakdownViewsDefinitions.find((v) => v.value === breakdownView);
 
-    if (actionViewDef && actionViewDef.value !== this.state.actionView) {
+    if (breakdownViewDef) {
       body.setState({
         children: [
           ...body.state.children.slice(0, 1),
-          actionViewDef.getScene((vals) => {
-            if (actionViewDef.value === 'fields') {
+          breakdownViewDef.getScene((vals) => {
+            if (breakdownViewDef.value === 'fields') {
               this.setState({ detectedFieldsCount: vals.length });
             }
           }),
         ],
       });
-      this.setState({ actionView: actionViewDef.value });
     } else {
-      body.setState({ children: body.state.children.slice(0, 1) });
-      this.setState({ actionView: undefined });
+      console.error('not setting breakdown view');
     }
   }
 
@@ -366,29 +318,29 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   };
 }
 
-const actionViewsDefinitions: ActionViewDefinition[] = [
+const breakdownViewsDefinitions: BreakdownViewDefinition[] = [
   {
     displayName: 'Logs',
-    value: 'logs',
-    getScene: () => new PageScene({ body: buildLogsListScene(), title: 'Logs' }),
+    value: PageSlugs.logs,
+    getScene: () => buildLogsListScene(),
     testId: testIds.exploreServiceDetails.tabLogs,
   },
   {
     displayName: 'Labels',
-    value: 'labels',
-    getScene: () => new PageScene({ body: buildLabelBreakdownActionScene(), title: 'Labels' }),
+    value: PageSlugs.labels,
+    getScene: () => buildLabelBreakdownActionScene(),
     testId: testIds.exploreServiceDetails.tabLabels,
   },
   {
     displayName: 'Detected fields',
-    value: 'fields',
-    getScene: (f) => new PageScene({ body: buildFieldsBreakdownActionScene(f), title: 'Detected fields' }),
+    value: PageSlugs.fields,
+    getScene: (f) => buildFieldsBreakdownActionScene(f),
     testId: testIds.exploreServiceDetails.tabDetectedFields,
   },
   {
     displayName: 'Patterns',
-    value: 'patterns',
-    getScene: () => new PageScene({ body: buildPatternsScene(), title: 'Patterns' }),
+    value: PageSlugs.patterns,
+    getScene: () => buildPatternsScene(),
     testId: testIds.exploreServiceDetails.tabPatterns,
   },
 ];
@@ -397,27 +349,27 @@ export interface LogsActionBarState extends SceneObjectState {}
 
 export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
   public static Component = ({ model }: SceneComponentProps<LogsActionBar>) => {
-    const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
     const styles = useStyles2(getStyles);
     const exploration = getExplorationFor(model);
-    const { actionView } = serviceScene.useState();
+    const currentBreakdownViewSlug = getSlug();
 
-    const getCounter = (tab: ActionViewDefinition) => {
+    const getCounter = (tab: BreakdownViewDefinition, state: ServiceSceneState) => {
       switch (tab.value) {
         case 'fields':
           return (
-            serviceScene.state.detectedFieldsCount ??
-            (serviceScene.state.detectedFields?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []).length
+            state.detectedFieldsCount ?? (state.detectedFields?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []).length
           );
         case 'patterns':
-          return serviceScene.state.patterns?.length;
+          return state.patterns?.length;
         case 'labels':
-          return (serviceScene.state.labels?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []).length;
+          return (state.labels?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []).length;
         default:
           return undefined;
       }
     };
 
+    const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
+    const { loading, ...state } = serviceScene.useState();
     return (
       <Box paddingY={0}>
         <div className={styles.actions}>
@@ -427,25 +379,36 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
         </div>
 
         <TabsBar>
-          {actionViewsDefinitions.map((tab, index) => {
+          {breakdownViewsDefinitions.map((tab, index) => {
             return (
               <Tab
                 data-testid={tab.testId}
                 key={index}
                 label={tab.displayName}
-                active={actionView === tab.value}
-                counter={getCounter(tab)}
+                active={currentBreakdownViewSlug === tab.value}
+                counter={!loading ? getCounter(tab, state) : undefined}
+                icon={loading ? 'spinner' : undefined}
                 onChangeTab={() => {
-                  if (tab.value !== serviceScene.state.actionView) {
+                  if (tab.value !== currentBreakdownViewSlug) {
                     reportAppInteraction(
                       USER_EVENTS_PAGES.service_details,
                       USER_EVENTS_ACTIONS.service_details.action_view_changed,
                       {
                         newActionView: tab.value,
-                        previousActionView: serviceScene.state.actionView,
+                        previousActionView: currentBreakdownViewSlug,
                       }
                     );
-                    serviceScene.setActionView(tab.value);
+                    if (tab.value) {
+                      const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
+                      const variable = serviceScene.getFiltersVariable();
+                      const service = variable.state.filters.find((f) => f.key === SERVICE_NAME);
+
+                      if (service?.value) {
+                        navigateToBreakdown(tab.value);
+                      } else {
+                        navigateToIndex();
+                      }
+                    }
                   }
                 }}
               />
