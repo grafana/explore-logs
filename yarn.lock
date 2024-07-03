@@ -327,6 +327,11 @@
   resolved "https://registry.yarnpkg.com/@braintree/sanitize-url/-/sanitize-url-7.0.1.tgz#457233b0a18741b7711855044102b82bae7a070b"
   integrity sha512-URg8UM6lfC9ZYqFipItRSxYJdgpU5d2Z4KnjsJ+rj6tgAmGme7E+PQNCiud8g0HDaZKMovu2qjfa0f5Ge0Vlsg==
 
+"@bsull/augurs@0.2.0":
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@bsull/augurs/-/augurs-0.2.0.tgz#71fcec248493cb9ee2d473dd4b8a8bb1c320932e"
+  integrity sha512-HyxFkWxHgSgvCuiCyan9JqWaMbEvgVGAryoorkZ/fbwV1SV0J+fuVgaGCRfzYH15lVGR3fFWVjhYY0zZfjKHng==
+
 "@commitlint/cli@^19.2.2":
   version "19.2.2"
   resolved "https://registry.yarnpkg.com/@commitlint/cli/-/cli-19.2.2.tgz#7b6d78596dcf6d716942b147aa07c04c4ee126df"
@@ -811,6 +816,14 @@
     lodash "4.17.21"
     rxjs "7.8.1"
     tslib "2.6.2"
+
+"@grafana/scenes-ml@^0.2.0":
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@grafana/scenes-ml/-/scenes-ml-0.2.0.tgz#aaaadcb242934a8d83ba0633119d3a42ba60f922"
+  integrity sha512-p0QDFtn2iyuNFUn4CR01RIvU09YnpuXllgYZjkcnKeLvOjPY0iwJesnyE9VkYgEhcVQ31k30KgRutv8wlR0alw==
+  dependencies:
+    "@bsull/augurs" "0.2.0"
+    date-fns "^3.6.0"
 
 "@grafana/scenes@5.2.0":
   version "5.2.0"
@@ -3594,7 +3607,7 @@ data-view-byte-offset@^1.0.0:
     es-errors "^1.3.0"
     is-data-view "^1.0.1"
 
-date-fns@3.6.0:
+date-fns@3.6.0, date-fns@^3.6.0:
   version "3.6.0"
   resolved "https://registry.yarnpkg.com/date-fns/-/date-fns-3.6.0.tgz#f20ca4fe94f8b754951b24240676e8618c0206bf"
   integrity sha512-fRHTG8g/Gif+kSh50gaGEdToemgfj74aRX3swtiouboip5JDLAyDE9F11nHMIcvOaXeOC6D7SpNhi7uFyB7Uww==
