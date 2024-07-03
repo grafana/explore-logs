@@ -1,5 +1,5 @@
 import { css } from '@emotion/css';
-import { debounce } from 'lodash';
+import { debounce, escapeRegExp } from 'lodash';
 import React, { useCallback, useState } from 'react';
 import { DashboardCursorSync, GrafanaTheme2, TimeRange } from '@grafana/data';
 import {
@@ -148,7 +148,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     }
 
     try {
-      const serviceSearch = service ? `(?i).*${service}.*` : '.+';
+      const serviceSearch = service ? `(?i).*${escapeRegExp(service)}.*` : '.+';
       const volumeResponse = await ds.getResource!(
         'index/volume',
         {
