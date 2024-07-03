@@ -153,7 +153,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       const volumeResponse = await ds.getResource(
         'index/volume',
         {
-          query: `{${SERVICE_NAME}=~"${serviceSearch}"}`,
+          query: `{${SERVICE_NAME}=~\`${serviceSearch}\`}`,
           from: timeRange.from.utc().toISOString(),
           to: timeRange.to.utc().toISOString(),
         },
