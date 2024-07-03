@@ -106,4 +106,4 @@ Pattern 2: `user loaded: <_>`
 
 ## What next?
 
-Learn about how [Log patterns]({{< relref "../patterns" >}}) can help you deal with different types of log lines in bulk.
+See how Explore Logs works on your own data by following our [Get started guide]({{< relref "../get-started" >}}).
