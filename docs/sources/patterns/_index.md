@@ -23,7 +23,7 @@ Log patterns allow you to work with groups of similar log lines. You can hide th
 
 Patterns are automatically extracted when your logs are ingested.
 
-The Explore Logs app shows you the patterns alongside their log volumes. From this view, you can investigate spikes and drill down to view the logs.
+The Explore Logs app shows you the patterns alongside their log volumes. From this view, you can investigate spikes and include or exclude those log lines from your view.
 
 Patterns are ephemeral and can change over time as your logging evolves.
 
