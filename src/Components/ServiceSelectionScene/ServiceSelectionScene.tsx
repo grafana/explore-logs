@@ -149,7 +149,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
     try {
       const serviceSearch = service ? `(?i).*${escapeRegExp(service)}.*` : '.+';
-      const volumeResponse = await ds.getResource!(
+      const volumeResponse = await ds.getResource(
         'index/volume',
         {
           query: `{${SERVICE_NAME}=~"${serviceSearch}"}`,
