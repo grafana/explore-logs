@@ -25,13 +25,14 @@ cards:
 Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafana Labs offers limited support, and breaking changes might occur prior to the feature being made generally available.
 {{% /admonition %}}
 
-Explore Logs offers a queryless experience for browsing Loki logs. You can:
+Explore Logs automatically visualises insights from your Loki logs. You can:
 
 * Drill into your data using volume and text patterns
 * Easily find logs and log volumes for all of your services
 * Effortlessly filter logs based on their labels, fields, or patterns
 * Uncover related logs and monitor changes over time
 * Browse automatic visualizations of your log data based on its characteristics
+* Do all of this without writing LogQL queries
 
 {{< docs/hero-simple key="hero" >}}
 
@@ -43,5 +44,5 @@ Traditionally you'd need to learn LogQL and build a deep understanding of your s
 
 ## What next?
 
-Dive into the [Get started with Explore Logs]({{< relref "../get-started" >}}) article to learn how to set up Explore Logs and take a tour of the feature on your own data. 
+Dive into the [Get started with Explore Logs]({{< relref "get-started" >}}) article to learn how to set up Explore Logs and take a tour of the feature on your own data. 
 
