@@ -14,6 +14,7 @@ weight: 200
 
 {{% admonition type="caution" %}}
 Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafana Labs offers limited support, and breaking changes might occur prior to the feature being made generally available.
+Please [send us any feedback](https://forms.gle/1sYWCTPvD72T1dPH9).
 {{% /admonition %}}
 
 The best way to see what Explore Logs can do for you is to use it to explore your own data.
@@ -32,6 +33,7 @@ To take a tour of Explore Logs, follow these steps:
 
 1. In the main navigation bar click on **Explore** > **Logs**.
 2. You’ll land on the **Service overview page** showing time series and log visualizations for all the services in your selected Loki instance.
+
 3. Change your data source with the drop-down on the top left, and select a recent time range.
 {{% admonition type="tip" %}}
 Modify your time range in two ways:

@@ -14,6 +14,7 @@ weight: 300
 
 {{% admonition type="caution" %}}
 Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafana Labs offers limited support, and breaking changes might occur prior to the feature being made generally available.
+Please [send us any feedback](https://forms.gle/1sYWCTPvD72T1dPH9).
 {{% /admonition %}}
 
 Explore Logs shows you the volume of logs with specific Labels and Detected fields.
