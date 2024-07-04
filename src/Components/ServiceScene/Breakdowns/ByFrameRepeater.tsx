@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { LoadingState, PanelData, DataFrame, FieldType, fieldReducers, doStandardCalcs } from '@grafana/data';
+import { LoadingState, PanelData, DataFrame } from '@grafana/data';
 import {
   SceneObjectState,
   SceneFlexItem,
@@ -10,7 +10,7 @@ import {
   SceneByFrameRepeater,
   SceneLayout,
 } from '@grafana/scenes';
-import { ChangepointDetector } from '@bsull/augurs';
+import { sortSeries } from 'services/sorting';
 
 interface ByFrameRepeaterState extends SceneObjectState {
   body: SceneLayout;
@@ -64,57 +64,9 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     }
   };
 
-  private getSortedSeries = (data: PanelData) => {
-    const reducer = (dataFrame: DataFrame) => {
-      if (this.sortBy === 'changepoint') {
-        return this.calculateChangepointsValue(dataFrame);
-      }
-      const fieldReducer = fieldReducers.get(this.sortBy);
-      const value =
-        fieldReducer.reduce?.(dataFrame.fields[1], true, true) ?? doStandardCalcs(dataFrame.fields[1], true, true);
-      return value[this.sortBy] ?? 0;
-    };
-
-    const seriesCalcs = data.series.map((dataFrame) => ({
-      value: reducer(dataFrame),
-      dataFrame: dataFrame,
-    }));
-
-    seriesCalcs.sort((a, b) => {
-      if (a.value && b.value) {
-        return b.value - a.value;
-      }
-      return 0;
-    });
-
-    if (this.direction === 'asc') {
-      seriesCalcs.reverse();
-    }
-
-    return seriesCalcs.map(({ dataFrame }) => dataFrame);
-  };
-
-  private calculateChangepointsValue = (data: DataFrame) => {
-    const fields = data.fields.filter((f) => f.type === FieldType.number);
-
-    const dataPoints = fields[0].values.length;
-    let samplingStep = Math.floor(dataPoints / 100) || 1;
-    if (samplingStep > 1) {
-      // Avoiding "big" steps for more accuracy
-      samplingStep = Math.ceil(samplingStep / 2);
-    }
-
-    const sample = fields[0].values.filter((_, i) => i % samplingStep === 0);
-
-    const values = new Float64Array(sample);
-    const points = ChangepointDetector.defaultArgpcp().detectChangepoints(values);
-
-    return points.indices.length;
-  };
-
   private performRepeat(data: PanelData) {
     const newChildren: SceneFlexItem[] = [];
-    const sortedSeries = this.getSortedSeries(data);
+    const sortedSeries = sortSeries(data.series, this.sortBy, this.direction);
 
     for (let seriesIndex = 0; seriesIndex < sortedSeries.length; seriesIndex++) {
       const layoutChild = this.state.getLayoutChild(data, sortedSeries[seriesIndex], seriesIndex);
@@ -130,7 +82,7 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     if (!data) {
       return;
     }
-    const sortedSeries = this.getSortedSeries(data);
+    const sortedSeries = sortSeries(data.series, this.sortBy, this.direction);
     for (let seriesIndex = 0; seriesIndex < sortedSeries.length; seriesIndex++) {
       callback(sortedSeries, seriesIndex);
     }
