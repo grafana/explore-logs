@@ -14,7 +14,7 @@ describe('SortByScene', () => {
   test('Sorts by standard deviation by default', () => {
     render(<scene.Component model={scene} />);
 
-    expect(screen.getByText('StdDev')).toBeInTheDocument();
+    expect(screen.getByText('Relevance')).toBeInTheDocument();
     expect(screen.getByText('Desc')).toBeInTheDocument();
   });
 
@@ -45,6 +45,6 @@ describe('SortByScene', () => {
 
     await waitFor(() => select(screen.getByLabelText('Sort direction'), 'Asc', { container: document.body }));
 
-    expect(eventSpy).toHaveBeenCalledWith(new SortCriteriaChanged('stdDev', 'asc'), true);
+    expect(eventSpy).toHaveBeenCalledWith(new SortCriteriaChanged('changepoint', 'asc'), true);
   });
 });
