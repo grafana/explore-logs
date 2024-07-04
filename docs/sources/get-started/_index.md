@@ -45,12 +45,12 @@ Modify your time range in two ways:
 8. Select a label to see the log volume for each value of that label.
 
 {{% admonition type="Learn more" %}}
-Explore Logs shows you the volume of logs with specific Labels and Detected fields.
+Explore Logs shows you the volume of logs with specific Labels and fields.
 
-**What next?** Learn more about [Labels and Detected fields]({{< relref "../labels-and-detected-fields" >}}).
+**What next?** Learn more about [Labels and Fields]({{< relref "../labels-and-fields" >}}).
 {{% /admonition %}}
 
-9. Select the **Detected fields** tab to see visualizations of the log volume for each detected field. You can drill down in the same way.
+9. Select the **Fields** tab to see visualizations of the log volume for each Field. You can drill down in the same way.
 10. Click on the **Patterns** tab to see the log volume for each automatically detected pattern.
 
 {{% admonition type="Learn more" %}}

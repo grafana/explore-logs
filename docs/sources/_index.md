@@ -15,9 +15,9 @@ cards:
       href: ./get-started/
       description: Install Explore Logs and take a tour of Explore Logs using your own data.
       height: 24
-    - title: Labels and Detected fields
-      href: ./labels-and-detected-fields/
-      description: Learn how Explore Logs uses labels and detected fields to help you explore your Loki logs.
+    - title: Labels and Fields
+      href: ./labels-and-fields/
+      description: Learn how Explore Logs uses labels and Fields to help you explore your Loki logs.
       height: 24
     - title: Log patterns
       href: ./patterns/
