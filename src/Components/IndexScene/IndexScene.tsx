@@ -51,7 +51,6 @@ export interface IndexSceneState extends SceneObjectState {
   controls: SceneObject[];
   body?: LayoutScene;
   initialFilters?: AdHocVariableFilter[];
-  initialDS?: string;
   patterns?: AppliedPattern[];
 }
 
@@ -62,7 +61,8 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     super({
       $timeRange: state.$timeRange ?? new SceneTimeRange({}),
       $variables:
-        state.$variables ?? getVariableSet(state.initialDS ?? getLastUsedDataSourceFromStorage(), state.initialFilters),
+        state.$variables ??
+        getVariableSet('grafanacloud-logs' ?? getLastUsedDataSourceFromStorage(), state.initialFilters),
       controls: state.controls ?? [
         new VariableValueSelectors({ layout: 'vertical' }),
         new SceneControlsSpacer(),
@@ -166,7 +166,7 @@ function getContentScene() {
   return new ServiceScene({});
 }
 
-function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter[]) {
+function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVariableFilter[]) {
   const operators = [FilterOp.Equal, FilterOp.NotEqual].map<SelectableValue<string>>((value) => ({
     label: value,
     value,
@@ -205,7 +205,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
   const dsVariable = new DataSourceVariable({
     name: VAR_DATASOURCE,
     label: 'Data source',
-    value: initialDS,
+    value: initialDatasourceUid,
     pluginId: 'loki',
   });
   dsVariable.subscribeToState((newState) => {
