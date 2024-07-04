@@ -2,7 +2,7 @@ import { DataFrame } from '@grafana/data';
 import { SceneDataTransformer, SceneQueryRunner } from '@grafana/scenes';
 import { map, Observable } from 'rxjs';
 import { LokiQuery } from './query';
-import { explorationDS } from './variables';
+import { EXPLORATION_DS } from './variables';
 
 const UNKNOWN_LEVEL_LOGS = 'logs';
 // TODO: `FieldConfigOverridesBuilder` is not exported, so it can not be used
@@ -61,7 +61,7 @@ export function getQueryRunner(query: LokiQuery) {
   if (query.legendFormat?.toLowerCase().includes('level')) {
     return new SceneDataTransformer({
       $data: new SceneQueryRunner({
-        datasource: explorationDS,
+        datasource: EXPLORATION_DS,
         queries: [query],
       }),
       transformations: [sortLevelTransformation],
@@ -69,7 +69,7 @@ export function getQueryRunner(query: LokiQuery) {
   }
 
   return new SceneQueryRunner({
-    datasource: explorationDS,
+    datasource: EXPLORATION_DS,
     queries: [query],
   });
 }

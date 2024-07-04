@@ -15,15 +15,13 @@ import {
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
-import { renderLogQLLabelFilters } from 'Components/IndexScene/IndexScene';
-import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
 import { Unsubscribable } from 'rxjs';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { DetectedLabelsResponse } from 'services/fields';
 import { sortLabelsByCardinality } from 'services/filters';
 import { getQueryRunner } from 'services/panel';
-import { buildLokiQuery } from 'services/query';
-import { getSlug, navigateToBreakdown, navigateToIndex, PageSlugs, PLUGIN_ID } from 'services/routing';
+import { buildLokiQuery, renderLogQLStreamSelector } from 'services/query';
+import { getSlug, navigateToBreakdown, navigateToIndex, PLUGIN_ID, PageSlugs } from 'services/routing';
 import { getExplorationFor, getLokiDatasource } from 'services/scenes';
 import { testIds } from 'services/testIds';
 import {
@@ -33,7 +31,7 @@ import {
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE,
   VAR_FIELDS,
-  VAR_FILTERS,
+  VAR_LABELS,
   VAR_PATTERNS,
 } from 'services/variables';
 import { buildFieldsBreakdownActionScene } from './Breakdowns/FieldsBreakdownScene';
@@ -70,7 +68,7 @@ export interface ServiceSceneState extends SceneObjectState {
 
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
-    variableNames: [VAR_DATASOURCE, VAR_FILTERS, VAR_FIELDS, VAR_PATTERNS],
+    variableNames: [VAR_DATASOURCE, VAR_LABELS, VAR_FIELDS, VAR_PATTERNS],
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
   });
 
@@ -86,7 +84,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   public getFiltersVariable(): AdHocFiltersVariable {
-    const variable = sceneGraph.lookupVariable(VAR_FILTERS, this)!;
+    const variable = sceneGraph.lookupVariable(VAR_LABELS, this)!;
 
     if (!(variable instanceof AdHocFiltersVariable)) {
       throw new Error('Filters variable not found');
@@ -221,16 +219,16 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
 
     const timeRange = sceneGraph.getTimeRange(this).state.value;
-    const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
+    const labels = sceneGraph.lookupVariable(VAR_LABELS, this)! as AdHocFiltersVariable;
     const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
     const excludeLabels = [ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE];
 
     const { data } = await ds.getResource(
       'patterns',
       {
-        query: renderLogQLLabelFilters([
+        query: renderLogQLStreamSelector([
           // this will only be the service name for now
-          ...filters.state.filters,
+          ...labels.state.filters,
           // only include fields that are an indexed label
           ...fields.state.filters.filter(
             // we manually add level as a label, but it'll be structured metadata mostly, so we skip it here
@@ -256,7 +254,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       return;
     }
     const timeRange = sceneGraph.getTimeRange(this).state.value;
-    const filters = sceneGraph.lookupVariable(VAR_FILTERS, this)! as AdHocFiltersVariable;
+    const filters = sceneGraph.lookupVariable(VAR_LABELS, this)! as AdHocFiltersVariable;
     const { detectedLabels } = await ds.getResource<DetectedLabelsResponse>(
       'detected_labels',
       {
