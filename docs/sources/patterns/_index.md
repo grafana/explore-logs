@@ -103,7 +103,7 @@ Pattern 1: `duration=<_> trace_id=<_> <_> /path/to/endpoint/<_>`
 
 Pattern 2: `user loaded: <_>`
 
-{{% admonition type="tip" %}}
+{{% admonition type="note" %}}
 Since Loki 3.0, you can make queries using this simplified template format which is much faster than using regex.
 {{% /admonition %}}
 

@@ -23,7 +23,7 @@ The best way to see what Explore Logs can do for you is to use it to explore you
 
 We will walk through a simple step-by-step guide providing a tour of Explore Logs.
 
-{{% admonition type="tip" %}}
+{{% admonition type="note" %}}
 Instructions for how to access or install Explore Logs are below.
 {{% /admonition %}}
 
@@ -35,7 +35,7 @@ To take a tour of Explore Logs, follow these steps:
 2. You’ll land on the **Service overview page** showing time series and log visualizations for all the services in your selected Loki instance. ([No services?]({{< relref "../troubleshooting/#there-are-no-services" >}}))
 3. Change your data source with the drop-down on the top left, and select a recent time range.
 {{% admonition type="tip" %}}
-Modify your time range in two ways:
+You can modify your time range in two ways:
    - With the standard time range picker on the top right.
    - By clicking and dragging the time range on any time series visualization.
 {{% /admonition %}}
@@ -44,19 +44,19 @@ Modify your time range in two ways:
 7. Click on the **Labels** tab to see visualizations of the log volume for each label. ([No labels?]({{< relref "../troubleshooting/#there-are-no-labels" >}}))
 8. Select a label to see the log volume for each value of that label.
 
-{{% admonition type="Learn more" %}}
+{{% admonition type="note" %}}
 Explore Logs shows you the volume of logs with specific Labels and fields.
 
-**What next?** Learn more about [Labels and Fields]({{< relref "../labels-and-fields" >}}).
+**Learn more** about [Labels and Fields]({{< relref "../labels-and-fields" >}}).
 {{% /admonition %}}
 
 9. Select the **Fields** tab to see visualizations of the log volume for each Field. You can drill down in the same way.
 10. Click on the **Patterns** tab to see the log volume for each automatically detected pattern.
 
-{{% admonition type="Learn more" %}}
+{{% admonition type="note" %}}
 Log patterns allow you to work with groups of similar log lines. You can hide them if they're noise, or focus in on them if they're useful.
 
-**What next?** Learn more about [Log Patterns]({{< relref "../patterns" >}}).
+**Learn more** about [Log Patterns]({{< relref "../patterns" >}}).
 {{% /admonition %}}
 
 ## Access in Grafana Cloud

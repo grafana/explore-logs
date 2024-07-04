@@ -58,6 +58,8 @@ With Explore Logs, you get the same powerful insights, by just clicking around a
 Take a look around, and please 
 
 {{< card-grid key="cards" type="simple" >}}
+<br>
+If you're having trouble using Explore Logs, check out our [troubleshooting guides]({{< relref "troubleshooting" >}}).
 
 ## Please share your feedback
 
