@@ -32,8 +32,7 @@ While you are browsing around the app, look out for any unexpected spikes. Or pe
 To take a tour of Explore Logs, follow these steps:
 
 1. In the main navigation bar click on **Explore** > **Logs**.
-2. You’ll land on the **Service overview page** showing time series and log visualizations for all the services in your selected Loki instance.
-
+2. You’ll land on the **Service overview page** showing time series and log visualizations for all the services in your selected Loki instance. ([Why can't I see any services?]({{< relref "../troubleshooting/#there-are-no-services" >}}))
 3. Change your data source with the drop-down on the top left, and select a recent time range.
 {{% admonition type="tip" %}}
 Modify your time range in two ways:
@@ -42,7 +41,7 @@ Modify your time range in two ways:
 {{% /admonition %}}
 5. Services are shown based on the volume of logs, or you can search for the service by name.
 6. Click **Select** on the service you would like to explore.
-7. Click on the **Labels** tab to see visualizations of the log volume for each label.
+7. Click on the **Labels** tab to see visualizations of the log volume for each label. ([Why can't I see any labels?]({{< relref "../troubleshooting/#there-are-no-labels" >}}))
 8. Select a label to see the log volume for each value of that label.
 
 {{% admonition type="Learn more" %}}
