@@ -19,11 +19,19 @@ Please [send us any feedback](https://forms.gle/1sYWCTPvD72T1dPH9).
 
 ## There are no services
 
-TODO: tips
+If you don't see any services when you access Explore Logs, you can try the following fixes:
+
+1. Specify the label to use to identify services by setting the [discover_service_name configuration value](https://grafana.com/docs/loki/latest/configure/#:~:text=discover_service_name) in Loki.
 
 ## There are no labels
 
-If you do not see any labels, ensure your collector is properly configured to attach them.
+If you do not see any labels in Explore Logs, you can try the following fixes:
+
+1. Ensure your collector is properly configured to attach them.
+
+{{% admonition type="tip" %}}
+To learn more about Labels, check out the [Understand labels article](https://grafana.com/docs/loki/latest/get-started/labels/).
+{{% /admonition %}}
 
 ## I cannot find something
 
