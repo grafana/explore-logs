@@ -24,23 +24,12 @@ export enum PageSlugs {
   fields = 'fields',
 }
 
-export function encodeParameter(parameter: string): string {
-  return encodeURIComponent(parameter.replace(/\//g, '---'));
-}
-
-export function decodeParameter(parameter: string): string {
-  return decodeURIComponent(parameter).replace(/---/g, '/');
-}
-
 export const ROUTES = {
   explore: () => prefixRoute(PageSlugs.explore),
-  logs: (service: string) => prefixRoute(`${PageSlugs.explore}/service/${encodeParameter(service)}/${PageSlugs.logs}`),
-  fields: (service: string) =>
-    prefixRoute(`${PageSlugs.explore}/service/${encodeParameter(service)}/${PageSlugs.fields}`),
-  patterns: (service: string) =>
-    prefixRoute(`${PageSlugs.explore}/service/${encodeParameter(service)}/${PageSlugs.patterns}`),
-  labels: (service: string) =>
-    prefixRoute(`${PageSlugs.explore}/service/${encodeParameter(service)}/${PageSlugs.labels}`),
+  logs: (service: string) => prefixRoute(`${PageSlugs.explore}/service/${service}/${PageSlugs.logs}`),
+  fields: (service: string) => prefixRoute(`${PageSlugs.explore}/service/${service}/${PageSlugs.fields}`),
+  patterns: (service: string) => prefixRoute(`${PageSlugs.explore}/service/${service}/${PageSlugs.patterns}`),
+  labels: (service: string) => prefixRoute(`${PageSlugs.explore}/service/${service}/${PageSlugs.labels}`),
 };
 
 export const ROUTE_DEFINITIONS: Record<keyof typeof PageSlugs, string> = {
