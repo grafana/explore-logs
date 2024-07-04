@@ -100,7 +100,7 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     const fields = data.fields.filter((f) => f.type === FieldType.number);
 
     const dataPoints = fields[0].values.length;
-    const samplingStep = Math.floor(dataPoints / Math.pow(10, dataPoints.toString().length - 1));
+    const samplingStep = Math.floor(dataPoints / 100) || 1;
 
     const sample = fields[0].values.filter((_, i) => i % samplingStep === 0);
 
