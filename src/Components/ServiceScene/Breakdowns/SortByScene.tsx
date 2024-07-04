@@ -23,11 +23,11 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
     {
       value: 'changepoint',
       label: 'Auto',
-      description: 'Best-effort identification of the most relevant time series',
+      description: 'Best-effort identification of the most relevant graphs',
     },
     {
       value: ReducerID.stdDev,
-      label: 'Standard deviation',
+      label: 'Dispersion',
       description: 'Standard deviation of all values in a field',
     },
     ...fieldReducers.selectOptions([], (ext) => ext.id !== ReducerID.stdDev).options,
