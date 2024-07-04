@@ -80,8 +80,6 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
       dataFrame: dataFrame,
     }));
 
-    console.log(seriesCalcs);
-
     seriesCalcs.sort((a, b) => {
       if (a.value && b.value) {
         return b.value - a.value;
@@ -100,7 +98,11 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     const fields = data.fields.filter((f) => f.type === FieldType.number);
 
     const dataPoints = fields[0].values.length;
-    const samplingStep = Math.floor(dataPoints / 100) || 1;
+    let samplingStep = Math.floor(dataPoints / 100) || 1;
+    if (samplingStep > 1) {
+      // Avoiding "big" steps for more accuracy
+      samplingStep = Math.ceil(samplingStep / 2);
+    }
 
     const sample = fields[0].values.filter((_, i) => i % samplingStep === 0);
 
