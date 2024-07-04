@@ -18,7 +18,7 @@ export const sortSeries = (series: DataFrame[], sortBy: string, direction: strin
   }));
 
   seriesCalcs.sort((a, b) => {
-    if (a.value && b.value) {
+    if (a.value !== undefined && b.value !== undefined) {
       return b.value - a.value;
     }
     return 0;
@@ -35,6 +35,7 @@ export const calculateDataFrameChangepoints = (data: DataFrame) => {
   const fields = data.fields.filter((f) => f.type === FieldType.number);
 
   const dataPoints = fields[0].values.length;
+
   let samplingStep = Math.floor(dataPoints / 100) || 1;
   if (samplingStep > 1) {
     // Avoiding "big" steps for more accuracy
