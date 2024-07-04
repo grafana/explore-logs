@@ -28,9 +28,9 @@ This experience is useful for understanding the traits of your system, and for s
 To explore labels with your own data, follow these steps:
 
 1. In the main menu, select **Explore** > **Logs**.
-1. Click the **Select** button for the service you want to explore. ([Why can't I see any services?]({{< relref "../troubleshooting/#there-are-no-services" >}}))
+1. Click the **Select** button for the **Service** you want to explore. ([No services?]({{< relref "../troubleshooting/#there-are-no-services" >}}))
 1. Click the **Labels** tab.
-1. Browse the labels detected for this service. ([Why can't I see any labels?]({{< relref "../troubleshooting/#there-are-no-labels" >}}))
+1. Browse the labels detected for this service. ([No labels?]({{< relref "../troubleshooting/#there-are-no-labels" >}}))
 1. Look for an interesting label and click the **Select** button.
 
 You will see a selection of visualizations showing the volume of each one.

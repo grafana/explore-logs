@@ -17,6 +17,8 @@ Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafan
 Please [send us any feedback](https://forms.gle/1sYWCTPvD72T1dPH9).
 {{% /admonition %}}
 
+This page address common issues when getting started and using Explore Logs.
+
 ## There are no services
 
 TODO: tips
@@ -24,6 +26,11 @@ TODO: tips
 ## There are no labels
 
 If you do not see any labels, ensure your collector is properly configured to attach them.
+
+## There are no patterns
+
+* todo: how to make sure it's enabled
+* todo: explanation of why you might not get any patterns
 
 ## I cannot find something
 

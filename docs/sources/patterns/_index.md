@@ -57,9 +57,9 @@ If you know the kind of log line you're looking for, Log patterns are an easy wa
 To view only a specific set of patterns, perform the following steps:
 
 1. In the main menu, select **Explore** > **Logs**.
-2. Select the relevant **Service**.
+2. Select the relevant **Service**. ([No services?]({{< relref "../troubleshooting/#there-are-no-services" >}}))
 3. Click the **Patterns** tab.
-4. Identify a pattern that matches the type of logs you're interested in viewing.
+4. Identify a pattern that matches the type of logs you're interested in viewing. ([No patterns?]({{< relref "../troubleshooting/#there-are-no-patterns" >}}))
 5. Click the **Include** button.
 6. Return to the **Logs** tab and notice the filtered view.
 
@@ -68,9 +68,9 @@ To view only a specific set of patterns, perform the following steps:
 To hide noisy log lines, perform the following steps:
 
 1. In the main menu, select **Explore** > **Logs**.
-2. Select the relevant **Service**.
+2. Select the relevant **Service**. ([No services?]({{< relref "../troubleshooting/#there-are-no-services" >}}))
 3. Open the **Patterns** tab.
-4. Identify a pattern that represents noise in the logs that you want to remove.
+4. Identify a pattern that represents noise in the logs that you want to remove. ([No patterns?]({{< relref "../troubleshooting/#there-are-no-patterns" >}}))
 5. Click the **Exclude** button to exclude that pattern.
 6. Return to the **Logs** tab and notice the noisy pattern has been removed.
 
