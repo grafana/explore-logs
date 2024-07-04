@@ -80,6 +80,8 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
       dataFrame: dataFrame,
     }));
 
+    console.log(seriesCalcs);
+
     seriesCalcs.sort((a, b) => {
       if (a.value && b.value) {
         return b.value - a.value;
@@ -96,8 +98,15 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
 
   private calculateChangepointsValue = (data: DataFrame) => {
     const fields = data.fields.filter((f) => f.type === FieldType.number);
-    const values = new Float64Array(fields[0].values);
+
+    const dataPoints = fields[0].values.length;
+    const samplingStep = Math.floor(dataPoints / Math.pow(10, dataPoints.toString().length - 1));
+
+    const sample = fields[0].values.filter((_, i) => i % samplingStep === 0);
+
+    const values = new Float64Array(sample);
     const points = ChangepointDetector.defaultArgpcp().detectChangepoints(values);
+
     return points.indices.length;
   };
 
