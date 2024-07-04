@@ -21,7 +21,6 @@ type FrameFilterCallback = (frame: DataFrame) => boolean;
 type FrameIterateCallback = (frames: DataFrame[], seriesIndex: number) => void;
 
 export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
-  public changepointDetector = ChangepointDetector.defaultArgpcp();
   private unfilteredChildren: SceneFlexItem[];
   private sortBy: string;
   private direction: string;
@@ -68,7 +67,7 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
   private getSortedSeries = (data: PanelData) => {
     const reducer = (dataFrame: DataFrame) => {
       if (this.sortBy === 'changepoint') {
-        return this.changePointsValue(dataFrame);
+        return this.calculateChangepointsValue(dataFrame);
       }
       const fieldReducer = fieldReducers.get(this.sortBy);
       const value =
@@ -95,10 +94,10 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     return seriesCalcs.map(({ dataFrame }) => dataFrame);
   };
 
-  private changePointsValue = (data: DataFrame) => {
+  private calculateChangepointsValue = (data: DataFrame) => {
     const fields = data.fields.filter((f) => f.type === FieldType.number);
     const values = new Float64Array(fields[0].values);
-    const points = this.changepointDetector.detectChangepoints(values);
+    const points = ChangepointDetector.defaultArgpcp().detectChangepoints(values);
     return points.indices.length;
   };
 
