@@ -37,8 +37,10 @@ To learn more about Labels, check out the [Understand labels article](https://gr
 
 ## There are no patterns
 
-* todo: how to make sure it's enabled
-* todo: explanation of why you might not get any patterns
+If you aren't getting any patterns, you can try the following fixes:
+
+1. Ensure pattern extraction is enabled by setting `--pattern-ingester.enabled=true` in your Loki config. [Learn about other necessary config](http://localhost:3002/docs/explore-logs/latest/get-started/#install-using-grafana-cli).
+1. It is possible that no patterns were detected, although this is rare - please [get in touch](https://forms.gle/1sYWCTPvD72T1dPH9) so we can see what's going on.
 
 ## I cannot find something
 
