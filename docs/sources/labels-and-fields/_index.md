@@ -17,7 +17,7 @@ Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafan
 Please [send us any feedback](https://forms.gle/1sYWCTPvD72T1dPH9).
 {{% /admonition %}}
 
-Explore Logs shows you the volume of logs with specific labels attached to your log lines and fields automatically extracted from the log lines themselves.
+Explore Logs visualises log volumes for the labels attached to your log lines, and fields automatically extracted from the text of the line itself.
 
 You can click **Select** on a Label or Field to access a breakdown of its values, seeing the log volumes visualized along the way.
 
@@ -28,14 +28,14 @@ This experience is useful for understanding the traits of your system, and for s
 To explore labels with your own data, follow these steps:
 
 1. In the main menu, select **Explore** > **Logs**.
-1. Click the **Select** button for the service you want to explore.
+1. Click the **Select** button for the service you want to explore. ([Why can't I see any services?]({{< relref "../troubleshooting/#there-are-no-services" >}}))
 1. Click the **Labels** tab.
-1. Browse the labels detected for this service.
+1. Browse the labels detected for this service. ([Why can't I see any labels?]({{< relref "../troubleshooting/#there-are-no-labels" >}}))
 1. Look for an interesting label and click the **Select** button.
 
 You will see a selection of visualizations showing the volume of each one.
 
-If you do not see any labels, ensure your collector is properly configured to attach them. Alternatively, you can repeat the same steps in the **Fields** tab to see fields that were extracted from your log lines.
+You can repeat the same steps in the **Fields** tab to see fields that were extracted from your log lines.
 
 ## What next?
 

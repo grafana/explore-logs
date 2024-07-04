@@ -23,7 +23,7 @@ TODO: tips
 
 ## There are no labels
 
-TODO: tips for adding labels
+If you do not see any labels, ensure your collector is properly configured to attach them.
 
 ## I cannot find something
 
