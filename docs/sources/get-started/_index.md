@@ -19,12 +19,14 @@ Please [send us any feedback](https://forms.gle/1sYWCTPvD72T1dPH9).
 
 The best way to see what Explore Logs can do for you is to use it to explore your own data.
 
+{{< docs/play title="the Grafana Play site" url="https://play.grafana.org/a/grafana-lokiexplore-app/explore?var-ds=ddhr3fttaw8aod&var-patterns=&var-lineFilter=&var-logsFormat=" >}}
+
 ## Guide
 
 We will walk through a simple step-by-step guide providing a tour of Explore Logs.
 
 {{% admonition type="note" %}}
-Instructions for how to access or install Explore Logs are below.
+Instructions for how to [access or install Explore Logs](#access-in-grafana-cloud) are below.
 {{% /admonition %}}
 
 While you are browsing around the app, look out for any unexpected spikes. Or perhaps one of your services is down and has stopped logging. Maybe you're seeing an increase in errors after a recent release.
