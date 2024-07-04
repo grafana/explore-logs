@@ -1,10 +1,9 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { GrafanaTheme2, LoadingState } from '@grafana/data';
+import { GrafanaTheme2 } from '@grafana/data';
 import {
   AdHocFiltersVariable,
-  CustomVariable,
   SceneComponentProps,
   SceneFlexItem,
   SceneFlexLayout,
@@ -17,21 +16,24 @@ import {
 } from '@grafana/scenes';
 import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
 import { renderLogQLLabelFilters } from 'Components/IndexScene/IndexScene';
+import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
 import { Unsubscribable } from 'rxjs';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { DetectedLabelsResponse, extractParserAndFieldsFromDataFrame } from 'services/fields';
+import { DetectedLabelsResponse } from 'services/fields';
+import { sortLabelsByCardinality } from 'services/filters';
 import { getQueryRunner } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
-import { getSlug, navigateToBreakdown, navigateToIndex, PLUGIN_ID, PageSlugs } from 'services/routing';
+import { getSlug, navigateToBreakdown, navigateToIndex, PageSlugs, PLUGIN_ID } from 'services/routing';
 import { getExplorationFor, getLokiDatasource } from 'services/scenes';
+import { testIds } from 'services/testIds';
 import {
   ALL_VARIABLE_VALUE,
+  DetectedField,
   LEVEL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_FILTERS,
-  VAR_LOGS_FORMAT,
   VAR_PATTERNS,
 } from 'services/variables';
 import { buildFieldsBreakdownActionScene } from './Breakdowns/FieldsBreakdownScene';
@@ -39,9 +41,6 @@ import { buildLabelBreakdownActionScene } from './Breakdowns/LabelBreakdownScene
 import { buildPatternsScene } from './Breakdowns/PatternsBreakdownScene';
 import { GoToExploreButton } from './GoToExploreButton';
 import { buildLogsListScene } from './LogsListScene';
-import { testIds } from 'services/testIds';
-import { sortLabelsByCardinality } from 'services/filters';
-import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
 
 export interface LokiPattern {
   pattern: string;
@@ -52,7 +51,7 @@ interface BreakdownViewDefinition {
   displayName: string;
   value: PageSlugs;
   testId: string;
-  getScene: (changeFields: (f: string[]) => void) => SceneObject;
+  getScene: (changeFields: (f: DetectedField[]) => void) => SceneObject;
 }
 
 type MakeOptional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
@@ -60,7 +59,7 @@ type MakeOptional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 export interface ServiceSceneState extends SceneObjectState {
   body: SceneFlexLayout;
 
-  fields?: string[];
+  fields?: DetectedField[];
   labels?: string[];
   patterns?: LokiPattern[];
 
@@ -166,16 +165,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       });
   }
 
-  private getLogsFormatVariable() {
-    const variable = sceneGraph.lookupVariable(VAR_LOGS_FORMAT, this);
-    if (!(variable instanceof CustomVariable)) {
-      throw new Error('Logs format variable not found');
-    }
-    return variable;
-  }
+  private async updateFields() {
+    const timeRange = sceneGraph.getTimeRange(this).state.value;
+    const labels = sceneGraph.lookupVariable(VAR_FILTERS, this);
 
-  private updateFields() {
-    const variable = this.getLogsFormatVariable();
     const disabledFields = [
       '__time',
       'timestamp',
@@ -192,33 +185,32 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       'referer',
       'user_identifier',
     ];
-    const newState = sceneGraph.getData(this).state;
-    if (newState.data?.state === LoadingState.Done) {
-      const frame = newState.data?.series[0];
-      if (frame) {
-        const res = extractParserAndFieldsFromDataFrame(frame);
-        const fields = res.fields.filter((f) => !disabledFields.includes(f)).sort((a, b) => a.localeCompare(b));
-        if (JSON.stringify(fields) !== JSON.stringify(this.state.fields)) {
-          this.setState({
-            fields: fields,
-            loading: false,
-          });
-        }
-        const newType = res.type ? ` | ${res.type}` : '';
-        if (variable.getValue() !== newType) {
-          variable.changeValueTo(newType);
-        }
-      } else {
-        this.setState({
-          fields: [],
-          loading: false,
-        });
-      }
-    } else if (newState.data?.state === LoadingState.Error) {
-      this.setState({
-        fields: [],
-        loading: false,
+
+    if (!(labels instanceof AdHocFiltersVariable)) {
+      return;
+    }
+    const expression = `${labels?.state?.filterExpression}`;
+
+    const ds = await getLokiDatasource(this);
+    if (!ds) {
+      return;
+    }
+    try {
+      const response: { fieldLimit: number; fields: DetectedField[] } = await ds.getResource('detected_fields', {
+        query: expression,
+        from: timeRange.from.utc().toISOString(),
+        to: timeRange.to.utc().toISOString(),
       });
+
+      this.setState({
+        loading: false,
+        fields: response.fields
+          .filter((field) => !disabledFields.includes(field.label) && field.cardinality > 1)
+          .sort((a, b) => a.label.localeCompare(b.label))
+          .map((field) => new DetectedField(field.type, field.label, field.parsers, field.cardinality)),
+      });
+    } catch (error) {
+      console.error('Could not fetch detected_fields', error);
     }
   }
 
@@ -356,7 +348,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
     const getCounter = (tab: BreakdownViewDefinition, state: ServiceSceneState) => {
       switch (tab.value) {
         case 'fields':
-          return state.fieldsCount ?? (state.fields?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []).length;
+          return state.fieldsCount ?? (state.fields?.filter((l) => l.label !== ALL_VARIABLE_VALUE) ?? []).length;
         case 'patterns':
           return state.patterns?.length;
         case 'labels':

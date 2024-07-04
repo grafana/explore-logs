@@ -2,16 +2,16 @@ import { css } from '@emotion/css';
 import React, { useState } from 'react';
 
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
-import { Select, useStyles2, InlineField, Icon } from '@grafana/ui';
+import { Icon, InlineField, Select, useStyles2 } from '@grafana/ui';
 
-type Props = {
-  options: Array<SelectableValue<string>>;
-  value?: string;
-  onChange: (label: string | undefined) => void;
+type Props<T> = {
+  options: Array<SelectableValue<T>>;
+  value?: T;
+  onChange: (label: T | undefined) => void;
   label: string;
 };
 
-export function FieldSelector({ options, value, onChange, label }: Props) {
+export function FieldSelector<T>({ options, value, onChange, label }: Props<T>) {
   const styles = useStyles2(getStyles);
   const [selected, setSelected] = useState(false);
   return (
