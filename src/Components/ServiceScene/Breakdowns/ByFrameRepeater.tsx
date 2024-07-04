@@ -24,6 +24,7 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
   private unfilteredChildren: SceneFlexItem[];
   private sortBy: string;
   private direction: string;
+  private sortedSeries: DataFrame[] = [];
   public constructor({ sortBy, direction, ...state }: ByFrameRepeaterState & { sortBy: string; direction: string }) {
     super(state);
 
@@ -73,6 +74,7 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
       newChildren.push(layoutChild);
     }
 
+    this.sortedSeries = sortedSeries;
     this.state.body.setState({ children: newChildren });
     this.unfilteredChildren = newChildren;
   }
@@ -82,9 +84,8 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     if (!data) {
       return;
     }
-    const sortedSeries = sortSeries(data.series, this.sortBy, this.direction);
-    for (let seriesIndex = 0; seriesIndex < sortedSeries.length; seriesIndex++) {
-      callback(sortedSeries, seriesIndex);
+    for (let seriesIndex = 0; seriesIndex < this.sortedSeries.length; seriesIndex++) {
+      callback(this.sortedSeries, seriesIndex);
     }
   };
 
