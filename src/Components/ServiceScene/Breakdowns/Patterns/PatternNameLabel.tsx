@@ -3,7 +3,7 @@ import { AdHocFiltersVariable, sceneGraph } from '@grafana/scenes';
 import { Spinner, Toggletip } from '@grafana/ui';
 import { getLokiDatasource } from 'services/scenes';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
-import { VAR_FILTERS } from 'services/variables';
+import { VAR_FIELDS } from 'services/variables';
 import { buildLokiQuery } from 'services/query';
 import { PatternFieldLabelStats } from './PatternFieldLabelStats';
 import { LogLabelStatsModel, TimeRange } from '@grafana/data';
@@ -29,7 +29,7 @@ export const PatternNameLabel = ({ exploration, pattern }: PatternNameLabelProps
     const query = constructQuery(
       pattern,
       patternIndices,
-      sceneGraph.lookupVariable(VAR_FILTERS, exploration) as AdHocFiltersVariable
+      sceneGraph.lookupVariable(VAR_FIELDS, exploration) as AdHocFiltersVariable
     );
     const datasource = await getLokiDatasource(exploration);
     const currentTimeRange = sceneGraph.getTimeRange(exploration).state.value;
