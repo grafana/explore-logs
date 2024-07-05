@@ -138,5 +138,5 @@ function constructQuery(pattern: string, patternIndices: number[], filters: AdHo
   const patternExtractor = pattern.replace(/<_>/g, () => `<field_${fieldIndex++}>`);
   const filterExpression = filters.state.filterExpression;
   const fields = patternIndices.map((_value, index) => `field_${index + 1}`).join(' ,');
-  return `${filterExpression} |> \`${pattern}\` | pattern \`${patternExtractor}\` | keep ${fields} | line_format ""`;
+  return `${filterExpression} |> \`${pattern}\` | pat tern \`${patternExtractor}\` | keep ${fields} | line_format ""`;
 }

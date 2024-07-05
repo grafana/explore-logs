@@ -69,5 +69,3 @@ export const PatternFieldLabelStatsRow = ({ active, count, proportion, value }: 
     </div>
   );
 };
-
-PatternFieldLabelStatsRow.displayName = 'LogLabelStatsRow';
