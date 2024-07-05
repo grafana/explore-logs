@@ -26,10 +26,14 @@ export enum PageSlugs {
 
 export const ROUTES = {
   explore: () => prefixRoute(PageSlugs.explore),
-  logs: (service: string) => prefixRoute(`${PageSlugs.explore}/service/${service}/${PageSlugs.logs}`),
-  fields: (service: string) => prefixRoute(`${PageSlugs.explore}/service/${service}/${PageSlugs.fields}`),
-  patterns: (service: string) => prefixRoute(`${PageSlugs.explore}/service/${service}/${PageSlugs.patterns}`),
-  labels: (service: string) => prefixRoute(`${PageSlugs.explore}/service/${service}/${PageSlugs.labels}`),
+  logs: (service: string) =>
+    prefixRoute(`${PageSlugs.explore}/service/${service.replace(/\//g, '-')}/${PageSlugs.logs}`),
+  fields: (service: string) =>
+    prefixRoute(`${PageSlugs.explore}/service/${service.replace(/\//g, '-')}/${PageSlugs.fields}`),
+  patterns: (service: string) =>
+    prefixRoute(`${PageSlugs.explore}/service/${service.replace(/\//g, '-')}/${PageSlugs.patterns}`),
+  labels: (service: string) =>
+    prefixRoute(`${PageSlugs.explore}/service/${service.replace(/\//g, '-')}/${PageSlugs.labels}`),
 };
 
 export const ROUTE_DEFINITIONS: Record<keyof typeof PageSlugs, string> = {
