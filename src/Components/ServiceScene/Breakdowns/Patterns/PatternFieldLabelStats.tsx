@@ -74,7 +74,7 @@ export const PatternFieldLabelStats = (props: PatternFieldLabelStatsProps) => {
   combinedRows.sort((a, b) => b.count - a.count);
 
   return (
-    <div className={style.logsStats} data-testid="logLabelStats">
+    <div className={style.logsStats}>
       <div className={style.logsStatsHeader}>
         <div className={style.logsStatsTitle}>From a sample of {total} rows found</div>
       </div>
