@@ -26,7 +26,6 @@ import { getExplorationFor, getLokiDatasource } from 'services/scenes';
 import { testIds } from 'services/testIds';
 import {
   ALL_VARIABLE_VALUE,
-  DetectedField,
   LEVEL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE,
@@ -34,11 +33,12 @@ import {
   VAR_LABELS,
   VAR_PATTERNS,
 } from 'services/variables';
-import { buildFieldsBreakdownActionScene } from './Breakdowns/FieldsBreakdownScene';
+import { buildFieldsBreakdownActionScene, DetectedField } from './Breakdowns/FieldsBreakdownScene';
 import { buildLabelBreakdownActionScene } from './Breakdowns/LabelBreakdownScene';
 import { buildPatternsScene } from './Breakdowns/PatternsBreakdownScene';
 import { GoToExploreButton } from './GoToExploreButton';
 import { buildLogsListScene } from './LogsListScene';
+import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
 
 export interface LokiPattern {
   pattern: string;
@@ -165,7 +165,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
   private async updateFields() {
     const timeRange = sceneGraph.getTimeRange(this).state.value;
-    const labels = sceneGraph.lookupVariable(VAR_FILTERS, this);
+    const labels = sceneGraph.lookupVariable(VAR_LABELS, this);
 
     const disabledFields = [
       '__time',
@@ -209,6 +209,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       });
     } catch (error) {
       console.error('Could not fetch detected_fields', error);
+      this.setState({ loading: false });
     }
   }
 

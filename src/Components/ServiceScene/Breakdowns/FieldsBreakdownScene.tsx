@@ -27,7 +27,6 @@ import { buildLokiQuery } from 'services/query';
 import { getSortByPreference } from 'services/store';
 import {
   ALL_VARIABLE_VALUE,
-  DetectedField,
   LOG_STREAM_SELECTOR_EXPR,
   VAR_FIELDS,
   VAR_FIELD_GROUP_BY,
@@ -40,6 +39,22 @@ import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { SortByScene, SortCriteriaChanged } from './SortByScene';
 import { StatusWrapper } from './StatusWrapper';
+
+export class DetectedField {
+  static All = new DetectedField(ALL_VARIABLE_VALUE, 'All', [], 0);
+
+  public type: string;
+  public label: string;
+  public parsers: string[];
+  public cardinality: number;
+
+  constructor(type: string, label: string, parsers: string[], cardinality: number) {
+    this.type = type;
+    this.label = label;
+    this.parsers = parsers;
+    this.cardinality = cardinality;
+  }
+}
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -291,8 +306,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   public static Component = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
     const { fields, body, loading, fieldLabel, blockingMessage, search, sort } = model.useState();
     const styles = useStyles2(getStyles);
-
-    const detectedField = getFieldByLabel(fields, fieldLabel);
+    const detectedField = fieldLabel ? getFieldByLabel(fields, fieldLabel) : undefined;
 
     return (
       <div className={styles.container}>
@@ -327,7 +341,7 @@ const emptyStateStyles = {
   }),
 };
 
-function getFieldByLabel(fields: Array<SelectableValue<DetectedField>>, fieldLabel: string | undefined) {
+function getFieldByLabel(fields: Array<SelectableValue<DetectedField>>, fieldLabel: string) {
   return fields.find((f) => f?.label === fieldLabel)?.value;
 }
 
@@ -355,17 +369,15 @@ function getStyles(theme: GrafanaTheme2) {
   };
 }
 
-const avgFieldTypes = ['duration'];
-
 function isAvgFieldType(fieldType: string) {
-  return avgFieldTypes.includes(fieldType);
+  return ['duration', 'bytes'].includes(fieldType);
 }
 
 function getExpr(field: DetectedField) {
   if (isAvgFieldType(field.type)) {
-    return `avg_over_time(${LOG_STREAM_SELECTOR_EXPR} | ${field.parsers[0]} | unwrap ${field.type}(${field.label}) [$__auto]) by ()`;
+    return `avg_over_time(${LOG_STREAM_SELECTOR_EXPR} | ${field.parsers[0]} | ${field.label}!="" | unwrap ${field.type}(${field.label}) [$__auto]) by ()`;
   }
-  return `sum by (${field.label}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | ${field.parsers[0]} | drop __error__ | ${field.label}!=""   [$__auto]))`;
+  return `sum by (${field.label}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | ${field.parsers[0]} | drop __error__ | ${field.label}!="" [$__auto]))`;
 }
 
 const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
