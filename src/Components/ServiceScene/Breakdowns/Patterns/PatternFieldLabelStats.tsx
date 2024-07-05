@@ -15,7 +15,9 @@ const getStyles = (theme: GrafanaTheme2) => ({
     color: theme.colors.text.primary,
     wordBreak: 'break-all',
     width: 'fit-content',
-    maxWidth: ' 100%',
+    maxHeight: '40vh',
+    overflowY: 'auto',
+    marginTop: theme.spacing(1),
   }),
   logsStatsHeader: css({
     borderBottom: `1px solid ${theme.colors.border.medium}`,
