@@ -80,7 +80,7 @@ export const PatternNameLabel = ({ exploration, pattern }: PatternNameLabelProps
               content={
                 <>
                   {stats && <PatternFieldLabelStats stats={stats[index]} value="" />}
-                  {!stats && statsError && <div>Pattern stats are not available.</div>}
+                  {!stats && statsError && <div>Could not load stats for this pattern.</div>}
                   {!stats && !statsError && (
                     <div style={{ padding: '10px' }}>
                       <Spinner size="xl" />
