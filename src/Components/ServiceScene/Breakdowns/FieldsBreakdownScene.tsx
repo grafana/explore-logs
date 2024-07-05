@@ -3,6 +3,7 @@ import React from 'react';
 
 import { GrafanaTheme2, ReducerID, SelectableValue } from '@grafana/data';
 import {
+  AdHocFiltersVariable,
   CustomVariable,
   PanelBuilders,
   SceneComponentProps,
@@ -23,11 +24,11 @@ import { Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getFilterBreakdownValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
-import { buildLokiQuery } from 'services/query';
+import { buildLokiQuery, renderLogQLStreamSelector } from 'services/query';
 import { getSortByPreference } from 'services/store';
 import {
   ALL_VARIABLE_VALUE,
-  LOG_STREAM_SELECTOR_EXPR,
+  LOG_EXPR_WITHOUT_STREAM_SELECTOR,
   VAR_FIELDS,
   VAR_FIELD_GROUP_BY,
   VAR_LABELS,
@@ -175,6 +176,11 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   private updateBody() {
     const fieldLabelVariable = this.getVariable();
+    const labelVariable = sceneGraph.lookupVariable(VAR_LABELS, this);
+    if (!(labelVariable instanceof AdHocFiltersVariable)) {
+      return;
+    }
+    const streamSelector = renderLogQLStreamSelector(labelVariable.state.filters);
     const detectedField = getFieldByLabel(this.state.fields, fieldLabelVariable.getValueText());
 
     const stateUpdate: Partial<FieldsBreakdownSceneState> = {
@@ -187,8 +193,8 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     } else {
       stateUpdate.body =
         fieldLabelVariable.hasAllValue() || !detectedField || detectedField.type === ALL_VARIABLE_VALUE
-          ? this.buildFieldsLayout(this.state.fields)
-          : buildValuesLayout(detectedField);
+          ? this.buildFieldsLayout(this.state.fields, streamSelector)
+          : buildValuesLayout(detectedField, streamSelector);
     }
 
     this.setState(stateUpdate);
@@ -222,7 +228,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     });
   }
 
-  private buildFieldsLayout(detectedFields: Array<SelectableValue<DetectedField>>) {
+  private buildFieldsLayout(detectedFields: Array<SelectableValue<DetectedField>>, streamSelector: string) {
     const children: SceneFlexItemLike[] = [];
 
     for (const option of detectedFields) {
@@ -231,7 +237,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         continue;
       }
 
-      const query = buildLokiQuery(getExpr(detectedField), {
+      const query = buildLokiQuery(getExpr(detectedField, streamSelector), {
         legendFormat: `{{${detectedField.label}}}`,
         refId: detectedField.label,
       });
@@ -373,17 +379,17 @@ function isAvgFieldType(fieldType: string) {
   return ['duration', 'bytes'].includes(fieldType);
 }
 
-function getExpr(field: DetectedField) {
+function getExpr(field: DetectedField, streamSelector: string) {
   if (isAvgFieldType(field.type)) {
-    return `avg_over_time(${LOG_STREAM_SELECTOR_EXPR} | ${field.parsers[0]} | ${field.label}!="" | unwrap ${field.type}(${field.label}) [$__auto]) by ()`;
+    return `avg_over_time(${streamSelector} ${LOG_EXPR_WITHOUT_STREAM_SELECTOR} | ${field.parsers[0]} | ${field.label}!="" | unwrap ${field.type}(${field.label}) [$__auto]) by ()`;
   }
-  return `sum by (${field.label}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | ${field.parsers[0]} | drop __error__ | ${field.label}!="" [$__auto]))`;
+  return `sum by (${field.label}) (count_over_time(${streamSelector} ${LOG_EXPR_WITHOUT_STREAM_SELECTOR} | ${field.parsers[0]} | drop __error__ | ${field.label}!="" [$__auto]))`;
 }
 
 const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
-function buildValuesLayout(field: DetectedField) {
-  const query = buildLokiQuery(getExpr(field), { legendFormat: `{{${field.label}}}` });
+function buildValuesLayout(field: DetectedField, streamSelector: string) {
+  const query = buildLokiQuery(getExpr(field, streamSelector), { legendFormat: `{{${field.label}}}` });
 
   const { sortBy, direction } = getSortByPreference('fields', ReducerID.stdDev, 'desc');
 
