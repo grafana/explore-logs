@@ -40,23 +40,7 @@ import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { SortByScene, SortCriteriaChanged } from './SortByScene';
 import { StatusWrapper } from './StatusWrapper';
-
-export class DetectedField {
-  static All = new DetectedField(ALL_VARIABLE_VALUE, 'All', [], 0);
-
-  public type: string;
-  public label: string;
-  public parsers: string[];
-  public cardinality: number;
-
-  constructor(type: string, label: string, parsers: string[], cardinality: number) {
-    this.type = type;
-    this.label = label;
-    this.parsers = parsers;
-    this.cardinality = cardinality;
-  }
-}
-
+import { DetectedField } from 'models/DetectedField';
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
   search: BreakdownSearchScene;

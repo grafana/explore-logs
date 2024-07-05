@@ -33,12 +33,13 @@ import {
   VAR_LABELS,
   VAR_PATTERNS,
 } from 'services/variables';
-import { buildFieldsBreakdownActionScene, DetectedField } from './Breakdowns/FieldsBreakdownScene';
+import { buildFieldsBreakdownActionScene } from './Breakdowns/FieldsBreakdownScene';
 import { buildLabelBreakdownActionScene } from './Breakdowns/LabelBreakdownScene';
 import { buildPatternsScene } from './Breakdowns/PatternsBreakdownScene';
 import { GoToExploreButton } from './GoToExploreButton';
 import { buildLogsListScene } from './LogsListScene';
 import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
+import { DetectedField } from 'models/DetectedField';
 
 export interface LokiPattern {
   pattern: string;
