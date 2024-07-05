@@ -21,10 +21,10 @@ import {
   VariableValueSelectors,
 } from '@grafana/scenes';
 import {
-  explorationDS,
+  EXPLORATION_DS,
   VAR_DATASOURCE,
   VAR_FIELDS,
-  VAR_FILTERS,
+  VAR_LABELS,
   VAR_LINE_FILTER,
   VAR_LOGS_FORMAT,
   VAR_PATTERNS,
@@ -32,11 +32,13 @@ import {
 
 import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
 import { ServiceScene } from '../ServiceScene/ServiceScene';
-import { ServiceSelectionScene, StartingPointSelectedEvent } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LayoutScene } from './LayoutScene';
 import { FilterOp } from 'services/filters';
-
-type LogExplorationMode = 'service_selection' | 'service_details';
+import { getSlug, PageSlugs } from '../../services/routing';
+import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
+import { LoadingPlaceholder } from '@grafana/ui';
+import { locationService } from '@grafana/runtime';
+import { renderPatternFilters, renderLogQLStreamSelector, renderLogQLFieldFilters } from 'services/query';
 
 export interface AppliedPattern {
   pattern: string;
@@ -47,30 +49,30 @@ export interface IndexSceneState extends SceneObjectState {
   // contentScene is the scene that is displayed in the main body of the index scene - it can be either the service selection or service scene
   contentScene?: SceneObject;
   controls: SceneObject[];
-  body: LayoutScene;
-  // mode is the current mode of the index scene - it can be either 'service_selection' or 'service_details'
-  mode?: LogExplorationMode;
+  body?: LayoutScene;
   initialFilters?: AdHocVariableFilter[];
-  initialDS?: string;
   patterns?: AppliedPattern[];
 }
 
 export class IndexScene extends SceneObjectBase<IndexSceneState> {
-  protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['mode', 'patterns'] });
+  protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['patterns'] });
 
   public constructor(state: Partial<IndexSceneState>) {
     super({
       $timeRange: state.$timeRange ?? new SceneTimeRange({}),
       $variables:
-        state.$variables ?? getVariableSet(state.initialDS ?? getLastUsedDataSourceFromStorage(), state.initialFilters),
+        state.$variables ??
+        getVariableSet('grafanacloud-logs' ?? getLastUsedDataSourceFromStorage(), state.initialFilters),
       controls: state.controls ?? [
         new VariableValueSelectors({ layout: 'vertical' }),
         new SceneControlsSpacer(),
         new SceneTimePicker({}),
         new SceneRefreshPicker({}),
       ],
-      body: new LayoutScene({}),
+      // Need to clear patterns state when the class in constructed
+      patterns: [],
       ...state,
+      body: new LayoutScene({}),
     });
 
     this.addActivationHandler(this.onActivate.bind(this));
@@ -78,90 +80,110 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
   static Component = ({ model }: SceneComponentProps<IndexScene>) => {
     const { body } = model.useState();
+    if (body) {
+      return <body.Component model={body} />;
+    }
 
-    return <body.Component model={body} />;
+    return <LoadingPlaceholder text={'Loading...'} />;
   };
 
   public onActivate() {
+    const stateUpdate: Partial<IndexSceneState> = {};
+
     if (!this.state.contentScene) {
-      this.setState({ contentScene: getContentScene(this.state.mode) });
+      stateUpdate.contentScene = getContentScene();
     }
 
-    // Some scene elements publish this
-    this.subscribeToEvent(StartingPointSelectedEvent, this._handleStartingPointSelected.bind(this));
+    this.setState(stateUpdate);
+    const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
+    if (patternsVariable instanceof CustomVariable) {
+      this.updatePatterns(this.state, patternsVariable);
+    }
 
-    this.subscribeToState((newState, oldState) => {
-      if (newState.mode !== oldState.mode) {
-        this.setState({ contentScene: getContentScene(newState.mode) });
-      }
+    const fieldsVariable = sceneGraph.lookupVariable(VAR_FIELDS, this);
+    if (fieldsVariable instanceof AdHocFiltersVariable) {
+      this.syncFieldsWithUrl(fieldsVariable);
+    }
 
-      const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
-      if (patternsVariable instanceof CustomVariable) {
-        const patternsLine = renderPatternFilters(newState.patterns ?? []);
-        patternsVariable.changeValueTo(patternsLine);
-      }
-    });
+    this._subs.add(
+      this.subscribeToState((newState) => {
+        const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
+        if (patternsVariable instanceof CustomVariable) {
+          this.updatePatterns(newState, patternsVariable);
+        }
+      })
+    );
 
     return () => {
       getUrlSyncManager().cleanUp(this);
     };
   }
 
+  /**
+   * @todo why do we need to manually sync fields, but nothing else?
+   * @param fieldsVariable
+   * @private
+   */
+  private syncFieldsWithUrl(fieldsVariable: AdHocFiltersVariable) {
+    const location = locationService.getLocation();
+    const search = new URLSearchParams(location.search);
+    const filtersFromUrl = search.get('var-fields');
+
+    // If the filters aren't in the URL, then they're coming from the cache, set the state to sync with url
+    if (filtersFromUrl === null) {
+      fieldsVariable.setState({ filters: [] });
+    }
+  }
+
+  private updatePatterns(newState: IndexSceneState, patternsVariable: CustomVariable) {
+    const patternsLine = renderPatternFilters(newState.patterns ?? []);
+    patternsVariable.changeValueTo(patternsLine);
+  }
+
   getUrlState() {
     return {
-      mode: this.state.mode,
-      patterns: this.state.mode === 'service_selection' ? '' : JSON.stringify(this.state.patterns),
+      patterns: JSON.stringify(this.state.patterns),
     };
   }
 
   updateFromUrl(values: SceneObjectUrlValues) {
     const stateUpdate: Partial<IndexSceneState> = {};
-    if (values.mode !== this.state.mode) {
-      const mode: LogExplorationMode = (values.mode as LogExplorationMode) ?? 'service_selection';
-      stateUpdate.mode = mode;
-      stateUpdate.contentScene = getContentScene(mode);
-    }
-    if (this.state.mode === 'service_selection') {
-      // Clear patterns on start
-      stateUpdate.patterns = undefined;
-    } else if (values.patterns && typeof values.patterns === 'string') {
+
+    if (values.patterns && typeof values.patterns === 'string') {
       stateUpdate.patterns = JSON.parse(values.patterns) as AppliedPattern[];
     }
+
     this.setState(stateUpdate);
   }
-
-  private _handleStartingPointSelected(evt: StartingPointSelectedEvent) {
-    this.setState({
-      mode: 'service_details',
-    });
-  }
 }
 
-function getContentScene(mode?: LogExplorationMode) {
-  if (mode === 'service_details') {
-    return new ServiceScene({});
+function getContentScene() {
+  const slug = getSlug();
+  if (slug === PageSlugs.explore) {
+    return new ServiceSelectionScene({});
   }
-  return new ServiceSelectionScene({});
+
+  return new ServiceScene({});
 }
 
-function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter[]) {
+function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVariableFilter[]) {
   const operators = [FilterOp.Equal, FilterOp.NotEqual].map<SelectableValue<string>>((value) => ({
     label: value,
     value,
   }));
 
-  const filterVariable = new AdHocFiltersVariable({
-    name: VAR_FILTERS,
-    datasource: explorationDS,
+  const labelVariable = new AdHocFiltersVariable({
+    name: VAR_LABELS,
+    datasource: EXPLORATION_DS,
     layout: 'vertical',
     label: 'Service',
     filters: initialFilters ?? [],
-    expressionBuilder: renderLogQLLabelFilters,
+    expressionBuilder: renderLogQLStreamSelector,
     hide: VariableHide.hideLabel,
     key: 'adhoc_service_filter',
   });
 
-  filterVariable._getOperators = function () {
+  labelVariable._getOperators = function () {
     return operators;
   };
 
@@ -183,7 +205,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
   const dsVariable = new DataSourceVariable({
     name: VAR_DATASOURCE,
     label: 'Data source',
-    value: initialDS,
+    value: initialDatasourceUid,
     pluginId: 'loki',
   });
   dsVariable.subscribeToState((newState) => {
@@ -193,8 +215,9 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
   return new SceneVariableSet({
     variables: [
       dsVariable,
-      filterVariable,
+      labelVariable,
       fieldsVariable,
+      // @todo where is patterns being added to the url? Why do we have var-patterns and patterns?
       new CustomVariable({
         name: VAR_PATTERNS,
         value: '',
@@ -204,35 +227,4 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
       new CustomVariable({ name: VAR_LOGS_FORMAT, value: '', hide: VariableHide.hideVariable }),
     ],
   });
-}
-
-export function renderLogQLLabelFilters(filters: AdHocVariableFilter[]) {
-  return '{' + filters.map((filter) => renderFilter(filter)).join(', ') + '}';
-}
-
-export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
-  return filters.map((filter) => `| ${renderFilter(filter)}`).join(' ');
-}
-
-function renderFilter(filter: AdHocVariableFilter) {
-  return `${filter.key}${filter.operator}\`${filter.value}\``;
-}
-
-export function renderPatternFilters(patterns: AppliedPattern[]) {
-  const excludePatterns = patterns.filter((pattern) => pattern.type === 'exclude');
-  const excludePatternsLine = excludePatterns
-    .map((p) => `!> \`${p.pattern}\``)
-    .join(' ')
-    .trim();
-
-  const includePatterns = patterns.filter((pattern) => pattern.type === 'include');
-  let includePatternsLine = '';
-  if (includePatterns.length > 0) {
-    if (includePatterns.length === 1) {
-      includePatternsLine = `|> \`${includePatterns[0].pattern}\``;
-    } else {
-      includePatternsLine = `|>  ${includePatterns.map((p) => `\`${p.pattern}\``).join(' or ')}`;
-    }
-  }
-  return `${excludePatternsLine} ${includePatternsLine}`.trim();
 }

@@ -10,6 +10,7 @@ import {
   SceneByFrameRepeater,
   SceneLayout,
 } from '@grafana/scenes';
+import { sortSeries } from 'services/sorting';
 
 interface ByFrameRepeaterState extends SceneObjectState {
   body: SceneLayout;
@@ -21,8 +22,14 @@ type FrameIterateCallback = (frames: DataFrame[], seriesIndex: number) => void;
 
 export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
   private unfilteredChildren: SceneFlexItem[];
-  public constructor(state: ByFrameRepeaterState) {
+  private sortBy: string;
+  private direction: string;
+  private sortedSeries: DataFrame[] = [];
+  public constructor({ sortBy, direction, ...state }: ByFrameRepeaterState & { sortBy: string; direction: string }) {
     super(state);
+
+    this.sortBy = sortBy;
+    this.direction = direction;
 
     this.unfilteredChildren = [];
 
@@ -43,14 +50,31 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     });
   }
 
+  public sort = (sortBy: string, direction: string) => {
+    const data = sceneGraph.getData(this);
+    // Do not re-calculate when only the direction changes
+    if (sortBy === this.sortBy && this.direction !== direction) {
+      this.direction = direction;
+      this.state.body.setState({ children: this.state.body.state.children.reverse() });
+      return;
+    }
+    this.sortBy = sortBy;
+    this.direction = direction;
+    if (data.state.data) {
+      this.performRepeat(data.state.data);
+    }
+  };
+
   private performRepeat(data: PanelData) {
     const newChildren: SceneFlexItem[] = [];
+    const sortedSeries = sortSeries(data.series, this.sortBy, this.direction);
 
-    for (let seriesIndex = 0; seriesIndex < data.series.length; seriesIndex++) {
-      const layoutChild = this.state.getLayoutChild(data, data.series[seriesIndex], seriesIndex);
+    for (let seriesIndex = 0; seriesIndex < sortedSeries.length; seriesIndex++) {
+      const layoutChild = this.state.getLayoutChild(data, sortedSeries[seriesIndex], seriesIndex);
       newChildren.push(layoutChild);
     }
 
+    this.sortedSeries = sortedSeries;
     this.state.body.setState({ children: newChildren });
     this.unfilteredChildren = newChildren;
   }
@@ -60,8 +84,8 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     if (!data) {
       return;
     }
-    for (let seriesIndex = 0; seriesIndex < data.series.length; seriesIndex++) {
-      callback(data.series, seriesIndex);
+    for (let seriesIndex = 0; seriesIndex < this.sortedSeries.length; seriesIndex++) {
+      callback(this.sortedSeries, seriesIndex);
     }
   };
 

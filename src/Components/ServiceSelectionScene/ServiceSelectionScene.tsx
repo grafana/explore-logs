@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
-import { debounce } from 'lodash';
+import { debounce, escapeRegExp } from 'lodash';
 import React, { useCallback, useState } from 'react';
-import { BusEventBase, DashboardCursorSync, GrafanaTheme2, PageLayoutType, TimeRange } from '@grafana/data';
+import { DashboardCursorSync, GrafanaTheme2, TimeRange } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   behaviors,
@@ -31,16 +31,16 @@ import {
 import { getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
 import { testIds } from 'services/testIds';
-import { LEVEL_VARIABLE_VALUE, VAR_DATASOURCE, VAR_FILTERS } from 'services/variables';
+import { LEVEL_VARIABLE_VALUE, VAR_DATASOURCE, VAR_LABELS } from 'services/variables';
 import { SelectServiceButton } from './SelectServiceButton';
 import { PLUGIN_ID } from 'services/routing';
 import { buildLokiQuery } from 'services/query';
-import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
+import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
 import { NoVolumeError } from './NoVolumeError';
-import { PluginPage } from '@grafana/runtime';
 import { getLabelsFromSeries, toggleLevelFromFilter } from 'services/levels';
+import { isFetchError } from '@grafana/runtime';
 
 export const SERVICE_NAME = 'service_name';
 
@@ -59,10 +59,6 @@ interface ServiceSelectionSceneState extends SceneObjectState {
   volumeApiError?: boolean;
   // Show logs of a certain level for a given service
   serviceLevel: Map<string, string[]>;
-}
-
-export class StartingPointSelectedEvent extends BusEventBase {
-  public static type = 'start-point-selected-event';
 }
 
 export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionSceneState> {
@@ -94,7 +90,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
   private onActivate() {
     // Clear all adhoc filters when the scene is activated, if there are any
-    const variable = sceneGraph.lookupVariable(VAR_FILTERS, this);
+    const variable = sceneGraph.lookupVariable(VAR_LABELS, this);
     if (variable instanceof AdHocFiltersVariable && variable.state.filters.length > 0) {
       variable.setState({
         filters: [],
@@ -153,11 +149,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     }
 
     try {
-      const serviceSearch = service ? `(?i).*${service}.*` : '.+';
-      const volumeResponse = await ds.getResource!(
+      const serviceSearch = service ? `(?i).*${escapeRegExp(service)}.*` : '.+';
+      const volumeResponse = await ds.getResource(
         'index/volume',
         {
-          query: `{${SERVICE_NAME}=~"${serviceSearch}"}`,
+          query: `{${SERVICE_NAME}=~\`${serviceSearch}\`}`,
           from: timeRange.from.utc().toISOString(),
           to: timeRange.to.utc().toISOString(),
         },
@@ -185,8 +181,9 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       });
     } catch (error) {
       console.log(`Failed to fetch top services:`, error);
+      const volumeApiError = isFetchError(error) && error.data.message?.includes('parse error') ? false : true;
       this.setState({
-        volumeApiError: true,
+        volumeApiError,
         servicesByVolume: [],
         isServicesByVolumeLoading: false,
       });
@@ -366,36 +363,34 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       [model]
     );
     return (
-      <PluginPage pageNav={{ text: 'Services' }} layout={PageLayoutType.Custom}>
-        <div className={styles.container}>
-          <div className={styles.bodyWrapper}>
-            <div>
-              {/** When services fetched, show how many services are we showing */}
-              {isServicesByVolumeLoading && (
-                <LoadingPlaceholder text={'Loading services'} className={styles.loadingText} />
-              )}
-              {!isServicesByVolumeLoading && <>Showing {servicesToQuery?.length ?? 0} services</>}
-            </div>
-            <Field className={styles.searchField}>
-              <Input
-                data-testid={testIds.exploreServiceSearch.search}
-                value={searchQuery}
-                prefix={<Icon name="search" />}
-                placeholder="Search services"
-                onChange={onSearchChange}
-              />
-            </Field>
-            {/** If we don't have any servicesByVolume, volume endpoint is probably not enabled */}
-            {!isServicesByVolumeLoading && volumeApiError && <ConfigureVolumeError />}
-            {!isServicesByVolumeLoading && !volumeApiError && !servicesByVolume?.length && <NoVolumeError />}
-            {!isServicesByVolumeLoading && servicesToQuery && servicesToQuery.length > 0 && (
-              <div className={styles.body}>
-                <body.Component model={body} />
-              </div>
+      <div className={styles.container}>
+        <div className={styles.bodyWrapper}>
+          <div>
+            {/** When services fetched, show how many services are we showing */}
+            {isServicesByVolumeLoading && (
+              <LoadingPlaceholder text={'Loading services'} className={styles.loadingText} />
             )}
+            {!isServicesByVolumeLoading && <>Showing {servicesToQuery?.length ?? 0} services</>}
           </div>
+          <Field className={styles.searchField}>
+            <Input
+              data-testid={testIds.exploreServiceSearch.search}
+              value={searchQuery}
+              prefix={<Icon name="search" />}
+              placeholder="Search services"
+              onChange={onSearchChange}
+            />
+          </Field>
+          {/** If we don't have any servicesByVolume, volume endpoint is probably not enabled */}
+          {!isServicesByVolumeLoading && volumeApiError && <ConfigureVolumeError />}
+          {!isServicesByVolumeLoading && !volumeApiError && !servicesByVolume?.length && <NoVolumeError />}
+          {!isServicesByVolumeLoading && servicesToQuery && servicesToQuery.length > 0 && (
+            <div className={styles.body}>
+              <body.Component model={body} />
+            </div>
+          )}
         </div>
-      </PluginPage>
+      </div>
     );
   };
 }

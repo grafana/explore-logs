@@ -3,6 +3,7 @@
   "type": "app",
   "name": "Logs",
   "id": "grafana-lokiexplore-app",
+  "autoEnabled": true,
   "info": {
     "keywords": ["app", "loki", "explore", "logs"],
     "description": "Query-less exploration of log data stored in Loki",
@@ -46,10 +47,9 @@
       "defaultNav": true
     }
   ],
-  "roles": [
-  ],
+  "roles": [],
   "dependencies": {
-    "grafanaDependency": ">=10.0.3",
+    "grafanaDependency": ">=11.0.0",
     "plugins": []
   }
 }

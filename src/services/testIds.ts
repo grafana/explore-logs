@@ -13,7 +13,7 @@ export const testIds = {
     openExplore: 'data-testid open-explore',
     tabPatterns: 'data-testid tab-patterns',
     tabLogs: 'data-testid tab-logs',
-    tabDetectedFields: 'data-testid tab-detected-fields',
+    tabFields: 'data-testid tab-fields',
     tabLabels: 'data-testid tab-labels',
     buttonRemovePattern: 'data-testid button-remove-pattern',
     buttonFilterInclude: 'data-testid button-filter-include',
@@ -25,6 +25,7 @@ export const testIds = {
     buttonExcludedPattern: 'data-testid button-excluded-pattern',
   },
   logsPanelHeader: {
+    header: 'data-testid Panel header Logs',
     radio: 'data-testid radio-button',
   },
   table: {
