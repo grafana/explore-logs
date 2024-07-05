@@ -1,8 +1,8 @@
 import { SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import React from 'react';
-import { BusEventBase, DataFrame, ReducerID, SelectableValue } from '@grafana/data';
+import { BusEventBase, DataFrame, ReducerID, SelectableValue, fieldReducers } from '@grafana/data';
 import { getLabelValueFromDataFrame } from 'services/levels';
-import { InlineField, Select, StatsPicker } from '@grafana/ui';
+import { InlineField, Select } from '@grafana/ui';
 import { getSortByPreference, setSortByPreference } from 'services/store';
 
 export interface SortBySceneState extends SceneObjectState {
@@ -19,8 +19,22 @@ export class SortCriteriaChanged extends BusEventBase {
 }
 
 export class SortByScene extends SceneObjectBase<SortBySceneState> {
+  public sortingOptions = [
+    {
+      value: 'changepoint',
+      label: 'Relevance',
+      description: 'Most relevant time series first',
+    },
+    {
+      value: ReducerID.stdDev,
+      label: 'Dispersion',
+      description: 'Standard deviation of all values in a field',
+    },
+    ...fieldReducers.selectOptions([], (ext) => ext.id !== ReducerID.stdDev).options,
+  ];
+
   constructor(state: Pick<SortBySceneState, 'target'>) {
-    const { sortBy, direction } = getSortByPreference(state.target, ReducerID.stdDev, 'desc');
+    const { sortBy, direction } = getSortByPreference(state.target, 'changepoint', 'desc');
     super({
       target: state.target,
       sortBy,
@@ -28,13 +42,13 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
     });
   }
 
-  public onCriteriaChange = (criteria: string[]) => {
-    if (!criteria.length) {
+  public onCriteriaChange = (criteria: SelectableValue<string>) => {
+    if (!criteria.value) {
       return;
     }
-    this.setState({ sortBy: criteria[0] });
-    setSortByPreference(this.state.target, criteria[0], this.state.direction);
-    this.publishEvent(new SortCriteriaChanged(criteria[0], this.state.direction), true);
+    this.setState({ sortBy: criteria.value });
+    setSortByPreference(this.state.target, criteria.value, this.state.direction);
+    this.publishEvent(new SortCriteriaChanged(criteria.value, this.state.direction), true);
   };
 
   public onDirectionChange = (direction: SelectableValue<string>) => {
@@ -48,6 +62,7 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
 
   public static Component = ({ model }: SceneComponentProps<SortByScene>) => {
     const { sortBy, direction } = model.useState();
+    const value = model.sortingOptions.find(({ value }) => value === sortBy);
     return (
       <>
         <InlineField>
@@ -73,13 +88,13 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
           htmlFor="sort-by-criteria"
           tooltip="Calculate a derived quantity from the values in your time series and sort by this criteria. Defaults to standard deviation."
         >
-          <StatsPicker
-            placeholder="Choose criteria"
-            stats={[sortBy]}
-            allowMultiple={false}
-            onChange={model.onCriteriaChange}
-            defaultStat={ReducerID.stdDev}
+          <Select
+            value={value}
             width={18}
+            isSearchable={true}
+            options={model.sortingOptions}
+            placeholder={'Choose criteria'}
+            onChange={model.onCriteriaChange}
             inputId="sort-by-criteria"
           />
         </InlineField>

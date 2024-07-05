@@ -3,8 +3,8 @@
   "version": "0.0.13",
   "description": "Query less exploration of log data stored in Loki",
   "scripts": {
-    "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
-    "dev": "webpack -w -c ./.config/webpack/webpack.config.ts --env development",
+    "build": "webpack -c ./webpack.config.ts --env production",
+    "dev": "webpack -w -c ./webpack.config.ts --env development",
     "test": "jest --watch --onlyChanged",
     "test:ci": "jest --passWithNoTests --maxWorkers 4",
     "typecheck": "tsc --noEmit",
@@ -73,6 +73,7 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@bsull/augurs": "^0.2.0",
     "@emotion/css": "^11.10.6",
     "@grafana/data": "^11.0.0",
     "@grafana/runtime": "^11.0.0",
