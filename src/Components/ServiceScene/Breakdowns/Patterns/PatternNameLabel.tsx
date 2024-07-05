@@ -21,8 +21,8 @@ export const PatternNameLabel = ({ exploration, pattern }: PatternNameLabelProps
   const [stats, setStats] = useState<LogLabelStatsModel[][] | undefined>(undefined);
 
   // Refs to store the previous values of query and timeRange
-  const previousQueryRef = useRef<string>('');
-  const previousTimeRangeRef = useRef<TimeRange>();
+  const previousQueryRef = useRef<string | null>(null);
+  const previousTimeRangeRef = useRef<TimeRange | null>(null);
 
   const handleClick = async () => {
     reportAppInteraction(USER_EVENTS_PAGES.service_details, USER_EVENTS_ACTIONS.service_details.pattern_field_clicked);
