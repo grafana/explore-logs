@@ -24,16 +24,17 @@ export enum PageSlugs {
   fields = 'fields',
 }
 
+export function replaceSlash(parameter: string): string {
+  return parameter.replace(/\//g, '-');
+}
+
 export const ROUTES = {
   explore: () => prefixRoute(PageSlugs.explore),
-  logs: (service: string) =>
-    prefixRoute(`${PageSlugs.explore}/service/${service.replace(/\//g, '-')}/${PageSlugs.logs}`),
-  fields: (service: string) =>
-    prefixRoute(`${PageSlugs.explore}/service/${service.replace(/\//g, '-')}/${PageSlugs.fields}`),
+  logs: (service: string) => prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(service)}/${PageSlugs.logs}`),
+  fields: (service: string) => prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(service)}/${PageSlugs.fields}`),
   patterns: (service: string) =>
-    prefixRoute(`${PageSlugs.explore}/service/${service.replace(/\//g, '-')}/${PageSlugs.patterns}`),
-  labels: (service: string) =>
-    prefixRoute(`${PageSlugs.explore}/service/${service.replace(/\//g, '-')}/${PageSlugs.labels}`),
+    prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(service)}/${PageSlugs.patterns}`),
+  labels: (service: string) => prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(service)}/${PageSlugs.labels}`),
 };
 
 export const ROUTE_DEFINITIONS: Record<keyof typeof PageSlugs, string> = {
