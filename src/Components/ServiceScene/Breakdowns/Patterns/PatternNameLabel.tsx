@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { AdHocFiltersVariable, sceneGraph } from '@grafana/scenes';
 import { Spinner, Toggletip } from '@grafana/ui';
 import { getLokiDatasource } from 'services/scenes';
@@ -6,7 +6,7 @@ import { IndexScene } from 'Components/IndexScene/IndexScene';
 import { VAR_LABELS } from 'services/variables';
 import { buildLokiQuery } from 'services/query';
 import { PatternFieldLabelStats } from './PatternFieldLabelStats';
-import { LogLabelStatsModel, TimeRange } from '@grafana/data';
+import { LoadingState, LogLabelStatsModel, TimeRange } from '@grafana/data';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 
 interface PatternNameLabelProps {
@@ -19,12 +19,13 @@ const LINE_LIMIT = 2000;
 export const PatternNameLabel = ({ exploration, pattern }: PatternNameLabelProps) => {
   const patternIndices = extractPatternIndices(pattern);
   const [stats, setStats] = useState<LogLabelStatsModel[][] | undefined>(undefined);
+  const [statsError, setStatsError] = useState(false);
 
   // Refs to store the previous values of query and timeRange
   const previousQueryRef = useRef<string | null>(null);
   const previousTimeRangeRef = useRef<TimeRange | null>(null);
 
-  const handleClick = async () => {
+  const handlePatternClick = async () => {
     reportAppInteraction(USER_EVENTS_PAGES.service_details, USER_EVENTS_ACTIONS.service_details.pattern_field_clicked);
     const query = constructQuery(
       pattern,
@@ -56,30 +57,36 @@ export const PatternNameLabel = ({ exploration, pattern }: PatternNameLabelProps
         startTime: 0,
       })
       .forEach((result) => {
-        if (result.state !== 'Done') {
+        if (result.state === LoadingState.Done && !result.errors?.length) {
+          setStats(convertResultToStats(result, patternIndices.length));
+          setStatsError(false);
+        } else if (result.state === LoadingState.Error || result.errors?.length) {
           setStats(undefined);
-          return;
+          setStatsError(true);
         }
-        setStats(convertResultToStats(result, patternIndices.length));
       });
   };
 
+  const parts = useMemo(() => pattern.split('<_>'), [pattern]);
+
   return (
     <div>
-      {pattern.split('<_>').map((part, index) => (
+      {parts.map((part, index) => (
         <span key={index}>
           {part}
           {index !== patternIndices.length && (
             <Toggletip
-              onOpen={handleClick}
+              onOpen={handlePatternClick}
               content={
-                stats ? (
-                  <PatternFieldLabelStats stats={stats[index]} value="" />
-                ) : (
-                  <div style={{ padding: '10px' }}>
-                    <Spinner size="xl" />
-                  </div>
-                )
+                <>
+                  {stats && <PatternFieldLabelStats stats={stats[index]} value="" />}
+                  {!stats && statsError && <div>Pattern stats are not available.</div>}
+                  {!stats && !statsError && (
+                    <div style={{ padding: '10px' }}>
+                      <Spinner size="xl" />
+                    </div>
+                  )}
+                </>
               }
             >
               <span style={{ cursor: 'pointer', textDecoration: 'underline dotted' }}>&lt;_&gt;</span>
@@ -138,5 +145,5 @@ function constructQuery(pattern: string, patternIndices: number[], filters: AdHo
   const patternExtractor = pattern.replace(/<_>/g, () => `<field_${fieldIndex++}>`);
   const filterExpression = filters.state.filterExpression;
   const fields = patternIndices.map((_value, index) => `field_${index + 1}`).join(' ,');
-  return `${filterExpression} |> \`${pattern}\` | pat tern \`${patternExtractor}\` | keep ${fields} | line_format ""`;
+  return `${filterExpression} |> \`${pattern}\` | pattern \`${patternExtractor}\` | keep ${fields} | line_format ""`;
 }
