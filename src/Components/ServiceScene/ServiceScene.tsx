@@ -199,6 +199,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         query: expression,
         from: timeRange.from.utc().toISOString(),
         to: timeRange.to.utc().toISOString(),
+        line_limit: 1000,
       });
 
       this.setState({
