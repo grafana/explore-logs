@@ -49,7 +49,7 @@ You can:
 
 Explore Logs is for engineers of all levels of operational expertise. You no longer need to be an SRE wizard to get value from your logs.
 
-Traditionally you'd need a deep understanding of your systems in order to get the most out of Loki. 
+Traditionally, you'd need a deep understanding of your systems in order to get the most out of Loki. 
 
 With Explore Logs, you get the same powerful insights, by just clicking around and glancing at visualizations which are automatically generated from your data.
 
@@ -68,6 +68,6 @@ Our new experiences are in their early stages, and we'd love to hear your feedba
 * You'll find a **Give feedback** link on the Explore Logs page in Grafana.
 * You can also [fill out this form](https://forms.gle/1sYWCTPvD72T1dPH9) to send your thoughts directly to the team building the apps.
 
-## What next?
+## What's next?
 
 Dive into the [Get started with Explore Logs]({{< relref "get-started" >}}) article to learn how to set up Explore Logs and take a tour of the feature on your own data. 
