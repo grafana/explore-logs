@@ -14,7 +14,7 @@ describe('SortByScene', () => {
   test('Sorts by standard deviation by default', () => {
     render(<scene.Component model={scene} />);
 
-    expect(screen.getByText('Relevance')).toBeInTheDocument();
+    expect(screen.getByText('Most relevant')).toBeInTheDocument();
     expect(screen.getByText('Desc')).toBeInTheDocument();
   });
 

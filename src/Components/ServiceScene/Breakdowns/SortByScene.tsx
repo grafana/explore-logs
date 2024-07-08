@@ -22,8 +22,8 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
   public sortingOptions = [
     {
       value: 'changepoint',
-      label: 'Relevance',
-      description: 'Most relevant time series first',
+      label: 'Most relevant',
+      description: 'Smart ordering of graphs based on the data',
     },
     {
       value: ReducerID.stdDev,
