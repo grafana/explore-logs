@@ -35,7 +35,7 @@ import {
 } from 'services/variables';
 import { buildFieldsBreakdownActionScene } from './Breakdowns/FieldsBreakdownScene';
 import { buildLabelBreakdownActionScene } from './Breakdowns/LabelBreakdownScene';
-import { buildPatternsScene } from './Breakdowns/PatternsBreakdownScene';
+import { buildPatternsScene } from './Breakdowns/Patterns/PatternsBreakdownScene';
 import { GoToExploreButton } from './GoToExploreButton';
 import { buildLogsListScene } from './LogsListScene';
 import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
