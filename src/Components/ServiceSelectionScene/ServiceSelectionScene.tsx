@@ -161,6 +161,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           query: `{${SERVICE_NAME}=~\`${serviceSearch}\`}`,
           from: timeRange.from.utc().toISOString(),
           to: timeRange.to.utc().toISOString(),
+          limit: 1000,
         },
         {
           headers: {
@@ -376,6 +377,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           </div>
           <Field className={styles.searchField}>
             <ServiceFieldSelector
+              isLoading={isServicesByVolumeLoading}
               value={searchQuery}
               onChange={onSearchChange}
               selectOption={(value: string) => {

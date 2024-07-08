@@ -281,11 +281,13 @@ function buildLabelsLayout(options: Array<SelectableValue<string>>) {
     active: 'grid',
     layouts: [
       new SceneCSSGridLayout({
+        isLazy: true,
         templateColumns: GRID_TEMPLATE_COLUMNS,
         autoRows: '200px',
         children: children,
       }),
       new SceneCSSGridLayout({
+        isLazy: true,
         templateColumns: '1fr',
         autoRows: '200px',
         children: children.map((child) => child.clone()),

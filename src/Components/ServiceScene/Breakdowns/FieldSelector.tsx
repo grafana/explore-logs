@@ -2,21 +2,22 @@ import { css } from '@emotion/css';
 import React, { useState } from 'react';
 
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
-import { ActionMeta, Icon, InlineField, InputActionMeta, Select, useStyles2 } from '@grafana/ui';
+import { Select, useStyles2, InlineField, Icon, ActionMeta, InputActionMeta } from '@grafana/ui';
 import { testIds } from '../../../services/testIds';
 
-type FieldSelectorProps = {
-  options: Array<SelectableValue<string>>;
-  value?: string;
-  onChange: (label: string | undefined) => void;
+type Props<T> = {
+  options: Array<SelectableValue<T>>;
+  value?: T;
+  onChange: (label: T | undefined) => void;
   label: string;
 };
 
 type AsyncFieldSelectorProps = {
   selectOption: (value: string) => void;
-} & FieldSelectorProps;
+  isLoading: boolean;
+} & Props<string>;
 
-export function FieldSelector({ options, value, onChange, label }: FieldSelectorProps) {
+export function FieldSelector<T>({ options, value, onChange, label }: Props<T>) {
   const styles = useStyles2(getStyles);
   const [selected, setSelected] = useState(false);
   return (
@@ -33,7 +34,14 @@ export function FieldSelector({ options, value, onChange, label }: FieldSelector
   );
 }
 
-export function ServiceFieldSelector({ options, value, onChange, label, selectOption }: AsyncFieldSelectorProps) {
+export function ServiceFieldSelector({
+  options,
+  value,
+  onChange,
+  label,
+  selectOption,
+  isLoading,
+}: AsyncFieldSelectorProps) {
   const styles = useStyles2(getStyles);
   const [selected, setSelected] = useState(false);
   const [customOption, setCustomOption] = useState<SelectableValue<string>>();
@@ -44,6 +52,7 @@ export function ServiceFieldSelector({ options, value, onChange, label, selectOp
   return (
     <InlineField grow={true} label={label}>
       <Select
+        isLoading={isLoading}
         data-testid={testIds.exploreServiceSearch.search}
         placeholder={'Search services'}
         options={allOptions}
