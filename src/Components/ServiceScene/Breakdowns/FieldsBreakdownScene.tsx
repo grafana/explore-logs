@@ -83,6 +83,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   }
 
   private onActivate() {
+    console.log('fields breakdown activate');
     const variable = this.getVariable();
 
     this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange);
@@ -104,10 +105,10 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     });
 
     this.updateFields();
-    this.updateBody();
   }
 
   private updateFields() {
+    console.log('updateFields');
     const logsScene = sceneGraph.getAncestor(this, ServiceScene);
 
     this.setState({
@@ -163,16 +164,21 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   };
 
   private updateBody() {
+    console.log('update body');
     const variable = this.getVariable();
     const stateUpdate: Partial<FieldsBreakdownSceneState> = {
       value: String(variable.state.value),
       blockingMessage: undefined,
     };
 
+    console.log('this.state.fields.length', this.state.fields.length);
+
     if (this.state.loading === false && this.state.fields.length <= 1) {
       const indexScene = sceneGraph.getAncestor(this, IndexScene);
       const variables = sceneGraph.getVariables(indexScene);
       let variablesToClear: Array<SceneVariable<SceneVariableState>> = [];
+      console.log('variables', variables);
+      console.log('variablesToClear', variablesToClear);
 
       for (const variable of variables.state.variables) {
         if (variable instanceof AdHocFiltersVariable && variable.state.filters.length) {
@@ -183,7 +189,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         }
       }
 
-      if (variablesToClear.length) {
+      if (variablesToClear.length <= 1) {
         stateUpdate.body = this.buildClearFiltersLayout(this.clearVariables(variablesToClear));
       } else {
         stateUpdate.body = this.buildEmptyLayout();
