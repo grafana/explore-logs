@@ -3,11 +3,11 @@ title: Explore Logs documentation
 description: Documentation for Explore Logs
 weight: 100
 hero:
-  title: Grafana Incident
+  title: Explore Logs
   level: 1
   width: 100
   height: 100
-  description: Grafana Incident is an incident management solution designed to help teams respond quickly and effectively to incidents, outages, and other critical events.
+  description: Explore Logs automatically visualises insights from your Loki logs.
 cards:
   title_class: pt-0 lh-1
   items:
@@ -44,6 +44,8 @@ You can:
 * Uncover related logs and monitor changes over time.
 * Browse automatic visualizations of your log data based on its characteristics.
 * Do all of this without writing LogQL queries.
+
+![Screenshot of Explore Logs landing page](images/service_index.png)
 
 ## Who is Explore Logs for?
 
