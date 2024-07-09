@@ -1,6 +1,6 @@
 import { css } from '@emotion/css';
 import { debounce, escapeRegExp } from 'lodash';
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import { DashboardCursorSync, GrafanaTheme2, TimeRange } from '@grafana/data';
 import {
   AdHocFiltersVariable,
@@ -19,8 +19,6 @@ import {
 import {
   DrawStyle,
   Field,
-  Icon,
-  Input,
   LegendDisplayMode,
   LoadingPlaceholder,
   PanelContext,
@@ -30,9 +28,8 @@ import {
 } from '@grafana/ui';
 import { getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
-import { testIds } from 'services/testIds';
 import { LEVEL_VARIABLE_VALUE, VAR_DATASOURCE, VAR_LABELS } from 'services/variables';
-import { SelectServiceButton } from './SelectServiceButton';
+import { selectService, SelectServiceButton } from './SelectServiceButton';
 import { PLUGIN_ID } from 'services/routing';
 import { buildLokiQuery } from 'services/query';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
@@ -41,6 +38,7 @@ import { ConfigureVolumeError } from './ConfigureVolumeError';
 import { NoVolumeError } from './NoVolumeError';
 import { getLabelsFromSeries, toggleLevelFromFilter } from 'services/levels';
 import { isFetchError } from '@grafana/runtime';
+import { ServiceFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
 
 export const SERVICE_NAME = 'service_name';
 
@@ -94,6 +92,13 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     if (variable instanceof AdHocFiltersVariable && variable.state.filters.length > 0) {
       variable.setState({
         filters: [],
+      });
+    }
+
+    // Reset search after routing back
+    if (this.state.searchServicesString) {
+      this.setState({
+        searchServicesString: '',
       });
     }
     // On activation, fetch services by volume
@@ -156,6 +161,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           query: `{${SERVICE_NAME}=~\`${serviceSearch}\`}`,
           from: timeRange.from.utc().toISOString(),
           to: timeRange.to.utc().toISOString(),
+          limit: 1000,
         },
         {
           headers: {
@@ -355,13 +361,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
     // searchQuery is used to keep track of the search query in input field
     const [searchQuery, setSearchQuery] = useState('');
-    const onSearchChange = useCallback(
-      (e: React.FormEvent<HTMLInputElement>) => {
-        setSearchQuery(e.currentTarget.value);
-        model.onSearchServicesChange(e.currentTarget.value);
-      },
-      [model]
-    );
+    const onSearchChange = (serviceName: string | undefined) => {
+      setSearchQuery(serviceName ?? '');
+      model.onSearchServicesChange(serviceName ?? '');
+    };
     return (
       <div className={styles.container}>
         <div className={styles.bodyWrapper}>
@@ -373,12 +376,20 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
             {!isServicesByVolumeLoading && <>Showing {servicesToQuery?.length ?? 0} services</>}
           </div>
           <Field className={styles.searchField}>
-            <Input
-              data-testid={testIds.exploreServiceSearch.search}
+            <ServiceFieldSelector
+              isLoading={isServicesByVolumeLoading}
               value={searchQuery}
-              prefix={<Icon name="search" />}
-              placeholder="Search services"
               onChange={onSearchChange}
+              selectOption={(value: string) => {
+                selectService(value, model);
+              }}
+              label="Service"
+              options={
+                servicesToQuery?.map((serviceName) => ({
+                  value: serviceName,
+                  label: serviceName,
+                })) ?? []
+              }
             />
           </Field>
           {/** If we don't have any servicesByVolume, volume endpoint is probably not enabled */}

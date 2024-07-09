@@ -1,5 +1,5 @@
 import { sceneGraph, SceneObjectState } from '@grafana/scenes';
-import { IndexScene } from '../../IndexScene/IndexScene';
+import { IndexScene } from '../../../IndexScene/IndexScene';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 
 export interface FilterByPatternsButtonState extends SceneObjectState {
