@@ -11,7 +11,7 @@ import {
   SceneObjectUrlValues,
   SceneTimeRangeLike,
 } from '@grafana/scenes';
-import { LineFilter } from './LineFilter';
+import { LineFilterScene } from './LineFilterScene';
 import { SelectedTableRow } from '../Table/LogLineCellComponent';
 import { LogsTableScene } from './LogsTableScene';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
@@ -24,6 +24,8 @@ import { getLabelTypeFromFrame, LabelType } from 'services/fields';
 import { VAR_FIELDS, VAR_LABELS } from 'services/variables';
 import { getAdHocFiltersVariable } from 'services/scenes';
 import { locationService } from '@grafana/runtime';
+import { LogOptionsScene } from './LogOptionsScene';
+import { getLogOption } from 'services/store';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -42,7 +44,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, {
     keys: ['urlColumns', 'selectedLine', 'visualizationType'],
   });
-  private lineFilterScene?: LineFilter = undefined;
+  private lineFilterScene?: LineFilterScene = undefined;
   constructor(state: Partial<LogsListSceneState>) {
     super({
       ...state,
@@ -95,16 +97,12 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     this.setStateFromUrl(searchParams);
 
     if (!this.state.panel) {
-      this.setState({
-        panel: this.getVizPanel(),
-      });
+      this.updateLogsPanel();
     }
 
     this.subscribeToState((newState, prevState) => {
       if (newState.visualizationType !== prevState.visualizationType) {
-        this.setState({
-          panel: this.getVizPanel(),
-        });
+        this.updateLogsPanel();
       }
     });
   }
@@ -187,6 +185,12 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     }
   };
 
+  public updateLogsPanel = () => {
+    this.setState({
+      panel: this.getVizPanel(),
+    });
+  };
+
   private getLogsPanel() {
     const visualizationType = this.state.visualizationType;
 
@@ -194,7 +198,6 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       height: 'calc(100vh - 220px)',
       body: PanelBuilders.logs()
         .setTitle('Logs')
-        .setOption('showLogContextToggle', true)
         .setOption('showTime', true)
         // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
         .setOption('onClickFilterLabel', this.handleLabelFilterClick)
@@ -204,6 +207,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         .setOption('isFilterLabelActive', this.handleIsFilterLabelActive)
         // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
         .setOption('onClickFilterString', this.handleFilterStringClick)
+        .setOption('wrapLogMessage', Boolean(getLogOption('wrapLines')))
         .setHeaderActions(<LogsPanelHeaderActions vizType={visualizationType} onChange={this.setVisualizationType} />)
         .build(),
     });
@@ -225,21 +229,33 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   };
 
   private getVizPanel() {
-    this.lineFilterScene = new LineFilter();
+    this.lineFilterScene = new LineFilterScene();
     return new SceneFlexLayout({
       direction: 'column',
-      children: [
-        new SceneFlexItem({
-          body: this.lineFilterScene,
-          ySizing: 'content',
-        }),
+      children:
         this.state.visualizationType === 'logs'
-          ? this.getLogsPanel()
-          : new SceneFlexItem({
-              height: 'calc(100vh - 220px)',
-              body: new LogsTableScene({}),
-            }),
-      ],
+          ? [
+              new SceneFlexLayout({
+                children: [
+                  new SceneFlexItem({
+                    body: this.lineFilterScene,
+                    xSizing: 'fill',
+                  }),
+                  new LogOptionsScene(),
+                ],
+              }),
+              this.getLogsPanel(),
+            ]
+          : [
+              new SceneFlexItem({
+                body: this.lineFilterScene,
+                xSizing: 'fill',
+              }),
+              new SceneFlexItem({
+                height: 'calc(100vh - 220px)',
+                body: new LogsTableScene({}),
+              }),
+            ],
     });
   }
 
