@@ -13,10 +13,9 @@ title: Log patterns
 weight: 400
 ---
 
-{{% admonition type="caution" %}}
+{{< admonition type="caution" >}}  
 Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafana Labs offers limited support, and breaking changes might occur prior to the feature being made generally available.
-Please [send us any feedback](https://forms.gle/1sYWCTPvD72T1dPH9).
-{{% /admonition %}}
+{{< /admonition >}}
 
 # Log patterns
 
