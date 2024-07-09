@@ -97,16 +97,12 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     this.setStateFromUrl(searchParams);
 
     if (!this.state.panel) {
-      this.setState({
-        panel: this.getVizPanel(),
-      });
+      this.updateLogsPanel();
     }
 
     this.subscribeToState((newState, prevState) => {
       if (newState.visualizationType !== prevState.visualizationType) {
-        this.setState({
-          panel: this.getVizPanel(),
-        });
+        this.updateLogsPanel();
       }
     });
   }
@@ -187,6 +183,12 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         }
       );
     }
+  };
+
+  public updateLogsPanel = () => {
+    this.setState({
+      panel: this.getVizPanel(),
+    });
   };
 
   private getLogsPanel() {

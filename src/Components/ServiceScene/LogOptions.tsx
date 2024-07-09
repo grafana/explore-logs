@@ -1,8 +1,9 @@
 import { css } from '@emotion/css';
-import { SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
+import { SceneComponentProps, SceneObjectBase, SceneObjectState, sceneGraph } from '@grafana/scenes';
 import { InlineField, InlineSwitch } from '@grafana/ui';
 import React, { ChangeEvent } from 'react';
 import { getLogOption, setLogOption } from 'services/store';
+import { LogsListScene } from './LogsListScene';
 
 interface LogOptionsState extends SceneObjectState {
   wrapLines?: boolean;
@@ -22,6 +23,10 @@ export class LogOptionsScene extends SceneObjectBase<LogOptionsState> {
     const checked = e.target.checked;
     this.setState({ wrapLines: checked });
     setLogOption('wrapLines', checked);
+    const parentScene = sceneGraph.getAncestor(this, LogsListScene);
+    if (parentScene) {
+      parentScene.updateLogsPanel();
+    }
   };
 }
 
