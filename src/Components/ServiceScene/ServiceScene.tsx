@@ -64,6 +64,7 @@ export interface ServiceSceneState extends SceneObjectState {
   patterns?: LokiPattern[];
 
   fieldsCount?: number;
+  ignoreAutoNavigate: boolean;
 
   loading?: boolean;
 }
@@ -80,6 +81,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       $data: getQueryRunner(buildLokiQuery(LOG_STREAM_SELECTOR_EXPR)),
       loading: true,
       ...state,
+      ignoreAutoNavigate: false,
     });
 
     this.addActivationHandler(this.onActivate.bind(this));
@@ -156,8 +158,12 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     Promise.all([this.updatePatterns(), this.updateLabels()])
       .finally(() => {
         // For patterns, we don't want to reload to logs as we allow users to select multiple patterns
-        if (variable.state.name !== VAR_PATTERNS) {
+        if (variable.state.name !== VAR_PATTERNS && !this.state.ignoreAutoNavigate) {
           navigateToBreakdown(PageSlugs.logs);
+        } else if (this.state.ignoreAutoNavigate) {
+          this.setState({
+            ignoreAutoNavigate: false,
+          });
         }
       })
       .catch((err) => {
