@@ -199,6 +199,12 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   private clearVariables(variablesToClear: Array<SceneVariable<SceneVariableState>>) {
     return () => {
+      // clear patterns: needs to happen first, or it won't work as patterns is split into a variable and a state, and updating the variable triggers a state update
+      const indexScene = sceneGraph.getAncestor(this, IndexScene);
+      indexScene.setState({
+        patterns: [],
+      });
+
       variablesToClear.forEach((variable) => {
         if (variable instanceof AdHocFiltersVariable && variable.state.key === 'adhoc_service_filter') {
           variable.setState({
@@ -214,12 +220,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
             text: '',
           });
         }
-
-        // clear patterns
-        const indexScene = sceneGraph.getAncestor(this, IndexScene);
-        indexScene.setState({
-          patterns: undefined,
-        });
       });
     };
   }

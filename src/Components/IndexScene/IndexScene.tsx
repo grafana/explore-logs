@@ -163,9 +163,7 @@ function getContentScene() {
     return new ServiceSelectionScene({});
   }
 
-  return new ServiceScene({
-    ignoreAutoNavigate: false,
-  });
+  return new ServiceScene({});
 }
 
 function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVariableFilter[]) {

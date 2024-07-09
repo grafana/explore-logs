@@ -75,13 +75,13 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
   });
 
-  public constructor(state: MakeOptional<ServiceSceneState, 'body'>) {
+  public constructor(state: MakeOptional<MakeOptional<ServiceSceneState, 'body'>, 'ignoreAutoNavigate'>) {
     super({
       body: state.body ?? buildGraphScene(),
       $data: getQueryRunner(buildLokiQuery(LOG_STREAM_SELECTOR_EXPR)),
       loading: true,
-      ...state,
       ignoreAutoNavigate: false,
+      ...state,
     });
 
     this.addActivationHandler(this.onActivate.bind(this));
@@ -160,10 +160,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         // For patterns, we don't want to reload to logs as we allow users to select multiple patterns
         if (variable.state.name !== VAR_PATTERNS && !this.state.ignoreAutoNavigate) {
           navigateToBreakdown(PageSlugs.logs);
-        } else if (this.state.ignoreAutoNavigate) {
-          this.setState({
-            ignoreAutoNavigate: false,
-          });
         }
       })
       .catch((err) => {
