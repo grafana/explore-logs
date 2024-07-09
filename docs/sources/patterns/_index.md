@@ -13,12 +13,12 @@ title: Log patterns
 weight: 400
 ---
 
-# Log patterns
-
 {{% admonition type="caution" %}}
 Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafana Labs offers limited support, and breaking changes might occur prior to the feature being made generally available.
 Please [send us any feedback](https://forms.gle/1sYWCTPvD72T1dPH9).
 {{% /admonition %}}
+
+# Log patterns
 
 Log patterns allow you to work with groups of similar log lines. You can hide them if they're noise, or focus in on them if they're useful.
 

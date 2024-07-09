@@ -10,12 +10,12 @@ title: Labels and Fields
 weight: 300
 ---
 
-# Labels and Fields
-
 {{% admonition type="caution" %}}
 Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafana Labs offers limited support, and breaking changes might occur prior to the feature being made generally available.
 Please [send us any feedback](https://forms.gle/1sYWCTPvD72T1dPH9).
 {{% /admonition %}}
+
+# Labels and Fields
 
 Explore Logs visualises log volumes for the labels attached to your log lines, and fields automatically extracted from the text of the line itself.
 

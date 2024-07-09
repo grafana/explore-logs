@@ -10,12 +10,12 @@ title: Get started with Explore Logs
 weight: 200
 ---
 
-# Get started with Explore Logs
-
 {{% admonition type="caution" %}}
 Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafana Labs offers limited support, and breaking changes might occur prior to the feature being made generally available.
 Please [send us any feedback](https://forms.gle/1sYWCTPvD72T1dPH9).
 {{% /admonition %}}
+
+# Get started with Explore Logs
 
 The best way to see what Explore Logs can do for you is to use it to explore your own data.
 
