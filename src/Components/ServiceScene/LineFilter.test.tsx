@@ -1,6 +1,6 @@
 import React from 'react';
 import { act, render, screen } from '@testing-library/react';
-import { LineFilter } from './LineFilter';
+import { LineFilterScene } from './LineFilterScene';
 import userEvent from '@testing-library/user-event';
 import { CustomVariable, SceneVariableSet } from '@grafana/scenes';
 import { VAR_LINE_FILTER } from 'services/variables';
@@ -12,11 +12,11 @@ jest.mock('lodash', () => ({
 }));
 
 describe('LineFilter', () => {
-  let scene: LineFilter;
+  let scene: LineFilterScene;
   let lineFilterVariable: CustomVariable;
   beforeEach(() => {
     lineFilterVariable = new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable });
-    scene = new LineFilter({
+    scene = new LineFilterScene({
       $variables: new SceneVariableSet({
         variables: [lineFilterVariable],
       }),

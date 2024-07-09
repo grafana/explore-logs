@@ -11,7 +11,7 @@ import {
   SceneObjectUrlValues,
   SceneTimeRangeLike,
 } from '@grafana/scenes';
-import { LineFilter } from './LineFilter';
+import { LineFilterScene } from './LineFilterScene';
 import { SelectedTableRow } from '../Table/LogLineCellComponent';
 import { LogsTableScene } from './LogsTableScene';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
@@ -24,7 +24,7 @@ import { getLabelTypeFromFrame, LabelType } from 'services/fields';
 import { VAR_FIELDS, VAR_LABELS } from 'services/variables';
 import { getAdHocFiltersVariable } from 'services/scenes';
 import { locationService } from '@grafana/runtime';
-import { LogOptionsScene } from './LogOptions';
+import { LogOptionsScene } from './LogOptionsScene';
 import { getLogOption } from 'services/store';
 
 export interface LogsListSceneState extends SceneObjectState {
@@ -44,7 +44,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, {
     keys: ['urlColumns', 'selectedLine', 'visualizationType'],
   });
-  private lineFilterScene?: LineFilter = undefined;
+  private lineFilterScene?: LineFilterScene = undefined;
   constructor(state: Partial<LogsListSceneState>) {
     super({
       ...state,
@@ -229,7 +229,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   };
 
   private getVizPanel() {
-    this.lineFilterScene = new LineFilter();
+    this.lineFilterScene = new LineFilterScene();
     return new SceneFlexLayout({
       direction: 'column',
       children:
