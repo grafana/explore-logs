@@ -29,7 +29,7 @@ import {
   LOG_STREAM_SELECTOR_EXPR,
   VAR_FIELD_GROUP_BY,
   VAR_FIELDS,
-  VAR_FILTERS,
+  VAR_LABELS,
 } from 'services/variables';
 import { ServiceScene } from '../ServiceScene';
 import { ByFrameRepeater } from './ByFrameRepeater';
@@ -56,7 +56,7 @@ export interface FieldsBreakdownSceneState extends SceneObjectState {
 
 export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
-    variableNames: [VAR_FILTERS],
+    variableNames: [VAR_LABELS],
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
   });
 
@@ -83,7 +83,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange);
 
     sceneGraph.getAncestor(this, ServiceScene)!.subscribeToState((newState, oldState) => {
-      if (newState.detectedFields !== oldState.detectedFields) {
+      if (newState.fields !== oldState.fields) {
         this.updateFields();
       }
     });
@@ -108,7 +108,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this.setState({
       fields: [
         { label: 'All', value: ALL_VARIABLE_VALUE },
-        ...(logsScene.state.detectedFields ?? []).map((f) => ({
+        ...(logsScene.state.fields ?? []).map((f) => ({
           label: f,
           value: f,
         })),
@@ -184,7 +184,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
             reactNode: (
               <div>
                 <Alert title="" severity="warning">
-                  No detected fields. Please{' '}
+                  We did not find any fields for the given timerange. Please{' '}
                   <a
                     className={emptyStateStyles.link}
                     href="https://forms.gle/1sYWCTPvD72T1dPH9"
@@ -252,11 +252,13 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       active: 'grid',
       layouts: [
         new SceneCSSGridLayout({
+          isLazy: true,
           templateColumns: GRID_TEMPLATE_COLUMNS,
           autoRows: '200px',
           children: children,
         }),
         new SceneCSSGridLayout({
+          isLazy: true,
           templateColumns: '1fr',
           autoRows: '200px',
           children: children.map((child) => child.clone()),

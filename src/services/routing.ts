@@ -4,7 +4,7 @@ import {
   VAR_DATASOURCE,
   VAR_FIELD_GROUP_BY,
   VAR_FIELDS,
-  VAR_FILTERS,
+  VAR_LABELS,
   VAR_LABEL_GROUP_BY,
   VAR_LINE_FILTER,
   VAR_LOGS_FORMAT,
@@ -24,23 +24,17 @@ export enum PageSlugs {
   fields = 'fields',
 }
 
-export function encodeParameter(parameter: string): string {
-  return encodeURIComponent(parameter.replace(/\//g, '---'));
-}
-
-export function decodeParameter(parameter: string): string {
-  return decodeURIComponent(parameter).replace(/---/g, '/');
+export function replaceSlash(parameter: string): string {
+  return parameter.replace(/\//g, '-');
 }
 
 export const ROUTES = {
   explore: () => prefixRoute(PageSlugs.explore),
-  logs: (service: string) => prefixRoute(`${PageSlugs.explore}/service/${encodeParameter(service)}/${PageSlugs.logs}`),
-  fields: (service: string) =>
-    prefixRoute(`${PageSlugs.explore}/service/${encodeParameter(service)}/${PageSlugs.fields}`),
+  logs: (service: string) => prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(service)}/${PageSlugs.logs}`),
+  fields: (service: string) => prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(service)}/${PageSlugs.fields}`),
   patterns: (service: string) =>
-    prefixRoute(`${PageSlugs.explore}/service/${encodeParameter(service)}/${PageSlugs.patterns}`),
-  labels: (service: string) =>
-    prefixRoute(`${PageSlugs.explore}/service/${encodeParameter(service)}/${PageSlugs.labels}`),
+    prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(service)}/${PageSlugs.patterns}`),
+  labels: (service: string) => prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(service)}/${PageSlugs.labels}`),
 };
 
 export const ROUTE_DEFINITIONS: Record<keyof typeof PageSlugs, string> = {
@@ -71,7 +65,7 @@ export const DRILLDOWN_URL_KEYS = [
   VAR_PATTERNS,
   `var-${VAR_PATTERNS}`,
   `var-${VAR_DATASOURCE}`,
-  `var-${VAR_FILTERS}`,
+  `var-${VAR_LABELS}`,
   `var-${VAR_FIELDS}`,
   `var-${VAR_FIELD_GROUP_BY}`,
   `var-${VAR_LABEL_GROUP_BY}`,

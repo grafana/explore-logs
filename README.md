@@ -2,7 +2,7 @@
 
 > **__NOTE:__** Explore Logs is presently undergoing active development and is offered in a preview state. Subsequent updates are likely to incorporate significant changes that may impact existing functionality. 
 
-Explore Logs offers a query-less experience for browsing Loki logs without the need for writing complex queries. Discover or narrow down your search by using by volume and text patterns. Uncover related logs and and understand patterns—all with just a few clicks. No LogQL required! With Explore Logs, you can:
+Explore Logs offers a query-less experience for browsing Loki logs without the need for writing complex queries. Discover or narrow down your search using by volume and text patterns. Uncover related logs and understand patterns—all with just a few clicks. No LogQL required. With Explore Logs, you can:
 
 - Easily find logs and log volumes for all of your services
 - Effortlessly filter service logs based on their log volumes, labels, fields, or patterns.
@@ -60,7 +60,7 @@ Once the docker container started, navigate to http://localhost:3000/a/grafana-l
    - By clicking and dragging the time range you want to see on any time series visualization.
 5. Services are shown based on the volume of logs, and you can search for the service you want through the Search service input.
 6. Select the service you would like to explore. This takes you to the Service page.
-7. Filter logs based on strings, labels, detected fields, or detected patterns.
+7. Filter logs based on strings, labels, fields, or detected patterns.
 
 <img src="src/img/service_logs.png" alt="app"/>
 
