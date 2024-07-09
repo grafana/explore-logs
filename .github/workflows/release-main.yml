@@ -43,7 +43,7 @@ jobs:
         run: mv ${{ steps.build-release.outputs.archive }} ${{ steps.metadata.outputs.archive }}
 
       - id: 'upload-to-gcs'
-        name: 'Upload assets to latest'
+        name: 'Upload assets to `main`'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         with:
           path: ./
