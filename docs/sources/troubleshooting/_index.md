@@ -38,9 +38,9 @@ If you do not see any labels in Explore Logs, you can try the following fixes:
 
 1. Ensure your collector is properly configured to attach them.
 
-{{% admonition type="note" %}}
+{{< admonition type="note" >}}
 To learn more about Labels, check out the [Understand labels article](https://grafana.com/docs/loki/latest/get-started/labels/).
-{{% /admonition %}}
+{{< /admonition >}}
 
 ## There are no patterns
 

@@ -18,6 +18,10 @@ Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafan
 
 Explore Logs visualises log volumes for the labels attached to your log lines, and fields automatically extracted from the text of the line itself.
 
+{{< admonition type="note" >}}
+A special `detected_level` label is added to all log lines where Loki assigns a level of the log line, including `debug`, `info`, `warn`, `error`, `fatal`, `critical`, `trace`, or `unknown` if no level could be determined.
+{{< /admonition >}}
+
 You can click **Select** on a Label or Field to access a breakdown of its values, seeing the log volumes visualized along the way.
 
 This experience is useful for understanding the traits of your system, and for spotting spikes or other changes.
