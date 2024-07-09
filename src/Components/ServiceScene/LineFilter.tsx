@@ -92,6 +92,7 @@ const styles = {
   }),
   field: css({
     label: 'field',
+    width: '100%',
     marginBottom: 0,
   }),
 };
