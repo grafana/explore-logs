@@ -112,7 +112,7 @@ function filterReducerOptions(ext: FieldReducerInfo) {
     return ENABLED_PERCENTILES.includes(ext.id);
   }
   // Do not offer all* reducers
-  if (ext.id.startsWith('all')) {
+  if (ext.id.startsWith('all') || ext.description?.startsWith('All')) {
     return false;
   }
   return true;
