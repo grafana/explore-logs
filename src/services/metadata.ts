@@ -8,6 +8,9 @@ export function initializeMetadataService(): void {
   }
 }
 
+/**
+ * Singleton class for sharing state across drilldown routes with common parent scene
+ */
 export class MetadataService {
   private serviceSceneState: ServiceSceneCustomState | undefined = undefined;
 
