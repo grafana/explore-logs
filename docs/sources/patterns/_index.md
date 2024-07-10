@@ -39,7 +39,7 @@ Log patterns allow you to:
 * Filter out noisy log lines during exploration.
 * Identify specific log lines for targeted analysis.
 
-## Quick guides
+## Guides
 
 We've outlined the steps you'll need to take to perform these common use cases.
 
