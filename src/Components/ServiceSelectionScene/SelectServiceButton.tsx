@@ -16,7 +16,6 @@ import { SERVICE_NAME } from './ServiceSelectionScene';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { FilterOp } from 'services/filters';
 import { navigateToBreakdown, ROUTES } from '../../services/routing';
-import { ServiceScene } from '../ServiceScene/ServiceScene';
 
 export interface SelectServiceButtonState extends SceneObjectState {
   service: string;
@@ -45,7 +44,9 @@ export function selectService(service: string, sceneRef: SceneObject) {
   });
   const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, sceneRef)?.getValue();
   addToFavoriteServicesInStorage(ds, service);
-  navigateToBreakdown(ROUTES.logs(service), sceneGraph.getAncestor(sceneRef, ServiceScene));
+
+  // In this case, we don't have a ServiceScene inited
+  navigateToBreakdown(ROUTES.logs(service));
 }
 
 export class SelectServiceButton extends SceneObjectBase<SelectServiceButtonState> {

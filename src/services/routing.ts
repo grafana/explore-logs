@@ -4,15 +4,15 @@ import {
   VAR_DATASOURCE,
   VAR_FIELD_GROUP_BY,
   VAR_FIELDS,
-  VAR_LABELS,
   VAR_LABEL_GROUP_BY,
+  VAR_LABELS,
   VAR_LINE_FILTER,
   VAR_LOGS_FORMAT,
   VAR_PATTERNS,
 } from './variables';
 import { locationService } from '@grafana/runtime';
 import { SceneRouteMatch } from '@grafana/scenes';
-import { ServiceScene } from '../Components/ServiceScene/ServiceScene';
+import { ServiceSceneState } from '../Components/ServiceScene/ServiceScene';
 import { getMetadataService } from './metadata';
 
 export const PLUGIN_ID = pluginJson.id;
@@ -88,9 +88,18 @@ export function navigateToIndex() {
   locationService.push(serviceUrl);
 }
 
+/**
+ * Navigates to the drilldown view specified by the path slug
+ * Note: If the serviceScene is not provided we assume it is not a parent of the calling class, i.e. we're navigating from the service selection view, instead of a drilldown view
+ * Drilldown views should ALWAYS provide the serviceScene state
+ *
+ * @param path
+ * @param serviceScene
+ * @param extraQueryParams
+ */
 export function navigateToBreakdown(
   path: PageSlugs | string,
-  serviceScene: ServiceScene,
+  serviceScene?: ServiceSceneState,
   extraQueryParams?: UrlQueryMap
 ) {
   const location = locationService.getLocation();
@@ -102,8 +111,12 @@ export function navigateToBreakdown(
     // Url did not change, don't add an event to browser history
     return;
   }
-  const metadataService = getMetadataService();
-  metadataService.setServiceSceneState(serviceScene.state);
+
+  // If we're going to navigate, we need to share the state between this instantiation of the service scene
+  if (serviceScene) {
+    const metadataService = getMetadataService();
+    metadataService.setServiceSceneState(serviceScene);
+  }
 
   locationService.push(breakdownUrl);
 }

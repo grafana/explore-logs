@@ -175,7 +175,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       .finally(() => {
         // For patterns, we don't want to reload to logs as we allow users to select multiple patterns
         if (variable.state.name !== VAR_PATTERNS) {
-          navigateToBreakdown(PageSlugs.logs, this);
+          navigateToBreakdown(PageSlugs.logs, this.state);
         }
       })
       .catch((err) => {
@@ -419,7 +419,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                       const service = variable.state.filters.find((f) => f.key === SERVICE_NAME);
 
                       if (service?.value) {
-                        navigateToBreakdown(tab.value, serviceScene);
+                        navigateToBreakdown(tab.value, serviceScene.state);
                       } else {
                         navigateToIndex();
                       }
