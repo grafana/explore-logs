@@ -11,15 +11,19 @@ hero:
 cards:
   title_class: pt-0 lh-1
   items:
+    - title: Get access or install
+      href: ./access/
+      description: Get access to Explore Logs in Grafana Cloud or in your own stack.
+      height: 24
     - title: Get started
       href: ./get-started/
       description: Install Explore Logs and take a tour of Explore Logs using your own data.
       height: 24
-    - title: Labels and Fields
+    - title: Learn about Labels and Fields
       href: ./labels-and-fields/
       description: Learn how Explore Logs uses labels and Fields to help you explore your Loki logs.
       height: 24
-    - title: Log patterns
+    - title: Learn about Log patterns
       href: ./patterns/
       description: Learn how you can use automatic log grouping to remove noise and find hard to locate logs.
       height: 24
@@ -31,20 +35,19 @@ Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafan
 
 # Explore Logs documentation
 
-## Welcome to our new logs experience
+![A new way to look at your logs](images/explore-logs-hero-banner.png)
+![Screenshot of Explore Logs landing page](images/explore-logs-features.jpeg)
 
-Explore Logs automatically visualises insights from your Loki logs.
+Welcome to our new experience for Loki. Explore Logs automatically visualizes insights.
 
 You can:
 
-* Drill into your data using volume and text patterns.
-* Easily find logs and log volumes for all of your services.
-* Effortlessly filter logs based on their labels, fields, or patterns.
-* Uncover related logs and monitor changes over time.
-* Browse automatic visualizations of your log data based on its characteristics.
-* Do all of this without writing LogQL queries.
-
-![Screenshot of Explore Logs landing page](images/service_index.png)
+* **Drill into your** data using volume and text patterns.
+* **Easily find logs and log volumes** for all of your services.
+* Effortlessly **filter logs based on their labels, fields, or patterns**.
+* Uncover **related logs** and monitor changes over time.
+* Browse **automatic visualizations of your log data** based on its characteristics.
+* Do all of this **without writing LogQL queries**.
 
 ## Who is Explore Logs for?
 

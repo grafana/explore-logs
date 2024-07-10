@@ -71,3 +71,7 @@ This will download the https://github.com/grafana/explore-logs/blob/main/scripts
 That shell file will download some configuration files into your `/tmp/explore-logs` directory and start the docker containers via `docker compose` from there.
 
 Once the docker container has started, navigate to `http://localhost:3000/a/grafana-lokiexplore-app/explore` to access Explore Logs.
+
+# Having trouble?
+
+Check out our [troubleshooting guides]({{< relref "troubleshooting" >}}) for tips on how to solve common issues.
