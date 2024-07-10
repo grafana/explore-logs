@@ -111,6 +111,10 @@ function filterReducerOptions(ext: FieldReducerInfo) {
   if (ext.id >= 'p1' && ext.id <= 'p99') {
     return ENABLED_PERCENTILES.includes(ext.id);
   }
+  // Do not offer all* reducers
+  if (ext.id.startsWith('all')) {
+    return false;
+  }
   return true;
 }
 
