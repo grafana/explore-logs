@@ -18,6 +18,10 @@ Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafan
 
 This page address common issues when getting started and using Explore Logs.
 
+## Ensure Loki is properly configured
+
+To use Explore Logs, you need to have Loki properly configured. You can find full instructions on how to do this when [installing Explore Logs]({{< relref "../access" >}}).
+
 ## There are no services
 
 If everything is presented as an `unknown_service` when you access Explore Logs, you can try the following fixes:

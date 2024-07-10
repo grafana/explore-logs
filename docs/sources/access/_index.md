@@ -29,6 +29,19 @@ To access Explore Logs:
 1. Open your Grafana stack in a web browser
 1. In the main menu, select **Explore** > **Logs**.
 
+## Installation
+
+The following Loki and Grafana version and configuration are required:
+
+- Loki v3.0+
+  - `--pattern-ingester.enabled=true` for pattern ingestion
+  -  Volume endpoint enabled in Loki config:
+```yaml
+limits_config:
+  volume_enabled: true
+```
+- Grafana v11.0+
+
 ### Install via environment variable
 
 If you want to [install the app in a docker container](https://grafana.com/docs/grafana/latest/setup-grafana/configure-docker/#install-plugins-in-the-docker-container), you need to configure the following environment variable:
@@ -39,16 +52,7 @@ GF_INSTALL_PLUGINS=https://storage.googleapis.com/integration-artifacts/grafana-
 
 ## Install using grafana-cli
 
-You can install Explore Logs in your own Grafana instance using `grafana-cli`:
-> The following Loki and Grafana version and configuration are required:
-> - Loki v3.0+
->   - `--pattern-ingester.enabled=true` for pattern ingestion
->   -  Volume endpoint enabled in Loki config:
-> ```yaml
->limits_config:
->  volume_enabled: true
->```
-> - Grafana v11.0+
+You can install Explore Logs in your own Grafana instance using `grafana-cli`.
 
 Using `grafana-cli` run the following command:
 ```sh
