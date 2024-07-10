@@ -39,7 +39,7 @@ jobs:
         with:
           credentials_json: ${{ env.GCP_UPLOAD_ARTIFACTS_KEY }}
 
-      - id: 'move release to main'
+      - name: 'move release to main'
         run: mv ${{ steps.build-release.outputs.archive }} ${{ steps.metadata.outputs.archive }}
 
       - id: 'upload-to-gcs'
