@@ -12,6 +12,8 @@ import {
 } from './variables';
 import { locationService } from '@grafana/runtime';
 import { SceneRouteMatch } from '@grafana/scenes';
+import { ServiceScene } from '../Components/ServiceScene/ServiceScene';
+import { getMetadataService } from './metadata';
 
 export const PLUGIN_ID = pluginJson.id;
 export const PLUGIN_BASE_URL = `/a/${PLUGIN_ID}`;
@@ -86,7 +88,11 @@ export function navigateToIndex() {
   locationService.push(serviceUrl);
 }
 
-export function navigateToBreakdown(path: PageSlugs | string, extraQueryParams?: UrlQueryMap) {
+export function navigateToBreakdown(
+  path: PageSlugs | string,
+  serviceScene: ServiceScene,
+  extraQueryParams?: UrlQueryMap
+) {
   const location = locationService.getLocation();
   const pathParts = location.pathname.split('/');
   const currentSlug = pathParts[pathParts.length - 1];
@@ -96,6 +102,8 @@ export function navigateToBreakdown(path: PageSlugs | string, extraQueryParams?:
     // Url did not change, don't add an event to browser history
     return;
   }
+  const metadataService = getMetadataService();
+  metadataService.setServiceSceneState(serviceScene.state);
 
   locationService.push(breakdownUrl);
 }
