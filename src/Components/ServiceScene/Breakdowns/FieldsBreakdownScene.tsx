@@ -6,7 +6,6 @@ import {
   CustomVariable,
   PanelBuilders,
   SceneComponentProps,
-  SceneCSSGridItem,
   SceneCSSGridLayout,
   SceneFlexItem,
   SceneFlexItemLike,
@@ -39,6 +38,7 @@ import { StatusWrapper } from './StatusWrapper';
 import { BreakdownSearchScene, getLabelValue } from './BreakdownSearchScene';
 import { SortByScene, SortCriteriaChanged } from './SortByScene';
 import { getSortByPreference } from 'services/store';
+import { LazySceneCSSGridItem } from './LazySceneCSSGridItem';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -143,8 +143,12 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   }
 
   private handleSortByChange = (event: SortCriteriaChanged) => {
-    if (this.state.body instanceof LayoutSwitcher && this.state.body.state.layouts[1] instanceof ByFrameRepeater) {
-      this.state.body.state.layouts[1].sort(event.sortBy, event.direction);
+    if (this.state.body instanceof LayoutSwitcher) {
+      this.state.body.state.layouts.forEach((layout) => {
+        if (layout instanceof ByFrameRepeater) {
+          layout.sort(event.sortBy, event.direction);
+        }
+      });
     }
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
@@ -229,7 +233,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
           .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
           .setOverrides(setLeverColorOverrides);
       }
-      const gridItem = new SceneCSSGridItem({
+      const gridItem = new LazySceneCSSGridItem({
         body: body.build(),
       });
 
@@ -252,13 +256,11 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       active: 'grid',
       layouts: [
         new SceneCSSGridLayout({
-          isLazy: true,
           templateColumns: GRID_TEMPLATE_COLUMNS,
           autoRows: '200px',
           children: children,
         }),
         new SceneCSSGridLayout({
-          isLazy: true,
           templateColumns: '1fr',
           autoRows: '200px',
           children: children.map((child) => child.clone()),

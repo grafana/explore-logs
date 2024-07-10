@@ -12,7 +12,7 @@ interface LineFilterState extends SceneObjectState {
   lineFilter: string;
 }
 
-export class LineFilter extends SceneObjectBase<LineFilterState> {
+export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   static Component = LineFilterRenderer;
 
   constructor(state?: Partial<LineFilterState>) {
@@ -67,7 +67,7 @@ export class LineFilter extends SceneObjectBase<LineFilterState> {
   }, 350);
 }
 
-function LineFilterRenderer({ model }: SceneComponentProps<LineFilter>) {
+function LineFilterRenderer({ model }: SceneComponentProps<LineFilterScene>) {
   const { lineFilter } = model.useState();
 
   return (
@@ -92,6 +92,7 @@ const styles = {
   }),
   field: css({
     label: 'field',
+    width: '100%',
     marginBottom: 0,
   }),
 };
