@@ -1,17 +1,17 @@
 {
   "name": "grafana-lokiexplore-app",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "Query less exploration of log data stored in Loki",
   "scripts": {
-    "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
-    "dev": "webpack -w -c ./.config/webpack/webpack.config.ts --env development",
+    "build": "webpack -c ./webpack.config.ts --env production",
+    "dev": "webpack -w -c ./webpack.config.ts --env development",
     "test": "jest --watch --onlyChanged",
     "test:ci": "jest --passWithNoTests --maxWorkers 4",
     "typecheck": "tsc --noEmit",
     "lint": "eslint --cache --ignore-path ./.gitignore --ext .js,.jsx,.ts,.tsx .",
     "lint:fix": "npm run lint -- --fix",
-    "e2e": "playwright test",
-    "e2e:debug": "playwright test /test --debug",
+    "e2e": "playwright test -x --trace on",
+    "e2e:debug": "playwright test --debug -x --trace on /test",
     "e2e:codegen": "playwright install && playwright codegen",
     "generate-logs": "pushd generator; go mod download; go run . -url http://localhost:3100/loki/api/v1/push; popd",
     "server": "docker-compose -f docker-compose.dev.yaml up --build",
@@ -74,6 +74,7 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@bsull/augurs": "^0.2.0",
     "@emotion/css": "^11.10.6",
     "@grafana/data": "^11.0.0",
     "@grafana/runtime": "^11.0.0",

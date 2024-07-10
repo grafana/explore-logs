@@ -16,8 +16,8 @@ import { Text, TextLink, useStyles2 } from '@grafana/ui';
 import { StatusWrapper } from 'Components/ServiceScene/Breakdowns/StatusWrapper';
 import { GrotError } from 'Components/GrotError';
 import { VAR_LABEL_GROUP_BY } from 'services/variables';
-import { LokiPattern, ServiceScene } from '../ServiceScene';
-import { IndexScene } from '../../IndexScene/IndexScene';
+import { LokiPattern, ServiceScene } from '../../ServiceScene';
+import { IndexScene } from '../../../IndexScene/IndexScene';
 import { PatternsFrameScene } from './PatternsFrameScene';
 import { PatternsViewTextSearch } from './PatternsViewTextSearch';
 

@@ -62,7 +62,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       $timeRange: state.$timeRange ?? new SceneTimeRange({}),
       $variables:
         state.$variables ??
-        getVariableSet('grafanacloud-logs' ?? getLastUsedDataSourceFromStorage(), state.initialFilters),
+        getVariableSet(getLastUsedDataSourceFromStorage() ?? 'grafanacloud-logs', state.initialFilters),
       controls: state.controls ?? [
         new VariableValueSelectors({ layout: 'vertical' }),
         new SceneControlsSpacer(),
