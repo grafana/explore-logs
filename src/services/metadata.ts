@@ -4,7 +4,6 @@ let metadataService: MetadataService;
 
 export function initializeMetadataService(): void {
   if (!metadataService) {
-    console.warn('INIT METADATA');
     metadataService = new MetadataService();
   }
 }
