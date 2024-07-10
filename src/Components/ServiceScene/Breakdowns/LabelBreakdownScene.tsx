@@ -105,8 +105,12 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   }
 
   private handleSortByChange = (event: SortCriteriaChanged) => {
-    if (this.state.body instanceof LayoutSwitcher && this.state.body.state.layouts[1] instanceof ByFrameRepeater) {
-      this.state.body.state.layouts[1].sort(event.sortBy, event.direction);
+    if (this.state.body instanceof LayoutSwitcher) {
+      this.state.body.state.layouts.forEach((layout) => {
+        if (layout instanceof ByFrameRepeater) {
+          layout.sort(event.sortBy, event.direction);
+        }
+      });
     }
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
