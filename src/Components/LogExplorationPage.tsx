@@ -4,6 +4,7 @@ import { getUrlSyncManager, SceneApp, useSceneApp } from '@grafana/scenes';
 import { config } from '@grafana/runtime';
 import { Redirect } from 'react-router-dom';
 import { makeIndexPage, makeRedirectPage } from './Pages';
+import { initializeMetadataService } from '../services/metadata';
 
 const getSceneApp = () =>
   new SceneApp({
@@ -12,6 +13,8 @@ const getSceneApp = () =>
 
 export function LogExplorationView() {
   const [isInitialized, setIsInitialized] = React.useState(false);
+
+  initializeMetadataService();
 
   const scene = useSceneApp(getSceneApp);
 
