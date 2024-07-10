@@ -11,6 +11,7 @@ import { getFieldMappings } from 'Components/Table/Table';
 import { FieldNameMetaStore } from 'Components/Table/TableTypes';
 import { useTableColumnContext } from 'Components/Table/Context/TableColumnsContext';
 import { getTemplateSrv } from '@grafana/runtime';
+import { LEVEL_NAME } from './Constants';
 
 interface LogLinePillProps {
   originalField?: Field;
@@ -25,7 +26,7 @@ interface LogLinePillProps {
   value: string;
 }
 
-const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
+const getStyles = (theme: GrafanaTheme2, levelColor?: string) => ({
   pill: css({
     flex: '0 1 auto',
     marginLeft: theme.spacing(0.5),
@@ -38,11 +39,24 @@ const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
   }),
   activePill: css({}),
   valueWrap: css({
-    padding: `0 ${theme.spacing(0.5)}`,
     border: `1px solid ${theme.colors.background.secondary}`,
     boxShadow: `-2px 2px 5px 0px ${theme.colors.background.secondary}`,
-    backgroundColor: bgColor ?? 'transparent',
+    backgroundColor: 'transparent',
     cursor: 'pointer',
+    position: 'relative',
+
+    paddingRight: `${theme.spacing(0.5)}`,
+    paddingLeft: levelColor ? `${theme.spacing(0.75)}` : `${theme.spacing(0.5)}`,
+
+    '&:before': {
+      content: '""',
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      height: '100%',
+      width: `${theme.spacing(0.25)}`,
+      backgroundColor: levelColor,
+    },
 
     '&:hover': {
       border: `1px solid ${theme.colors.border.strong}`,
@@ -61,15 +75,15 @@ function LogLinePillValue(props: {
 }) {
   const theme = useTheme2();
 
-  let bgColor;
-  if (props.label === 'level') {
+  let levelColor;
+  if (props.label === LEVEL_NAME) {
     const mappings = getFieldMappings().options;
     if (props.value in mappings) {
-      bgColor = mappings[props.value].color;
+      levelColor = mappings[props.value].color;
     }
   }
 
-  const styles = getStyles(theme, bgColor);
+  const styles = getStyles(theme, levelColor);
 
   return (
     <span className={cx(styles.pill, props.menuActive ? styles.activePill : undefined)} onClick={props.onClick}>
