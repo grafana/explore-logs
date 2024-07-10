@@ -10,43 +10,161 @@ on:
       - 'docs/**'
 
 jobs:
-  release:
+  build-latest-version:
     runs-on: ubuntu-latest
+
+    env:
+      GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_SIGNING_KEY }} # Requires a Grafana API key from Grafana.com.
+
+    outputs:
+      upload-folder: ${{ steps.metadata.outputs.upload-folder }}
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: grafana/plugin-actions/package-plugin@d9fbd8428ec5e1e6914db1d16f3003089c29d6df
-        id: build-release
+      - uses: tibdex/github-app-token@v1
+        id: get_installation_token
         with:
-          policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+          app_id: ${{ secrets.DB_FE_GITHUB_APP_ID }}
+          installation_id: ${{ secrets.DB_FE_GITHUB_APP_INSTALLATION_ID }}
+          private_key: ${{ secrets.DB_FE_GITHUB_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v4
+        with:
+          # Latest release of 'main'
+          ref: 'main'
+          token: ${{ steps.get_installation_token.outputs.token }}
+          fetch-depth: 0
+
+      - name: Setup credentials to access Grafana private repositories
+        run: git config --global url.https://${{ steps.get_installation_token.outputs.token }}@github.com/.insteadOf https://github.com/
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
+
+      - name: Setup Go environment
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Install utilities
+        run: sudo apt-get install jq
+
+      - name: Restore npm cache
+        id: restore-npm-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/yarn.lock', '!node_modules/**/yarn.lock') }}
+          restore-keys: ${{ runner.os }}-npm-
+
+      - name: Install dependencies on cache miss
+        run: yarn install --frozen-lockfile
+        if: steps.restore-npm-cache.outputs.cache-hit != 'true'
+
+      - name: Save npm cache
+        id: save-npm-cache
+        if: steps.restore-npm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            node_modules
+          key: ${{ steps.restore-npm-cache.outputs.cache-primary-key }}
+
+      - name: Lint frontend
+        run: npm run lint
+
+      # - name: Test frontend
+      #   run: npm run test:ci
+
+      - name: bump package version
+        run: npm version --no-git-tag-version `npm version --json | jq -r '."grafana-lokiexplore-app"'`-`git rev-parse --short HEAD`
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Warn missing Grafana API key
+        run: |
+          echo Please generate a Grafana API key: https://grafana.com/docs/grafana/latest/developers/plugins/sign-a-plugin/#generate-an-api-key
+          echo Once done please follow the instructions found here: https://github.com/${{github.repository}}/blob/main/README.md#using-github-actions-release-workflow
+        if: ${{ env.GRAFANA_API_KEY == '' }}
+
+      - name: Sign plugin
+        run: npm run sign
+        if: ${{ env.GRAFANA_API_KEY != '' }}
+
       - name: Get plugin metadata
         id: metadata
         run: |
-          sudo apt-get install jq
+          export GRAFANA_PLUGIN_ID=$(cat dist/plugin.json | jq -r .id)
+          export GRAFANA_PLUGIN_VERSION=$(cat dist/plugin.json | jq -r .info.version)
+          export GRAFANA_PLUGIN_TYPE=$(cat dist/plugin.json | jq -r .type)
 
-          export GRAFANA_PLUGIN_ID=$(cat src/plugin.json | jq -r .id)
-          export GRAFANA_PLUGIN_ARTIFACT=${GRAFANA_PLUGIN_ID}-main.zip
+          export GRAFANA_PLUGIN_ARTIFACT_LATEST=${GRAFANA_PLUGIN_ID}-latest.zip
 
           echo "plugin-id=${GRAFANA_PLUGIN_ID}" >> $GITHUB_OUTPUT
-          echo "archive=${GRAFANA_PLUGIN_ARTIFACT}" >> $GITHUB_OUTPUT
+          echo "plugin-version=${GRAFANA_PLUGIN_VERSION}" >> $GITHUB_OUTPUT
+          echo "plugin-type=${GRAFANA_PLUGIN_TYPE}" >> $GITHUB_OUTPUT
+          echo "archive-latest=${GRAFANA_PLUGIN_ARTIFACT_LATEST}" >> $GITHUB_OUTPUT
+          echo "upload-folder=__to-upload__" >> $GITHUB_OUTPUT
 
-      - id: get-secrets
-        uses: grafana/shared-workflows/actions/get-vault-secrets@main
+      - name: Create latest zip
+        id: package-plugin
+        run: |
+          mv dist ${{ steps.metadata.outputs.plugin-id }}
+          zip ${{ steps.metadata.outputs.archive-latest }} ${{ steps.metadata.outputs.plugin-id }} -r
+
+          # move assets to upload folder for mass upload
+          mkdir ${{ steps.metadata.outputs.upload-folder }}
+          mv ${{ steps.metadata.outputs.archive-latest }} ${{ steps.metadata.outputs.upload-folder }}/
+
+      - name: Validate plugin
+        run: |
+          git clone https://github.com/grafana/plugin-validator
+          pushd ./plugin-validator/pkg/cmd/plugincheck2
+          go install
+          popd
+          plugincheck2 -config ./plugin-validator/config/default.yaml ${{ steps.metadata.outputs.upload-folder }}/${{ steps.metadata.outputs.archive-latest }}
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
         with:
-          common_secrets: |
-            GCP_UPLOAD_ARTIFACTS_KEY=grafana/integration-artifacts-uploader-service-account:'credentials.json'
+          name: upload-dir
+          path: ${{ steps.metadata.outputs.upload-folder }}
+
+  release-and-upload:
+    runs-on: ubuntu-latest
+    needs: ['build-latest-version']
+    steps:
+      - uses: tibdex/github-app-token@v1
+        id: get_installation_token
+        with:
+          app_id: ${{ secrets.DB_FE_GITHUB_APP_ID }}
+          installation_id: ${{ secrets.DB_FE_GITHUB_APP_INSTALLATION_ID }}
+          private_key: ${{ secrets.DB_FE_GITHUB_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ steps.get_installation_token.outputs.token }}
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: upload-dir
+          path: ${{ needs.build-latest-version.outputs.upload-folder }}
+
       - id: 'auth'
-        uses: 'google-github-actions/auth@v2'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
         with:
-          credentials_json: ${{ env.GCP_UPLOAD_ARTIFACTS_KEY }}
-
-      - name: 'move release to main'
-        run: mv ${{ steps.build-release.outputs.archive }} ${{ steps.metadata.outputs.archive }}
+          credentials_json: '${{ secrets.GCP_DB_FE_CI_PRIVATE_KEY }}'
 
       - id: 'upload-to-gcs'
-        name: 'Upload assets to main'
+        name: 'Upload assets'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         with:
-          path: ./
-          destination: 'integration-artifacts/grafana-lokiexplore-app/'
-          glob: '*.zip'
+          path: ./${{ needs.build-latest-version.outputs.upload-folder }}
+          destination: 'grafana-lokiexplore-app'
           parent: false
