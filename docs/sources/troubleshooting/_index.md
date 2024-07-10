@@ -33,7 +33,6 @@ If you do not see `detected_level` values in Explore Logs, you can try the follo
 
 ## There are no labels
 
-
 If you do not see any labels in Explore Logs, you can try the following fixes:
 
 1. Ensure your collector is properly configured to attach them.

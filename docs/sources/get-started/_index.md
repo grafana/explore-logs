@@ -18,15 +18,13 @@ Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafan
 
 The best way to see what Explore Logs can do for you is to use it to explore your own data.
 
-{{< docs/play title="the Grafana Play site" url="https://play.grafana.org/a/grafana-lokiexplore-app/explore?var-ds=ddhr3fttaw8aod&var-patterns=&var-lineFilter=&var-logsFormat=" >}}
+{{< admonition type="note" >}}
+See also instructions for how to [access or install Explore Logs]({{< relref "../access" >}}).
+{{< /admonition >}}
 
 ## Guide
 
 We will walk through a simple step-by-step guide providing a tour of Explore Logs.
-
-{{< admonition type="note" >}}
-Instructions for how to [access or install Explore Logs](#access-in-grafana-cloud) are below.
-{{< /admonition >}}
 
 While you are browsing around the app, look out for any unexpected spikes. Or perhaps one of your services is down and has stopped logging. Maybe you're seeing an increase in errors after a recent release.
 
@@ -51,51 +49,3 @@ You can modify your time range in two ways:
 ### What do you think?
 
 Please [share your feedback](https://forms.gle/1sYWCTPvD72T1dPH9) and help make Explore Logs better.
-
-## Access in Grafana Cloud
-
-Explore Logs is already available in Grafana Cloud.
-
-To access Explore Logs:
-
-1. Open your Grafana stack in a web browser
-1. In the main menu, select **Explore** > **Logs**.
-
-### Install via environment variable
-
-If you want to [install the app in a docker container](https://grafana.com/docs/grafana/latest/setup-grafana/configure-docker/#install-plugins-in-the-docker-container), you need to configure the following environment variable:
-
-```
-GF_INSTALL_PLUGINS=https://storage.googleapis.com/integration-artifacts/grafana-lokiexplore-app/grafana-lokiexplore-app-latest.zip;grafana-lokiexplore-app
-```
-
-## Install using grafana-cli
-
-You can install Explore Logs in your own Grafana instance using `grafana-cli`:
-> The following Loki and Grafana version and configuration are required:
-> - Loki v3.0+
->   - `--pattern-ingester.enabled=true` for pattern ingestion
->   -  Volume endpoint enabled in Loki config:
-> ```yaml
->limits_config:
->  volume_enabled: true
->```
-> - Grafana v11.0+
-
-Using `grafana-cli` run the following command:
-```sh
-grafana-cli --pluginUrl=https://storage.googleapis.com/integration-artifacts/grafana-lokiexplore-app/grafana-lokiexplore-app-latest.zip plugins install grafana-lokiexplore-app
-```
-
-### Test with Docker Compose
-
-You can test the app using the following command to spin up Grafana, Loki, and the Explore Logs App:  
-```sh
-curl -L https://github.com/grafana/explore-logs/raw/main/scripts/run.sh | sh
-```
-
-This will download the https://github.com/grafana/explore-logs/blob/main/scripts/run.sh file and execute it. 
-
-That shell file will download some configuration files into your `/tmp/explore-logs` directory and start the docker containers via `docker compose` from there.
-
-Once the docker container has started, navigate to `http://localhost:3000/a/grafana-lokiexplore-app/explore` to access Explore Logs.
