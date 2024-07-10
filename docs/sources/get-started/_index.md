@@ -16,6 +16,8 @@ Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafan
 
 # Get started with Explore Logs
 
+![Screenshot of Explore Logs landing page](../images/screenshots/fields.png)
+
 The best way to see what Explore Logs can do for you is to use it to explore your own data.
 
 {{< admonition type="note" >}}
@@ -49,3 +51,5 @@ You can modify your time range in two ways:
 ### What do you think?
 
 Please [share your feedback](https://forms.gle/1sYWCTPvD72T1dPH9) and help make Explore Logs better.
+
+![Screenshot of Explore Logs landing page](../images/explore-logs-features.jpeg)

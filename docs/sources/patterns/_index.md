@@ -19,6 +19,8 @@ Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafan
 
 # Log patterns
 
+![Screenshot of Explore Logs landing page](../images/screenshots/patterns.png)
+
 Log patterns allow you to work with groups of similar log lines. You can hide them if they're noise, or focus in on them if they're useful.
 
 Patterns are automatically extracted when your logs are ingested.
@@ -27,7 +29,7 @@ The Explore Logs app shows you the patterns alongside their log volumes. From th
 
 Patterns are ephemeral and can change over time as your logging evolves.
 
-## More use cases
+## Use cases
 
 Log patterns allow you to:
 

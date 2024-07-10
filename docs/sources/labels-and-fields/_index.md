@@ -14,6 +14,8 @@ weight: 300
 Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafana Labs offers limited support, and breaking changes might occur prior to the feature being made generally available.
 {{< /admonition >}}
 
+![Screenshot of Explore Logs landing page](../images/screenshots/labels.png) 
+
 # Labels and Fields
 
 Explore Logs visualises log volumes for the labels attached to your log lines, and fields automatically extracted from the text of the line itself.
@@ -41,6 +43,8 @@ To explore labels with your own data, follow these steps:
 You will see a selection of visualizations showing the volume of each one.
 
 You can repeat the same steps in the **Fields** tab to see fields that were extracted from your log lines.
+
+![Screenshot of Explore Logs landing page](../images/screenshots/fields.png)
 
 ## What next?
 
