@@ -17,7 +17,8 @@
     "server": "docker-compose -f docker-compose.dev.yaml up --build",
     "server:ci": "docker-compose -f docker-compose.dev.yaml up --build -d",
     "sign": "npx --yes @grafana/sign-plugin@latest",
-    "prepare": "husky"
+    "prepare": "husky",
+    "docs": "cd docs && make docs"
   },
   "author": "Grafana",
   "license": "AGPL-3.0-only",
