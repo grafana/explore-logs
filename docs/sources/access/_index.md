@@ -74,4 +74,4 @@ Once the docker container has started, navigate to `http://localhost:3000/a/graf
 
 # Having trouble?
 
-Check out our [troubleshooting guides]({{< relref "troubleshooting" >}}) for tips on how to solve common issues.
+Check out our [troubleshooting guides]({{< relref "../troubleshooting" >}}) for tips on how to solve common issues.
