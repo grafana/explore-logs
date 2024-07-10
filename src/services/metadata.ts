@@ -8,10 +8,6 @@ export function initializeMetadataService(): void {
   }
 }
 
-export interface ServiceMetadata {
-  fields?: string[];
-}
-
 export class MetadataService {
   private serviceSceneState: ServiceSceneCustomState | undefined = undefined;
 
