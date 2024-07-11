@@ -43,12 +43,13 @@ export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
     const styles = useStyles2(getStyles);
     return (
       <div className={styles.bodyContainer}>
-        <InterceptBanner
-          interceptDismissed={interceptDismissed}
-          onRemove={() => {
-            model.dismiss();
-          }}
-        />
+        {!interceptDismissed && (
+          <InterceptBanner
+            onRemove={() => {
+              model.dismiss();
+            }}
+          />
+        )}
         <div className={styles.container}>
           {controls && (
             <div className={styles.controlsContainer}>
