@@ -6,7 +6,6 @@ import { CustomCellRendererProps, useTheme2 } from '@grafana/ui';
 
 import { useQueryContext } from 'Components/Table/Context/QueryContext';
 import { LogLineState, useTableColumnContext } from 'Components/Table/Context/TableColumnsContext';
-import { getBgColorForCell } from 'Components/Table/DefaultCellComponent';
 import { DefaultCellWrapComponent } from 'Components/Table/DefaultCellWrapComponent';
 import { LogLinePill } from 'Components/Table/LogLinePill';
 import { Scroller } from 'Components/Table/Scroller';
@@ -14,6 +13,7 @@ import { css } from '@emotion/css';
 import { LineActionIcons } from 'Components/Table/LineActionIcons';
 import { RawLogLineText } from 'Components/Table/RawLogLineText';
 import { getBodyName } from '../../services/logsFrame';
+import { LEVEL_NAME } from './constants';
 
 export type SelectedTableRow = {
   row: number;
@@ -29,8 +29,7 @@ export const LogLineCellComponent = (props: Props) => {
   const field = props.field;
   const displayValue = field.display!(value);
   const theme = useTheme2();
-  const bgColor = getBgColorForCell(props);
-  const styles = getStyles(theme, bgColor);
+  const styles = getStyles(theme);
   const { columns, setVisible, bodyState } = useTableColumnContext();
   const { logsFrame } = useQueryContext();
   const [isHover, setIsHover] = useState(false);
@@ -54,10 +53,10 @@ export const LogLineCellComponent = (props: Props) => {
       .filter((name) => name !== getBodyName(logsFrame))
       .sort((a, b) => {
         // Sort level first
-        if (a === 'level') {
+        if (a === LEVEL_NAME) {
           return -1;
         }
-        if (b === 'level') {
+        if (b === LEVEL_NAME) {
           return 1;
         }
         // Then sort links
@@ -167,7 +166,7 @@ export const LogLineCellComponent = (props: Props) => {
   );
 };
 
-export const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
+export const getStyles = (theme: GrafanaTheme2) => ({
   content: css`
     white-space: nowrap;
     overflow-x: auto;
@@ -190,11 +189,7 @@ export const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
       left: 0;
       top: 0;
       // Fade out text in last 10px to background color to add affordance to horiziontal scroll
-      background: linear-gradient(
-        to right,
-        transparent calc(100% - 10px),
-        ${bgColor ?? theme.colors.background.primary}
-      );
+      background: linear-gradient(to right, transparent calc(100% - 10px), ${theme.colors.background.primary});
     }
   `,
 });
