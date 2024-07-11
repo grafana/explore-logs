@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - svennergr/use-package-plugin-action
     paths-ignore: # Don't run the workflow if only .github/** or docs/** files have been changed
       - '.github/**'
       - 'docs/**'
