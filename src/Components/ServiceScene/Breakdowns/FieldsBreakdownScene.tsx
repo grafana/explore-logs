@@ -260,7 +260,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     return new SceneReactObject({
       reactNode: (
         <GrotError>
-          <Alert title="" severity="warning">
+          <Alert title="" severity="info">
             No labels match these filters.{' '}
             <a
               className={emptyStateStyles.link}
