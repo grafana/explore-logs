@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
   "type": "app",
-  "name": "Logs",
+  "name": "Explore Logs",
   "id": "grafana-lokiexplore-app",
   "autoEnabled": true,
   "info": {
@@ -29,11 +29,11 @@
     "links": [
       {
         "name": "Github",
-        "url": "https://github.com/grafana/loki-explore"
+        "url": "https://github.com/grafana/explore-logs"
       },
       {
         "name": "Report bug",
-        "url": "https://github.com/grafana/loki-explore/issues/new"
+        "url": "https://github.com/grafana/explore-logs/issues/new"
       }
     ]
   },
