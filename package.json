@@ -18,7 +18,8 @@
     "server:ci": "docker-compose -f docker-compose.dev.yaml up --build -d",
     "sign": "npx --yes @grafana/sign-plugin@latest",
     "prepare": "husky",
-    "docs": "cd docs && make docs"
+    "docs": "cd docs && make docs",
+    "spellcheck": "cspell -c cspell.config.json \"**/*.{ts,tsx,js,go,md,mdx,yml,yaml,json,scss,css}\""
   },
   "author": "Grafana",
   "license": "AGPL-3.0-only",
@@ -44,6 +45,7 @@
     "@types/react-table": "^7.7.20",
     "@types/testing-library__jest-dom": "5.14.8",
     "copy-webpack-plugin": "^11.0.0",
+    "cspell": "6.13.3",
     "css-loader": "^6.7.3",
     "eslint-plugin-deprecation": "^2.0.0",
     "eslint-webpack-plugin": "^4.0.1",
