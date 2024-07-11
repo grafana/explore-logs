@@ -7,7 +7,6 @@ import {
   CustomVariable,
   PanelBuilders,
   SceneComponentProps,
-  SceneCSSGridItem,
   SceneCSSGridLayout,
   SceneFlexItem,
   SceneFlexItemLike,
@@ -44,6 +43,7 @@ import { SortByScene, SortCriteriaChanged } from './SortByScene';
 import { getSortByPreference } from 'services/store';
 import { GrotError } from '../../GrotError';
 import { IndexScene } from '../../IndexScene/IndexScene';
+import { LazySceneCSSGridItem } from './LazySceneCSSGridItem';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -149,8 +149,12 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   }
 
   private handleSortByChange = (event: SortCriteriaChanged) => {
-    if (this.state.body instanceof LayoutSwitcher && this.state.body.state.layouts[1] instanceof ByFrameRepeater) {
-      this.state.body.state.layouts[1].sort(event.sortBy, event.direction);
+    if (this.state.body instanceof LayoutSwitcher) {
+      this.state.body.state.layouts.forEach((layout) => {
+        if (layout instanceof ByFrameRepeater) {
+          layout.sort(event.sortBy, event.direction);
+        }
+      });
     }
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
@@ -164,21 +168,16 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   };
 
   private updateBody() {
-    console.log('update body');
     const variable = this.getVariable();
     const stateUpdate: Partial<FieldsBreakdownSceneState> = {
       value: String(variable.state.value),
       blockingMessage: undefined,
     };
 
-    console.log('this.state.fields.length', this.state.fields.length);
-
     if (this.state.loading === false && this.state.fields.length <= 1) {
       const indexScene = sceneGraph.getAncestor(this, IndexScene);
       const variables = sceneGraph.getVariables(indexScene);
       let variablesToClear: Array<SceneVariable<SceneVariableState>> = [];
-      console.log('variables', variables);
-      console.log('variablesToClear', variablesToClear);
 
       for (const variable of variables.state.variables) {
         if (variable instanceof AdHocFiltersVariable && variable.state.filters.length) {
@@ -189,7 +188,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         }
       }
 
-      if (variablesToClear.length <= 1) {
+      if (variablesToClear.length > 1) {
         stateUpdate.body = this.buildClearFiltersLayout(this.clearVariables(variablesToClear));
       } else {
         stateUpdate.body = this.buildEmptyLayout();
@@ -304,7 +303,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
           .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
           .setOverrides(setLeverColorOverrides);
       }
-      const gridItem = new SceneCSSGridItem({
+      const gridItem = new LazySceneCSSGridItem({
         body: body.build(),
       });
 
@@ -327,13 +326,11 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       active: 'grid',
       layouts: [
         new SceneCSSGridLayout({
-          isLazy: true,
           templateColumns: GRID_TEMPLATE_COLUMNS,
           autoRows: '200px',
           children: children,
         }),
         new SceneCSSGridLayout({
-          isLazy: true,
           templateColumns: '1fr',
           autoRows: '200px',
           children: children.map((child) => child.clone()),

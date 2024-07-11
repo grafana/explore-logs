@@ -41,6 +41,7 @@ import { buildLogsListScene } from './LogsListScene';
 import { testIds } from 'services/testIds';
 import { sortLabelsByCardinality } from 'services/filters';
 import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
+import { getMetadataService } from '../../services/metadata';
 
 export interface LokiPattern {
   pattern: string;
@@ -56,17 +57,16 @@ interface BreakdownViewDefinition {
 
 type MakeOptional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
-export interface ServiceSceneState extends SceneObjectState {
-  body: SceneFlexLayout;
-
+export interface ServiceSceneCustomState {
   fields?: string[];
   labels?: string[];
   patterns?: LokiPattern[];
-
   fieldsCount?: number;
-  ignoreAutoNavigate: boolean;
-
   loading?: boolean;
+}
+
+export interface ServiceSceneState extends SceneObjectState, ServiceSceneCustomState {
+  body: SceneFlexLayout;
 }
 
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
@@ -75,12 +75,11 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
   });
 
-  public constructor(state: MakeOptional<MakeOptional<ServiceSceneState, 'body'>, 'ignoreAutoNavigate'>) {
+  public constructor(state: MakeOptional<ServiceSceneState, 'body'>) {
     super({
       body: state.body ?? buildGraphScene(),
       $data: getQueryRunner(buildLokiQuery(LOG_STREAM_SELECTOR_EXPR)),
       loading: true,
-      ignoreAutoNavigate: false,
       ...state,
     });
 
@@ -119,7 +118,24 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     navigateToIndex();
   }
 
+  /**
+   * After routing we need to pull any data set to the service scene by other routes from the metadata singleton,
+   * as each route has a different instantiation of this scene
+   * @private
+   */
+  private getMetadata() {
+    const metadataService = getMetadataService();
+    const state = metadataService.getServiceSceneState();
+
+    if (state) {
+      this.setState({
+        ...state,
+      });
+    }
+  }
+
   private onActivate() {
+    this.getMetadata();
     this.setBreakdownView(getSlug());
     this.setEmptyFiltersRedirection();
 
@@ -158,8 +174,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     Promise.all([this.updatePatterns(), this.updateLabels()])
       .finally(() => {
         // For patterns, we don't want to reload to logs as we allow users to select multiple patterns
-        if (variable.state.name !== VAR_PATTERNS && !this.state.ignoreAutoNavigate) {
-          navigateToBreakdown(PageSlugs.logs);
+        if (variable.state.name !== VAR_PATTERNS) {
+          navigateToBreakdown(PageSlugs.logs, this.state);
         }
       })
       .catch((err) => {
@@ -403,7 +419,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                       const service = variable.state.filters.find((f) => f.key === SERVICE_NAME);
 
                       if (service?.value) {
-                        navigateToBreakdown(tab.value);
+                        navigateToBreakdown(tab.value, serviceScene.state);
                       } else {
                         navigateToIndex();
                       }

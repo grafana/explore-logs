@@ -1,6 +1,6 @@
 import { SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import React from 'react';
-import { BusEventBase, DataFrame, ReducerID, SelectableValue, fieldReducers } from '@grafana/data';
+import { BusEventBase, DataFrame, FieldReducerInfo, ReducerID, SelectableValue, fieldReducers } from '@grafana/data';
 import { getLabelValueFromDataFrame } from 'services/levels';
 import { InlineField, Select } from '@grafana/ui';
 import { getSortByPreference, setSortByPreference } from 'services/store';
@@ -30,7 +30,7 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
       label: 'Dispersion',
       description: 'Standard deviation of all values in a field',
     },
-    ...fieldReducers.selectOptions([], (ext) => ext.id !== ReducerID.stdDev).options,
+    ...fieldReducers.selectOptions([], filterReducerOptions).options,
   ];
 
   constructor(state: Pick<SortBySceneState, 'target'>) {
@@ -101,6 +101,21 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
       </>
     );
   };
+}
+
+const ENABLED_PERCENTILES = ['p1', 'p10', 'p25', 'p50', 'p75', 'p90', 'p99'];
+function filterReducerOptions(ext: FieldReducerInfo) {
+  if (ext.id === ReducerID.stdDev) {
+    return false;
+  }
+  if (ext.id >= 'p1' && ext.id <= 'p99') {
+    return ENABLED_PERCENTILES.includes(ext.id);
+  }
+  // Do not offer all* reducers
+  if (ext.id.startsWith('all') || ext.description?.startsWith('All') || ext.name.includes('*')) {
+    return false;
+  }
+  return true;
 }
 
 export function getLabelValue(frame: DataFrame) {

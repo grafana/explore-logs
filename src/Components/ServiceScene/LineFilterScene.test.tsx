@@ -1,6 +1,6 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
-import { LineFilter } from './LineFilter';
+import { act, render, screen } from '@testing-library/react';
+import { LineFilterScene } from './LineFilterScene';
 import userEvent from '@testing-library/user-event';
 import { CustomVariable, SceneVariableSet } from '@grafana/scenes';
 import { VAR_LINE_FILTER } from 'services/variables';
@@ -12,11 +12,11 @@ jest.mock('lodash', () => ({
 }));
 
 describe('LineFilter', () => {
-  let scene: LineFilter;
+  let scene: LineFilterScene;
   let lineFilterVariable: CustomVariable;
   beforeEach(() => {
     lineFilterVariable = new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable });
-    scene = new LineFilter({
+    scene = new LineFilterScene({
       $variables: new SceneVariableSet({
         variables: [lineFilterVariable],
       }),
@@ -26,7 +26,7 @@ describe('LineFilter', () => {
   test('Updates the variable with the user input', async () => {
     render(<scene.Component model={scene} />);
 
-    await userEvent.type(screen.getByPlaceholderText('Search in log lines'), 'some text');
+    await act(() => userEvent.type(screen.getByPlaceholderText('Search in log lines'), 'some text'));
 
     expect(await screen.findByDisplayValue('some text')).toBeInTheDocument();
     expect(lineFilterVariable.getValue()).toBe('|~ `(?i)some text`');
@@ -35,7 +35,7 @@ describe('LineFilter', () => {
   test('Escapes the regular expression in the variable', async () => {
     render(<scene.Component model={scene} />);
 
-    await userEvent.type(screen.getByPlaceholderText('Search in log lines'), '(characters');
+    await act(() => userEvent.type(screen.getByPlaceholderText('Search in log lines'), '(characters'));
 
     expect(await screen.findByDisplayValue('(characters')).toBeInTheDocument();
     expect(lineFilterVariable.getValue()).toBe('|~ `(?i)\\(characters`');
