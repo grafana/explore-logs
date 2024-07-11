@@ -48,7 +48,6 @@ export function LineActionIcons(props: { rowIndex: number; value: unknown }) {
   const theme = useTheme2();
   const styles = getStyles(theme);
   const { logsFrame } = useQueryContext();
-  // const logId = logsFrame?.idField?.values[props.rowIndex];
   const lineValue = logsFrame?.bodyField.values[props.rowIndex];
   const [isInspecting, setIsInspecting] = useState(false);
   return (
