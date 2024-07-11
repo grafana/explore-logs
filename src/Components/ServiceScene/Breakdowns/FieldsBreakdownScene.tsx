@@ -83,7 +83,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   }
 
   private onActivate() {
-    console.log('fields breakdown activate');
     const variable = this.getVariable();
 
     this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange);
@@ -108,7 +107,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   }
 
   private updateFields() {
-    console.log('updateFields');
     const logsScene = sceneGraph.getAncestor(this, ServiceScene);
 
     this.setState({
@@ -262,12 +260,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         <GrotError>
           <Alert title="" severity="info">
             No labels match these filters.{' '}
-            <a
-              className={emptyStateStyles.link}
-              onClick={() => clearCallback()}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a className={emptyStateStyles.link} onClick={() => clearCallback()}>
               Clear the filters
             </a>{' '}
             to see all labels.
