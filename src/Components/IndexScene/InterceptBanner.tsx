@@ -7,16 +7,17 @@ export function InterceptBanner(props: { interceptDismissed: boolean; onRemove: 
       {!props.interceptDismissed && (
         <Alert
           severity={'info'}
-          title={"Welcome to Explore Logs (preview) - we're in active development so please expect things to change."}
+          title={
+            "Welcome to Explore Logs (public preview) - we're in active development so please expect things to change."
+          }
           onRemove={props.onRemove}
         >
           <div>
             Check out our{' '}
-            <a className="external-link" href="#">
-              video
-            </a>
-            , dive into our{' '}
-            <a className="external-link" href="#">
+            <a
+              className="external-link"
+              href="https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/   "
+            >
               Get started doc
             </a>
             , or see{' '}
