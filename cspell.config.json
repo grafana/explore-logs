@@ -1,5 +1,5 @@
 {
-  "ignorePaths": ["node_modules", "/project-words.txt"],
+  "ignorePaths": ["node_modules", "/project-words.txt", "dist"],
   "ignoreRegExpList": [],
   "words": [],
   "dictionaryDefinitions": [
