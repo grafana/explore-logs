@@ -15,7 +15,7 @@ export function InterceptBanner(props: { onRemove: () => void }) {
           Check out our{' '}
           <a
             className="external-link"
-            target={'_blank'}
+            target="_blank"
             href="https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/   "
             rel="noreferrer"
           >
@@ -24,7 +24,7 @@ export function InterceptBanner(props: { onRemove: () => void }) {
           , or see{' '}
           <a
             className={'external-link'}
-            target={'_blank'}
+            target="_blank"
             href="https://github.com/grafana/explore-logs/releases"
             rel="noreferrer"
           >
@@ -32,13 +32,13 @@ export function InterceptBanner(props: { onRemove: () => void }) {
           </a>
           .<br />
           Help us shape the future of the app.{' '}
-          <a className={'external-link'} target={'_blank'} href="https://forms.gle/1sYWCTPvD72T1dPH9" rel="noreferrer">
+          <a className={'external-link'} target="_blank" href="https://forms.gle/1sYWCTPvD72T1dPH9" rel="noreferrer">
             Send us feedback
           </a>{' '}
           or engage with us on{' '}
           <a
             className={'external-link'}
-            target={'_blank'}
+            target="_blank"
             href="https://github.com/grafana/explore-logs/?tab=readme-ov-file#explore-logs"
             rel="noreferrer"
           >
