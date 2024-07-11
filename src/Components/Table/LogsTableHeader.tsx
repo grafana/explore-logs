@@ -40,7 +40,7 @@ const getStyles = (theme: GrafanaTheme2, isFirstColumn: boolean, isLine: boolean
   }),
   wrapper: css({
     display: 'flex',
-    marginLeft: isFirstColumn ? '56px' : '6px',
+    marginLeft: isFirstColumn ? '30px' : '6px',
     // Body has extra padding then other columns
     width: isLine ? 'calc(100% + 6px)' : '100%',
 
