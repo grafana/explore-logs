@@ -7,12 +7,13 @@ import { AppliedPattern, IndexSceneState } from './IndexScene';
 import { css } from '@emotion/css';
 import { GiveFeedbackButton } from './GiveFeedbackButton';
 import { InterceptBanner } from './InterceptBanner';
+import { PLUGIN_ID } from '../../services/routing';
 
 interface LayoutSceneState extends SceneObjectState {
   interceptDismissed: boolean;
 }
 
-const interceptBannerStorageKey = 'interceptBannerStorageKey';
+const interceptBannerStorageKey = `${PLUGIN_ID}.interceptBannerStorageKey`;
 
 export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
   constructor(state: Partial<LayoutSceneState>) {
