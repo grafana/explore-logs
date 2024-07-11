@@ -3,6 +3,7 @@ import React from 'react';
 
 import { GrafanaTheme2, ReducerID, SelectableValue } from '@grafana/data';
 import {
+  AdHocFiltersVariable,
   CustomVariable,
   PanelBuilders,
   SceneComponentProps,
@@ -15,7 +16,9 @@ import {
   SceneObjectBase,
   SceneObjectState,
   SceneReactObject,
+  SceneVariable,
   SceneVariableSet,
+  SceneVariableState,
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
@@ -38,6 +41,8 @@ import { StatusWrapper } from './StatusWrapper';
 import { BreakdownSearchScene, getLabelValue } from './BreakdownSearchScene';
 import { SortByScene, SortCriteriaChanged } from './SortByScene';
 import { getSortByPreference } from 'services/store';
+import { GrotError } from '../../GrotError';
+import { IndexScene } from '../../IndexScene/IndexScene';
 import { LazySceneCSSGridItem } from './LazySceneCSSGridItem';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
@@ -99,7 +104,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     });
 
     this.updateFields();
-    this.updateBody();
   }
 
   private updateFields() {
@@ -168,8 +172,25 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       blockingMessage: undefined,
     };
 
-    if (this.state.loading === false && this.state.fields.length === 1) {
-      stateUpdate.body = this.buildEmptyLayout();
+    if (this.state.loading === false && this.state.fields.length <= 1) {
+      const indexScene = sceneGraph.getAncestor(this, IndexScene);
+      const variables = sceneGraph.getVariables(indexScene);
+      let variablesToClear: Array<SceneVariable<SceneVariableState>> = [];
+
+      for (const variable of variables.state.variables) {
+        if (variable instanceof AdHocFiltersVariable && variable.state.filters.length) {
+          variablesToClear.push(variable);
+        }
+        if (variable instanceof CustomVariable && variable.state.value && variable.state.name !== 'logsFormat') {
+          variablesToClear.push(variable);
+        }
+      }
+
+      if (variablesToClear.length > 1) {
+        stateUpdate.body = this.buildClearFiltersLayout(() => this.clearVariables(variablesToClear));
+      } else {
+        stateUpdate.body = this.buildEmptyLayout();
+      }
     } else {
       stateUpdate.body = variable.hasAllValue()
         ? this.buildFieldsLayout(this.state.fields)
@@ -179,6 +200,31 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this.setState(stateUpdate);
   }
 
+  private clearVariables = (variablesToClear: Array<SceneVariable<SceneVariableState>>) => {
+    // clear patterns: needs to happen first, or it won't work as patterns is split into a variable and a state, and updating the variable triggers a state update
+    const indexScene = sceneGraph.getAncestor(this, IndexScene);
+    indexScene.setState({
+      patterns: [],
+    });
+
+    variablesToClear.forEach((variable) => {
+      if (variable instanceof AdHocFiltersVariable && variable.state.key === 'adhoc_service_filter') {
+        variable.setState({
+          filters: variable.state.filters.filter((filter) => filter.key === 'service_name'),
+        });
+      } else if (variable instanceof AdHocFiltersVariable) {
+        variable.setState({
+          filters: [],
+        });
+      } else if (variable instanceof CustomVariable) {
+        variable.setState({
+          value: '',
+          text: '',
+        });
+      }
+    });
+  };
+
   private buildEmptyLayout() {
     return new SceneFlexLayout({
       direction: 'column',
@@ -186,7 +232,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         new SceneFlexItem({
           body: new SceneReactObject({
             reactNode: (
-              <div>
+              <GrotError>
                 <Alert title="" severity="warning">
                   We did not find any fields for the given timerange. Please{' '}
                   <a
@@ -199,11 +245,25 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
                   </a>{' '}
                   if you think this is a mistake.
                 </Alert>
-              </div>
+              </GrotError>
             ),
           }),
         }),
       ],
+    });
+  }
+  private buildClearFiltersLayout(clearCallback: () => void) {
+    return new SceneReactObject({
+      reactNode: (
+        <GrotError>
+          <Alert title="" severity="info">
+            No labels match these filters.{' '}
+            <Button className={emptyStateStyles.button} onClick={() => clearCallback()}>
+              Clear filters
+            </Button>{' '}
+          </Alert>
+        </GrotError>
+      ),
     });
   }
 
@@ -317,6 +377,9 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 const emptyStateStyles = {
   link: css({
     textDecoration: 'underline',
+  }),
+  button: css({
+    marginLeft: '1.5rem',
   }),
 };
 
