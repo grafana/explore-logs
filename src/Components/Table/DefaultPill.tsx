@@ -7,7 +7,7 @@ import { useTheme2 } from '@grafana/ui';
 import { useTableCellContext } from 'Components/Table/Context/TableCellContext';
 import { CellContextMenu } from 'Components/Table/CellContextMenu';
 import { getFieldMappings } from 'Components/Table/Table';
-import { LEVEL_NAME } from './Constants';
+import { LEVEL_NAME } from './constants';
 
 interface DefaultPillProps {
   label: string;

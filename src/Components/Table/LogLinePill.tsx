@@ -11,7 +11,7 @@ import { getFieldMappings } from 'Components/Table/Table';
 import { FieldNameMetaStore } from 'Components/Table/TableTypes';
 import { useTableColumnContext } from 'Components/Table/Context/TableColumnsContext';
 import { getTemplateSrv } from '@grafana/runtime';
-import { LEVEL_NAME } from './Constants';
+import { LEVEL_NAME } from './constants';
 
 interface LogLinePillProps {
   originalField?: Field;

@@ -13,7 +13,7 @@ import { css } from '@emotion/css';
 import { LineActionIcons } from 'Components/Table/LineActionIcons';
 import { RawLogLineText } from 'Components/Table/RawLogLineText';
 import { getBodyName } from '../../services/logsFrame';
-import { LEVEL_NAME } from './Constants';
+import { LEVEL_NAME } from './constants';
 
 export type SelectedTableRow = {
   row: number;
