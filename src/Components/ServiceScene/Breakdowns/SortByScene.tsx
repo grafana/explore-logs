@@ -27,8 +27,23 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
     },
     {
       value: ReducerID.stdDev,
-      label: 'Dispersion',
-      description: 'Standard deviation of all values in a field',
+      label: 'Widest spread',
+      description: 'Prioritize graphs that have changed the most',
+    },
+    {
+      value: 'alphabetical',
+      label: 'Name',
+      description: 'Alphabetical order',
+    },
+    {
+      value: ReducerID.max,
+      label: 'Highest spike',
+      description: 'Show graphs with the highest values first (max)',
+    },
+    {
+      value: ReducerID.min,
+      label: 'Lowest dip',
+      description: 'Show graphs with the smallest values first (min)',
     },
     ...fieldReducers.selectOptions([], filterReducerOptions).options,
   ];
@@ -105,17 +120,10 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
 
 const ENABLED_PERCENTILES = ['p1', 'p10', 'p25', 'p50', 'p75', 'p90', 'p99'];
 function filterReducerOptions(ext: FieldReducerInfo) {
-  if (ext.id === ReducerID.stdDev) {
-    return false;
-  }
   if (ext.id >= 'p1' && ext.id <= 'p99') {
     return ENABLED_PERCENTILES.includes(ext.id);
   }
-  // Do not offer all* reducers
-  if (ext.id.startsWith('all') || ext.description?.startsWith('All') || ext.name.includes('*')) {
-    return false;
-  }
-  return true;
+  return false;
 }
 
 export function getLabelValue(frame: DataFrame) {
