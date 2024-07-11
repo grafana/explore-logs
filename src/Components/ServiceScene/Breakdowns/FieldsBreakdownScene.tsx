@@ -187,7 +187,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       }
 
       if (variablesToClear.length > 1) {
-        stateUpdate.body = this.buildClearFiltersLayout(this.clearVariables(variablesToClear));
+        stateUpdate.body = this.buildClearFiltersLayout(() => this.clearVariables(variablesToClear));
       } else {
         stateUpdate.body = this.buildEmptyLayout();
       }
@@ -200,32 +200,30 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this.setState(stateUpdate);
   }
 
-  private clearVariables(variablesToClear: Array<SceneVariable<SceneVariableState>>) {
-    return () => {
-      // clear patterns: needs to happen first, or it won't work as patterns is split into a variable and a state, and updating the variable triggers a state update
-      const indexScene = sceneGraph.getAncestor(this, IndexScene);
-      indexScene.setState({
-        patterns: [],
-      });
+  private clearVariables = (variablesToClear: Array<SceneVariable<SceneVariableState>>) => {
+    // clear patterns: needs to happen first, or it won't work as patterns is split into a variable and a state, and updating the variable triggers a state update
+    const indexScene = sceneGraph.getAncestor(this, IndexScene);
+    indexScene.setState({
+      patterns: [],
+    });
 
-      variablesToClear.forEach((variable) => {
-        if (variable instanceof AdHocFiltersVariable && variable.state.key === 'adhoc_service_filter') {
-          variable.setState({
-            filters: variable.state.filters.filter((filter) => filter.key === 'service_name'),
-          });
-        } else if (variable instanceof AdHocFiltersVariable) {
-          variable.setState({
-            filters: [],
-          });
-        } else if (variable instanceof CustomVariable) {
-          variable.setState({
-            value: '',
-            text: '',
-          });
-        }
-      });
-    };
-  }
+    variablesToClear.forEach((variable) => {
+      if (variable instanceof AdHocFiltersVariable && variable.state.key === 'adhoc_service_filter') {
+        variable.setState({
+          filters: variable.state.filters.filter((filter) => filter.key === 'service_name'),
+        });
+      } else if (variable instanceof AdHocFiltersVariable) {
+        variable.setState({
+          filters: [],
+        });
+      } else if (variable instanceof CustomVariable) {
+        variable.setState({
+          value: '',
+          text: '',
+        });
+      }
+    });
+  };
 
   private buildEmptyLayout() {
     return new SceneFlexLayout({
@@ -260,10 +258,9 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         <GrotError>
           <Alert title="" severity="info">
             No labels match these filters.{' '}
-            <a className={emptyStateStyles.link} onClick={() => clearCallback()}>
-              Clear the filters
-            </a>{' '}
-            to see all labels.
+            <Button className={emptyStateStyles.button} onClick={() => clearCallback()}>
+              Clear filters
+            </Button>{' '}
           </Alert>
         </GrotError>
       ),
@@ -380,6 +377,9 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 const emptyStateStyles = {
   link: css({
     textDecoration: 'underline',
+  }),
+  button: css({
+    marginLeft: '1.5rem',
   }),
 };
 
