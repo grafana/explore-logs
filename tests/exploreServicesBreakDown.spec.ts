@@ -49,7 +49,7 @@ test.describe('explore services breakdown page', () => {
     // Click the filter button
     await pillContextMenu.click()
     // New level filter should be added
-    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label level')).toBeVisible()
+    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label detected_level')).toBeVisible()
   })
 
   test('should show inspect modal', async ({ page }) => {
