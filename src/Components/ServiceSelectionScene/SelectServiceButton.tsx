@@ -44,6 +44,8 @@ export function selectService(service: string, sceneRef: SceneObject) {
   });
   const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, sceneRef)?.getValue();
   addToFavoriteServicesInStorage(ds, service);
+
+  // In this case, we don't have a ServiceScene inited
   navigateToBreakdown(ROUTES.logs(service));
 }
 
