@@ -12,7 +12,7 @@ weight: 400
 
 # Labels and Fields
 
-{{< docs/private-preview product="Explore Logs" >}}
+{{< docs/public-preview product="Explore Logs" >}}
 
 Explore Logs visualises log volumes for the labels attached to your log lines, and fields automatically extracted from the text of the line itself.
 

@@ -15,7 +15,7 @@ weight: 500
 
 # Log patterns
 
-{{< docs/private-preview product="Explore Logs" >}}
+{{< docs/public-preview product="Explore Logs" >}}
 
 Log patterns let you work with groups of similar log lines. You can hide log patterns that are noisy, or focus only on the patterns that are most useful.
 

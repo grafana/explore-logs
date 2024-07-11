@@ -12,7 +12,7 @@ weight: 700
 
 # Troubleshooting
 
-{{< docs/private-preview product="Explore Logs" >}}
+{{< docs/public-preview product="Explore Logs" >}}
 
 This page address common issues when getting started and using Explore Logs.
 

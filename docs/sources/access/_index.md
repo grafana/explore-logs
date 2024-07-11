@@ -12,7 +12,7 @@ weight: 200
 
 # Access or install Explore Logs
 
-{{< docs/private-preview product="Explore Logs" >}}
+{{< docs/public-preview product="Explore Logs" >}}
 
 To use Explore Logs on your own data, you can either access it in Grafana Cloud or install it in your own Grafana instance.
 

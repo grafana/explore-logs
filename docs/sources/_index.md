@@ -40,7 +40,7 @@ cards:
 
 # Explore Logs
 
-{{< docs/private-preview product="Explore Logs" >}}
+{{< docs/public-preview product="Explore Logs" >}}
 
 Welcome to our new experience for Loki. Explore Logs lets you automatically visualize and explore your logs without having to write queries.
 Using Explore Logs you can:
