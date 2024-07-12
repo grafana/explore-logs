@@ -186,6 +186,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     }
 
     const variable = this.getVariable();
+    const { sortBy, direction } = getSortByPreference('labels', ReducerID.stdDev, 'desc');
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.select_field_in_breakdown_clicked,
@@ -193,6 +194,8 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
         label: value,
         previousLabel: variable.getValueText(),
         view: 'labels',
+        sortBy,
+        sortByDirection: direction,
       }
     );
 
