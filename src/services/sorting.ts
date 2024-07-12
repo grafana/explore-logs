@@ -1,5 +1,5 @@
 import { ChangepointDetector } from '@bsull/augurs';
-import { DataFrame, FieldType, doStandardCalcs, fieldReducers } from '@grafana/data';
+import { DataFrame, FieldType, ReducerID, doStandardCalcs, fieldReducers } from '@grafana/data';
 import { getLabelValueFromDataFrame } from './levels';
 
 export const sortSeries = (series: DataFrame[], sortBy: string, direction: string) => {
@@ -9,7 +9,12 @@ export const sortSeries = (series: DataFrame[], sortBy: string, direction: strin
 
   const reducer = (dataFrame: DataFrame) => {
     if (sortBy === 'changepoint') {
-      return calculateDataFrameChangepoints(dataFrame);
+      if (wasmSupported()) {
+        return calculateDataFrameChangepoints(dataFrame);
+      } else {
+        console.warn('Changepoint not supported, using stdDev');
+        sortBy = ReducerID.stdDev;
+      }
     }
     const fieldReducer = fieldReducers.get(sortBy);
     const value =
@@ -69,4 +74,8 @@ export const sortSeriesByName = (series: DataFrame[], direction: string) => {
     sortedSeries.reverse();
   }
   return sortedSeries;
+};
+
+const wasmSupported = () => {
+  return typeof WebAssembly === 'object';
 };
