@@ -1,7 +1,12 @@
 import { ChangepointDetector } from '@bsull/augurs';
 import { DataFrame, FieldType, doStandardCalcs, fieldReducers } from '@grafana/data';
+import { getLabelValueFromDataFrame } from './levels';
 
 export const sortSeries = (series: DataFrame[], sortBy: string, direction: string) => {
+  if (sortBy === 'alphabetical') {
+    return sortSeriesByName(series, direction);
+  }
+
   const reducer = (dataFrame: DataFrame) => {
     if (sortBy === 'changepoint') {
       return calculateDataFrameChangepoints(dataFrame);
@@ -48,4 +53,20 @@ export const calculateDataFrameChangepoints = (data: DataFrame) => {
   const points = ChangepointDetector.defaultArgpcp().detectChangepoints(values);
 
   return points.indices.length;
+};
+
+export const sortSeriesByName = (series: DataFrame[], direction: string) => {
+  const sortedSeries = [...series];
+  sortedSeries.sort((a, b) => {
+    const valueA = getLabelValueFromDataFrame(a);
+    const valueB = getLabelValueFromDataFrame(b);
+    if (!valueA || !valueB) {
+      return 0;
+    }
+    return valueA?.localeCompare(valueB) ?? 0;
+  });
+  if (direction === 'desc') {
+    sortedSeries.reverse();
+  }
+  return sortedSeries;
 };
