@@ -31,7 +31,7 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
         {
           value: ReducerID.stdDev,
           label: 'Widest spread',
-          description: 'Sort graphs by deviation from the average value (standard deviation)',
+          description: 'Sort graphs by deviation from the average value',
         },
         {
           value: 'alphabetical',
