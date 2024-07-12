@@ -108,13 +108,13 @@ function getStyles(theme: GrafanaTheme2) {
     pattern: css({
       cursor: 'pointer',
       textDecoration: 'underline dotted',
-      'text-underline-offset': '2px',
+      textUnderlineOffset: '2px',
       backgroundColor: theme.colors.emphasize(theme.colors.background.primary, 0.1),
 
       '&:hover': {
         textDecoration: 'underline',
         // somehow this needs 3px when hovered
-        'text-underline-offset': '3px',
+        textUnderlineOffset: '3px',
         backgroundColor: theme.colors.emphasize(theme.colors.background.primary, 0.2),
       },
     }),
