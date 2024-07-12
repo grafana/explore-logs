@@ -107,9 +107,8 @@ function getStyles(theme: GrafanaTheme2) {
   return {
     pattern: css({
       cursor: 'pointer',
-      textDecoration: 'underline dotted',
-      textUnderlineOffset: '2px',
       backgroundColor: theme.colors.emphasize(theme.colors.background.primary, 0.1),
+      margin: '0 2px',
 
       '&:hover': {
         textDecoration: 'underline',
