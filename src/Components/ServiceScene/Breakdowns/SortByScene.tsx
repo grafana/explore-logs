@@ -26,12 +26,12 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
         {
           value: 'changepoint',
           label: 'Most relevant',
-          description: 'Smart ordering of graphs based on the data',
+          description: 'Smart ordering of graphs based on the most significant spikes in the data',
         },
         {
           value: ReducerID.stdDev,
           label: 'Widest spread',
-          description: 'Prioritize graphs that have changed the most',
+          description: 'Prioritize graphs that have changed the most (standard deviation)',
         },
         {
           value: 'alphabetical',
