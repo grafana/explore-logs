@@ -186,6 +186,8 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     }
 
     const variable = this.getVariable();
+    variable.changeValueTo(value);
+
     const { sortBy, direction } = getSortByPreference('labels', ReducerID.stdDev, 'desc');
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
@@ -198,8 +200,6 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
         sortByDirection: direction,
       }
     );
-
-    variable.changeValueTo(value);
   };
 
   public static Component = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
