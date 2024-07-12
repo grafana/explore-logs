@@ -112,7 +112,6 @@ function getStyles(theme: GrafanaTheme2) {
 
       '&:hover': {
         textDecoration: 'underline',
-        // somehow this needs 3px when hovered
         textUnderlineOffset: '3px',
         backgroundColor: theme.colors.emphasize(theme.colors.background.primary, 0.2),
       },
