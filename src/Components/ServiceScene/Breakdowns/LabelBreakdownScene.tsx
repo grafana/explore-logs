@@ -105,6 +105,9 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   }
 
   private handleSortByChange = (event: SortCriteriaChanged) => {
+    if (event.target !== 'labels') {
+      return;
+    }
     if (this.state.body instanceof LayoutSwitcher) {
       this.state.body.state.layouts.forEach((layout) => {
         if (layout instanceof ByFrameRepeater) {

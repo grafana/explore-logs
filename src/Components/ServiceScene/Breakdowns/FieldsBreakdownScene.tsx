@@ -147,6 +147,9 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   }
 
   private handleSortByChange = (event: SortCriteriaChanged) => {
+    if (event.target !== 'fields') {
+      return;
+    }
     if (this.state.body instanceof LayoutSwitcher) {
       this.state.body.state.layouts.forEach((layout) => {
         if (layout instanceof ByFrameRepeater) {
