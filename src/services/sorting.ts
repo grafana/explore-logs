@@ -1,35 +1,50 @@
 import { ChangepointDetector } from '@bsull/augurs';
 import { DataFrame, FieldType, doStandardCalcs, fieldReducers } from '@grafana/data';
+import { getLabelValueFromDataFrame } from './levels';
+import { memoize } from 'lodash';
 
-export const sortSeries = (series: DataFrame[], sortBy: string, direction: string) => {
-  const reducer = (dataFrame: DataFrame) => {
-    if (sortBy === 'changepoint') {
-      return calculateDataFrameChangepoints(dataFrame);
+export const sortSeries = memoize(
+  (series: DataFrame[], sortBy: string, direction: string) => {
+    const reducer = (dataFrame: DataFrame) => {
+      if (sortBy === 'changepoint') {
+        return calculateDataFrameChangepoints(dataFrame);
+      }
+      const fieldReducer = fieldReducers.get(sortBy);
+      const value =
+        fieldReducer.reduce?.(dataFrame.fields[1], true, true) ?? doStandardCalcs(dataFrame.fields[1], true, true);
+      return value[sortBy] ?? 0;
+    };
+
+    const seriesCalcs = series.map((dataFrame) => ({
+      value: reducer(dataFrame),
+      dataFrame: dataFrame,
+    }));
+
+    seriesCalcs.sort((a, b) => {
+      if (a.value !== undefined && b.value !== undefined) {
+        return b.value - a.value;
+      }
+      return 0;
+    });
+
+    if (direction === 'asc') {
+      seriesCalcs.reverse();
     }
-    const fieldReducer = fieldReducers.get(sortBy);
-    const value =
-      fieldReducer.reduce?.(dataFrame.fields[1], true, true) ?? doStandardCalcs(dataFrame.fields[1], true, true);
-    return value[sortBy] ?? 0;
-  };
 
-  const seriesCalcs = series.map((dataFrame) => ({
-    value: reducer(dataFrame),
-    dataFrame: dataFrame,
-  }));
-
-  seriesCalcs.sort((a, b) => {
-    if (a.value !== undefined && b.value !== undefined) {
-      return b.value - a.value;
-    }
-    return 0;
-  });
-
-  if (direction === 'asc') {
-    seriesCalcs.reverse();
+    return seriesCalcs.map(({ dataFrame }) => dataFrame);
+  },
+  (series: DataFrame[], sortBy: string, direction: string) => {
+    const firstTimestamp = series.length > 0 ? series[0].fields[0].values[0] : 0;
+    const lastTimestamp =
+      series.length > 0
+        ? series[series.length - 1].fields[0].values[series[series.length - 1].fields[0].values.length - 1]
+        : 0;
+    const firstValue = series.length > 0 ? getLabelValueFromDataFrame(series[0]) : '';
+    const lastValue = series.length > 0 ? getLabelValueFromDataFrame(series[series.length - 1]) : '';
+    const key = `${firstValue}_${lastValue}_${firstTimestamp}_${lastTimestamp}_${series.length}_${sortBy}_${direction}`;
+    return key;
   }
-
-  return seriesCalcs.map(({ dataFrame }) => dataFrame);
-};
+);
 
 export const calculateDataFrameChangepoints = (data: DataFrame) => {
   const fields = data.fields.filter((f) => f.type === FieldType.number);
