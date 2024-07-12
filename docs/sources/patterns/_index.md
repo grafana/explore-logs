@@ -33,13 +33,13 @@ Patterns are ephemeral and can change over time as your logging evolves.
 
 Log patterns allow you to:
 
-* Browse the log volume over time of different types of logs.
-* Simplify log management by grouping similar log entries.
-* Enhance log searches by focusing on relevant patterns.
-* Improve troubleshooting efficiency by highlighting critical log lines.
-* Reduce storage requirements by minimizing log data.
-* Filter out noisy log lines during exploration.
-* Identify specific log lines for targeted analysis.
+- Browse the log volume over time of different types of logs.
+- Simplify log management by grouping similar log entries.
+- Enhance log searches by focusing on relevant patterns.
+- Improve troubleshooting efficiency by highlighting critical log lines.
+- Reduce storage requirements by minimizing log data.
+- Filter out noisy log lines during exploration.
+- Identify specific log lines for targeted analysis.
 
 ## Guides
 
@@ -51,7 +51,7 @@ Explore Logs proactively visualizes your log volume data per detected pattern, b
 
 For example, if your HTTP service is suffering from a DDoS attack, the relevant graphs will clearly show the spikes. From here you can drill down to discover enough details about the attack to counter it.
 
-### Targetted analysis
+### Targeted analysis
 
 If you know the kind of log line you're looking for, Log patterns are an easy way to get everything else out of the way.
 
