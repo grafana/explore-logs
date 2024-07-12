@@ -1,6 +1,7 @@
 import { ChangepointDetector } from '@bsull/augurs';
 import { DataFrame, FieldType, ReducerID, doStandardCalcs, fieldReducers } from '@grafana/data';
 import { getLabelValueFromDataFrame } from './levels';
+import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from './analytics';
 
 export const sortSeries = (series: DataFrame[], sortBy: string, direction: string) => {
   if (sortBy === 'alphabetical') {
@@ -13,6 +14,7 @@ export const sortSeries = (series: DataFrame[], sortBy: string, direction: strin
         return calculateDataFrameChangepoints(dataFrame);
       } else {
         console.warn('Changepoint not supported, using stdDev');
+        reportAppInteraction(USER_EVENTS_PAGES.service_details, USER_EVENTS_ACTIONS.service_details.wasm_not_supported);
         sortBy = ReducerID.stdDev;
       }
     }
