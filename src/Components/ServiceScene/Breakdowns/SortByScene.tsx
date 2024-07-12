@@ -21,31 +21,39 @@ export class SortCriteriaChanged extends BusEventBase {
 export class SortByScene extends SceneObjectBase<SortBySceneState> {
   public sortingOptions = [
     {
-      value: 'changepoint',
-      label: 'Most relevant',
-      description: 'Smart ordering of graphs based on the data',
+      label: '',
+      options: [
+        {
+          value: 'changepoint',
+          label: 'Most relevant',
+          description: 'Smart ordering of graphs based on the data',
+        },
+        {
+          value: ReducerID.stdDev,
+          label: 'Widest spread',
+          description: 'Prioritize graphs that have changed the most',
+        },
+        {
+          value: 'alphabetical',
+          label: 'Name',
+          description: 'Alphabetical order',
+        },
+        {
+          value: ReducerID.max,
+          label: 'Highest spike',
+          description: 'Show graphs with the highest values first (max)',
+        },
+        {
+          value: ReducerID.min,
+          label: 'Lowest dip',
+          description: 'Show graphs with the smallest values first (min)',
+        },
+      ],
     },
     {
-      value: ReducerID.stdDev,
-      label: 'Widest spread',
-      description: 'Prioritize graphs that have changed the most',
+      label: 'Percentiles',
+      options: [...fieldReducers.selectOptions([], filterReducerOptions).options],
     },
-    {
-      value: 'alphabetical',
-      label: 'Name',
-      description: 'Alphabetical order',
-    },
-    {
-      value: ReducerID.max,
-      label: 'Highest spike',
-      description: 'Show graphs with the highest values first (max)',
-    },
-    {
-      value: ReducerID.min,
-      label: 'Lowest dip',
-      description: 'Show graphs with the smallest values first (min)',
-    },
-    ...fieldReducers.selectOptions([], filterReducerOptions).options,
   ];
 
   constructor(state: Pick<SortBySceneState, 'target'>) {
@@ -77,7 +85,8 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
 
   public static Component = ({ model }: SceneComponentProps<SortByScene>) => {
     const { sortBy, direction } = model.useState();
-    const value = model.sortingOptions.find(({ value }) => value === sortBy);
+    const group = model.sortingOptions.find((group) => group.options.find((option) => option.value === sortBy));
+    const value = group?.options.find((option) => option.value === sortBy);
     return (
       <>
         <InlineField>
@@ -105,7 +114,7 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
         >
           <Select
             value={value}
-            width={18}
+            width={20}
             isSearchable={true}
             options={model.sortingOptions}
             placeholder={'Choose criteria'}
@@ -118,7 +127,7 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
   };
 }
 
-const ENABLED_PERCENTILES = ['p1', 'p10', 'p25', 'p50', 'p75', 'p90', 'p99'];
+const ENABLED_PERCENTILES = ['p10', 'p25', 'p75', 'p90', 'p99'];
 function filterReducerOptions(ext: FieldReducerInfo) {
   if (ext.id >= 'p1' && ext.id <= 'p99') {
     return ENABLED_PERCENTILES.includes(ext.id);
