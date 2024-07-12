@@ -12,7 +12,7 @@ export interface SortBySceneState extends SceneObjectState {
 }
 
 export class SortCriteriaChanged extends BusEventBase {
-  constructor(public sortBy: string, public direction: string) {
+  constructor(public target: 'fields' | 'labels', public sortBy: string, public direction: string) {
     super();
   }
   public static type = 'sort-criteria-changed';
@@ -71,7 +71,7 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
     }
     this.setState({ sortBy: criteria.value });
     setSortByPreference(this.state.target, criteria.value, this.state.direction);
-    this.publishEvent(new SortCriteriaChanged(criteria.value, this.state.direction), true);
+    this.publishEvent(new SortCriteriaChanged(this.state.target, criteria.value, this.state.direction), true);
   };
 
   public onDirectionChange = (direction: SelectableValue<string>) => {
@@ -80,7 +80,7 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
     }
     this.setState({ direction: direction.value });
     setSortByPreference(this.state.target, this.state.sortBy, direction.value);
-    this.publishEvent(new SortCriteriaChanged(this.state.sortBy, direction.value), true);
+    this.publishEvent(new SortCriteriaChanged(this.state.target, this.state.sortBy, direction.value), true);
   };
 
   public static Component = ({ model }: SceneComponentProps<SortByScene>) => {

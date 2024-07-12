@@ -35,7 +35,7 @@ describe('SortByScene', () => {
 
     await waitFor(() => select(screen.getByLabelText('Sort by'), 'Highest spike', { container: document.body }));
 
-    expect(eventSpy).toHaveBeenCalledWith(new SortCriteriaChanged('max', 'desc'), true);
+    expect(eventSpy).toHaveBeenCalledWith(new SortCriteriaChanged('fields', 'max', 'desc'), true);
   });
 
   test('Reports criteria changes', async () => {
@@ -45,6 +45,6 @@ describe('SortByScene', () => {
 
     await waitFor(() => select(screen.getByLabelText('Sort direction'), 'Asc', { container: document.body }));
 
-    expect(eventSpy).toHaveBeenCalledWith(new SortCriteriaChanged('changepoint', 'asc'), true);
+    expect(eventSpy).toHaveBeenCalledWith(new SortCriteriaChanged('fields', 'changepoint', 'asc'), true);
   });
 });
