@@ -41,12 +41,12 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
         {
           value: ReducerID.max,
           label: 'Highest spike',
-          description: 'Show graphs with the highest values first (max)',
+          description: 'Sort graphs by the highest values (max)',
         },
         {
           value: ReducerID.min,
           label: 'Lowest dip',
-          description: 'Show graphs with the smallest values first (min)',
+          description: 'Sort graphs by the smallest values (min)',
         },
       ],
     },
