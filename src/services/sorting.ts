@@ -1,6 +1,7 @@
 import { ChangepointDetector } from '@bsull/augurs';
-import { DataFrame, FieldType, doStandardCalcs, fieldReducers } from '@grafana/data';
+import { DataFrame, FieldType, ReducerID, doStandardCalcs, fieldReducers } from '@grafana/data';
 import { getLabelValueFromDataFrame } from './levels';
+import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from './analytics';
 
 export const sortSeries = (series: DataFrame[], sortBy: string, direction: string) => {
   if (sortBy === 'alphabetical') {
@@ -9,7 +10,13 @@ export const sortSeries = (series: DataFrame[], sortBy: string, direction: strin
 
   const reducer = (dataFrame: DataFrame) => {
     if (sortBy === 'changepoint') {
-      return calculateDataFrameChangepoints(dataFrame);
+      if (wasmSupported()) {
+        return calculateDataFrameChangepoints(dataFrame);
+      } else {
+        console.warn('Changepoint not supported, using stdDev');
+        reportAppInteraction(USER_EVENTS_PAGES.service_details, USER_EVENTS_ACTIONS.service_details.wasm_not_supported);
+        sortBy = ReducerID.stdDev;
+      }
     }
     const fieldReducer = fieldReducers.get(sortBy);
     const value =
@@ -69,4 +76,8 @@ export const sortSeriesByName = (series: DataFrame[], direction: string) => {
     sortedSeries.reverse();
   }
   return sortedSeries;
+};
+
+const wasmSupported = () => {
+  return typeof WebAssembly === 'object';
 };
