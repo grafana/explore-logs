@@ -111,8 +111,6 @@ function getStyles(theme: GrafanaTheme2) {
       margin: '0 2px',
 
       '&:hover': {
-        textDecoration: 'underline',
-        textUnderlineOffset: '3px',
         backgroundColor: theme.colors.emphasize(theme.colors.background.primary, 0.2),
       },
     }),
