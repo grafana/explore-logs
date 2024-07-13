@@ -43,6 +43,9 @@ If you already use **Explore** to query your logs, you can skip this section.
    On Mac: `docker.for.mac.localhost`
    On Windows: `docker.for.win.localhost`
 
+1. Open Grafana in a web browser and navigate to **Explore** > **Logs**.
+1. Select your **Loki** datasource from the drop-down on the top left.
+
 ## Guide
 
 We will walk through a simple step-by-step guide providing a tour of Explore Logs.
