@@ -57,3 +57,5 @@ If you aren't getting any patterns, you can try the following fixes:
 ## I cannot find something
 
 Please [get in touch with the team building the app](https://forms.gle/1sYWCTPvD72T1dPH9) and let us know what's not working for you.
+
+Support tickets are not in scope for products or features in public preview. However, we are always looking to improve the experience and would love to hear from you.
