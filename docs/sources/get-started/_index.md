@@ -24,6 +24,25 @@ The best way to see what Explore Logs can do for you is to use it to explore you
 See also instructions for how to [access or install Explore Logs]({{< relref "../access" >}}).
 {{< /admonition >}}
 
+## Set up a new Loki datasource
+
+In order to access your logs through Explore Logs, you will need to configure a datasource in Grafana.
+
+If you already use **Explore** to query your logs, you can skip this section.
+
+1. Log into your Grafana instance. If this is your first time running Grafana, the username and password are both defaulted to `admin`.
+1. In Grafana, go to **Connections** > **Data Sources** via the cog icon on the left sidebar.
+1. Click the big **+ Add a new data source** button.
+1. Search for, or choose **Loki** from the list.
+1. The **http URL** field should be the address of your Loki server. For example, when running locally or with Docker using port mapping, the address is likely `http://localhost:3100`.
+
+   When running with docker-compose or Kubernetes, the address is likely `http://loki:3100`.
+
+   When running Grafana (with Docker) and trying to connect to a locally built Loki instance, the address (for the URL field) is:
+
+   On Mac: `docker.for.mac.localhost`
+   On Windows: `docker.for.win.localhost`
+
 ## Guide
 
 We will walk through a simple step-by-step guide providing a tour of Explore Logs.
