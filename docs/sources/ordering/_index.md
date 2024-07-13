@@ -21,7 +21,7 @@ Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafan
 
 ![Screenshot of Explore Logs on a page with lots of graphs](../images/screenshots/sea-of-graphs.png)
 
-If you find yourself on a page with lots of graphs, you might want to sort them in a way that makes sense to you. You can do this in Explore Logs by clicking on the **Sort by** dropdown in the top right corner of the page.
+If you find yourself on a page with lots of graphs, you might want to sort them in a way that makes sense to you. You can do this in Explore Logs using the **Sort by** dropdown in the top right toolbar.
 
 By default the graphs are sorted by **Most relevant** where we prioritise graphs with more volatile data. For example, the graphs with the most spikes or dips will be shown first.
 
