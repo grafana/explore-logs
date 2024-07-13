@@ -74,3 +74,7 @@ To take a tour of Explore Logs, follow these steps:
 Please [share your feedback](https://forms.gle/1sYWCTPvD72T1dPH9) and help make Explore Logs better.
 
 ![Screenshot of Explore Logs landing page](../images/explore-logs-features.jpeg)
+
+# What next?
+
+Learn more about how Explore Logs makes it easy to work with [Labels and Fields]({{< relref "../labels-and-fields" >}}).
