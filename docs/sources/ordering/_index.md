@@ -21,7 +21,7 @@ Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafan
 
 If you find yourself on a page with lots of graphs, you might want to sort them in a way that makes sense to you. You can do this in Explore Logs using the **Sort by** dropdown in the top right toolbar.
 
-You can use the **ASC/DESC** dropdown to change the direction of the sort.
+You can use the **Asc/Desc** dropdown to change the direction of the sort.
 
 ## Sorting algorithms
 
