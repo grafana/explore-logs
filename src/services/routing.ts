@@ -1,6 +1,7 @@
 import pluginJson from '../plugin.json';
 import { UrlQueryMap, urlUtil } from '@grafana/data';
 import {
+  ALL_VARIABLE_VALUE,
   VAR_DATASOURCE,
   VAR_FIELD_GROUP_BY,
   VAR_FIELDS,
@@ -11,8 +12,8 @@ import {
   VAR_PATTERNS,
 } from './variables';
 import { locationService } from '@grafana/runtime';
-import { SceneRouteMatch } from '@grafana/scenes';
-import { ServiceSceneState } from '../Components/ServiceScene/ServiceScene';
+import { AdHocFiltersVariable, sceneGraph, SceneRouteMatch } from '@grafana/scenes';
+import { ServiceScene } from '../Components/ServiceScene/ServiceScene';
 import { getMetadataService } from './metadata';
 
 export const PLUGIN_ID = pluginJson.id;
@@ -22,9 +23,22 @@ export enum PageSlugs {
   explore = 'explore',
   logs = 'logs',
   labels = 'labels',
+
   patterns = 'patterns',
   fields = 'fields',
 }
+export enum ValueSlugs {
+  field = 'field',
+  label = 'label',
+}
+
+export type ParentDrilldownSlugs =
+  | PageSlugs.explore
+  | PageSlugs.fields
+  | PageSlugs.logs
+  | PageSlugs.labels
+  | PageSlugs.patterns;
+export type ChildDrilldownSlugs = ValueSlugs.field | ValueSlugs.label;
 
 export function replaceSlash(parameter: string): string {
   return parameter.replace(/\//g, '-');
@@ -39,12 +53,24 @@ export const ROUTES = {
   labels: (service: string) => prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(service)}/${PageSlugs.labels}`),
 };
 
+export const SUB_ROUTES = {
+  label: (service: string, label: string) =>
+    prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(service)}/${ValueSlugs.label}/${label}`),
+  field: (service: string, label: string) =>
+    prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(service)}/${ValueSlugs.field}/${label}`),
+};
+
 export const ROUTE_DEFINITIONS: Record<keyof typeof PageSlugs, string> = {
   explore: prefixRoute(PageSlugs.explore),
   logs: prefixRoute(`${PageSlugs.explore}/service/:service/${PageSlugs.logs}`),
   fields: prefixRoute(`${PageSlugs.explore}/service/:service/${PageSlugs.fields}`),
   patterns: prefixRoute(`${PageSlugs.explore}/service/:service/${PageSlugs.patterns}`),
   labels: prefixRoute(`${PageSlugs.explore}/service/:service/${PageSlugs.labels}`),
+};
+
+export const CHILD_ROUTE_DEFINITIONS: Record<keyof typeof ValueSlugs, string> = {
+  field: prefixRoute(`${PageSlugs.explore}/service/:service/${ValueSlugs.field}/:field`),
+  label: prefixRoute(`${PageSlugs.explore}/service/:service/${ValueSlugs.label}/:label`),
 };
 
 export const EXPLORATIONS_ROUTE = `${PLUGIN_BASE_URL}/${PageSlugs.explore}`;
@@ -99,12 +125,43 @@ export function navigateToIndex() {
  */
 export function navigateToBreakdown(
   path: PageSlugs | string,
-  serviceScene?: ServiceSceneState,
+  serviceScene?: ServiceScene,
   extraQueryParams?: UrlQueryMap
 ) {
+  const indexScene = serviceScene?.parent;
+
   const location = locationService.getLocation();
   const pathParts = location.pathname.split('/');
   const currentSlug = pathParts[pathParts.length - 1];
+
+  // @todo struggling: is there a better way to get the service name to build the URL?
+  if (indexScene) {
+    const variable = sceneGraph.lookupVariable(VAR_LABELS, indexScene);
+
+    if (variable instanceof AdHocFiltersVariable) {
+      const serviceName = variable.state.filters.find((f) => f.key === 'service_name');
+
+      if (serviceName) {
+        const fullUrl = prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(serviceName.value)}/${path}`);
+        const breakdownUrl = buildBreakdownUrl(fullUrl, extraQueryParams);
+
+        if (breakdownUrl === currentSlug + location.search) {
+          // Url did not change, don't add an event to browser history
+          return;
+        }
+
+        // If we're going to navigate, we need to share the state between this instantiation of the service scene
+        if (serviceScene) {
+          const metadataService = getMetadataService();
+          metadataService.setServiceSceneState(serviceScene.state);
+        }
+
+        locationService.push(breakdownUrl);
+        return;
+      }
+    }
+  }
+
   const breakdownUrl = buildBreakdownUrl(path, extraQueryParams);
 
   if (breakdownUrl === currentSlug + location.search) {
@@ -115,17 +172,75 @@ export function navigateToBreakdown(
   // If we're going to navigate, we need to share the state between this instantiation of the service scene
   if (serviceScene) {
     const metadataService = getMetadataService();
-    metadataService.setServiceSceneState(serviceScene);
+    metadataService.setServiceSceneState(serviceScene.state);
   }
 
   locationService.push(breakdownUrl);
+}
+
+export function navigateToSubBreakdown(newPath: ValueSlugs, label: string, serviceScene: ServiceScene) {
+  const indexScene = serviceScene.parent;
+
+  // @todo struggling: is there a better way to get the service name to build the URL?
+  if (indexScene) {
+    const variable = sceneGraph.lookupVariable(VAR_LABELS, indexScene);
+
+    if (variable instanceof AdHocFiltersVariable) {
+      const serviceName = variable.state.filters.find((f) => f.key === 'service_name');
+
+      if (serviceName) {
+        let urlFromScratch;
+        if (label === ALL_VARIABLE_VALUE && newPath === ValueSlugs.label) {
+          urlFromScratch = prefixRoute(
+            `${PageSlugs.explore}/service/${replaceSlash(serviceName.value)}/${PageSlugs.labels}`
+          );
+        } else if (label === ALL_VARIABLE_VALUE && newPath === ValueSlugs.field) {
+          urlFromScratch = prefixRoute(
+            `${PageSlugs.explore}/service/${replaceSlash(serviceName.value)}/${PageSlugs.fields}`
+          );
+        } else {
+          urlFromScratch = prefixRoute(
+            `${PageSlugs.explore}/service/${replaceSlash(serviceName.value)}/${newPath}/${replaceSlash(label)}`
+          );
+        }
+
+        const fullUrl = buildSubBreakdownUrl(urlFromScratch);
+
+        // If we're going to navigate, we need to share the state between this instantiation of the service scene
+        if (serviceScene) {
+          const metadataService = getMetadataService();
+          metadataService.setServiceSceneState(serviceScene.state);
+        }
+
+        locationService.push(fullUrl);
+        return;
+      }
+    }
+  }
 }
 
 export function buildBreakdownUrl(path: PageSlugs | string, extraQueryParams?: UrlQueryMap): string {
   return urlUtil.renderUrl(path, buildBreakdownRoute(extraQueryParams));
 }
 
+export function buildSubBreakdownUrl(fullUrl: string, extraQueryParams?: UrlQueryMap): string {
+  return urlUtil.renderUrl(`${fullUrl}`, buildSubBreakdownRoute(extraQueryParams));
+}
+
 export function buildBreakdownRoute(extraQueryParams?: UrlQueryMap): UrlQueryMap {
+  return {
+    ...Object.entries(urlUtil.getUrlSearchParams()).reduce<UrlQueryMap>((acc, [key, value]) => {
+      if (DRILLDOWN_URL_KEYS.includes(key)) {
+        acc[key] = value;
+      }
+
+      return acc;
+    }, {}),
+    ...extraQueryParams,
+  };
+}
+
+export function buildSubBreakdownRoute(extraQueryParams?: UrlQueryMap): UrlQueryMap {
   return {
     ...Object.entries(urlUtil.getUrlSearchParams()).reduce<UrlQueryMap>((acc, [key, value]) => {
       if (DRILLDOWN_URL_KEYS.includes(key)) {
@@ -148,9 +263,21 @@ export function getSlug() {
   return slug as PageSlugs;
 }
 
+export function getParentSlug() {
+  const location = locationService.getLocation();
+  const locationArray = location.pathname.split('/');
+  const slug = locationArray[locationArray.length - 2];
+  return slug as ValueSlugs;
+}
+
 export function extractServiceFromRoute(routeMatch: SceneRouteMatch<{ service: string }>): { service: string } {
   const service = routeMatch.params.service;
   return { service };
+}
+
+export function extractLabelNameFromRoute(routeMatch: SceneRouteMatch<{ label: string }>): { label: string } {
+  const label = routeMatch.params.label;
+  return { label };
 }
 
 export function buildServicesRoute(extraQueryParams?: UrlQueryMap): UrlQueryMap {

@@ -349,7 +349,9 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   };
 
   public static Component = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
-    const { fields, body, loading, value, blockingMessage, search, sort } = model.useState();
+    const { body, loading, blockingMessage, search, sort } = model.useState();
+    const variable = model.getVariable();
+    const { options, value } = variable.useState();
     const styles = useStyles2(getStyles);
 
     return (
@@ -363,8 +365,13 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
                 <search.Component model={search} />
               </>
             )}
-            {!loading && fields.length > 1 && (
-              <FieldSelector label="Field" options={fields} value={value} onChange={model.onFieldSelectorChange} />
+            {!loading && options.length > 1 && (
+              <FieldSelector
+                label="Field"
+                options={options}
+                value={String(value)}
+                onChange={model.onFieldSelectorChange}
+              />
             )}
           </div>
           <div className={styles.content}>{body && <body.Component model={body} />}</div>
@@ -501,6 +508,16 @@ export function buildFieldsBreakdownActionScene(changeFieldNumber: (n: string[])
     children: [
       new SceneFlexItem({
         body: new FieldsBreakdownScene({ changeFields: changeFieldNumber }),
+      }),
+    ],
+  });
+}
+
+export function buildFieldValuesBreakdownActionScene(value: string) {
+  return new SceneFlexLayout({
+    children: [
+      new SceneFlexItem({
+        body: new FieldsBreakdownScene({ value }),
       }),
     ],
   });

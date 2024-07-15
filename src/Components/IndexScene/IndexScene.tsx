@@ -38,7 +38,7 @@ import { getSlug, PageSlugs } from '../../services/routing';
 import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { locationService } from '@grafana/runtime';
-import { renderPatternFilters, renderLogQLStreamSelector, renderLogQLFieldFilters } from 'services/query';
+import { renderLogQLFieldFilters, renderLogQLStreamSelector, renderPatternFilters } from 'services/query';
 
 export interface AppliedPattern {
   pattern: string;
@@ -52,6 +52,7 @@ export interface IndexSceneState extends SceneObjectState {
   body?: LayoutScene;
   initialFilters?: AdHocVariableFilter[];
   patterns?: AppliedPattern[];
+  drillDownLabel?: string;
 }
 
 export class IndexScene extends SceneObjectBase<IndexSceneState> {
@@ -91,7 +92,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     const stateUpdate: Partial<IndexSceneState> = {};
 
     if (!this.state.contentScene) {
-      stateUpdate.contentScene = getContentScene();
+      stateUpdate.contentScene = getContentScene(this.state.drillDownLabel);
     }
 
     this.setState(stateUpdate);
@@ -157,13 +158,13 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   }
 }
 
-function getContentScene() {
+function getContentScene(drillDownLabel?: string) {
   const slug = getSlug();
   if (slug === PageSlugs.explore) {
     return new ServiceSelectionScene({});
   }
 
-  return new ServiceScene({});
+  return new ServiceScene({ drillDownLabel });
 }
 
 function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVariableFilter[]) {

@@ -4,9 +4,10 @@ import React, { useState } from 'react';
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import { Select, useStyles2, InlineField, Icon, ActionMeta, InputActionMeta } from '@grafana/ui';
 import { testIds } from '../../../services/testIds';
+import { VariableValueOption } from '@grafana/scenes';
 
 type Props<T> = {
-  options: Array<SelectableValue<T>>;
+  options: VariableValueOption[];
   value?: T;
   onChange: (label: T | undefined) => void;
   label: string;
@@ -20,13 +21,20 @@ type AsyncFieldSelectorProps = {
 export function FieldSelector<T>({ options, value, onChange, label }: Props<T>) {
   const styles = useStyles2(getStyles);
   const [selected, setSelected] = useState(false);
+  // @todo cleanup
+  const selectableOptions: SelectableValue[] = options.map((option) => {
+    return {
+      label: option.label,
+      value: option.value,
+    };
+  });
   return (
     <InlineField label={label}>
       <Select
-        {...{ options, value }}
+        {...{ options: selectableOptions, value }}
         onOpenMenu={() => setSelected(true)}
         onCloseMenu={() => setSelected(false)}
-        onChange={(selected) => onChange(selected.value)}
+        onChange={(selected: SelectableValue<T>) => onChange(selected.value)}
         className={styles.select}
         prefix={selected ? undefined : <Icon name={'search'} />}
       />
@@ -45,8 +53,18 @@ export function ServiceFieldSelector({
   const styles = useStyles2(getStyles);
   const [selected, setSelected] = useState(false);
   const [customOption, setCustomOption] = useState<SelectableValue<string>>();
+
+  // @todo cleanup
+  const selectableOptions: SelectableValue[] = options.map((option) => {
+    return {
+      label: option.label,
+      value: option.value,
+    };
+  });
   const allOptions =
-    customOption && value && customOption.value?.includes(value) ? [customOption, ...options] : options;
+    customOption && value && customOption.value?.includes(value)
+      ? [customOption, ...selectableOptions]
+      : selectableOptions;
   const selectedOption = allOptions?.find((opt) => opt.value === value);
 
   return (
@@ -55,7 +73,7 @@ export function ServiceFieldSelector({
         isLoading={isLoading}
         data-testid={testIds.exploreServiceSearch.search}
         placeholder={'Search services'}
-        options={allOptions}
+        options={selectableOptions}
         isClearable={true}
         value={value}
         onOpenMenu={() => setSelected(true)}
