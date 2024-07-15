@@ -27,6 +27,14 @@ cards:
       href: ./patterns/
       description: Learn how you can use automatic log grouping to remove noise and find hard to locate logs.
       height: 24
+    - title: Troubleshooting
+      href: ./troubleshooting/
+      description: Find solutions to common issues you might encounter when using Explore Logs.
+      height: 24
+    - title: Give feedback
+      href: https://forms.gle/1sYWCTPvD72T1dPH9
+      description: Share your thoughts on Explore Logs and help us improve the experience.
+      height: 24
 ---
 
 {{< admonition type="caution" >}}  
@@ -57,9 +65,9 @@ Traditionally, you'd need a deep understanding of your systems in order to get t
 
 With Explore Logs, you get the same powerful insights, by just clicking around and glancing at visualizations which are automatically generated from your data.
 
-## Explore
+## Learn more
 
-Take a look around, and please
+Check out the following articles to learn more about Explore Logs:
 
 {{< card-grid key="cards" type="simple" >}}
 <br>

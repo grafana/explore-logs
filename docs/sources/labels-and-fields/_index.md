@@ -14,7 +14,7 @@ weight: 300
 Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafana Labs offers limited support, and breaking changes might occur prior to the feature being made generally available.
 {{< /admonition >}}
 
-![Screenshot of Explore Logs landing page](../images/screenshots/labels.png) 
+![Screenshot of Explore Logs landing page](../images/screenshots/labels.png)
 
 # Labels and Fields
 
@@ -41,6 +41,15 @@ To explore labels with your own data, follow these steps:
 1. Look for an interesting label and click the **Select** button.
 
 You will see a selection of visualizations showing the volume of each one.
+
+These visualizations are great for;
+
+- Spotting unexpected spikes in log volume.
+- Noticing dips or outages in your services.
+- Understanding the distribution of log lines across your labels.
+- Identifying labels that might be useful for filtering or grouping your logs.
+
+You also have a range of [sorting and ordering options]({{< relref "../ordering" >}}) to help you focus on the most important areas.
 
 You can repeat the same steps in the **Fields** tab to see fields that were extracted from your log lines.
 

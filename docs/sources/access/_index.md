@@ -89,3 +89,7 @@ Once the docker container has started, navigate to `http://localhost:3000/a/graf
 # Having trouble?
 
 Check out our [troubleshooting guides]({{< relref "../troubleshooting" >}}) for tips on how to solve common issues.
+
+# What next?
+
+Once you're set up, you'll need to configure a data source in order to access your logs in Explore Logs. Our Get Started guide includes a section on how to [set up a new Loki datasource]({{< relref "../get-started#set-up-a-new-loki-datasource" >}}).
