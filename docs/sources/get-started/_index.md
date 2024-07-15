@@ -17,7 +17,9 @@ weight: 300
 The best way to see what Explore Logs can do for you is to use it to explore your own data.
 If you have a Grafana Cloud account can access Explore logs in Grafana Cloud by selecting **Explore** > **Logs**, or you can [install Explore Logs]({{< relref "../access" >}}) in your own Grafana instance.
 
-<!-- Drop video link here. -->
+To learn more, check out our overview video:
+
+{{< youtube id="iH0Ufv2bD1U" >}}
 
 ## Guided tour
 

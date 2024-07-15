@@ -37,7 +37,6 @@ cards:
       height: 24
 ---
 
-
 # Explore Logs
 
 {{< docs/public-preview product="Explore Logs" >}}
@@ -51,6 +50,10 @@ Using Explore Logs you can:
 - Uncover related logs and monitor changes over time.
 - Browse automatic visualizations of your log data based on its characteristics.
 - Do all of this without writing LogQL queries.
+
+To learn more, check out our overview video:
+
+{{< youtube id="iH0Ufv2bD1U" >}}
 
 ## Who is Explore Logs for?
 
