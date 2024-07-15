@@ -10,6 +10,8 @@ Explore Logs offers a query-less experience for browsing Loki logs without the n
 
 ...all without crafting a single query!
 
+* Check out the [Explore Logs documentation](https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/)
+
 <img width="840" alt="Screenshot of Explore Logs" src="https://github.com/user-attachments/assets/96b7ddb5-5eb1-42a1-bc35-1f524fc0431b">
 
 
