@@ -29,7 +29,7 @@ To access Explore Logs:
 
 ## Installation
 
-## Install via Plugins catalog
+### Install via Plugins catalog
 
 For Enterprise and OSS Grafana users, you can install Explore Logs via the [Grafana Plugins catalog](https://grafana-dev.com/grafana/plugins/grafana-lokiexplore-app/).
 
@@ -37,7 +37,7 @@ For Enterprise and OSS Grafana users, you can install Explore Logs via the [Graf
 1. Open the **Installation** tab
 1. Follow the instructions to install the app
 
-## Install in Loki
+### Install in Loki
 
 The following Loki and Grafana version and configuration are required:
 
@@ -51,7 +51,7 @@ The following Loki and Grafana version and configuration are required:
         volume_enabled: true
       ```
 
-## Install via environment variable
+### Install via environment variable
 
 If you want to [install the app in a docker container](https://grafana.com/docs/grafana/latest/setup-grafana/configure-docker/#install-plugins-in-the-docker-container), you need to configure the following environment variable:
 
@@ -59,7 +59,7 @@ If you want to [install the app in a docker container](https://grafana.com/docs/
 GF_INSTALL_PLUGINS=https://storage.googleapis.com/integration-artifacts/grafana-lokiexplore-app/grafana-lokiexplore-app-latest.zip;grafana-lokiexplore-app
 ```
 
-## Install using grafana-cli
+### Install using grafana-cli
 
 You can install Explore Logs in your own Grafana instance using `grafana-cli`.
 
