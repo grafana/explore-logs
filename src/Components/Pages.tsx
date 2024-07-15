@@ -74,12 +74,10 @@ export function makeIndexPage() {
         routePath: CHILD_ROUTE_DEFINITIONS.field,
         getPage: (routeMatch, parent) => makeBreakdownValuePage(routeMatch, parent, ValueSlugs.field),
       },
-
-      // @todo add redirect back
-      // {
-      //   routePath: '*',
-      //   getPage: () => makeRedirectPage(),
-      // },
+      {
+        routePath: '*',
+        getPage: () => makeRedirectPage(),
+      },
     ],
   });
 }
