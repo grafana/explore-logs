@@ -13,19 +13,17 @@ title: Sorting and ordering
 weight: 400
 ---
 
-{{< admonition type="caution" >}}  
-Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafana Labs offers limited support, and breaking changes might occur prior to the feature being made generally available.
-{{< /admonition >}}
-
 # Sorting and ordering
 
-If you find yourself on a page with lots of graphs, you might want to sort them in a way that makes sense to you. You can do this in Explore Logs using the **Sort by** dropdown in the top right toolbar.
+{{< docs/public-preview product="Explore Logs" >}}
 
-You can use the **Asc/Desc** dropdown to change the direction of the sort.
+If you find yourself on a page with lots of graphs, you might want to sort them in a way that makes sense to you. You can do this in Explore Logs using the **Sort by** menu in the top right toolbar.
+
+You can use the **Asc/Desc** menu to change the direction of the sort.
 
 ## Sorting algorithms
 
-![Screenshot of the Sort By dropdown](../images/screenshots/sort-by-dropdown.png)
+{{< figure alt="Sort by many" width="900px" align="center" src="../images/sort-by-dropdown.png" caption="Sort by menu" >}}
 
 By default the graphs are sorted by **Most relevant** where we prioritise graphs with more volatile data. For example, the graphs with the most spikes or dips will be shown first.
 
@@ -39,5 +37,5 @@ By default the graphs are sorted by **Most relevant** where we prioritise graphs
 | Percentiles    | Sorts graphs by the nth percentile.                       |
 
 {{< admonition type="note" >}}  
-We are keen to improve this feature, so please [get in touch](https://forms.gle/1sYWCTPvD72T1dPH9) if there is something that would help you find the signal in the noise.
+We are keen to improve this feature, so please [contact us](https://forms.gle/1sYWCTPvD72T1dPH9) if there is something that would help you find the signal in the noise.
 {{< /admonition >}}
