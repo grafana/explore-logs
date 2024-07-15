@@ -21,7 +21,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'se
 import { DetectedLabel, DetectedLabelsResponse, extractParserAndFieldsFromDataFrame } from 'services/fields';
 import { getQueryRunner } from 'services/panel';
 import { buildLokiQuery, renderLogQLStreamSelector } from 'services/query';
-import { getDrilldownSlug, PLUGIN_ID, PageSlugs, ValueSlugs, getDrilldownValueSlug } from 'services/routing';
+import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, PLUGIN_ID, ValueSlugs } from 'services/routing';
 import { getExplorationFor, getLokiDatasource } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
@@ -408,7 +408,19 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
   public static Component = ({ model }: SceneComponentProps<LogsActionBar>) => {
     const styles = useStyles2(getStyles);
     const exploration = getExplorationFor(model);
-    const currentBreakdownViewSlug = getDrilldownSlug();
+    let currentBreakdownViewSlug = getDrilldownSlug();
+    let allowNavToParent = false;
+
+    if (!Object.values(PageSlugs).includes(currentBreakdownViewSlug)) {
+      const drilldownValueSlug = getDrilldownValueSlug();
+      allowNavToParent = true;
+      if (drilldownValueSlug === ValueSlugs.field) {
+        currentBreakdownViewSlug = PageSlugs.fields;
+      }
+      if (drilldownValueSlug === ValueSlugs.label) {
+        currentBreakdownViewSlug = PageSlugs.labels;
+      }
+    }
 
     const getCounter = (tab: BreakdownViewDefinition, state: ServiceSceneState) => {
       switch (tab.value) {
@@ -444,7 +456,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                 counter={!loading ? getCounter(tab, state) : undefined}
                 icon={loading ? 'spinner' : undefined}
                 onChangeTab={() => {
-                  if (tab.value !== currentBreakdownViewSlug) {
+                  if (tab.value !== currentBreakdownViewSlug || allowNavToParent) {
                     reportAppInteraction(
                       USER_EVENTS_PAGES.service_details,
                       USER_EVENTS_ACTIONS.service_details.action_view_changed,
