@@ -36,6 +36,6 @@ By default the graphs are sorted by **Most relevant** where we prioritise graphs
 | Lowest dip     | Sorts graphs by the lowest dips.                          |
 | Percentiles    | Sorts graphs by the nth percentile.                       |
 
-{{< admonition type="note" >}}  
+{{< admonition type="note" >}}
 We are keen to improve this feature, so please [contact us](https://forms.gle/1sYWCTPvD72T1dPH9) if there is something that would help you find the signal in the noise.
 {{< /admonition >}}
