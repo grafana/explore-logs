@@ -1,6 +1,6 @@
 # Explore Logs
 
-> ****NOTE:**** Explore Logs is presently undergoing active development and is offered in a preview state. Subsequent updates are likely to incorporate significant changes that may impact existing functionality.
+> \***\*NOTE:\*\*** Explore Logs is presently undergoing active development and is offered in a preview state. Subsequent updates are likely to incorporate significant changes that may impact existing functionality.
 
 Explore Logs offers a query-less experience for browsing Loki logs without the need for writing complex queries. Discover or narrow down your search using by volume and text patterns. Uncover related logs and understand patterns—all with just a few clicks. No LogQL required. With Explore Logs, you can:
 
@@ -10,7 +10,7 @@ Explore Logs offers a query-less experience for browsing Loki logs without the n
 
 ...all without crafting a single query!
 
-- Check out the [Explore Logs documentation](https://grafana.com/docs/grafana/latest/explore/simplified-exploration/)
+- Check out the [Explore Logs documentation](https://grafana.com/docs/grafana/latest/explore/simplified-exploration/logs/)
 
 <img width="840" alt="Screenshot of Explore Logs" src="https://github.com/user-attachments/assets/96b7ddb5-5eb1-42a1-bc35-1f524fc0431b">
 
