@@ -43,11 +43,15 @@ Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafan
 
 # Explore Logs
 
-![A new way to look at your logs](images/explore-logs-hero-image.jpeg)
-
 Welcome to our new experience for Loki. Explore Logs automatically visualizes insights.
 
-You can:
+Watch our intro video for a quick overview:
+
+{{< youtube id="iH0Ufv2bD1U" >}}
+
+## What can you do with Explore Logs?
+
+With Explore Logs, you can:
 
 - **Drill into your** data using volume and text patterns.
 - **Easily find logs and log volumes** for all of your services.

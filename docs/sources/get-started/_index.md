@@ -16,9 +16,13 @@ Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafan
 
 # Get started with Explore Logs
 
-![Screenshot of Explore Logs landing page](../images/screenshots/service_index.png)
-
 The best way to see what Explore Logs can do for you is to use it to explore your own data.
+
+## What is Explore Logs?
+
+If you'd like to learn more about how to use Explore Logs, check out our introduction video:
+
+{{< youtube id="iH0Ufv2bD1U" >}}
 
 {{< admonition type="note" >}}
 See also instructions for how to [access or install Explore Logs]({{< relref "../access" >}}).
@@ -45,6 +49,8 @@ If you already use **Explore** to query your logs, you can skip this section.
 
 1. Open Grafana in a web browser and navigate to **Explore** > **Logs**.
 1. Select your **Loki** datasource from the drop-down on the top left.
+
+![Screenshot of Explore Logs landing page](../images/screenshots/service_index.png)
 
 ## Guide
 
