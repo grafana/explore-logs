@@ -1,9 +1,9 @@
 ---
-title: Explore Logs
-description: Documentation for Explore Logs
+title: Explore Logs (Public preview)
+description: Documentation for Explore Logs (Public preview)
 weight: 100
 hero:
-  title: Explore Logs
+  title: Explore Logs (Public preview)
   level: 1
   width: 100
   height: 100
