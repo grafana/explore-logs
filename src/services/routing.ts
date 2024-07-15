@@ -204,7 +204,7 @@ export function navigateToSubBreakdown(newPath: ValueSlugs, label: string, servi
           );
         }
 
-        const fullUrl = buildSubBreakdownUrl(urlFromScratch);
+        const fullUrl = buildBreakdownUrl(urlFromScratch);
 
         // If we're going to navigate, we need to share the state between this instantiation of the service scene
         if (serviceScene) {
@@ -223,24 +223,7 @@ export function buildBreakdownUrl(path: PageSlugs | string, extraQueryParams?: U
   return urlUtil.renderUrl(path, buildBreakdownRoute(extraQueryParams));
 }
 
-export function buildSubBreakdownUrl(fullUrl: string, extraQueryParams?: UrlQueryMap): string {
-  return urlUtil.renderUrl(`${fullUrl}`, buildSubBreakdownRoute(extraQueryParams));
-}
-
 export function buildBreakdownRoute(extraQueryParams?: UrlQueryMap): UrlQueryMap {
-  return {
-    ...Object.entries(urlUtil.getUrlSearchParams()).reduce<UrlQueryMap>((acc, [key, value]) => {
-      if (DRILLDOWN_URL_KEYS.includes(key)) {
-        acc[key] = value;
-      }
-
-      return acc;
-    }, {}),
-    ...extraQueryParams,
-  };
-}
-
-export function buildSubBreakdownRoute(extraQueryParams?: UrlQueryMap): UrlQueryMap {
   return {
     ...Object.entries(urlUtil.getUrlSearchParams()).reduce<UrlQueryMap>((acc, [key, value]) => {
       if (DRILLDOWN_URL_KEYS.includes(key)) {
