@@ -1,6 +1,6 @@
 ---
 title: Explore Logs (Public preview)
-description: Learn about the new queryless experience for browsing your Loki logs.
+description: Learn about the new experience for browsing your Loki logs without writing queries.
 weight: 100
 hero:
   title: Explore Logs (Public preview)
