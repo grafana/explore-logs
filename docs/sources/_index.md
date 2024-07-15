@@ -43,8 +43,7 @@ Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafan
 
 # Explore Logs
 
-![A new way to look at your logs](images/explore-logs-hero-banner.png)
-![Screenshot of Explore Logs landing page](images/explore-logs-features.jpeg)
+![A new way to look at your logs](images/explore-logs-hero-image.jpeg)
 
 Welcome to our new experience for Loki. Explore Logs automatically visualizes insights.
 
@@ -56,6 +55,8 @@ You can:
 - Uncover **related logs** and monitor changes over time.
 - Browse **automatic visualizations of your log data** based on its characteristics.
 - Do all of this **without writing LogQL queries**.
+
+![Screenshot of Explore Logs landing page](images/explore-logs-features.jpeg)
 
 ## Who is Explore Logs for?
 
