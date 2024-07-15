@@ -15,7 +15,8 @@ import { VAR_DATASOURCE, VAR_LABELS } from 'services/variables';
 import { SERVICE_NAME } from './ServiceSelectionScene';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { FilterOp } from 'services/filters';
-import { navigateToBreakdown, ROUTES } from '../../services/routing';
+import { ROUTES } from '../../services/routing';
+import { navigateToBreakdown } from '../../services/navigate';
 
 export interface SelectServiceButtonState extends SceneObjectState {
   service: string;

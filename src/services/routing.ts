@@ -1,7 +1,6 @@
 import pluginJson from '../plugin.json';
 import { UrlQueryMap, urlUtil } from '@grafana/data';
 import {
-  ALL_VARIABLE_VALUE,
   VAR_DATASOURCE,
   VAR_FIELD_GROUP_BY,
   VAR_FIELDS,
@@ -12,9 +11,7 @@ import {
   VAR_PATTERNS,
 } from './variables';
 import { locationService } from '@grafana/runtime';
-import { AdHocFiltersVariable, sceneGraph, SceneRouteMatch } from '@grafana/scenes';
-import { ServiceScene } from '../Components/ServiceScene/ServiceScene';
-import { getMetadataService } from './metadata';
+import { SceneRouteMatch } from '@grafana/scenes';
 
 export const PLUGIN_ID = pluginJson.id;
 export const PLUGIN_BASE_URL = `/a/${PLUGIN_ID}`;
@@ -102,157 +99,22 @@ export const DRILLDOWN_URL_KEYS = [
   `var-${VAR_LINE_FILTER}`,
 ];
 
-export function navigateToIndex() {
-  const location = locationService.getLocation();
-  const serviceUrl = buildServicesUrl(ROUTES.explore());
-  const currentUrl = location.pathname + location.search;
-
-  if (serviceUrl === currentUrl) {
-    return;
-  }
-
-  locationService.push(serviceUrl);
-}
-
-/**
- * Navigates to the drilldown view specified by the path slug
- * Note: If the serviceScene is not provided we assume it is not a parent of the calling class, i.e. we're navigating from the service selection view, instead of a drilldown view
- * Drilldown views should ALWAYS provide the serviceScene state
- *
- * @param path
- * @param serviceScene
- * @param extraQueryParams
- */
-export function navigateToBreakdown(
-  path: PageSlugs | string,
-  serviceScene?: ServiceScene,
-  extraQueryParams?: UrlQueryMap
-) {
-  const indexScene = serviceScene?.parent;
-
-  const location = locationService.getLocation();
-  const pathParts = location.pathname.split('/');
-  const currentSlug = pathParts[pathParts.length - 1];
-
-  // @todo struggling: is there a better way to get the service name to build the URL?
-  if (indexScene) {
-    const variable = sceneGraph.lookupVariable(VAR_LABELS, indexScene);
-
-    if (variable instanceof AdHocFiltersVariable) {
-      const serviceName = variable.state.filters.find((f) => f.key === 'service_name');
-
-      if (serviceName) {
-        const fullUrl = prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(serviceName.value)}/${path}`);
-        const breakdownUrl = buildBreakdownUrl(fullUrl, extraQueryParams);
-
-        if (breakdownUrl === currentSlug + location.search) {
-          // Url did not change, don't add an event to browser history
-          return;
-        }
-
-        // If we're going to navigate, we need to share the state between this instantiation of the service scene
-        if (serviceScene) {
-          const metadataService = getMetadataService();
-          metadataService.setServiceSceneState(serviceScene.state);
-        }
-
-        locationService.push(breakdownUrl);
-        return;
-      }
-    }
-  }
-
-  const breakdownUrl = buildBreakdownUrl(path, extraQueryParams);
-
-  if (breakdownUrl === currentSlug + location.search) {
-    // Url did not change, don't add an event to browser history
-    return;
-  }
-
-  // If we're going to navigate, we need to share the state between this instantiation of the service scene
-  if (serviceScene) {
-    const metadataService = getMetadataService();
-    metadataService.setServiceSceneState(serviceScene.state);
-  }
-
-  locationService.push(breakdownUrl);
-}
-
-export function navigateToSubBreakdown(newPath: ValueSlugs, label: string, serviceScene: ServiceScene) {
-  const indexScene = serviceScene.parent;
-
-  // @todo struggling: is there a better way to get the service name to build the URL?
-  if (indexScene) {
-    const variable = sceneGraph.lookupVariable(VAR_LABELS, indexScene);
-
-    if (variable instanceof AdHocFiltersVariable) {
-      const serviceName = variable.state.filters.find((f) => f.key === 'service_name');
-
-      if (serviceName) {
-        let urlFromScratch;
-        if (label === ALL_VARIABLE_VALUE && newPath === ValueSlugs.label) {
-          urlFromScratch = prefixRoute(
-            `${PageSlugs.explore}/service/${replaceSlash(serviceName.value)}/${PageSlugs.labels}`
-          );
-        } else if (label === ALL_VARIABLE_VALUE && newPath === ValueSlugs.field) {
-          urlFromScratch = prefixRoute(
-            `${PageSlugs.explore}/service/${replaceSlash(serviceName.value)}/${PageSlugs.fields}`
-          );
-        } else {
-          urlFromScratch = prefixRoute(
-            `${PageSlugs.explore}/service/${replaceSlash(serviceName.value)}/${newPath}/${replaceSlash(label)}`
-          );
-        }
-
-        const fullUrl = buildBreakdownUrl(urlFromScratch);
-
-        // If we're going to navigate, we need to share the state between this instantiation of the service scene
-        if (serviceScene) {
-          const metadataService = getMetadataService();
-          metadataService.setServiceSceneState(serviceScene.state);
-        }
-
-        locationService.push(fullUrl);
-        return;
-      }
-    }
-  }
-}
-
-export function buildBreakdownUrl(path: PageSlugs | string, extraQueryParams?: UrlQueryMap): string {
-  return urlUtil.renderUrl(path, buildBreakdownRoute(extraQueryParams));
-}
-
-export function buildBreakdownRoute(extraQueryParams?: UrlQueryMap): UrlQueryMap {
-  return {
-    ...Object.entries(urlUtil.getUrlSearchParams()).reduce<UrlQueryMap>((acc, [key, value]) => {
-      if (DRILLDOWN_URL_KEYS.includes(key)) {
-        acc[key] = value;
-      }
-
-      return acc;
-    }, {}),
-    ...extraQueryParams,
-  };
-}
-
-export function buildServicesUrl(path: string, extraQueryParams?: UrlQueryMap): string {
-  return urlUtil.renderUrl(path, buildServicesRoute(extraQueryParams));
-}
-
-export function getSlug() {
+export function getDrilldownSlug() {
   const location = locationService.getLocation();
   const slug = location.pathname.slice(location.pathname.lastIndexOf('/') + 1, location.pathname.length);
   return slug as PageSlugs;
 }
 
-export function getParentSlug() {
+export function getDrilldownValueSlug() {
   const location = locationService.getLocation();
   const locationArray = location.pathname.split('/');
   const slug = locationArray[locationArray.length - 2];
   return slug as ValueSlugs;
 }
 
+export function buildServicesUrl(path: string, extraQueryParams?: UrlQueryMap): string {
+  return urlUtil.renderUrl(path, buildServicesRoute(extraQueryParams));
+}
 export function extractServiceFromRoute(routeMatch: SceneRouteMatch<{ service: string }>): { service: string } {
   const service = routeMatch.params.service;
   return { service };

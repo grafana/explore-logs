@@ -21,15 +21,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'se
 import { DetectedLabel, DetectedLabelsResponse, extractParserAndFieldsFromDataFrame } from 'services/fields';
 import { getQueryRunner } from 'services/panel';
 import { buildLokiQuery, renderLogQLStreamSelector } from 'services/query';
-import {
-  getSlug,
-  navigateToBreakdown,
-  navigateToIndex,
-  PLUGIN_ID,
-  PageSlugs,
-  ValueSlugs,
-  getParentSlug,
-} from 'services/routing';
+import { getDrilldownSlug, PLUGIN_ID, PageSlugs, ValueSlugs, getDrilldownValueSlug } from 'services/routing';
 import { getExplorationFor, getLokiDatasource } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
@@ -53,6 +45,7 @@ import { testIds } from 'services/testIds';
 import { sortLabelsByCardinality } from 'services/filters';
 import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
 import { getMetadataService } from '../../services/metadata';
+import { navigateToBreakdown, navigateToIndex } from '../../services/navigate';
 
 export interface LokiPattern {
   pattern: string;
@@ -333,7 +326,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
   public setBreakdownView() {
     const { body } = this.state;
-    const breakdownView = getSlug();
+    const breakdownView = getDrilldownSlug();
     const breakdownViewDef = breakdownViewsDefinitions.find((v) => v.value === breakdownView);
 
     if (breakdownViewDef) {
@@ -348,7 +341,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         ],
       });
     } else {
-      const valueBreakdownView = getParentSlug();
+      const valueBreakdownView = getDrilldownValueSlug();
       const valueBreakdownViewDef = valueBreakdownViews.find((v) => v.value === valueBreakdownView);
 
       if (valueBreakdownViewDef && this.state.drillDownLabel) {
@@ -415,7 +408,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
   public static Component = ({ model }: SceneComponentProps<LogsActionBar>) => {
     const styles = useStyles2(getStyles);
     const exploration = getExplorationFor(model);
-    const currentBreakdownViewSlug = getSlug();
+    const currentBreakdownViewSlug = getDrilldownSlug();
 
     const getCounter = (tab: BreakdownViewDefinition, state: ServiceSceneState) => {
       switch (tab.value) {

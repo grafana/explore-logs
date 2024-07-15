@@ -15,6 +15,7 @@ import {
   SceneObjectUrlSyncConfig,
   SceneObjectUrlValues,
   SceneRefreshPicker,
+  SceneRouteMatch,
   SceneTimePicker,
   SceneTimeRange,
   SceneVariableSet,
@@ -34,7 +35,7 @@ import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from
 import { ServiceScene } from '../ServiceScene/ServiceScene';
 import { LayoutScene } from './LayoutScene';
 import { FilterOp } from 'services/filters';
-import { getSlug, PageSlugs } from '../../services/routing';
+import { getDrilldownSlug, PageSlugs } from '../../services/routing';
 import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { locationService } from '@grafana/runtime';
@@ -53,6 +54,7 @@ export interface IndexSceneState extends SceneObjectState {
   initialFilters?: AdHocVariableFilter[];
   patterns?: AppliedPattern[];
   drillDownLabel?: string;
+  routeMatch?: SceneRouteMatch<{ service?: string; label?: string }>;
 }
 
 export class IndexScene extends SceneObjectBase<IndexSceneState> {
@@ -159,7 +161,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 }
 
 function getContentScene(drillDownLabel?: string) {
-  const slug = getSlug();
+  const slug = getDrilldownSlug();
   if (slug === PageSlugs.explore) {
     return new ServiceSelectionScene({});
   }

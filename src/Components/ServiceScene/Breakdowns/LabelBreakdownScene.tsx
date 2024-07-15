@@ -23,7 +23,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'se
 import { DetectedLabel, getFilterBreakdownValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
-import { navigateToSubBreakdown, ValueSlugs } from 'services/routing';
+import { ValueSlugs } from 'services/routing';
 import { getLokiDatasource } from 'services/scenes';
 import { ALL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR, VAR_LABEL_GROUP_BY, VAR_LABELS } from 'services/variables';
 import { ByFrameRepeater } from './ByFrameRepeater';
@@ -36,6 +36,7 @@ import { getSortByPreference } from 'services/store';
 import { SortByScene, SortCriteriaChanged } from './SortByScene';
 import { ServiceScene } from '../ServiceScene';
 import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
+import { navigateToValueBreakdown } from '../../../services/navigate';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -207,7 +208,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     );
 
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
-    navigateToSubBreakdown(ValueSlugs.label, value, serviceScene);
+    navigateToValueBreakdown(ValueSlugs.label, value, serviceScene);
   };
 
   public static Component = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
@@ -428,7 +429,7 @@ interface SelectLabelActionState extends SceneObjectState {
 export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
   public onClick = () => {
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
-    navigateToSubBreakdown(ValueSlugs.label, this.state.labelName, serviceScene);
+    navigateToValueBreakdown(ValueSlugs.label, this.state.labelName, serviceScene);
   };
 
   public static Component = ({ model }: SceneComponentProps<SelectLabelAction>) => {

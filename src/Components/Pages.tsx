@@ -13,7 +13,6 @@ import {
   DRILLDOWN_URL_KEYS,
   extractLabelNameFromRoute,
   extractServiceFromRoute,
-  navigateToIndex,
   PageSlugs,
   ParentDrilldownSlugs,
   PLUGIN_BASE_URL,
@@ -25,14 +24,16 @@ import {
 } from '../services/routing';
 import { PageLayoutType } from '@grafana/data';
 import { IndexScene } from './IndexScene/IndexScene';
+import { navigateToIndex } from '../services/navigate';
 
-function getServicesScene(routeMatch?: SceneRouteMatch<{ service?: string }>, label?: string) {
+function getServicesScene(routeMatch?: SceneRouteMatch<{ service?: string; label?: string }>, label?: string) {
   const DEFAULT_TIME_RANGE = { from: 'now-15m', to: 'now' };
 
   return new EmbeddedScene({
     body: new IndexScene({
       drillDownLabel: label,
       $timeRange: new SceneTimeRange(DEFAULT_TIME_RANGE),
+      routeMatch,
     }),
   });
 }
