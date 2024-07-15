@@ -115,29 +115,6 @@ export function makeBreakdownPage(
   slug: ParentDrilldownSlugs
 ): SceneAppPage {
   const { service } = extractServiceFromRoute(routeMatch);
-  // if((slug === ChildSlugs.field || slug === ChildSlugs.label)){
-  //   const { label } = extractLabelNameFromRoute(routeMatch as SceneRouteMatch<{ service: string, label : string }>);
-  //
-  //   return new SceneAppPage({
-  //     title: slugToBreadcrumbTitle(slug),
-  //     layout: PageLayoutType.Custom,
-  //     url: SUB_ROUTES[slug](service, label),
-  //     preserveUrlKeys: DRILLDOWN_URL_KEYS,
-  //     getParentPage: () => parent,
-  //     getScene: () => getServicesScene(),
-  //     drilldowns: [
-  //       {
-  //         routePath: CHILD_ROUTE_DEFINITIONS.label,
-  //         getPage: (routeMatch, parent) => makeBreakdownValuePage(routeMatch, parent, ChildSlugs.label),
-  //       },
-  //       {
-  //         routePath: CHILD_ROUTE_DEFINITIONS.field,
-  //         getPage: (routeMatch, parent) => makeBreakdownValuePage(routeMatch, parent, ChildSlugs.field),
-  //       },
-  //     ]
-  //   });
-  // }
-
   return new SceneAppPage({
     title: slugToBreadcrumbTitle(slug),
     layout: PageLayoutType.Custom,

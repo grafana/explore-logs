@@ -41,8 +41,6 @@ export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
   search: BreakdownSearchScene;
   sort: SortByScene;
-  // labels: Array<VariableValueOption>;
-  // value?: string;
   loading?: boolean;
   error?: boolean;
   blockingMessage?: string;
@@ -53,7 +51,6 @@ export interface LabelBreakdownSceneState extends SceneObjectState {
 export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
     variableNames: [VAR_LABELS],
-    // onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
   });
 
   // Labels/options can be passed in when instantiated, but should ONLY exist on the state of the variable
