@@ -41,7 +41,7 @@ cards:
 Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafana Labs offers limited support, and breaking changes might occur prior to the feature being made generally available.
 {{< /admonition >}}
 
-# Explore Logs documentation
+# Explore Logs
 
 ![A new way to look at your logs](images/explore-logs-hero-banner.png)
 ![Screenshot of Explore Logs landing page](images/explore-logs-features.jpeg)
