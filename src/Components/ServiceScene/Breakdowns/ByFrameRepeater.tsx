@@ -9,10 +9,14 @@ import {
   SceneComponentProps,
   SceneByFrameRepeater,
   SceneLayout,
+  SceneFlexLayout,
+  SceneReactObject,
 } from '@grafana/scenes';
 import { sortSeries } from 'services/sorting';
 import { fuzzySearch } from '../../../services/search';
 import { getLabelValue } from './SortByScene';
+import { Alert } from '@grafana/ui';
+import { css } from '@emotion/css';
 
 interface ByFrameRepeaterState extends SceneObjectState {
   body: SceneLayout;
@@ -105,6 +109,7 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
   };
 
   filterByString = (filter: string) => {
+    this.filter = filter;
     let haystack: string[] = [];
 
     this.iterateFrames((frames, seriesIndex) => {
@@ -133,7 +138,11 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
       }
     });
 
-    this.state.body.setState({ children: newChildren });
+    if (newChildren.length === 0) {
+      this.state.body.setState({ children: [buildNoResultsScene(this.filter)] });
+    } else {
+      this.state.body.setState({ children: newChildren });
+    }
   };
 
   public static Component = ({ model }: SceneComponentProps<SceneByFrameRepeater>) => {
@@ -141,3 +150,28 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     return <body.Component model={body} />;
   };
 }
+
+function buildNoResultsScene(filter: string) {
+  return new SceneFlexLayout({
+    direction: 'row',
+    children: [
+      new SceneFlexItem({
+        body: new SceneReactObject({
+          reactNode: (
+            <div>
+              <Alert title="" severity="info" className={styles.noResultsAlert}>
+                <p>No values found matching &ldquo;{filter}&rdquo;.</p>
+              </Alert>
+            </div>
+          ),
+        }),
+      }),
+    ],
+  });
+}
+
+const styles = {
+  noResultsAlert: css({
+    minWidth: '50vw',
+  }),
+};
