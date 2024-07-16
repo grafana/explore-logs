@@ -1,9 +1,9 @@
 ---
-title: Explore Logs (Public preview)
+title: Explore Logs
 description: Learn about the new experience for browsing your Loki logs without writing queries.
 weight: 100
 hero:
-  title: Explore Logs (Public preview)
+  title: Explore Logs
   level: 1
   width: 100
   height: 100
@@ -51,10 +51,6 @@ Using Explore Logs you can:
 - Browse automatic visualizations of your log data based on its characteristics.
 - Do all of this without writing LogQL queries.
 
-To learn more, check out our overview video:
-
-{{< youtube id="iH0Ufv2bD1U" >}}
-
 ## Who is Explore Logs for?
 
 Explore Logs is for engineers of all levels of operational expertise. You no longer need to be an SRE wizard to get value from your logs.
@@ -63,7 +59,7 @@ Traditionally, you'd need a deep understanding of your systems and Loki's query 
 
 With Explore Logs, you get the same powerful insights, by just viewing and clicking in visualizations which are automatically generated from your log data.
 
-## Learn more
+## Explore
 
 {{< card-grid key="cards" type="simple" >}}
 
