@@ -279,7 +279,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         continue;
       }
 
-      const query = buildLokiQuery(getExpr(optionValue), {
+      const query = buildLokiQuery(getExpr(optionValue, false), {
         legendFormat: `{{${optionValue}}}`,
         refId: optionValue,
       });
@@ -419,7 +419,7 @@ function isAvgField(field: string) {
   return avgFields.includes(field);
 }
 
-function getExpr(field: string) {
+function getExpr(field: string, isValueDrilldown: boolean) {
   if (isAvgField(field)) {
     return (
       `avg_over_time(${LOG_STREAM_SELECTOR_EXPR} | unwrap ` +
@@ -427,6 +427,10 @@ function getExpr(field: string) {
       `(${field}) [$__auto]) by ()`
     );
   }
+  if (isValueDrilldown) {
+    return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__  [$__auto]))`;
+  }
+
   return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${field}!=""   [$__auto]))`;
 }
 
@@ -434,7 +438,7 @@ const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
 function buildValuesLayout(variable: CustomVariable) {
   const tagKey = variable.getValueText();
-  const query = buildLokiQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
+  const query = buildLokiQuery(getExpr(tagKey, true), { legendFormat: `{{${tagKey}}}` });
 
   const { sortBy, direction } = getSortByPreference('fields', ReducerID.stdDev, 'desc');
 
@@ -452,6 +456,7 @@ function buildValuesLayout(variable: CustomVariable) {
         children: [
           new SceneFlexItem({
             minHeight: 300,
+            //@todo add better name then "Value"
             body: PanelBuilders.timeseries().setTitle(variable.getValueText()).build(),
           }),
         ],
@@ -470,9 +475,10 @@ function buildValuesLayout(variable: CustomVariable) {
           isLazy: true,
         }),
         getLayoutChild: getFilterBreakdownValueScene(
-          getLabelValue,
+          (df) => getLabelValue(df, tagKey),
           query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-          VAR_FIELDS
+          VAR_FIELDS,
+          tagKey
         ),
         sortBy,
         direction,
@@ -491,9 +497,10 @@ function buildValuesLayout(variable: CustomVariable) {
           isLazy: true,
         }),
         getLayoutChild: getFilterBreakdownValueScene(
-          getLabelValue,
+          (df) => getLabelValue(df, tagKey),
           query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-          VAR_FIELDS
+          VAR_FIELDS,
+          tagKey
         ),
         sortBy,
         direction,

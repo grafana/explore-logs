@@ -70,6 +70,6 @@ export class BreakdownSearchScene extends SceneObjectBase<BreakdownSearchSceneSt
   }
 }
 
-export function getLabelValue(frame: DataFrame) {
-  return getLabelValueFromDataFrame(frame) ?? 'No labels';
+export function getLabelValue(frame: DataFrame, labelName?: string) {
+  return getLabelValueFromDataFrame(frame) ?? (labelName ? `Logs missing ${labelName}` : 'MISSING');
 }

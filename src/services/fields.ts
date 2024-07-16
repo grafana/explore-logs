@@ -41,7 +41,8 @@ export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
 export function getFilterBreakdownValueScene(
   getTitle: (df: DataFrame) => string,
   style: DrawStyle,
-  variableName: typeof VAR_FIELDS | typeof VAR_LABELS
+  variableName: typeof VAR_FIELDS | typeof VAR_LABELS,
+  labelName?: string
 ) {
   return (data: PanelData, frame: DataFrame, frameIndex: number) => {
     const panel = PanelBuilders.timeseries() //
@@ -51,7 +52,7 @@ export function getFilterBreakdownValueScene(
       .setData(new SceneDataNode({ data: { ...data, series: [frame] } }))
       .setColor({ mode: 'fixed', fixedColor: getColorByIndex(frameIndex) })
       .setOverrides(setLeverColorOverrides)
-      .setHeaderActions(new AddToFiltersButton({ frame, variableName }));
+      .setHeaderActions(new AddToFiltersButton({ frame, variableName, labelName }));
 
     if (style === DrawStyle.Bars) {
       panel
