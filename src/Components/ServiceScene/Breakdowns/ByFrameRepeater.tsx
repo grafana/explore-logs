@@ -158,9 +158,9 @@ function buildNoResultsScene(filter: string) {
       new SceneFlexItem({
         body: new SceneReactObject({
           reactNode: (
-            <div>
+            <div className={styles.alertContainer}>
               <Alert title="" severity="info" className={styles.noResultsAlert}>
-                <p>No values found matching &ldquo;{filter}&rdquo;.</p>
+                No values found matching &ldquo;{filter}&rdquo;
               </Alert>
             </div>
           ),
@@ -171,7 +171,14 @@ function buildNoResultsScene(filter: string) {
 }
 
 const styles = {
+  alertContainer: css({
+    flexGrow: 1,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }),
   noResultsAlert: css({
-    minWidth: '50vw',
+    minWidth: '30vw',
+    flexGrow: 0,
   }),
 };

@@ -14,7 +14,6 @@ export class BreakdownSearchScene extends SceneObjectBase<BreakdownSearchSceneSt
     super({
       filter: '',
     });
-    console.log('new search');
   }
 
   public static Component = ({ model }: SceneComponentProps<BreakdownSearchScene>) => {
