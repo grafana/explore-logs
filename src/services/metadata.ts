@@ -13,8 +13,6 @@ export function initializeMetadataService(): void {
  */
 export class MetadataService {
   private serviceSceneState: ServiceSceneCustomState | undefined = undefined;
-  // private valueBreakdownState:
-
   public getServiceSceneState() {
     return this.serviceSceneState;
   }
