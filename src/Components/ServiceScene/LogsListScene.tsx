@@ -208,6 +208,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
         .setOption('onClickFilterString', this.handleFilterStringClick)
         .setOption('wrapLogMessage', Boolean(getLogOption('wrapLines')))
+        .setOption('showLogContextToggle', true)
         .setHeaderActions(<LogsPanelHeaderActions vizType={visualizationType} onChange={this.setVisualizationType} />)
         .build(),
     });
