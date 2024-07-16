@@ -1,4 +1,5 @@
 ---
+canonical: https://grafana.com/docs/grafana/latest/explore/simplified-exploration/logs/labels-and-fields/
 description: Learn how breaking logs down by Labels and Fields can help you find the signal in the noise.
 keywords:
   - Logs
@@ -7,7 +8,7 @@ keywords:
   - Analysis
 menuTitle: Labels and Fields
 title: Labels and Fields
-weight: 400
+weight: 500
 ---
 
 # Labels and Fields

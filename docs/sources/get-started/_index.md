@@ -1,5 +1,6 @@
 ---
-description: Get set up and take a tour of Explore Logs.
+canonical: https://grafana.com/docs/grafana/latest/explore/simplified-exploration/logs/get-started/
+description: Provides a guided tour of the features in Explore Logs.
 keywords:
   - Logs
   - Explore

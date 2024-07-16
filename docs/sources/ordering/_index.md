@@ -1,5 +1,6 @@
 ---
-description: Learn about sorting and ordering data in Explore Logs
+canonical: https://grafana.com/docs/grafana/latest/explore/simplified-exploration/logs/ordering/ 
+description: Learn about sorting and ordering data in Explore Logs.
 keywords:
   - Logs
   - Log Patterns

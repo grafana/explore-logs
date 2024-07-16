@@ -1,5 +1,6 @@
 ---
-description: Solve common issues when working with Explore Logs.
+canonical: https://grafana.com/docs/grafana/latest/explore/simplified-exploration/logs/troubleshooting/
+description: Describes how to solve common issues when working with Explore Logs.
 keywords:
   - Logs
   - Explore
