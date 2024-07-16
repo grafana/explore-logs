@@ -34,7 +34,7 @@ import { getLabelOptions, sortLabelsByCardinality } from 'services/filters';
 import { BreakdownSearchScene, getLabelValue } from './BreakdownSearchScene';
 import { getSortByPreference } from 'services/store';
 import { SortByScene, SortCriteriaChanged } from './SortByScene';
-import { ServiceScene } from '../ServiceScene';
+import { ServiceScene, ServiceSceneState } from '../ServiceScene';
 import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
 import { navigateToValueBreakdown } from '../../../services/navigate';
 
@@ -56,21 +56,21 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
 
   // Labels/options can be passed in when instantiated, but should ONLY exist on the state of the variable
   constructor(state: Partial<LabelBreakdownSceneState> & { options?: VariableValueOption[]; value?: string }) {
-    const variable = new CustomConstantVariable({
-      name: VAR_LABEL_GROUP_BY,
-      defaultToAll: false,
-      includeAll: true,
-
-      value: state.value ?? ALL_VARIABLE_VALUE,
-      options: state.options ?? [],
-    });
-
     super({
       ...state,
       $variables:
         state.$variables ??
         new SceneVariableSet({
-          variables: [variable],
+          variables: [
+            new CustomConstantVariable({
+              name: VAR_LABEL_GROUP_BY,
+              defaultToAll: false,
+              includeAll: true,
+
+              value: state.value ?? ALL_VARIABLE_VALUE,
+              options: state.options ?? [],
+            }),
+          ],
         }),
       loading: true,
       sort: new SortByScene({ target: 'labels' }),
@@ -91,36 +91,46 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     const variable = this.getVariable();
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
 
-    // Pull the detected_labels from our service scene, update the variable when they change
-    this._subs.add(
-      serviceScene.subscribeToState((newState, prevState) => {
-        if (JSON.stringify(newState.labels) !== JSON.stringify(prevState.labels)) {
-          this.updateLabels(newState.labels);
-        }
-
-        if (newState.labels?.length && !variable.state.options.length) {
-          this.updateLabels(newState.labels);
-        }
-      })
-    );
-
     // Need to update labels with current state
     if (serviceScene.state.labels) {
       this.updateLabels(serviceScene.state.labels);
     }
 
-    this._subs.add(
-      variable.subscribeToState((newState, oldState) => {
-        if (
-          JSON.stringify(newState.options) !== JSON.stringify(oldState.options) ||
-          newState.value !== oldState.value ||
-          newState.loading !== oldState.loading
-        ) {
-          this.updateBody(variable, newState);
-        }
-      })
-    );
+    this._subs.add(serviceScene.subscribeToState(this.onServiceStateChange));
+    this._subs.add(variable.subscribeToState(this.onVariableStateChange));
   }
+
+  /**
+   * Update body when variable state is updated
+   * @param newState
+   * @param oldState
+   */
+  private onVariableStateChange = (newState: CustomConstantVariableState, oldState: CustomConstantVariableState) => {
+    if (
+      JSON.stringify(newState.options) !== JSON.stringify(oldState.options) ||
+      newState.value !== oldState.value ||
+      newState.loading !== oldState.loading
+    ) {
+      const variable = this.getVariable();
+      this.updateBody(variable, newState);
+    }
+  };
+
+  /**
+   * Pull the detected_labels from our service scene, update the variable when they change
+   * @param newState
+   * @param prevState
+   */
+  private onServiceStateChange = (newState: ServiceSceneState, prevState: ServiceSceneState) => {
+    const variable = this.getVariable();
+    if (JSON.stringify(newState.labels) !== JSON.stringify(prevState.labels)) {
+      this.updateLabels(newState.labels);
+    }
+
+    if (newState.labels?.length && !variable.state.options.length) {
+      this.updateLabels(newState.labels);
+    }
+  };
 
   private getVariable(): CustomConstantVariable {
     const variable = sceneGraph.lookupVariable(VAR_LABEL_GROUP_BY, this)!;

@@ -343,9 +343,8 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     }
 
     const variable = this.getVariable();
-    // variable.changeValueTo(value);
-
     const { sortBy, direction } = getSortByPreference('fields', ReducerID.stdDev, 'desc');
+
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.select_field_in_breakdown_clicked,
