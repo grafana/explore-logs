@@ -67,6 +67,8 @@ export function navigateToValueBreakdown(newPath: ValueSlugs, label: string, ser
       return;
     }
   }
+
+  console.warn('no navigate?');
 }
 
 /**

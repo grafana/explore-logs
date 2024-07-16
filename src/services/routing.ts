@@ -66,7 +66,7 @@ export const ROUTE_DEFINITIONS: Record<keyof typeof PageSlugs, string> = {
 };
 
 export const CHILD_ROUTE_DEFINITIONS: Record<keyof typeof ValueSlugs, string> = {
-  field: prefixRoute(`${PageSlugs.explore}/service/:service/${ValueSlugs.field}/:field`),
+  field: prefixRoute(`${PageSlugs.explore}/service/:service/${ValueSlugs.field}/:label`),
   label: prefixRoute(`${PageSlugs.explore}/service/:service/${ValueSlugs.label}/:label`),
 };
 

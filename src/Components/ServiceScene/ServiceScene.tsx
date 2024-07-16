@@ -154,8 +154,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     const unsubs: Unsubscribable[] = [];
     if (this.state.$data) {
       unsubs.push(
-        this.state.$data?.subscribeToState(() => {
-          this.updateFields();
+        this.state.$data?.subscribeToState((newState, prevState) => {
+          if (newState.data?.state === LoadingState.Done) {
+            this.updateFields();
+          }
         })
       );
     }
