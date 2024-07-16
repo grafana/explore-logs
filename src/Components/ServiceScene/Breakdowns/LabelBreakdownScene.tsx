@@ -33,9 +33,9 @@ import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
 import { getLabelOptions, sortLabelsByCardinality } from 'services/filters';
-import { BreakdownSearchScene, getLabelValue } from './BreakdownSearchScene';
+import { BreakdownSearchScene } from './BreakdownSearchScene';
 import { getSortByPreference } from 'services/store';
-import { SortByScene, SortCriteriaChanged } from './SortByScene';
+import { getLabelValue, SortByScene, SortCriteriaChanged } from './SortByScene';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -173,9 +173,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       error: false,
     };
 
-    stateUpdate.body = variable.hasAllValue() ? buildLabelsLayout(options) : buildLabelValuesLayout(variable);
-
-    stateUpdate.search = new BreakdownSearchScene();
+    stateUpdate.body = variable.hasAllValue() ? buildLabelsLayout(options) : buildLabelValuesLayout(variable, this);
 
     this.setState(stateUpdate);
   }
@@ -312,7 +310,7 @@ function getExpr(tagKey: string) {
 
 const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
-function buildLabelValuesLayout(variable: CustomVariable) {
+function buildLabelValuesLayout(variable: CustomVariable, scene: LabelBreakdownScene) {
   const tagKey = variable.getValueText();
   const query = buildLokiQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
 
@@ -328,6 +326,7 @@ function buildLabelValuesLayout(variable: CustomVariable) {
 
   const body = bodyOpts.build();
   const { sortBy, direction } = getSortByPreference('labels', ReducerID.stdDev, 'desc');
+  const filter = scene.state.search.state.filter ?? '';
 
   return new LayoutSwitcher({
     $data: getQueryRunner(query),
@@ -366,6 +365,7 @@ function buildLabelValuesLayout(variable: CustomVariable) {
         ),
         sortBy,
         direction,
+        filter,
       }),
       new ByFrameRepeater({
         body: new SceneCSSGridLayout({
@@ -386,6 +386,7 @@ function buildLabelValuesLayout(variable: CustomVariable) {
         ),
         sortBy,
         direction,
+        filter,
       }),
     ],
   });
