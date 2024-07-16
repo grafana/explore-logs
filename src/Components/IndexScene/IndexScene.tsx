@@ -53,7 +53,6 @@ export interface IndexSceneState extends SceneObjectState {
   body?: LayoutScene;
   initialFilters?: AdHocVariableFilter[];
   patterns?: AppliedPattern[];
-  drillDownLabel?: string;
   routeMatch?: SceneRouteMatch<{ service?: string; label?: string }>;
 }
 
@@ -94,7 +93,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     const stateUpdate: Partial<IndexSceneState> = {};
 
     if (!this.state.contentScene) {
-      stateUpdate.contentScene = getContentScene(this.state.drillDownLabel);
+      stateUpdate.contentScene = getContentScene(this.state.routeMatch?.params.label);
     }
 
     this.setState(stateUpdate);

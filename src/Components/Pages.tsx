@@ -26,12 +26,10 @@ import { PageLayoutType } from '@grafana/data';
 import { IndexScene } from './IndexScene/IndexScene';
 import { navigateToIndex } from '../services/navigate';
 
-function getServicesScene(routeMatch?: SceneRouteMatch<{ service?: string; label?: string }>, label?: string) {
+function getServicesScene(routeMatch?: SceneRouteMatch<{ service?: string; label?: string }>) {
   const DEFAULT_TIME_RANGE = { from: 'now-15m', to: 'now' };
-
   return new EmbeddedScene({
     body: new IndexScene({
-      drillDownLabel: label,
       $timeRange: new SceneTimeRange(DEFAULT_TIME_RANGE),
       routeMatch,
     }),
@@ -138,7 +136,7 @@ export function makeBreakdownValuePage(
     url: SUB_ROUTES[slug](service, label),
     preserveUrlKeys: DRILLDOWN_URL_KEYS,
     getParentPage: () => parent,
-    getScene: (routeMatch) => getServicesScene(routeMatch, label),
+    getScene: (routeMatch) => getServicesScene(routeMatch),
   });
 }
 
