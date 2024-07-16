@@ -1,9 +1,9 @@
 ---
-title: Explore Logs documentation
-description: Documentation for Explore Logs
+title: Explore Logs (Public preview)
+description: Learn about the new experience for browsing your Loki logs without writing queries.
 weight: 100
 hero:
-  title: Explore Logs
+  title: Explore Logs (Public preview)
   level: 1
   width: 100
   height: 100
@@ -27,51 +27,53 @@ cards:
       href: ./patterns/
       description: Learn how you can use automatic log grouping to remove noise and find hard to locate logs.
       height: 24
+    - title: Troubleshooting
+      href: ./troubleshooting/
+      description: Find solutions to common issues you might encounter when using Explore Logs.
+      height: 24
+    - title: Give feedback
+      href: https://forms.gle/1sYWCTPvD72T1dPH9
+      description: Share your thoughts on Explore Logs and help us improve the experience.
+      height: 24
 ---
 
-{{< admonition type="caution" >}}  
-Explore Logs is currently in [public preview](/docs/release-life-cycle/). Grafana Labs offers limited support, and breaking changes might occur prior to the feature being made generally available.
-{{< /admonition >}}
+# Explore Logs
 
-# Explore Logs documentation
+{{< docs/public-preview product="Explore Logs" >}}
 
-![A new way to look at your logs](images/explore-logs-hero-banner.png)
-![Screenshot of Explore Logs landing page](images/explore-logs-features.jpeg)
+Welcome to our new experience for Loki. Explore Logs lets you automatically visualize and explore your logs without having to write queries.
+Using Explore Logs you can:
 
-Welcome to our new experience for Loki. Explore Logs automatically visualizes insights.
+- Easily find logs and log volumes for all of your services.
+- Effortlessly filter logs based on their labels, fields, or patterns.
+- Drill into your data using volume and text patterns.
+- Uncover related logs and monitor changes over time.
+- Browse automatic visualizations of your log data based on its characteristics.
+- Do all of this without writing LogQL queries.
 
-You can:
+To learn more, check out our overview video:
 
-* **Drill into your** data using volume and text patterns.
-* **Easily find logs and log volumes** for all of your services.
-* Effortlessly **filter logs based on their labels, fields, or patterns**.
-* Uncover **related logs** and monitor changes over time.
-* Browse **automatic visualizations of your log data** based on its characteristics.
-* Do all of this **without writing LogQL queries**.
+{{< youtube id="iH0Ufv2bD1U" >}}
 
 ## Who is Explore Logs for?
 
 Explore Logs is for engineers of all levels of operational expertise. You no longer need to be an SRE wizard to get value from your logs.
 
-Traditionally, you'd need a deep understanding of your systems in order to get the most out of Loki. 
+Traditionally, you'd need a deep understanding of your systems and Loki's query language, LogQL, in order to get the most out of Loki.
 
-With Explore Logs, you get the same powerful insights, by just clicking around and glancing at visualizations which are automatically generated from your data.
+With Explore Logs, you get the same powerful insights, by just viewing and clicking in visualizations which are automatically generated from your log data.
 
-## Explore
-
-Take a look around, and please 
+## Learn more
 
 {{< card-grid key="cards" type="simple" >}}
-<br>
-If you're having trouble using Explore Logs, check out our [troubleshooting guides]({{< relref "troubleshooting" >}}).
 
 ## Please share your feedback
 
 Our new experiences are in their early stages, and we'd love to hear your feedback.
 
-* You'll find a **Give feedback** link on the Explore Logs page in Grafana.
-* You can also [fill out this form](https://forms.gle/1sYWCTPvD72T1dPH9) to send your thoughts directly to the team building the apps.
+- You'll find a **Give feedback** link on each Explore Logs page.
+- You can also fill out [this Google form](https://forms.gle/1sYWCTPvD72T1dPH9) to send your thoughts directly to the team building the apps.
 
 ## What's next?
 
-Dive into the [Get started with Explore Logs]({{< relref "get-started" >}}) article to learn how to set up Explore Logs and take a tour of the feature on your own data. 
+Dive into [Get started with Explore Logs]({{< relref "./get-started" >}}) to learn how to set up Explore Logs and take a tour of the feature using your own data.

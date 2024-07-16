@@ -132,6 +132,9 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   }
 
   private handleSortByChange = (event: SortCriteriaChanged) => {
+    if (event.target !== 'labels') {
+      return;
+    }
     if (this.state.body instanceof LayoutSwitcher) {
       this.state.body.state.layouts.forEach((layout) => {
         if (layout instanceof ByFrameRepeater) {
@@ -197,6 +200,9 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     }
 
     const variable = this.getVariable();
+    variable.changeValueTo(value);
+
+    const { sortBy, direction } = getSortByPreference('labels', ReducerID.stdDev, 'desc');
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.select_field_in_breakdown_clicked,
@@ -204,6 +210,8 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
         label: value,
         previousLabel: variable.getValueText(),
         view: 'labels',
+        sortBy,
+        sortByDirection: direction,
       }
     );
 
