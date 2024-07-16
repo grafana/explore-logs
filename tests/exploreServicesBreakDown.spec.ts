@@ -74,7 +74,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page1.getByText('{service_name=`tempo-distributor`}')).toBeVisible();
   });
 
-  test.only('should select a label, label added to url', async ({ page }) => {
+  test('should select a label, label added to url', async ({ page }) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
     const labelsUrlArray = page.url().split('/')
     expect(labelsUrlArray[labelsUrlArray.length - 1].startsWith('labels')).toEqual(true)
