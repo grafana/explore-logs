@@ -11,6 +11,8 @@ import {
   SceneLayout,
 } from '@grafana/scenes';
 import { sortSeries } from 'services/sorting';
+import { fuzzySearch } from '../../../services/search';
+import { getLabelValue } from './SortByScene';
 
 interface ByFrameRepeaterState extends SceneObjectState {
   body: SceneLayout;
@@ -25,11 +27,18 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
   private sortBy: string;
   private direction: string;
   private sortedSeries: DataFrame[] = [];
-  public constructor({ sortBy, direction, ...state }: ByFrameRepeaterState & { sortBy: string; direction: string }) {
+  private filter: string;
+  public constructor({
+    sortBy,
+    direction,
+    filter = '',
+    ...state
+  }: ByFrameRepeaterState & { sortBy: string; direction: string; filter: string }) {
     super(state);
 
     this.sortBy = sortBy;
     this.direction = direction;
+    this.filter = filter;
 
     this.unfilteredChildren = [];
 
@@ -40,12 +49,18 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
         data.subscribeToState((data) => {
           if (data.data?.state === LoadingState.Done) {
             this.performRepeat(data.data);
+            if (this.filter) {
+              this.filterByString(filter);
+            }
           }
         })
       );
 
       if (data.state.data) {
         this.performRepeat(data.state.data);
+        if (this.filter) {
+          this.filterByString(filter);
+        }
       }
     });
   }
@@ -87,6 +102,27 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     for (let seriesIndex = 0; seriesIndex < this.sortedSeries.length; seriesIndex++) {
       callback(this.sortedSeries, seriesIndex);
     }
+  };
+
+  filterByString = (filter: string) => {
+    let haystack: string[] = [];
+
+    this.iterateFrames((frames, seriesIndex) => {
+      const labelValue = getLabelValue(frames[seriesIndex]);
+      haystack.push(labelValue);
+    });
+    fuzzySearch(haystack, filter, (data) => {
+      if (data && data[0]) {
+        // We got search results
+        this.filterFrames((frame: DataFrame) => {
+          const label = getLabelValue(frame);
+          return data[0].includes(label);
+        });
+      } else {
+        // reset search
+        this.filterFrames(() => true);
+      }
+    });
   };
 
   public filterFrames = (filterFn: FrameFilterCallback) => {
