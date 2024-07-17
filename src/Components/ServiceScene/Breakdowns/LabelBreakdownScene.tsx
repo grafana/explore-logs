@@ -11,36 +11,35 @@ import {
   SceneFlexItemLike,
   SceneFlexLayout,
   sceneGraph,
-  SceneObject,
   SceneObjectBase,
   SceneObjectState,
+  SceneReactObject,
   SceneVariableSet,
   VariableDependencyConfig,
   VariableValueOption,
 } from '@grafana/scenes';
-import { Alert, Button, DrawStyle, StackingMode, useStyles2 } from '@grafana/ui';
+import { Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { DetectedLabel } from 'services/fields';
+import { DetectedLabel, getFilterBreakdownValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { ValueSlugs } from 'services/routing';
 import { getLokiDatasource } from 'services/scenes';
-import { ALL_VARIABLE_VALUE, VAR_LABEL_GROUP_BY, VAR_LABELS } from 'services/variables';
+import { ALL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR, VAR_LABEL_GROUP_BY, VAR_LABELS } from 'services/variables';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
 import { getLabelOptions, sortLabelsByCardinality } from 'services/filters';
-import { BreakdownSearchScene } from './BreakdownSearchScene';
+import { BreakdownSearchScene, getLabelValue } from './BreakdownSearchScene';
 import { getSortByPreference } from 'services/store';
 import { SortByScene, SortCriteriaChanged } from './SortByScene';
 import { ServiceScene, ServiceSceneState } from '../ServiceScene';
 import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
 import { navigateToValueBreakdown } from '../../../services/navigate';
-import { getLabelValuesQueryExpr, LabelValuesBreakdownScene } from './LabelValuesBreakdownScene';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
-  body?: SceneObject;
+  body?: LayoutSwitcher;
   search: BreakdownSearchScene;
   sort: SortByScene;
   loading?: boolean;
@@ -198,9 +197,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
 
     stateUpdate.body = variable.hasAllValue()
       ? buildLabelsLayout(variableState.options)
-      : new LabelValuesBreakdownScene({
-          variableState,
-        });
+      : buildLabelValuesLayout(variableState);
 
     stateUpdate.search = new BreakdownSearchScene();
 
@@ -303,9 +300,7 @@ function buildLabelsLayout(options: VariableValueOption[]) {
       new SceneCSSGridItem({
         body: PanelBuilders.timeseries()
           .setTitle(optionValue)
-          .setData(
-            getQueryRunner(buildLokiQuery(getLabelValuesQueryExpr(optionValue), { legendFormat: `{{${optionValue}}}` }))
-          )
+          .setData(getQueryRunner(buildLokiQuery(getExpr(optionValue), { legendFormat: `{{${optionValue}}}` })))
           .setHeaderActions(new SelectLabelAction({ labelName: optionValue }))
           .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
           .setCustomFieldConfig('fillOpacity', 100)
@@ -341,93 +336,90 @@ function buildLabelsLayout(options: VariableValueOption[]) {
   });
 }
 
+function getExpr(tagKey: string) {
+  return `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${tagKey}!="" [$__auto])) by (${tagKey})`;
+}
+
 export const LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
-// function buildLabelValuesLayout(variableState: CustomConstantVariableState) {
-//   const tagKey = String(variableState?.value);
-//   const query = buildLokiQuery(getLabelValuesQueryExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
-//
-//   let bodyOpts = PanelBuilders.timeseries();
-//   bodyOpts = bodyOpts
-//     .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
-//     .setCustomFieldConfig('fillOpacity', 100)
-//     .setCustomFieldConfig('lineWidth', 0)
-//     .setCustomFieldConfig('pointSize', 0)
-//     .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-//     .setOverrides(setLeverColorOverrides)
-//     .setTitle(tagKey);
-//
-//   const body = bodyOpts.build();
-//   const { sortBy, direction } = getSortByPreference('labels', ReducerID.stdDev, 'desc');
-//
-//   const queryRunner = getQueryRunner(query);
-//   queryRunner.getResultsStream().subscribe(response => {
-//     if(response.data.state === LoadingState.Done && !response.data.series.length){
-//
-//     }
-//   })
-//
-//   return new LayoutSwitcher({
-//     $data: queryRunner,
-//     options: [
-//       { value: 'single', label: 'Single' },
-//       { value: 'grid', label: 'Grid' },
-//       { value: 'rows', label: 'Rows' },
-//     ],
-//     active: 'grid',
-//     layouts: [
-//       new SceneFlexLayout({
-//         direction: 'column',
-//         children: [
-//           new SceneFlexItem({
-//             minHeight: 300,
-//             body,
-//           }),
-//         ],
-//       }),
-//       new ByFrameRepeater({
-//         body: new SceneCSSGridLayout({
-//           templateColumns: LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS,
-//           autoRows: '200px',
-//           children: [
-//             new SceneFlexItem({
-//               body: new SceneReactObject({
-//                 reactNode: <LoadingPlaceholder text="Loading..." />,
-//               }),
-//             }),
-//           ],
-//         }),
-//         getLayoutChild: getFilterBreakdownValueScene(
-//           getLabelValue,
-//           query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-//           VAR_LABELS
-//         ),
-//         sortBy,
-//         direction,
-//       }),
-//       new ByFrameRepeater({
-//         body: new SceneCSSGridLayout({
-//           templateColumns: '1fr',
-//           autoRows: '200px',
-//           children: [
-//             new SceneFlexItem({
-//               body: new SceneReactObject({
-//                 reactNode: <LoadingPlaceholder text="Loading..." />,
-//               }),
-//             }),
-//           ],
-//         }),
-//         getLayoutChild: getFilterBreakdownValueScene(
-//           getLabelValue,
-//           query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-//           VAR_LABELS
-//         ),
-//         sortBy,
-//         direction,
-//       }),
-//     ],
-//   });
-// }
+function buildLabelValuesLayout(variableState: CustomConstantVariableState) {
+  const tagKey = String(variableState?.value);
+  const query = buildLokiQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
+
+  let bodyOpts = PanelBuilders.timeseries();
+  bodyOpts = bodyOpts
+    .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
+    .setCustomFieldConfig('fillOpacity', 100)
+    .setCustomFieldConfig('lineWidth', 0)
+    .setCustomFieldConfig('pointSize', 0)
+    .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+    .setOverrides(setLeverColorOverrides)
+    .setTitle(tagKey);
+
+  const body = bodyOpts.build();
+  const { sortBy, direction } = getSortByPreference('labels', ReducerID.stdDev, 'desc');
+
+  return new LayoutSwitcher({
+    $data: getQueryRunner(query),
+    options: [
+      { value: 'single', label: 'Single' },
+      { value: 'grid', label: 'Grid' },
+      { value: 'rows', label: 'Rows' },
+    ],
+    active: 'grid',
+    layouts: [
+      new SceneFlexLayout({
+        direction: 'column',
+        children: [
+          new SceneFlexItem({
+            minHeight: 300,
+            body,
+          }),
+        ],
+      }),
+      new ByFrameRepeater({
+        body: new SceneCSSGridLayout({
+          templateColumns: LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS,
+          autoRows: '200px',
+          children: [
+            new SceneFlexItem({
+              body: new SceneReactObject({
+                reactNode: <LoadingPlaceholder text="Loading..." />,
+              }),
+            }),
+          ],
+        }),
+        getLayoutChild: getFilterBreakdownValueScene(
+          getLabelValue,
+          query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
+          VAR_LABELS
+        ),
+        sortBy,
+        direction,
+      }),
+      new ByFrameRepeater({
+        body: new SceneCSSGridLayout({
+          templateColumns: '1fr',
+          autoRows: '200px',
+          children: [
+            new SceneFlexItem({
+              body: new SceneReactObject({
+                reactNode: <LoadingPlaceholder text="Loading..." />,
+              }),
+            }),
+          ],
+        }),
+        getLayoutChild: getFilterBreakdownValueScene(
+          getLabelValue,
+          query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
+          VAR_LABELS
+        ),
+        sortBy,
+        direction,
+      }),
+    ],
+  });
+}
 
 export function buildLabelBreakdownActionScene() {
   return new SceneFlexLayout({
