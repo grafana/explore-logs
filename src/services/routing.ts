@@ -20,7 +20,6 @@ export enum PageSlugs {
   explore = 'explore',
   logs = 'logs',
   labels = 'labels',
-
   patterns = 'patterns',
   fields = 'fields',
 }
