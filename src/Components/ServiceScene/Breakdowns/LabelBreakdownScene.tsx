@@ -33,7 +33,7 @@ import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
 import { getLabelOptions, sortLabelsByCardinality } from 'services/filters';
-import { BreakdownSearchScene } from './BreakdownSearchScene';
+import { BreakdownSearchReset, BreakdownSearchScene } from './BreakdownSearchScene';
 import { getSortByPreference } from 'services/store';
 import { getLabelValue, SortByScene, SortCriteriaChanged } from './SortByScene';
 
@@ -72,7 +72,12 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   }
 
   private onActivate() {
-    this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange);
+    this._subs.add(
+      this.subscribeToEvent(BreakdownSearchReset, () => {
+        this.state.search.clearValueFilter();
+      })
+    );
+    this._subs.add(this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange));
 
     const variable = this.getVariable();
 
