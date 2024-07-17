@@ -5,6 +5,7 @@ import { FieldType, createDataFrame } from '@grafana/data';
 import userEvent from '@testing-library/user-event';
 import { AdHocFiltersVariable, SceneObject, sceneGraph } from '@grafana/scenes';
 import { LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS } from 'services/variables';
+import { ServiceSceneState } from '../ServiceScene';
 
 describe('AddToFiltersButton', () => {
   it('updates correct variable passed to AddToFiltersButton', async () => {
@@ -69,8 +70,13 @@ describe('addToFilters and addAdHocFilter', () => {
   beforeEach(() => {
     jest.spyOn(sceneGraph, 'getAncestor').mockReturnValue({
       state: {
-        labels: ['indexed'],
-      },
+        labels: [
+          {
+            label: 'indexed',
+            cardinality: 1,
+          },
+        ],
+      } as Partial<ServiceSceneState>,
     });
     adHocVariable = new AdHocFiltersVariable({
       filters: [
