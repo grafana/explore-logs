@@ -26,12 +26,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: bump package version
-        run: npm version --no-git-tag-version `npm version --json | jq -r '."grafana-lokiexplore-app"'`-`git rev-parse --short HEAD`
+        run: npm version --no-git-tag-version patch && npm version --no-git-tag-version `npm version --json | jq -r '."grafana-lokiexplore-app"'`-`git rev-parse --short HEAD`
       - uses: grafana/plugin-actions/package-plugin@main
         id: 'package-plugin'
         with:
-          # see https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin#generate-an-access-policy-token to generate it
-          # save the value in your repository secrets
           policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
 
       - id: get-secrets
