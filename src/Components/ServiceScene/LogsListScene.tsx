@@ -100,11 +100,13 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       this.updateLogsPanel();
     }
 
-    this.subscribeToState((newState, prevState) => {
-      if (newState.visualizationType !== prevState.visualizationType) {
-        this.updateLogsPanel();
-      }
-    });
+    this._subs.add(
+      this.subscribeToState((newState, prevState) => {
+        if (newState.visualizationType !== prevState.visualizationType) {
+          this.updateLogsPanel();
+        }
+      })
+    );
   }
 
   private setStateFromUrl(searchParams: URLSearchParams) {

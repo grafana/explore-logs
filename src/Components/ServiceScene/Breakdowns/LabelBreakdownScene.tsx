@@ -86,7 +86,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       loading: true,
     });
 
-    this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange);
+    this._subs.add(this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange));
 
     const variable = this.getVariable();
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
