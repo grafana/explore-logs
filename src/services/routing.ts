@@ -12,8 +12,6 @@ import {
 } from './variables';
 import { locationService } from '@grafana/runtime';
 import { SceneRouteMatch } from '@grafana/scenes';
-import { ServiceSceneState } from '../Components/ServiceScene/ServiceScene';
-import { getMetadataService } from './metadata';
 
 export const PLUGIN_ID = pluginJson.id;
 export const PLUGIN_BASE_URL = `/a/${PLUGIN_ID}`;
@@ -25,6 +23,18 @@ export enum PageSlugs {
   patterns = 'patterns',
   fields = 'fields',
 }
+export enum ValueSlugs {
+  field = 'field',
+  label = 'label',
+}
+
+export type ParentDrilldownSlugs =
+  | PageSlugs.explore
+  | PageSlugs.fields
+  | PageSlugs.logs
+  | PageSlugs.labels
+  | PageSlugs.patterns;
+export type ChildDrilldownSlugs = ValueSlugs.field | ValueSlugs.label;
 
 export function replaceSlash(parameter: string): string {
   return parameter.replace(/\//g, '-');
@@ -39,12 +49,24 @@ export const ROUTES = {
   labels: (service: string) => prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(service)}/${PageSlugs.labels}`),
 };
 
+export const SUB_ROUTES = {
+  label: (service: string, label: string) =>
+    prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(service)}/${ValueSlugs.label}/${label}`),
+  field: (service: string, label: string) =>
+    prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(service)}/${ValueSlugs.field}/${label}`),
+};
+
 export const ROUTE_DEFINITIONS: Record<keyof typeof PageSlugs, string> = {
   explore: prefixRoute(PageSlugs.explore),
   logs: prefixRoute(`${PageSlugs.explore}/service/:service/${PageSlugs.logs}`),
   fields: prefixRoute(`${PageSlugs.explore}/service/:service/${PageSlugs.fields}`),
   patterns: prefixRoute(`${PageSlugs.explore}/service/:service/${PageSlugs.patterns}`),
   labels: prefixRoute(`${PageSlugs.explore}/service/:service/${PageSlugs.labels}`),
+};
+
+export const CHILD_ROUTE_DEFINITIONS: Record<keyof typeof ValueSlugs, string> = {
+  field: prefixRoute(`${PageSlugs.explore}/service/:service/${ValueSlugs.field}/:label`),
+  label: prefixRoute(`${PageSlugs.explore}/service/:service/${ValueSlugs.label}/:label`),
 };
 
 export const EXPLORATIONS_ROUTE = `${PLUGIN_BASE_URL}/${PageSlugs.explore}`;
@@ -76,81 +98,30 @@ export const DRILLDOWN_URL_KEYS = [
   `var-${VAR_LINE_FILTER}`,
 ];
 
-export function navigateToIndex() {
-  const location = locationService.getLocation();
-  const serviceUrl = buildServicesUrl(ROUTES.explore());
-  const currentUrl = location.pathname + location.search;
-
-  if (serviceUrl === currentUrl) {
-    return;
-  }
-
-  locationService.push(serviceUrl);
-}
-
-/**
- * Navigates to the drilldown view specified by the path slug
- * Note: If the serviceScene is not provided we assume it is not a parent of the calling class, i.e. we're navigating from the service selection view, instead of a drilldown view
- * Drilldown views should ALWAYS provide the serviceScene state
- *
- * @param path
- * @param serviceScene
- * @param extraQueryParams
- */
-export function navigateToBreakdown(
-  path: PageSlugs | string,
-  serviceScene?: ServiceSceneState,
-  extraQueryParams?: UrlQueryMap
-) {
-  const location = locationService.getLocation();
-  const pathParts = location.pathname.split('/');
-  const currentSlug = pathParts[pathParts.length - 1];
-  const breakdownUrl = buildBreakdownUrl(path, extraQueryParams);
-
-  if (breakdownUrl === currentSlug + location.search) {
-    // Url did not change, don't add an event to browser history
-    return;
-  }
-
-  // If we're going to navigate, we need to share the state between this instantiation of the service scene
-  if (serviceScene) {
-    const metadataService = getMetadataService();
-    metadataService.setServiceSceneState(serviceScene);
-  }
-
-  locationService.push(breakdownUrl);
-}
-
-export function buildBreakdownUrl(path: PageSlugs | string, extraQueryParams?: UrlQueryMap): string {
-  return urlUtil.renderUrl(path, buildBreakdownRoute(extraQueryParams));
-}
-
-export function buildBreakdownRoute(extraQueryParams?: UrlQueryMap): UrlQueryMap {
-  return {
-    ...Object.entries(urlUtil.getUrlSearchParams()).reduce<UrlQueryMap>((acc, [key, value]) => {
-      if (DRILLDOWN_URL_KEYS.includes(key)) {
-        acc[key] = value;
-      }
-
-      return acc;
-    }, {}),
-    ...extraQueryParams,
-  };
-}
-
-export function buildServicesUrl(path: string, extraQueryParams?: UrlQueryMap): string {
-  return urlUtil.renderUrl(path, buildServicesRoute(extraQueryParams));
-}
-
-export function getSlug() {
+export function getDrilldownSlug() {
   const location = locationService.getLocation();
   const slug = location.pathname.slice(location.pathname.lastIndexOf('/') + 1, location.pathname.length);
   return slug as PageSlugs;
 }
 
+export function getDrilldownValueSlug() {
+  const location = locationService.getLocation();
+  const locationArray = location.pathname.split('/');
+  const slug = locationArray[locationArray.length - 2];
+  return slug as ValueSlugs;
+}
+
+export function buildServicesUrl(path: string, extraQueryParams?: UrlQueryMap): string {
+  return urlUtil.renderUrl(path, buildServicesRoute(extraQueryParams));
+}
 export function extractServiceFromRoute(routeMatch: SceneRouteMatch<{ service: string }>): { service: string } {
   const service = routeMatch.params.service;
   return { service };
+}
+
+export function extractLabelNameFromRoute(routeMatch: SceneRouteMatch<{ label: string }>): { label: string } {
+  const label = routeMatch.params.label;
+  return { label };
 }
 
 export function buildServicesRoute(extraQueryParams?: UrlQueryMap): UrlQueryMap {
