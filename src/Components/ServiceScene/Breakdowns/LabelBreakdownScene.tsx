@@ -155,7 +155,10 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     } catch (error) {
       console.error(error);
       this.setState({ loading: false, error: true });
+      return;
     }
+
+    console.log('detectedLables', detectedLabels);
 
     if (!detectedLabels || !Array.isArray(detectedLabels)) {
       this.setState({ loading: false, error: true });
