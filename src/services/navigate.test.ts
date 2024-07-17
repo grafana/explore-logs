@@ -1,5 +1,5 @@
 import {
-  navigateToBreakdown,
+  navigateToDrilldownPage,
   navigateToIndex,
   navigateToInitialPageAfterServiceSelection,
   navigateToValueBreakdown,
@@ -79,7 +79,7 @@ describe('navigate', () => {
       expect(getMetadataService().getServiceSceneState()).toEqual(mockServiceSceneState);
     });
   });
-  describe('navigateToBreakdown', () => {
+  describe('navigateToDrilldownPage', () => {
     let serviceLabel: string;
     beforeAll(() => {
       serviceLabel = 'service_name';
@@ -98,7 +98,7 @@ describe('navigate', () => {
     });
     test.each(Object.values(PageSlugs))('should push url for slug %s', (slug) => {
       const serviceScene = new ServiceScene({});
-      navigateToBreakdown(slug, serviceScene);
+      navigateToDrilldownPage(slug, serviceScene);
       expect(locationSpy).toHaveBeenCalledWith(`/a/grafana-lokiexplore-app/explore/service/${serviceLabel}/${slug}`);
     });
   });

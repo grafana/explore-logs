@@ -1,5 +1,5 @@
 import { buildServicesUrl, PageSlugs, ROUTES } from './routing';
-import { buildBreakdownUrl } from './navigate';
+import { buildDrilldownPageUrl } from './navigate';
 
 describe('buildBreakdownUrl', () => {
   const OLD_LOCATION = window.location;
@@ -19,7 +19,7 @@ describe('buildBreakdownUrl', () => {
       writable: true,
     });
     Object.keys(PageSlugs).forEach((slug) => {
-      const breakdownUrl = buildBreakdownUrl(slug);
+      const breakdownUrl = buildDrilldownPageUrl(slug);
       expect(breakdownUrl).toBe(`${slug}?var-ds=DSID&from=now-5m&to=now&patterns=%5B%5D&var-fields=`);
     });
   });
@@ -33,7 +33,7 @@ describe('buildBreakdownUrl', () => {
     });
 
     Object.keys(PageSlugs).forEach((slug) => {
-      const breakdownUrl = buildBreakdownUrl(slug);
+      const breakdownUrl = buildDrilldownPageUrl(slug);
       expect(breakdownUrl).toBe(`${slug}?var-ds=DSID&from=now-5m&to=now&patterns=%5B%5D&var-fields=`);
     });
   });
@@ -47,7 +47,7 @@ describe('buildBreakdownUrl', () => {
     });
 
     Object.keys(PageSlugs).forEach((slug) => {
-      const breakdownUrl = buildBreakdownUrl(slug);
+      const breakdownUrl = buildDrilldownPageUrl(slug);
       expect(breakdownUrl).toBe(
         `${slug}?var-ds=DSID&from=now-5m&to=now&patterns=%5B%5D&var-fields=&var-filters=service_name%7C%3D%7Ctempo-distributor&urlColumns=%5B%22Time%22,%22Line%22%5D&visualizationType=%22table%22`
       );

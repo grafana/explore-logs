@@ -25,11 +25,11 @@ function buildValueBreakdownUrl(label: string, newPath: ValueSlugs, serviceStrin
   }
 }
 
-export function buildBreakdownUrl(path: PageSlugs | string, extraQueryParams?: UrlQueryMap): string {
-  return urlUtil.renderUrl(path, buildBreakdownRoute(extraQueryParams));
+export function buildDrilldownPageUrl(path: PageSlugs | string, extraQueryParams?: UrlQueryMap): string {
+  return urlUtil.renderUrl(path, buildDrilldownPageRoute(extraQueryParams));
 }
 
-export function buildBreakdownRoute(extraQueryParams?: UrlQueryMap): UrlQueryMap {
+export function buildDrilldownPageRoute(extraQueryParams?: UrlQueryMap): UrlQueryMap {
   return {
     ...Object.entries(urlUtil.getUrlSearchParams()).reduce<UrlQueryMap>((acc, [key, value]) => {
       if (DRILLDOWN_URL_KEYS.includes(key)) {
@@ -55,7 +55,7 @@ export function navigateToValueBreakdown(newPath: ValueSlugs, label: string, ser
     const serviceString = indexScene.state.routeMatch?.params.service;
     if (serviceString) {
       let urlPath = buildValueBreakdownUrl(label, newPath, serviceString);
-      const fullUrl = buildBreakdownUrl(urlPath);
+      const fullUrl = buildDrilldownPageUrl(urlPath);
 
       // If we're going to navigate, we need to share the state between this instantiation of the service scene
       if (serviceScene) {
@@ -75,24 +75,24 @@ export function navigateToValueBreakdown(newPath: ValueSlugs, label: string, ser
  * @param serviceName
  */
 export function navigateToInitialPageAfterServiceSelection(serviceName: string) {
-  const breakdownUrl = buildBreakdownUrl(ROUTES.logs(serviceName));
+  const breakdownUrl = buildDrilldownPageUrl(ROUTES.logs(serviceName));
   locationService.push(breakdownUrl);
 }
 
 /**
- * Navigates to the breakdown/drilldown page specified by the path slug
+ * Navigates to the drilldown page specified by the path slug
  *
  * @param path
  * @param serviceScene
  * @param extraQueryParams
  */
-export function navigateToBreakdown(path: PageSlugs, serviceScene: ServiceScene, extraQueryParams?: UrlQueryMap) {
+export function navigateToDrilldownPage(path: PageSlugs, serviceScene: ServiceScene, extraQueryParams?: UrlQueryMap) {
   const indexScene = sceneGraph.getAncestor(serviceScene, IndexScene);
   const serviceString = indexScene.state.routeMatch?.params.service;
 
   if (serviceString) {
     const fullUrl = prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(serviceString)}/${path}`);
-    const breakdownUrl = buildBreakdownUrl(fullUrl, extraQueryParams);
+    const breakdownUrl = buildDrilldownPageUrl(fullUrl, extraQueryParams);
 
     // If we're going to navigate, we need to share the state between this instantiation of the service scene
     if (serviceScene) {

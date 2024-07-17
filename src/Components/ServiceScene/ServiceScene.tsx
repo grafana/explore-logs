@@ -45,7 +45,7 @@ import { testIds } from 'services/testIds';
 import { sortLabelsByCardinality } from 'services/filters';
 import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
 import { getMetadataService } from '../../services/metadata';
-import { navigateToBreakdown, navigateToIndex } from '../../services/navigate';
+import { navigateToDrilldownPage, navigateToIndex } from '../../services/navigate';
 
 export interface LokiPattern {
   pattern: string;
@@ -189,7 +189,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       .finally(() => {
         // For patterns, we don't want to reload to logs as we allow users to select multiple patterns
         if (variable.state.name !== VAR_PATTERNS) {
-          navigateToBreakdown(PageSlugs.logs, this);
+          navigateToDrilldownPage(PageSlugs.logs, this);
         }
       })
       .catch((err) => {
@@ -473,7 +473,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                       const service = variable.state.filters.find((f) => f.key === SERVICE_NAME);
 
                       if (service?.value) {
-                        navigateToBreakdown(tab.value, serviceScene);
+                        navigateToDrilldownPage(tab.value, serviceScene);
                       } else {
                         navigateToIndex();
                       }
