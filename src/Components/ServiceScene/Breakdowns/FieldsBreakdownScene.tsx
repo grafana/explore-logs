@@ -73,7 +73,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         }),
       loading: true,
       sort: new SortByScene({ target: 'fields' }),
-      search: new BreakdownSearchScene(),
+      search: new BreakdownSearchScene('fields'),
       value: state.value ?? ALL_VARIABLE_VALUE,
       ...state,
     });

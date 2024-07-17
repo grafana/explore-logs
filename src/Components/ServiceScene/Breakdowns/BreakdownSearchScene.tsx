@@ -14,11 +14,15 @@ export interface BreakdownSearchSceneState extends SceneObjectState {
   filter?: string;
 }
 
+const recentFilters: Record<string, string> = {};
+
 export class BreakdownSearchScene extends SceneObjectBase<BreakdownSearchSceneState> {
-  constructor() {
+  private cacheKey: string;
+  constructor(cacheKey: string) {
     super({
-      filter: '',
+      filter: recentFilters[cacheKey] ?? '',
     });
+    this.cacheKey = cacheKey;
   }
 
   public static Component = ({ model }: SceneComponentProps<BreakdownSearchScene>) => {
@@ -45,6 +49,7 @@ export class BreakdownSearchScene extends SceneObjectBase<BreakdownSearchSceneSt
 
   private filterValues(filter: string) {
     if (this.parent instanceof LabelBreakdownScene || this.parent instanceof FieldsBreakdownScene) {
+      recentFilters[this.cacheKey] = filter;
       const body = this.parent.state.body;
       body?.forEachChild((child) => {
         if (child instanceof ByFrameRepeater && child.state.body.isActive) {

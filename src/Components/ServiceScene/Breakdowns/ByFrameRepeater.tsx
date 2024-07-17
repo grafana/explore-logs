@@ -28,7 +28,7 @@ type FrameFilterCallback = (frame: DataFrame) => boolean;
 type FrameIterateCallback = (frames: DataFrame[], seriesIndex: number) => void;
 
 export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
-  private unfilteredChildren: SceneFlexItem[];
+  private unfilteredChildren: SceneFlexItem[] = [];
   private sortBy: string;
   private direction: string;
   private sortedSeries: DataFrame[] = [];
@@ -45,27 +45,19 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     this.direction = direction;
     this.filter = filter;
 
-    this.unfilteredChildren = [];
-
     this.addActivationHandler(() => {
       const data = sceneGraph.getData(this);
 
       this._subs.add(
         data.subscribeToState((data) => {
           if (data.data?.state === LoadingState.Done) {
-            this.performRepeat(data.data);
-            if (this.filter) {
-              this.filterByString(filter);
-            }
+            this.performRepeat(data.data, 'sub');
           }
         })
       );
 
       if (data.state.data) {
-        this.performRepeat(data.state.data);
-        if (this.filter) {
-          this.filterByString(filter);
-        }
+        this.performRepeat(data.state.data, 'data');
       }
     });
   }
@@ -81,11 +73,12 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     this.sortBy = sortBy;
     this.direction = direction;
     if (data.state.data) {
-      this.performRepeat(data.state.data);
+      this.performRepeat(data.state.data, 'sort');
     }
   };
 
-  private performRepeat(data: PanelData) {
+  private performRepeat(data: PanelData, source = 'unknown') {
+    console.log('performRepeat', source);
     const newChildren: SceneFlexItem[] = [];
     const sortedSeries = sortSeries(data.series, this.sortBy, this.direction);
 
@@ -95,8 +88,14 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     }
 
     this.sortedSeries = sortedSeries;
-    this.state.body.setState({ children: newChildren });
     this.unfilteredChildren = newChildren;
+
+    if (this.filter) {
+      this.state.body.setState({ children: [] });
+      this.filterByString(this.filter);
+    } else {
+      this.state.body.setState({ children: newChildren });
+    }
   }
 
   public iterateFrames = (callback: FrameIterateCallback) => {
@@ -110,6 +109,7 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
   };
 
   filterByString = (filter: string) => {
+    console.log('filterByString');
     this.filter = filter;
     let haystack: string[] = [];
 
@@ -132,6 +132,7 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
   };
 
   public filterFrames = (filterFn: FrameFilterCallback) => {
+    console.log('filterFrames');
     const newChildren: SceneFlexItem[] = [];
     this.iterateFrames((frames, seriesIndex) => {
       if (filterFn(frames[seriesIndex])) {

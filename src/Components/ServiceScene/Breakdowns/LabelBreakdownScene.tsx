@@ -74,7 +74,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
         }),
       loading: true,
       sort: new SortByScene({ target: 'labels' }),
-      search: new BreakdownSearchScene(),
+      search: new BreakdownSearchScene('labels'),
       value: state.value,
     });
 
@@ -203,8 +203,6 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     stateUpdate.body = variable.hasAllValue()
       ? buildLabelsLayout(variableState.options)
       : buildLabelValuesLayout(variableState, this);
-
-    stateUpdate.search = new BreakdownSearchScene();
 
     this.setState(stateUpdate);
   }
