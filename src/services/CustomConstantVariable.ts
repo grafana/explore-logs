@@ -6,9 +6,13 @@ import {
   SceneComponentProps,
   VariableGetOptionsArgs,
   VariableValueOption,
+  VariableValueSingle,
 } from '@grafana/scenes';
 
-export interface CustomConstantVariableState extends MultiValueVariableState {}
+export interface CustomConstantVariableState extends MultiValueVariableState {
+  value: VariableValueSingle;
+  isMulti?: false;
+}
 
 export class CustomConstantVariable extends MultiValueVariable<CustomConstantVariableState> {
   public constructor(initialState: Partial<CustomConstantVariableState>) {
