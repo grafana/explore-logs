@@ -26,7 +26,7 @@ export function PatternsTooOld() {
     <GrotError>
       <div>
         <p>
-          <strong>Sorry, patterns are currently only available for the most recent 2 hours of data.</strong>
+          <strong>Patterns are only available for the most recent 2 hours of data.</strong>
         </p>
         <p>
           See the{' '}
