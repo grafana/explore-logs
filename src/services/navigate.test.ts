@@ -96,7 +96,7 @@ describe('navigate', () => {
         },
       } as IndexScene;
     });
-    test.each(Object.values(PageSlugs))('should push url for slug %i', (slug) => {
+    test.each(Object.values(PageSlugs))('should push url for slug %s', (slug) => {
       const serviceScene = new ServiceScene({});
       navigateToBreakdown(slug, serviceScene);
       expect(locationSpy).toHaveBeenCalledWith(`/a/grafana-lokiexplore-app/explore/service/${serviceLabel}/${slug}`);
