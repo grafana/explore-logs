@@ -7,24 +7,31 @@ import {
   SceneTimeRange,
 } from '@grafana/scenes';
 import {
+  CHILD_ROUTE_DEFINITIONS,
+  ChildDrilldownSlugs,
+  ValueSlugs,
   DRILLDOWN_URL_KEYS,
+  extractLabelNameFromRoute,
   extractServiceFromRoute,
-  navigateToIndex,
+  PageSlugs,
+  ParentDrilldownSlugs,
   PLUGIN_BASE_URL,
   prefixRoute,
   ROUTE_DEFINITIONS,
   ROUTES,
   SERVICE_URL_KEYS,
-  PageSlugs,
+  SUB_ROUTES,
 } from '../services/routing';
 import { PageLayoutType } from '@grafana/data';
 import { IndexScene } from './IndexScene/IndexScene';
+import { navigateToIndex } from '../services/navigate';
 
-function getServicesScene() {
+function getServicesScene(routeMatch?: SceneRouteMatch<{ service?: string; label?: string }>) {
   const DEFAULT_TIME_RANGE = { from: 'now-15m', to: 'now' };
   return new EmbeddedScene({
     body: new IndexScene({
       $timeRange: new SceneTimeRange(DEFAULT_TIME_RANGE),
+      routeMatch,
     }),
   });
 }
@@ -38,7 +45,7 @@ export function makeIndexPage() {
     layout: PageLayoutType.Custom,
     preserveUrlKeys: SERVICE_URL_KEYS,
     routePath: prefixRoute(PageSlugs.explore),
-    getScene: () => getServicesScene(),
+    getScene: (routeMatch) => getServicesScene(routeMatch),
     drilldowns: [
       {
         routePath: ROUTE_DEFINITIONS.logs,
@@ -56,6 +63,14 @@ export function makeIndexPage() {
       {
         routePath: ROUTE_DEFINITIONS.fields,
         getPage: (routeMatch, parent) => makeBreakdownPage(routeMatch, parent, PageSlugs.fields),
+      },
+      {
+        routePath: CHILD_ROUTE_DEFINITIONS.label,
+        getPage: (routeMatch, parent) => makeBreakdownValuePage(routeMatch, parent, ValueSlugs.label),
+      },
+      {
+        routePath: CHILD_ROUTE_DEFINITIONS.field,
+        getPage: (routeMatch, parent) => makeBreakdownValuePage(routeMatch, parent, ValueSlugs.field),
       },
       {
         routePath: '*',
@@ -92,23 +107,40 @@ function makeEmptyScene(): (routeMatch: SceneRouteMatch) => EmbeddedScene {
 }
 
 export function makeBreakdownPage(
-  routeMatch: SceneRouteMatch<{ service: string }>,
+  routeMatch: SceneRouteMatch<{ service: string; label?: string }>,
   parent: SceneAppPageLike,
-  slug: PageSlugs
+  slug: ParentDrilldownSlugs
 ): SceneAppPage {
   const { service } = extractServiceFromRoute(routeMatch);
-
   return new SceneAppPage({
     title: slugToBreadcrumbTitle(slug),
     layout: PageLayoutType.Custom,
     url: ROUTES[slug](service),
     preserveUrlKeys: DRILLDOWN_URL_KEYS,
     getParentPage: () => parent,
-    getScene: () => getServicesScene(),
+    getScene: (routeMatch) => getServicesScene(routeMatch),
   });
 }
 
-function slugToBreadcrumbTitle(slug: PageSlugs) {
+export function makeBreakdownValuePage(
+  routeMatch: SceneRouteMatch<{ service: string; label: string }>,
+  parent: SceneAppPageLike,
+  slug: ChildDrilldownSlugs
+): SceneAppPage {
+  const { service } = extractServiceFromRoute(routeMatch);
+  const { label } = extractLabelNameFromRoute(routeMatch);
+
+  return new SceneAppPage({
+    title: slugToBreadcrumbTitle(label),
+    layout: PageLayoutType.Custom,
+    url: SUB_ROUTES[slug](service, label),
+    preserveUrlKeys: DRILLDOWN_URL_KEYS,
+    getParentPage: () => parent,
+    getScene: (routeMatch) => getServicesScene(routeMatch),
+  });
+}
+
+function slugToBreadcrumbTitle(slug: string) {
   // capitalize first letter
   return slug.charAt(0).toUpperCase() + slug.slice(1);
 }

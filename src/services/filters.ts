@@ -1,6 +1,6 @@
-import { SelectableValue } from '@grafana/data';
 import { DetectedLabel } from './fields';
 import { ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE } from './variables';
+import { VariableValueOption } from '@grafana/scenes';
 
 export enum FilterOp {
   Equal = '=',
@@ -26,7 +26,7 @@ export function getLabelOptions(labels: string[]) {
   if (!labels.includes(LEVEL_VARIABLE_VALUE)) {
     options.unshift(LEVEL_VARIABLE_VALUE);
   }
-  const labelOptions: Array<SelectableValue<string>> = options.map((label) => ({
+  const labelOptions: VariableValueOption[] = options.map((label) => ({
     label,
     value: String(label),
   }));
