@@ -1,4 +1,5 @@
 ---
+canonical: https://grafana.com/docs/grafana/latest/explore/simplified-exploration/logs/patterns/
 description: Use Log patterns to detect and analyze types of log lines.
 keywords:
   - Logs
@@ -10,7 +11,7 @@ keywords:
   - Analysis
 menuTitle: Log patterns
 title: Log patterns
-weight: 500
+weight: 600
 ---
 
 # Log patterns
