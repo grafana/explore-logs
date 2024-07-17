@@ -15,8 +15,9 @@ import {
 import { sortSeries } from 'services/sorting';
 import { fuzzySearch } from '../../../services/search';
 import { getLabelValue } from './SortByScene';
-import { Alert } from '@grafana/ui';
+import { Alert, Button } from '@grafana/ui';
 import { css } from '@emotion/css';
+import { BreakdownSearchReset } from './BreakdownSearchScene';
 
 interface ByFrameRepeaterState extends SceneObjectState {
   body: SceneLayout;
@@ -139,10 +140,14 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     });
 
     if (newChildren.length === 0) {
-      this.state.body.setState({ children: [buildNoResultsScene(this.filter)] });
+      this.state.body.setState({ children: [buildNoResultsScene(this.filter, this.clearFilter)] });
     } else {
       this.state.body.setState({ children: newChildren });
     }
+  };
+
+  public clearFilter = () => {
+    this.publishEvent(new BreakdownSearchReset(), true);
   };
 
   public static Component = ({ model }: SceneComponentProps<SceneByFrameRepeater>) => {
@@ -151,7 +156,7 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
   };
 }
 
-function buildNoResultsScene(filter: string) {
+function buildNoResultsScene(filter: string, clearFilter: () => void) {
   return new SceneFlexLayout({
     direction: 'row',
     children: [
@@ -161,6 +166,9 @@ function buildNoResultsScene(filter: string) {
             <div className={styles.alertContainer}>
               <Alert title="" severity="info" className={styles.noResultsAlert}>
                 No values found matching &ldquo;{filter}&rdquo;
+                <Button className={styles.clearButton} onClick={clearFilter}>
+                  Clear filter
+                </Button>
               </Alert>
             </div>
           ),
@@ -180,5 +188,8 @@ const styles = {
   noResultsAlert: css({
     minWidth: '30vw',
     flexGrow: 0,
+  }),
+  clearButton: css({
+    marginLeft: '1.5rem',
   }),
 };

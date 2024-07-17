@@ -38,7 +38,7 @@ import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
-import { BreakdownSearchScene } from './BreakdownSearchScene';
+import { BreakdownSearchReset, BreakdownSearchScene } from './BreakdownSearchScene';
 import { getLabelValue, SortByScene, SortCriteriaChanged } from './SortByScene';
 import { getSortByPreference } from 'services/store';
 import { GrotError } from '../../GrotError';
@@ -85,7 +85,12 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   private onActivate() {
     const variable = this.getVariable();
 
-    this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange);
+    this._subs.add(
+      this.subscribeToEvent(BreakdownSearchReset, () => {
+        this.state.search.clearValueFilter();
+      })
+    );
+    this._subs.add(this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange));
 
     sceneGraph.getAncestor(this, ServiceScene)!.subscribeToState((newState, oldState) => {
       if (newState.fields !== oldState.fields) {

@@ -4,6 +4,11 @@ import { ByFrameRepeater } from './ByFrameRepeater';
 import { SearchInput } from './SearchInput';
 import { LabelBreakdownScene } from './LabelBreakdownScene';
 import { FieldsBreakdownScene } from './FieldsBreakdownScene';
+import { BusEventBase } from '@grafana/data';
+
+export class BreakdownSearchReset extends BusEventBase {
+  public static type = 'breakdown-search-reset';
+}
 
 export interface BreakdownSearchSceneState extends SceneObjectState {
   filter?: string;
