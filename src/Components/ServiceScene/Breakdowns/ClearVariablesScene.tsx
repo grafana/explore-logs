@@ -4,7 +4,6 @@ import React from 'react';
 import { css } from '@emotion/css';
 import {
   AdHocFiltersVariable,
-  CustomVariable,
   SceneComponentProps,
   sceneGraph,
   SceneObject,
@@ -14,6 +13,7 @@ import {
 } from '@grafana/scenes';
 import { IndexScene } from '../../IndexScene/IndexScene';
 import { SERVICE_NAME } from '../../ServiceSelectionScene/ServiceSelectionScene';
+import { CustomConstantVariable } from '../../../services/CustomConstantVariable';
 
 interface ClearVariablesSceneState extends SceneObjectState {
   fieldsOnly?: boolean;
@@ -25,15 +25,12 @@ export class ClearVariablesScene extends SceneObjectBase<ClearVariablesSceneStat
     const variablesToClear: SceneVariable[] = [];
 
     for (const variable of variables.state.variables) {
-      if (
-        variable instanceof AdHocFiltersVariable &&
-        variable.state.filters.filter((filter) => filter.key !== SERVICE_NAME).length
-      ) {
+      if (variable instanceof CustomConstantVariable && variable.state.value && variable.state.name !== 'logsFormat') {
         variablesToClear.push(variable);
       }
     }
-    const fieldsToClear = ClearVariablesScene.getFieldsToClear(indexSceneChild);
 
+    const fieldsToClear = ClearVariablesScene.getFieldsToClear(indexSceneChild);
     return [...variablesToClear, ...fieldsToClear];
   }
 
@@ -43,7 +40,10 @@ export class ClearVariablesScene extends SceneObjectBase<ClearVariablesSceneStat
     const variablesToClear: SceneVariable[] = [];
 
     for (const variable of variables.state.variables) {
-      if (variable instanceof CustomVariable && variable.state.value && variable.state.name !== 'logsFormat') {
+      if (
+        variable instanceof AdHocFiltersVariable &&
+        variable.state.filters.filter((filter) => filter.key !== SERVICE_NAME).length
+      ) {
         variablesToClear.push(variable);
       }
     }
@@ -76,7 +76,7 @@ export class ClearVariablesScene extends SceneObjectBase<ClearVariablesSceneStat
         variable.setState({
           filters: [],
         });
-      } else if (variable instanceof CustomVariable) {
+      } else if (variable instanceof CustomConstantVariable) {
         variable.setState({
           value: '',
           text: '',
