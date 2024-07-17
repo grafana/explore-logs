@@ -74,11 +74,11 @@ export interface ServiceSceneCustomState {
   patterns?: LokiPattern[];
   fieldsCount?: number;
   loading?: boolean;
-  drillDownLabel?: string;
 }
 
 export interface ServiceSceneState extends SceneObjectState, ServiceSceneCustomState {
   body: SceneFlexLayout;
+  drillDownLabel?: string;
 }
 
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {

@@ -1,4 +1,4 @@
-import { ServiceSceneCustomState, ServiceSceneState } from '../Components/ServiceScene/ServiceScene';
+import { ServiceSceneCustomState } from '../Components/ServiceScene/ServiceScene';
 
 let metadataService: MetadataService;
 
@@ -17,7 +17,7 @@ export class MetadataService {
     return this.serviceSceneState;
   }
 
-  public setServiceSceneState(state: ServiceSceneState) {
+  public setServiceSceneState(state: ServiceSceneCustomState) {
     this.serviceSceneState = {
       fields: state.fields,
       labels: state.labels,

@@ -70,39 +70,38 @@ export function navigateToValueBreakdown(newPath: ValueSlugs, label: string, ser
 }
 
 /**
- * Navigates to the drilldown view specified by the path slug
- * Note: If the serviceScene is not provided we assume it is not a parent of the calling class, i.e. we're navigating from the service selection view, instead of a drilldown view
- * Drilldown views should ALWAYS provide the serviceScene state
+ * The case for initial navigation from the service selection to the service index is a special case, as we don't yet have a serviceScene constructed to pull the selected service.
+ * This function will route users to the initial (logs) page from the service selection view, which will populate the service scene state with the selected service string.
+ * @param serviceName
+ */
+export function navigateToInitialPageAfterServiceSelection(serviceName: string) {
+  const breakdownUrl = buildBreakdownUrl(ROUTES.logs(serviceName));
+  locationService.push(breakdownUrl);
+}
+
+/**
+ * Navigates to the breakdown/drilldown page specified by the path slug
  *
  * @param path
  * @param serviceScene
  * @param extraQueryParams
  */
-export function navigateToBreakdown(
-  path: PageSlugs | string,
-  serviceScene?: ServiceScene,
-  extraQueryParams?: UrlQueryMap
-) {
-  if (serviceScene) {
-    const indexScene = sceneGraph.getAncestor(serviceScene, IndexScene);
-    const serviceString = indexScene.state.routeMatch?.params.service;
+export function navigateToBreakdown(path: PageSlugs, serviceScene: ServiceScene, extraQueryParams?: UrlQueryMap) {
+  const indexScene = sceneGraph.getAncestor(serviceScene, IndexScene);
+  const serviceString = indexScene.state.routeMatch?.params.service;
 
-    if (serviceString) {
-      const fullUrl = prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(serviceString)}/${path}`);
-      const breakdownUrl = buildBreakdownUrl(fullUrl, extraQueryParams);
+  if (serviceString) {
+    const fullUrl = prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(serviceString)}/${path}`);
+    const breakdownUrl = buildBreakdownUrl(fullUrl, extraQueryParams);
 
-      // If we're going to navigate, we need to share the state between this instantiation of the service scene
-      if (serviceScene) {
-        const metadataService = getMetadataService();
-        metadataService.setServiceSceneState(serviceScene.state);
-      }
-
-      locationService.push(breakdownUrl);
-      return;
+    // If we're going to navigate, we need to share the state between this instantiation of the service scene
+    if (serviceScene) {
+      const metadataService = getMetadataService();
+      metadataService.setServiceSceneState(serviceScene.state);
     }
-  } else {
-    const breakdownUrl = buildBreakdownUrl(path, extraQueryParams);
+
     locationService.push(breakdownUrl);
+    return;
   }
 }
 
