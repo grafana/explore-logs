@@ -1,5 +1,6 @@
 ---
-description: Access and installation guide for Explore Logs.
+canonical: https://grafana.com/docs/grafana/latest/explore/simplified-exploration/logs/access/
+description: Describes how to access Explore Logs in Grafana Cloud and the different installation methods for self-hosted Grafana.
 keywords:
   - Logs
   - Explore
@@ -29,13 +30,15 @@ To access Explore Logs:
 
 ## Installation
 
+If you are not using Grafana Cloud, you can install Explore Logs in your Grafana environment.
+
 ### Install via Plugins catalog
 
 For Enterprise and OSS Grafana users, you can install Explore Logs via the [Grafana Plugins catalog](https://grafana-dev.com/grafana/plugins/grafana-lokiexplore-app/).
 
 1. Open [https://grafana-dev.com/grafana/plugins/grafana-lokiexplore-app/](https://grafana-dev.com/grafana/plugins/grafana-lokiexplore-app/) in a web browser
-1. Open the **Installation** tab
-1. Follow the instructions to install the app
+1. Open the **Installation** tab.
+1. Follow the instructions to install the app.
 
 ### Install in Loki
 
