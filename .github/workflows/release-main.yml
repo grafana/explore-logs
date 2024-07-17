@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - svennergr/fix-main-release
     paths-ignore: # Don't run the workflow if only .github/** or docs/** files have been changed
       - '.github/**'
       - 'docs/**'
@@ -26,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: bump package version
-        run: npm version --no-git-tag-version `npm version --json | jq -r '."grafana-lokiexplore-app"'`-`git rev-parse --short HEAD`
+        run: npm version --no-git-tag-version patch && npm version --no-git-tag-version `npm version --json | jq -r '."grafana-lokiexplore-app"'`-`git rev-parse --short HEAD`
       - uses: grafana/plugin-actions/package-plugin@main
         id: 'package-plugin'
         with:
