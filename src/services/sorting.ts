@@ -79,9 +79,22 @@ export const calculateDataFrameChangepoints = (data: DataFrame) => {
   return points.indices.length;
 };
 
+export const sortSeriesByName = (series: DataFrame[], direction: string) => {
+  const sortedSeries = [...series];
+  sortedSeries.sort((a, b) => {
+    const valueA = getLabelValueFromDataFrame(a);
+    const valueB = getLabelValueFromDataFrame(b);
+    if (!valueA || !valueB) {
+      return 0;
+    }
+    return valueA?.localeCompare(valueB) ?? 0;
+  });
+  if (direction === 'desc') {
+    sortedSeries.reverse();
+  }
+  return sortedSeries;
+};
+
 const wasmSupported = () => {
   return typeof WebAssembly === 'object';
 };
-function sortSeriesByName(series: DataFrame[], direction: string): any {
-  throw new Error('Function not implemented.');
-}
