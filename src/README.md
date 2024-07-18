@@ -1,8 +1,6 @@
 # Explore Logs
 
-Explore Logs offers a query-less experience for browsing Loki logs without the need for writing complex queries.
-Discover or narrow down your search using by volume and text patterns. Uncover related logs and understand
-patterns—all with just a few clicks.
+Explore Logs offers a query-less experience for browsing Loki logs without the need for writing complex queries. Discover or narrow down your search using by volume and text patterns. Uncover related logs and understand patterns—all with just a few clicks.
 
 ## Requirements
 
@@ -10,14 +8,14 @@ Requires Grafana 11.0.0 or newer.
 
 ## Getting Started
 
-See the [getting started](https://github.com/grafana/explore-logs?tab=readme-ov-file#getting-started) for more info using Explore Logs.
-For instructions installing, see the [installation instructions](https://github.com/grafana/explore-logs?tab=readme-ov-file#installation-in-your-own-grafana-instance)
+See the [getting started](https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/get-started/) for more info using Explore Logs.
+For instructions installing, see the [access and installation instructions](https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/access/)
 
 ## Documentation
 
-* [README](https://github.com/grafana/explore-logs?tab=readme-ov-file#explore-logs)
-* [CHANGELOG](https://github.com/grafana/explore-logs/releases)
-* [GITHUB](https://github.com/grafana/explore-logs/)
+- [DOCS](https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/)
+- [CHANGELOG](https://github.com/grafana/explore-logs/releases)
+- [GITHUB](https://github.com/grafana/explore-logs/)
 
 ## Contributing
 

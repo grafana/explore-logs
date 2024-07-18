@@ -459,3 +459,5 @@ youmark
 yuin
 yvasiyarov
 zipkin
+prioritise
+logspanel

@@ -1,13 +1,27 @@
 import { ChangepointDetector } from '@bsull/augurs';
-import { DataFrame, FieldType, doStandardCalcs, fieldReducers } from '@grafana/data';
+import { DataFrame, FieldType, ReducerID, doStandardCalcs, fieldReducers } from '@grafana/data';
 import { getLabelValueFromDataFrame } from './levels';
 import { memoize } from 'lodash';
+import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from './analytics';
 
 export const sortSeries = memoize(
   (series: DataFrame[], sortBy: string, direction: string) => {
+    if (sortBy === 'alphabetical') {
+      return sortSeriesByName(series, direction);
+    }
+
     const reducer = (dataFrame: DataFrame) => {
       if (sortBy === 'changepoint') {
-        return calculateDataFrameChangepoints(dataFrame);
+        if (wasmSupported()) {
+          return calculateDataFrameChangepoints(dataFrame);
+        } else {
+          console.warn('Changepoint not supported, using stdDev');
+          reportAppInteraction(
+            USER_EVENTS_PAGES.service_details,
+            USER_EVENTS_ACTIONS.service_details.wasm_not_supported
+          );
+          sortBy = ReducerID.stdDev;
+        }
       }
       const fieldReducer = fieldReducers.get(sortBy);
       const value =
@@ -64,3 +78,10 @@ export const calculateDataFrameChangepoints = (data: DataFrame) => {
 
   return points.indices.length;
 };
+
+const wasmSupported = () => {
+  return typeof WebAssembly === 'object';
+};
+function sortSeriesByName(series: DataFrame[], direction: string): any {
+  throw new Error('Function not implemented.');
+}
