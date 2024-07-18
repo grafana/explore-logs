@@ -47,6 +47,11 @@ export class BreakdownSearchScene extends SceneObjectBase<BreakdownSearchSceneSt
     this.filterValues('');
   };
 
+  public reset = () => {
+    this.setState({ filter: '' });
+    recentFilters[this.cacheKey] = '';
+  };
+
   private filterValues(filter: string) {
     if (this.parent instanceof LabelBreakdownScene || this.parent instanceof FieldsBreakdownScene) {
       recentFilters[this.cacheKey] = filter;

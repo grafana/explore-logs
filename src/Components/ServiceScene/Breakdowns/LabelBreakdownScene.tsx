@@ -201,7 +201,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     };
 
     stateUpdate.body = variable.hasAllValue()
-      ? buildLabelsLayout(variableState.options)
+      ? buildLabelsLayout(variableState.options, this)
       : buildLabelValuesLayout(variableState, this);
 
     this.setState(stateUpdate);
@@ -289,9 +289,10 @@ function getStyles(theme: GrafanaTheme2) {
   };
 }
 
-function buildLabelsLayout(options: VariableValueOption[]) {
-  const children: SceneFlexItemLike[] = [];
+function buildLabelsLayout(options: VariableValueOption[], scene: LabelBreakdownScene) {
+  scene.state.search.reset();
 
+  const children: SceneFlexItemLike[] = [];
   for (const option of options) {
     const { value } = option;
     const optionValue = String(value);

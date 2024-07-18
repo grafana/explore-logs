@@ -281,8 +281,9 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   }
 
   private buildFieldsLayout(options: Array<SelectableValue<string>>) {
-    const children: SceneFlexItemLike[] = [];
+    this.state.search.reset();
 
+    const children: SceneFlexItemLike[] = [];
     for (const option of options) {
       const { value: optionValue } = option;
       if (optionValue === ALL_VARIABLE_VALUE || !optionValue) {
