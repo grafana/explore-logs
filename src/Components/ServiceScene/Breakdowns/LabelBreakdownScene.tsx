@@ -31,9 +31,9 @@ import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
 import { getLabelOptions, sortLabelsByCardinality } from 'services/filters';
-import { BreakdownSearchScene, getLabelValue } from './BreakdownSearchScene';
+import { BreakdownSearchReset, BreakdownSearchScene } from './BreakdownSearchScene';
 import { getSortByPreference } from 'services/store';
-import { SortByScene, SortCriteriaChanged } from './SortByScene';
+import { getLabelValue, SortByScene, SortCriteriaChanged } from './SortByScene';
 import { ServiceScene, ServiceSceneState } from '../ServiceScene';
 import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
 import { navigateToValueBreakdown } from '../../../services/navigate';
@@ -74,7 +74,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
         }),
       loading: true,
       sort: new SortByScene({ target: 'labels' }),
-      search: new BreakdownSearchScene(),
+      search: new BreakdownSearchScene('labels'),
       value: state.value,
     });
 
@@ -86,7 +86,12 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       loading: true,
     });
 
-    this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange);
+    this._subs.add(
+      this.subscribeToEvent(BreakdownSearchReset, () => {
+        this.state.search.clearValueFilter();
+      })
+    );
+    this._subs.add(this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange));
 
     const variable = this.getVariable();
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
@@ -196,10 +201,8 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     };
 
     stateUpdate.body = variable.hasAllValue()
-      ? buildLabelsLayout(variableState.options)
-      : buildLabelValuesLayout(variableState);
-
-    stateUpdate.search = new BreakdownSearchScene();
+      ? buildLabelsLayout(variableState.options, this)
+      : buildLabelValuesLayout(variableState, this);
 
     this.setState(stateUpdate);
   }
@@ -286,9 +289,10 @@ function getStyles(theme: GrafanaTheme2) {
   };
 }
 
-function buildLabelsLayout(options: VariableValueOption[]) {
-  const children: SceneFlexItemLike[] = [];
+function buildLabelsLayout(options: VariableValueOption[], scene: LabelBreakdownScene) {
+  scene.state.search.reset();
 
+  const children: SceneFlexItemLike[] = [];
   for (const option of options) {
     const { value } = option;
     const optionValue = String(value);
@@ -342,7 +346,7 @@ function getExpr(tagKey: string) {
 
 export const LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
-function buildLabelValuesLayout(variableState: CustomConstantVariableState) {
+function buildLabelValuesLayout(variableState: CustomConstantVariableState, scene: LabelBreakdownScene) {
   const tagKey = String(variableState?.value);
   const query = buildLokiQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
 
@@ -358,6 +362,7 @@ function buildLabelValuesLayout(variableState: CustomConstantVariableState) {
 
   const body = bodyOpts.build();
   const { sortBy, direction } = getSortByPreference('labels', ReducerID.stdDev, 'desc');
+  const getFilter = () => scene.state.search.state.filter ?? '';
 
   return new LayoutSwitcher({
     $data: getQueryRunner(query),
@@ -396,6 +401,7 @@ function buildLabelValuesLayout(variableState: CustomConstantVariableState) {
         ),
         sortBy,
         direction,
+        getFilter,
       }),
       new ByFrameRepeater({
         body: new SceneCSSGridLayout({
@@ -416,6 +422,7 @@ function buildLabelValuesLayout(variableState: CustomConstantVariableState) {
         ),
         sortBy,
         direction,
+        getFilter,
       }),
     ],
   });
