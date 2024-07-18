@@ -32,18 +32,18 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
   private sortBy: string;
   private direction: string;
   private sortedSeries: DataFrame[] = [];
-  private filter: string;
+  private getFilter: () => string;
   public constructor({
     sortBy,
     direction,
-    filter = '',
+    getFilter,
     ...state
-  }: ByFrameRepeaterState & { sortBy: string; direction: string; filter: string }) {
+  }: ByFrameRepeaterState & { sortBy: string; direction: string; getFilter: () => string }) {
     super(state);
 
     this.sortBy = sortBy;
     this.direction = direction;
-    this.filter = filter;
+    this.getFilter = getFilter;
 
     this.addActivationHandler(() => {
       const data = sceneGraph.getData(this);
@@ -83,9 +83,9 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     this.sortedSeries = sortedSeries;
     this.unfilteredChildren = newChildren;
 
-    if (this.filter) {
+    if (this.getFilter()) {
       this.state.body.setState({ children: [] });
-      this.filterByString(this.filter);
+      this.filterByString(this.getFilter());
     } else {
       this.state.body.setState({ children: newChildren });
     }
@@ -102,7 +102,6 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
   };
 
   filterByString = (filter: string) => {
-    this.filter = filter;
     let haystack: string[] = [];
 
     this.iterateFrames((frames, seriesIndex) => {
@@ -132,7 +131,7 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     });
 
     if (newChildren.length === 0) {
-      this.state.body.setState({ children: [buildNoResultsScene(this.filter, this.clearFilter)] });
+      this.state.body.setState({ children: [buildNoResultsScene(this.getFilter(), this.clearFilter)] });
     } else {
       this.state.body.setState({ children: newChildren });
     }

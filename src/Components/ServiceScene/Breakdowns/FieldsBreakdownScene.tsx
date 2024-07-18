@@ -347,7 +347,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     const query = buildLokiQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
 
     const { sortBy, direction } = getSortByPreference('fields', ReducerID.stdDev, 'desc');
-    const filter = this.state.search.state.filter ?? '';
+    const getFilter = () => this.state.search.state.filter ?? '';
 
     return new LayoutSwitcher({
       $data: getQueryRunner(query),
@@ -387,7 +387,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
           ),
           sortBy,
           direction,
-          filter,
+          getFilter,
         }),
         new ByFrameRepeater({
           body: new SceneCSSGridLayout({
@@ -409,7 +409,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
           ),
           sortBy,
           direction,
-          filter,
+          getFilter,
         }),
       ],
     });

@@ -361,7 +361,7 @@ function buildLabelValuesLayout(variableState: CustomConstantVariableState, scen
 
   const body = bodyOpts.build();
   const { sortBy, direction } = getSortByPreference('labels', ReducerID.stdDev, 'desc');
-  const filter = scene.state.search.state.filter ?? '';
+  const getFilter = () => scene.state.search.state.filter ?? '';
 
   return new LayoutSwitcher({
     $data: getQueryRunner(query),
@@ -400,7 +400,7 @@ function buildLabelValuesLayout(variableState: CustomConstantVariableState, scen
         ),
         sortBy,
         direction,
-        filter,
+        getFilter,
       }),
       new ByFrameRepeater({
         body: new SceneCSSGridLayout({
@@ -421,7 +421,7 @@ function buildLabelValuesLayout(variableState: CustomConstantVariableState, scen
         ),
         sortBy,
         direction,
-        filter,
+        getFilter,
       }),
     ],
   });
