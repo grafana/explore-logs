@@ -1,6 +1,7 @@
 import { GrotError } from '../../../GrotError';
 import { TextLink } from '@grafana/ui';
 import React from 'react';
+import { PATTERNS_MAX_AGE_HOURS } from './PatternsBreakdownScene';
 
 export function PatternsNotDetected() {
   return (
@@ -26,7 +27,7 @@ export function PatternsTooOld() {
     <GrotError>
       <div>
         <p>
-          <strong>Patterns are only available for the most recent 3 hours of data.</strong>
+          <strong>Patterns are only available for the most recent {PATTERNS_MAX_AGE_HOURS} hours of data.</strong>
         </p>
         <p>
           See the{' '}

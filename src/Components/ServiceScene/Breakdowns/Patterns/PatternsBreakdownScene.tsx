@@ -42,7 +42,7 @@ export type PatternFrame = {
   status?: 'include' | 'exclude';
 };
 
-const PATTERNS_MAX_AGE_HOURS = 3;
+export const PATTERNS_MAX_AGE_HOURS = 3;
 
 export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSceneState> {
   constructor(state: Partial<PatternsBreakdownSceneState>) {
