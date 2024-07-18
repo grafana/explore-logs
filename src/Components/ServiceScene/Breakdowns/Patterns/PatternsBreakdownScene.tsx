@@ -42,6 +42,8 @@ export type PatternFrame = {
   status?: 'include' | 'exclude';
 };
 
+const PATTERNS_MAX_AGE_HOURS = 3;
+
 export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSceneState> {
   constructor(state: Partial<PatternsBreakdownSceneState>) {
     super({
@@ -65,7 +67,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     const logsByServiceScene = sceneGraph.getAncestor(model, ServiceScene);
     const { patterns } = logsByServiceScene.useState();
     const styles = useStyles2(getStyles);
-    const timeRangeTooOld = dateTime().diff(timeRange.to, 'hours');
+    const timeRangeTooOld = dateTime().diff(timeRange.to, 'hours') >= PATTERNS_MAX_AGE_HOURS;
 
     return (
       <div className={styles.container}>
