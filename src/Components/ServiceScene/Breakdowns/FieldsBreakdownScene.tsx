@@ -170,8 +170,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       loading: logsScene.state.loading,
     };
 
-    console.log('update body, loading?', logsScene.state.loading);
-
     if (logsScene.state.fields && logsScene.state?.fields.length <= 1) {
       const indexScene = sceneGraph.getAncestor(this, IndexScene);
       const variables = sceneGraph.getVariables(indexScene);
