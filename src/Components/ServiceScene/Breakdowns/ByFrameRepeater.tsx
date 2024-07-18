@@ -64,12 +64,6 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
 
   public sort = (sortBy: string, direction: string) => {
     const data = sceneGraph.getData(this);
-    // Do not re-calculate when only the direction changes
-    if (sortBy === this.sortBy && this.direction !== direction) {
-      this.direction = direction;
-      this.state.body.setState({ children: this.state.body.state.children.reverse() });
-      return;
-    }
     this.sortBy = sortBy;
     this.direction = direction;
     if (data.state.data) {
