@@ -109,18 +109,14 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   };
 
   private serviceFieldsChanged = (newState: ServiceSceneState, oldState: ServiceSceneState) => {
-    if (JSON.stringify(newState.fields) !== JSON.stringify(oldState.fields)) {
+    if (JSON.stringify(newState.fields) !== JSON.stringify(oldState.fields) || newState.loading !== oldState.loading) {
       this.updateFields(newState);
     }
   };
 
   private updateFields(state: ServiceSceneState) {
-    if (!state.fields || !state.fields.length) {
-      return;
-    }
-
     const variable = this.getVariable();
-    const options = getLabelOptions(state.fields);
+    const options = state.fields ? getLabelOptions(state.fields) : [];
 
     variable.setState({
       options,
