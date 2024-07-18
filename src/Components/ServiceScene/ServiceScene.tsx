@@ -16,7 +16,6 @@ import {
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
-import { Unsubscribable } from 'rxjs';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { DetectedLabel, DetectedLabelsResponse, extractParserAndFieldsFromDataFrame } from 'services/fields';
 import { getQueryRunner } from 'services/panel';
@@ -114,15 +113,17 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       this.redirectToStart();
       return;
     }
-    variable.subscribeToState((newState) => {
-      if (newState.filters.length === 0) {
-        this.redirectToStart();
-      }
-      // If we remove the service name filter, we should redirect to the start
-      if (!newState.filters.some((f) => f.key === SERVICE_NAME)) {
-        this.redirectToStart();
-      }
-    });
+    this._subs.add(
+      variable.subscribeToState((newState) => {
+        if (newState.filters.length === 0) {
+          this.redirectToStart();
+        }
+        // If we remove the service name filter, we should redirect to the start
+        if (!newState.filters.some((f) => f.key === SERVICE_NAME)) {
+          this.redirectToStart();
+        }
+      })
+    );
   }
 
   private redirectToStart() {
@@ -151,9 +152,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.setBreakdownView();
     this.setEmptyFiltersRedirection();
 
-    const unsubs: Unsubscribable[] = [];
     if (this.state.$data) {
-      unsubs.push(
+      this._subs.add(
         this.state.$data?.subscribeToState((newState, prevState) => {
           if (newState.data?.state === LoadingState.Done) {
             this.updateFields();
@@ -165,14 +165,12 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.updateLabels();
     this.updatePatterns();
 
-    unsubs.push(
+    this._subs.add(
       sceneGraph.getTimeRange(this).subscribeToState(() => {
         this.updateLabels();
         this.updatePatterns();
       })
     );
-
-    return () => unsubs.forEach((u) => u.unsubscribe());
   }
 
   private onReferencedVariableValueChanged(variable: SceneVariable) {
