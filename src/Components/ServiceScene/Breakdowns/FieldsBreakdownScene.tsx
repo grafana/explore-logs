@@ -37,8 +37,8 @@ import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
-import { BreakdownSearchScene, getLabelValue } from './BreakdownSearchScene';
-import { SortByScene, SortCriteriaChanged } from './SortByScene';
+import { BreakdownSearchReset, BreakdownSearchScene } from './BreakdownSearchScene';
+import { getLabelValue, SortByScene, SortCriteriaChanged } from './SortByScene';
 import { getSortByPreference } from 'services/store';
 import { GrotError } from '../../GrotError';
 import { IndexScene } from '../../IndexScene/IndexScene';
@@ -73,7 +73,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         }),
       loading: true,
       sort: new SortByScene({ target: 'fields' }),
-      search: new BreakdownSearchScene(),
+      search: new BreakdownSearchScene('fields'),
       value: state.value ?? ALL_VARIABLE_VALUE,
       ...state,
     });
@@ -86,6 +86,11 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
 
     // Subscriptions
+    this._subs.add(
+      this.subscribeToEvent(BreakdownSearchReset, () => {
+        this.state.search.clearValueFilter();
+      })
+    );
     this._subs.add(this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange));
     this._subs.add(serviceScene.subscribeToState(this.serviceFieldsChanged));
     this._subs.add(variable.subscribeToState(this.variableChanged));
@@ -201,7 +206,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       stateUpdate.body =
         newState.value === ALL_VARIABLE_VALUE
           ? this.buildFieldsLayout(newState.options.map((opt) => ({ label: opt.label, value: String(opt.value) })))
-          : buildValuesLayout(newState);
+          : this.buildValuesLayout(newState);
     }
 
     this.setState(stateUpdate);
@@ -276,8 +281,9 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   }
 
   private buildFieldsLayout(options: Array<SelectableValue<string>>) {
-    const children: SceneFlexItemLike[] = [];
+    this.state.search.reset();
 
+    const children: SceneFlexItemLike[] = [];
     for (const option of options) {
       const { value: optionValue } = option;
       if (optionValue === ALL_VARIABLE_VALUE || !optionValue) {
@@ -332,6 +338,79 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
           templateColumns: '1fr',
           autoRows: '200px',
           children: children.map((child) => child.clone()),
+        }),
+      ],
+    });
+  }
+
+  buildValuesLayout(variableState: CustomConstantVariableState) {
+    const tagKey = String(variableState.value);
+    const query = buildLokiQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
+
+    const { sortBy, direction } = getSortByPreference('fields', ReducerID.stdDev, 'desc');
+    const getFilter = () => this.state.search.state.filter ?? '';
+
+    return new LayoutSwitcher({
+      $data: getQueryRunner(query),
+      options: [
+        { value: 'single', label: 'Single' },
+        { value: 'grid', label: 'Grid' },
+        { value: 'rows', label: 'Rows' },
+      ],
+      active: 'grid',
+      layouts: [
+        new SceneFlexLayout({
+          direction: 'column',
+          children: [
+            new SceneFlexItem({
+              minHeight: 300,
+              body: PanelBuilders.timeseries().setTitle(tagKey).build(),
+            }),
+          ],
+        }),
+        new ByFrameRepeater({
+          body: new SceneCSSGridLayout({
+            templateColumns: GRID_TEMPLATE_COLUMNS,
+            autoRows: '200px',
+            children: [
+              new SceneFlexItem({
+                body: new SceneReactObject({
+                  reactNode: <LoadingPlaceholder text="Loading..." />,
+                }),
+              }),
+            ],
+            isLazy: true,
+          }),
+          getLayoutChild: getFilterBreakdownValueScene(
+            getLabelValue,
+            query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
+            VAR_FIELDS
+          ),
+          sortBy,
+          direction,
+          getFilter,
+        }),
+        new ByFrameRepeater({
+          body: new SceneCSSGridLayout({
+            templateColumns: '1fr',
+            autoRows: '200px',
+            children: [
+              new SceneFlexItem({
+                body: new SceneReactObject({
+                  reactNode: <LoadingPlaceholder text="Loading..." />,
+                }),
+              }),
+            ],
+            isLazy: true,
+          }),
+          getLayoutChild: getFilterBreakdownValueScene(
+            getLabelValue,
+            query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
+            VAR_FIELDS
+          ),
+          sortBy,
+          direction,
+          getFilter,
         }),
       ],
     });
@@ -445,76 +524,6 @@ function getExpr(field: string) {
 }
 
 const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
-
-function buildValuesLayout(variableState: CustomConstantVariableState) {
-  const tagKey = String(variableState.value);
-  const query = buildLokiQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
-
-  const { sortBy, direction } = getSortByPreference('fields', ReducerID.stdDev, 'desc');
-
-  return new LayoutSwitcher({
-    $data: getQueryRunner(query),
-    options: [
-      { value: 'single', label: 'Single' },
-      { value: 'grid', label: 'Grid' },
-      { value: 'rows', label: 'Rows' },
-    ],
-    active: 'grid',
-    layouts: [
-      new SceneFlexLayout({
-        direction: 'column',
-        children: [
-          new SceneFlexItem({
-            minHeight: 300,
-            body: PanelBuilders.timeseries().setTitle(tagKey).build(),
-          }),
-        ],
-      }),
-      new ByFrameRepeater({
-        body: new SceneCSSGridLayout({
-          templateColumns: GRID_TEMPLATE_COLUMNS,
-          autoRows: '200px',
-          children: [
-            new SceneFlexItem({
-              body: new SceneReactObject({
-                reactNode: <LoadingPlaceholder text="Loading..." />,
-              }),
-            }),
-          ],
-          isLazy: true,
-        }),
-        getLayoutChild: getFilterBreakdownValueScene(
-          getLabelValue,
-          query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-          VAR_FIELDS
-        ),
-        sortBy,
-        direction,
-      }),
-      new ByFrameRepeater({
-        body: new SceneCSSGridLayout({
-          templateColumns: '1fr',
-          autoRows: '200px',
-          children: [
-            new SceneFlexItem({
-              body: new SceneReactObject({
-                reactNode: <LoadingPlaceholder text="Loading..." />,
-              }),
-            }),
-          ],
-          isLazy: true,
-        }),
-        getLayoutChild: getFilterBreakdownValueScene(
-          getLabelValue,
-          query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-          VAR_FIELDS
-        ),
-        sortBy,
-        direction,
-      }),
-    ],
-  });
-}
 
 export function buildFieldsBreakdownActionScene(changeFieldNumber: (n: string[]) => void) {
   return new SceneFlexLayout({
