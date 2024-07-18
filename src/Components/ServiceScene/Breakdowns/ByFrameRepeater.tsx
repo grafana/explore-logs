@@ -51,13 +51,13 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
       this._subs.add(
         data.subscribeToState((data) => {
           if (data.data?.state === LoadingState.Done) {
-            this.performRepeat(data.data, 'sub');
+            this.performRepeat(data.data);
           }
         })
       );
 
       if (data.state.data) {
-        this.performRepeat(data.state.data, 'data');
+        this.performRepeat(data.state.data);
       }
     });
   }
@@ -67,12 +67,11 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     this.sortBy = sortBy;
     this.direction = direction;
     if (data.state.data) {
-      this.performRepeat(data.state.data, 'sort');
+      this.performRepeat(data.state.data);
     }
   };
 
-  private performRepeat(data: PanelData, source = 'unknown') {
-    console.log('performRepeat', source);
+  private performRepeat(data: PanelData) {
     const newChildren: SceneFlexItem[] = [];
     const sortedSeries = sortSeries(data.series, this.sortBy, this.direction);
 
@@ -103,7 +102,6 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
   };
 
   filterByString = (filter: string) => {
-    console.log('filterByString');
     this.filter = filter;
     let haystack: string[] = [];
 
@@ -126,7 +124,6 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
   };
 
   public filterFrames = (filterFn: FrameFilterCallback) => {
-    console.log('filterFrames');
     const newChildren: SceneFlexItem[] = [];
     this.iterateFrames((frames, seriesIndex) => {
       if (filterFn(frames[seriesIndex])) {
