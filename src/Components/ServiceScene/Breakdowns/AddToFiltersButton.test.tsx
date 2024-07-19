@@ -61,7 +61,7 @@ describe('AddToFiltersButton', () => {
     const lookup = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(new AdHocFiltersVariable({}));
     render(<button.Component model={button} />);
     userEvent.click(screen.getByRole('button', { name: 'Include' }));
-    await waitFor(async () => expect(lookup).toHaveBeenCalledWith(VAR_FIELDS, expect.anything()));
+    await waitFor(async () => expect(lookup).toHaveBeenCalledWith(VAR_LEVELS, expect.anything()));
   });
 });
 
