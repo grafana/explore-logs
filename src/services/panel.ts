@@ -35,7 +35,7 @@ interface TimeSeriesFieldConfig extends FieldConfig {
 export function setLevelSeriesOverrides(levels: string[], overrides: FieldConfigOverridesBuilder<FieldConfig>) {
   overrides
     .match({
-      id: FieldMatcherID.byName,
+      id: FieldMatcherID.byNames,
       options: {
         mode: 'exclude',
         names: levels,
@@ -44,8 +44,8 @@ export function setLevelSeriesOverrides(levels: string[], overrides: FieldConfig
       },
     })
     .overrideCustomFieldConfig<TimeSeriesFieldConfig, 'hideFrom'>('hideFrom', {
-      legend: true,
-      tooltip: true,
+      legend: false,
+      tooltip: false,
       viz: true,
     });
 }
