@@ -60,11 +60,13 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['patterns'] });
 
   public constructor(state: Partial<IndexSceneState>) {
+    const { variablesScene, unsub } = getVariableSet(
+      getLastUsedDataSourceFromStorage() ?? 'grafanacloud-logs',
+      state.initialFilters
+    );
     super({
       $timeRange: state.$timeRange ?? new SceneTimeRange({}),
-      $variables:
-        state.$variables ??
-        getVariableSet(getLastUsedDataSourceFromStorage() ?? 'grafanacloud-logs', state.initialFilters),
+      $variables: state.$variables ?? variablesScene,
       controls: state.controls ?? [
         new VariableValueSelectors({ layout: 'vertical' }),
         new SceneControlsSpacer(),
@@ -77,6 +79,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       body: new LayoutScene({}),
     });
 
+    this._subs.add(unsub);
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
@@ -210,23 +213,27 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     value: initialDatasourceUid,
     pluginId: 'loki',
   });
-  dsVariable.subscribeToState((newState) => {
+
+  const unsub = dsVariable.subscribeToState((newState) => {
     const dsValue = `${newState.value}`;
     newState.value && addLastUsedDataSourceToStorage(dsValue);
   });
-  return new SceneVariableSet({
-    variables: [
-      dsVariable,
-      labelVariable,
-      fieldsVariable,
-      // @todo where is patterns being added to the url? Why do we have var-patterns and patterns?
-      new CustomVariable({
-        name: VAR_PATTERNS,
-        value: '',
-        hide: VariableHide.hideVariable,
-      }),
-      new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable }),
-      new CustomVariable({ name: VAR_LOGS_FORMAT, value: '', hide: VariableHide.hideVariable }),
-    ],
-  });
+  return {
+    variablesScene: new SceneVariableSet({
+      variables: [
+        dsVariable,
+        labelVariable,
+        fieldsVariable,
+        // @todo where is patterns being added to the url? Why do we have var-patterns and patterns?
+        new CustomVariable({
+          name: VAR_PATTERNS,
+          value: '',
+          hide: VariableHide.hideVariable,
+        }),
+        new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable }),
+        new CustomVariable({ name: VAR_LOGS_FORMAT, value: '', hide: VariableHide.hideVariable }),
+      ],
+    }),
+    unsub,
+  };
 }

@@ -307,13 +307,15 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         body: body.build(),
       });
 
-      queryRunner.getResultsStream().subscribe((result) => {
-        if (result.data.errors && result.data.errors.length > 0) {
-          const val = result.data.errors[0].refId!;
-          this.hideField(val);
-          gridItem.setState({ isHidden: true });
-        }
-      });
+      this._subs.add(
+        queryRunner.getResultsStream().subscribe((result) => {
+          if (result.data.errors && result.data.errors.length > 0) {
+            const val = result.data.errors[0].refId!;
+            this.hideField(val);
+            gridItem.setState({ isHidden: true });
+          }
+        })
+      );
 
       children.push(gridItem);
     }
