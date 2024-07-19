@@ -1,13 +1,12 @@
-import { DataFrame } from '@grafana/data';
-import { SceneDataTransformer, SceneQueryRunner } from '@grafana/scenes';
+import { DataFrame, FieldConfig, FieldMatcherID } from '@grafana/data';
+import { FieldConfigOverridesBuilder, SceneDataTransformer, SceneQueryRunner } from '@grafana/scenes';
 import { map, Observable } from 'rxjs';
 import { LokiQuery } from './query';
 import { EXPLORATION_DS } from './variables';
+import { HideSeriesConfig } from '@grafana/schema';
 
 const UNKNOWN_LEVEL_LOGS = 'logs';
-// TODO: `FieldConfigOverridesBuilder` is not exported, so it can not be used
-// here.
-export function setLeverColorOverrides(overrides: any) {
+export function setLeverColorOverrides(overrides: FieldConfigOverridesBuilder<FieldConfig>) {
   overrides.matchFieldsWithName('info').overrideColor({
     mode: 'fixed',
     fixedColor: 'semi-dark-green',
@@ -28,6 +27,27 @@ export function setLeverColorOverrides(overrides: any) {
     mode: 'fixed',
     fixedColor: 'darkgray',
   });
+}
+
+interface TimeSeriesFieldConfig extends FieldConfig {
+  hideFrom: HideSeriesConfig;
+}
+export function setLevelSeriesOverrides(levels: string[], overrides: FieldConfigOverridesBuilder<FieldConfig>) {
+  overrides
+    .match({
+      id: FieldMatcherID.byName,
+      options: {
+        mode: 'exclude',
+        names: levels,
+        prefix: 'All except:',
+        readOnly: true,
+      },
+    })
+    .overrideCustomFieldConfig<TimeSeriesFieldConfig, 'hideFrom'>('hideFrom', {
+      legend: true,
+      tooltip: true,
+      viz: true,
+    });
 }
 
 export function sortLevelTransformation() {

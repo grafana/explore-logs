@@ -1,19 +1,12 @@
 import React from 'react';
 
-import {
-  AdHocFiltersVariable,
-  PanelBuilders,
-  SceneComponentProps,
-  SceneObjectBase,
-  SceneObjectState,
-  VizPanel,
-  sceneGraph,
-} from '@grafana/scenes';
+import { PanelBuilders, SceneComponentProps, SceneObjectBase, SceneObjectState, VizPanel } from '@grafana/scenes';
 import { DrawStyle, LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode, StackingMode } from '@grafana/ui';
-import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
+import { getQueryRunner, setLevelSeriesOverrides, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { LEVEL_VARIABLE_VALUE, LOG_VOLUME_STREAM_SELECTOR_EXPR, VAR_LEVELS } from 'services/variables';
 import { addToFilters } from './Breakdowns/AddToFiltersButton';
+import { getAdHocFiltersVariable } from 'services/scenes';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
@@ -36,7 +29,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
   }
 
   private getVizPanel() {
-    const panel = PanelBuilders.timeseries()
+    const viz = PanelBuilders.timeseries()
       .setTitle('Log volume')
       .setOption('legend', { showLegend: true, calcs: ['sum'], displayMode: LegendDisplayMode.List })
       .setUnit('short')
@@ -53,9 +46,15 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       .setCustomFieldConfig('lineWidth', 0)
       .setCustomFieldConfig('pointSize', 0)
       .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-      .setOverrides(setLeverColorOverrides)
-      .build();
+      .setOverrides(setLeverColorOverrides);
 
+    const fieldFilters = getAdHocFiltersVariable(VAR_LEVELS, this);
+    const filteredLevels = fieldFilters?.state.filters.map((filter) => filter.value);
+    if (filteredLevels?.length) {
+      viz.setOverrides(setLevelSeriesOverrides.bind(null, filteredLevels));
+    }
+
+    const panel = viz.build();
     panel.setState({
       extendPanelContext: (_, context) => this.extendTimeSeriesLegendBus(context),
     });
@@ -66,8 +65,8 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
   private extendTimeSeriesLegendBus = (context: PanelContext) => {
     const originalOnToggleSeriesVisibility = context.onToggleSeriesVisibility;
 
-    const fieldFilters = sceneGraph.lookupVariable(VAR_LEVELS, this);
-    if (fieldFilters instanceof AdHocFiltersVariable) {
+    const fieldFilters = getAdHocFiltersVariable(VAR_LEVELS, this);
+    if (fieldFilters) {
       fieldFilters?.subscribeToState((newState, prevState) => {
         const hadLevel = prevState.filters.find((filter) => filter.key === LEVEL_VARIABLE_VALUE);
         const removedLevel = newState.filters.findIndex((filter) => filter.key === LEVEL_VARIABLE_VALUE) < 0;
