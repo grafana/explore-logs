@@ -4,7 +4,7 @@ import { AddToFiltersButton, FilterType, addAdHocFilter, addToFilters } from './
 import { FieldType, createDataFrame } from '@grafana/data';
 import userEvent from '@testing-library/user-event';
 import { AdHocFiltersVariable, SceneObject, sceneGraph } from '@grafana/scenes';
-import { LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS } from 'services/variables';
+import { LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from 'services/variables';
 import { ServiceSceneState } from '../ServiceScene';
 
 describe('AddToFiltersButton', () => {
@@ -211,7 +211,7 @@ describe('addToFilters and addAdHocFilter', () => {
       const lookupVariable = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(adHocVariable);
       addAdHocFilter({ key: LEVEL_VARIABLE_VALUE, value: 'info', operator: '=' }, {} as SceneObject, VAR_FIELDS);
 
-      expect(lookupVariable).toHaveBeenCalledWith(VAR_LABELS, expect.anything());
+      expect(lookupVariable).toHaveBeenCalledWith(VAR_LEVELS, expect.anything());
     });
   });
 });
