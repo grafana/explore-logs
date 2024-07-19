@@ -12,7 +12,7 @@ import {
 import { DrawStyle, LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode, StackingMode } from '@grafana/ui';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
-import { LEVEL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR, VAR_FIELDS } from 'services/variables';
+import { LEVEL_VARIABLE_VALUE, LOG_VOLUME_STREAM_SELECTOR_EXPR, VAR_LEVELS } from 'services/variables';
 import { addToFilters } from './Breakdowns/AddToFiltersButton';
 
 export interface LogsVolumePanelState extends SceneObjectState {
@@ -43,7 +43,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       .setData(
         getQueryRunner(
           buildLokiQuery(
-            `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ [$__auto]))`,
+            `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time(${LOG_VOLUME_STREAM_SELECTOR_EXPR} | drop __error__ [$__auto]))`,
             { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}` }
           )
         )
@@ -66,7 +66,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
   private extendTimeSeriesLegendBus = (context: PanelContext) => {
     const originalOnToggleSeriesVisibility = context.onToggleSeriesVisibility;
 
-    const fieldFilters = sceneGraph.lookupVariable(VAR_FIELDS, this);
+    const fieldFilters = sceneGraph.lookupVariable(VAR_LEVELS, this);
     if (fieldFilters instanceof AdHocFiltersVariable) {
       fieldFilters?.subscribeToState((newState, prevState) => {
         const hadLevel = prevState.filters.find((filter) => filter.key === LEVEL_VARIABLE_VALUE);
