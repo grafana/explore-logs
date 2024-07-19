@@ -4,7 +4,7 @@ import { AdHocVariableFilter, DataFrame } from '@grafana/data';
 import { SceneObjectState, SceneObjectBase, SceneComponentProps, SceneObject, sceneGraph } from '@grafana/scenes';
 import { VariableHide } from '@grafana/schema';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
-import { getAdHocFiltersVariable, LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS } from 'services/variables';
+import { getAdHocFiltersVariable, LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from 'services/variables';
 import { FilterButton } from 'Components/FilterButton';
 import { FilterOp } from 'services/filters';
 import { ServiceScene } from '../ServiceScene';
@@ -67,7 +67,7 @@ export function addToFilters(
 function validateVariableNameForField(field: string, variableName: string) {
   // Special case: If the key is LEVEL_VARIABLE_VALUE, we need to use the VAR_FIELDS.
   if (field === LEVEL_VARIABLE_VALUE) {
-    return VAR_FIELDS;
+    return VAR_LEVELS;
   }
   return variableName;
 }
