@@ -32,8 +32,8 @@ export function setLeverColorOverrides(overrides: FieldConfigOverridesBuilder<Fi
 interface TimeSeriesFieldConfig extends FieldConfig {
   hideFrom: HideSeriesConfig;
 }
-export function setLevelSeriesOverrides(levels: string[], overrides: FieldConfigOverridesBuilder<FieldConfig>) {
-  overrides
+export function setLevelSeriesOverrides(levels: string[], overrideConfig: FieldConfigOverridesBuilder<FieldConfig>) {
+  overrideConfig
     .match({
       id: FieldMatcherID.byNames,
       options: {
@@ -48,6 +48,11 @@ export function setLevelSeriesOverrides(levels: string[], overrides: FieldConfig
       tooltip: false,
       viz: true,
     });
+
+  // Setting __systemRef to hideSeriesFrom, allows the override to be changed by interacting with the viz
+  const overrides = overrideConfig.build();
+  //@ts-expect-error
+  overrides[overrides.length - 1].__systemRef = 'hideSeriesFrom';
 }
 
 export function sortLevelTransformation() {
