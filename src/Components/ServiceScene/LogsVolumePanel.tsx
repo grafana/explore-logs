@@ -66,17 +66,19 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
 
     const levelFilter = getAdHocFiltersVariable(VAR_LEVELS, this);
     if (levelFilter) {
-      levelFilter?.subscribeToState((newState, prevState) => {
-        const hadLevel = prevState.filters.find((filter) => filter.key === LEVEL_VARIABLE_VALUE);
-        const removedLevel = newState.filters.findIndex((filter) => filter.key === LEVEL_VARIABLE_VALUE) < 0;
-        if (hadLevel && removedLevel) {
-          originalOnToggleSeriesVisibility?.(hadLevel.value, SeriesVisibilityChangeMode.ToggleSelection);
-        }
-        const addedLevel = newState.filters.find((filter) => filter.key === LEVEL_VARIABLE_VALUE);
-        if (addedLevel) {
-          originalOnToggleSeriesVisibility?.(addedLevel.value, SeriesVisibilityChangeMode.ToggleSelection);
-        }
-      });
+      this._subs.add(
+        levelFilter?.subscribeToState((newState, prevState) => {
+          const hadLevel = prevState.filters.find((filter) => filter.key === LEVEL_VARIABLE_VALUE);
+          const removedLevel = newState.filters.findIndex((filter) => filter.key === LEVEL_VARIABLE_VALUE) < 0;
+          if (hadLevel && removedLevel) {
+            originalOnToggleSeriesVisibility?.(hadLevel.value, SeriesVisibilityChangeMode.ToggleSelection);
+          }
+          const addedLevel = newState.filters.find((filter) => filter.key === LEVEL_VARIABLE_VALUE);
+          if (addedLevel) {
+            originalOnToggleSeriesVisibility?.(addedLevel.value, SeriesVisibilityChangeMode.ToggleSelection);
+          }
+        })
+      );
     }
 
     context.onToggleSeriesVisibility = (level: string, mode: SeriesVisibilityChangeMode) => {
