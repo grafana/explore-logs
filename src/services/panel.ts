@@ -51,7 +51,7 @@ export function setLevelSeriesOverrides(levels: string[], overrideConfig: FieldC
 
   // Setting __systemRef to hideSeriesFrom, allows the override to be changed by interacting with the viz
   const overrides = overrideConfig.build();
-  //@ts-expect-error
+  // @ts-expect-error
   overrides[overrides.length - 1].__systemRef = 'hideSeriesFrom';
 }
 
