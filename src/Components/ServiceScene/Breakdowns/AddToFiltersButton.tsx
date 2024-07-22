@@ -64,6 +64,32 @@ export function addToFilters(
   });
 }
 
+export function replaceFilter(
+  key: string,
+  value: string,
+  operator: Extract<FilterType, 'include' | 'exclude'>,
+  scene: SceneObject
+) {
+  const variable = getAdHocFiltersVariable(
+    validateVariableNameForField(key, resolveVariableNameForField(key, scene)),
+    scene
+  );
+  if (!variable) {
+    return;
+  }
+
+  variable.setState({
+    filters: [
+      {
+        key,
+        operator: operator === 'exclude' ? FilterOp.NotEqual : FilterOp.Equal,
+        value,
+      },
+    ],
+    hide: VariableHide.hideLabel,
+  });
+}
+
 function validateVariableNameForField(field: string, variableName: string) {
   // Special case: If the key is LEVEL_VARIABLE_VALUE, we need to use the VAR_FIELDS.
   if (field === LEVEL_VARIABLE_VALUE) {
