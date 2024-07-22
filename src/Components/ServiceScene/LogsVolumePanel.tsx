@@ -72,6 +72,10 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
         if (hadLevel && removedLevel) {
           originalOnToggleSeriesVisibility?.(hadLevel.value, SeriesVisibilityChangeMode.ToggleSelection);
         }
+        const addedLevel = newState.filters.find((filter) => filter.key === LEVEL_VARIABLE_VALUE);
+        if (addedLevel) {
+          originalOnToggleSeriesVisibility?.(addedLevel.value, SeriesVisibilityChangeMode.ToggleSelection);
+        }
       });
     }
 
@@ -93,8 +97,6 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       } else {
         addToFilters(LEVEL_VARIABLE_VALUE, level, 'toggle', this);
       }
-
-      originalOnToggleSeriesVisibility?.(level, mode);
     };
   };
 
