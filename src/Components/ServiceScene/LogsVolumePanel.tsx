@@ -5,7 +5,7 @@ import { DrawStyle, LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode,
 import { getQueryRunner, setLevelSeriesOverrides, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { LEVEL_VARIABLE_VALUE, LOG_VOLUME_STREAM_SELECTOR_EXPR, VAR_LEVELS } from 'services/variables';
-import { addToFilters } from './Breakdowns/AddToFiltersButton';
+import { addToFilters, replaceFilter } from './Breakdowns/AddToFiltersButton';
 import { getAdHocFiltersVariable } from 'services/scenes';
 
 export interface LogsVolumePanelState extends SceneObjectState {
@@ -13,7 +13,6 @@ export interface LogsVolumePanelState extends SceneObjectState {
 }
 
 export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
-  private focusedLevel = '';
   constructor(state: LogsVolumePanelState) {
     super(state);
 
@@ -65,9 +64,9 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
   private extendTimeSeriesLegendBus = (context: PanelContext) => {
     const originalOnToggleSeriesVisibility = context.onToggleSeriesVisibility;
 
-    const fieldFilters = getAdHocFiltersVariable(VAR_LEVELS, this);
-    if (fieldFilters) {
-      fieldFilters?.subscribeToState((newState, prevState) => {
+    const levelFilter = getAdHocFiltersVariable(VAR_LEVELS, this);
+    if (levelFilter) {
+      levelFilter?.subscribeToState((newState, prevState) => {
         const hadLevel = prevState.filters.find((filter) => filter.key === LEVEL_VARIABLE_VALUE);
         const removedLevel = newState.filters.findIndex((filter) => filter.key === LEVEL_VARIABLE_VALUE) < 0;
         if (hadLevel && removedLevel) {
@@ -77,13 +76,25 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     }
 
     context.onToggleSeriesVisibility = (level: string, mode: SeriesVisibilityChangeMode) => {
-      originalOnToggleSeriesVisibility?.(level, mode);
       // @TODO. We don't yet support filters with multiple values.
       if (mode === SeriesVisibilityChangeMode.AppendToSelection) {
         return;
       }
-      addToFilters(LEVEL_VARIABLE_VALUE, level, 'toggle', this);
-      this.focusedLevel = this.focusedLevel === level ? '' : level;
+
+      const levelFilter = getAdHocFiltersVariable(VAR_LEVELS, this);
+      if (!levelFilter) {
+        return;
+      }
+      const hadLevel = levelFilter.state.filters.find(
+        (filter) => filter.key === LEVEL_VARIABLE_VALUE && filter.value !== level
+      );
+      if (hadLevel) {
+        replaceFilter(LEVEL_VARIABLE_VALUE, level, 'include', this);
+      } else {
+        addToFilters(LEVEL_VARIABLE_VALUE, level, 'toggle', this);
+      }
+
+      originalOnToggleSeriesVisibility?.(level, mode);
     };
   };
 
