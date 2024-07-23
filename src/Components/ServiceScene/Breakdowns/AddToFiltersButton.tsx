@@ -79,7 +79,7 @@ function validateVariableNameForField(field: string, variableName: string) {
 
 function resolveVariableNameForField(field: string, scene: SceneObject) {
   const serviceScene = sceneGraph.getAncestor(scene, ServiceScene);
-  const indexedLabel = serviceScene.state.labels?.find((label) => label === field);
+  const indexedLabel = serviceScene.state.labels?.find((label) => label.label === field);
   return indexedLabel ? VAR_LABELS : VAR_FIELDS;
 }
 

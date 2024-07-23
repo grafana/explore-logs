@@ -103,43 +103,55 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     }
     // On activation, fetch services by volume
     this.getServicesByVolume();
-    this.subscribeToState((newState, oldState) => {
-      // Updates servicesToQuery when servicesByVolume is changed
-      if (newState.servicesByVolume !== oldState.servicesByVolume) {
-        const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue()?.toString();
-        let servicesToQuery: string[] = [];
-        if (ds && newState.servicesByVolume) {
-          servicesToQuery = createListOfServicesToQuery(newState.servicesByVolume, ds, this.state.searchServicesString);
+    this._subs.add(
+      this.subscribeToState((newState, oldState) => {
+        // Updates servicesToQuery when servicesByVolume is changed
+        if (newState.servicesByVolume !== oldState.servicesByVolume) {
+          const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue()?.toString();
+          let servicesToQuery: string[] = [];
+          if (ds && newState.servicesByVolume) {
+            servicesToQuery = createListOfServicesToQuery(
+              newState.servicesByVolume,
+              ds,
+              this.state.searchServicesString
+            );
+          }
+          this.setState({
+            servicesToQuery,
+          });
         }
-        this.setState({
-          servicesToQuery,
-        });
-      }
 
-      // Updates servicesToQuery when searchServicesString is changed
-      if (newState.searchServicesString !== oldState.searchServicesString) {
-        const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue()?.toString();
-        let servicesToQuery: string[] = [];
-        if (ds && this.state.servicesByVolume) {
-          servicesToQuery = createListOfServicesToQuery(this.state.servicesByVolume, ds, newState.searchServicesString);
+        // Updates servicesToQuery when searchServicesString is changed
+        if (newState.searchServicesString !== oldState.searchServicesString) {
+          const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue()?.toString();
+          let servicesToQuery: string[] = [];
+          if (ds && this.state.servicesByVolume) {
+            servicesToQuery = createListOfServicesToQuery(
+              this.state.servicesByVolume,
+              ds,
+              newState.searchServicesString
+            );
+          }
+          this.setState({
+            servicesToQuery,
+          });
+          this.getServicesByVolume(newState.searchServicesString);
         }
-        this.setState({
-          servicesToQuery,
-        });
-        this.getServicesByVolume(newState.searchServicesString);
-      }
 
-      // When servicesToQuery is changed, update the body and render the panels with the new services
-      if (newState.servicesToQuery !== oldState.servicesToQuery) {
-        this.updateBody();
-      }
-    });
+        // When servicesToQuery is changed, update the body and render the panels with the new services
+        if (newState.servicesToQuery !== oldState.servicesToQuery) {
+          this.updateBody();
+        }
+      })
+    );
 
-    sceneGraph.getTimeRange(this).subscribeToState((newTime, oldTime) => {
-      if (shouldUpdateServicesByVolume(newTime.value, oldTime.value)) {
-        this.getServicesByVolume();
-      }
-    });
+    this._subs.add(
+      sceneGraph.getTimeRange(this).subscribeToState((newTime, oldTime) => {
+        if (shouldUpdateServicesByVolume(newTime.value, oldTime.value)) {
+          this.getServicesByVolume();
+        }
+      })
+    );
   }
 
   // Run to fetch services by volume

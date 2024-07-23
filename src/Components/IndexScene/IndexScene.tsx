@@ -15,6 +15,7 @@ import {
   SceneObjectUrlSyncConfig,
   SceneObjectUrlValues,
   SceneRefreshPicker,
+  SceneRouteMatch,
   SceneTimePicker,
   SceneTimeRange,
   SceneVariableSet,
@@ -34,11 +35,11 @@ import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from
 import { ServiceScene } from '../ServiceScene/ServiceScene';
 import { LayoutScene } from './LayoutScene';
 import { FilterOp } from 'services/filters';
-import { getSlug, PageSlugs } from '../../services/routing';
+import { getDrilldownSlug, PageSlugs } from '../../services/routing';
 import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { locationService } from '@grafana/runtime';
-import { renderPatternFilters, renderLogQLStreamSelector, renderLogQLFieldFilters } from 'services/query';
+import { renderLogQLFieldFilters, renderLogQLStreamSelector, renderPatternFilters } from 'services/query';
 
 export interface AppliedPattern {
   pattern: string;
@@ -52,17 +53,20 @@ export interface IndexSceneState extends SceneObjectState {
   body?: LayoutScene;
   initialFilters?: AdHocVariableFilter[];
   patterns?: AppliedPattern[];
+  routeMatch?: SceneRouteMatch<{ service?: string; label?: string }>;
 }
 
 export class IndexScene extends SceneObjectBase<IndexSceneState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['patterns'] });
 
   public constructor(state: Partial<IndexSceneState>) {
+    const { variablesScene, unsub } = getVariableSet(
+      getLastUsedDataSourceFromStorage() ?? 'grafanacloud-logs',
+      state.initialFilters
+    );
     super({
       $timeRange: state.$timeRange ?? new SceneTimeRange({}),
-      $variables:
-        state.$variables ??
-        getVariableSet(getLastUsedDataSourceFromStorage() ?? 'grafanacloud-logs', state.initialFilters),
+      $variables: state.$variables ?? variablesScene,
       controls: state.controls ?? [
         new VariableValueSelectors({ layout: 'vertical' }),
         new SceneControlsSpacer(),
@@ -75,6 +79,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       body: new LayoutScene({}),
     });
 
+    this._subs.add(unsub);
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
@@ -91,7 +96,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     const stateUpdate: Partial<IndexSceneState> = {};
 
     if (!this.state.contentScene) {
-      stateUpdate.contentScene = getContentScene();
+      stateUpdate.contentScene = getContentScene(this.state.routeMatch?.params.label);
     }
 
     this.setState(stateUpdate);
@@ -157,13 +162,13 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   }
 }
 
-function getContentScene() {
-  const slug = getSlug();
+function getContentScene(drillDownLabel?: string) {
+  const slug = getDrilldownSlug();
   if (slug === PageSlugs.explore) {
     return new ServiceSelectionScene({});
   }
 
-  return new ServiceScene({});
+  return new ServiceScene({ drillDownLabel });
 }
 
 function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVariableFilter[]) {
@@ -208,23 +213,27 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     value: initialDatasourceUid,
     pluginId: 'loki',
   });
-  dsVariable.subscribeToState((newState) => {
+
+  const unsub = dsVariable.subscribeToState((newState) => {
     const dsValue = `${newState.value}`;
     newState.value && addLastUsedDataSourceToStorage(dsValue);
   });
-  return new SceneVariableSet({
-    variables: [
-      dsVariable,
-      labelVariable,
-      fieldsVariable,
-      // @todo where is patterns being added to the url? Why do we have var-patterns and patterns?
-      new CustomVariable({
-        name: VAR_PATTERNS,
-        value: '',
-        hide: VariableHide.hideVariable,
-      }),
-      new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable }),
-      new CustomVariable({ name: VAR_LOGS_FORMAT, value: '', hide: VariableHide.hideVariable }),
-    ],
-  });
+  return {
+    variablesScene: new SceneVariableSet({
+      variables: [
+        dsVariable,
+        labelVariable,
+        fieldsVariable,
+        // @todo where is patterns being added to the url? Why do we have var-patterns and patterns?
+        new CustomVariable({
+          name: VAR_PATTERNS,
+          value: '',
+          hide: VariableHide.hideVariable,
+        }),
+        new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable }),
+        new CustomVariable({ name: VAR_LOGS_FORMAT, value: '', hide: VariableHide.hideVariable }),
+      ],
+    }),
+    unsub,
+  };
 }

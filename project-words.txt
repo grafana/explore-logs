@@ -460,3 +460,4 @@ yuin
 yvasiyarov
 zipkin
 prioritise
+logspanel
