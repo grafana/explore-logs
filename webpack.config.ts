@@ -1,4 +1,4 @@
-import { Configuration, DefinePlugin } from 'webpack';
+import type { Configuration } from 'webpack';
 import { merge } from 'webpack-merge';
 import grafanaConfig from './.config/webpack/webpack.config';
 
@@ -9,11 +9,6 @@ const config = async (env): Promise<Configuration> => {
       // Required to load WASM modules.
       asyncWebAssembly: true,
     },
-    plugins: [
-      new DefinePlugin({
-        E2E_ENV: JSON.stringify(process.env.CI && process.env.NODE_ENV !== 'production'),
-      }),
-    ]
   });
 };
 
