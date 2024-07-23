@@ -11,6 +11,7 @@ import {
   SceneFlexItemLike,
   SceneFlexLayout,
   sceneGraph,
+  SceneObject,
   SceneObjectBase,
   SceneObjectState,
   SceneReactObject,
@@ -25,7 +26,7 @@ import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { ValueSlugs } from 'services/routing';
 import { getLokiDatasource } from 'services/scenes';
-import { ALL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR, VAR_LABEL_GROUP_BY, VAR_LABELS } from 'services/variables';
+import { ALL_VARIABLE_VALUE, VAR_LABEL_GROUP_BY, VAR_LABELS, VAR_LABELS_EXPR } from 'services/variables';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
@@ -37,6 +38,8 @@ import { getLabelValue, SortByScene, SortCriteriaChanged } from './SortByScene';
 import { ServiceScene, ServiceSceneState } from '../ServiceScene';
 import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
 import { navigateToValueBreakdown } from '../../../services/navigate';
+import { getLabelsVariable } from '../../../services/getVariables';
+import { LEVEL_NAME } from '../../Table/constants';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -304,7 +307,12 @@ function buildLabelsLayout(options: VariableValueOption[], scene: LabelBreakdown
       new SceneCSSGridItem({
         body: PanelBuilders.timeseries()
           .setTitle(optionValue)
-          .setData(getQueryRunner(buildLokiQuery(getExpr(optionValue), { legendFormat: `{{${optionValue}}}` })))
+          .setData(
+            getQueryRunner(
+              buildLokiQuery(getExpr(optionValue), { legendFormat: `{{${optionValue}}}` }),
+              cloneVariablesToExcludeEmptyForKey(scene, optionValue)
+            )
+          )
           .setHeaderActions(new SelectLabelAction({ labelName: optionValue }))
           .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
           .setCustomFieldConfig('fillOpacity', 100)
@@ -341,10 +349,43 @@ function buildLabelsLayout(options: VariableValueOption[], scene: LabelBreakdown
 }
 
 function getExpr(tagKey: string) {
-  return `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${tagKey}!="" [$__auto])) by (${tagKey})`;
+  // Is there a better way to check for all detected metadata?
+  if (tagKey === LEVEL_NAME) {
+    return `sum(count_over_time(${VAR_LABELS_EXPR} | ${LEVEL_NAME}!="" [$__auto])) by (${tagKey})`;
+  }
+  return `sum(count_over_time(${VAR_LABELS_EXPR} [$__auto])) by (${tagKey})`;
 }
 
 const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
+
+/**
+ * AdHoc variables are bound to the UI state, so if we want to add a specific override for a query without updating the UI, we'll need to clone the original and make updates.
+ * Allows adding custom filters that are specific to a single query, when passed into the SceneQueryRunner $variables prop.
+ * @param scene
+ * @param keyName
+ */
+function cloneVariablesToExcludeEmptyForKey(scene: SceneObject, keyName: string) {
+  if (keyName !== LEVEL_NAME) {
+    const labelsVariable = getLabelsVariable(scene).clone();
+    labelsVariable.setState({
+      filters: [
+        ...labelsVariable.state.filters,
+        {
+          key: keyName,
+          keyLabel: keyName,
+          operator: '!=',
+          value: '',
+        },
+      ],
+    });
+
+    return new SceneVariableSet({
+      variables: [labelsVariable],
+    });
+  }
+
+  return undefined;
+}
 
 function buildLabelValuesLayout(variableState: CustomConstantVariableState, scene: LabelBreakdownScene) {
   const tagKey = String(variableState?.value);
@@ -365,7 +406,7 @@ function buildLabelValuesLayout(variableState: CustomConstantVariableState, scen
   const getFilter = () => scene.state.search.state.filter ?? '';
 
   return new LayoutSwitcher({
-    $data: getQueryRunner(query),
+    $data: getQueryRunner(query, cloneVariablesToExcludeEmptyForKey(scene, tagKey)),
     options: [
       { value: 'single', label: 'Single' },
       { value: 'grid', label: 'Grid' },

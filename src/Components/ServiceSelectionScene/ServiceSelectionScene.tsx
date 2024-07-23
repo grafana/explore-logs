@@ -39,6 +39,7 @@ import { NoVolumeError } from './NoVolumeError';
 import { getLabelsFromSeries, toggleLevelFromFilter } from 'services/levels';
 import { isFetchError } from '@grafana/runtime';
 import { ServiceFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
+import { LEVEL_NAME } from '../Table/constants';
 
 export const SERVICE_NAME = 'service_name';
 
@@ -326,7 +327,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       if (level === 'logs') {
         level = '';
       }
-      return `detected_level=\`${level}\``;
+      return `${LEVEL_NAME}=\`${level}\``;
     });
     return ` | ${filters.join(' or ')} `;
   };
