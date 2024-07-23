@@ -1,7 +1,7 @@
-import { css } from '@emotion/css';
+import {css} from '@emotion/css';
 import React from 'react';
 
-import { GrafanaTheme2, ReducerID, SelectableValue } from '@grafana/data';
+import {GrafanaTheme2, ReducerID, SelectableValue} from '@grafana/data';
 import {
   AdHocFiltersVariable,
   PanelBuilders,
@@ -20,11 +20,11 @@ import {
   SceneVariableState,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import { Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
-import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { getFilterBreakdownValueScene } from 'services/fields';
-import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
-import { buildLokiQuery } from 'services/query';
+import {Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2} from '@grafana/ui';
+import {reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES} from 'services/analytics';
+import {getFilterBreakdownValueScene} from 'services/fields';
+import {getQueryRunner, setLeverColorOverrides} from 'services/panel';
+import {buildLokiQuery} from 'services/query';
 import {
   ALL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
@@ -32,21 +32,21 @@ import {
   VAR_FIELDS,
   VAR_LABELS,
 } from 'services/variables';
-import { ServiceScene, ServiceSceneState } from '../ServiceScene';
-import { ByFrameRepeater } from './ByFrameRepeater';
-import { FieldSelector } from './FieldSelector';
-import { LayoutSwitcher } from './LayoutSwitcher';
-import { StatusWrapper } from './StatusWrapper';
-import { BreakdownSearchReset, BreakdownSearchScene } from './BreakdownSearchScene';
-import { getLabelValue, SortByScene, SortCriteriaChanged } from './SortByScene';
-import { getSortByPreference } from 'services/store';
-import { GrotError } from '../../GrotError';
-import { IndexScene } from '../../IndexScene/IndexScene';
-import { LazySceneCSSGridItem } from './LazySceneCSSGridItem';
-import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
-import { getLabelOptions } from '../../../services/filters';
-import { navigateToValueBreakdown } from '../../../services/navigate';
-import { ValueSlugs } from '../../../services/routing';
+import {ServiceScene, ServiceSceneState} from '../ServiceScene';
+import {ByFrameRepeater} from './ByFrameRepeater';
+import {FieldSelector} from './FieldSelector';
+import {LayoutSwitcher} from './LayoutSwitcher';
+import {StatusWrapper} from './StatusWrapper';
+import {BreakdownSearchReset, BreakdownSearchScene} from './BreakdownSearchScene';
+import {getLabelValue, SortByScene, SortCriteriaChanged} from './SortByScene';
+import {getSortByPreference} from 'services/store';
+import {GrotError} from '../../GrotError';
+import {IndexScene} from '../../IndexScene/IndexScene';
+import {LazySceneCSSGridItem} from './LazySceneCSSGridItem';
+import {CustomConstantVariable, CustomConstantVariableState} from '../../../services/CustomConstantVariable';
+import {getLabelOptions} from '../../../services/filters';
+import {navigateToValueBreakdown} from '../../../services/navigate';
+import {ValueSlugs} from '../../../services/routing';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -343,9 +343,9 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   buildValuesLayout(variableState: CustomConstantVariableState) {
     const tagKey = String(variableState.value);
-    const query = buildLokiQuery(getExpr(tagKey, true), { legendFormat: `{{${tagKey}}}` });
+    const query = buildLokiQuery(getExpr(tagKey, true), {legendFormat: `{{${tagKey}}}`});
 
-    const { sortBy, direction } = getSortByPreference('fields', ReducerID.stdDev, 'desc');
+    const {sortBy, direction} = getSortByPreference('fields', ReducerID.stdDev, 'desc');
     const getFilter = () => this.state.search.state.filter ?? '';
 
     return new LayoutSwitcher({
