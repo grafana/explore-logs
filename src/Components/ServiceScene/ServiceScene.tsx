@@ -214,7 +214,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     if (newState.data?.state === LoadingState.Done) {
       const frame = newState.data?.series[0];
       if (frame) {
-        console.log('serviceScene');
         const res = updateParserFromDataFrame(frame, this);
         const fields = res.fields.filter((f) => !disabledFields.includes(f)).sort((a, b) => a.localeCompare(b));
         if (JSON.stringify(fields) !== JSON.stringify(this.state.fields)) {
