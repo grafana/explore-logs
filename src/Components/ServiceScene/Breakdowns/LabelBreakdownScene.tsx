@@ -25,7 +25,7 @@ import { DetectedLabel, getFilterBreakdownValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { ValueSlugs } from 'services/routing';
-import { getLokiDatasource } from 'services/scenes';
+import { getLokiDatasource, isDefined } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
   VAR_LABEL_GROUP_BY,
@@ -384,8 +384,8 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       fieldExpressionToAdd = `| ${LEVEL_VARIABLE_VALUE} != ""`;
     }
     const streamSelectors = [...labelsVariable.state.filters, labelExpressionToAdd]
-      .filter((f) => !!f)
-      .map((f) => `${f!.key}${f!.operator}\`${f!.value}\``)
+      .filter(isDefined)
+      .map((f) => `${f.key}${f.operator}\`${f.value}\``)
       .join(',');
 
     const fields = fieldsVariable.state.filters;
