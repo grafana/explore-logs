@@ -28,21 +28,25 @@ export interface SelectServiceButtonState extends SceneObjectState {
 function setParserIfFrameExistsForService(service: string, sceneRef: SceneObject) {
   const serviceSelectionScene = sceneGraph.getAncestor(sceneRef, ServiceSelectionScene);
 
-  const theChildWeWant = serviceSelectionScene.state.body.state.children.find((child) => {
-    if (child instanceof SceneCSSGridItem) {
-      const body = child.state.body;
+  const gridItem: SceneCSSGridItem | SceneObject | undefined = serviceSelectionScene.state.body.state.children.find(
+    (child) => {
+      if (child instanceof SceneCSSGridItem) {
+        const body = child.state.body;
 
-      // The query runner is only defined for the logs panel
-      const queryRunner = body?.state.$data as SceneQueryRunner | undefined;
-      return queryRunner?.state?.queries?.find((query) => {
-        return query.refId === `logs-${service}`;
-      });
+        // The query runner is only defined for the logs panel
+        const queryRunner = body?.state.$data;
+        if (queryRunner instanceof SceneQueryRunner) {
+          return queryRunner?.state?.queries?.find((query) => {
+            return query.refId === `logs-${service}`;
+          });
+        }
+      }
+      return false;
     }
-    return false;
-  }) as SceneCSSGridItem | undefined;
+  );
 
-  if (theChildWeWant) {
-    const body = theChildWeWant.state.body as VizPanel;
+  if (gridItem && gridItem instanceof SceneCSSGridItem) {
+    const body = gridItem.state.body as VizPanel;
     const frame = body.state.$data?.state.data?.series[0];
 
     if (frame) {
