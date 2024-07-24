@@ -2,6 +2,9 @@ import {expect, test} from '@grafana/plugin-e2e';
 import {ExplorePage} from './fixtures/explore';
 import {testIds} from '../src/services/testIds';
 import {FilterOp} from '../src/services/filters';
+import {async} from "rxjs";
+import {APIResponse} from "@playwright/test";
+import * as Buffer from "buffer";
 
 test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;
@@ -60,6 +63,61 @@ test.describe('explore services breakdown page', () => {
     await page.getByTestId(testIds.table.inspectLine).last().click();
     await expect(page.getByRole('dialog', { name: 'Inspect value' })).toBeVisible()
   });
+
+  test('detected_labels that returns labels should not show empty state', async({page}) => {
+    await page.route(/detected_labels/, (route) => route.fulfill({
+      status: 200,
+      body: JSON.stringify({
+        "detectedLabels": [
+          {
+            "label": "cluster",
+            "cardinality": 4
+          },
+          {
+            "label": "pod",
+            "cardinality": 40
+          }
+        ]
+      })
+    }));
+
+    await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
+    expect(page.getByTestId('Spinner')).not.toBeVisible()
+    expect(page.getByText('The labels are not available at this moment.')).not.toBeVisible()
+    expect(page.getByTestId('data-testid Panel header cluster')).toBeVisible()
+  })
+
+  test('detected_labels that returns no labels should show empty state', async({page}) => {
+    await page.route(/detected_labels/, (route) => route.fulfill({
+      status: 200,
+      body: '[]'
+    }));
+    await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
+    expect(page.getByTestId('Spinner')).not.toBeVisible()
+    expect(page.getByText('The labels are not available at this moment.')).toBeVisible()
+
+    await page.route(/detected_labels/, (route) => route.fulfill({
+      status: 200,
+      body: JSON.stringify({
+        "detectedLabels": [
+          {
+            "label": "cluster",
+            "cardinality": 4
+          },
+          {
+            "label": "pod",
+            "cardinality": 40
+          }
+        ]
+      })
+    }));
+
+    await page.reload()
+    await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
+    expect(page.getByTestId('Spinner')).not.toBeVisible()
+    expect(page.getByText('The labels are not available at this moment.')).not.toBeVisible()
+    expect(page.getByTestId('data-testid Panel header cluster')).toBeVisible()
+  })
 
   test('should select a label, update filters, open in explore', async ({ page }) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();

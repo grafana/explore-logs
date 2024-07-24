@@ -12,7 +12,7 @@ export type DetectedLabel = {
 };
 
 export type DetectedLabelsResponse = {
-  detectedLabels: DetectedLabel[];
+  detectedLabels?: DetectedLabel[];
 };
 
 interface ExtratedFields {

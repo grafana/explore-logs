@@ -311,12 +311,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       }
     );
 
-    if (!detectedLabels || !Array.isArray(detectedLabels)) {
-      return;
-    }
-
     const labels = detectedLabels
-      .sort((a, b) => sortLabelsByCardinality(a, b))
+      ?.sort((a, b) => sortLabelsByCardinality(a, b))
       .filter((label) => label.label !== LEVEL_VARIABLE_VALUE);
 
     if (JSON.stringify(labels) !== JSON.stringify(this.state.labels)) {

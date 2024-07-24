@@ -107,9 +107,18 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     const variable = this.getVariable();
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
 
+    console.log('serviceScene.state.labels', serviceScene.state.labels);
+
     // Need to update labels with current state
-    if (serviceScene.state.labels) {
+    if (serviceScene.state.labels?.length) {
       this.updateLabels(serviceScene.state.labels);
+    } else {
+      this.updateLabels(serviceScene.state.labels);
+      // If the labels aren't undefined, clear the loading state
+      this.setState({
+        loading: false,
+        error: true,
+      });
     }
 
     this._subs.add(serviceScene.subscribeToState(this.onServiceStateChange));
