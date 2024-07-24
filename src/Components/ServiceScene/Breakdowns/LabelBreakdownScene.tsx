@@ -3,6 +3,7 @@ import React from 'react';
 
 import { GrafanaTheme2, ReducerID } from '@grafana/data';
 import {
+  AdHocFiltersVariable,
   PanelBuilders,
   SceneComponentProps,
   SceneCSSGridItem,
@@ -25,7 +26,16 @@ import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { ValueSlugs } from 'services/routing';
 import { getLokiDatasource } from 'services/scenes';
-import { ALL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR, VAR_LABEL_GROUP_BY, VAR_LABELS } from 'services/variables';
+import {
+  ALL_VARIABLE_VALUE,
+  VAR_LABEL_GROUP_BY,
+  VAR_LABELS,
+  VAR_FIELDS_EXPR,
+  VAR_LINE_FILTER_EXPR,
+  VAR_PATTERNS_EXPR,
+  LEVEL_VARIABLE_VALUE,
+  VAR_LOGS_FORMAT_EXPR,
+} from 'services/variables';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
@@ -201,10 +211,166 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     };
 
     stateUpdate.body = variable.hasAllValue()
-      ? buildLabelsLayout(variableState.options, this)
-      : buildLabelValuesLayout(variableState, this);
+      ? this.buildLabelsLayout(variableState.options)
+      : this.buildLabelValuesLayout(variableState);
 
     this.setState(stateUpdate);
+  }
+
+  private buildLabelsLayout(options: VariableValueOption[]) {
+    this.state.search.reset();
+    const children: SceneFlexItemLike[] = [];
+
+    for (const option of options) {
+      const { value } = option;
+      const optionValue = String(value);
+      if (optionValue === ALL_VARIABLE_VALUE || !optionValue) {
+        continue;
+      }
+
+      children.push(
+        new SceneCSSGridItem({
+          body: PanelBuilders.timeseries()
+            .setTitle(optionValue)
+            .setData(getQueryRunner(buildLokiQuery(this.getExpr(optionValue), { legendFormat: `{{${optionValue}}}` })))
+            .setHeaderActions(new SelectLabelAction({ labelName: optionValue }))
+            .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
+            .setCustomFieldConfig('fillOpacity', 100)
+            .setCustomFieldConfig('lineWidth', 0)
+            .setCustomFieldConfig('pointSize', 0)
+            .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+            .setOverrides(setLeverColorOverrides)
+            .build(),
+        })
+      );
+    }
+
+    return new LayoutSwitcher({
+      options: [
+        { value: 'grid', label: 'Grid' },
+        { value: 'rows', label: 'Rows' },
+      ],
+      active: 'grid',
+      layouts: [
+        new SceneCSSGridLayout({
+          isLazy: true,
+          templateColumns: GRID_TEMPLATE_COLUMNS,
+          autoRows: '200px',
+          children: children,
+        }),
+        new SceneCSSGridLayout({
+          isLazy: true,
+          templateColumns: '1fr',
+          autoRows: '200px',
+          children: children.map((child) => child.clone()),
+        }),
+      ],
+    });
+  }
+
+  private buildLabelValuesLayout(variableState: CustomConstantVariableState) {
+    const tagKey = String(variableState?.value);
+    const query = buildLokiQuery(this.getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
+
+    let bodyOpts = PanelBuilders.timeseries();
+    bodyOpts = bodyOpts
+      .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
+      .setCustomFieldConfig('fillOpacity', 100)
+      .setCustomFieldConfig('lineWidth', 0)
+      .setCustomFieldConfig('pointSize', 0)
+      .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+      .setOverrides(setLeverColorOverrides)
+      .setTitle(tagKey);
+
+    const body = bodyOpts.build();
+    const { sortBy, direction } = getSortByPreference('labels', ReducerID.stdDev, 'desc');
+    const getFilter = () => this.state.search.state.filter ?? '';
+
+    return new LayoutSwitcher({
+      $data: getQueryRunner(query),
+      options: [
+        { value: 'single', label: 'Single' },
+        { value: 'grid', label: 'Grid' },
+        { value: 'rows', label: 'Rows' },
+      ],
+      active: 'grid',
+      layouts: [
+        new SceneFlexLayout({
+          direction: 'column',
+          children: [
+            new SceneFlexItem({
+              minHeight: 300,
+              body,
+            }),
+          ],
+        }),
+        new ByFrameRepeater({
+          body: new SceneCSSGridLayout({
+            templateColumns: GRID_TEMPLATE_COLUMNS,
+            autoRows: '200px',
+            children: [
+              new SceneFlexItem({
+                body: new SceneReactObject({
+                  reactNode: <LoadingPlaceholder text="Loading..." />,
+                }),
+              }),
+            ],
+          }),
+          getLayoutChild: getFilterBreakdownValueScene(
+            getLabelValue,
+            query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
+            VAR_LABELS
+          ),
+          sortBy,
+          direction,
+          getFilter,
+        }),
+        new ByFrameRepeater({
+          body: new SceneCSSGridLayout({
+            templateColumns: '1fr',
+            autoRows: '200px',
+            children: [
+              new SceneFlexItem({
+                body: new SceneReactObject({
+                  reactNode: <LoadingPlaceholder text="Loading..." />,
+                }),
+              }),
+            ],
+          }),
+          getLayoutChild: getFilterBreakdownValueScene(
+            getLabelValue,
+            query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
+            VAR_LABELS
+          ),
+          sortBy,
+          direction,
+          getFilter,
+        }),
+      ],
+    });
+  }
+
+  public getLabelsVariable(): AdHocFiltersVariable {
+    const variable = sceneGraph.lookupVariable(VAR_LABELS, this)!;
+
+    if (!(variable instanceof AdHocFiltersVariable)) {
+      throw new Error('Filters variable not found');
+    }
+
+    return variable;
+  }
+
+  private getExpr(tagKey: string) {
+    const labelsVariable = this.getLabelsVariable();
+    let labelExpressionToAdd;
+    if (tagKey !== LEVEL_VARIABLE_VALUE) {
+      labelExpressionToAdd = { key: tagKey, operator: '!=', value: '' };
+    }
+    const labels = [...labelsVariable.state.filters, labelExpressionToAdd]
+      .filter((f) => !!f)
+      .map((f) => `${f!.key}${f!.operator}\`${f!.value}\``)
+      .join(',');
+    return `sum(count_over_time({${labels}} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_FIELDS_EXPR} ${VAR_LINE_FILTER_EXPR} [$__auto])) by (${tagKey})`;
   }
 
   public onChange = (value?: string) => {
@@ -289,144 +455,7 @@ function getStyles(theme: GrafanaTheme2) {
   };
 }
 
-function buildLabelsLayout(options: VariableValueOption[], scene: LabelBreakdownScene) {
-  scene.state.search.reset();
-
-  const children: SceneFlexItemLike[] = [];
-  for (const option of options) {
-    const { value } = option;
-    const optionValue = String(value);
-    if (optionValue === ALL_VARIABLE_VALUE || !optionValue) {
-      continue;
-    }
-
-    children.push(
-      new SceneCSSGridItem({
-        body: PanelBuilders.timeseries()
-          .setTitle(optionValue)
-          .setData(getQueryRunner(buildLokiQuery(getExpr(optionValue), { legendFormat: `{{${optionValue}}}` })))
-          .setHeaderActions(new SelectLabelAction({ labelName: optionValue }))
-          .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
-          .setCustomFieldConfig('fillOpacity', 100)
-          .setCustomFieldConfig('lineWidth', 0)
-          .setCustomFieldConfig('pointSize', 0)
-          .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-          .setOverrides(setLeverColorOverrides)
-          .build(),
-      })
-    );
-  }
-
-  return new LayoutSwitcher({
-    options: [
-      { value: 'grid', label: 'Grid' },
-      { value: 'rows', label: 'Rows' },
-    ],
-    active: 'grid',
-    layouts: [
-      new SceneCSSGridLayout({
-        isLazy: true,
-        templateColumns: GRID_TEMPLATE_COLUMNS,
-        autoRows: '200px',
-        children: children,
-      }),
-      new SceneCSSGridLayout({
-        isLazy: true,
-        templateColumns: '1fr',
-        autoRows: '200px',
-        children: children.map((child) => child.clone()),
-      }),
-    ],
-  });
-}
-
-function getExpr(tagKey: string) {
-  return `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${tagKey}!="" [$__auto])) by (${tagKey})`;
-}
-
 const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
-
-function buildLabelValuesLayout(variableState: CustomConstantVariableState, scene: LabelBreakdownScene) {
-  const tagKey = String(variableState?.value);
-  const query = buildLokiQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
-
-  let bodyOpts = PanelBuilders.timeseries();
-  bodyOpts = bodyOpts
-    .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
-    .setCustomFieldConfig('fillOpacity', 100)
-    .setCustomFieldConfig('lineWidth', 0)
-    .setCustomFieldConfig('pointSize', 0)
-    .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-    .setOverrides(setLeverColorOverrides)
-    .setTitle(tagKey);
-
-  const body = bodyOpts.build();
-  const { sortBy, direction } = getSortByPreference('labels', ReducerID.stdDev, 'desc');
-  const getFilter = () => scene.state.search.state.filter ?? '';
-
-  return new LayoutSwitcher({
-    $data: getQueryRunner(query),
-    options: [
-      { value: 'single', label: 'Single' },
-      { value: 'grid', label: 'Grid' },
-      { value: 'rows', label: 'Rows' },
-    ],
-    active: 'grid',
-    layouts: [
-      new SceneFlexLayout({
-        direction: 'column',
-        children: [
-          new SceneFlexItem({
-            minHeight: 300,
-            body,
-          }),
-        ],
-      }),
-      new ByFrameRepeater({
-        body: new SceneCSSGridLayout({
-          templateColumns: GRID_TEMPLATE_COLUMNS,
-          autoRows: '200px',
-          children: [
-            new SceneFlexItem({
-              body: new SceneReactObject({
-                reactNode: <LoadingPlaceholder text="Loading..." />,
-              }),
-            }),
-          ],
-        }),
-        getLayoutChild: getFilterBreakdownValueScene(
-          getLabelValue,
-          query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-          VAR_LABELS
-        ),
-        sortBy,
-        direction,
-        getFilter,
-      }),
-      new ByFrameRepeater({
-        body: new SceneCSSGridLayout({
-          templateColumns: '1fr',
-          autoRows: '200px',
-          children: [
-            new SceneFlexItem({
-              body: new SceneReactObject({
-                reactNode: <LoadingPlaceholder text="Loading..." />,
-              }),
-            }),
-          ],
-        }),
-        getLayoutChild: getFilterBreakdownValueScene(
-          getLabelValue,
-          query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-          VAR_LABELS
-        ),
-        sortBy,
-        direction,
-        getFilter,
-      }),
-    ],
-  });
-}
 
 export function buildLabelBreakdownActionScene() {
   return new SceneFlexLayout({
