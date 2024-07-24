@@ -82,41 +82,19 @@ test.describe('explore services breakdown page', () => {
     }));
 
     await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
-    expect(page.getByTestId('Spinner')).not.toBeVisible()
-    expect(page.getByText('The labels are not available at this moment.')).not.toBeVisible()
-    expect(page.getByTestId('data-testid Panel header cluster')).toBeVisible()
+    await expect(page.getByTestId('Spinner')).not.toBeVisible()
+    await expect(page.getByText('The labels are not available at this moment.')).not.toBeVisible()
+    await expect(page.getByTestId('data-testid Panel header cluster')).toBeVisible()
   })
 
   test('detected_labels that returns no labels should show empty state', async({page}) => {
     await page.route(/detected_labels/, (route) => route.fulfill({
       status: 200,
-      body: '[]'
+      body: '{}'
     }));
     await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
-    expect(page.getByTestId('Spinner')).not.toBeVisible()
-    expect(page.getByText('The labels are not available at this moment.')).toBeVisible()
-
-    await page.route(/detected_labels/, (route) => route.fulfill({
-      status: 200,
-      body: JSON.stringify({
-        "detectedLabels": [
-          {
-            "label": "cluster",
-            "cardinality": 4
-          },
-          {
-            "label": "pod",
-            "cardinality": 40
-          }
-        ]
-      })
-    }));
-
-    await page.reload()
-    await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
-    expect(page.getByTestId('Spinner')).not.toBeVisible()
-    expect(page.getByText('The labels are not available at this moment.')).not.toBeVisible()
-    expect(page.getByTestId('data-testid Panel header cluster')).toBeVisible()
+    await expect(page.getByTestId('Spinner')).not.toBeVisible()
+    await expect(page.getByText('The labels are not available at this moment.')).toBeVisible()
   })
 
   test('should select a label, update filters, open in explore', async ({ page }) => {
