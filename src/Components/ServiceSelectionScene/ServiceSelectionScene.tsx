@@ -59,11 +59,11 @@ interface ServiceSelectionSceneState extends SceneObjectState {
   serviceLevel: Map<string, string[]>;
 }
 
-function getTsExpr(service: string) {
+function getMetricExpression(service: string) {
   return `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`;
 }
 
-function getExpr(service: string, levelFilter: string) {
+function getLogExpression(service: string, levelFilter: string) {
   return `{${SERVICE_NAME}=\`${service}\`}${levelFilter}`;
 }
 
@@ -289,7 +289,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       .setTitle(service)
       .setData(
         getQueryRunner(
-          buildLokiQuery(getTsExpr(service), {
+          buildLokiQuery(getMetricExpression(service), {
             legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`,
             splitDuration,
             refId: `ts-${service}`,
@@ -346,7 +346,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         .setHoverHeader(true)
         .setData(
           getQueryRunner(
-            buildLokiQuery(getExpr(service, levelFilter), {
+            buildLokiQuery(getLogExpression(service, levelFilter), {
               maxLines: 100,
               refId: `logs-${service}`,
             })
