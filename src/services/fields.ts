@@ -26,7 +26,6 @@ export function updateParserFromDataFrame(frame: DataFrame, sceneRef: SceneObjec
   const res = extractParserAndFieldsFromDataFrame(frame);
   const newType = res.type ? ` | ${res.type}` : '';
   if (variable.getValue() !== newType) {
-    console.log('actually updating fmt', newType);
     variable.changeValueTo(newType);
   }
 
