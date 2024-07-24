@@ -54,7 +54,6 @@ export interface LabelBreakdownSceneState extends SceneObjectState {
   search: BreakdownSearchScene;
   sort: SortByScene;
   loading?: boolean;
-  error?: boolean;
   blockingMessage?: string;
   // We have to store the value in state because scenes doesn't allow variables that don't have options. We need to hold on to this until the API call getting values is done, and then reset the state
   value?: string;
@@ -93,8 +92,10 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   }
 
   private onActivate() {
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
+
     this.setState({
-      loading: true,
+      loading: serviceScene.state.loading,
     });
 
     this._subs.add(
@@ -105,21 +106,9 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     this._subs.add(this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange));
 
     const variable = this.getVariable();
-    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
-
-    console.log('serviceScene.state.labels', serviceScene.state.labels);
 
     // Need to update labels with current state
-    if (serviceScene.state.labels?.length) {
-      this.updateLabels(serviceScene.state.labels);
-    } else {
-      this.updateLabels(serviceScene.state.labels);
-      // If the labels aren't undefined, clear the loading state
-      this.setState({
-        loading: false,
-        error: true,
-      });
-    }
+    this.updateLabels(serviceScene.state.labels);
 
     this._subs.add(serviceScene.subscribeToState(this.onServiceStateChange));
     this._subs.add(variable.subscribeToState(this.onVariableStateChange));
@@ -155,6 +144,12 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     if (newState.labels?.length && !variable.state.options.length) {
       this.updateLabels(newState.labels);
     }
+
+    if (newState.loading !== this.state.loading) {
+      this.setState({
+        loading: newState.loading,
+      });
+    }
   };
 
   private getVariable(): CustomConstantVariable {
@@ -188,13 +183,10 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     );
   };
 
-  private updateLabels(detectedLabels: DetectedLabel[] | undefined) {
-    if (!detectedLabels || !detectedLabels.length) {
-      return;
-    }
+  private updateLabels(detectedLabels?: DetectedLabel[] | undefined) {
     const variable = this.getVariable();
-    const labels = detectedLabels.sort((a, b) => sortLabelsByCardinality(a, b)).map((l) => l.label);
-    const options = getLabelOptions(labels);
+    const labels = detectedLabels?.sort((a, b) => sortLabelsByCardinality(a, b)).map((l) => l.label) ?? [];
+    const options = labels.length ? getLabelOptions(labels) : [];
 
     variable.setState({
       options,
@@ -217,7 +209,6 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     const stateUpdate: Partial<LabelBreakdownSceneState> = {
       loading: false,
       blockingMessage: undefined,
-      error: false,
     };
 
     stateUpdate.body = variable.hasAllValue()
@@ -431,7 +422,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   };
 
   public static Component = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
-    const { body, loading, blockingMessage, error, search, sort } = model.useState();
+    const { body, loading, blockingMessage, search, sort } = model.useState();
     const variable = model.getVariable();
     const { options, value } = variable.useState();
     const styles = useStyles2(getStyles);
@@ -451,7 +442,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
               <FieldSelector label="Label" options={options} value={String(value)} onChange={model.onChange} />
             )}
           </div>
-          {error && (
+          {!options.length && (
             <Alert title="" severity="warning">
               The labels are not available at this moment. Try using a different time range or check again later.
             </Alert>
