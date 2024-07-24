@@ -34,6 +34,7 @@ import {
   VAR_LINE_FILTER_EXPR,
   VAR_PATTERNS_EXPR,
   LEVEL_VARIABLE_VALUE,
+  VAR_FIELDS,
   VAR_LOGS_FORMAT_EXPR,
 } from 'services/variables';
 import { ByFrameRepeater } from './ByFrameRepeater';
@@ -360,17 +361,39 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     return variable;
   }
 
+  public getFieldsVariable(): AdHocFiltersVariable {
+    const variable = sceneGraph.lookupVariable(VAR_FIELDS, this)!;
+
+    if (!(variable instanceof AdHocFiltersVariable)) {
+      throw new Error('Filters variable not found');
+    }
+
+    return variable;
+  }
+
   private getExpr(tagKey: string) {
     const labelsVariable = this.getLabelsVariable();
+    const fieldsVariable = this.getFieldsVariable();
+
     let labelExpressionToAdd;
+    let fieldExpressionToAdd = '';
+    // `LEVEL_VARIABLE_VALUE` is a special case where we don't want to add this to the stream selector
     if (tagKey !== LEVEL_VARIABLE_VALUE) {
       labelExpressionToAdd = { key: tagKey, operator: '!=', value: '' };
+    } else {
+      fieldExpressionToAdd = `| ${LEVEL_VARIABLE_VALUE} != ""`;
     }
-    const labels = [...labelsVariable.state.filters, labelExpressionToAdd]
+    const streamSelectors = [...labelsVariable.state.filters, labelExpressionToAdd]
       .filter((f) => !!f)
       .map((f) => `${f!.key}${f!.operator}\`${f!.value}\``)
       .join(',');
-    return `sum(count_over_time({${labels}} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_FIELDS_EXPR} ${VAR_LINE_FILTER_EXPR} [$__auto])) by (${tagKey})`;
+
+    const fields = fieldsVariable.state.filters;
+    // if we have fields, we also need to add `VAR_LOGS_FORMAT_EXPR`
+    if (fields.length) {
+      return `sum(count_over_time({${streamSelectors}} ${fieldExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_FIELDS_EXPR} [$__auto])) by (${tagKey})`;
+    }
+    return `sum(count_over_time({${streamSelectors}} ${fieldExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} [$__auto])) by (${tagKey})`;
   }
 
   public onChange = (value?: string) => {
