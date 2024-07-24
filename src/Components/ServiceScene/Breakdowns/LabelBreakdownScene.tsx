@@ -3,7 +3,6 @@ import React from 'react';
 
 import { GrafanaTheme2, ReducerID } from '@grafana/data';
 import {
-  AdHocFiltersVariable,
   PanelBuilders,
   SceneComponentProps,
   SceneCSSGridItem,
@@ -25,18 +24,8 @@ import { DetectedLabel, getFilterBreakdownValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { ValueSlugs } from 'services/routing';
-import { getLokiDatasource, isDefined } from 'services/scenes';
-import {
-  ALL_VARIABLE_VALUE,
-  VAR_LABEL_GROUP_BY,
-  VAR_LABELS,
-  VAR_FIELDS_EXPR,
-  VAR_LINE_FILTER_EXPR,
-  VAR_PATTERNS_EXPR,
-  LEVEL_VARIABLE_VALUE,
-  VAR_FIELDS,
-  VAR_LOGS_FORMAT_EXPR,
-} from 'services/variables';
+import { getLokiDatasource } from 'services/scenes';
+import { ALL_VARIABLE_VALUE, VAR_LABEL_GROUP_BY, VAR_LABELS } from 'services/variables';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
@@ -48,6 +37,7 @@ import { getLabelValue, SortByScene, SortCriteriaChanged } from './SortByScene';
 import { ServiceScene, ServiceSceneState } from '../ServiceScene';
 import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
 import { navigateToValueBreakdown } from '../../../services/navigate';
+import { getTimeSeriesExpr } from '../../../services/expressions';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -233,7 +223,11 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
         new SceneCSSGridItem({
           body: PanelBuilders.timeseries()
             .setTitle(optionValue)
-            .setData(getQueryRunner(buildLokiQuery(this.getExpr(optionValue), { legendFormat: `{{${optionValue}}}` })))
+            .setData(
+              getQueryRunner(
+                buildLokiQuery(getTimeSeriesExpr(this, optionValue), { legendFormat: `{{${optionValue}}}` })
+              )
+            )
             .setHeaderActions(new SelectLabelAction({ labelName: optionValue }))
             .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
             .setCustomFieldConfig('fillOpacity', 100)
@@ -271,7 +265,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
 
   private buildLabelValuesLayout(variableState: CustomConstantVariableState) {
     const tagKey = String(variableState?.value);
-    const query = buildLokiQuery(this.getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
+    const query = buildLokiQuery(getTimeSeriesExpr(this, tagKey), { legendFormat: `{{${tagKey}}}` });
 
     let bodyOpts = PanelBuilders.timeseries();
     bodyOpts = bodyOpts
@@ -349,51 +343,6 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
         }),
       ],
     });
-  }
-
-  public getLabelsVariable(): AdHocFiltersVariable {
-    const variable = sceneGraph.lookupVariable(VAR_LABELS, this)!;
-
-    if (!(variable instanceof AdHocFiltersVariable)) {
-      throw new Error('Filters variable not found');
-    }
-
-    return variable;
-  }
-
-  public getFieldsVariable(): AdHocFiltersVariable {
-    const variable = sceneGraph.lookupVariable(VAR_FIELDS, this)!;
-
-    if (!(variable instanceof AdHocFiltersVariable)) {
-      throw new Error('Filters variable not found');
-    }
-
-    return variable;
-  }
-
-  private getExpr(tagKey: string) {
-    const labelsVariable = this.getLabelsVariable();
-    const fieldsVariable = this.getFieldsVariable();
-
-    let labelExpressionToAdd;
-    let fieldExpressionToAdd = '';
-    // `LEVEL_VARIABLE_VALUE` is a special case where we don't want to add this to the stream selector
-    if (tagKey !== LEVEL_VARIABLE_VALUE) {
-      labelExpressionToAdd = { key: tagKey, operator: '!=', value: '' };
-    } else {
-      fieldExpressionToAdd = `| ${LEVEL_VARIABLE_VALUE} != ""`;
-    }
-    const streamSelectors = [...labelsVariable.state.filters, labelExpressionToAdd]
-      .filter(isDefined)
-      .map((f) => `${f.key}${f.operator}\`${f.value}\``)
-      .join(',');
-
-    const fields = fieldsVariable.state.filters;
-    // if we have fields, we also need to add `VAR_LOGS_FORMAT_EXPR`
-    if (fields.length) {
-      return `sum(count_over_time({${streamSelectors}} ${fieldExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_FIELDS_EXPR} [$__auto])) by (${tagKey})`;
-    }
-    return `sum(count_over_time({${streamSelectors}} ${fieldExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} [$__auto])) by (${tagKey})`;
   }
 
   public onChange = (value?: string) => {

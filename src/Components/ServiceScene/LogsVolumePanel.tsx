@@ -4,7 +4,8 @@ import { PanelBuilders, SceneComponentProps, SceneObjectBase, SceneObjectState, 
 import { DrawStyle, LegendDisplayMode, StackingMode } from '@grafana/ui';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
-import { LEVEL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR } from 'services/variables';
+import { LEVEL_VARIABLE_VALUE } from 'services/variables';
+import { getTimeSeriesExpr } from '../../services/expressions';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
@@ -32,10 +33,9 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       .setUnit('short')
       .setData(
         getQueryRunner(
-          buildLokiQuery(
-            `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ [$__auto]))`,
-            { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}` }
-          )
+          buildLokiQuery(getTimeSeriesExpr(this, LEVEL_VARIABLE_VALUE, false), {
+            legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`,
+          })
         )
       )
       .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
