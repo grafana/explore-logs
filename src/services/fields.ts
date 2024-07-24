@@ -1,10 +1,11 @@
 import { DataFrame, PanelData } from '@grafana/data';
 import { DrawStyle, StackingMode } from '@grafana/ui';
-import { PanelBuilders, SceneCSSGridItem, SceneDataNode } from '@grafana/scenes';
+import { PanelBuilders, SceneCSSGridItem, SceneDataNode, SceneObject } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
 import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { VAR_FIELDS, VAR_LABELS } from './variables';
 import { setLeverColorOverrides } from './panel';
+import { getLogsFormatVariable } from './variableGetters';
 
 export type DetectedLabel = {
   label: string;
@@ -15,13 +16,25 @@ export type DetectedLabelsResponse = {
   detectedLabels: DetectedLabel[];
 };
 
-interface ExtratedFields {
+interface ExtractedFields {
   type: 'logfmt' | 'json';
   fields: string[];
 }
 
+export function updateParserFromDataFrame(frame: DataFrame, sceneRef: SceneObject): ExtractedFields {
+  const variable = getLogsFormatVariable(sceneRef);
+  const res = extractParserAndFieldsFromDataFrame(frame);
+  const newType = res.type ? ` | ${res.type}` : '';
+  if (variable.getValue() !== newType) {
+    console.log('actually updating fmt', newType);
+    variable.changeValueTo(newType);
+  }
+
+  return res;
+}
+
 export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
-  const result: ExtratedFields = { type: 'logfmt', fields: [] };
+  const result: ExtractedFields = { type: 'logfmt', fields: [] };
   const labelTypesField = data.fields.find((f) => f.name === 'labelTypes');
   result.fields = Object.keys(
     labelTypesField?.values.reduce((acc: Record<string, boolean>, value: Record<string, string>) => {

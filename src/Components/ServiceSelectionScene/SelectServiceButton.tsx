@@ -3,22 +3,52 @@ import React from 'react';
 import {
   AdHocFiltersVariable,
   SceneComponentProps,
+  SceneCSSGridItem,
   sceneGraph,
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
+  SceneQueryRunner,
+  VizPanel,
 } from '@grafana/scenes';
 import { Button } from '@grafana/ui';
 import { VariableHide } from '@grafana/schema';
 import { addToFavoriteServicesInStorage } from 'services/store';
 import { VAR_DATASOURCE, VAR_LABELS } from 'services/variables';
-import { SERVICE_NAME } from './ServiceSelectionScene';
+import { SERVICE_NAME, ServiceSelectionScene } from './ServiceSelectionScene';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { FilterOp } from 'services/filters';
 import { navigateToInitialPageAfterServiceSelection } from '../../services/navigate';
+import { updateParserFromDataFrame } from '../../services/fields';
 
 export interface SelectServiceButtonState extends SceneObjectState {
   service: string;
+}
+
+function setParserIfFrameExistsForService(service: string, sceneRef: SceneObject) {
+  const serviceSelectionScene = sceneGraph.getAncestor(sceneRef, ServiceSelectionScene);
+
+  const theChildWeWant = serviceSelectionScene.state.body.state.children.find((child) => {
+    if (child instanceof SceneCSSGridItem) {
+      const body = child.state.body;
+
+      // The query runner is only defined for the logs panel
+      const queryRunner = body?.state.$data as SceneQueryRunner | undefined;
+      return queryRunner?.state?.queries?.find((query) => {
+        return query.refId === `logs-${service}`;
+      });
+    }
+    return false;
+  }) as SceneCSSGridItem | undefined;
+
+  if (theChildWeWant) {
+    const body = theChildWeWant.state.body as VizPanel;
+    const frame = body.state.$data?.state.data?.series[0];
+
+    if (frame) {
+      updateParserFromDataFrame(frame, sceneRef);
+    }
+  }
 }
 
 export function selectService(service: string, sceneRef: SceneObject) {
@@ -29,6 +59,14 @@ export function selectService(service: string, sceneRef: SceneObject) {
 
   reportAppInteraction(USER_EVENTS_PAGES.service_selection, USER_EVENTS_ACTIONS.service_selection.service_selected, {
     service: service,
+  });
+
+  setParserIfFrameExistsForService(service, sceneRef);
+
+  const serviceSelectionScene = sceneGraph.getAncestor(sceneRef, ServiceSelectionScene);
+  // Setting the service variable state triggers a re-query of the services with invalid queries, so we clear out the body state to avoid triggering queries since
+  serviceSelectionScene.setState({
+    servicesToQuery: undefined,
   });
 
   variable.setState({

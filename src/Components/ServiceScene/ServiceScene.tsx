@@ -4,7 +4,6 @@ import React from 'react';
 import { GrafanaTheme2, LoadingState } from '@grafana/data';
 import {
   AdHocFiltersVariable,
-  CustomVariable,
   SceneComponentProps,
   SceneFlexItem,
   SceneFlexLayout,
@@ -17,7 +16,7 @@ import {
 } from '@grafana/scenes';
 import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { DetectedLabel, DetectedLabelsResponse, extractParserAndFieldsFromDataFrame } from 'services/fields';
+import { DetectedLabel, DetectedLabelsResponse, updateParserFromDataFrame } from 'services/fields';
 import { getQueryRunner } from 'services/panel';
 import { buildLokiQuery, renderLogQLStreamSelector } from 'services/query';
 import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, PLUGIN_ID, ValueSlugs } from 'services/routing';
@@ -29,7 +28,6 @@ import {
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_LABELS,
-  VAR_LOGS_FORMAT,
   VAR_PATTERNS,
 } from 'services/variables';
 import {
@@ -195,16 +193,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       });
   }
 
-  private getLogsFormatVariable() {
-    const variable = sceneGraph.lookupVariable(VAR_LOGS_FORMAT, this);
-    if (!(variable instanceof CustomVariable)) {
-      throw new Error('Logs format variable not found');
-    }
-    return variable;
-  }
-
   private updateFields() {
-    const variable = this.getLogsFormatVariable();
     const disabledFields = [
       '__time',
       'timestamp',
@@ -225,17 +214,14 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     if (newState.data?.state === LoadingState.Done) {
       const frame = newState.data?.series[0];
       if (frame) {
-        const res = extractParserAndFieldsFromDataFrame(frame);
+        console.log('serviceScene');
+        const res = updateParserFromDataFrame(frame, this);
         const fields = res.fields.filter((f) => !disabledFields.includes(f)).sort((a, b) => a.localeCompare(b));
         if (JSON.stringify(fields) !== JSON.stringify(this.state.fields)) {
           this.setState({
             fields: fields,
             loading: false,
           });
-        }
-        const newType = res.type ? ` | ${res.type}` : '';
-        if (variable.getValue() !== newType) {
-          variable.changeValueTo(newType);
         }
       } else {
         this.setState({
