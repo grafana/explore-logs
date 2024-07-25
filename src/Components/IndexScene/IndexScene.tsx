@@ -101,22 +101,13 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     }
 
     this.setState(stateUpdate);
-    const patternsVariable = getPatternsVariable(this);
-    if (patternsVariable) {
-      this.updatePatterns(this.state, patternsVariable);
-    }
 
-    const fieldsVariable = getFieldsVariable(this);
-    if (fieldsVariable) {
-      this.syncFieldsWithUrl(fieldsVariable);
-    }
+    this.updatePatterns(this.state, getPatternsVariable(this));
+    this.syncFieldsWithUrl(getFieldsVariable(this));
 
     this._subs.add(
       this.subscribeToState((newState) => {
-        const patternsVariable = getPatternsVariable(this);
-        if (patternsVariable) {
-          this.updatePatterns(newState, patternsVariable);
-        }
+        this.updatePatterns(newState, getPatternsVariable(this));
       })
     );
 
