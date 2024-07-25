@@ -44,7 +44,7 @@ export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
     }, {}) || {}
   );
 
-  const linesField = data.fields.find((f) => f.name === 'Line');
+  const linesField = data.fields.find((f) => f.name === 'Line' || f.name === 'body');
   result.type = linesField?.values[0]?.[0] === '{' ? 'json' : 'logfmt';
 
   return result;
