@@ -1,7 +1,6 @@
 import React from 'react';
 
 import {
-  AdHocFiltersVariable,
   SceneComponentProps,
   SceneCSSGridItem,
   sceneGraph,
@@ -57,9 +56,6 @@ function setParserIfFrameExistsForService(service: string, sceneRef: SceneObject
 
 export function selectService(service: string, sceneRef: SceneObject) {
   const variable = getLabelsVariable(sceneRef);
-  if (!(variable instanceof AdHocFiltersVariable)) {
-    return;
-  }
 
   reportAppInteraction(USER_EVENTS_PAGES.service_selection, USER_EVENTS_ACTIONS.service_selection.service_selected, {
     service: service,
@@ -84,7 +80,7 @@ export function selectService(service: string, sceneRef: SceneObject) {
     ],
     hide: VariableHide.hideLabel,
   });
-  const ds = getDataSourceVariable(sceneRef)?.getValue();
+  const ds = getDataSourceVariable(sceneRef).getValue();
   addToFavoriteServicesInStorage(ds, service);
 
   // In this case, we don't have a ServiceScene created yet, so we call a special function to navigate there for the first time
@@ -93,8 +89,7 @@ export function selectService(service: string, sceneRef: SceneObject) {
 
 export class SelectServiceButton extends SceneObjectBase<SelectServiceButtonState> {
   public onClick = () => {
-    const variable = getLabelsVariable(this);
-    if (!variable || !this.state.service) {
+    if (!this.state.service) {
       return;
     }
     selectService(this.state.service, this);
