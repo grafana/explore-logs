@@ -59,6 +59,14 @@ interface ServiceSelectionSceneState extends SceneObjectState {
   serviceLevel: Map<string, string[]>;
 }
 
+function getMetricExpression(service: string) {
+  return `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`;
+}
+
+function getLogExpression(service: string, levelFilter: string) {
+  return `{${SERVICE_NAME}=\`${service}\`}${levelFilter}`;
+}
+
 export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
     // We want to subscribe to changes in datasource variables and update the top services when the datasource changes
@@ -214,26 +222,22 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       this.state.body.setState({ children: [] });
     } else {
       // If we have services to query, build the layout with the services. Children is an array of layouts for each service (1 row with 2 columns - timeseries and logs panel)
-      const children = [];
+      const children: SceneCSSGridItem[] = [];
       const timeRange = sceneGraph.getTimeRange(this).state.value;
       for (const service of this.state.servicesToQuery) {
         // for each service, we create a layout with timeseries and logs panel
         children.push(this.buildServiceLayout(service, timeRange), this.buildServiceLogsLayout(service));
       }
       this.state.body.setState({
-        children: [
-          new SceneCSSGridLayout({
-            children,
-            isLazy: true,
-            templateColumns: 'repeat(auto-fit, minmax(500px, 1fr) minmax(300px, 70vw))',
-            autoRows: '200px',
-            md: {
-              templateColumns: '1fr',
-              rowGap: 1,
-              columnGap: 1,
-            },
-          }),
-        ],
+        children,
+        isLazy: true,
+        templateColumns: 'repeat(auto-fit, minmax(500px, 1fr) minmax(300px, 70vw))',
+        autoRows: '200px',
+        md: {
+          templateColumns: '1fr',
+          rowGap: 1,
+          columnGap: 1,
+        },
       });
     }
   }
@@ -285,10 +289,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       .setTitle(service)
       .setData(
         getQueryRunner(
-          buildLokiQuery(
-            `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`,
-            { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`, splitDuration, refId: `ts-${service}` }
-          )
+          buildLokiQuery(getMetricExpression(service), {
+            legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`,
+            splitDuration,
+            refId: `ts-${service}`,
+          })
         )
       )
       .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
@@ -341,7 +346,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         .setHoverHeader(true)
         .setData(
           getQueryRunner(
-            buildLokiQuery(`{${SERVICE_NAME}=\`${service}\`}${levelFilter}`, {
+            buildLokiQuery(getLogExpression(service, levelFilter), {
               maxLines: 100,
               refId: `logs-${service}`,
             })
