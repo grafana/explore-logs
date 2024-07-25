@@ -1,3 +1,7 @@
+import { CustomVariable, DataSourceVariable, sceneGraph, SceneObject } from '@grafana/scenes';
+import { getAdHocFiltersVariable } from './scenes';
+import { CustomConstantVariable } from './CustomConstantVariable';
+
 export const VAR_LABELS = 'filters';
 export const VAR_LABELS_EXPR = '${filters}';
 export const VAR_FIELDS = 'fields';
@@ -17,3 +21,51 @@ export const EXPLORATION_DS = { uid: VAR_DATASOURCE_EXPR };
 export const ALL_VARIABLE_VALUE = '$__all';
 export const LEVEL_VARIABLE_VALUE = 'detected_level';
 export const PATTERNS_TEXT_FILTER = 'patternsFilter';
+
+export function getPatternsVariable(scene: SceneObject) {
+  const variable = sceneGraph.lookupVariable(VAR_PATTERNS, scene);
+  if (variable instanceof CustomVariable) {
+    return variable;
+  }
+  return null;
+}
+
+export function getLabelsVariable(scene: SceneObject) {
+  return getAdHocFiltersVariable(VAR_LABELS, scene);
+}
+
+export function getFieldsVariable(scene: SceneObject) {
+  return getAdHocFiltersVariable(VAR_FIELDS, scene);
+}
+
+export function getLineFilterVariable(scene: SceneObject) {
+  const variable = sceneGraph.lookupVariable(VAR_LINE_FILTER, scene);
+  if (variable instanceof CustomVariable) {
+    return variable;
+  }
+  return null;
+}
+
+export function getLabelGroupByVariable(scene: SceneObject) {
+  const variable = sceneGraph.lookupVariable(VAR_LABEL_GROUP_BY, scene);
+  if (variable instanceof CustomConstantVariable) {
+    return variable;
+  }
+  return null;
+}
+
+export function getFieldGroupByVariable(scene: SceneObject) {
+  const variable = sceneGraph.lookupVariable(VAR_FIELD_GROUP_BY, scene);
+  if (variable instanceof CustomConstantVariable) {
+    return variable;
+  }
+  return null;
+}
+
+export function getDataSourceVariable(scene: SceneObject) {
+  const variable = sceneGraph.lookupVariable(VAR_DATASOURCE, scene);
+  if (variable instanceof DataSourceVariable) {
+    return variable;
+  }
+  return null;
+}
