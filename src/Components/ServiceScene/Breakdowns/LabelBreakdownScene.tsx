@@ -3,7 +3,6 @@ import React from 'react';
 
 import { GrafanaTheme2, ReducerID } from '@grafana/data';
 import {
-  AdHocFiltersVariable,
   PanelBuilders,
   SceneComponentProps,
   SceneCSSGridItem,
@@ -151,12 +150,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   };
 
   private getVariable(): CustomConstantVariable {
-    const variable = getLabelGroupByVariable(this);
-    if (!variable) {
-      throw new Error('Group by variable not found');
-    }
-
-    return variable;
+    return getLabelGroupByVariable(this);
   }
 
   private handleSortByChange = (event: SortCriteriaChanged) => {
@@ -353,29 +347,9 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     });
   }
 
-  public getLabelsVariable(): AdHocFiltersVariable {
-    const variable = getLabelsVariable(this);
-
-    if (!variable) {
-      throw new Error('Filters variable not found');
-    }
-
-    return variable;
-  }
-
-  public getFieldsVariable(): AdHocFiltersVariable {
-    const variable = getFieldsVariable(this);
-
-    if (!variable) {
-      throw new Error('Filters variable not found');
-    }
-
-    return variable;
-  }
-
   private getExpr(tagKey: string) {
-    const labelsVariable = this.getLabelsVariable();
-    const fieldsVariable = this.getFieldsVariable();
+    const labelsVariable = getLabelsVariable(this);
+    const fieldsVariable = getFieldsVariable(this);
 
     let labelExpressionToAdd;
     let fieldExpressionToAdd = '';
