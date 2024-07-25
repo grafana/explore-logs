@@ -275,11 +275,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     const timeRangeValue = timeRange.state.value;
     const filters = getLabelsVariable(this);
 
-    if (!filters) {
-      console.error('Filters variable not found');
-      return;
-    }
-
     const { detectedLabels } = await ds.getResource<DetectedLabelsResponse>(
       'detected_labels',
       {
