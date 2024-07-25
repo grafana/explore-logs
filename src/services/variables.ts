@@ -23,7 +23,7 @@ export const PATTERNS_TEXT_FILTER = 'patternsFilter';
 
 export function getPatternsVariable(scene: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_PATTERNS, scene);
-  if (variable instanceof CustomVariable) {
+  if (!(variable instanceof CustomVariable)) {
     throw new Error('VAR_PATTERNS not found');
   }
   return variable;
