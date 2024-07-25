@@ -4,9 +4,8 @@ import { AdHocVariableFilter, DataFrame } from '@grafana/data';
 import { SceneObjectState, SceneObjectBase, SceneComponentProps, SceneObject, sceneGraph } from '@grafana/scenes';
 import { VariableHide } from '@grafana/schema';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
-import { LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS } from 'services/variables';
+import { getAdHocFiltersVariable, LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS } from 'services/variables';
 import { FilterButton } from 'Components/FilterButton';
-import { getAdHocFiltersVariable } from 'services/scenes';
 import { FilterOp } from 'services/filters';
 import { ServiceScene } from '../ServiceScene';
 
@@ -40,9 +39,6 @@ export function addToFilters(
   }
 
   const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableName), scene);
-  if (!variable) {
-    return;
-  }
 
   // If the filter exists, filter it
   let filters = variable.state.filters.filter((filter) => {
@@ -111,9 +107,6 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
     }
 
     const variable = getAdHocFiltersVariable(validateVariableNameForField(filter.name, this.state.variableName), this);
-    if (!variable) {
-      return { isIncluded: false, isExcluded: false };
-    }
 
     // Check if the filter is already there
     const filterInSelectedFilters = variable.state.filters.find((f) => {

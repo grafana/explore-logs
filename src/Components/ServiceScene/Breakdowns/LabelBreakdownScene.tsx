@@ -3,7 +3,6 @@ import React from 'react';
 
 import { GrafanaTheme2, ReducerID } from '@grafana/data';
 import {
-  AdHocFiltersVariable,
   PanelBuilders,
   SceneComponentProps,
   SceneCSSGridItem,
@@ -34,8 +33,10 @@ import {
   VAR_LINE_FILTER_EXPR,
   VAR_PATTERNS_EXPR,
   LEVEL_VARIABLE_VALUE,
-  VAR_FIELDS,
   VAR_LOGS_FORMAT_EXPR,
+  getLabelGroupByVariable,
+  getLabelsVariable,
+  getFieldsVariable,
 } from 'services/variables';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
@@ -149,12 +150,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   };
 
   private getVariable(): CustomConstantVariable {
-    const variable = sceneGraph.lookupVariable(VAR_LABEL_GROUP_BY, this)!;
-    if (!(variable instanceof CustomConstantVariable)) {
-      throw new Error('Group by variable not found');
-    }
-
-    return variable;
+    return getLabelGroupByVariable(this);
   }
 
   private handleSortByChange = (event: SortCriteriaChanged) => {
@@ -351,29 +347,9 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     });
   }
 
-  public getLabelsVariable(): AdHocFiltersVariable {
-    const variable = sceneGraph.lookupVariable(VAR_LABELS, this)!;
-
-    if (!(variable instanceof AdHocFiltersVariable)) {
-      throw new Error('Filters variable not found');
-    }
-
-    return variable;
-  }
-
-  public getFieldsVariable(): AdHocFiltersVariable {
-    const variable = sceneGraph.lookupVariable(VAR_FIELDS, this)!;
-
-    if (!(variable instanceof AdHocFiltersVariable)) {
-      throw new Error('Filters variable not found');
-    }
-
-    return variable;
-  }
-
   private getExpr(tagKey: string) {
-    const labelsVariable = this.getLabelsVariable();
-    const fieldsVariable = this.getFieldsVariable();
+    const labelsVariable = getLabelsVariable(this);
+    const fieldsVariable = getFieldsVariable(this);
 
     let labelExpressionToAdd;
     let fieldExpressionToAdd = '';

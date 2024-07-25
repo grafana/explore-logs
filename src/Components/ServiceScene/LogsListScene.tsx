@@ -21,8 +21,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '..
 import { DataFrame } from '@grafana/data';
 import { addToFilters, FilterType } from './Breakdowns/AddToFiltersButton';
 import { getLabelTypeFromFrame, LabelType } from 'services/fields';
-import { VAR_FIELDS, VAR_LABELS } from 'services/variables';
-import { getAdHocFiltersVariable } from 'services/scenes';
+import { getAdHocFiltersVariable, VAR_FIELDS, VAR_LABELS } from 'services/variables';
 import { locationService } from '@grafana/runtime';
 import { LogOptionsScene } from './LogOptionsScene';
 import { getLogOption } from 'services/store';
