@@ -4,9 +4,13 @@ import { PanelBuilders, SceneComponentProps, SceneObjectBase, SceneObjectState, 
 import { DrawStyle, LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode, StackingMode } from '@grafana/ui';
 import { getQueryRunner, setLevelSeriesOverrides, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
-import { LEVEL_VARIABLE_VALUE, LOG_VOLUME_STREAM_SELECTOR_EXPR, VAR_LEVELS } from 'services/variables';
+import {
+  getAdHocFiltersVariable,
+  LEVEL_VARIABLE_VALUE,
+  LOG_VOLUME_STREAM_SELECTOR_EXPR,
+  VAR_LEVELS,
+} from 'services/variables';
 import { addToFilters, replaceFilter } from './Breakdowns/AddToFiltersButton';
-import { getAdHocFiltersVariable } from 'services/scenes';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
