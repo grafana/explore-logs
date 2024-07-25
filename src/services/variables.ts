@@ -1,5 +1,4 @@
-import { CustomVariable, DataSourceVariable, sceneGraph, SceneObject } from '@grafana/scenes';
-import { getAdHocFiltersVariable } from './scenes';
+import { AdHocFiltersVariable, CustomVariable, DataSourceVariable, sceneGraph, SceneObject } from '@grafana/scenes';
 import { CustomConstantVariable } from './CustomConstantVariable';
 
 export const VAR_LABELS = 'filters';
@@ -68,4 +67,20 @@ export function getDataSourceVariable(scene: SceneObject) {
     return variable;
   }
   return null;
+}
+
+export function getAdHocFiltersVariable(variableName: string, sceneObject: SceneObject) {
+  const variable = sceneGraph.lookupVariable(variableName, sceneObject);
+
+  if (!variable) {
+    console.warn(`Could not get AdHocFiltersVariable ${variableName}. Variable not found.`);
+    return null;
+  }
+  if (!(variable instanceof AdHocFiltersVariable)) {
+    console.warn(
+      `Could not get AdHocFiltersVariable ${variableName}. Variable is not an instance of AdHocFiltersVariable`
+    );
+    return null;
+  }
+  return variable;
 }

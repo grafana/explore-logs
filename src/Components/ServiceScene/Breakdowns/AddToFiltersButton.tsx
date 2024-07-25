@@ -4,9 +4,8 @@ import { AdHocVariableFilter, DataFrame } from '@grafana/data';
 import { SceneObjectState, SceneObjectBase, SceneComponentProps, SceneObject, sceneGraph } from '@grafana/scenes';
 import { VariableHide } from '@grafana/schema';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
-import { LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS } from 'services/variables';
+import { getAdHocFiltersVariable, LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS } from 'services/variables';
 import { FilterButton } from 'Components/FilterButton';
-import { getAdHocFiltersVariable } from 'services/scenes';
 import { FilterOp } from 'services/filters';
 import { ServiceScene } from '../ServiceScene';
 
