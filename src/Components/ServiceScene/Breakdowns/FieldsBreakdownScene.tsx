@@ -127,11 +127,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   }
 
   private getVariable(): CustomConstantVariable {
-    const variable = getFieldGroupByVariable(this);
-    if (!variable) {
-      throw new Error('Group by variable not found');
-    }
-    return variable;
+    return getFieldGroupByVariable(this);
   }
 
   private hideField(field: string) {
