@@ -39,9 +39,6 @@ export function addToFilters(
   }
 
   const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableName), scene);
-  if (!variable) {
-    return;
-  }
 
   // If the filter exists, filter it
   let filters = variable.state.filters.filter((filter) => {
@@ -110,9 +107,6 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
     }
 
     const variable = getAdHocFiltersVariable(validateVariableNameForField(filter.name, this.state.variableName), this);
-    if (!variable) {
-      return { isIncluded: false, isExcluded: false };
-    }
 
     // Check if the filter is already there
     const filterInSelectedFilters = variable.state.filters.find((f) => {
