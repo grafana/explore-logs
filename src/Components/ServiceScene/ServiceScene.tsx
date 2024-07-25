@@ -222,11 +222,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
             fields: fields,
             loading: false,
           });
-        } else if (this.state.fields === undefined) {
-          this.setState({
-            fields: [],
-            loading: false,
-          });
         }
       } else {
         this.setState({
