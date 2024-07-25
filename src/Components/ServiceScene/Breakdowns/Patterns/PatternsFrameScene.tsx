@@ -19,7 +19,7 @@ import { PatternsViewTableScene } from './PatternsViewTableScene';
 import { config } from '@grafana/runtime';
 import { css } from '@emotion/css';
 import { PatternFrame, PatternsBreakdownScene } from './PatternsBreakdownScene';
-import { areArraysEqual } from '../../../../services/state';
+import { areArraysEqual } from '../../../../services/comparison';
 
 const palette = config.theme2.visualization.palette;
 

@@ -7,7 +7,7 @@ import { PanelChrome } from '@grafana/ui';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 import { css } from '@emotion/css';
 import { addAdHocFilter } from './Breakdowns/AddToFiltersButton';
-import { areArraysEqual } from '../../services/state';
+import { areArraysEqual } from '../../services/comparison';
 
 export class LogsTableScene extends SceneObjectBase {
   public static Component = ({ model }: SceneComponentProps<LogsTableScene>) => {

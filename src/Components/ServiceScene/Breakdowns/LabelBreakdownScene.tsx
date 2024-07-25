@@ -48,7 +48,7 @@ import { getLabelValue, SortByScene, SortCriteriaChanged } from './SortByScene';
 import { ServiceScene, ServiceSceneState } from '../ServiceScene';
 import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
 import { navigateToValueBreakdown } from '../../../services/navigate';
-import { areArraysEqual } from '../../../services/state';
+import { areArraysEqual } from '../../../services/comparison';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;

@@ -5,7 +5,7 @@ import { css } from '@emotion/css';
 import { PatternFrame, PatternsBreakdownScene } from './PatternsBreakdownScene';
 import { debouncedFuzzySearch, fuzzySearch } from '../../../../services/search';
 import { SearchInput } from '../SearchInput';
-import { areArraysEqual } from '../../../../services/state';
+import { areArraysEqual } from '../../../../services/comparison';
 
 export interface PatternsViewTextSearchState extends SceneObjectState {}
 

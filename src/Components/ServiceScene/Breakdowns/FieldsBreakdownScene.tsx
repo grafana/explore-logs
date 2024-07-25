@@ -47,7 +47,7 @@ import { CustomConstantVariable, CustomConstantVariableState } from '../../../se
 import { getLabelOptions } from '../../../services/filters';
 import { navigateToValueBreakdown } from '../../../services/navigate';
 import { ValueSlugs } from '../../../services/routing';
-import { areArraysEqual } from '../../../services/state';
+import { areArraysEqual } from '../../../services/comparison';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;

@@ -20,7 +20,7 @@ import { IndexScene } from '../../../IndexScene/IndexScene';
 import { PatternsFrameScene } from './PatternsFrameScene';
 import { PatternsViewTextSearch } from './PatternsViewTextSearch';
 import { PatternsNotDetected, PatternsTooOld } from './PatternsNotDetected';
-import { areArraysEqual } from '../../../../services/state';
+import { areArraysEqual } from '../../../../services/comparison';
 
 export interface PatternsBreakdownSceneState extends SceneObjectState {
   body?: SceneFlexLayout;
