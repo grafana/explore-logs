@@ -24,9 +24,9 @@ export const PATTERNS_TEXT_FILTER = 'patternsFilter';
 export function getPatternsVariable(scene: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_PATTERNS, scene);
   if (variable instanceof CustomVariable) {
-    return variable;
+    throw new Error('VAR_PATTERNS not found');
   }
-  return null;
+  return variable;
 }
 
 export function getLabelsVariable(scene: SceneObject) {
@@ -39,48 +39,41 @@ export function getFieldsVariable(scene: SceneObject) {
 
 export function getLineFilterVariable(scene: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_LINE_FILTER, scene);
-  if (variable instanceof CustomVariable) {
-    return variable;
+  if (!(variable instanceof CustomVariable)) {
+    throw new Error('VAR_LINE_FILTER not found');
   }
-  return null;
+  return variable;
 }
 
 export function getLabelGroupByVariable(scene: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_LABEL_GROUP_BY, scene);
-  if (variable instanceof CustomConstantVariable) {
-    return variable;
+  if (!(variable instanceof CustomConstantVariable)) {
+    throw new Error('VAR_LABEL_GROUP_BY not found');
   }
-  return null;
+  return variable;
 }
 
 export function getFieldGroupByVariable(scene: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_FIELD_GROUP_BY, scene);
-  if (variable instanceof CustomConstantVariable) {
-    return variable;
+  if (!(variable instanceof CustomConstantVariable)) {
+    throw new Error('VAR_FIELD_GROUP_BY not found');
   }
-  return null;
+  return variable;
 }
 
 export function getDataSourceVariable(scene: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_DATASOURCE, scene);
-  if (variable instanceof DataSourceVariable) {
-    return variable;
+  if (!(variable instanceof DataSourceVariable)) {
+    throw new Error('VAR_DATASOURCE not found');
   }
-  return null;
+  return variable;
 }
 
-export function getAdHocFiltersVariable(variableName: string, sceneObject: SceneObject) {
-  const variable = sceneGraph.lookupVariable(variableName, sceneObject);
+export function getAdHocFiltersVariable(variableName: string, scene: SceneObject) {
+  const variable = sceneGraph.lookupVariable(variableName, scene);
 
-  if (!variable) {
-    console.warn(`Could not get AdHocFiltersVariable ${variableName}. Variable not found.`);
-    return null;
-  }
   if (!(variable instanceof AdHocFiltersVariable)) {
-    console.warn(
-      `Could not get AdHocFiltersVariable ${variableName}. Variable is not an instance of AdHocFiltersVariable`
-    );
-    return null;
+    throw new Error(`Could not get AdHocFiltersVariable ${variableName}. Variable not found.`);
   }
   return variable;
 }
