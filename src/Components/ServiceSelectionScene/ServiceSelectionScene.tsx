@@ -96,7 +96,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   private onActivate() {
     // Clear all adhoc filters when the scene is activated, if there are any
     const variable = getLabelsVariable(this);
-    if (variable && variable.state.filters.length > 0) {
+    if (variable.state.filters.length > 0) {
       variable.setState({
         filters: [],
       });
@@ -114,7 +114,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       this.subscribeToState((newState, oldState) => {
         // Updates servicesToQuery when servicesByVolume is changed
         if (newState.servicesByVolume !== oldState.servicesByVolume) {
-          const ds = getDataSourceVariable(this)?.getValue()?.toString();
+          const ds = getDataSourceVariable(this).getValue()?.toString();
           let servicesToQuery: string[] = [];
           if (ds && newState.servicesByVolume) {
             servicesToQuery = createListOfServicesToQuery(
@@ -130,7 +130,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
         // Updates servicesToQuery when searchServicesString is changed
         if (newState.searchServicesString !== oldState.searchServicesString) {
-          const ds = getDataSourceVariable(this)?.getValue()?.toString();
+          const ds = getDataSourceVariable(this).getValue()?.toString();
           let servicesToQuery: string[] = [];
           if (ds && this.state.servicesByVolume) {
             servicesToQuery = createListOfServicesToQuery(
