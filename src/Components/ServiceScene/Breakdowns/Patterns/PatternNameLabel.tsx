@@ -3,7 +3,7 @@ import { AdHocFiltersVariable, sceneGraph } from '@grafana/scenes';
 import { Spinner, Toggletip, useStyles2 } from '@grafana/ui';
 import { getLokiDatasource } from 'services/scenes';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
-import { VAR_LABELS } from 'services/variables';
+import { getLabelsVariable } from 'services/variables';
 import { buildLokiQuery } from 'services/query';
 import { PatternFieldLabelStats } from './PatternFieldLabelStats';
 import { GrafanaTheme2, LoadingState, LogLabelStatsModel, TimeRange } from '@grafana/data';
@@ -29,11 +29,7 @@ export const PatternNameLabel = ({ exploration, pattern }: PatternNameLabelProps
 
   const handlePatternClick = async () => {
     reportAppInteraction(USER_EVENTS_PAGES.service_details, USER_EVENTS_ACTIONS.service_details.pattern_field_clicked);
-    const query = constructQuery(
-      pattern,
-      patternIndices,
-      sceneGraph.lookupVariable(VAR_LABELS, exploration) as AdHocFiltersVariable
-    );
+    const query = constructQuery(pattern, patternIndices, getLabelsVariable(exploration));
     const datasource = await getLokiDatasource(exploration);
     const currentTimeRange = sceneGraph.getTimeRange(exploration).state.value;
 
