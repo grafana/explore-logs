@@ -21,7 +21,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   }
 
   private onActivate = () => {
-    const lineFilterValue = this.getVariable().getValue();
+    const lineFilterValue = getLineFilterVariable(this).getValue();
     if (!lineFilterValue) {
       return;
     }
@@ -33,14 +33,6 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
       lineFilter: matches[1].replace(/\\(.)/g, '$1'),
     });
   };
-
-  private getVariable() {
-    const variable = getLineFilterVariable(this);
-    if (!variable) {
-      throw new Error('Logs format variable not found');
-    }
-    return variable;
-  }
 
   updateFilter(lineFilter: string) {
     this.setState({
@@ -54,7 +46,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   };
 
   updateVariable = debounce((search: string) => {
-    const variable = this.getVariable();
+    const variable = getLineFilterVariable(this);
     variable.changeValueTo(`|~ \`(?i)${escapeRegExp(search)}\``);
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
