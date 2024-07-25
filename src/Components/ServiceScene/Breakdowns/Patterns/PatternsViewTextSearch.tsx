@@ -5,6 +5,7 @@ import { css } from '@emotion/css';
 import { PatternFrame, PatternsBreakdownScene } from './PatternsBreakdownScene';
 import { debouncedFuzzySearch, fuzzySearch } from '../../../../services/search';
 import { SearchInput } from '../SearchInput';
+import { areArraysEqual } from '../../../../services/state';
 
 export interface PatternsViewTextSearchState extends SceneObjectState {}
 
@@ -68,7 +69,7 @@ export class PatternsViewTextSearch extends SceneObjectBase<PatternsViewTextSear
           newState.patternFilter &&
           !newState.filteredPatterns &&
           newState.patternFrames &&
-          JSON.stringify(newState.filteredPatterns) !== JSON.stringify(prevState.filteredPatterns)
+          !areArraysEqual(newState.filteredPatterns, prevState.filteredPatterns)
         ) {
           fuzzySearch(
             newState.patternFrames.map((frame) => frame.pattern),

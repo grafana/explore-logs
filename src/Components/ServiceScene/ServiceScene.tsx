@@ -43,6 +43,7 @@ import { sortLabelsByCardinality } from 'services/filters';
 import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
 import { getMetadataService } from '../../services/metadata';
 import { navigateToDrilldownPage, navigateToIndex } from '../../services/navigate';
+import { areArraysEqual } from '../../services/state';
 
 export interface LokiPattern {
   pattern: string;
@@ -216,7 +217,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       if (frame) {
         const res = updateParserFromDataFrame(frame, this);
         const fields = res.fields.filter((f) => !disabledFields.includes(f)).sort((a, b) => a.localeCompare(b));
-        if (JSON.stringify(fields) !== JSON.stringify(this.state.fields)) {
+        if (!areArraysEqual(fields, this.state.fields)) {
           this.setState({
             fields: fields,
             loading: false,
@@ -304,7 +305,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       .sort((a, b) => sortLabelsByCardinality(a, b))
       .filter((label) => label.label !== LEVEL_VARIABLE_VALUE);
 
-    if (JSON.stringify(labels) !== JSON.stringify(this.state.labels)) {
+    if (!areArraysEqual(labels, this.state.labels)) {
       this.setState({ labels });
     }
   }
