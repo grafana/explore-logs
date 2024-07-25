@@ -34,8 +34,10 @@ import {
   VAR_LINE_FILTER_EXPR,
   VAR_PATTERNS_EXPR,
   LEVEL_VARIABLE_VALUE,
-  VAR_FIELDS,
   VAR_LOGS_FORMAT_EXPR,
+  getLabelGroupByVariable,
+  getLabelsVariable,
+  getFieldsVariable,
 } from 'services/variables';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
@@ -149,8 +151,8 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   };
 
   private getVariable(): CustomConstantVariable {
-    const variable = sceneGraph.lookupVariable(VAR_LABEL_GROUP_BY, this)!;
-    if (!(variable instanceof CustomConstantVariable)) {
+    const variable = getLabelGroupByVariable(this);
+    if (!variable) {
       throw new Error('Group by variable not found');
     }
 
@@ -352,9 +354,9 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   }
 
   public getLabelsVariable(): AdHocFiltersVariable {
-    const variable = sceneGraph.lookupVariable(VAR_LABELS, this)!;
+    const variable = getLabelsVariable(this);
 
-    if (!(variable instanceof AdHocFiltersVariable)) {
+    if (!variable) {
       throw new Error('Filters variable not found');
     }
 
@@ -362,9 +364,9 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   }
 
   public getFieldsVariable(): AdHocFiltersVariable {
-    const variable = sceneGraph.lookupVariable(VAR_FIELDS, this)!;
+    const variable = getFieldsVariable(this);
 
-    if (!(variable instanceof AdHocFiltersVariable)) {
+    if (!variable) {
       throw new Error('Filters variable not found');
     }
 

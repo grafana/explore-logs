@@ -8,7 +8,6 @@ import {
   getUrlSyncManager,
   SceneComponentProps,
   SceneControlsSpacer,
-  sceneGraph,
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
@@ -23,6 +22,8 @@ import {
 } from '@grafana/scenes';
 import {
   EXPLORATION_DS,
+  getFieldsVariable,
+  getPatternsVariable,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_LABELS,
@@ -100,20 +101,20 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     }
 
     this.setState(stateUpdate);
-    const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
-    if (patternsVariable instanceof CustomVariable) {
+    const patternsVariable = getPatternsVariable(this);
+    if (patternsVariable) {
       this.updatePatterns(this.state, patternsVariable);
     }
 
-    const fieldsVariable = sceneGraph.lookupVariable(VAR_FIELDS, this);
-    if (fieldsVariable instanceof AdHocFiltersVariable) {
+    const fieldsVariable = getFieldsVariable(this);
+    if (fieldsVariable) {
       this.syncFieldsWithUrl(fieldsVariable);
     }
 
     this._subs.add(
       this.subscribeToState((newState) => {
-        const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
-        if (patternsVariable instanceof CustomVariable) {
+        const patternsVariable = getPatternsVariable(this);
+        if (patternsVariable) {
           this.updatePatterns(newState, patternsVariable);
         }
       })

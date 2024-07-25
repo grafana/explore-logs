@@ -14,7 +14,7 @@ import {
 import { Button } from '@grafana/ui';
 import { VariableHide } from '@grafana/schema';
 import { addToFavoriteServicesInStorage } from 'services/store';
-import { VAR_DATASOURCE, VAR_LABELS } from 'services/variables';
+import { getDataSourceVariable, getLabelsVariable } from 'services/variables';
 import { SERVICE_NAME, ServiceSelectionScene } from './ServiceSelectionScene';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { FilterOp } from 'services/filters';
@@ -56,7 +56,7 @@ function setParserIfFrameExistsForService(service: string, sceneRef: SceneObject
 }
 
 export function selectService(service: string, sceneRef: SceneObject) {
-  const variable = sceneGraph.lookupVariable(VAR_LABELS, sceneRef);
+  const variable = getLabelsVariable(sceneRef);
   if (!(variable instanceof AdHocFiltersVariable)) {
     return;
   }
@@ -84,7 +84,7 @@ export function selectService(service: string, sceneRef: SceneObject) {
     ],
     hide: VariableHide.hideLabel,
   });
-  const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, sceneRef)?.getValue();
+  const ds = getDataSourceVariable(sceneRef)?.getValue();
   addToFavoriteServicesInStorage(ds, service);
 
   // In this case, we don't have a ServiceScene created yet, so we call a special function to navigate there for the first time
@@ -93,12 +93,8 @@ export function selectService(service: string, sceneRef: SceneObject) {
 
 export class SelectServiceButton extends SceneObjectBase<SelectServiceButtonState> {
   public onClick = () => {
-    const variable = sceneGraph.lookupVariable(VAR_LABELS, this);
-    if (!(variable instanceof AdHocFiltersVariable)) {
-      return;
-    }
-
-    if (!this.state.service) {
+    const variable = getLabelsVariable(this);
+    if (!variable || !this.state.service) {
       return;
     }
     selectService(this.state.service, this);

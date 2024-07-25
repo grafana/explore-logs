@@ -23,6 +23,8 @@ import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, PLUGIN_ID, ValueSlu
 import { getExplorationFor, getLokiDatasource } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
+  getFieldsVariable,
+  getLabelsVariable,
   LEVEL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE,
@@ -95,10 +97,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
-  public getFiltersVariable(): AdHocFiltersVariable {
-    const variable = sceneGraph.lookupVariable(VAR_LABELS, this)!;
+  public getLabelsVariable(): AdHocFiltersVariable {
+    const variable = getLabelsVariable(this);
 
-    if (!(variable instanceof AdHocFiltersVariable)) {
+    if (!variable) {
       throw new Error('Filters variable not found');
     }
 
@@ -106,7 +108,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private setEmptyFiltersRedirection() {
-    const variable = this.getFiltersVariable();
+    const variable = this.getLabelsVariable();
     if (variable.state.filters.length === 0) {
       this.redirectToStart();
       return;
@@ -177,7 +179,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       return;
     }
 
-    const filterVariable = this.getFiltersVariable();
+    const filterVariable = this.getLabelsVariable();
     if (filterVariable.state.filters.length === 0) {
       return;
     }
@@ -243,8 +245,14 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
 
     const timeRange = sceneGraph.getTimeRange(this).state.value;
-    const labels = sceneGraph.lookupVariable(VAR_LABELS, this)! as AdHocFiltersVariable;
-    const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
+    const labels = getLabelsVariable(this);
+    const fields = getFieldsVariable(this);
+
+    if (!labels || !fields) {
+      console.error('Labels for fields variable missing');
+      return;
+    }
+
     const excludeLabels = [ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE];
 
     const { data } = await ds.getResource(
@@ -281,7 +289,13 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     const timeRange = sceneGraph.getTimeRange(this);
 
     const timeRangeValue = timeRange.state.value;
-    const filters = sceneGraph.lookupVariable(VAR_LABELS, this)! as AdHocFiltersVariable;
+    const filters = getLabelsVariable(this);
+
+    if (!filters) {
+      console.error('Filters variable not found');
+      return;
+    }
+
     const { detectedLabels } = await ds.getResource<DetectedLabelsResponse>(
       'detected_labels',
       {
@@ -452,7 +466,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                     );
                     if (tab.value) {
                       const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
-                      const variable = serviceScene.getFiltersVariable();
+                      const variable = serviceScene.getLabelsVariable();
                       const service = variable.state.filters.find((f) => f.key === SERVICE_NAME);
 
                       if (service?.value) {

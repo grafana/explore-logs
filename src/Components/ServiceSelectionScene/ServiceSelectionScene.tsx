@@ -3,7 +3,6 @@ import { debounce, escapeRegExp } from 'lodash';
 import React, { useState } from 'react';
 import { DashboardCursorSync, GrafanaTheme2, TimeRange } from '@grafana/data';
 import {
-  AdHocFiltersVariable,
   behaviors,
   PanelBuilders,
   SceneComponentProps,
@@ -28,7 +27,7 @@ import {
 } from '@grafana/ui';
 import { getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
-import { LEVEL_VARIABLE_VALUE, VAR_DATASOURCE, VAR_LABELS } from 'services/variables';
+import { getDataSourceVariable, getLabelsVariable, LEVEL_VARIABLE_VALUE, VAR_DATASOURCE } from 'services/variables';
 import { selectService, SelectServiceButton } from './SelectServiceButton';
 import { PLUGIN_ID } from 'services/routing';
 import { buildLokiQuery } from 'services/query';
@@ -96,8 +95,8 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
   private onActivate() {
     // Clear all adhoc filters when the scene is activated, if there are any
-    const variable = sceneGraph.lookupVariable(VAR_LABELS, this);
-    if (variable instanceof AdHocFiltersVariable && variable.state.filters.length > 0) {
+    const variable = getLabelsVariable(this);
+    if (variable && variable.state.filters.length > 0) {
       variable.setState({
         filters: [],
       });
@@ -115,7 +114,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       this.subscribeToState((newState, oldState) => {
         // Updates servicesToQuery when servicesByVolume is changed
         if (newState.servicesByVolume !== oldState.servicesByVolume) {
-          const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue()?.toString();
+          const ds = getDataSourceVariable(this)?.getValue()?.toString();
           let servicesToQuery: string[] = [];
           if (ds && newState.servicesByVolume) {
             servicesToQuery = createListOfServicesToQuery(
@@ -131,7 +130,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
         // Updates servicesToQuery when searchServicesString is changed
         if (newState.searchServicesString !== oldState.searchServicesString) {
-          const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue()?.toString();
+          const ds = getDataSourceVariable(this)?.getValue()?.toString();
           let servicesToQuery: string[] = [];
           if (ds && this.state.servicesByVolume) {
             servicesToQuery = createListOfServicesToQuery(

@@ -27,6 +27,7 @@ import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import {
   ALL_VARIABLE_VALUE,
+  getFieldGroupByVariable,
   LOG_STREAM_SELECTOR_EXPR,
   VAR_FIELD_GROUP_BY,
   VAR_FIELDS,
@@ -126,11 +127,10 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   }
 
   private getVariable(): CustomConstantVariable {
-    const variable = sceneGraph.lookupVariable(VAR_FIELD_GROUP_BY, this)!;
-    if (!(variable instanceof CustomConstantVariable)) {
+    const variable = getFieldGroupByVariable(this);
+    if (!variable) {
       throw new Error('Group by variable not found');
     }
-
     return variable;
   }
 
