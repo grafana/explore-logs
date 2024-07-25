@@ -3,7 +3,6 @@ import React from 'react';
 
 import { GrafanaTheme2, LoadingState } from '@grafana/data';
 import {
-  AdHocFiltersVariable,
   SceneComponentProps,
   SceneFlexItem,
   SceneFlexLayout,
@@ -97,18 +96,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
-  public getLabelsVariable(): AdHocFiltersVariable {
-    const variable = getLabelsVariable(this);
-
-    if (!variable) {
-      throw new Error('Filters variable not found');
-    }
-
-    return variable;
-  }
-
   private setEmptyFiltersRedirection() {
-    const variable = this.getLabelsVariable();
+    const variable = getLabelsVariable(this);
     if (variable.state.filters.length === 0) {
       this.redirectToStart();
       return;
@@ -179,7 +168,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       return;
     }
 
-    const filterVariable = this.getLabelsVariable();
+    const filterVariable = getLabelsVariable(this);
     if (filterVariable.state.filters.length === 0) {
       return;
     }
@@ -247,11 +236,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     const labels = getLabelsVariable(this);
     const fields = getFieldsVariable(this);
-
-    if (!labels || !fields) {
-      console.error('Labels for fields variable missing');
-      return;
-    }
 
     const excludeLabels = [ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE];
 
@@ -466,7 +450,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                     );
                     if (tab.value) {
                       const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
-                      const variable = serviceScene.getLabelsVariable();
+                      const variable = getLabelsVariable(serviceScene);
                       const service = variable.state.filters.find((f) => f.key === SERVICE_NAME);
 
                       if (service?.value) {
