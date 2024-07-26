@@ -1,4 +1,4 @@
-import { AdHocVariableFilter } from '@grafana/data';
+import { AdHocVariableFilter, DataSourceApi } from '@grafana/data';
 import { AppliedPattern } from 'Components/IndexScene/IndexScene';
 import { PLUGIN_ID } from './routing';
 
@@ -10,6 +10,8 @@ export type LokiQuery = {
   expr: string;
   legendFormat?: string;
   splitDuration?: string;
+
+  datasource?: DataSourceApi;
 };
 export const buildLokiQuery = (expr: string, queryParamsOverrides?: Record<string, unknown>): LokiQuery => {
   return {

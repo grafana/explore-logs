@@ -1,4 +1,4 @@
-import { DetectedLabel } from './fields';
+import { DetectedLabel, LabelType } from './fields';
 import { ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE } from './variables';
 import { VariableValueOption } from '@grafana/scenes';
 
@@ -6,6 +6,13 @@ export enum FilterOp {
   Equal = '=',
   NotEqual = '!=',
 }
+
+export type Filter = {
+  key: string;
+  operator: FilterOp;
+  value: string;
+  type?: LabelType;
+};
 
 // We want to show labels with cardinality 1 at the end of the list because they are less useful
 // And then we want to sort by cardinality - from lowest to highest
