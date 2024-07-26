@@ -13,11 +13,12 @@ import {
 } from '@grafana/scenes';
 import { css, cx } from '@emotion/css';
 import { of } from 'rxjs';
+import { getLabelValueFromDataFrame } from 'services/levels';
 
 // A subset of an outlying series, with a start and end time.
-interface Outlier {
+export interface Outlier {
   // The index of the series in the data frame.
-  series: number;
+  series: string;
   // The start time of the outlier.
   start: number;
   // The end time of the outlier, if it's a region.
@@ -27,7 +28,7 @@ interface Outlier {
 interface SceneOutlierDetectorState extends SceneObjectState {
   sensitivity?: number;
   addAnnotations?: boolean;
-  onOutlierDetected?: (outlier: Outlier) => void;
+  onOutlierDetected?: (outliers: Outlier[]) => void;
 }
 
 const DEFAULT_SENSITIVITY = 0.4;
@@ -105,7 +106,7 @@ function addOutliers(
   data: PanelData,
   joined: DataFrame,
   addAnnotations: boolean,
-  onOutlierDetected?: (outlier: Outlier) => void
+  onOutlierDetected?: (outlier: Outlier[]) => void
 ): PanelData {
   // TODO: avoid duplicating the serieses extraction.
   const serieses = joined.fields.filter((f) => f.type === FieldType.number);
@@ -113,16 +114,17 @@ function addOutliers(
   const outliers = detector.detect();
 
   if (onOutlierDetected !== undefined) {
-    const idx = 0;
-    for (const s of outliers.seriesResults) {
-      for (const i of s.outlierIntervals) {
-        onOutlierDetected({
-          series: idx,
-          start: joined.fields[0].values[i.start],
-          end: joined.fields[0].values[i.end ?? nTimestamps - 1],
+    const detectedOutliers: Outlier[] = [];
+    for (const i in outliers.seriesResults) {
+      for (const interval of outliers.seriesResults[i].outlierIntervals) {
+        detectedOutliers.push({
+          series: getLabelValueFromDataFrame(data.series[i]) ?? i.toString(),
+          start: joined.fields[0].values[interval.start],
+          end: joined.fields[0].values[interval.end ?? nTimestamps - 1],
         });
       }
     }
+    onOutlierDetected(detectedOutliers);
   }
 
   const annotations = [];
@@ -172,6 +174,7 @@ function addOutliers(
 
   return {
     ...data,
+    series: [],
     annotations,
   };
 }
