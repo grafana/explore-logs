@@ -1,5 +1,6 @@
-import { getFieldsVariable, getLabelsVariable } from './variableGetters';
 import {
+  getFieldsVariable,
+  getLabelsVariable,
   LEVEL_VARIABLE_VALUE,
   VAR_FIELDS_EXPR,
   VAR_LINE_FILTER_EXPR,

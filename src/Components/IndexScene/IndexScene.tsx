@@ -8,7 +8,6 @@ import {
   getUrlSyncManager,
   SceneComponentProps,
   SceneControlsSpacer,
-  sceneGraph,
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
@@ -23,9 +22,12 @@ import {
 } from '@grafana/scenes';
 import {
   EXPLORATION_DS,
+  getFieldsVariable,
+  getPatternsVariable,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_LABELS,
+  VAR_LEVELS,
   VAR_LINE_FILTER,
   VAR_LOGS_FORMAT,
   VAR_PATTERNS,
@@ -100,22 +102,13 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     }
 
     this.setState(stateUpdate);
-    const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
-    if (patternsVariable instanceof CustomVariable) {
-      this.updatePatterns(this.state, patternsVariable);
-    }
 
-    const fieldsVariable = sceneGraph.lookupVariable(VAR_FIELDS, this);
-    if (fieldsVariable instanceof AdHocFiltersVariable) {
-      this.syncFieldsWithUrl(fieldsVariable);
-    }
+    this.updatePatterns(this.state, getPatternsVariable(this));
+    this.syncFieldsWithUrl(getFieldsVariable(this));
 
     this._subs.add(
       this.subscribeToState((newState) => {
-        const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
-        if (patternsVariable instanceof CustomVariable) {
-          this.updatePatterns(newState, patternsVariable);
-        }
+        this.updatePatterns(newState, getPatternsVariable(this));
       })
     );
 
@@ -207,6 +200,21 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     return operators;
   };
 
+  const levelsVariable = new AdHocFiltersVariable({
+    name: VAR_LEVELS,
+    label: 'Filters',
+    applyMode: 'manual',
+    layout: 'vertical',
+    getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
+    getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
+    expressionBuilder: renderLogQLFieldFilters,
+    hide: VariableHide.hideLabel,
+  });
+
+  levelsVariable._getOperators = () => {
+    return operators;
+  };
+
   const dsVariable = new DataSourceVariable({
     name: VAR_DATASOURCE,
     label: 'Data source',
@@ -224,6 +232,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
         dsVariable,
         labelVariable,
         fieldsVariable,
+        levelsVariable,
         // @todo where is patterns being added to the url? Why do we have var-patterns and patterns?
         new CustomVariable({
           name: VAR_PATTERNS,

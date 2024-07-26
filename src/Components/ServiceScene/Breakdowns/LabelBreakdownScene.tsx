@@ -25,7 +25,7 @@ import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { ValueSlugs } from 'services/routing';
 import { getLokiDatasource } from 'services/scenes';
-import { ALL_VARIABLE_VALUE, VAR_LABEL_GROUP_BY, VAR_LABELS } from 'services/variables';
+import { ALL_VARIABLE_VALUE, getLabelGroupByVariable, VAR_LABEL_GROUP_BY, VAR_LABELS } from 'services/variables';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
@@ -139,12 +139,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   };
 
   private getVariable(): CustomConstantVariable {
-    const variable = sceneGraph.lookupVariable(VAR_LABEL_GROUP_BY, this)!;
-    if (!(variable instanceof CustomConstantVariable)) {
-      throw new Error('Group by variable not found');
-    }
-
-    return variable;
+    return getLabelGroupByVariable(this);
   }
 
   private handleSortByChange = (event: SortCriteriaChanged) => {
