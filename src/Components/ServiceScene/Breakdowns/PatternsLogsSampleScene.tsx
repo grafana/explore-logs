@@ -136,7 +136,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
       value.data.state === LoadingState.Error
     ) {
       // Logging an error so loki folks can debug why some patterns returned from the API seem to fail.
-      console.error('Pattern query returns no results', {
+      console.error('Pattern query sample returns no results', {
         pattern: this.state.pattern,
         traceIds: value.data.traceIds,
         request: value.data.request,
