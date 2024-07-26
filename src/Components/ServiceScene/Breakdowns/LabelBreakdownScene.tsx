@@ -51,6 +51,7 @@ import { getLabelValue, SortByScene, SortCriteriaChanged } from './SortByScene';
 import { ServiceScene, ServiceSceneState } from '../ServiceScene';
 import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
 import { navigateToValueBreakdown } from '../../../services/navigate';
+import { SceneOutlierDetector } from '../SceneOutlierDetector';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -232,13 +233,19 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
           body: PanelBuilders.timeseries()
             .setTitle(optionValue)
             .setData(getQueryRunner(buildLokiQuery(this.getExpr(optionValue), { legendFormat: `{{${optionValue}}}` })))
-            .setHeaderActions(new SelectLabelAction({ labelName: optionValue }))
             .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
             .setCustomFieldConfig('fillOpacity', 100)
             .setCustomFieldConfig('lineWidth', 0)
             .setCustomFieldConfig('pointSize', 0)
             .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
             .setOverrides(setLeverColorOverrides)
+            .setHeaderActions([
+              new SceneOutlierDetector({
+                sensitivity: 0.3,
+                onOutlierDetected: console.log,
+              }),
+              new SelectLabelAction({ labelName: optionValue }),
+            ])
             .build(),
         })
       );

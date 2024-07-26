@@ -48,6 +48,7 @@ import { CustomConstantVariable, CustomConstantVariableState } from '../../../se
 import { getLabelOptions } from '../../../services/filters';
 import { navigateToValueBreakdown } from '../../../services/navigate';
 import { ValueSlugs } from '../../../services/routing';
+import { SceneOutlierDetector } from '../SceneOutlierDetector';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -291,12 +292,18 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
       if (!isAvgField(optionValue)) {
         body = body
-          .setHeaderActions(new SelectLabelAction({ labelName: String(optionValue) }))
           .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
           .setCustomFieldConfig('fillOpacity', 100)
           .setCustomFieldConfig('lineWidth', 0)
           .setCustomFieldConfig('pointSize', 0)
           .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+          .setHeaderActions([
+            new SceneOutlierDetector({
+              sensitivity: 0.3,
+              onOutlierDetected: console.log,
+            }),
+            new SelectLabelAction({ labelName: String(optionValue) }),
+          ])
           .setOverrides(setLeverColorOverrides);
       }
       const gridItem = new LazySceneCSSGridItem({
