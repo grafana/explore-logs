@@ -27,6 +27,7 @@ import {
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_LABELS,
+  VAR_LEVELS,
   VAR_LINE_FILTER,
   VAR_LOGS_FORMAT,
   VAR_PATTERNS,
@@ -199,6 +200,21 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     return operators;
   };
 
+  const levelsVariable = new AdHocFiltersVariable({
+    name: VAR_LEVELS,
+    label: 'Filters',
+    applyMode: 'manual',
+    layout: 'vertical',
+    getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
+    getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
+    expressionBuilder: renderLogQLFieldFilters,
+    hide: VariableHide.hideLabel,
+  });
+
+  levelsVariable._getOperators = () => {
+    return operators;
+  };
+
   const dsVariable = new DataSourceVariable({
     name: VAR_DATASOURCE,
     label: 'Data source',
@@ -216,6 +232,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
         dsVariable,
         labelVariable,
         fieldsVariable,
+        levelsVariable,
         // @todo where is patterns being added to the url? Why do we have var-patterns and patterns?
         new CustomVariable({
           name: VAR_PATTERNS,
