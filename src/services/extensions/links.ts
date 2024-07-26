@@ -7,12 +7,14 @@ import { appendUrlParameter, createAppUrl, setUrlParameter, UrlParameterType } f
 
 const title = 'Open in Explore Logs';
 const description = 'Open current query in the Explore Logs view';
+const icon = 'gf-logs';
 
 export const linkConfigs: PluginExtensionLinkConfig[] = [
   {
     extensionPointId: PluginExtensionPoints.DashboardPanelMenu,
     title,
     description,
+    icon,
     path: createAppUrl(),
     configure: (context?: PluginExtensionPanelContext) => {
       if (!context) {
@@ -58,6 +60,7 @@ export const linkConfigs: PluginExtensionLinkConfig[] = [
     extensionPointId: PluginExtensionPoints.ExploreToolbarAction,
     title,
     description,
+    icon,
     path: createAppUrl(),
     configure: (context?: PluginExtensionPanelContext) => {
       if (!context) {
