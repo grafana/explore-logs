@@ -155,7 +155,7 @@ export const Table = (props: Props) => {
     // This function is building the table dataframe that will be transformed, even though the components within the dataframe (cells, headers) can mutate the dataframe!
     // If we try to update the dataframe whenever the columns are changed (which are rebuilt using this dataframe after being transformed), react will infinitely update frame -> columns -> frame -> ...
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [timeZone, theme, labels]
+    [timeZone, theme, labels, width, replace, setVisible]
   );
 
   // prepare dataFrame
@@ -421,7 +421,7 @@ function getInitialFieldWidth(
   const maxWidth = numberOfFields <= 2 ? tableWidth : Math.min(tableWidth / 2);
 
   // First field gets icons, and a little extra width
-  const extraPadding = fieldIndex === 0 ? 50 : 0;
+  const extraPadding = fieldIndex === 0 ? 30 : 0;
 
   // Time fields have consistent widths
   if (field.type === FieldType.time) {

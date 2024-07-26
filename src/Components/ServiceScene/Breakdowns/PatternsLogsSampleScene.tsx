@@ -9,9 +9,9 @@ import {
 } from '@grafana/scenes';
 import React from 'react';
 import { getQueryRunner } from '../../../services/panel';
-import { buildLokiQuery } from '../../../services/query';
+import { buildLokiQuery, renderPatternFilters } from '../../../services/query';
 import { LOG_STREAM_SELECTOR_EXPR, VAR_PATTERNS_EXPR } from '../../../services/variables';
-import { AppliedPattern, renderPatternFilters } from '../../IndexScene/IndexScene';
+import { AppliedPattern } from '../../IndexScene/IndexScene';
 
 interface PatternsLogsSampleSceneState extends SceneObjectState {
   pattern: string;

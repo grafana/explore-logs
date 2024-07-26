@@ -2,7 +2,7 @@ version: '3.0'
 
 services:
   grafana:
-    image: grafana/grafana:11.1.0
+    image: grafana/grafana:11.1.1
     environment:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
       - GF_AUTH_ANONYMOUS_ENABLED=true

@@ -11,12 +11,16 @@ const getStyles = (theme: GrafanaTheme2) => {
     graphicContainer: css({
       display: 'flex',
       justifyContent: 'center',
+      margin: '0 auto',
     }),
-    graphic: css({ height: '120px', padding: theme.spacing(1) }),
+    graphic: css({ width: '200px', height: '120px', padding: theme.spacing(1) }),
     text: css({
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
+    }),
+    wrap: css({
+      margin: '0 auto',
     }),
   };
 };
@@ -29,7 +33,7 @@ export const GrotError = ({ children }: React.PropsWithChildren<Props>) => {
   const styles = useStyles2(getStyles);
   const theme = useTheme2();
   return (
-    <>
+    <div className={styles.wrap}>
       <div className={styles.graphicContainer}>
         <SVG
           className={styles.graphic}
@@ -45,6 +49,6 @@ export const GrotError = ({ children }: React.PropsWithChildren<Props>) => {
           {children ? children : 'An error occurred'}
         </Text>
       </div>
-    </>
+    </div>
   );
 };

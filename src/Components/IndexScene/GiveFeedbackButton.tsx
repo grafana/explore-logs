@@ -33,6 +33,7 @@ const getStyles = (theme: GrafanaTheme2) => {
   return {
     wrapper: css({
       display: 'flex',
+      whiteSpace: 'nowrap',
     }),
     feedback: css({
       alignSelf: 'center',

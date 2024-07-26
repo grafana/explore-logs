@@ -57,3 +57,34 @@ export function getLastUsedDataSourceFromStorage(): string | undefined {
 export function addLastUsedDataSourceToStorage(dsKey: string) {
   localStorage.setItem(DS_LOCALSTORAGE_KEY, dsKey);
 }
+
+const SORT_BY_LOCALSTORAGE_KEY = `${pluginJson.id}.values.sort`;
+export function getSortByPreference(target: string, defaultSortBy: string, defaultDirection: 'desc' | 'asc') {
+  const preference = localStorage.getItem(`${SORT_BY_LOCALSTORAGE_KEY}.${target}.by`) ?? '';
+  const parts = preference.split('.');
+  if (!parts[0] || !parts[1]) {
+    return { sortBy: defaultSortBy, direction: defaultDirection };
+  }
+  return { sortBy: parts[0], direction: parts[1] };
+}
+
+export function setSortByPreference(target: string, sortBy: string, direction: string) {
+  // Prevent storing empty values
+  if (sortBy && direction) {
+    localStorage.setItem(`${SORT_BY_LOCALSTORAGE_KEY}.${target}.by`, `${sortBy}.${direction}`);
+  }
+}
+
+const LOG_OPTIONS_LOCALSTORAGE_KEY = `${pluginJson.id}.logs.option`;
+export type LogOption = 'wrapLines';
+export function getLogOption(option: LogOption) {
+  return localStorage.getItem(`${LOG_OPTIONS_LOCALSTORAGE_KEY}.${option}`);
+}
+
+export function setLogOption(option: LogOption, value: string | number | boolean) {
+  let storedValue = value.toString();
+  if (typeof value === 'boolean' && !value) {
+    storedValue = '';
+  }
+  localStorage.setItem(`${LOG_OPTIONS_LOCALSTORAGE_KEY}.${option}`, storedValue);
+}

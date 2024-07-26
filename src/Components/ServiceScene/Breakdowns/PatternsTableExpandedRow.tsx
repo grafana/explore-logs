@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { PatternsLogsSampleScene } from './PatternsLogsSampleScene';
-import { PatternsTableCellData, PatternsViewTableScene } from './PatternsViewTableScene';
+import { PatternsTableCellData, PatternsViewTableScene } from './Patterns/PatternsViewTableScene';
 
 interface ExpandedRowProps {
   tableViz: PatternsViewTableScene;

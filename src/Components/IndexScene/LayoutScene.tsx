@@ -1,19 +1,42 @@
 import { GrafanaTheme2 } from '@grafana/data';
-import { SceneComponentProps, SceneObjectBase, VariableValueSelectors } from '@grafana/scenes';
+import { SceneComponentProps, SceneObjectBase, SceneObjectState, VariableValueSelectors } from '@grafana/scenes';
 import { useStyles2 } from '@grafana/ui';
 import React from 'react';
 import { PatternControls } from './PatternControls';
 import { AppliedPattern, IndexSceneState } from './IndexScene';
 import { css } from '@emotion/css';
 import { GiveFeedbackButton } from './GiveFeedbackButton';
+import { InterceptBanner } from './InterceptBanner';
+import { PLUGIN_ID } from '../../services/routing';
 
-export class LayoutScene extends SceneObjectBase {
+interface LayoutSceneState extends SceneObjectState {
+  interceptDismissed: boolean;
+}
+
+const interceptBannerStorageKey = `${PLUGIN_ID}.interceptBannerStorageKey`;
+
+export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
+  constructor(state: Partial<LayoutSceneState>) {
+    super({
+      ...state,
+      interceptDismissed: !!localStorage.getItem(interceptBannerStorageKey),
+    });
+  }
+
+  public dismiss() {
+    this.setState({
+      interceptDismissed: true,
+    });
+    localStorage.setItem(interceptBannerStorageKey, 'true');
+  }
+
   static Component = ({ model }: SceneComponentProps<LayoutScene>) => {
     if (!model.parent) {
       return null;
     }
 
     const { controls, contentScene, patterns } = model.parent.useState() as IndexSceneState;
+    const { interceptDismissed } = model.useState();
     if (!contentScene) {
       return null;
     }
@@ -21,6 +44,13 @@ export class LayoutScene extends SceneObjectBase {
     const styles = useStyles2(getStyles);
     return (
       <div className={styles.bodyContainer}>
+        {!interceptDismissed && (
+          <InterceptBanner
+            onRemove={() => {
+              model.dismiss();
+            }}
+          />
+        )}
         <div className={styles.container}>
           {controls && (
             <div className={styles.controlsContainer}>
@@ -63,7 +93,7 @@ function getStyles(theme: GrafanaTheme2) {
     container: css({
       flexGrow: 1,
       display: 'flex',
-      gap: theme.spacing(2),
+      gap: theme.spacing(1),
       minHeight: '100%',
       flexDirection: 'column',
       padding: theme.spacing(2),
@@ -115,6 +145,15 @@ function getStyles(theme: GrafanaTheme2) {
               },
             },
           },
+        },
+      },
+      // the `service_name` filter is a special case where we want to hide the operator
+      '[data-testid="AdHocFilter-service_name"]': {
+        'div[class*="input-wrapper"]:first-child': {
+          display: 'none',
+        },
+        'div[class*="input-wrapper"]:nth-child(2)': {
+          marginLeft: 0,
         },
       },
 

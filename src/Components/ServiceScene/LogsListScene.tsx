@@ -1,6 +1,7 @@
 import React from 'react';
 
 import {
+  AdHocFiltersVariable,
   PanelBuilders,
   SceneComponentProps,
   SceneFlexItem,
@@ -11,7 +12,7 @@ import {
   SceneObjectUrlValues,
   SceneTimeRangeLike,
 } from '@grafana/scenes';
-import { LineFilter } from './LineFilter';
+import { LineFilterScene } from './LineFilterScene';
 import { SelectedTableRow } from '../Table/LogLineCellComponent';
 import { LogsTableScene } from './LogsTableScene';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
@@ -19,10 +20,12 @@ import { LogsVolumePanel } from './LogsVolumePanel';
 import { css } from '@emotion/css';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { DataFrame } from '@grafana/data';
-import { FilterType, addToFilters } from './Breakdowns/AddToFiltersButton';
-import { LabelType, getLabelTypeFromFrame } from 'services/fields';
-import { VAR_FIELDS, VAR_FILTERS } from 'services/variables';
-import { getAdHocFiltersVariable } from 'services/scenes';
+import { addToFilters, FilterType } from './Breakdowns/AddToFiltersButton';
+import { getLabelTypeFromFrame, LabelType } from 'services/fields';
+import { getAdHocFiltersVariable, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from 'services/variables';
+import { locationService } from '@grafana/runtime';
+import { LogOptionsScene } from './LogOptionsScene';
+import { getLogOption } from 'services/store';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -41,6 +44,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, {
     keys: ['urlColumns', 'selectedLine', 'visualizationType'],
   });
+  private lineFilterScene?: LineFilterScene = undefined;
   constructor(state: Partial<LogsListSceneState>) {
     super({
       ...state,
@@ -89,19 +93,42 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   }
 
   public onActivate() {
+    const searchParams = new URLSearchParams(locationService.getLocation().search);
+    this.setStateFromUrl(searchParams);
+
     if (!this.state.panel) {
-      this.setState({
-        panel: this.getVizPanel(),
-      });
+      this.updateLogsPanel();
     }
 
-    this.subscribeToState((newState, prevState) => {
-      if (newState.visualizationType !== prevState.visualizationType) {
-        this.setState({
-          panel: this.getVizPanel(),
-        });
-      }
-    });
+    this._subs.add(
+      this.subscribeToState((newState, prevState) => {
+        if (newState.visualizationType !== prevState.visualizationType) {
+          this.updateLogsPanel();
+        }
+      })
+    );
+  }
+
+  private setStateFromUrl(searchParams: URLSearchParams) {
+    const state: Partial<LogsListSceneState> = {};
+    const selectedLineUrl = searchParams.get('selectedLine');
+    const urlColumnsUrl = searchParams.get('urlColumns');
+    const vizTypeUrl = searchParams.get('visualizationType');
+
+    if (selectedLineUrl) {
+      state.selectedLine = JSON.parse(selectedLineUrl);
+    }
+    if (urlColumnsUrl) {
+      state.urlColumns = JSON.parse(urlColumnsUrl);
+    }
+    if (vizTypeUrl) {
+      state.visualizationType = JSON.parse(vizTypeUrl);
+    }
+
+    // If state is saved in url on activation, save to scene state
+    if (Object.keys(state).length) {
+      this.setState(state);
+    }
   }
 
   private handleLabelFilter(key: string, value: string, frame: DataFrame | undefined, operator: FilterType) {
@@ -110,7 +137,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       return;
     }
     const type = frame ? getLabelTypeFromFrame(key, frame) : LabelType.Parsed;
-    const variableName = type === LabelType.Indexed ? VAR_FILTERS : VAR_FIELDS;
+    const variableName = type === LabelType.Indexed ? VAR_LABELS : VAR_FIELDS;
     addToFilters(key, value, operator, this, variableName);
 
     reportAppInteraction(
@@ -133,18 +160,36 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   };
 
   public handleIsFilterLabelActive = (key: string, value: string) => {
-    const filters = getAdHocFiltersVariable(VAR_FILTERS, this);
+    const labels = getAdHocFiltersVariable(VAR_LABELS, this);
     const fields = getAdHocFiltersVariable(VAR_FIELDS, this);
-    return (
-      (filters &&
-        filters.state.filters.findIndex(
-          (filter) => filter.operator === '=' && filter.key === key && filter.value === value
-        ) >= 0) ||
-      (fields &&
-        fields.state.filters.findIndex(
-          (filter) => filter.operator === '=' && filter.key === key && filter.value === value
-        ) >= 0)
-    );
+    const levels = getAdHocFiltersVariable(VAR_LEVELS, this);
+
+    const hasKeyValueFilter = (filter: AdHocFiltersVariable | null) =>
+      filter &&
+      filter.state.filters.findIndex(
+        (filter) => filter.operator === '=' && filter.key === key && filter.value === value
+      ) >= 0;
+
+    return hasKeyValueFilter(labels) || hasKeyValueFilter(fields) || hasKeyValueFilter(levels);
+  };
+
+  public handleFilterStringClick = (value: string) => {
+    if (this.lineFilterScene) {
+      this.lineFilterScene.updateFilter(value);
+      reportAppInteraction(
+        USER_EVENTS_PAGES.service_details,
+        USER_EVENTS_ACTIONS.service_details.logs_popover_line_filter,
+        {
+          selectionLength: value.length,
+        }
+      );
+    }
+  };
+
+  public updateLogsPanel = () => {
+    this.setState({
+      panel: this.getVizPanel(),
+    });
   };
 
   private getLogsPanel() {
@@ -154,7 +199,6 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       height: 'calc(100vh - 220px)',
       body: PanelBuilders.logs()
         .setTitle('Logs')
-        .setOption('showLogContextToggle', true)
         .setOption('showTime', true)
         // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
         .setOption('onClickFilterLabel', this.handleLabelFilterClick)
@@ -162,6 +206,10 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         .setOption('onClickFilterOutLabel', this.handleLabelFilterOutClick)
         // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
         .setOption('isFilterLabelActive', this.handleIsFilterLabelActive)
+        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
+        .setOption('onClickFilterString', this.handleFilterStringClick)
+        .setOption('wrapLogMessage', Boolean(getLogOption('wrapLines')))
+        .setOption('showLogContextToggle', true)
         .setHeaderActions(<LogsPanelHeaderActions vizType={visualizationType} onChange={this.setVisualizationType} />)
         .build(),
     });
@@ -183,20 +231,33 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   };
 
   private getVizPanel() {
+    this.lineFilterScene = new LineFilterScene();
     return new SceneFlexLayout({
       direction: 'column',
-      children: [
-        new SceneFlexItem({
-          body: new LineFilter(),
-          ySizing: 'content',
-        }),
+      children:
         this.state.visualizationType === 'logs'
-          ? this.getLogsPanel()
-          : new SceneFlexItem({
-              height: 'calc(100vh - 220px)',
-              body: new LogsTableScene({}),
-            }),
-      ],
+          ? [
+              new SceneFlexLayout({
+                children: [
+                  new SceneFlexItem({
+                    body: this.lineFilterScene,
+                    xSizing: 'fill',
+                  }),
+                  new LogOptionsScene(),
+                ],
+              }),
+              this.getLogsPanel(),
+            ]
+          : [
+              new SceneFlexItem({
+                body: this.lineFilterScene,
+                xSizing: 'fill',
+              }),
+              new SceneFlexItem({
+                height: 'calc(100vh - 220px)',
+                body: new LogsTableScene({}),
+              }),
+            ],
     });
   }
 
@@ -238,5 +299,13 @@ const styles = {
     '.show-on-hover': {
       display: 'none',
     },
+
+    // Hack to select internal div
+    'section > div[class$="panel-content"]': css({
+      // A components withing the Logs viz sets contain, which creates a new containing block that is not body which breaks the popover menu
+      contain: 'none',
+      // Prevent overflow from spilling out of parent container
+      overflow: 'auto',
+    }),
   }),
 };
