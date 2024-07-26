@@ -51,7 +51,8 @@ import { getLabelValue, SortByScene, SortCriteriaChanged } from './SortByScene';
 import { ServiceScene, ServiceSceneState } from '../ServiceScene';
 import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
 import { navigateToValueBreakdown } from '../../../services/navigate';
-import { SceneOutlierDetector } from '../SceneOutlierDetector';
+import { Outlier, SceneOutlierDetector } from '../SceneOutlierDetector';
+import { uniq } from 'lodash';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -220,6 +221,9 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   private buildLabelsLayout(options: VariableValueOption[]) {
     this.state.search.reset();
     const children: SceneFlexItemLike[] = [];
+    const originalChildren: SceneFlexItemLike[] = [];
+    const names: string[] = [];
+    const order = new Set<string>();
 
     for (const option of options) {
       const { value } = option;
@@ -228,27 +232,68 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
         continue;
       }
 
-      children.push(
-        new SceneCSSGridItem({
-          body: PanelBuilders.timeseries()
-            .setTitle(optionValue)
-            .setData(getQueryRunner(buildLokiQuery(this.getExpr(optionValue), { legendFormat: `{{${optionValue}}}` })))
-            .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
-            .setCustomFieldConfig('fillOpacity', 100)
-            .setCustomFieldConfig('lineWidth', 0)
-            .setCustomFieldConfig('pointSize', 0)
-            .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-            .setOverrides(setLeverColorOverrides)
-            .setHeaderActions([
-              new SceneOutlierDetector({
-                sensitivity: 0.3,
-                onOutlierDetected: console.log,
-              }),
-              new SelectLabelAction({ labelName: optionValue }),
-            ])
-            .build(),
-        })
-      );
+      names.push(optionValue);
+
+      const getPanel = () => {
+        const onOutlierDetected = (outliers: Outlier[]) => {
+          const series = uniq(outliers.map((outlier) => outlier.series));
+          console.log(series);
+          series.forEach((name) => {
+            order.add(name);
+          });
+          if (
+            this.state.body instanceof LayoutSwitcher &&
+            this.state.body.state.layouts[0] instanceof SceneCSSGridLayout
+          ) {
+            const newChildren = [...children];
+            newChildren.sort((a, b) => {
+              const aIndex = originalChildren.indexOf(a);
+              const bIndex = originalChildren.indexOf(b);
+
+              const aOutlier = order.has(names[aIndex]);
+              const bOutlier = order.has(names[bIndex]);
+
+              if (aOutlier && bOutlier) {
+                return 0;
+              }
+
+              if (aOutlier) {
+                return -1;
+              }
+              if (bOutlier) {
+                return 1;
+              }
+              return 0;
+            });
+            this.state.body.state.layouts[0].setState({ children: newChildren });
+          }
+        };
+
+        const panel = PanelBuilders.timeseries()
+          .setTitle(optionValue)
+          .setData(getQueryRunner(buildLokiQuery(this.getExpr(optionValue), { legendFormat: `{{${optionValue}}}` })))
+          .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
+          .setCustomFieldConfig('fillOpacity', 100)
+          .setCustomFieldConfig('lineWidth', 0)
+          .setCustomFieldConfig('pointSize', 0)
+          .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+          .setOverrides(setLeverColorOverrides)
+          .setHeaderActions([
+            new SceneOutlierDetector({
+              sensitivity: 0.3,
+              onOutlierDetected,
+            }),
+            new SelectLabelAction({ labelName: optionValue }),
+          ]);
+
+        return panel.build();
+      };
+
+      const item = new SceneCSSGridItem({
+        body: getPanel(),
+      });
+      originalChildren.push(item);
+      children.push(item);
     }
 
     return new LayoutSwitcher({

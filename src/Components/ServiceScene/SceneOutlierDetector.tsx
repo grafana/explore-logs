@@ -13,7 +13,7 @@ import {
 } from '@grafana/scenes';
 import { css, cx } from '@emotion/css';
 import { of } from 'rxjs';
-import { getLabelValueFromDataFrame } from 'services/levels';
+import { getLabelNameFromDataFrame } from 'services/levels';
 
 // A subset of an outlying series, with a start and end time.
 export interface Outlier {
@@ -118,13 +118,15 @@ function addOutliers(
     for (const i in outliers.seriesResults) {
       for (const interval of outliers.seriesResults[i].outlierIntervals) {
         detectedOutliers.push({
-          series: getLabelValueFromDataFrame(data.series[i]) ?? i.toString(),
+          series: getLabelNameFromDataFrame(data.series[i]) ?? i.toString(),
           start: joined.fields[0].values[interval.start],
           end: joined.fields[0].values[interval.end ?? nTimestamps - 1],
         });
       }
     }
-    onOutlierDetected(detectedOutliers);
+    if (detectedOutliers.length) {
+      onOutlierDetected(detectedOutliers);
+    }
   }
 
   const annotations = [];

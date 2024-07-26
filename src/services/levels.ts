@@ -44,3 +44,18 @@ export function getLabelValueFromDataFrame(frame: DataFrame) {
 
   return labels[keys[0]];
 }
+
+export function getLabelNameFromDataFrame(frame: DataFrame) {
+  const labels = frame.fields[1]?.labels;
+
+  if (!labels) {
+    return null;
+  }
+
+  const keys = Object.keys(labels);
+  if (keys.length === 0) {
+    return null;
+  }
+
+  return keys[0];
+}

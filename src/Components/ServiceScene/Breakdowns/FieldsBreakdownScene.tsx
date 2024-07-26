@@ -48,7 +48,8 @@ import { CustomConstantVariable, CustomConstantVariableState } from '../../../se
 import { getLabelOptions } from '../../../services/filters';
 import { navigateToValueBreakdown } from '../../../services/navigate';
 import { ValueSlugs } from '../../../services/routing';
-import { SceneOutlierDetector } from '../SceneOutlierDetector';
+import { Outlier, SceneOutlierDetector } from '../SceneOutlierDetector';
+import { uniq } from 'lodash';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -277,11 +278,17 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this.state.search.reset();
 
     const children: SceneFlexItemLike[] = [];
+    const originalChildren: SceneFlexItemLike[] = [];
+    const names: string[] = [];
+    const order = new Set<string>();
+
     for (const option of options) {
       const { value: optionValue } = option;
       if (optionValue === ALL_VARIABLE_VALUE || !optionValue) {
         continue;
       }
+
+      names.push(optionValue);
 
       const query = buildLokiQuery(getExpr(optionValue), {
         legendFormat: `{{${optionValue}}}`,
@@ -291,6 +298,40 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       let body = PanelBuilders.timeseries().setTitle(optionValue).setData(queryRunner);
 
       if (!isAvgField(optionValue)) {
+        const onOutlierDetected = (outliers: Outlier[]) => {
+          const series = uniq(outliers.map((outlier) => outlier.series));
+          console.log(series);
+          series.forEach((name) => {
+            order.add(name);
+          });
+          if (
+            this.state.body instanceof LayoutSwitcher &&
+            this.state.body.state.layouts[0] instanceof SceneCSSGridLayout
+          ) {
+            const newChildren = [...children];
+            newChildren.sort((a, b) => {
+              const aIndex = originalChildren.indexOf(a);
+              const bIndex = originalChildren.indexOf(b);
+
+              const aOutlier = order.has(names[aIndex]);
+              const bOutlier = order.has(names[bIndex]);
+
+              if (aOutlier && bOutlier) {
+                return 0;
+              }
+
+              if (aOutlier) {
+                return -1;
+              }
+              if (bOutlier) {
+                return 1;
+              }
+              return 0;
+            });
+            this.state.body.state.layouts[0].setState({ children: newChildren });
+          }
+        };
+
         body = body
           .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
           .setCustomFieldConfig('fillOpacity', 100)
@@ -300,7 +341,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
           .setHeaderActions([
             new SceneOutlierDetector({
               sensitivity: 0.3,
-              onOutlierDetected: console.log,
+              onOutlierDetected,
             }),
             new SelectLabelAction({ labelName: String(optionValue) }),
           ])
