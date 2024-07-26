@@ -5,11 +5,14 @@ import { getMatcherFromQuery } from 'services/logql';
 import { LokiQuery } from 'services/query';
 import { appendUrlParameter, createAppUrl, setUrlParameter, UrlParameterType } from 'services/routing';
 
+const title = 'Open in Explore Logs';
+const description = 'Open current query in the Explore Logs view';
+
 export const linkConfigs: PluginExtensionLinkConfig[] = [
   {
     extensionPointId: PluginExtensionPoints.DashboardPanelMenu,
-    title: 'Show in Explore Logs',
-    description: 'Open the Explore Logs view with the current query',
+    title,
+    description,
     path: createAppUrl(),
     configure: (context?: PluginExtensionPanelContext) => {
       if (!context) {
@@ -53,8 +56,8 @@ export const linkConfigs: PluginExtensionLinkConfig[] = [
   } as PluginExtensionLinkConfig,
   {
     extensionPointId: PluginExtensionPoints.ExploreToolbarAction,
-    title: 'Show in Explore Logs',
-    description: 'Open the Explore Logs view with the current query',
+    title,
+    description,
     path: createAppUrl(),
     configure: (context?: PluginExtensionPanelContext) => {
       if (!context) {
