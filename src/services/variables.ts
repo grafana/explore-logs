@@ -40,6 +40,10 @@ export function getFieldsVariable(scene: SceneObject) {
   return getAdHocFiltersVariable(VAR_FIELDS, scene);
 }
 
+export function getLevelsVariable(scene: SceneObject) {
+  return getAdHocFiltersVariable(VAR_LEVELS, scene);
+}
+
 export function getLineFilterVariable(scene: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_LINE_FILTER, scene);
   if (!(variable instanceof CustomVariable)) {
