@@ -44,9 +44,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
 
       // but if that fails to return results, we fire the query without the filters, instead of showing no-data in the viz
       const queryRunnerWithFilters = getQueryRunner(queryWithFilters);
-      queryRunnerWithFilters.getResultsStream().subscribe((value) => {
-        this.onQueryResult(value);
-      });
+      queryRunnerWithFilters.getResultsStream().subscribe(this.onQueryWithFiltersResult);
 
       this.setState({
         body: new SceneFlexLayout({
@@ -82,9 +80,62 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
     queryWithFilters.expr = queryWithFilters.expr.replace(VAR_PATTERNS_EXPR, patternsLine);
   }
 
-  private onQueryResult(value: SceneDataProviderResult) {
+  /**
+   * If the first query with the users filters applied fails, we run another one after removing the filters
+   * @param value
+   */
+  private onQueryWithoutFiltersResult = (value: SceneDataProviderResult) => {
+    if (
+      value.data.state === LoadingState.Done &&
+      (value.data.series.length === 0 || value.data.series.every((frame) => frame.length === 0))
+    ) {
+      // Logging an error so loki folks can debug why some patterns returned from the API seem to fail.
+      console.error('Pattern query returns no results', {
+        pattern: this.state.pattern,
+        traceIds: value.data.traceIds,
+        request: value.data.request,
+      });
+
+      const children = this.state.body?.state.children;
+      const noticeFlexItem = children?.[0];
+      const panelFlexItem = children?.[1];
+
+      if (noticeFlexItem instanceof SceneFlexItem) {
+        noticeFlexItem.setState({
+          height: 'auto',
+          body: new SceneReactObject({
+            reactNode: (
+              <Alert severity={'error'} title={''}>
+                This pattern returns no logs.
+              </Alert>
+            ),
+          }),
+        });
+      }
+
+      // Run another query without the filters so we can still show log lines of what the pattern looks like.
+      if (panelFlexItem instanceof SceneFlexItem) {
+        panelFlexItem.setState({
+          isHidden: true,
+        });
+      }
+    }
+  };
+
+  /**
+   * Callback to subscription of pattern sample query with all of the current query filters applied.
+   * If this query fails to return data, we show a warning, and attempt the pattern sample query again without applying the existing filters.
+   * We also add the pattern to the state of the PatternsTableViewScene so we can hide the filter buttons for this pattern, as including it would break the query
+   * @param value
+   */
+  private onQueryWithFiltersResult = (value: SceneDataProviderResult) => {
     const queryWithoutFilters = buildLokiQuery(PATTERNS_SAMPLE_SELECTOR_EXPR);
     this.replacePatternsInQueryWithThisPattern(queryWithoutFilters);
+
+    const queryRunner = getQueryRunner(queryWithoutFilters);
+
+    // Subscribe to the secondary query, so we can log errors and update the UI
+    queryRunner.getResultsStream().subscribe(this.onQueryWithoutFiltersResult);
 
     if (
       value.data.state === LoadingState.Done &&
@@ -114,7 +165,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
         const panel = panelFlexItem.state.body;
         if (panel instanceof VizPanel) {
           panel?.setState({
-            $data: getQueryRunner(queryWithoutFilters),
+            $data: queryRunner,
           });
         }
       }
@@ -128,7 +179,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
         patternsThatDontMatchCurrentFilters: [...patternsThatDontMatchCurrentFilters, this.state.pattern],
       });
     }
-  }
+  };
 
   public static Component({ model }: SceneComponentProps<PatternsLogsSampleScene>) {
     const { body } = model.useState();
