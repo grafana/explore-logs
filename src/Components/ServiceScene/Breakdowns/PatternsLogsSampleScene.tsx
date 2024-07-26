@@ -99,8 +99,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
     if (lineFilterVariable.state.value) {
       lineFilterVariable.changeValueTo('');
 
-      const children = this.state.body?.state.children;
-      const noticeFlexItem = children?.[0];
+      const noticeFlexItem = this.getNoticeFlexItem();
 
       // The query we just fired is already correct after we clear the filters, we just need to hide the warning, and allow filtering
       noticeFlexItem?.setState({
@@ -162,7 +161,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
 
   private setWarningMessage(reactNode: React.ReactNode) {
     const noticeFlexItem = this.getNoticeFlexItem();
-    const panelFlexItem = this.getVizFlexItem();
+    const vizFlexItem = this.getVizFlexItem();
 
     if (noticeFlexItem instanceof SceneFlexItem) {
       noticeFlexItem.setState({
@@ -173,7 +172,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
         }),
       });
     }
-    return panelFlexItem;
+    return vizFlexItem;
   }
 
   private getNoticeFlexItem() {
@@ -186,8 +185,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
   }
 
   private getFlexItemChildren() {
-    const children = this.state.body?.state.children;
-    return children;
+    return this.state.body?.state.children;
   }
 
   /**
@@ -209,9 +207,8 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
       value.data.state === LoadingState.Done &&
       (value.data.series.length === 0 || value.data.series.every((frame) => frame.length === 0))
     ) {
-      const children = this.state.body?.state.children;
-      const noticeFlexItem = children?.[0];
-      const panelFlexItem = children?.[1];
+      const noticeFlexItem = this.getNoticeFlexItem();
+      const panelFlexItem = this.getVizFlexItem();
 
       // Add a warning notice that the patterns shown will not show up in their current log results due to their existing filters.
       if (noticeFlexItem instanceof SceneFlexItem) {
