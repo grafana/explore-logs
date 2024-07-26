@@ -1,6 +1,7 @@
 import {
   getFieldsVariable,
   getLabelsVariable,
+  getLevelsVariable,
   LEVEL_VARIABLE_VALUE,
   VAR_FIELDS_EXPR,
   VAR_LINE_FILTER_EXPR,
@@ -20,6 +21,7 @@ import { SceneObject } from '@grafana/scenes';
 export function getTimeSeriesExpr(sceneRef: SceneObject, streamSelectorName: string, excludeEmpty = true): string {
   const labelsVariable = getLabelsVariable(sceneRef);
   const fieldsVariable = getFieldsVariable(sceneRef);
+  const levelsVariables = getLevelsVariable(sceneRef);
 
   let labelExpressionToAdd;
   let fieldExpressionToAdd = '';
@@ -38,8 +40,10 @@ export function getTimeSeriesExpr(sceneRef: SceneObject, streamSelectorName: str
     .join(',');
 
   const fields = fieldsVariable.state.filters;
+  const levels = levelsVariables.state.filters;
+
   // if we have fields, we also need to add `VAR_LOGS_FORMAT_EXPR`
-  if (fields.length) {
+  if (fields.length || levels.length) {
     return `sum(count_over_time({${streamSelectors}} ${fieldExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_FIELDS_EXPR} [$__auto])) by (${streamSelectorName})`;
   }
   return `sum(count_over_time({${streamSelectors}} ${fieldExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} [$__auto])) by (${streamSelectorName})`;
