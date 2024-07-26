@@ -130,10 +130,11 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
    * If the first query with the users filters applied fails, we run another one after removing the filters
    * @param value
    */
-  private onQueryWithoutFiltersResult = (value: SceneDataProviderResult) => {
+  private onQueryError = (value: SceneDataProviderResult) => {
     if (
-      value.data.state === LoadingState.Done &&
-      (value.data.series.length === 0 || value.data.series.every((frame) => frame.length === 0))
+      (value.data.state === LoadingState.Done &&
+        (value.data.series.length === 0 || value.data.series.every((frame) => frame.length === 0))) ||
+      value.data.state === LoadingState.Error
     ) {
       // Logging an error so loki folks can debug why some patterns returned from the API seem to fail.
       console.error('Pattern query returns no results', {
@@ -142,23 +143,13 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
         request: value.data.request,
       });
 
-      const children = this.state.body?.state.children;
-      const noticeFlexItem = children?.[0];
-      const panelFlexItem = children?.[1];
+      this.setWarningMessage(
+        <Alert severity={'error'} title={''}>
+          This pattern returns no logs.
+        </Alert>
+      );
 
-      if (noticeFlexItem instanceof SceneFlexItem) {
-        noticeFlexItem.setState({
-          isHidden: false,
-          height: 'auto',
-          body: new SceneReactObject({
-            reactNode: (
-              <Alert severity={'error'} title={''}>
-                This pattern returns no logs.
-              </Alert>
-            ),
-          }),
-        });
-      }
+      const panelFlexItem = this.getVizFlexItem();
 
       // Run another query without the filters so we can still show log lines of what the pattern looks like.
       if (panelFlexItem instanceof SceneFlexItem) {
@@ -168,6 +159,36 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
       }
     }
   };
+
+  private setWarningMessage(reactNode: React.ReactNode) {
+    const noticeFlexItem = this.getNoticeFlexItem();
+    const panelFlexItem = this.getVizFlexItem();
+
+    if (noticeFlexItem instanceof SceneFlexItem) {
+      noticeFlexItem.setState({
+        isHidden: false,
+        height: 'auto',
+        body: new SceneReactObject({
+          reactNode: reactNode,
+        }),
+      });
+    }
+    return panelFlexItem;
+  }
+
+  private getNoticeFlexItem() {
+    const children = this.getFlexItemChildren();
+    return children?.[0];
+  }
+  private getVizFlexItem() {
+    const children = this.getFlexItemChildren();
+    return children?.[1];
+  }
+
+  private getFlexItemChildren() {
+    const children = this.state.body?.state.children;
+    return children;
+  }
 
   /**
    * Callback to subscription of pattern sample query with all of the current query filters applied.
@@ -182,7 +203,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
     const queryRunnerWithoutFilters = getQueryRunner(queryWithoutFilters);
 
     // Subscribe to the secondary query, so we can log errors and update the UI
-    queryRunnerWithoutFilters.getResultsStream().subscribe(this.onQueryWithoutFiltersResult);
+    queryRunnerWithoutFilters.getResultsStream().subscribe(this.onQueryError);
 
     if (
       value.data.state === LoadingState.Done &&
@@ -220,6 +241,10 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
         }
       }
       this.excludeThisPatternFromFiltering();
+    }
+
+    if (value.data.state === LoadingState.Error) {
+      this.onQueryError(value);
     }
   };
 
