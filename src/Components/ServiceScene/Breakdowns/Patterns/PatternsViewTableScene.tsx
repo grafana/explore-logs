@@ -30,6 +30,9 @@ export interface SingleViewTableSceneState extends SceneObjectState {
   // The local copy of the pattern frames, the parent breakdown scene decides if we get the filtered subset or not, in this scene we just present the data
   patternFrames: PatternFrame[] | undefined;
   expandedRows?: SceneObject[];
+
+  // An array of patterns to exclude links
+  patternsThatDontMatchCurrentFilters?: string[];
 }
 
 export interface PatternsTableCellData {
@@ -53,9 +56,15 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
    * @param total
    * @param appliedPatterns
    * @param theme
+   * @param patternsThatDontMatchCurrentFilters
    * @protected
    */
-  public buildColumns(total: number, appliedPatterns: AppliedPattern[] | undefined, theme: GrafanaTheme2) {
+  public buildColumns(
+    total: number,
+    appliedPatterns: AppliedPattern[] | undefined,
+    theme: GrafanaTheme2,
+    patternsThatDontMatchCurrentFilters?: string[]
+  ) {
     const styles = getColumnStyles(theme);
     const timeRange = sceneGraph.getTimeRange(this).state.value;
     const columns: Array<Column<PatternsTableCellData>> = [
@@ -138,6 +147,10 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
         header: undefined,
         disableGrow: true,
         cell: (props: CellProps<PatternsTableCellData>) => {
+          if (patternsThatDontMatchCurrentFilters?.includes(props.cell.row.original.pattern)) {
+            return undefined;
+          }
+
           const existingPattern = appliedPatterns?.find(
             (appliedPattern) => appliedPattern.pattern === props.cell.row.original.pattern
           );
@@ -268,7 +281,7 @@ export function PatternTableViewSceneComponent({ model }: SceneComponentProps<Pa
   const { legendSyncPatterns } = patternsFrameScene.useState();
 
   // Must use local patternFrames as the parent decides if we get the filtered or not
-  const { patternFrames: patternFramesRaw } = model.useState();
+  const { patternFrames: patternFramesRaw, patternsThatDontMatchCurrentFilters } = model.useState();
   const patternFrames = patternFramesRaw ?? [];
 
   // Calculate total for percentages
@@ -277,7 +290,7 @@ export function PatternTableViewSceneComponent({ model }: SceneComponentProps<Pa
   }, 0);
 
   const tableData = model.buildTableData(patternFrames, legendSyncPatterns);
-  const columns = model.buildColumns(total, appliedPatterns, theme);
+  const columns = model.buildColumns(total, appliedPatterns, theme, patternsThatDontMatchCurrentFilters);
 
   return (
     <div data-testid={testIds.patterns.tableWrapper} className={styles.tableWrap}>
