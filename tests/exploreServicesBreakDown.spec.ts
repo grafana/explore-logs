@@ -269,7 +269,7 @@ test.describe('explore services breakdown page', () => {
   });
 
   test('should update a filter and run new logs', async ({ page }) => {
-    await page.getByTestId('AdHocFilter-service_name').getByRole('img').nth(1).click();
+    await page.getByTestId('AdHocFilter-service_name').locator('svg').nth(2).click();
     await page.getByText('mimir-distributor').click();
 
     // Assert the panel is done loading before going on

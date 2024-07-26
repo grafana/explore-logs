@@ -37,6 +37,8 @@ import {
   getLabelGroupByVariable,
   getLabelsVariable,
   getFieldsVariable,
+  VAR_LEVELS_EXPR,
+  getLevelsVariable,
 } from 'services/variables';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
@@ -349,6 +351,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   private getExpr(tagKey: string) {
     const labelsVariable = getLabelsVariable(this);
     const fieldsVariable = getFieldsVariable(this);
+    const levelsVariables = getLevelsVariable(this);
 
     let labelExpressionToAdd;
     let fieldExpressionToAdd = '';
@@ -364,9 +367,10 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       .join(',');
 
     const fields = fieldsVariable.state.filters;
+    const levels = levelsVariables.state.filters;
     // if we have fields, we also need to add `VAR_LOGS_FORMAT_EXPR`
-    if (fields.length) {
-      return `sum(count_over_time({${streamSelectors}} ${fieldExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_FIELDS_EXPR} [$__auto])) by (${tagKey})`;
+    if (fields.length || levels.length) {
+      return `sum(count_over_time({${streamSelectors}} ${fieldExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_LEVELS_EXPR} ${VAR_FIELDS_EXPR} [$__auto])) by (${tagKey})`;
     }
     return `sum(count_over_time({${streamSelectors}} ${fieldExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} [$__auto])) by (${tagKey})`;
   }

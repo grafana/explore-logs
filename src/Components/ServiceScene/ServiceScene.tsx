@@ -29,6 +29,7 @@ import {
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_LABELS,
+  VAR_LEVELS,
   VAR_PATTERNS,
 } from 'services/variables';
 import {
@@ -82,7 +83,7 @@ export interface ServiceSceneState extends SceneObjectState, ServiceSceneCustomS
 
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
-    variableNames: [VAR_DATASOURCE, VAR_LABELS, VAR_FIELDS, VAR_PATTERNS],
+    variableNames: [VAR_DATASOURCE, VAR_LABELS, VAR_FIELDS, VAR_PATTERNS, VAR_LEVELS],
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
   });
 
@@ -144,7 +145,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
     if (this.state.$data) {
       this._subs.add(
-        this.state.$data?.subscribeToState((newState, prevState) => {
+        this.state.$data?.subscribeToState((newState) => {
           if (newState.data?.state === LoadingState.Done) {
             this.updateFields();
           }
