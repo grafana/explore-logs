@@ -21,23 +21,27 @@ export const linkConfigs: PluginExtensionLinkConfig[] = [
       }
 
       const expr = lokiQuery.expr;
-      const streamSelectors = getMatcherFromQuery(expr);
-      const serviceSelector = streamSelectors.find((selector) => selector.key === 'service_name');
+      const labelFilters = getMatcherFromQuery(expr);
+      const serviceSelector = labelFilters.find((selector) => selector.key === 'service_name');
       if (!serviceSelector) {
         return undefined;
       }
       const serviceName = serviceSelector.value;
       // sort `service_name` first
-      streamSelectors.sort((a, b) => (a.key === 'service_name' ? -1 : 1));
+      labelFilters.sort((a, b) => (a.key === 'service_name' ? -1 : 1));
 
       let params = setUrlParameter(UrlParameterType.DatasourceId, lokiQuery.datasource?.uid);
       params = setUrlParameter(UrlParameterType.TimeRangeFrom, context.timeRange.from.valueOf().toString(), params);
       params = setUrlParameter(UrlParameterType.TimeRangeTo, context.timeRange.to.valueOf().toString(), params);
 
-      for (const streamSelector of streamSelectors) {
+      for (const labelFilter of labelFilters) {
+        // skip non-indexed filters for now
+        if (labelFilter.type !== LabelType.Indexed) {
+          continue;
+        }
         params = appendUrlParameter(
           UrlParameterType.Labels,
-          `${streamSelector.key}|${streamSelector.operator}|${streamSelector.value}`,
+          `${labelFilter.key}|${labelFilter.operator}|${labelFilter.value}`,
           params
         );
       }
