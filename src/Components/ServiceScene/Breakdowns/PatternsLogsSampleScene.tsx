@@ -2,11 +2,13 @@ import {
   PanelBuilders,
   SceneComponentProps,
   SceneDataProviderResult,
+  SceneDataTransformer,
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
+  SceneQueryRunner,
   SceneReactObject,
   VizPanel,
 } from '@grafana/scenes';
@@ -14,13 +16,16 @@ import React from 'react';
 import { getQueryRunner } from '../../../services/panel';
 import { buildLokiQuery, LokiQuery, renderPatternFilters } from '../../../services/query';
 import {
+  getFieldsVariable,
+  getLevelsVariable,
+  getLineFilterVariable,
   LOG_STREAM_SELECTOR_EXPR,
   PATTERNS_SAMPLE_SELECTOR_EXPR,
   VAR_PATTERNS_EXPR,
 } from '../../../services/variables';
 import { AppliedPattern } from '../../IndexScene/IndexScene';
 import { LoadingState } from '@grafana/data';
-import { Alert } from '@grafana/ui';
+import { Alert, Button } from '@grafana/ui';
 import { PatternsViewTableScene } from './Patterns/PatternsViewTableScene';
 
 interface PatternsLogsSampleSceneState extends SceneObjectState {
@@ -44,7 +49,9 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
 
       // but if that fails to return results, we fire the query without the filters, instead of showing no-data in the viz
       const queryRunnerWithFilters = getQueryRunner(queryWithFilters);
-      queryRunnerWithFilters.getResultsStream().subscribe(this.onQueryWithFiltersResult);
+      queryRunnerWithFilters.getResultsStream().subscribe((value) => {
+        this.onQueryWithFiltersResult(value, queryRunnerWithFilters);
+      });
 
       this.setState({
         body: new SceneFlexLayout({
@@ -80,6 +87,46 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
     queryWithFilters.expr = queryWithFilters.expr.replace(VAR_PATTERNS_EXPR, patternsLine);
   }
 
+  private clearFilters = () => {
+    const filterVariable = getFieldsVariable(this);
+    const lineFilterVariable = getLineFilterVariable(this);
+    const levelsVariable = getLevelsVariable(this);
+    filterVariable.setState({
+      filters: [],
+    });
+    levelsVariable.setState({
+      filters: [],
+    });
+    if (lineFilterVariable.state.value) {
+      lineFilterVariable.changeValueTo('');
+
+      const children = this.state.body?.state.children;
+      const noticeFlexItem = children?.[0];
+
+      // The query we just fired is already correct after we clear the filters, we just need to hide the warning, and allow filtering
+      noticeFlexItem?.setState({
+        isHidden: true,
+      });
+
+      this.removeThisPatternFromFilterExclusion();
+    }
+  };
+
+  private removeThisPatternFromFilterExclusion() {
+    const patternsViewTableScene = sceneGraph.getAncestor(this, PatternsViewTableScene);
+    const patternsThatDontMatchCurrentFilters = patternsViewTableScene.state.patternsThatDontMatchCurrentFilters ?? [];
+
+    const index = patternsThatDontMatchCurrentFilters.findIndex((pattern) => pattern === this.state.pattern);
+
+    if (index !== -1) {
+      patternsThatDontMatchCurrentFilters.splice(index, 1);
+      // remove this pattern, as they can filter by this pattern again
+      patternsViewTableScene.setState({
+        patternsThatDontMatchCurrentFilters: patternsThatDontMatchCurrentFilters,
+      });
+    }
+  }
+
   /**
    * If the first query with the users filters applied fails, we run another one after removing the filters
    * @param value
@@ -102,6 +149,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
 
       if (noticeFlexItem instanceof SceneFlexItem) {
         noticeFlexItem.setState({
+          isHidden: false,
           height: 'auto',
           body: new SceneReactObject({
             reactNode: (
@@ -128,14 +176,17 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
    * We also add the pattern to the state of the PatternsTableViewScene so we can hide the filter buttons for this pattern, as including it would break the query
    * @param value
    */
-  private onQueryWithFiltersResult = (value: SceneDataProviderResult) => {
+  private onQueryWithFiltersResult = (
+    value: SceneDataProviderResult,
+    queryRunnerWithFilters: SceneQueryRunner | SceneDataTransformer
+  ) => {
     const queryWithoutFilters = buildLokiQuery(PATTERNS_SAMPLE_SELECTOR_EXPR);
     this.replacePatternsInQueryWithThisPattern(queryWithoutFilters);
 
-    const queryRunner = getQueryRunner(queryWithoutFilters);
+    const queryRunnerWithoutFilters = getQueryRunner(queryWithoutFilters);
 
     // Subscribe to the secondary query, so we can log errors and update the UI
-    queryRunner.getResultsStream().subscribe(this.onQueryWithoutFiltersResult);
+    queryRunnerWithoutFilters.getResultsStream().subscribe(this.onQueryWithoutFiltersResult);
 
     if (
       value.data.state === LoadingState.Done &&
@@ -148,12 +199,13 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
       // Add a warning notice that the patterns shown will not show up in their current log results due to their existing filters.
       if (noticeFlexItem instanceof SceneFlexItem) {
         noticeFlexItem.setState({
+          isHidden: false,
           height: 'auto',
           body: new SceneReactObject({
             reactNode: (
               <Alert severity={'warning'} title={''}>
                 The logs returned by this pattern do not match your active query filters. To filter by this pattern,
-                first clear your filters.
+                <Button onClick={() => this.clearFilters()}>clear your filters</Button>
               </Alert>
             ),
           }),
@@ -165,21 +217,23 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
         const panel = panelFlexItem.state.body;
         if (panel instanceof VizPanel) {
           panel?.setState({
-            $data: queryRunner,
+            $data: queryRunnerWithoutFilters,
           });
         }
       }
-
-      const patternsViewTableScene = sceneGraph.getAncestor(this, PatternsViewTableScene);
-      const patternsThatDontMatchCurrentFilters =
-        patternsViewTableScene.state.patternsThatDontMatchCurrentFilters ?? [];
-
-      // Add this pattern to the array of patterns that don't match current filters
-      patternsViewTableScene.setState({
-        patternsThatDontMatchCurrentFilters: [...patternsThatDontMatchCurrentFilters, this.state.pattern],
-      });
+      this.excludeThisPatternFromFiltering();
     }
   };
+
+  private excludeThisPatternFromFiltering() {
+    const patternsViewTableScene = sceneGraph.getAncestor(this, PatternsViewTableScene);
+    const patternsThatDontMatchCurrentFilters = patternsViewTableScene.state.patternsThatDontMatchCurrentFilters ?? [];
+
+    // Add this pattern to the array of patterns that don't match current filters
+    patternsViewTableScene.setState({
+      patternsThatDontMatchCurrentFilters: [...patternsThatDontMatchCurrentFilters, this.state.pattern],
+    });
+  }
 
   public static Component({ model }: SceneComponentProps<PatternsLogsSampleScene>) {
     const { body } = model.useState();
