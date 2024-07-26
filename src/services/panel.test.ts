@@ -10,6 +10,7 @@ describe('setLeverColorOverrides', () => {
     const overrides = {
       matchFieldsWithName: matchFieldsWithNameMock,
     };
+    // @ts-expect-error
     setLeverColorOverrides(overrides);
 
     expect(matchFieldsWithNameMock).toHaveBeenCalledTimes(5);
