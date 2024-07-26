@@ -2,13 +2,11 @@ import {
   PanelBuilders,
   SceneComponentProps,
   SceneDataProviderResult,
-  SceneDataTransformer,
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
-  SceneQueryRunner,
   SceneReactObject,
   VizPanel,
 } from '@grafana/scenes';
@@ -27,6 +25,7 @@ import { AppliedPattern } from '../../IndexScene/IndexScene';
 import { LoadingState } from '@grafana/data';
 import { Alert, Button } from '@grafana/ui';
 import { PatternsViewTableScene } from './Patterns/PatternsViewTableScene';
+import { emptyStateStyles } from './FieldsBreakdownScene';
 
 interface PatternsLogsSampleSceneState extends SceneObjectState {
   pattern: string;
@@ -50,7 +49,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
       // but if that fails to return results, we fire the query without the filters, instead of showing no-data in the viz
       const queryRunnerWithFilters = getQueryRunner(queryWithFilters);
       queryRunnerWithFilters.getResultsStream().subscribe((value) => {
-        this.onQueryWithFiltersResult(value, queryRunnerWithFilters);
+        this.onQueryWithFiltersResult(value);
       });
 
       this.setState({
@@ -176,10 +175,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
    * We also add the pattern to the state of the PatternsTableViewScene so we can hide the filter buttons for this pattern, as including it would break the query
    * @param value
    */
-  private onQueryWithFiltersResult = (
-    value: SceneDataProviderResult,
-    queryRunnerWithFilters: SceneQueryRunner | SceneDataTransformer
-  ) => {
+  private onQueryWithFiltersResult = (value: SceneDataProviderResult) => {
     const queryWithoutFilters = buildLokiQuery(PATTERNS_SAMPLE_SELECTOR_EXPR);
     this.replacePatternsInQueryWithThisPattern(queryWithoutFilters);
 
@@ -204,8 +200,10 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
           body: new SceneReactObject({
             reactNode: (
               <Alert severity={'warning'} title={''}>
-                The logs returned by this pattern do not match your active query filters. To filter by this pattern,
-                <Button onClick={() => this.clearFilters()}>clear your filters</Button>
+                The logs returned by this pattern do not match the current query filters.
+                <Button className={emptyStateStyles.button} onClick={() => this.clearFilters()}>
+                  Clear filters
+                </Button>
               </Alert>
             ),
           }),

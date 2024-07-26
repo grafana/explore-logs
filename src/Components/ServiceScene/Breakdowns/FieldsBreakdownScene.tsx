@@ -467,7 +467,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   };
 }
 
-const emptyStateStyles = {
+export const emptyStateStyles = {
   link: css({
     textDecoration: 'underline',
   }),
