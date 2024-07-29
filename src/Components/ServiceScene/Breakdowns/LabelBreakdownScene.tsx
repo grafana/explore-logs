@@ -37,6 +37,7 @@ import { getLabelValue, SortByScene, SortCriteriaChanged } from './SortByScene';
 import { ServiceScene, ServiceSceneState } from '../ServiceScene';
 import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
 import { navigateToValueBreakdown } from '../../../services/navigate';
+import { areArraysEqual } from '../../../services/comparison';
 import { getTimeSeriesExpr } from '../../../services/expressions';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
@@ -113,7 +114,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
    */
   private onVariableStateChange = (newState: CustomConstantVariableState, oldState: CustomConstantVariableState) => {
     if (
-      JSON.stringify(newState.options) !== JSON.stringify(oldState.options) ||
+      !areArraysEqual(newState.options, oldState.options) ||
       newState.value !== oldState.value ||
       newState.loading !== oldState.loading
     ) {
@@ -129,11 +130,9 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
    */
   private onServiceStateChange = (newState: ServiceSceneState, prevState: ServiceSceneState) => {
     const variable = this.getVariable();
-    if (JSON.stringify(newState.labels) !== JSON.stringify(prevState.labels)) {
+    if (!areArraysEqual(newState.labels, prevState.labels)) {
       this.updateLabels(newState.labels);
-    }
-
-    if (newState.labels?.length && !variable.state.options.length) {
+    } else if (newState.labels?.length && !variable.state.options.length) {
       this.updateLabels(newState.labels);
     }
   };

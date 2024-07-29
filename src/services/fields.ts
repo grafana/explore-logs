@@ -40,7 +40,7 @@ export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
         .filter(([_, v]) => v === 'P')
         .forEach(([k]) => (acc[k] = true));
       return acc;
-    }, {}) || {}
+    }, {}) ?? {}
   );
 
   const linesField = data.fields.find((f) => f.name === 'Line' || f.name === 'body');
