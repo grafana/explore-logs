@@ -1,17 +1,37 @@
 import React from 'react';
 
-import { PanelBuilders, SceneComponentProps, SceneObjectBase, SceneObjectState, VizPanel } from '@grafana/scenes';
+import {
+  AdHocFiltersVariable,
+  CustomVariable,
+  PanelBuilders,
+  SceneComponentProps,
+  sceneGraph,
+  SceneObjectBase,
+  SceneObjectState,
+  VizPanel,
+} from '@grafana/scenes';
 import { DrawStyle, LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode, StackingMode } from '@grafana/ui';
 import { getQueryRunner, setLevelSeriesOverrides, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
-import { getAdHocFiltersVariable, getLabelsVariable, LEVEL_VARIABLE_VALUE, VAR_LEVELS } from 'services/variables';
+import {
+  LEVEL_VARIABLE_VALUE,
+  LOG_STREAM_SELECTOR_EXPR,
+  VAR_FIELDS,
+  VAR_LEVELS,
+  VAR_LABELS,
+  VAR_LINE_FILTER,
+  VAR_PATTERNS,
+  getAdHocFiltersVariable,
+  // getLabelsVariable,
+} from 'services/variables';
+import { SERVICE_NAME } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { addToFilters, replaceFilter } from './Breakdowns/AddToFiltersButton';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { getTimeSeriesExpr } from '../../services/expressions';
-import { SERVICE_NAME } from '../ServiceSelectionScene/ServiceSelectionScene';
+// import { getTimeSeriesExpr } from '../../services/expressions';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
+  filter?: AdHocFiltersVariable;
 }
 
 export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
@@ -28,31 +48,73 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       });
     }
 
-    const labels = getLabelsVariable(this);
+    const fields = sceneGraph.lookupVariable(VAR_FIELDS, this) as AdHocFiltersVariable;
+    const patterns = sceneGraph.lookupVariable(VAR_PATTERNS, this) as CustomVariable;
+    const lineFilter = sceneGraph.lookupVariable(VAR_LINE_FILTER, this) as CustomVariable;
+    const labels = sceneGraph.lookupVariable(VAR_LABELS, this) as AdHocFiltersVariable;
 
-    labels.subscribeToState((newState, prevState) => {
-      const newService = newState.filters.find((f) => f.key === SERVICE_NAME);
-      const prevService = prevState.filters.find((f) => f.key === SERVICE_NAME);
-      if (newService !== prevService) {
-        this.setState({
-          panel: this.getVizPanel(),
-        });
-      }
-    });
+    this._subs.add(
+      fields.subscribeToState((newState, prevState) => {
+        if (newState.filters.length !== prevState.filters.length) {
+          this.updateVolumePanel();
+        }
+      })
+    );
+    this._subs.add(
+      labels.subscribeToState((newState, prevState) => {
+        if (newState.filters.length !== prevState.filters.length) {
+          this.updateVolumePanel();
+        }
+
+        const newService = newState.filters.find((f) => f.key === SERVICE_NAME);
+        const prevService = prevState.filters.find((f) => f.key === SERVICE_NAME);
+        if (newService !== prevService) {
+          this.setState({
+            panel: this.getVizPanel(),
+          });
+        }
+      })
+    );
+    this._subs.add(
+      patterns.subscribeToState((newState, prevState) => {
+        if (newState.value !== prevState.value) {
+          this.updateVolumePanel();
+        }
+      })
+    );
+    this._subs.add(
+      lineFilter.subscribeToState((newState, prevState) => {
+        if (newState.value !== prevState.value) {
+          this.updateVolumePanel();
+        }
+      })
+    );
   }
 
+  public updateVolumePanel = () => {
+    this.setState({
+      panel: this.getVizPanel(),
+    });
+  };
+
   private getVizPanel() {
+    const service = this.service();
+    const queryString = this.hasSingleServiceSelector()
+      ? `sum by (${LEVEL_VARIABLE_VALUE}) (sum_over_time({__aggregated_metric__=\`${service}\`} | logfmt | unwrap count [$__auto]))`
+      : `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ [$__auto]))`;
+
     const viz = PanelBuilders.timeseries()
       .setTitle('Log volume')
       .setOption('legend', { showLegend: true, calcs: ['sum'], displayMode: LegendDisplayMode.List })
       .setUnit('short')
-      .setData(
-        getQueryRunner(
-          buildLokiQuery(getTimeSeriesExpr(this, LEVEL_VARIABLE_VALUE, false), {
-            legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`,
-          })
-        )
-      )
+      // .setData(
+      //   getQueryRunner(
+      //     buildLokiQuery(getTimeSeriesExpr(this, LEVEL_VARIABLE_VALUE, false), {
+      //       legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`,
+      //     })
+      //   )
+      // )
+      .setData(getQueryRunner(buildLokiQuery(queryString, { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}` })))
       .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
       .setCustomFieldConfig('fillOpacity', 100)
       .setCustomFieldConfig('lineWidth', 0)
@@ -72,6 +134,37 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     });
 
     return panel;
+  }
+
+  private hasSingleServiceSelector(): boolean {
+    const fields = sceneGraph.lookupVariable(VAR_FIELDS, this) as AdHocFiltersVariable;
+    const patterns = sceneGraph.lookupVariable(VAR_PATTERNS, this) as CustomVariable;
+    const lineFilter = sceneGraph.lookupVariable(VAR_LINE_FILTER, this) as CustomVariable;
+
+    if (fields.state.filters.length !== 0 || patterns.state.value !== '') {
+      return false;
+    }
+
+    const labels = sceneGraph.lookupVariable(VAR_LABELS, this) as AdHocFiltersVariable;
+    if (labels.state.filters.length > 1) {
+      return false;
+    }
+
+    const filter = (lineFilter.state.value as string).trim();
+    if (labels.state.filters[0].key === SERVICE_NAME) {
+      if (filter === '|~ `(?i)`' || !filter) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private service(): string {
+    const labels = sceneGraph.lookupVariable(VAR_LABELS, this) as AdHocFiltersVariable;
+    const filters = labels?.state.filters ?? [];
+
+    return filters.find((filter) => filter.key === SERVICE_NAME)?.value ?? '';
   }
 
   private extendTimeSeriesLegendBus = (context: PanelContext) => {
