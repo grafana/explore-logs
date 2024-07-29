@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { DragDropContext, Draggable, DraggableProvided, Droppable, DropResult } from 'react-beautiful-dnd';
+import { DragDropContext, Draggable, DraggableProvided, Droppable, DropResult } from '@hello-pangea/dnd';
 import { css, cx } from '@emotion/css';
 
 import { GrafanaTheme2 } from '@grafana/data/';
