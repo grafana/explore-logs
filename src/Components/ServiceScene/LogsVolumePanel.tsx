@@ -29,8 +29,6 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
 
     const labels = getLabelsVariable(this);
 
-    console.log('labels', labels);
-
     labels.subscribeToState((newState, prevState) => {
       const newService = newState.filters.find((f) => f.key === SERVICE_NAME);
       const prevService = prevState.filters.find((f) => f.key === SERVICE_NAME);
