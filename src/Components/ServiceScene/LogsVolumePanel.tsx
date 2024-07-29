@@ -11,6 +11,7 @@ import {
   VAR_LEVELS,
 } from 'services/variables';
 import { addToFilters, replaceFilter } from './Breakdowns/AddToFiltersButton';
+import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
@@ -98,11 +99,23 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       const hadLevel = levelFilter.state.filters.find(
         (filter) => filter.key === LEVEL_VARIABLE_VALUE && filter.value !== level
       );
+      let action;
       if (hadLevel) {
         replaceFilter(LEVEL_VARIABLE_VALUE, level, 'include', this);
+        action = 'remove';
       } else {
         addToFilters(LEVEL_VARIABLE_VALUE, level, 'toggle', this);
+        action = 'add';
       }
+
+      reportAppInteraction(
+        USER_EVENTS_PAGES.service_details,
+        USER_EVENTS_ACTIONS.service_details.level_in_logs_volume_clicked,
+        {
+          level,
+          action,
+        }
+      );
     };
   };
 
