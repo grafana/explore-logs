@@ -2,10 +2,8 @@ import React from 'react';
 
 import {
   AdHocFiltersVariable,
-  CustomVariable,
   PanelBuilders,
   SceneComponentProps,
-  sceneGraph,
   SceneObjectBase,
   SceneObjectState,
   VizPanel,
@@ -15,13 +13,13 @@ import { getQueryRunner, setLevelSeriesOverrides, setLeverColorOverrides } from 
 import { buildLokiQuery } from 'services/query';
 import {
   LEVEL_VARIABLE_VALUE,
-  VAR_FIELDS,
   VAR_LEVELS,
-  VAR_LABELS,
-  VAR_LINE_FILTER,
-  VAR_PATTERNS,
   SERVICE_NAME,
   getAdHocFiltersVariable,
+  getFieldsVariable,
+  getPatternsVariable,
+  getLineFilterVariable,
+  getLabelsVariable,
 } from 'services/variables';
 import { addToFilters, replaceFilter } from './Breakdowns/AddToFiltersButton';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
@@ -46,47 +44,34 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       });
     }
 
-    const fields = sceneGraph.lookupVariable(VAR_FIELDS, this) as AdHocFiltersVariable;
-    const patterns = sceneGraph.lookupVariable(VAR_PATTERNS, this) as CustomVariable;
-    const lineFilter = sceneGraph.lookupVariable(VAR_LINE_FILTER, this) as CustomVariable;
-    const labels = sceneGraph.lookupVariable(VAR_LABELS, this) as AdHocFiltersVariable;
+    const fieldsVariable = getFieldsVariable(this);
+    const patternsVariable = getPatternsVariable(this);
+    const lineFilterVariable = getLineFilterVariable(this);
+    const labelsVariable = getLabelsVariable(this);
 
-    this._subs.add(
-      fields.subscribeToState((newState, prevState) => {
-        if (newState.filters.length !== prevState.filters.length) {
-          this.updateVolumePanel();
-        }
-      })
-    );
-    this._subs.add(
-      labels.subscribeToState((newState, prevState) => {
-        if (newState.filters.length !== prevState.filters.length) {
-          this.updateVolumePanel();
-        }
+    fieldsVariable.subscribeToState((newState, prevState) => {
+      if (newState.filters.length !== prevState.filters.length) {
+        this.updateVolumePanel();
+      }
+    });
+    labelsVariable.subscribeToState((newState, prevState) => {
+      const newService = newState.filters.find((f) => f.key === SERVICE_NAME);
+      const prevService = prevState.filters.find((f) => f.key === SERVICE_NAME);
 
-        const newService = newState.filters.find((f) => f.key === SERVICE_NAME);
-        const prevService = prevState.filters.find((f) => f.key === SERVICE_NAME);
-        if (newService !== prevService) {
-          this.setState({
-            panel: this.getVizPanel(),
-          });
-        }
-      })
-    );
-    this._subs.add(
-      patterns.subscribeToState((newState, prevState) => {
-        if (newState.value !== prevState.value) {
-          this.updateVolumePanel();
-        }
-      })
-    );
-    this._subs.add(
-      lineFilter.subscribeToState((newState, prevState) => {
-        if (newState.value !== prevState.value) {
-          this.updateVolumePanel();
-        }
-      })
-    );
+      if (newState.filters.length !== prevState.filters.length || newService !== prevService) {
+        this.updateVolumePanel();
+      }
+    });
+    patternsVariable.subscribeToState((newState, prevState) => {
+      if (newState.value !== prevState.value) {
+        this.updateVolumePanel();
+      }
+    });
+    lineFilterVariable.subscribeToState((newState, prevState) => {
+      if (newState.value !== prevState.value) {
+        this.updateVolumePanel();
+      }
+    });
   }
 
   public updateVolumePanel = () => {
