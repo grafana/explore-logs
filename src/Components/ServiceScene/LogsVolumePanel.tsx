@@ -4,14 +4,11 @@ import { PanelBuilders, SceneComponentProps, SceneObjectBase, SceneObjectState, 
 import { DrawStyle, LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode, StackingMode } from '@grafana/ui';
 import { getQueryRunner, setLevelSeriesOverrides, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
-import {
-  getAdHocFiltersVariable,
-  LEVEL_VARIABLE_VALUE,
-  LOG_VOLUME_STREAM_SELECTOR_EXPR,
-  VAR_LEVELS,
-} from 'services/variables';
+import { getAdHocFiltersVariable, getLabelsVariable, LEVEL_VARIABLE_VALUE, VAR_LEVELS } from 'services/variables';
 import { addToFilters, replaceFilter } from './Breakdowns/AddToFiltersButton';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
+import { getTimeSeriesExpr } from '../../services/expressions';
+import { SERVICE_NAME } from '../ServiceSelectionScene/ServiceSelectionScene';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
@@ -30,6 +27,18 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
         panel: this.getVizPanel(),
       });
     }
+
+    const labels = getLabelsVariable(this);
+
+    labels.subscribeToState((newState, prevState) => {
+      const newService = newState.filters.find((f) => f.key === SERVICE_NAME);
+      const prevService = prevState.filters.find((f) => f.key === SERVICE_NAME);
+      if (newService !== prevService) {
+        this.setState({
+          panel: this.getVizPanel(),
+        });
+      }
+    });
   }
 
   private getVizPanel() {
@@ -39,10 +48,9 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       .setUnit('short')
       .setData(
         getQueryRunner(
-          buildLokiQuery(
-            `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time(${LOG_VOLUME_STREAM_SELECTOR_EXPR} | drop __error__ [$__auto]))`,
-            { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}` }
-          )
+          buildLokiQuery(getTimeSeriesExpr(this, LEVEL_VARIABLE_VALUE, false), {
+            legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`,
+          })
         )
       )
       .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
