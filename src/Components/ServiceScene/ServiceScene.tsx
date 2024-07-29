@@ -31,6 +31,7 @@ import {
   VAR_LABELS,
   VAR_LEVELS,
   VAR_PATTERNS,
+  SERVICE_NAME,
 } from 'services/variables';
 import {
   buildFieldsBreakdownActionScene,
@@ -42,7 +43,6 @@ import { GoToExploreButton } from './GoToExploreButton';
 import { buildLogsListScene } from './LogsListScene';
 import { testIds } from 'services/testIds';
 import { sortLabelsByCardinality } from 'services/filters';
-import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
 import { getMetadataService } from '../../services/metadata';
 import { navigateToDrilldownPage, navigateToIndex } from '../../services/navigate';
 import { areArraysEqual } from '../../services/comparison';
