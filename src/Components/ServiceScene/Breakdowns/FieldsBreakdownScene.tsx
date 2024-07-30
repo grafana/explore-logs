@@ -101,12 +101,14 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   }
 
   private variableChanged = (newState: CustomConstantVariableState, oldState: CustomConstantVariableState) => {
-    if (
-      !areArraysEqual(newState.options, oldState.options) ||
-      newState.value !== oldState.value ||
-      newState.loading !== oldState.loading
-    ) {
+    if (!areArraysEqual(newState.options, oldState.options) || newState.value !== oldState.value) {
       this.updateBody(newState);
+    }
+
+    if (newState.loading !== oldState.loading) {
+      this.setState({
+        loading: newState.loading,
+      });
     }
   };
 
