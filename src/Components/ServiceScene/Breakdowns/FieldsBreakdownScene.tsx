@@ -48,6 +48,7 @@ import { CustomConstantVariable, CustomConstantVariableState } from '../../../se
 import { getLabelOptions } from '../../../services/filters';
 import { navigateToValueBreakdown } from '../../../services/navigate';
 import { ValueSlugs } from '../../../services/routing';
+import { areArraysEqual } from '../../../services/comparison';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -101,7 +102,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   private variableChanged = (newState: CustomConstantVariableState, oldState: CustomConstantVariableState) => {
     if (
-      JSON.stringify(newState.options) !== JSON.stringify(oldState.options) ||
+      !areArraysEqual(newState.options, oldState.options) ||
       newState.value !== oldState.value ||
       newState.loading !== oldState.loading
     ) {
@@ -110,7 +111,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   };
 
   private serviceFieldsChanged = (newState: ServiceSceneState, oldState: ServiceSceneState) => {
-    if (JSON.stringify(newState.fields) !== JSON.stringify(oldState.fields) || newState.loading !== oldState.loading) {
+    if (!areArraysEqual(newState.fields, oldState.fields) || newState.loading !== oldState.loading) {
       this.updateFields(newState);
     }
   };

@@ -20,6 +20,7 @@ import { IndexScene } from '../../../IndexScene/IndexScene';
 import { PatternsFrameScene } from './PatternsFrameScene';
 import { PatternsViewTextSearch } from './PatternsViewTextSearch';
 import { PatternsNotDetected, PatternsTooOld } from './PatternsNotDetected';
+import { areArraysEqual } from '../../../../services/comparison';
 
 export interface PatternsBreakdownSceneState extends SceneObjectState {
   body?: SceneFlexLayout;
@@ -108,7 +109,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     // Subscribe to changes from pattern API call
     this._subs.add(
       serviceScene.subscribeToState((newState, prevState) => {
-        if (JSON.stringify(newState.patterns) !== JSON.stringify(prevState.patterns)) {
+        if (!areArraysEqual(newState.patterns, prevState.patterns)) {
           this.updatePatternFrames(newState.patterns);
         }
       })

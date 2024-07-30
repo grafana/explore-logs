@@ -3,9 +3,8 @@ import { DrawStyle, StackingMode } from '@grafana/ui';
 import { PanelBuilders, SceneCSSGridItem, SceneDataNode, SceneObject } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
 import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
-import { VAR_FIELDS, VAR_LABELS } from './variables';
+import { getLogsFormatVariable, VAR_FIELDS, VAR_LABELS } from './variables';
 import { setLeverColorOverrides } from './panel';
-import { getLogsFormatVariable } from './variableGetters';
 
 export type DetectedLabel = {
   label: string;
@@ -41,7 +40,7 @@ export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
         .filter(([_, v]) => v === 'P')
         .forEach(([k]) => (acc[k] = true));
       return acc;
-    }, {}) || {}
+    }, {}) ?? {}
   );
 
   const linesField = data.fields.find((f) => f.name === 'Line' || f.name === 'body');
