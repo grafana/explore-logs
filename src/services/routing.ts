@@ -143,13 +143,14 @@ export function createAppUrl(path = '/explore', urlParams?: URLSearchParams): st
   return `/a/${pluginJson.id}${path}${urlParams ? `?${urlParams.toString()}` : ''}`;
 }
 
-export enum UrlParameterType {
-  DatasourceId = 'var-ds',
-  TimeRangeFrom = 'from',
-  TimeRangeTo = 'to',
-  Labels = 'var-filters',
-  Fields = 'var-fields',
-}
+export const UrlParameters = {
+  DatasourceId: `var-${VAR_DATASOURCE}`,
+  TimeRangeFrom: 'from',
+  TimeRangeTo: 'to',
+  Labels: `var-${VAR_LABELS}`,
+  Fields: `var-${VAR_FIELDS}`,
+} as const;
+export type UrlParameterType = (typeof UrlParameters)[keyof typeof UrlParameters];
 
 export function setUrlParameter(key: UrlParameterType, value: string, initalParams?: URLSearchParams): URLSearchParams {
   const searchParams = new URLSearchParams(initalParams?.toString() ?? location.search);
