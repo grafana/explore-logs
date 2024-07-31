@@ -81,7 +81,7 @@
     "@grafana/data": "^11.0.0",
     "@grafana/lezer-logql": "^0.2.6",
     "@grafana/runtime": "^11.0.0",
-    "@grafana/scenes": "5.2.0",
+    "@grafana/scenes": "5.7.2",
     "@grafana/ui": "^11.0.0",
     "@lezer/common": "^1.2.1",
     "@lezer/lr": "^1.4.1",
@@ -90,7 +90,7 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-router-dom": "^5.2.0",
-    "rxjs": "7.8.0",
+    "rxjs": "7.8.1",
     "tslib": "2.5.3"
   },
   "resolutions": {

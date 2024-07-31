@@ -6,6 +6,7 @@ import {
   AdHocFiltersVariable,
   PanelBuilders,
   SceneComponentProps,
+  SceneCSSGridItem,
   SceneCSSGridLayout,
   SceneFlexItem,
   SceneFlexItemLike,
@@ -43,7 +44,6 @@ import { getLabelValue, SortByScene, SortCriteriaChanged } from './SortByScene';
 import { getSortByPreference } from 'services/store';
 import { GrotError } from '../../GrotError';
 import { IndexScene } from '../../IndexScene/IndexScene';
-import { LazySceneCSSGridItem } from './LazySceneCSSGridItem';
 import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
 import { getLabelOptions } from '../../../services/filters';
 import { navigateToValueBreakdown } from '../../../services/navigate';
@@ -300,7 +300,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
           .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
           .setOverrides(setLeverColorOverrides);
       }
-      const gridItem = new LazySceneCSSGridItem({
+      const gridItem = new SceneCSSGridItem({
         body: body.build(),
       });
 
