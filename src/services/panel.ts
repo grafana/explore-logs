@@ -2,8 +2,8 @@ import { DataFrame, FieldConfig, FieldMatcherID } from '@grafana/data';
 import { FieldConfigOverridesBuilder, SceneDataTransformer, SceneQueryRunner } from '@grafana/scenes';
 import { map, Observable } from 'rxjs';
 import { LokiQuery } from './query';
-import { EXPLORATION_DS } from './variables';
 import { HideSeriesConfig } from '@grafana/schema';
+import { WRAPPED_LOKI_DS_UID } from './datasource';
 
 const UNKNOWN_LEVEL_LOGS = 'logs';
 export function setLeverColorOverrides(overrides: FieldConfigOverridesBuilder<FieldConfig>) {
@@ -86,7 +86,7 @@ export function getQueryRunner(query: LokiQuery) {
   if (query.legendFormat?.toLowerCase().includes('level')) {
     return new SceneDataTransformer({
       $data: new SceneQueryRunner({
-        datasource: EXPLORATION_DS,
+        datasource: { uid: WRAPPED_LOKI_DS_UID },
         queries: [query],
       }),
       transformations: [sortLevelTransformation],
@@ -94,7 +94,7 @@ export function getQueryRunner(query: LokiQuery) {
   }
 
   return new SceneQueryRunner({
-    datasource: EXPLORATION_DS,
+    datasource: { uid: WRAPPED_LOKI_DS_UID },
     queries: [query],
   });
 }
