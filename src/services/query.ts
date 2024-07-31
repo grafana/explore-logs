@@ -19,14 +19,17 @@ export type LokiQuery = {
  * Builds the resource query
  * @param expr string to be interpolated and executed in the resource request
  * @param resource
+ * @param queryParamsOverrides
  */
 export const buildResourceQuery = (
   expr: string,
-  resource: 'volume' | 'patterns' | 'detected_labels'
+  resource: 'volume' | 'patterns' | 'detected_labels',
+  queryParamsOverrides?: Record<string, unknown>
 ): LokiQuery & SceneDataQueryResourceRequest => {
   return {
     ...defaultQueryParams,
     resource,
+    ...queryParamsOverrides,
     expr,
   };
 };

@@ -63,12 +63,9 @@ export function selectService(service: string, sceneRef: SceneObject) {
 
   setParserIfFrameExistsForService(service, sceneRef);
 
-  //@todo verify
   const serviceSelectionVariable = getServiceSelectionStringVariable(sceneRef);
-  // Setting the service variable state triggers a re-query of the services with invalid queries, so we clear out the body state to avoid triggering queries since
-  serviceSelectionVariable.setState({
-    value: '.+',
-  });
+  // Reset the service selection search to show all services
+  serviceSelectionVariable.changeValueTo('');
 
   variable.setState({
     filters: [

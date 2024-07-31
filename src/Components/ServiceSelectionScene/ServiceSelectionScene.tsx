@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import { debounce } from 'lodash';
 import React from 'react';
-import { DashboardCursorSync, GrafanaTheme2, LoadingState, PanelData, TimeRange } from '@grafana/data';
+import { DashboardCursorSync, GrafanaTheme2, LoadingState, PanelData, TimeRange, VariableHide } from '@grafana/data';
 import {
   behaviors,
   PanelBuilders,
@@ -12,8 +12,7 @@ import {
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
-  SceneVariable,
-  VariableDependencyConfig,
+  SceneVariableSet,
   VizPanel,
 } from '@grafana/scenes';
 import {
@@ -32,17 +31,19 @@ import {
   getLabelsVariable,
   getServiceSelectionStringVariable,
   LEVEL_VARIABLE_VALUE,
-  VAR_DATASOURCE,
   VAR_SERVICE,
+  VAR_SERVICE_EXPR,
+  VAR_SERVICE_EXPR_HACK,
 } from 'services/variables';
 import { selectService, SelectServiceButton } from './SelectServiceButton';
-import { buildLokiQuery } from 'services/query';
+import { buildLokiQuery, buildResourceQuery } from 'services/query';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
 import { NoVolumeError } from './NoVolumeError';
 import { getLabelsFromSeries, toggleLevelFromFilter } from 'services/levels';
 import { ServiceFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
+import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 
 export const SERVICE_NAME = 'service_name';
 
@@ -66,24 +67,27 @@ function getLogExpression(service: string, levelFilter: string) {
 }
 
 export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionSceneState> {
-  protected _variableDependency = new VariableDependencyConfig(this, {
-    // We want to subscribe to changes in datasource variables and update the top services when the datasource changes
-    variableNames: [VAR_DATASOURCE, VAR_SERVICE],
-    onReferencedVariableValueChanged: async (variable: SceneVariable) => {
-      console.log('onReferencedVariableValueChanged', variable);
-      const { name } = variable.state;
-      if (name === VAR_DATASOURCE) {
-        console.log('data source changed');
-        // this.state.$data.
-      }
-    },
-  });
-
-  constructor(state: Partial<ServiceSelectionSceneState> & { $data: SceneDataProvider }) {
+  constructor(state: Partial<ServiceSelectionSceneState>) {
     super({
       body: new SceneCSSGridLayout({ children: [] }),
-
-      //@todo how to interpolate VAR_SERVICE??
+      $variables: new SceneVariableSet({
+        variables: [
+          new CustomConstantVariable({
+            name: VAR_SERVICE,
+            label: 'Service',
+            hide: VariableHide.hideVariable,
+            value: '',
+            skipUrlSync: true,
+          }),
+        ],
+      }),
+      $data: getQueryRunner(
+        buildResourceQuery(
+          // passing in the hack string will force the query to be re-run when the datasource changes, we'll remove it before interpolating so it should have no impact on the actual query being executed
+          `{${SERVICE_NAME}=~\`${VAR_SERVICE_EXPR}.+\` ${VAR_SERVICE_EXPR_HACK} }`,
+          'volume'
+        )
+      ),
       serviceLevel: new Map<string, string[]>(),
       ...state,
     });
@@ -101,16 +105,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     }
 
     const serviceVariable = getServiceSelectionStringVariable(this);
-
     // Reset search after routing back
-    if (serviceVariable.state.value) {
-      serviceVariable.setState({
-        value: '.+',
-      });
-    }
+    serviceVariable.changeValueTo('');
 
     this.state.$data.subscribeToState((newState) => {
-      console.log('data update, updating body', newState);
       if (newState.data?.state === LoadingState.Done) {
         this.updateBody();
         if (this.state.volumeApiError) {
@@ -183,10 +181,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       originalOnToggleSeriesVisibility?.(level, mode);
 
       const allLevels = getLabelsFromSeries(panel.state.$data?.state.data?.series ?? []);
-      console.log('allLevels', allLevels);
-      console.log('panel.state.$data?.state.data?.series', panel.state.$data?.state.data?.series);
-      console.log('panel', panel);
-
       const levels = toggleLevelFromFilter(level, this.state.serviceLevel.get(service), mode, allLevels);
       this.state.serviceLevel.set(service, levels);
 
@@ -277,10 +271,8 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   // We could also run model.setState in component, but it is recommended to implement the state-modifying methods in the scene object
   public onSearchServicesChange = debounce((serviceString?: string) => {
     const variable = getServiceSelectionStringVariable(this);
-    console.log('setting new state', serviceString);
-    variable.setState({
-      value: String(serviceString),
-    });
+    variable.changeValueTo(serviceString ?? '');
+
     reportAppInteraction(
       USER_EVENTS_PAGES.service_selection,
       USER_EVENTS_ACTIONS.service_selection.search_services_changed,
@@ -362,12 +354,9 @@ function createListOfServicesToQuery(services: string[], ds: string, searchStrin
     return [];
   }
 
-  const matchString = searchString === '.+' ? '' : searchString;
-  console.log('match string', matchString);
-
-  const servicesToQuery = services.filter((service) => service.toLowerCase().includes(matchString.toLowerCase()));
+  const servicesToQuery = services.filter((service) => service.toLowerCase().includes(searchString.toLowerCase()));
   const favoriteServicesToQuery = getFavoriteServicesFromStorage(ds).filter(
-    (service) => service.toLowerCase().includes(matchString.toLowerCase()) && servicesToQuery.includes(service)
+    (service) => service.toLowerCase().includes(searchString.toLowerCase()) && servicesToQuery.includes(service)
   );
 
   // Deduplicate

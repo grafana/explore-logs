@@ -1,11 +1,4 @@
-import {
-  AdHocFiltersVariable,
-  CustomVariable,
-  DataSourceVariable,
-  QueryVariable,
-  sceneGraph,
-  SceneObject,
-} from '@grafana/scenes';
+import { AdHocFiltersVariable, CustomVariable, DataSourceVariable, sceneGraph, SceneObject } from '@grafana/scenes';
 import { CustomConstantVariable } from './CustomConstantVariable';
 
 export const VAR_LABELS = 'filters';
@@ -32,6 +25,8 @@ export const EXPLORATION_DS = { uid: VAR_DATASOURCE_EXPR };
 export const ALL_VARIABLE_VALUE = '$__all';
 export const LEVEL_VARIABLE_VALUE = 'detected_level';
 export const PATTERNS_TEXT_FILTER = 'patternsFilter';
+
+// @todo is there a better way to specify variable dependencies?
 export const VAR_SERVICE_EXPR_HACK = `, __service_name__!="${VAR_DATASOURCE_EXPR}"`;
 
 export function getPatternsVariable(scene: SceneObject) {
@@ -105,7 +100,7 @@ export function getLogsFormatVariable(sceneRef: SceneObject) {
 
 export function getServiceSelectionStringVariable(sceneRef: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_SERVICE, sceneRef);
-  if (!(variable instanceof QueryVariable)) {
+  if (!(variable instanceof CustomConstantVariable)) {
     throw new Error('VAR_SERVICE not found');
   }
   return variable;

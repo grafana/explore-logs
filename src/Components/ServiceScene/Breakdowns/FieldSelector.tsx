@@ -50,6 +50,7 @@ export function ServiceFieldSelector({
   selectOption,
   isLoading,
 }: AsyncFieldSelectorProps) {
+  //@todo why is the custom option broken?
   const styles = useStyles2(getStyles);
   const [selected, setSelected] = useState(false);
   const [customOption, setCustomOption] = useState<SelectableValue<string>>();

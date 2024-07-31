@@ -37,8 +37,6 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
   }
 
   query(request: SceneDataQueryRequest): Promise<DataQueryResponse> | Observable<DataQueryResponse> {
-    console.log('request', request);
-
     return new Observable<DataQueryResponse>((subscriber) => {
       if (!request.scopedVars?.__sceneObject) {
         throw new Error('Scene object not found in request');
@@ -82,17 +80,24 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
   private transformVolumeResponse(
     request: DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest>,
-    ds: DataSourceWithBackend,
+    ds: DataSourceWithBackend<LokiQuery>,
     subscriber: Subscriber<DataQueryResponse>
   ) {
     if (request.targets.length !== 1) {
       throw new Error('Volume query can only have a single target!');
     }
+
+    request.targets.forEach((target) => {
+      target.expr = target.expr.replace(VAR_SERVICE_EXPR_HACK, '');
+    });
+
+    const targetsInterpolated = ds.interpolateVariablesInQueries(request.targets, request.scopedVars);
+
     const dsResponse = ds.getResource(
       'index/volume',
       {
-        expr: request.targets[0].expr.replace(VAR_SERVICE_EXPR_HACK, ''),
-        query: request.targets[0].expr.replace(VAR_SERVICE_EXPR_HACK, ''),
+        expr: targetsInterpolated[0].expr.replace(VAR_SERVICE_EXPR_HACK, ''),
+        query: targetsInterpolated[0].expr.replace(VAR_SERVICE_EXPR_HACK, ''),
         from: request.range.from.utc().toISOString(),
         to: request.range.to.utc().toISOString(),
         limit: 1000,
