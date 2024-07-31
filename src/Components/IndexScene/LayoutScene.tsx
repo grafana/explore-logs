@@ -61,13 +61,15 @@ export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
                   ) : null
                 )}
               </div>
-              <div className={styles.controls}>
+              <div className={styles.controlsWrapper}>
                 <GiveFeedbackButton />
-                {controls.map((control) =>
-                  control instanceof VariableValueSelectors === false ? (
-                    <control.Component key={control.state.key} model={control} />
-                  ) : null
-                )}
+                <div className={styles.controls}>
+                  {controls.map((control) =>
+                    control instanceof VariableValueSelectors === false ? (
+                      <control.Component key={control.state.key} model={control} />
+                    ) : null
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -165,10 +167,16 @@ function getStyles(theme: GrafanaTheme2) {
         margin: 0,
       },
     }),
+    controlsWrapper: css({
+      display: 'flex',
+      flexDirection: 'column',
+    }),
     controls: css({
       display: 'flex',
-      paddingTop: theme.spacing(3),
       gap: theme.spacing(1),
+    }),
+    feedback: css({
+      textAlign: 'end',
     }),
     rotateIcon: css({
       svg: { transform: 'rotate(180deg)' },
