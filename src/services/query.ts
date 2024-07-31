@@ -15,11 +15,12 @@ export type LokiQuery = {
   datasource?: DataSourceApi;
 };
 
-export const buildResourceQuery = (expr: string, resource: 'volume' | 'patterns' | 'detected_labels'): LokiQuery & SceneDataQueryResourceRequest => {
+export const buildResourceQuery = (interpolationExpr: string, resource: 'volume' | 'patterns' | 'detected_labels', resourceQuery: string): LokiQuery & SceneDataQueryResourceRequest => {
   return {
     ...defaultQueryParams,
     resource,
-    expr
+    resourceQuery,
+    expr: interpolationExpr
   }
 }
 export const buildLokiQuery = (expr: string, queryParamsOverrides?: Record<string, unknown>): LokiQuery => {

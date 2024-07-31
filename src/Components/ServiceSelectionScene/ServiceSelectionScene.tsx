@@ -1,7 +1,7 @@
 import {css} from '@emotion/css';
-import {debounce, escapeRegExp} from 'lodash';
+import {debounce} from 'lodash';
 import React from 'react';
-import {DashboardCursorSync, GrafanaTheme2, SelectableValue, TimeRange} from '@grafana/data';
+import {DashboardCursorSync, GrafanaTheme2, LoadingState, PanelData, TimeRange} from '@grafana/data';
 import {
   behaviors,
   ConstantVariable,
@@ -9,6 +9,7 @@ import {
   SceneComponentProps,
   SceneCSSGridItem,
   SceneCSSGridLayout,
+  SceneDataProvider,
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
@@ -27,25 +28,22 @@ import {
   StackingMode,
   useStyles2,
 } from '@grafana/ui';
-import {getLokiDatasource} from 'services/scenes';
 import {getFavoriteServicesFromStorage} from 'services/store';
 import {
   getDataSourceVariable,
   getLabelsVariable,
   getServiceSelectionStringVariable,
   LEVEL_VARIABLE_VALUE,
-  VAR_DATASOURCE,
+  VAR_DATASOURCE, VAR_DATASOURCE_EXPR,
   VAR_SERVICE
 } from 'services/variables';
 import {selectService, SelectServiceButton} from './SelectServiceButton';
-import {PLUGIN_ID} from 'services/routing';
 import {buildLokiQuery, buildResourceQuery} from 'services/query';
 import {reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES} from 'services/analytics';
 import {getQueryRunner, setLeverColorOverrides} from 'services/panel';
 import {ConfigureVolumeError} from './ConfigureVolumeError';
 import {NoVolumeError} from './NoVolumeError';
 import {getLabelsFromSeries, toggleLevelFromFilter} from 'services/levels';
-import {isFetchError} from '@grafana/runtime';
 import {ServiceFieldSelector} from '../ServiceScene/Breakdowns/FieldSelector';
 import {VariableHide} from "@grafana/schema";
 
@@ -54,18 +52,12 @@ export const SERVICE_NAME = 'service_name';
 interface ServiceSelectionSceneState extends SceneObjectState {
   // The body of the component
   body: SceneCSSGridLayout;
-  // We query volume endpoint to get list of all services and order them by volume
-  servicesByVolume?: string[];
-  // Keeps track of whether service list is being fetched from volume endpoint
-  isServicesByVolumeLoading: boolean;
-  // Keeps track of the search query in input field
-  // searchServicesString: string;
-  // List of services to be shown in the body
-  servicesToQuery?: string[];
-  // in case the volume api errors out
+
   volumeApiError?: boolean;
   // Show logs of a certain level for a given service
   serviceLevel: Map<string, string[]>;
+  // Logs volume API response as dataframe with SceneQueryRunner
+  $data: SceneDataProvider
 }
 
 function getMetricExpression(service: string) {
@@ -84,6 +76,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       console.log('onReferencedVariableValueChanged', variable)
       const { name } = variable.state;
       if (name === VAR_DATASOURCE) {
+        console.log('data source changed')
         // If datasource changes, we need to fetch services by volume for the new datasource
         // this.getServicesByVolume();
       }
@@ -93,10 +86,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   constructor(state: Partial<ServiceSelectionSceneState>) {
     super({
       body: new SceneCSSGridLayout({ children: [] }),
-      isServicesByVolumeLoading: false,
-      servicesByVolume: undefined,
+      // isServicesByVolumeLoading: false,
+      // servicesByVolume: undefined,
       // searchServicesString: '',
-      servicesToQuery: undefined,
+      // servicesToQuery: undefined,
       $variables: new SceneVariableSet({
         variables: [
           new ConstantVariable({
@@ -107,7 +100,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           })
         ]
       }),
-      $data: getQueryRunner(buildResourceQuery( `{${SERVICE_NAME}=~\`.+\`}`, 'volume')),
+      $data: getQueryRunner(buildResourceQuery(
+          // `{${SERVICE_NAME}=~\`.+\` , ds~=\`${VAR_DATASOURCE_EXPR}\` }`,
+          `{${SERVICE_NAME}=~\`.+\`}`,
+          'volume',
+          `{${SERVICE_NAME}=~\`.+\`}`)),
       serviceLevel: new Map<string, string[]>(),
       ...state,
     });
@@ -130,127 +127,41 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
     // Reset search after routing back
     if (serviceVariable.state.value) {
-      console.log('variable had stuff resetting?', serviceVariable.state)
       serviceVariable.setState({
         value: '.+',
       })
     }
-    // On activation, fetch services by volume
-    // this.getServicesByVolume();
-    this._subs.add(
-      this.subscribeToState((newState, oldState) => {
-        // Updates servicesToQuery when servicesByVolume is changed
-        if (newState.servicesByVolume !== oldState.servicesByVolume) {
-          const ds = getDataSourceVariable(this).getValue()?.toString();
-          let servicesToQuery: string[] = [];
-          if (ds && newState.servicesByVolume) {
-            servicesToQuery = createListOfServicesToQuery(
-              newState.servicesByVolume,
-              ds,
-              serviceVariable.state.value as string
-            );
-          }
+
+    this.state.$data.subscribeToState((newState, prevState) => {
+      console.log('data update, updating body', newState)
+      if(newState.data?.state === LoadingState.Done){
+        this.updateBody()
+        if(this.state.volumeApiError){
           this.setState({
-            servicesToQuery,
-          });
+            volumeApiError: false
+          })
         }
-
-        // Updates servicesToQuery when searchServicesString is changed
-        // if (newState.searchServicesString !== oldState.searchServicesString) {
-        //   const ds = getDataSourceVariable(this).getValue()?.toString();
-        //   let servicesToQuery: string[] = [];
-        //   if (ds && this.state.servicesByVolume) {
-        //     servicesToQuery = createListOfServicesToQuery(
-        //       this.state.servicesByVolume,
-        //       ds,
-        //       newState.searchServicesString
-        //     );
-        //   }
-        //   this.setState({
-        //     servicesToQuery,
-        //   });
-        //   this.getServicesByVolume(newState.searchServicesString);
-        // }
-
-        // When servicesToQuery is changed, update the body and render the panels with the new services
-        if (newState.servicesToQuery !== oldState.servicesToQuery) {
-          this.updateBody();
-        }
-      })
-    );
-
-    // this._subs.add(
-    //   sceneGraph.getTimeRange(this).subscribeToState((newTime, oldTime) => {
-    //     if (shouldUpdateServicesByVolume(newTime.value, oldTime.value)) {
-    //       this.getServicesByVolume();
-    //     }
-    //   })
-    // );
+      }
+      if(newState.data?.state === LoadingState.Error){
+        this.setState({
+          volumeApiError: true
+        })
+      }
+    })
   }
 
-  // Run to fetch services by volume
-  private async getServicesByVolume(service?: string) {
-    const timeRange = sceneGraph.getTimeRange(this).state.value;
-    this.setState({
-      isServicesByVolumeLoading: true,
-    });
-    const ds = await getLokiDatasource(this);
-    if (!ds) {
-      return;
-    }
-
-    try {
-      const serviceSearch = service ? `(?i).*${escapeRegExp(service)}.*` : '.+';
-      const volumeResponse = await ds.getResource(
-        'index/volume',
-        {
-          query: `{${SERVICE_NAME}=~\`${serviceSearch}\`}`,
-          from: timeRange.from.utc().toISOString(),
-          to: timeRange.to.utc().toISOString(),
-          limit: 1000,
-        },
-        {
-          headers: {
-            'X-Query-Tags': `Source=${PLUGIN_ID}`,
-          },
-        }
-      );
-      const serviceMetrics: { [key: string]: number } = {};
-      volumeResponse.data.result.forEach((item: any) => {
-        const serviceName = item['metric'][SERVICE_NAME];
-        const value = Number(item['value'][1]);
-        serviceMetrics[serviceName] = value;
-      });
-
-      const servicesByVolume = Object.entries(serviceMetrics)
-        .sort((a, b) => b[1] - a[1]) // Sort by value in descending order
-        .map(([serviceName]) => serviceName); // Extract service names
-
-      this.setState({
-        volumeApiError: false,
-        servicesByVolume,
-        isServicesByVolumeLoading: false,
-      });
-    } catch (error) {
-      console.log(`Failed to fetch top services:`, error);
-      const volumeApiError = isFetchError(error) && error.data.message?.includes('parse error') ? false : true;
-      this.setState({
-        volumeApiError,
-        servicesByVolume: [],
-        isServicesByVolumeLoading: false,
-      });
-    }
-  }
 
   private updateBody() {
+
+    const { servicesToQuery} = this.getServices(this.state.$data.state.data)
     // If no services are to be queried, clear the body
-    if (!this.state.servicesToQuery || this.state.servicesToQuery.length === 0) {
+    if (!servicesToQuery || servicesToQuery.length === 0) {
       this.state.body.setState({ children: [] });
     } else {
       // If we have services to query, build the layout with the services. Children is an array of layouts for each service (1 row with 2 columns - timeseries and logs panel)
       const children: SceneCSSGridItem[] = [];
       const timeRange = sceneGraph.getTimeRange(this).state.value;
-      for (const service of this.state.servicesToQuery) {
+      for (const service of servicesToQuery) {
         // for each service, we create a layout with timeseries and logs panel
         children.push(this.buildServiceLayout(service, timeRange), this.buildServiceLogsLayout(service));
       }
@@ -276,7 +187,8 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       this.updateBody();
       return;
     }
-    const serviceIndex = this.state.servicesToQuery?.indexOf(service);
+    const {servicesToQuery} = this.getServices(this.state.$data.state.data)
+    const serviceIndex = servicesToQuery?.indexOf(service);
     if (serviceIndex === undefined || serviceIndex < 0) {
       return;
     }
@@ -296,6 +208,9 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       originalOnToggleSeriesVisibility?.(level, mode);
 
       const allLevels = getLabelsFromSeries(panel.state.$data?.state.data?.series ?? []);
+      console.log('allLevels', allLevels)
+      console.log('panel.state.$data?.state.data?.series', panel.state.$data?.state.data?.series)
+      console.log('panel', panel)
 
       const levels = toggleLevelFromFilter(level, this.state.serviceLevel.get(service), mode, allLevels);
       this.state.serviceLevel.set(service, levels);
@@ -385,7 +300,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   };
 
   // We could also run model.setState in component, but it is recommended to implement the state-modifying methods in the scene object
-  public onSearchServicesChange = debounce((serviceString: SelectableValue<string>) => {
+  public onSearchServicesChange = debounce((serviceString?: string) => {
     const variable = getServiceSelectionStringVariable(this)
     console.log('setting new state', serviceString)
     variable.setState({
@@ -402,14 +317,15 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
   public static Component = ({ model }: SceneComponentProps<ServiceSelectionScene>) => {
     const styles = useStyles2(getStyles);
-    const { isServicesByVolumeLoading, servicesByVolume, servicesToQuery, body, volumeApiError, $data } = model.useState();
+    const { body, volumeApiError, $data } = model.useState();
 
     const serviceStringVariable = getServiceSelectionStringVariable(model)
     const {value} = serviceStringVariable.useState()
-    console.log('render: variable value', value)
-    console.log('render: $data', $data)
+    const {data} = $data.useState()
+    const {servicesByVolume, servicesToQuery} = model.getServices(data);
+    const isServicesByVolumeLoading = data?.state === LoadingState.Loading || data?.state === undefined
 
-    const onSearchChange = (serviceName: SelectableValue<string>) => {
+    const onSearchChange = (serviceName: string) => {
       model.onSearchServicesChange(serviceName)
     };
     return (
@@ -426,7 +342,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
             <ServiceFieldSelector
               isLoading={isServicesByVolumeLoading}
               value={String(value)}
-              onChange={onSearchChange}
+              onChange={(serviceName) => onSearchChange(serviceName ?? '')}
               selectOption={(value: string) => {
                 selectService(value, model);
               }}
@@ -451,6 +367,14 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       </div>
     );
   };
+
+  private getServices(data?: PanelData) {
+    const servicesByVolume: string[] = data?.series?.[0]?.fields?.find(field => field.name === 'service_name')?.values ?? []
+    const dsString = getDataSourceVariable(this).getValue()?.toString();
+    const searchString = getServiceSelectionStringVariable(this).getValue();
+    const servicesToQuery = createListOfServicesToQuery(servicesByVolume, dsString, String(searchString));
+    return {servicesByVolume, servicesToQuery};
+  }
 }
 
 // Create a list of services to query:
@@ -462,9 +386,12 @@ function createListOfServicesToQuery(services: string[], ds: string, searchStrin
     return [];
   }
 
-  const servicesToQuery = services.filter((service) => service.toLowerCase().includes(searchString.toLowerCase()));
+  const matchString = searchString === '.+' ? '' : searchString
+  console.log('match string', matchString)
+
+  const servicesToQuery = services.filter((service) => service.toLowerCase().includes(matchString.toLowerCase()));
   const favoriteServicesToQuery = getFavoriteServicesFromStorage(ds).filter(
-    (service) => service.toLowerCase().includes(searchString.toLowerCase()) && servicesToQuery.includes(service)
+    (service) => service.toLowerCase().includes(matchString.toLowerCase()) && servicesToQuery.includes(service)
   );
 
   // Deduplicate
@@ -493,18 +420,18 @@ function createListOfServicesToQuery(services: string[], ds: string, searchStrin
 // }
 
 // Helper function to check if difference between two time ranges is larger than value
-function timeDiffBetweenRangesLargerThan(
-  newTimeRange: TimeRange,
-  oldTimeRange: TimeRange,
-  unit: 'minutes' | 'hours' | 'days',
-  value: number
-) {
-  const toChange =
-    newTimeRange.to.diff(oldTimeRange.to, unit) > value || newTimeRange.to.diff(oldTimeRange.to, unit) < -value;
-  const fromChange =
-    newTimeRange.from.diff(oldTimeRange.from, unit) > value || newTimeRange.from.diff(oldTimeRange.from, unit) < -value;
-  return toChange || fromChange;
-}
+// function timeDiffBetweenRangesLargerThan(
+//   newTimeRange: TimeRange,
+//   oldTimeRange: TimeRange,
+//   unit: 'minutes' | 'hours' | 'days',
+//   value: number
+// ) {
+//   const toChange =
+//     newTimeRange.to.diff(oldTimeRange.to, unit) > value || newTimeRange.to.diff(oldTimeRange.to, unit) < -value;
+//   const fromChange =
+//     newTimeRange.from.diff(oldTimeRange.from, unit) > value || newTimeRange.from.diff(oldTimeRange.from, unit) < -value;
+//   return toChange || fromChange;
+// }
 
 function getStyles(theme: GrafanaTheme2) {
   return {
