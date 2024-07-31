@@ -35,6 +35,8 @@ const getStyles = (theme: GrafanaTheme2) => {
       display: 'flex',
       marginLeft: 'auto',
       gap: theme.spacing(1),
+      position: 'relative',
+      top: theme.spacing(-1),
     }),
     feedback: css({
       alignSelf: 'center',
