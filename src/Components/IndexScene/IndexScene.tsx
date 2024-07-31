@@ -40,11 +40,17 @@ import { ServiceScene } from '../ServiceScene/ServiceScene';
 import { LayoutScene } from './LayoutScene';
 import { FilterOp } from 'services/filters';
 import { getDrilldownSlug, PageSlugs } from '../../services/routing';
-import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
+import { SERVICE_NAME, ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { locationService } from '@grafana/runtime';
-import { renderLogQLFieldFilters, renderLogQLStreamSelector, renderPatternFilters } from 'services/query';
+import {
+  buildResourceQuery,
+  renderLogQLFieldFilters,
+  renderLogQLStreamSelector,
+  renderPatternFilters,
+} from 'services/query';
 import { WRAPPED_LOKI_DS_UID } from '../../services/datasource';
+import { getQueryRunner } from '../../services/panel';
 
 export interface AppliedPattern {
   pattern: string;
@@ -161,7 +167,19 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 function getContentScene(drillDownLabel?: string) {
   const slug = getDrilldownSlug();
   if (slug === PageSlugs.explore) {
-    return new ServiceSelectionScene({});
+    const $data = getQueryRunner(
+      //@todo why can't we interpolate?
+      buildResourceQuery(
+        `{${SERVICE_NAME}=~\`.+\`}`,
+        // `{${SERVICE_NAME}=~\`.+\`, ${VAR_SERVICE_EXPR}}`,
+
+        // Works for all values, but won't search for matches because the interpolation isn't working
+        // `{${SERVICE_NAME}=~\`.+\`}`,
+
+        'volume'
+      )
+    );
+    return new ServiceSelectionScene({ $data });
   }
 
   return new ServiceScene({ drillDownLabel });

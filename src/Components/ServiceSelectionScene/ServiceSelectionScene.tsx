@@ -36,7 +36,7 @@ import {
   VAR_SERVICE,
 } from 'services/variables';
 import { selectService, SelectServiceButton } from './SelectServiceButton';
-import { buildLokiQuery, buildResourceQuery } from 'services/query';
+import { buildLokiQuery } from 'services/query';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
@@ -79,26 +79,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     },
   });
 
-  constructor(state: Partial<ServiceSelectionSceneState>) {
+  constructor(state: Partial<ServiceSelectionSceneState> & { $data: SceneDataProvider }) {
     super({
       body: new SceneCSSGridLayout({ children: [] }),
-      // isServicesByVolumeLoading: false,
-      // servicesByVolume: undefined,
-      // searchServicesString: '',
-      // servicesToQuery: undefined,
 
       //@todo how to interpolate VAR_SERVICE??
-      $data: getQueryRunner(
-        buildResourceQuery(
-          `{${SERVICE_NAME}=~\`.+\`}`,
-          // `{${SERVICE_NAME}=~\`.+\`, ${VAR_SERVICE_EXPR}}`,
-
-          // Works for all values, but won't search for matches because the interpolation isn't working
-          // `{${SERVICE_NAME}=~\`.+\`}`,
-
-          'volume'
-        )
-      ),
       serviceLevel: new Map<string, string[]>(),
       ...state,
     });
