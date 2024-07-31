@@ -1,10 +1,10 @@
 import {
   AdHocFiltersVariable,
-  ConstantVariable,
   CustomVariable,
   DataSourceVariable,
+  QueryVariable,
   sceneGraph,
-  SceneObject
+  SceneObject,
 } from '@grafana/scenes';
 import { CustomConstantVariable } from './CustomConstantVariable';
 
@@ -18,8 +18,9 @@ export const VAR_LEVELS = 'levels';
 export const VAR_LEVELS_EXPR = '${levels}';
 export const VAR_FIELD_GROUP_BY = 'fieldBy';
 export const VAR_LABEL_GROUP_BY = 'labelBy';
-export const VAR_SERVICE = 'service'
-export const VAR_SERVICE_EXPR = '${service}'
+export const VAR_SERVICE = 'service';
+export const VAR_SERVICE_EXPR = '${service}';
+export const VAR_SERVICE_SELECTOR_EXPR = `${VAR_SERVICE_EXPR}`;
 export const VAR_DATASOURCE = 'ds';
 export const VAR_DATASOURCE_EXPR = '${ds}';
 export const VAR_LOGS_FORMAT = 'logsFormat';
@@ -32,6 +33,7 @@ export const EXPLORATION_DS = { uid: VAR_DATASOURCE_EXPR };
 export const ALL_VARIABLE_VALUE = '$__all';
 export const LEVEL_VARIABLE_VALUE = 'detected_level';
 export const PATTERNS_TEXT_FILTER = 'patternsFilter';
+export const VAR_SERVICE_EXPR_HACK = `, __service_name__!="${VAR_DATASOURCE_EXPR}"`;
 
 export function getPatternsVariable(scene: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_PATTERNS, scene);
@@ -104,9 +106,8 @@ export function getLogsFormatVariable(sceneRef: SceneObject) {
 
 export function getServiceSelectionStringVariable(sceneRef: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_SERVICE, sceneRef);
-  if (!(variable instanceof ConstantVariable)) {
+  if (!(variable instanceof QueryVariable)) {
     throw new Error('VAR_SERVICE not found');
   }
   return variable;
 }
-

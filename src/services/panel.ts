@@ -3,7 +3,7 @@ import { FieldConfigOverridesBuilder, SceneDataTransformer, SceneQueryRunner } f
 import { map, Observable } from 'rxjs';
 import { LokiQuery } from './query';
 import { HideSeriesConfig } from '@grafana/schema';
-import {SceneDataQueryResourceRequest, WRAPPED_LOKI_DS_UID} from './datasource';
+import { WRAPPED_LOKI_DS_UID } from './datasource';
 
 const UNKNOWN_LEVEL_LOGS = 'logs';
 export function setLeverColorOverrides(overrides: FieldConfigOverridesBuilder<FieldConfig>) {
