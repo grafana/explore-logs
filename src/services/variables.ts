@@ -20,7 +20,6 @@ export const VAR_FIELD_GROUP_BY = 'fieldBy';
 export const VAR_LABEL_GROUP_BY = 'labelBy';
 export const VAR_SERVICE = 'service';
 export const VAR_SERVICE_EXPR = '${service}';
-export const VAR_SERVICE_SELECTOR_EXPR = `${VAR_SERVICE_EXPR}`;
 export const VAR_DATASOURCE = 'ds';
 export const VAR_DATASOURCE_EXPR = '${ds}';
 export const VAR_LOGS_FORMAT = 'logsFormat';

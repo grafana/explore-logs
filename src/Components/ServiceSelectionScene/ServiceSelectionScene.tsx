@@ -5,7 +5,6 @@ import { DashboardCursorSync, GrafanaTheme2, LoadingState, PanelData, TimeRange 
 import {
   behaviors,
   PanelBuilders,
-  QueryVariable,
   SceneComponentProps,
   SceneCSSGridItem,
   SceneCSSGridLayout,
@@ -14,7 +13,6 @@ import {
   SceneObjectBase,
   SceneObjectState,
   SceneVariable,
-  SceneVariableSet,
   VariableDependencyConfig,
   VizPanel,
 } from '@grafana/scenes';
@@ -45,8 +43,6 @@ import { ConfigureVolumeError } from './ConfigureVolumeError';
 import { NoVolumeError } from './NoVolumeError';
 import { getLabelsFromSeries, toggleLevelFromFilter } from 'services/levels';
 import { ServiceFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
-import { VariableHide } from '@grafana/schema';
-import { WRAPPED_LOKI_DS_UID } from '../../services/datasource';
 
 export const SERVICE_NAME = 'service_name';
 
@@ -90,24 +86,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       // servicesByVolume: undefined,
       // searchServicesString: '',
       // servicesToQuery: undefined,
-      $variables: new SceneVariableSet({
-        variables: [
-          new QueryVariable({
-            name: VAR_SERVICE,
-            label: 'Service',
-            hide: VariableHide.hideVariable,
-            value: '.+',
-            // @todo if interpolation can be fixed, we should update the query whenever the datasource updates
-            datasource: { uid: WRAPPED_LOKI_DS_UID },
-
-            // @todo why does setting a query prevent the query from running at all?
-            query: {
-              query: `*`,
-              refId: 'A',
-            },
-          }),
-        ],
-      }),
 
       //@todo how to interpolate VAR_SERVICE??
       $data: getQueryRunner(

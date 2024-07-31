@@ -6,6 +6,7 @@ import {
   CustomVariable,
   DataSourceVariable,
   getUrlSyncManager,
+  QueryVariable,
   SceneComponentProps,
   SceneControlsSpacer,
   SceneObject,
@@ -31,6 +32,7 @@ import {
   VAR_LINE_FILTER,
   VAR_LOGS_FORMAT,
   VAR_PATTERNS,
+  VAR_SERVICE,
 } from 'services/variables';
 
 import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
@@ -42,6 +44,7 @@ import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelection
 import { LoadingPlaceholder } from '@grafana/ui';
 import { locationService } from '@grafana/runtime';
 import { renderLogQLFieldFilters, renderLogQLStreamSelector, renderPatternFilters } from 'services/query';
+import { WRAPPED_LOKI_DS_UID } from '../../services/datasource';
 
 export interface AppliedPattern {
   pattern: string;
@@ -222,6 +225,21 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     pluginId: 'loki',
   });
 
+  const serviceSelectionVariable = new QueryVariable({
+    name: VAR_SERVICE,
+    label: 'Service',
+    hide: VariableHide.hideVariable,
+    value: '.+',
+    // @todo if interpolation can be fixed, we should update the query whenever the datasource updates
+    datasource: { uid: WRAPPED_LOKI_DS_UID },
+
+    // @todo why does setting a query prevent the query from running at all?
+    query: {
+      query: `*`,
+      refId: 'A',
+    },
+  });
+
   const unsub = dsVariable.subscribeToState((newState) => {
     const dsValue = `${newState.value}`;
     newState.value && addLastUsedDataSourceToStorage(dsValue);
@@ -241,6 +259,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
         }),
         new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable }),
         new CustomVariable({ name: VAR_LOGS_FORMAT, value: '', hide: VariableHide.hideVariable }),
+        serviceSelectionVariable,
       ],
     }),
     unsub,
