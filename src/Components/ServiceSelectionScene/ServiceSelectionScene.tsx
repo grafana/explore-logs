@@ -410,41 +410,6 @@ function createListOfServicesToQuery(services: string[], ds: string, searchStrin
   // Deduplicate
   return Array.from(new Set([...favoriteServicesToQuery, ...servicesToQuery]));
 }
-//
-// function shouldUpdateServicesByVolume(newTime: TimeRange, oldTime: TimeRange) {
-//   // Update if the time range is not within the same scope (hours vs. days)
-//   if (newTime.to.diff(newTime.from, 'days') > 1 !== oldTime.to.diff(oldTime.from, 'days') > 1) {
-//     return true;
-//   }
-//   // Update if the time range is less than 6 hours and the difference between the old and new 'from' and 'to' times is greater than 30 minutes
-//   if (newTime.to.diff(newTime.from, 'hours') < 6 && timeDiffBetweenRangesLargerThan(newTime, oldTime, 'minutes', 30)) {
-//     return true;
-//   }
-//   // Update if the time range is less than 1 day and the difference between the old and new 'from' and 'to' times is greater than 1 hour
-//   if (newTime.to.diff(newTime.from, 'days') < 1 && timeDiffBetweenRangesLargerThan(newTime, oldTime, 'hours', 1)) {
-//     return true;
-//   }
-//   // Update if the time range is more than 1 day and the difference between the old and new 'from' and 'to' times is greater than 1 day
-//   if (newTime.to.diff(newTime.from, 'days') > 1 && timeDiffBetweenRangesLargerThan(newTime, oldTime, 'days', 1)) {
-//     return true;
-//   }
-//
-//   return false;
-// }
-
-// Helper function to check if difference between two time ranges is larger than value
-// function timeDiffBetweenRangesLargerThan(
-//   newTimeRange: TimeRange,
-//   oldTimeRange: TimeRange,
-//   unit: 'minutes' | 'hours' | 'days',
-//   value: number
-// ) {
-//   const toChange =
-//     newTimeRange.to.diff(oldTimeRange.to, unit) > value || newTimeRange.to.diff(oldTimeRange.to, unit) < -value;
-//   const fromChange =
-//     newTimeRange.from.diff(oldTimeRange.from, unit) > value || newTimeRange.from.diff(oldTimeRange.from, unit) < -value;
-//   return toChange || fromChange;
-// }
 
 function getStyles(theme: GrafanaTheme2) {
   return {
