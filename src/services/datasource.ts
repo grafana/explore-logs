@@ -8,7 +8,7 @@ import { getDataSource } from './scenes';
 export const WRAPPED_LOKI_DS_UID = 'wrapped-loki-ds-uid';
 
 type SceneDataQueryRequest = DataQueryRequest<DataQuery> & {
-  scopedVars: { __sceneObject: { valueOf: () => SceneObject } };
+  scopedVars?: { __sceneObject?: { valueOf: () => SceneObject } };
 };
 
 class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
@@ -18,6 +18,10 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
   query(request: SceneDataQueryRequest): Promise<DataQueryResponse> | Observable<DataQueryResponse> {
     return new Observable<DataQueryResponse>((subscriber) => {
+      if (!request.scopedVars?.__sceneObject) {
+        throw new Error('Scene object not found in request');
+      }
+
       getDataSourceSrv()
         .get(getDataSource(request.scopedVars.__sceneObject.valueOf()))
         .then((ds) => {
