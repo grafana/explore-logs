@@ -3,7 +3,7 @@ import { ExplorePage } from './fixtures/explore';
 import { testIds } from "../src/services/testIds";
 import { mockVolumeApiResponse } from "./mocks/mockVolumeApiResponse";
 
-test.describe.only('explore services page', () => {
+test.describe('explore services page', () => {
   let explorePage: ExplorePage;
 
   test.beforeEach(async ({ page }) => {
