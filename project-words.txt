@@ -465,3 +465,4 @@ logspanel
 inital
 lezer
 logql
+subqueries
