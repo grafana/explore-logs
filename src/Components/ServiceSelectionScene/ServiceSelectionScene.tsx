@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import { debounce } from 'lodash';
 import React from 'react';
-import { DashboardCursorSync, GrafanaTheme2, LoadingState, PanelData, TimeRange, VariableHide } from '@grafana/data';
+import { DashboardCursorSync, DataFrame, GrafanaTheme2, LoadingState, TimeRange, VariableHide } from '@grafana/data';
 import {
   behaviors,
   PanelBuilders,
@@ -44,6 +44,7 @@ import { NoVolumeError } from './NoVolumeError';
 import { getLabelsFromSeries, toggleLevelFromFilter } from 'services/levels';
 import { ServiceFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
 import { CustomConstantVariable } from '../../services/CustomConstantVariable';
+import { areArraysEqual } from '../../services/comparison';
 
 export const SERVICE_NAME = 'service_name';
 
@@ -56,6 +57,8 @@ interface ServiceSelectionSceneState extends SceneObjectState {
   serviceLevel: Map<string, string[]>;
   // Logs volume API response as dataframe with SceneQueryRunner
   $data: SceneDataProvider;
+  logVolumeSeries?: DataFrame[];
+  isLogVolumeLoading: boolean;
 }
 
 function getMetricExpression(service: string) {
@@ -89,6 +92,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         )
       ),
       serviceLevel: new Map<string, string[]>(),
+      isLogVolumeLoading: true,
       ...state,
     });
 
@@ -109,30 +113,53 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     serviceVariable.changeValueTo('');
 
     this._subs.add(
-      this.state.$data.subscribeToState((newState) => {
-        if (newState.data?.state === LoadingState.Done) {
+      this.subscribeToState((newState, prevState) => {
+        if (!areArraysEqual(newState.logVolumeSeries, prevState.logVolumeSeries)) {
           this.updateBody();
-          if (this.state.volumeApiError) {
-            this.setState({
-              volumeApiError: false,
-            });
-          }
         }
-        if (newState.data?.state === LoadingState.Error) {
-          this.setState({
-            volumeApiError: true,
-          });
+      })
+    );
+
+    this._subs.add(
+      this.state.$data.subscribeToState((newState, prevState) => {
+        let stateUpdate: Partial<ServiceSelectionSceneState> = {};
+        const newServices = this.state.logVolumeSeries?.[0]?.fields?.find((f) => f.name === SERVICE_NAME);
+        const prevServices = newState?.data?.series?.[0]?.fields?.find((f) => f.name === SERVICE_NAME);
+        if (
+          newState.data?.state === LoadingState.Done &&
+          // We only want to re-render if the order of the services changed, if the volume was different, we don't want to re-render which will trigger additional queries
+          // However this means if the order changes, we won't update the UI
+
+          // Also note that when the time range is updated, that triggers all existing panels to requery with the new time range, but then we have to re-query again after the body is updated with a new list of services after the logs volume query returns
+          // It is for this reason that we want to avoid updating the `logVolumeSeries` as much as possible
+          // If we want the order of the services to update on time range change, we'll need a way to prevent the panels from updating immediately on time range change, and instead wait until the volume call returns
+          !areArraysEqual(newServices?.values, prevServices?.values)
+        ) {
+          // Add new dataframes if changed!
+          stateUpdate.logVolumeSeries = newState.data.series;
+          stateUpdate.isLogVolumeLoading = false;
+          stateUpdate.volumeApiError = false;
+        } else if (newState.data?.state === LoadingState.Error) {
+          stateUpdate.volumeApiError = true;
+          stateUpdate.isLogVolumeLoading = false;
+        } else if (newState.data?.state === LoadingState.Done) {
+          stateUpdate.isLogVolumeLoading = false;
+        }
+
+        if (Object.keys(stateUpdate).length) {
+          this.setState(stateUpdate);
         }
       })
     );
   }
 
   private updateBody() {
-    const { servicesToQuery } = this.getServices(this.state.$data.state.data);
+    const { servicesToQuery } = this.getServices(this.state.logVolumeSeries);
     // If no services are to be queried, clear the body
     if (!servicesToQuery || servicesToQuery.length === 0) {
       this.state.body.setState({ children: [] });
     } else {
+      // @todo update instead of overwrite? Then we can change order?
       // If we have services to query, build the layout with the services. Children is an array of layouts for each service (1 row with 2 columns - timeseries and logs panel)
       const children: SceneCSSGridItem[] = [];
       const timeRange = sceneGraph.getTimeRange(this).state.value;
@@ -162,7 +189,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       this.updateBody();
       return;
     }
-    const { servicesToQuery } = this.getServices(this.state.$data.state.data);
+    const { servicesToQuery } = this.getServices(this.state.logVolumeSeries);
     const serviceIndex = servicesToQuery?.indexOf(service);
     if (serviceIndex === undefined || serviceIndex < 0) {
       return;
@@ -251,6 +278,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   // Creates a layout with logs panel
   buildServiceLogsLayout = (service: string) => {
     const levelFilter = this.getLevelFilterForService(service);
+    // const timeRange = sceneGraph.getTimeRange(this).state.value;
     return new SceneCSSGridItem({
       $behaviors: [new behaviors.CursorSync({ sync: DashboardCursorSync.Off })],
       body: PanelBuilders.logs()
@@ -261,6 +289,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
             buildLokiQuery(getLogExpression(service, levelFilter), {
               maxLines: 100,
               refId: `logs-${service}`,
+              // range: timeRange
             })
           )
         )
@@ -286,13 +315,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
   public static Component = ({ model }: SceneComponentProps<ServiceSelectionScene>) => {
     const styles = useStyles2(getStyles);
-    const { body, volumeApiError, $data } = model.useState();
+    const { body, volumeApiError, logVolumeSeries, isLogVolumeLoading } = model.useState();
 
     const serviceStringVariable = getServiceSelectionStringVariable(model);
     const { value } = serviceStringVariable.useState();
-    const { data } = $data.useState();
-    const { servicesByVolume, servicesToQuery } = model.getServices(data);
-    const isServicesByVolumeLoading = data?.state === LoadingState.Loading || data?.state === undefined;
+    const { servicesByVolume, servicesToQuery } = model.getServices(logVolumeSeries);
 
     const onSearchChange = (serviceName: string) => {
       model.onSearchServicesChange(serviceName);
@@ -302,14 +329,12 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         <div className={styles.bodyWrapper}>
           <div>
             {/** When services fetched, show how many services are we showing */}
-            {isServicesByVolumeLoading && (
-              <LoadingPlaceholder text={'Loading services'} className={styles.loadingText} />
-            )}
-            {!isServicesByVolumeLoading && <>Showing {servicesToQuery?.length ?? 0} services</>}
+            {isLogVolumeLoading && <LoadingPlaceholder text={'Loading services'} className={styles.loadingText} />}
+            {!isLogVolumeLoading && <>Showing {servicesToQuery?.length ?? 0} services</>}
           </div>
           <Field className={styles.searchField}>
             <ServiceFieldSelector
-              isLoading={isServicesByVolumeLoading}
+              isLoading={isLogVolumeLoading}
               value={String(value)}
               onChange={(serviceName) => onSearchChange(serviceName ?? '')}
               selectOption={(value: string) => {
@@ -325,9 +350,9 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
             />
           </Field>
           {/** If we don't have any servicesByVolume, volume endpoint is probably not enabled */}
-          {!isServicesByVolumeLoading && volumeApiError && <ConfigureVolumeError />}
-          {!isServicesByVolumeLoading && !volumeApiError && !servicesByVolume?.length && <NoVolumeError />}
-          {!isServicesByVolumeLoading && servicesToQuery && servicesToQuery.length > 0 && (
+          {!isLogVolumeLoading && volumeApiError && <ConfigureVolumeError />}
+          {!isLogVolumeLoading && !volumeApiError && !servicesByVolume?.length && <NoVolumeError />}
+          {!isLogVolumeLoading && servicesToQuery && servicesToQuery.length > 0 && (
             <div className={styles.body}>
               <body.Component model={body} />
             </div>
@@ -337,9 +362,9 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     );
   };
 
-  private getServices(data?: PanelData) {
+  private getServices(series?: DataFrame[]) {
     const servicesByVolume: string[] =
-      data?.series?.[0]?.fields?.find((field) => field.name === 'service_name')?.values ?? [];
+      series?.[0]?.fields?.find((field) => field.name === 'service_name')?.values ?? [];
     const dsString = getDataSourceVariable(this).getValue()?.toString();
     const searchString = getServiceSelectionStringVariable(this).getValue();
     const servicesToQuery = createListOfServicesToQuery(servicesByVolume, dsString, String(searchString));

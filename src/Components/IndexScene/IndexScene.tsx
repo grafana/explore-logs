@@ -31,6 +31,8 @@ import {
   VAR_LINE_FILTER,
   VAR_LOGS_FORMAT,
   VAR_PATTERNS,
+  VAR_SERVICE_EXPR,
+  VAR_SERVICE_EXPR_HACK,
 } from 'services/variables';
 
 import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
@@ -38,10 +40,16 @@ import { ServiceScene } from '../ServiceScene/ServiceScene';
 import { LayoutScene } from './LayoutScene';
 import { FilterOp } from 'services/filters';
 import { getDrilldownSlug, PageSlugs } from '../../services/routing';
-import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
+import { SERVICE_NAME, ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { locationService } from '@grafana/runtime';
-import { renderLogQLFieldFilters, renderLogQLStreamSelector, renderPatternFilters } from 'services/query';
+import {
+  buildResourceQuery,
+  renderLogQLFieldFilters,
+  renderLogQLStreamSelector,
+  renderPatternFilters,
+} from 'services/query';
+import { getQueryRunner } from '../../services/panel';
 
 export interface AppliedPattern {
   pattern: string;
@@ -158,7 +166,14 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 function getContentScene(drillDownLabel?: string) {
   const slug = getDrilldownSlug();
   if (slug === PageSlugs.explore) {
-    return new ServiceSelectionScene({});
+    const $data = getQueryRunner(
+      buildResourceQuery(
+        // passing in the hack string will force the query to be re-run when the datasource changes, we'll remove it before interpolating so it should have no impact on the actual query being executed
+        `{${SERVICE_NAME}=~\`${VAR_SERVICE_EXPR}.+\` ${VAR_SERVICE_EXPR_HACK} }`,
+        'volume'
+      )
+    );
+    return new ServiceSelectionScene({ $data });
   }
 
   return new ServiceScene({ drillDownLabel });
