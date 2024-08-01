@@ -51,14 +51,10 @@ export const SERVICE_NAME = 'service_name';
 interface ServiceSelectionSceneState extends SceneObjectState {
   // The body of the component
   body: SceneCSSGridLayout;
-
-  volumeApiError?: boolean;
   // Show logs of a certain level for a given service
   serviceLevel: Map<string, string[]>;
   // Logs volume API response as dataframe with SceneQueryRunner
   $data: SceneDataProvider;
-  logVolumeSeries?: DataFrame[];
-  isLogVolumeLoading: boolean;
 }
 
 function getMetricExpression(service: string) {
@@ -92,7 +88,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         )
       ),
       serviceLevel: new Map<string, string[]>(),
-      isLogVolumeLoading: true,
       ...state,
     });
 
@@ -113,40 +108,20 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     serviceVariable.changeValueTo('');
 
     this._subs.add(
-      this.subscribeToState((newState, prevState) => {
-        if (!areArraysEqual(newState.logVolumeSeries, prevState.logVolumeSeries)) {
-          this.updateBody();
-        }
-      })
-    );
-
-    this._subs.add(
       this.state.$data.subscribeToState((newState, prevState) => {
-        let stateUpdate: Partial<ServiceSelectionSceneState> = {};
+        // update body if the data is done loading, and the dataframes have changed
         if (
           newState.data?.state === LoadingState.Done &&
-          !areArraysEqual(this.state.logVolumeSeries, newState?.data?.series)
+          !areArraysEqual(prevState?.data?.series, newState?.data?.series)
         ) {
-          // Add new dataframes if changed!
-          stateUpdate.logVolumeSeries = newState.data.series;
-          stateUpdate.isLogVolumeLoading = false;
-          stateUpdate.volumeApiError = false;
-        } else if (newState.data?.state === LoadingState.Error) {
-          stateUpdate.volumeApiError = true;
-          stateUpdate.isLogVolumeLoading = false;
-        } else if (newState.data?.state === LoadingState.Done) {
-          stateUpdate.isLogVolumeLoading = false;
-        }
-
-        if (Object.keys(stateUpdate).length) {
-          this.setState(stateUpdate);
+          this.updateBody();
         }
       })
     );
   }
 
   private updateBody() {
-    const { servicesToQuery } = this.getServices(this.state.logVolumeSeries);
+    const { servicesToQuery } = this.getServices(this.state.$data.state.data?.series);
     // If no services are to be queried, clear the body
     if (!servicesToQuery || servicesToQuery.length === 0) {
       this.state.body.setState({ children: [] });
@@ -193,7 +168,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       this.updateBody();
       return;
     }
-    const { servicesToQuery } = this.getServices(this.state.logVolumeSeries);
+    const { servicesToQuery } = this.getServices(this.state.$data.state.data?.series);
     const serviceIndex = servicesToQuery?.indexOf(service);
     if (serviceIndex === undefined || serviceIndex < 0) {
       return;
@@ -320,11 +295,17 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
   public static Component = ({ model }: SceneComponentProps<ServiceSelectionScene>) => {
     const styles = useStyles2(getStyles);
-    const { body, volumeApiError, logVolumeSeries, isLogVolumeLoading } = model.useState();
+    const { body, $data } = model.useState();
 
     const serviceStringVariable = getServiceSelectionStringVariable(model);
     const { value } = serviceStringVariable.useState();
-    const { servicesByVolume, servicesToQuery } = model.getServices(logVolumeSeries);
+
+    const { servicesByVolume, servicesToQuery } = model.getServices($data.state.data?.series);
+    const isLogVolumeLoading =
+      $data.state.data?.state === LoadingState.Loading ||
+      $data.state.data?.state === LoadingState.Streaming ||
+      $data.state.data === undefined;
+    const volumeApiError = $data.state.data?.state === LoadingState.Error;
 
     const onSearchChange = (serviceName: string) => {
       model.onSearchServicesChange(serviceName);
