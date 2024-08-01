@@ -318,13 +318,14 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     const onSearchChange = (serviceName: string) => {
       model.onSearchServicesChange(serviceName);
     };
+    const serviceCount = servicesToQuery?.length ?? 0;
     return (
       <div className={styles.container}>
         <div className={styles.bodyWrapper}>
           <div>
             {/** When services fetched, show how many services are we showing */}
             {isLogVolumeLoading && <LoadingPlaceholder text={'Loading services'} className={styles.loadingText} />}
-            {!isLogVolumeLoading && <>Showing {servicesToQuery?.length ?? 0} services</>}
+            {!isLogVolumeLoading && <>Showing {serviceCount} service{serviceCount > 1 ? 's' : ''}</>}
           </div>
           <Field className={styles.searchField}>
             <ServiceFieldSelector
