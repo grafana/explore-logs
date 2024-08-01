@@ -2,7 +2,10 @@ import {
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
+  getLineFilterVariable,
+  getPatternsVariable,
   LEVEL_VARIABLE_VALUE,
+  SERVICE_NAME,
   VAR_FIELDS_EXPR,
   VAR_LINE_FILTER_EXPR,
   VAR_LOGS_FORMAT_EXPR,
@@ -46,5 +49,53 @@ export function getTimeSeriesExpr(sceneRef: SceneObject, streamSelectorName: str
   if (fields.length || levels.length) {
     return `sum(count_over_time({${streamSelectors}} ${fieldExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_FIELDS_EXPR} [$__auto])) by (${streamSelectorName})`;
   }
+
+  // if we have a single service selector and the stream selector is `LEVEL_VARIABLE_VALUE`, we can use aggregated metrics for the whole service
+  if (hasSingleServiceSelector(sceneRef) && streamSelectorName === LEVEL_VARIABLE_VALUE) {
+    return `sum(sum_over_time({__aggregated_metric__=\`${service(
+      sceneRef
+    )}\`} | logfmt | unwrap count [$__auto])) by (${streamSelectorName})`;
+  }
+
+  // otherwise, if we have a single service selector and the stream selector is something else, we can use aggregated metrics for that specific selector
+  if (hasSingleServiceSelector(sceneRef)) {
+    return `sum(sum_over_time({__aggregated_metric__=\`${service(
+      sceneRef
+    )}\`} | logfmt |${streamSelectorName} != "" | unwrap count [$__auto])) by (${streamSelectorName})`;
+  }
+
+  // finally, we are in the case where we have too specific of selectors to use aggregated metrics, so we need to use the regular count_over_time
   return `sum(count_over_time({${streamSelectors}} ${fieldExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} [$__auto])) by (${streamSelectorName})`;
+}
+
+function service(sceneRef: SceneObject): string {
+  const labelsVariable = getLabelsVariable(sceneRef);
+  const filters = labelsVariable?.state.filters ?? [];
+
+  return filters.find((filter) => filter.key === SERVICE_NAME)?.value ?? '';
+}
+
+function hasSingleServiceSelector(sceneRef: SceneObject): boolean {
+  const patternsVariable = getPatternsVariable(sceneRef);
+  const lineFilterVariable = getLineFilterVariable(sceneRef);
+  const labelsVariable = getLabelsVariable(sceneRef);
+
+  if (patternsVariable.state.value !== '') {
+    return false;
+  }
+
+  if (labelsVariable.state.filters.length > 1) {
+    return false;
+  }
+
+  const filter = (lineFilterVariable.state.value as string).trim();
+
+  // only return true if there is a single label filter for the service name and empty line filter expression
+  if (labelsVariable.state.filters[0].key === SERVICE_NAME) {
+    if (filter === '|~ `(?i)`' || !filter) {
+      return true;
+    }
+  }
+
+  return false;
 }

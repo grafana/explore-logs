@@ -1,17 +1,33 @@
 import React from 'react';
 
-import { PanelBuilders, SceneComponentProps, SceneObjectBase, SceneObjectState, VizPanel } from '@grafana/scenes';
+import {
+  AdHocFiltersVariable,
+  PanelBuilders,
+  SceneComponentProps,
+  SceneObjectBase,
+  SceneObjectState,
+  VizPanel,
+} from '@grafana/scenes';
 import { DrawStyle, LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode, StackingMode } from '@grafana/ui';
 import { getQueryRunner, setLevelSeriesOverrides, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
-import { getAdHocFiltersVariable, getLabelsVariable, LEVEL_VARIABLE_VALUE, VAR_LEVELS } from 'services/variables';
+import {
+  LEVEL_VARIABLE_VALUE,
+  VAR_LEVELS,
+  SERVICE_NAME,
+  getAdHocFiltersVariable,
+  getFieldsVariable,
+  getPatternsVariable,
+  getLineFilterVariable,
+  getLabelsVariable,
+} from 'services/variables';
 import { addToFilters, replaceFilter } from './Breakdowns/AddToFiltersButton';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getTimeSeriesExpr } from '../../services/expressions';
-import { SERVICE_NAME } from '../ServiceSelectionScene/ServiceSelectionScene';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
+  filter?: AdHocFiltersVariable;
 }
 
 export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
@@ -28,18 +44,41 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       });
     }
 
-    const labels = getLabelsVariable(this);
+    const fieldsVariable = getFieldsVariable(this);
+    const patternsVariable = getPatternsVariable(this);
+    const lineFilterVariable = getLineFilterVariable(this);
+    const labelsVariable = getLabelsVariable(this);
 
-    labels.subscribeToState((newState, prevState) => {
+    fieldsVariable.subscribeToState((newState, prevState) => {
+      if (newState.filters.length !== prevState.filters.length) {
+        this.updateVolumePanel();
+      }
+    });
+    labelsVariable.subscribeToState((newState, prevState) => {
       const newService = newState.filters.find((f) => f.key === SERVICE_NAME);
       const prevService = prevState.filters.find((f) => f.key === SERVICE_NAME);
-      if (newService !== prevService) {
-        this.setState({
-          panel: this.getVizPanel(),
-        });
+
+      if (newState.filters.length !== prevState.filters.length || newService !== prevService) {
+        this.updateVolumePanel();
+      }
+    });
+    patternsVariable.subscribeToState((newState, prevState) => {
+      if (newState.value !== prevState.value) {
+        this.updateVolumePanel();
+      }
+    });
+    lineFilterVariable.subscribeToState((newState, prevState) => {
+      if (newState.value !== prevState.value) {
+        this.updateVolumePanel();
       }
     });
   }
+
+  public updateVolumePanel = () => {
+    this.setState({
+      panel: this.getVizPanel(),
+    });
+  };
 
   private getVizPanel() {
     const viz = PanelBuilders.timeseries()
@@ -73,6 +112,37 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
 
     return panel;
   }
+
+  // private hasSingleServiceSelector(): boolean {
+  //   const fields = sceneGraph.lookupVariable(VAR_FIELDS, this) as AdHocFiltersVariable;
+  //   const patterns = sceneGraph.lookupVariable(VAR_PATTERNS, this) as CustomVariable;
+  //   const lineFilter = sceneGraph.lookupVariable(VAR_LINE_FILTER, this) as CustomVariable;
+
+  //   if (fields.state.filters.length !== 0 || patterns.state.value !== '') {
+  //     return false;
+  //   }
+
+  //   const labels = sceneGraph.lookupVariable(VAR_LABELS, this) as AdHocFiltersVariable;
+  //   if (labels.state.filters.length > 1) {
+  //     return false;
+  //   }
+
+  //   const filter = (lineFilter.state.value as string).trim();
+  //   if (labels.state.filters[0].key === SERVICE_NAME) {
+  //     if (filter === '|~ `(?i)`' || !filter) {
+  //       return true;
+  //     }
+  //   }
+
+  //   return false;
+  // }
+
+  // private service(): string {
+  //   const labels = sceneGraph.lookupVariable(VAR_LABELS, this) as AdHocFiltersVariable;
+  //   const filters = labels?.state.filters ?? [];
+
+  //   return filters.find((filter) => filter.key === SERVICE_NAME)?.value ?? '';
+  // }
 
   private extendTimeSeriesLegendBus = (context: PanelContext) => {
     const originalOnToggleSeriesVisibility = context.onToggleSeriesVisibility;

@@ -27,7 +27,13 @@ import {
 } from '@grafana/ui';
 import { getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
-import { getDataSourceVariable, getLabelsVariable, LEVEL_VARIABLE_VALUE, VAR_DATASOURCE } from 'services/variables';
+import {
+  getDataSourceVariable,
+  getLabelsVariable,
+  LEVEL_VARIABLE_VALUE,
+  SERVICE_NAME,
+  VAR_DATASOURCE,
+} from 'services/variables';
 import { selectService, SelectServiceButton } from './SelectServiceButton';
 import { PLUGIN_ID } from 'services/routing';
 import { buildLokiQuery } from 'services/query';
@@ -38,8 +44,6 @@ import { NoVolumeError } from './NoVolumeError';
 import { getLabelsFromSeries, toggleLevelFromFilter } from 'services/levels';
 import { isFetchError } from '@grafana/runtime';
 import { ServiceFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
-
-export const SERVICE_NAME = 'service_name';
 
 interface ServiceSelectionSceneState extends SceneObjectState {
   // The body of the component
@@ -59,7 +63,7 @@ interface ServiceSelectionSceneState extends SceneObjectState {
 }
 
 function getMetricExpression(service: string) {
-  return `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`;
+  return `sum by (${LEVEL_VARIABLE_VALUE}) (sum_over_time({__aggregated_metric__=\`${service}\`} | logfmt | unwrap count [$__auto]))`;
 }
 
 function getLogExpression(service: string, levelFilter: string) {

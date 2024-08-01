@@ -23,6 +23,7 @@ export const EXPLORATION_DS = { uid: VAR_DATASOURCE_EXPR };
 export const ALL_VARIABLE_VALUE = '$__all';
 export const LEVEL_VARIABLE_VALUE = 'detected_level';
 export const PATTERNS_TEXT_FILTER = 'patternsFilter';
+export const SERVICE_NAME = 'service_name';
 
 export function getPatternsVariable(scene: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_PATTERNS, scene);

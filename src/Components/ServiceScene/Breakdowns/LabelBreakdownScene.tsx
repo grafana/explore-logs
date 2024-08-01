@@ -3,6 +3,7 @@ import React from 'react';
 
 import { GrafanaTheme2, ReducerID } from '@grafana/data';
 import {
+  MultiValueVariableState,
   PanelBuilders,
   SceneComponentProps,
   SceneCSSGridItem,
@@ -25,7 +26,16 @@ import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { ValueSlugs } from 'services/routing';
 import { getLokiDatasource } from 'services/scenes';
-import { ALL_VARIABLE_VALUE, getLabelGroupByVariable, VAR_LABEL_GROUP_BY, VAR_LABELS } from 'services/variables';
+import {
+  ALL_VARIABLE_VALUE,
+  getLabelGroupByVariable,
+  VAR_LABEL_GROUP_BY,
+  VAR_LABELS,
+  getFieldsVariable,
+  getPatternsVariable,
+  getLineFilterVariable,
+  getLabelsVariable,
+} from 'services/variables';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
@@ -105,6 +115,16 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
 
     this._subs.add(serviceScene.subscribeToState(this.onServiceStateChange));
     this._subs.add(variable.subscribeToState(this.onVariableStateChange));
+
+    const fieldsVariable = getFieldsVariable(this);
+    const patternsVariable = getPatternsVariable(this);
+    const lineFilterVariable = getLineFilterVariable(this);
+    const labelsVariable = getLabelsVariable(this);
+
+    this._subs.add(labelsVariable.subscribeToState(this.onAdHocVariableStateChange));
+    this._subs.add(fieldsVariable.subscribeToState(this.onAdHocVariableStateChange));
+    this._subs.add(patternsVariable.subscribeToState(this.onMultiVariableStateChange));
+    this._subs.add(lineFilterVariable.subscribeToState(this.onMultiVariableStateChange));
   }
 
   /**
@@ -120,6 +140,37 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     ) {
       const variable = this.getVariable();
       this.updateBody(variable, newState);
+    }
+  };
+
+  /**
+   * Update body when MultiValueVariableState state is updated
+   * @param newState
+   * @param oldState
+   */
+  private onMultiVariableStateChange = (newState: MultiValueVariableState, oldState: MultiValueVariableState) => {
+    const variable = this.getVariable();
+    const variableState = variable.state;
+
+    if (newState.value !== oldState.value) {
+      this.updateBody(variable, variableState);
+    }
+  };
+
+  /**
+   * Update body when AdHocVariableState state is updated
+   * @param newState
+   * @param oldState
+   */
+  private onAdHocVariableStateChange = async (
+    newState: { filters: Array<{ keyLabel?: string; valueLabel?: string }> },
+    oldState: { filters: Array<{ keyLabel?: string; valueLabel?: string }> }
+  ) => {
+    if (!areArraysEqual(newState.filters, oldState.filters)) {
+      const variable = this.getVariable();
+      const variableState = variable.state;
+
+      this.updateBody(variable, variableState);
     }
   };
 
