@@ -184,13 +184,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     if (serviceIndex === undefined || serviceIndex < 0) {
       return;
     }
-    this.state.body.forEachChild((scene) => {
-      if (scene instanceof SceneCSSGridLayout) {
-        let newChildren = [...scene.state.children];
-        newChildren.splice(serviceIndex * 2 + 1, 1, this.buildServiceLogsLayout(service));
-        scene.setState({ children: newChildren });
-      }
-    });
+    if (this.state.body) {
+      let newChildren = [...this.state.body.state.children];
+      newChildren.splice(serviceIndex * 2 + 1, 1, this.buildServiceLogsLayout(service));
+      this.state.body.setState({ children: newChildren });
+    }
   }
 
   private extendTimeSeriesLegendBus = (service: string, context: PanelContext, panel: VizPanel) => {
