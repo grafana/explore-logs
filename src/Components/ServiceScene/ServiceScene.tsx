@@ -3,8 +3,6 @@ import React from 'react';
 
 import { GrafanaTheme2, LoadingState } from '@grafana/data';
 import {
-  AdHocFiltersVariable,
-  CustomVariable,
   SceneComponentProps,
   SceneFlexItem,
   SceneFlexLayout,
@@ -17,19 +15,21 @@ import {
 } from '@grafana/scenes';
 import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { DetectedLabel, DetectedLabelsResponse, extractParserAndFieldsFromDataFrame } from 'services/fields';
+import { DetectedLabel, DetectedLabelsResponse, updateParserFromDataFrame } from 'services/fields';
 import { getQueryRunner } from 'services/panel';
 import { buildLokiQuery, renderLogQLStreamSelector } from 'services/query';
 import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, PLUGIN_ID, ValueSlugs } from 'services/routing';
 import { getExplorationFor, getLokiDatasource } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
+  getFieldsVariable,
+  getLabelsVariable,
   LEVEL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_LABELS,
-  VAR_LOGS_FORMAT,
+  VAR_LEVELS,
   VAR_PATTERNS,
 } from 'services/variables';
 import {
@@ -45,6 +45,7 @@ import { sortLabelsByCardinality } from 'services/filters';
 import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
 import { getMetadataService } from '../../services/metadata';
 import { navigateToDrilldownPage, navigateToIndex } from '../../services/navigate';
+import { areArraysEqual } from '../../services/comparison';
 
 export interface LokiPattern {
   pattern: string;
@@ -82,7 +83,7 @@ export interface ServiceSceneState extends SceneObjectState, ServiceSceneCustomS
 
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
-    variableNames: [VAR_DATASOURCE, VAR_LABELS, VAR_FIELDS, VAR_PATTERNS],
+    variableNames: [VAR_DATASOURCE, VAR_LABELS, VAR_FIELDS, VAR_PATTERNS, VAR_LEVELS],
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
   });
 
@@ -97,18 +98,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
-  public getFiltersVariable(): AdHocFiltersVariable {
-    const variable = sceneGraph.lookupVariable(VAR_LABELS, this)!;
-
-    if (!(variable instanceof AdHocFiltersVariable)) {
-      throw new Error('Filters variable not found');
-    }
-
-    return variable;
-  }
-
   private setEmptyFiltersRedirection() {
-    const variable = this.getFiltersVariable();
+    const variable = getLabelsVariable(this);
     if (variable.state.filters.length === 0) {
       this.redirectToStart();
       return;
@@ -154,7 +145,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
     if (this.state.$data) {
       this._subs.add(
-        this.state.$data?.subscribeToState((newState, prevState) => {
+        this.state.$data?.subscribeToState((newState) => {
           if (newState.data?.state === LoadingState.Done) {
             this.updateFields();
           }
@@ -179,7 +170,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       return;
     }
 
-    const filterVariable = this.getFiltersVariable();
+    const filterVariable = getLabelsVariable(this);
     if (filterVariable.state.filters.length === 0) {
       return;
     }
@@ -195,16 +186,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       });
   }
 
-  private getLogsFormatVariable() {
-    const variable = sceneGraph.lookupVariable(VAR_LOGS_FORMAT, this);
-    if (!(variable instanceof CustomVariable)) {
-      throw new Error('Logs format variable not found');
-    }
-    return variable;
-  }
-
   private updateFields() {
-    const variable = this.getLogsFormatVariable();
     const disabledFields = [
       '__time',
       'timestamp',
@@ -225,17 +207,13 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     if (newState.data?.state === LoadingState.Done) {
       const frame = newState.data?.series[0];
       if (frame) {
-        const res = extractParserAndFieldsFromDataFrame(frame);
+        const res = updateParserFromDataFrame(frame, this);
         const fields = res.fields.filter((f) => !disabledFields.includes(f)).sort((a, b) => a.localeCompare(b));
-        if (JSON.stringify(fields) !== JSON.stringify(this.state.fields)) {
+        if (!areArraysEqual(fields, this.state.fields)) {
           this.setState({
             fields: fields,
             loading: false,
           });
-        }
-        const newType = res.type ? ` | ${res.type}` : '';
-        if (variable.getValue() !== newType) {
-          variable.changeValueTo(newType);
         }
       } else {
         this.setState({
@@ -258,8 +236,9 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
 
     const timeRange = sceneGraph.getTimeRange(this).state.value;
-    const labels = sceneGraph.lookupVariable(VAR_LABELS, this)! as AdHocFiltersVariable;
-    const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
+    const labels = getLabelsVariable(this);
+    const fields = getFieldsVariable(this);
+
     const excludeLabels = [ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE];
 
     const { data } = await ds.getResource(
@@ -296,7 +275,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     const timeRange = sceneGraph.getTimeRange(this);
 
     const timeRangeValue = timeRange.state.value;
-    const filters = sceneGraph.lookupVariable(VAR_LABELS, this)! as AdHocFiltersVariable;
+    const filters = getLabelsVariable(this);
+
     const { detectedLabels } = await ds.getResource<DetectedLabelsResponse>(
       'detected_labels',
       {
@@ -319,7 +299,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       .sort((a, b) => sortLabelsByCardinality(a, b))
       .filter((label) => label.label !== LEVEL_VARIABLE_VALUE);
 
-    if (JSON.stringify(labels) !== JSON.stringify(this.state.labels)) {
+    if (!areArraysEqual(labels, this.state.labels)) {
       this.setState({ labels });
     }
   }
@@ -467,7 +447,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                     );
                     if (tab.value) {
                       const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
-                      const variable = serviceScene.getFiltersVariable();
+                      const variable = getLabelsVariable(serviceScene);
                       const service = variable.state.filters.find((f) => f.key === SERVICE_NAME);
 
                       if (service?.value) {

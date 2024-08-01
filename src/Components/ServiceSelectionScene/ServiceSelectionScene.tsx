@@ -3,7 +3,6 @@ import { debounce, escapeRegExp } from 'lodash';
 import React, { useState } from 'react';
 import { DashboardCursorSync, GrafanaTheme2, TimeRange } from '@grafana/data';
 import {
-  AdHocFiltersVariable,
   behaviors,
   PanelBuilders,
   SceneComponentProps,
@@ -28,7 +27,7 @@ import {
 } from '@grafana/ui';
 import { getLokiDatasource } from 'services/scenes';
 import { getFavoriteServicesFromStorage } from 'services/store';
-import { LEVEL_VARIABLE_VALUE, VAR_DATASOURCE, VAR_LABELS } from 'services/variables';
+import { getDataSourceVariable, getLabelsVariable, LEVEL_VARIABLE_VALUE, VAR_DATASOURCE } from 'services/variables';
 import { selectService, SelectServiceButton } from './SelectServiceButton';
 import { PLUGIN_ID } from 'services/routing';
 import { buildLokiQuery } from 'services/query';
@@ -57,6 +56,14 @@ interface ServiceSelectionSceneState extends SceneObjectState {
   volumeApiError?: boolean;
   // Show logs of a certain level for a given service
   serviceLevel: Map<string, string[]>;
+}
+
+function getMetricExpression(service: string) {
+  return `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`;
+}
+
+function getLogExpression(service: string, levelFilter: string) {
+  return `{${SERVICE_NAME}=\`${service}\`}${levelFilter}`;
 }
 
 export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionSceneState> {
@@ -88,8 +95,8 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
   private onActivate() {
     // Clear all adhoc filters when the scene is activated, if there are any
-    const variable = sceneGraph.lookupVariable(VAR_LABELS, this);
-    if (variable instanceof AdHocFiltersVariable && variable.state.filters.length > 0) {
+    const variable = getLabelsVariable(this);
+    if (variable.state.filters.length > 0) {
       variable.setState({
         filters: [],
       });
@@ -107,7 +114,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       this.subscribeToState((newState, oldState) => {
         // Updates servicesToQuery when servicesByVolume is changed
         if (newState.servicesByVolume !== oldState.servicesByVolume) {
-          const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue()?.toString();
+          const ds = getDataSourceVariable(this).getValue()?.toString();
           let servicesToQuery: string[] = [];
           if (ds && newState.servicesByVolume) {
             servicesToQuery = createListOfServicesToQuery(
@@ -123,7 +130,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
         // Updates servicesToQuery when searchServicesString is changed
         if (newState.searchServicesString !== oldState.searchServicesString) {
-          const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, this)?.getValue()?.toString();
+          const ds = getDataSourceVariable(this).getValue()?.toString();
           let servicesToQuery: string[] = [];
           if (ds && this.state.servicesByVolume) {
             servicesToQuery = createListOfServicesToQuery(
@@ -214,26 +221,22 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       this.state.body.setState({ children: [] });
     } else {
       // If we have services to query, build the layout with the services. Children is an array of layouts for each service (1 row with 2 columns - timeseries and logs panel)
-      const children = [];
+      const children: SceneCSSGridItem[] = [];
       const timeRange = sceneGraph.getTimeRange(this).state.value;
       for (const service of this.state.servicesToQuery) {
         // for each service, we create a layout with timeseries and logs panel
         children.push(this.buildServiceLayout(service, timeRange), this.buildServiceLogsLayout(service));
       }
       this.state.body.setState({
-        children: [
-          new SceneCSSGridLayout({
-            children,
-            isLazy: true,
-            templateColumns: 'repeat(auto-fit, minmax(500px, 1fr) minmax(300px, 70vw))',
-            autoRows: '200px',
-            md: {
-              templateColumns: '1fr',
-              rowGap: 1,
-              columnGap: 1,
-            },
-          }),
-        ],
+        children,
+        isLazy: true,
+        templateColumns: 'repeat(auto-fit, minmax(500px, 1fr) minmax(300px, 70vw))',
+        autoRows: '200px',
+        md: {
+          templateColumns: '1fr',
+          rowGap: 1,
+          columnGap: 1,
+        },
       });
     }
   }
@@ -285,10 +288,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       .setTitle(service)
       .setData(
         getQueryRunner(
-          buildLokiQuery(
-            `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`,
-            { legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`, splitDuration, refId: `ts-${service}` }
-          )
+          buildLokiQuery(getMetricExpression(service), {
+            legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`,
+            splitDuration,
+            refId: `ts-${service}`,
+          })
         )
       )
       .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
@@ -341,7 +345,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         .setHoverHeader(true)
         .setData(
           getQueryRunner(
-            buildLokiQuery(`{${SERVICE_NAME}=\`${service}\`}${levelFilter}`, {
+            buildLokiQuery(getLogExpression(service, levelFilter), {
               maxLines: 100,
               refId: `logs-${service}`,
             })

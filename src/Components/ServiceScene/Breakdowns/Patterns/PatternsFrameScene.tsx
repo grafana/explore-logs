@@ -19,6 +19,7 @@ import { PatternsViewTableScene } from './PatternsViewTableScene';
 import { config } from '@grafana/runtime';
 import { css } from '@emotion/css';
 import { PatternFrame, PatternsBreakdownScene } from './PatternsBreakdownScene';
+import { areArraysEqual } from '../../../../services/comparison';
 
 const palette = config.theme2.visualization.palette;
 
@@ -57,7 +58,7 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
     // If the patterns have changed, recalculate the dataframes
     this._subs.add(
       sceneGraph.getAncestor(this, ServiceScene).subscribeToState((newState, prevState) => {
-        if (JSON.stringify(newState.patterns) !== JSON.stringify(prevState.patterns)) {
+        if (!areArraysEqual(newState.patterns, prevState.patterns)) {
           const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
           this.updatePatterns(patternsBreakdownScene.state.patternFrames);
 
@@ -73,10 +74,7 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
     this._subs.add(
       sceneGraph.getAncestor(this, PatternsBreakdownScene).subscribeToState((newState, prevState) => {
         const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
-        if (
-          newState.filteredPatterns &&
-          JSON.stringify(newState.filteredPatterns) !== JSON.stringify(prevState.filteredPatterns)
-        ) {
+        if (newState.filteredPatterns && !areArraysEqual(newState.filteredPatterns, prevState.filteredPatterns)) {
           this.updatePatterns(patternsBreakdownScene.state.filteredPatterns);
         } else {
           // If there is no search string, clear the state

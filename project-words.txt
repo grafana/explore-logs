@@ -427,6 +427,7 @@ typeurl
 udpa
 ufuzzy
 ugorji
+unsub
 unsubs
 Unsubscribable
 urfave
@@ -461,4 +462,5 @@ yvasiyarov
 zipkin
 prioritise
 logspanel
-unsub
+lezer
+logql

@@ -1,7 +1,6 @@
 import {expect, test} from '@grafana/plugin-e2e';
 import {ExplorePage} from './fixtures/explore';
 import {testIds} from '../src/services/testIds';
-import {FilterOp} from '../src/services/filters';
 
 test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;
@@ -93,7 +92,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId(testIds.exploreServiceDetails.searchLogs)).toBeVisible();
     // Adhoc err filter should be added
     await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
-    await expect(page.getByText(FilterOp.NotEqual)).toBeVisible();
+    await expect(page.getByText('!=')).toBeVisible();
   });
 
 
@@ -270,7 +269,7 @@ test.describe('explore services breakdown page', () => {
   });
 
   test('should update a filter and run new logs', async ({ page }) => {
-    await page.getByTestId('AdHocFilter-service_name').getByRole('img').nth(1).click();
+    await page.getByTestId('AdHocFilter-service_name').locator('svg').nth(2).click();
     await page.getByText('mimir-distributor').click();
 
     // Assert the panel is done loading before going on

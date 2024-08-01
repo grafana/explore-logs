@@ -40,6 +40,8 @@ export const USER_EVENTS_ACTIONS = {
     add_to_filters_in_breakdown_clicked: 'add_to_filters_in_breakdown_clicked',
     // Clicking on "Select" button button in time series panels. Used in multiple views.The view type is passed as a parameter. Props: field, previousField, view
     select_field_in_breakdown_clicked: 'select_field_in_breakdown_clicked',
+    // Clicking on one of the levels in the Logs Volume panel
+    level_in_logs_volume_clicked: 'level_in_logs_volume_clicked',
     // Changing layout type (e.g. single/grid/rows). Used in multiple views. The view type is passed as a parameter. Props: layout, view
     layout_type_changed: 'layout_type_changed',
     // Changing search string in logs. Props: searchQuery

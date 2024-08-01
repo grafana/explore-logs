@@ -6,6 +6,7 @@ import {
   VAR_FIELDS,
   VAR_LABEL_GROUP_BY,
   VAR_LABELS,
+  VAR_LEVELS,
   VAR_LINE_FILTER,
   VAR_LOGS_FORMAT,
   VAR_PATTERNS,
@@ -91,6 +92,7 @@ export const DRILLDOWN_URL_KEYS = [
   `var-${VAR_DATASOURCE}`,
   `var-${VAR_LABELS}`,
   `var-${VAR_FIELDS}`,
+  `var-${VAR_LEVELS}`,
   `var-${VAR_FIELD_GROUP_BY}`,
   `var-${VAR_LABEL_GROUP_BY}`,
   `var-${VAR_DATASOURCE}`,
@@ -135,4 +137,39 @@ export function buildServicesRoute(extraQueryParams?: UrlQueryMap): UrlQueryMap 
     }, {}),
     ...extraQueryParams,
   };
+}
+
+export function createAppUrl(path = '/explore', urlParams?: URLSearchParams): string {
+  return `/a/${pluginJson.id}${path}${urlParams ? `?${urlParams.toString()}` : ''}`;
+}
+
+export const UrlParameters = {
+  DatasourceId: `var-${VAR_DATASOURCE}`,
+  TimeRangeFrom: 'from',
+  TimeRangeTo: 'to',
+  Labels: `var-${VAR_LABELS}`,
+  Fields: `var-${VAR_FIELDS}`,
+} as const;
+export type UrlParameterType = (typeof UrlParameters)[keyof typeof UrlParameters];
+
+export function setUrlParameter(
+  key: UrlParameterType,
+  value: string,
+  initialParams?: URLSearchParams
+): URLSearchParams {
+  const searchParams = new URLSearchParams(initialParams?.toString() ?? location.search);
+  searchParams.set(key, value);
+
+  return searchParams;
+}
+
+export function appendUrlParameter(
+  key: UrlParameterType,
+  value: string,
+  initialParams?: URLSearchParams
+): URLSearchParams {
+  const searchParams = new URLSearchParams(initialParams?.toString() ?? location.search);
+  searchParams.append(key, value);
+
+  return searchParams;
 }
