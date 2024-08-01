@@ -108,21 +108,23 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     // Reset search after routing back
     serviceVariable.changeValueTo('');
 
-    this.state.$data.subscribeToState((newState) => {
-      if (newState.data?.state === LoadingState.Done) {
-        this.updateBody();
-        if (this.state.volumeApiError) {
+    this._subs.add(
+      this.state.$data.subscribeToState((newState) => {
+        if (newState.data?.state === LoadingState.Done) {
+          this.updateBody();
+          if (this.state.volumeApiError) {
+            this.setState({
+              volumeApiError: false,
+            });
+          }
+        }
+        if (newState.data?.state === LoadingState.Error) {
           this.setState({
-            volumeApiError: false,
+            volumeApiError: true,
           });
         }
-      }
-      if (newState.data?.state === LoadingState.Error) {
-        this.setState({
-          volumeApiError: true,
-        });
-      }
-    });
+      })
+    );
   }
 
   private updateBody() {
