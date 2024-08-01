@@ -296,15 +296,14 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   public static Component = ({ model }: SceneComponentProps<ServiceSelectionScene>) => {
     const styles = useStyles2(getStyles);
     const { body, $data } = model.useState();
+    const { data } = $data.useState();
 
     const serviceStringVariable = getServiceSelectionStringVariable(model);
     const { value } = serviceStringVariable.useState();
 
-    const { servicesByVolume, servicesToQuery } = model.getServices($data.state.data?.series);
+    const { servicesByVolume, servicesToQuery } = model.getServices(data?.series);
     const isLogVolumeLoading =
-      $data.state.data?.state === LoadingState.Loading ||
-      $data.state.data?.state === LoadingState.Streaming ||
-      $data.state.data === undefined;
+      data?.state === LoadingState.Loading || data?.state === LoadingState.Streaming || data === undefined;
     const volumeApiError = $data.state.data?.state === LoadingState.Error;
 
     const onSearchChange = (serviceName: string) => {
