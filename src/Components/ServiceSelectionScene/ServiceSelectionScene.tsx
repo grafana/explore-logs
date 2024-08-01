@@ -123,17 +123,9 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     this._subs.add(
       this.state.$data.subscribeToState((newState, prevState) => {
         let stateUpdate: Partial<ServiceSelectionSceneState> = {};
-        const newServices = this.state.logVolumeSeries?.[0]?.fields?.find((f) => f.name === SERVICE_NAME);
-        const prevServices = newState?.data?.series?.[0]?.fields?.find((f) => f.name === SERVICE_NAME);
         if (
           newState.data?.state === LoadingState.Done &&
-          // We only want to re-render if the order of the services changed, if the volume was different, we don't want to re-render which will trigger additional queries
-          // However this means if the order changes, we won't update the UI
-
-          // Also note that when the time range is updated, that triggers all existing panels to requery with the new time range, but then we have to re-query again after the body is updated with a new list of services after the logs volume query returns
-          // It is for this reason that we want to avoid updating the `logVolumeSeries` as much as possible
-          // If we want the order of the services to update on time range change, we'll need a way to prevent the panels from updating immediately on time range change, and instead wait until the volume call returns
-          !areArraysEqual(newServices?.values, prevServices?.values)
+          !areArraysEqual(this.state.logVolumeSeries, newState?.data?.series)
         ) {
           // Add new dataframes if changed!
           stateUpdate.logVolumeSeries = newState.data.series;
@@ -159,16 +151,28 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     if (!servicesToQuery || servicesToQuery.length === 0) {
       this.state.body.setState({ children: [] });
     } else {
-      // @todo update instead of overwrite? Then we can change order?
       // If we have services to query, build the layout with the services. Children is an array of layouts for each service (1 row with 2 columns - timeseries and logs panel)
-      const children: SceneCSSGridItem[] = [];
+      const newChildren: SceneCSSGridItem[] = [];
+      const existingChildren: SceneCSSGridItem[] = this.state.body.state.children as SceneCSSGridItem[];
       const timeRange = sceneGraph.getTimeRange(this).state.value;
+
       for (const service of servicesToQuery) {
-        // for each service, we create a layout with timeseries and logs panel
-        children.push(this.buildServiceLayout(service, timeRange), this.buildServiceLogsLayout(service));
+        const existing = existingChildren.filter((child) => {
+          const vizPanel = child.state.body as VizPanel | undefined;
+          return vizPanel?.state.title === service;
+        });
+
+        if (existing.length === 2) {
+          // If we already have grid items for this service, move them over to the new array of children, this will preserve their queryRunners, preventing duplicate queries from getting run
+          newChildren.push(existing[0], existing[1]);
+        } else {
+          // for each service, we create a layout with timeseries and logs panel
+          newChildren.push(this.buildServiceLayout(service, timeRange), this.buildServiceLogsLayout(service));
+        }
       }
+
       this.state.body.setState({
-        children,
+        children: newChildren,
         isLazy: true,
         templateColumns: 'repeat(auto-fit, minmax(500px, 1fr) minmax(300px, 70vw))',
         autoRows: '200px',
@@ -293,6 +297,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
             })
           )
         )
+        .setTitle(service)
         .setOption('showTime', true)
         .setOption('enableLogDetails', false)
         .build(),
