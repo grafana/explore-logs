@@ -76,7 +76,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@bsull/augurs": "^0.2.0",
+    "@bsull/augurs": "^0.3.1",
     "@emotion/css": "^11.10.6",
     "@grafana/data": "^11.0.0",
     "@grafana/lezer-logql": "^0.2.6",
