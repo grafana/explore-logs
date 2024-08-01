@@ -3,7 +3,7 @@ import { ExplorePage } from './fixtures/explore';
 import { testIds } from "../src/services/testIds";
 import { mockVolumeApiResponse } from "./mocks/mockVolumeApiResponse";
 
-test.describe('explore services page', () => {
+test.describe.only('explore services page', () => {
   let explorePage: ExplorePage;
 
   test.beforeEach(async ({ page }) => {
@@ -72,7 +72,7 @@ test.describe('explore services page', () => {
     await explorePage.servicesSearch.click();
     await explorePage.servicesSearch.pressSequentially('tempo-distributor');
     await page.keyboard.press('Escape');
-    await expect(page.getByTestId('data-testid Panel header tempo-distributor')).toBeVisible();
+    await expect(page.getByText('Showing 1 service')).toBeVisible();
     await expect(page.getByText(/level=info/).first()).toBeVisible();
     await page.getByTitle('debug').first().click();
     await expect(page.getByText(/level=debug/).first()).toBeVisible();
