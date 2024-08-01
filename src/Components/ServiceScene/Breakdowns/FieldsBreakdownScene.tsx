@@ -505,7 +505,7 @@ function getStyles(theme: GrafanaTheme2) {
 
 const avgFields = ['duration', 'count', 'total', 'bytes'];
 
-function isAvgField(field: string) {
+export function isAvgField(field: string) {
   return avgFields.includes(field);
 }
 

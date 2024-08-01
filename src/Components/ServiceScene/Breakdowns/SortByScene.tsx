@@ -4,6 +4,7 @@ import { BusEventBase, DataFrame, FieldReducerInfo, ReducerID, SelectableValue, 
 import { getLabelValueFromDataFrame } from 'services/levels';
 import { InlineField, Select } from '@grafana/ui';
 import { getSortByPreference, setSortByPreference } from 'services/store';
+import { isAvgField } from './FieldsBreakdownScene';
 
 export interface SortBySceneState extends SceneObjectState {
   target: 'fields' | 'labels';
@@ -136,5 +137,8 @@ function filterReducerOptions(ext: FieldReducerInfo) {
 }
 
 export function getLabelValue(frame: DataFrame, labelName?: string) {
-  return getLabelValueFromDataFrame(frame) ?? (labelName ? `Logs without ${labelName}` : 'MISSING');
+  if (labelName && isAvgField(labelName)) {
+    return labelName;
+  }
+  return getLabelValueFromDataFrame(frame) ?? (labelName ? `Logs without "${labelName}"` : 'MISSING');
 }
