@@ -17,8 +17,8 @@ export function getUrlForValues(values: SceneObjectUrlValues) {
   return urlUtil.renderUrl(EXPLORATIONS_ROUTE, values);
 }
 
-export function getDataSource(exploration: IndexScene) {
-  return sceneGraph.interpolate(exploration, VAR_DATASOURCE_EXPR);
+export function getDataSource(sceneObject: SceneObject) {
+  return sceneGraph.interpolate(sceneObject, VAR_DATASOURCE_EXPR);
 }
 
 export function getQueryExpr(exploration: IndexScene) {

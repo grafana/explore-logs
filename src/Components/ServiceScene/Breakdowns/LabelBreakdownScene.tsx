@@ -24,22 +24,8 @@ import { DetectedLabel, getFilterBreakdownValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { buildLokiQuery } from 'services/query';
 import { ValueSlugs } from 'services/routing';
-import { getLokiDatasource, isDefined } from 'services/scenes';
-import {
-  ALL_VARIABLE_VALUE,
-  VAR_LABEL_GROUP_BY,
-  VAR_LABELS,
-  VAR_FIELDS_EXPR,
-  VAR_LINE_FILTER_EXPR,
-  VAR_PATTERNS_EXPR,
-  LEVEL_VARIABLE_VALUE,
-  VAR_LOGS_FORMAT_EXPR,
-  getLabelGroupByVariable,
-  getLabelsVariable,
-  getFieldsVariable,
-  VAR_LEVELS_EXPR,
-  getLevelsVariable,
-} from 'services/variables';
+import { getLokiDatasource } from 'services/scenes';
+import { ALL_VARIABLE_VALUE, getLabelGroupByVariable, VAR_LABEL_GROUP_BY, VAR_LABELS } from 'services/variables';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
 import { LayoutSwitcher } from './LayoutSwitcher';
@@ -51,6 +37,8 @@ import { getLabelValue, SortByScene, SortCriteriaChanged } from './SortByScene';
 import { ServiceScene, ServiceSceneState } from '../ServiceScene';
 import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
 import { navigateToValueBreakdown } from '../../../services/navigate';
+import { areArraysEqual } from '../../../services/comparison';
+import { getTimeSeriesExpr } from '../../../services/expressions';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -126,7 +114,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
    */
   private onVariableStateChange = (newState: CustomConstantVariableState, oldState: CustomConstantVariableState) => {
     if (
-      JSON.stringify(newState.options) !== JSON.stringify(oldState.options) ||
+      !areArraysEqual(newState.options, oldState.options) ||
       newState.value !== oldState.value ||
       newState.loading !== oldState.loading
     ) {
@@ -142,11 +130,9 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
    */
   private onServiceStateChange = (newState: ServiceSceneState, prevState: ServiceSceneState) => {
     const variable = this.getVariable();
-    if (JSON.stringify(newState.labels) !== JSON.stringify(prevState.labels)) {
+    if (!areArraysEqual(newState.labels, prevState.labels)) {
       this.updateLabels(newState.labels);
-    }
-
-    if (newState.labels?.length && !variable.state.options.length) {
+    } else if (newState.labels?.length && !variable.state.options.length) {
       this.updateLabels(newState.labels);
     }
   };
@@ -231,7 +217,11 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
         new SceneCSSGridItem({
           body: PanelBuilders.timeseries()
             .setTitle(optionValue)
-            .setData(getQueryRunner(buildLokiQuery(this.getExpr(optionValue), { legendFormat: `{{${optionValue}}}` })))
+            .setData(
+              getQueryRunner(
+                buildLokiQuery(getTimeSeriesExpr(this, optionValue), { legendFormat: `{{${optionValue}}}` })
+              )
+            )
             .setHeaderActions(new SelectLabelAction({ labelName: optionValue }))
             .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
             .setCustomFieldConfig('fillOpacity', 100)
@@ -269,7 +259,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
 
   private buildLabelValuesLayout(variableState: CustomConstantVariableState) {
     const tagKey = String(variableState?.value);
-    const query = buildLokiQuery(this.getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
+    const query = buildLokiQuery(getTimeSeriesExpr(this, tagKey), { legendFormat: `{{${tagKey}}}` });
 
     let bodyOpts = PanelBuilders.timeseries();
     bodyOpts = bodyOpts
@@ -347,33 +337,6 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
         }),
       ],
     });
-  }
-
-  private getExpr(tagKey: string) {
-    const labelsVariable = getLabelsVariable(this);
-    const fieldsVariable = getFieldsVariable(this);
-    const levelsVariables = getLevelsVariable(this);
-
-    let labelExpressionToAdd;
-    let fieldExpressionToAdd = '';
-    // `LEVEL_VARIABLE_VALUE` is a special case where we don't want to add this to the stream selector
-    if (tagKey !== LEVEL_VARIABLE_VALUE) {
-      labelExpressionToAdd = { key: tagKey, operator: '!=', value: '' };
-    } else {
-      fieldExpressionToAdd = `| ${LEVEL_VARIABLE_VALUE} != ""`;
-    }
-    const streamSelectors = [...labelsVariable.state.filters, labelExpressionToAdd]
-      .filter(isDefined)
-      .map((f) => `${f.key}${f.operator}\`${f.value}\``)
-      .join(',');
-
-    const fields = fieldsVariable.state.filters;
-    const levels = levelsVariables.state.filters;
-    // if we have fields, we also need to add `VAR_LOGS_FORMAT_EXPR`
-    if (fields.length || levels.length) {
-      return `sum(count_over_time({${streamSelectors}} ${fieldExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_LEVELS_EXPR} ${VAR_FIELDS_EXPR} [$__auto])) by (${tagKey})`;
-    }
-    return `sum(count_over_time({${streamSelectors}} ${fieldExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} [$__auto])) by (${tagKey})`;
   }
 
   public onChange = (value?: string) => {

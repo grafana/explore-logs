@@ -33,11 +33,13 @@ const getStyles = (theme: GrafanaTheme2) => {
   return {
     wrapper: css({
       display: 'flex',
-      whiteSpace: 'nowrap',
+      marginLeft: 'auto',
+      gap: theme.spacing(1),
+      position: 'relative',
+      top: theme.spacing(-1),
     }),
     feedback: css({
       alignSelf: 'center',
-      margin: '6px 6px 6px 0',
       color: theme.colors.text.secondary,
       fontSize: theme.typography.bodySmall.fontSize,
       '&:hover': {

@@ -327,10 +327,10 @@
   resolved "https://registry.yarnpkg.com/@braintree/sanitize-url/-/sanitize-url-7.0.1.tgz#457233b0a18741b7711855044102b82bae7a070b"
   integrity sha512-URg8UM6lfC9ZYqFipItRSxYJdgpU5d2Z4KnjsJ+rj6tgAmGme7E+PQNCiud8g0HDaZKMovu2qjfa0f5Ge0Vlsg==
 
-"@bsull/augurs@^0.2.0":
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/@bsull/augurs/-/augurs-0.2.0.tgz#71fcec248493cb9ee2d473dd4b8a8bb1c320932e"
-  integrity sha512-HyxFkWxHgSgvCuiCyan9JqWaMbEvgVGAryoorkZ/fbwV1SV0J+fuVgaGCRfzYH15lVGR3fFWVjhYY0zZfjKHng==
+"@bsull/augurs@^0.3.1":
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/@bsull/augurs/-/augurs-0.3.1.tgz#97ab2495b574bd7ee5faf512ca17e7bf09bed660"
+  integrity sha512-4EjKRoisAzMWtxAWIl//25Oa9dGkP5WftrhW34WAa8aojWZdZei7RJXtvMcKoMr52MiL/LsLpZeU2kPifApIHg==
 
 "@commitlint/cli@^19.2.2":
   version "19.2.2"
@@ -1082,6 +1082,11 @@
     ua-parser-js "^1.0.32"
     web-vitals "^3.1.1"
 
+"@grafana/lezer-logql@^0.2.6":
+  version "0.2.6"
+  resolved "https://registry.yarnpkg.com/@grafana/lezer-logql/-/lezer-logql-0.2.6.tgz#0e330443e88d547cc9353ac1e4b2dadd7301ef4a"
+  integrity sha512-XGTvLEzbKVCi/Y7li1fOYrihQqJhQ1Q2Qopj0Dix850TDnjtmK/V20js+ZA0bd+I0TiRyFYvMDLMwiUVMjzmCg==
+
 "@grafana/plugin-e2e@^1.1.1":
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/@grafana/plugin-e2e/-/plugin-e2e-1.1.1.tgz#a7680806eab687c3fda5ac2f4fb7cd59226222eb"
@@ -1106,10 +1111,10 @@
     rxjs "7.8.1"
     tslib "2.6.3"
 
-"@grafana/scenes@5.2.0":
-  version "5.2.0"
-  resolved "https://registry.yarnpkg.com/@grafana/scenes/-/scenes-5.2.0.tgz#a436e2185499aa9cbbc7db368c69640bcc3137d9"
-  integrity sha512-1JWPQPTvfH5ZeREy1rhwUbhQgok4Q3WO313zTYE58zOqfroGIe7MZio4yqtl4bYHyYsAzRhYpaZ4JCf8FQe2WQ==
+"@grafana/scenes@5.7.2":
+  version "5.7.2"
+  resolved "https://registry.yarnpkg.com/@grafana/scenes/-/scenes-5.7.2.tgz#35b927cf71c118436bd8169c2ac095b16b44bc78"
+  integrity sha512-kKvUX6F23Btq072FfnFjlcDBST2/ejGMVjPe+1kR2JoMFRfepzYTbzV9N5EwXmwMvBSek4nE/DiWdV/L7sygBg==
   dependencies:
     "@grafana/e2e-selectors" "^11.0.0"
     "@leeoniya/ufuzzy" "^1.0.14"
@@ -1516,6 +1521,18 @@
   version "1.0.14"
   resolved "https://registry.yarnpkg.com/@leeoniya/ufuzzy/-/ufuzzy-1.0.14.tgz#01572c0de9cfa1420cf6ecac76dd59db5ebd1337"
   integrity sha512-/xF4baYuCQMo+L/fMSUrZnibcu0BquEGnbxfVPiZhs/NbJeKj4c/UmFpQzW9Us0w45ui/yYW3vyaqawhNYsTzA==
+
+"@lezer/common@^1.0.0", "@lezer/common@^1.2.1":
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/@lezer/common/-/common-1.2.1.tgz#198b278b7869668e1bebbe687586e12a42731049"
+  integrity sha512-yemX0ZD2xS/73llMZIK6KplkjIjf2EvAHcinDi/TfJ9hS25G0388+ClHt6/3but0oOxinTcQHJLDXh6w1crzFQ==
+
+"@lezer/lr@^1.4.1":
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/@lezer/lr/-/lr-1.4.1.tgz#fe25f051880a754e820b28148d90aa2a96b8bdd2"
+  integrity sha512-CHsKq8DMKBf9b3yXPDIU4DbH+ZJd/sJdYOW2llbW/HudP5u0VS6Bfq1hLYfgU7uAYGFIyGGQIsSOXGPEErZiJw==
+  dependencies:
+    "@lezer/common" "^1.0.0"
 
 "@mapbox/jsonlint-lines-primitives@~2.0.2":
   version "2.0.2"
@@ -7780,13 +7797,6 @@ rw@1, rw@^1.3.3:
   version "1.3.3"
   resolved "https://registry.yarnpkg.com/rw/-/rw-1.3.3.tgz#3f862dfa91ab766b14885ef4d01124bfda074fb4"
   integrity sha512-PdhdWy89SiZogBLaw42zdeqtRJ//zFd2PgQavcICDUgJT5oW10QCRKbJ6bg4r0/UY2M6BWd5tkxuGFRvCkgfHQ==
-
-rxjs@7.8.0:
-  version "7.8.0"
-  resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-7.8.0.tgz#90a938862a82888ff4c7359811a595e14e1e09a4"
-  integrity sha512-F2+gxDshqmIub1KdvZkaEfGDwLNpPvk9Fs6LD/MyQxNgMds/WH9OdDDXOmxUZpME+iSK3rQCctkL0DYyytUqMg==
-  dependencies:
-    tslib "^2.1.0"
 
 rxjs@7.8.1:
   version "7.8.1"

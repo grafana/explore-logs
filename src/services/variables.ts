@@ -86,3 +86,11 @@ export function getAdHocFiltersVariable(variableName: string, scene: SceneObject
   }
   return variable;
 }
+
+export function getLogsFormatVariable(sceneRef: SceneObject) {
+  const variable = sceneGraph.lookupVariable(VAR_LOGS_FORMAT, sceneRef);
+  if (!(variable instanceof CustomVariable)) {
+    throw new Error('VAR_LOGS_FORMAT not found');
+  }
+  return variable;
+}

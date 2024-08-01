@@ -7,6 +7,7 @@ import { PanelChrome } from '@grafana/ui';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 import { css } from '@emotion/css';
 import { addAdHocFilter } from './Breakdowns/AddToFiltersButton';
+import { areArraysEqual } from '../../services/comparison';
 
 export class LogsTableScene extends SceneObjectBase {
   public static Component = ({ model }: SceneComponentProps<LogsTableScene>) => {
@@ -31,7 +32,7 @@ export class LogsTableScene extends SceneObjectBase {
 
     // Define callback function to update url columns in react
     const setUrlColumns = (urlColumns: string[]) => {
-      if (JSON.stringify(urlColumns) !== JSON.stringify(parentModel.state.urlColumns)) {
+      if (!areArraysEqual(urlColumns, parentModel.state.urlColumns)) {
         parentModel.setState({ urlColumns });
       }
     };
