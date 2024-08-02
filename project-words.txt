@@ -466,3 +466,4 @@ inital
 lezer
 logql
 subqueries
+dbscan
