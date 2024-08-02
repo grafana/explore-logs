@@ -1,7 +1,7 @@
 import { test, expect } from '@grafana/plugin-e2e';
 import { ExplorePage } from './fixtures/explore';
-import {testIds} from "../src/services/testIds";
-import {mockVolumeApiResponse} from "./mocks/mockVolumeApiResponse";
+import { testIds } from "../src/services/testIds";
+import { mockVolumeApiResponse } from "./mocks/mockVolumeApiResponse";
 
 test.describe('explore services page', () => {
   let explorePage: ExplorePage;
@@ -34,7 +34,7 @@ test.describe('explore services page', () => {
   });
 
   test.describe('mock volume API calls', () => {
-    let logsVolumeCount, logsQueryCount;
+    let logsVolumeCount: number, logsQueryCount: number;
 
     test.beforeEach(async ({page}) => {
       logsVolumeCount = 0;
