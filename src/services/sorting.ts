@@ -25,7 +25,6 @@ export const sortSeries = memoize(
       } catch (e) {
         console.error(e);
         // ML sorting panicked, fallback to stdDev
-        reportAppInteraction(USER_EVENTS_PAGES.service_details, USER_EVENTS_ACTIONS.service_details.wasm_not_supported);
         sortBy = ReducerID.stdDev;
       }
       const fieldReducer = fieldReducers.get(sortBy);
@@ -147,5 +146,11 @@ export const calculateOutlierValue = (series: DataFrame[], data: DataFrame): num
 };
 
 const wasmSupported = () => {
-  return typeof WebAssembly === 'object';
+  const support = typeof WebAssembly === 'object';
+
+  if (!support) {
+    reportAppInteraction(USER_EVENTS_PAGES.service_details, USER_EVENTS_ACTIONS.service_details.wasm_not_supported);
+  }
+
+  return support;
 };
