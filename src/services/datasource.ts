@@ -18,15 +18,17 @@ export type SceneDataQueryResourceRequest = {
 };
 type TimeStampOfVolumeEval = number;
 type VolumeCount = string;
+type VolumeValue = [TimeStampOfVolumeEval, VolumeCount];
+type VolumeResult = {
+  metric: {
+    service_name: string;
+  };
+  value: VolumeValue;
+};
 
 type IndexVolumeResponse = {
   data: {
-    result: Array<{
-      metric: {
-        service_name: string;
-      };
-      value: [TimeStampOfVolumeEval, VolumeCount];
-    }>;
+    result: VolumeResult[];
   };
 };
 
@@ -52,7 +54,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
           switch (requestType) {
             case 'volume': {
-              this.transformVolumeResponse(request, ds, subscriber);
+              this.getVolume(request, ds, subscriber);
               break;
             }
             case 'patterns': {
@@ -77,7 +79,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     });
   }
 
-  private transformVolumeResponse(
+  private getVolume(
     request: DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest>,
     ds: DataSourceWithBackend<LokiQuery>,
     subscriber: Subscriber<DataQueryResponse>
@@ -105,8 +107,10 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
       }
     );
     dsResponse.then((response: IndexVolumeResponse | undefined) => {
-      response?.data.result.sort((lhs, rhs) => {
-        return Number(rhs.value[1]) - Number(lhs.value[1]);
+      response?.data.result.sort((lhs: VolumeResult, rhs: VolumeResult) => {
+        const lVolumeCount: VolumeCount = lhs.value[1];
+        const rVolumeCount: VolumeCount = rhs.value[1];
+        return Number(rVolumeCount) - Number(lVolumeCount);
       });
       // Scenes will only emit dataframes from the SceneQueryRunner, so for now we need to convert the API response to a dataframe
       const df = createDataFrame({
