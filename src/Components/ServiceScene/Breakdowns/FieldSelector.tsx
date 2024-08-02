@@ -72,7 +72,7 @@ export function ServiceFieldSelector({
         isLoading={isLoading}
         data-testid={testIds.exploreServiceSearch.search}
         placeholder={'Search services'}
-        options={selectableOptions}
+        options={allOptions}
         isClearable={true}
         value={value}
         onOpenMenu={() => setSelected(true)}
