@@ -6,7 +6,6 @@ import { Observable, Subscriber } from 'rxjs';
 import { getDataSource } from './scenes';
 import { LokiQuery } from './query';
 import { PLUGIN_ID } from './routing';
-import { VAR_SERVICE_EXPR_HACK } from './variables';
 
 export const WRAPPED_LOKI_DS_UID = 'wrapped-loki-ds-uid';
 
@@ -87,22 +86,19 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
       throw new Error('Volume query can only have a single target!');
     }
 
-    request.targets.forEach((target) => {
-      target.expr = target.expr.replace(VAR_SERVICE_EXPR_HACK, '');
-    });
-
     const targetsInterpolated = ds.interpolateVariablesInQueries(request.targets, request.scopedVars);
 
     const dsResponse = ds.getResource(
       'index/volume',
       {
-        expr: targetsInterpolated[0].expr.replace(VAR_SERVICE_EXPR_HACK, ''),
-        query: targetsInterpolated[0].expr.replace(VAR_SERVICE_EXPR_HACK, ''),
+        expr: targetsInterpolated[0].expr,
+        query: targetsInterpolated[0].expr,
         from: request.range.from.utc().toISOString(),
         to: request.range.to.utc().toISOString(),
         limit: 1000,
       },
       {
+        requestId: request.requestId ?? 'volume',
         headers: {
           'X-Query-Tags': `Source=${PLUGIN_ID}`,
         },

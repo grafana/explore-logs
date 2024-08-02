@@ -12,7 +12,10 @@ import {
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
+  SceneQueryRunner,
+  SceneVariable,
   SceneVariableSet,
+  VariableDependencyConfig,
   VizPanel,
 } from '@grafana/scenes';
 import {
@@ -31,9 +34,9 @@ import {
   getLabelsVariable,
   getServiceSelectionStringVariable,
   LEVEL_VARIABLE_VALUE,
+  VAR_DATASOURCE,
   VAR_SERVICE,
   VAR_SERVICE_EXPR,
-  VAR_SERVICE_EXPR_HACK,
 } from 'services/variables';
 import { selectService, SelectServiceButton } from './SelectServiceButton';
 import { buildLokiQuery, buildResourceQuery } from 'services/query';
@@ -66,6 +69,11 @@ function getLogExpression(service: string, levelFilter: string) {
 }
 
 export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionSceneState> {
+  protected _variableDependency = new VariableDependencyConfig(this, {
+    variableNames: [VAR_DATASOURCE],
+    onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
+  });
+
   constructor(state: Partial<ServiceSelectionSceneState>) {
     super({
       body: new SceneCSSGridLayout({ children: [] }),
@@ -80,18 +88,21 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           }),
         ],
       }),
-      $data: getQueryRunner(
-        buildResourceQuery(
-          // passing in the hack string will force the query to be re-run when the datasource changes, we'll remove it before interpolating so it should have no impact on the actual query being executed
-          `{${SERVICE_NAME}=~\`${VAR_SERVICE_EXPR}.+\` ${VAR_SERVICE_EXPR_HACK} }`,
-          'volume'
-        )
-      ),
+      $data: getQueryRunner(buildResourceQuery(`{${SERVICE_NAME}=~\`${VAR_SERVICE_EXPR}.+\`}`, 'volume')),
       serviceLevel: new Map<string, string[]>(),
       ...state,
     });
 
     this.addActivationHandler(this.onActivate.bind(this));
+  }
+
+  private onReferencedVariableValueChanged(variable: SceneVariable) {
+    if (variable.state.name === VAR_DATASOURCE) {
+      if (this.state.$data instanceof SceneQueryRunner) {
+        this.state.$data.runQueries();
+      }
+      return;
+    }
   }
 
   private onActivate() {

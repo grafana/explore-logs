@@ -26,9 +26,6 @@ export const ALL_VARIABLE_VALUE = '$__all';
 export const LEVEL_VARIABLE_VALUE = 'detected_level';
 export const PATTERNS_TEXT_FILTER = 'patternsFilter';
 
-// @todo is there a better way to specify variable dependencies?
-export const VAR_SERVICE_EXPR_HACK = `, __service_name__!="${VAR_DATASOURCE_EXPR}"`;
-
 export function getPatternsVariable(scene: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_PATTERNS, scene);
   if (!(variable instanceof CustomVariable)) {
