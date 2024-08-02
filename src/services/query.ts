@@ -33,7 +33,13 @@ export const buildResourceQuery = (
     expr,
   };
 };
-export const buildLokiQuery = (expr: string, queryParamsOverrides?: Record<string, unknown>): LokiQuery => {
+/**
+ * Builds a loki data query
+ * @param expr
+ * @param queryParamsOverrides
+ * @returns LokiQuery
+ */
+export const buildDataQuery = (expr: string, queryParamsOverrides?: Record<string, unknown>): LokiQuery => {
   return {
     ...defaultQueryParams,
     ...queryParamsOverrides,

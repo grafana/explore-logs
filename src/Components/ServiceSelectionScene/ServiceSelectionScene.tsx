@@ -39,7 +39,7 @@ import {
   VAR_SERVICE_EXPR,
 } from 'services/variables';
 import { selectService, SelectServiceButton } from './SelectServiceButton';
-import { buildLokiQuery, buildResourceQuery } from 'services/query';
+import { buildDataQuery, buildResourceQuery } from 'services/query';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
@@ -226,7 +226,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       .setTitle(service)
       .setData(
         getQueryRunner(
-          buildLokiQuery(getMetricExpression(service), {
+          buildDataQuery(getMetricExpression(service), {
             legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`,
             splitDuration,
             refId: `ts-${service}`,
@@ -284,7 +284,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         .setHoverHeader(true)
         .setData(
           getQueryRunner(
-            buildLokiQuery(getLogExpression(service, levelFilter), {
+            buildDataQuery(getLogExpression(service, levelFilter), {
               maxLines: 100,
               refId: `logs-${service}`,
               // range: timeRange
