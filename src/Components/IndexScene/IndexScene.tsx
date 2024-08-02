@@ -22,6 +22,7 @@ import {
 } from '@grafana/scenes';
 import {
   EXPLORATION_DS,
+  getDataSourceVariable,
   getFieldsVariable,
   getPatternsVariable,
   VAR_DATASOURCE,
@@ -31,6 +32,7 @@ import {
   VAR_LINE_FILTER,
   VAR_LOGS_FORMAT,
   VAR_PATTERNS,
+  VAR_SERVICE_EXPR,
 } from 'services/variables';
 
 import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
@@ -38,10 +40,16 @@ import { ServiceScene } from '../ServiceScene/ServiceScene';
 import { LayoutScene } from './LayoutScene';
 import { FilterOp } from 'services/filters';
 import { getDrilldownSlug, PageSlugs } from '../../services/routing';
-import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
+import { SERVICE_NAME, ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { locationService } from '@grafana/runtime';
-import { renderLogQLFieldFilters, renderLogQLStreamSelector, renderPatternFilters } from 'services/query';
+import {
+  buildResourceQuery,
+  renderLogQLFieldFilters,
+  renderLogQLStreamSelector,
+  renderPatternFilters,
+} from 'services/query';
+import { getQueryRunner } from '../../services/panel';
 
 export interface AppliedPattern {
   pattern: string;
@@ -98,7 +106,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     const stateUpdate: Partial<IndexSceneState> = {};
 
     if (!this.state.contentScene) {
-      stateUpdate.contentScene = getContentScene(this.state.routeMatch?.params.label);
+      stateUpdate.contentScene = getContentScene(this, this.state.routeMatch?.params.label);
     }
 
     this.setState(stateUpdate);
@@ -155,10 +163,17 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   }
 }
 
-function getContentScene(drillDownLabel?: string) {
+function getContentScene(sceneRef: SceneObject, drillDownLabel?: string) {
   const slug = getDrilldownSlug();
   if (slug === PageSlugs.explore) {
-    return new ServiceSelectionScene({});
+    return new ServiceSelectionScene({
+      $data: getQueryRunner(
+        buildResourceQuery(`{${SERVICE_NAME}=~\`${VAR_SERVICE_EXPR}.+\`}`, 'volume'),
+        new SceneVariableSet({
+          variables: [getDataSourceVariable(sceneRef)],
+        })
+      ),
+    });
   }
 
   return new ServiceScene({ drillDownLabel });

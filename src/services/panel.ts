@@ -1,5 +1,5 @@
 import { DataFrame, FieldConfig, FieldMatcherID } from '@grafana/data';
-import { FieldConfigOverridesBuilder, SceneDataTransformer, SceneQueryRunner } from '@grafana/scenes';
+import { FieldConfigOverridesBuilder, SceneDataTransformer, SceneQueryRunner, SceneVariables } from '@grafana/scenes';
 import { map, Observable } from 'rxjs';
 import { LokiQuery } from './query';
 import { HideSeriesConfig } from '@grafana/schema';
@@ -78,7 +78,7 @@ export function sortLevelTransformation() {
   };
 }
 
-export function getQueryRunner(query: LokiQuery) {
+export function getQueryRunner(query: LokiQuery, variables?: SceneVariables) {
   // if there's a legendFormat related to any `level` like label, we want to
   // sort the output equally. That's purposefully not `LEVEL_VARIABLE_VALUE`,
   // such that the `detected_level` graph looks the same as a graph for the
@@ -88,6 +88,7 @@ export function getQueryRunner(query: LokiQuery) {
       $data: new SceneQueryRunner({
         datasource: { uid: WRAPPED_LOKI_DS_UID },
         queries: [query],
+        $variables: variables,
       }),
       transformations: [sortLevelTransformation],
     });
@@ -96,5 +97,6 @@ export function getQueryRunner(query: LokiQuery) {
   return new SceneQueryRunner({
     datasource: { uid: WRAPPED_LOKI_DS_UID },
     queries: [query],
+    $variables: variables,
   });
 }
