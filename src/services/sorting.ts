@@ -8,20 +8,25 @@ export const sortSeries = memoize(
   (series: DataFrame[], sortBy: string, direction: string) => {
     if (sortBy === 'alphabetical') {
       return sortSeriesByName(series, direction);
+    } else if (sortBy === 'outlier') {
+      return sortSeriesByOutliers(series, direction);
     }
 
     const reducer = (dataFrame: DataFrame) => {
-      if (sortBy === 'changepoint') {
-        if (wasmSupported()) {
-          return calculateDataFrameChangepoints(dataFrame);
-        } else {
-          console.warn('Changepoint not supported, using stdDev');
-          reportAppInteraction(
-            USER_EVENTS_PAGES.service_details,
-            USER_EVENTS_ACTIONS.service_details.wasm_not_supported
-          );
-          sortBy = ReducerID.stdDev;
+      // ML & Wasm sorting options
+      try {
+        if (sortBy === 'changepoint') {
+          if (wasmSupported()) {
+            return calculateDataFrameChangepoints(dataFrame);
+          } else {
+            throw new Error('Changepoint not supported, using stdDev');
+          }
         }
+      } catch (e) {
+        console.error(e);
+        // ML sorting panicked, fallback to stdDev
+        reportAppInteraction(USER_EVENTS_PAGES.service_details, USER_EVENTS_ACTIONS.service_details.wasm_not_supported);
+        sortBy = ReducerID.stdDev;
       }
       const fieldReducer = fieldReducers.get(sortBy);
       const value =
@@ -93,6 +98,10 @@ export const sortSeriesByName = (series: DataFrame[], direction: string) => {
     sortedSeries.reverse();
   }
   return sortedSeries;
+};
+
+export const sortSeriesByOutliers = (series: DataFrame[], direction: string) => {
+  return series;
 };
 
 const wasmSupported = () => {
