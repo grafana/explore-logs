@@ -5,6 +5,7 @@ import { getColorByIndex } from './scenes';
 import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { getLogsFormatVariable, VAR_FIELDS, VAR_LABELS } from './variables';
 import { setLeverColorOverrides } from './panel';
+import { getLabelValueFromDataFrame } from './levels';
 
 export type DetectedLabel = {
   label: string;
@@ -74,6 +75,13 @@ export function getFilterBreakdownValueScene(
         .setOverrides(setLeverColorOverrides)
         .setCustomFieldConfig('drawStyle', DrawStyle.Bars);
     }
+
+    if (!getLabelValueFromDataFrame(frame)) {
+      panel.setDescription(`Displays the volume of logs without the ${labelName ? `"${labelName}"` : ''} field`);
+      panel.setCustomFieldConfig('fillOpacity', 60);
+      panel.setColor({ mode: 'fixed', fixedColor: 'gray' });
+    }
+
     return new SceneCSSGridItem({
       body: panel.build(),
     });
