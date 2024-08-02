@@ -13,7 +13,7 @@ import {
   SceneVariable,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
+import { Box, LoadingPlaceholder, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { DetectedLabel, DetectedLabelsResponse, updateParserFromDataFrame } from 'services/fields';
 import { getQueryRunner } from 'services/panel';
@@ -77,7 +77,7 @@ export interface ServiceSceneCustomState {
 }
 
 export interface ServiceSceneState extends SceneObjectState, ServiceSceneCustomState {
-  body: SceneFlexLayout;
+  body: SceneFlexLayout | undefined;
   drillDownLabel?: string;
 }
 
@@ -118,6 +118,11 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private redirectToStart() {
+    // Clear ongoing queries
+    this.setState({
+      $data: undefined,
+      body: undefined,
+    });
     // Redirect to root with updated params, which will trigger history push back to index route, preventing empty page or empty service query bugs
     navigateToIndex();
   }
@@ -140,6 +145,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
   private onActivate() {
     this.getMetadata();
+    this.resetBodyAndData();
+
     this.setBreakdownView();
     this.setEmptyFiltersRedirection();
 
@@ -162,6 +169,22 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         this.updatePatterns();
       })
     );
+  }
+
+  private resetBodyAndData() {
+    let stateUpdate: Partial<ServiceSceneState> = {};
+
+    if (!this.state.$data) {
+      stateUpdate.$data = getQueryRunner(buildDataQuery(LOG_STREAM_SELECTOR_EXPR));
+    }
+
+    if (!this.state.body) {
+      stateUpdate.body = buildGraphScene();
+    }
+
+    if (Object.keys(stateUpdate).length) {
+      this.setState(stateUpdate);
+    }
   }
 
   private onReferencedVariableValueChanged(variable: SceneVariable) {
@@ -309,6 +332,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     const breakdownView = getDrilldownSlug();
     const breakdownViewDef = breakdownViewsDefinitions.find((v) => v.value === breakdownView);
 
+    if (!body) {
+      throw new Error('body is not defined in setBreakdownView!');
+    }
+
     if (breakdownViewDef) {
       body.setState({
         children: [
@@ -336,7 +363,11 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
   static Component = ({ model }: SceneComponentProps<ServiceScene>) => {
     const { body } = model.useState();
-    return <body.Component model={body} />;
+    if (body) {
+      return <body.Component model={body} />;
+    }
+
+    return <LoadingPlaceholder text={'Loading...'} />;
   };
 }
 

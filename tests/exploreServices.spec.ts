@@ -76,15 +76,13 @@ test.describe('explore services page', () => {
       await page.getByTestId(testIds.variables.serviceName.label).click()
 
       expect(logsVolumeCount).toEqual(1)
-      // this should be 6, but there's an extra query being fired before the query expression can be interpolated
-      expect(logsQueryCount).toEqual(7)
+      expect(logsQueryCount).toEqual(6)
 
       await explorePage.addServiceName()
       await page.getByTestId(testIds.variables.serviceName.label).click()
 
       expect(logsVolumeCount).toEqual(1)
-      // Should be 8
-      expect(logsQueryCount).toEqual(10)
+      expect(logsQueryCount).toEqual(8)
 
     })
 
