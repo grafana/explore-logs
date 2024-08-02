@@ -25,7 +25,7 @@ import { Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getFilterBreakdownValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
-import { buildLokiQuery } from 'services/query';
+import { buildDataQuery } from 'services/query';
 import {
   ALL_VARIABLE_VALUE,
   getFieldGroupByVariable,
@@ -283,7 +283,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         continue;
       }
 
-      const query = buildLokiQuery(getExpr(optionValue), {
+      const query = buildDataQuery(getExpr(optionValue), {
         legendFormat: `{{${optionValue}}}`,
         refId: optionValue,
       });
@@ -340,7 +340,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   buildValuesLayout(variableState: CustomConstantVariableState) {
     const tagKey = String(variableState.value);
-    const query = buildLokiQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
+    const query = buildDataQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
 
     const { sortBy, direction } = getSortByPreference('fields', ReducerID.stdDev, 'desc');
     const getFilter = () => this.state.search.state.filter ?? '';

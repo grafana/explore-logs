@@ -1,6 +1,7 @@
 import { AdHocVariableFilter, DataSourceApi } from '@grafana/data';
 import { AppliedPattern } from 'Components/IndexScene/IndexScene';
 import { PLUGIN_ID } from './routing';
+import { SceneDataQueryResourceRequest } from './datasource';
 
 export type LokiQuery = {
   refId: string;
@@ -13,7 +14,32 @@ export type LokiQuery = {
 
   datasource?: DataSourceApi;
 };
-export const buildLokiQuery = (expr: string, queryParamsOverrides?: Record<string, unknown>): LokiQuery => {
+
+/**
+ * Builds the resource query
+ * @param expr string to be interpolated and executed in the resource request
+ * @param resource
+ * @param queryParamsOverrides
+ */
+export const buildResourceQuery = (
+  expr: string,
+  resource: 'volume' | 'patterns' | 'detected_labels',
+  queryParamsOverrides?: Record<string, unknown>
+): LokiQuery & SceneDataQueryResourceRequest => {
+  return {
+    ...defaultQueryParams,
+    resource,
+    ...queryParamsOverrides,
+    expr,
+  };
+};
+/**
+ * Builds a loki data query
+ * @param expr
+ * @param queryParamsOverrides
+ * @returns LokiQuery
+ */
+export const buildDataQuery = (expr: string, queryParamsOverrides?: Record<string, unknown>): LokiQuery => {
   return {
     ...defaultQueryParams,
     ...queryParamsOverrides,

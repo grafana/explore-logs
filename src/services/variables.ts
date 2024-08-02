@@ -11,6 +11,8 @@ export const VAR_LEVELS = 'levels';
 export const VAR_LEVELS_EXPR = '${levels}';
 export const VAR_FIELD_GROUP_BY = 'fieldBy';
 export const VAR_LABEL_GROUP_BY = 'labelBy';
+export const VAR_SERVICE = 'service';
+export const VAR_SERVICE_EXPR = '${service}';
 export const VAR_DATASOURCE = 'ds';
 export const VAR_DATASOURCE_EXPR = '${ds}';
 export const VAR_LOGS_FORMAT = 'logsFormat';
@@ -91,6 +93,14 @@ export function getLogsFormatVariable(sceneRef: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_LOGS_FORMAT, sceneRef);
   if (!(variable instanceof CustomVariable)) {
     throw new Error('VAR_LOGS_FORMAT not found');
+  }
+  return variable;
+}
+
+export function getServiceSelectionStringVariable(sceneRef: SceneObject) {
+  const variable = sceneGraph.lookupVariable(VAR_SERVICE, sceneRef);
+  if (!(variable instanceof CustomConstantVariable)) {
+    throw new Error('VAR_SERVICE not found');
   }
   return variable;
 }
