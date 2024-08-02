@@ -22,7 +22,7 @@ import { Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { DetectedLabel, getFilterBreakdownValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
-import { buildLokiQuery } from 'services/query';
+import { buildDataQuery } from 'services/query';
 import { ValueSlugs } from 'services/routing';
 import { getLokiDatasource } from 'services/scenes';
 import { ALL_VARIABLE_VALUE, getLabelGroupByVariable, VAR_LABEL_GROUP_BY, VAR_LABELS } from 'services/variables';
@@ -219,7 +219,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
             .setTitle(optionValue)
             .setData(
               getQueryRunner(
-                buildLokiQuery(getTimeSeriesExpr(this, optionValue), { legendFormat: `{{${optionValue}}}` })
+                buildDataQuery(getTimeSeriesExpr(this, optionValue), { legendFormat: `{{${optionValue}}}` })
               )
             )
             .setHeaderActions(new SelectLabelAction({ labelName: optionValue }))
@@ -259,7 +259,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
 
   private buildLabelValuesLayout(variableState: CustomConstantVariableState) {
     const tagKey = String(variableState?.value);
-    const query = buildLokiQuery(getTimeSeriesExpr(this, tagKey), { legendFormat: `{{${tagKey}}}` });
+    const query = buildDataQuery(getTimeSeriesExpr(this, tagKey), { legendFormat: `{{${tagKey}}}` });
 
     let bodyOpts = PanelBuilders.timeseries();
     bodyOpts = bodyOpts

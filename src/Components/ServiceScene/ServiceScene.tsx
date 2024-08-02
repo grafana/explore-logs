@@ -17,7 +17,7 @@ import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { DetectedLabel, DetectedLabelsResponse, updateParserFromDataFrame } from 'services/fields';
 import { getQueryRunner } from 'services/panel';
-import { buildLokiQuery, renderLogQLStreamSelector } from 'services/query';
+import { buildDataQuery, renderLogQLStreamSelector } from 'services/query';
 import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, PLUGIN_ID, ValueSlugs } from 'services/routing';
 import { getExplorationFor, getLokiDatasource } from 'services/scenes';
 import {
@@ -90,7 +90,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   public constructor(state: MakeOptional<ServiceSceneState, 'body'>) {
     super({
       body: state.body ?? buildGraphScene(),
-      $data: getQueryRunner(buildLokiQuery(LOG_STREAM_SELECTOR_EXPR)),
+      $data: getQueryRunner(buildDataQuery(LOG_STREAM_SELECTOR_EXPR)),
       loading: true,
       ...state,
     });

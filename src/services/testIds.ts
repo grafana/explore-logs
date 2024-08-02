@@ -8,6 +8,18 @@ export const testIds = {
   exploreServiceSearch: {
     search: 'data-testid search-services',
   },
+  header: {
+    refreshPicker: 'data-testid RefreshPicker run button',
+  },
+  variables: {
+    datasource: {
+      label: 'data-testid Dashboard template variables submenu Label Data source',
+    },
+    serviceName: {
+      label: 'data-testid Dashboard template variables submenu Label service_name',
+    },
+  },
+
   exploreServiceDetails: {
     searchLogs: 'data-testid search-logs',
     openExplore: 'data-testid open-explore',
