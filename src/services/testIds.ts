@@ -12,6 +12,9 @@ export const testIds = {
     refreshPicker: 'data-testid RefreshPicker run button',
   },
   variables: {
+    datasource: {
+      label: 'data-testid Dashboard template variables submenu Label Data source',
+    },
     serviceName: {
       label: 'data-testid Dashboard template variables submenu Label service_name',
     },

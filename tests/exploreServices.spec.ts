@@ -87,5 +87,13 @@ test.describe('explore services page', () => {
       expect(logsQueryCount).toEqual(10)
 
     })
+
+    test('changing datasource will trigger new queries', async ({page}) => {
+      expect(logsVolumeCount).toEqual(1)
+      expect(logsQueryCount).toEqual(4)
+      await page.locator('div').filter({ hasText: /^gdev-loki$/ }).nth(1).click()
+      await page.getByText('gdev-loki-copy').click()
+      expect(logsVolumeCount).toEqual(2)
+    })
   })
 });
