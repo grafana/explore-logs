@@ -39,7 +39,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
   }
 
   private onActivate() {
-    if (!this.state.body) {
+    if (this.state.body) {
       return;
     }
 
