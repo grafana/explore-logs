@@ -1,5 +1,5 @@
-import { ChangepointDetector } from '@bsull/augurs';
-import { DataFrame, FieldType, ReducerID, doStandardCalcs, fieldReducers } from '@grafana/data';
+import { ChangepointDetector, OutlierDetector, OutlierOutput } from '@bsull/augurs';
+import { DataFrame, FieldType, ReducerID, doStandardCalcs, fieldReducers, outerJoinDataFrames } from '@grafana/data';
 import { getLabelValueFromDataFrame } from './levels';
 import { memoize } from 'lodash';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from './analytics';
@@ -8,19 +8,19 @@ export const sortSeries = memoize(
   (series: DataFrame[], sortBy: string, direction: string) => {
     if (sortBy === 'alphabetical') {
       return sortSeriesByName(series, direction);
-    } else if (sortBy === 'outlier') {
-      return sortSeriesByOutliers(series, direction);
+    }
+
+    if (sortBy === 'outliers') {
+      initOutlierDetector(series);
     }
 
     const reducer = (dataFrame: DataFrame) => {
       // ML & Wasm sorting options
       try {
         if (sortBy === 'changepoint') {
-          if (wasmSupported()) {
-            return calculateDataFrameChangepoints(dataFrame);
-          } else {
-            throw new Error('Changepoint not supported, using stdDev');
-          }
+          return calculateDataFrameChangepoints(dataFrame);
+        } else if (sortBy === 'outliers') {
+          return calculateOutlierValue(series, dataFrame);
         }
       } catch (e) {
         console.error(e);
@@ -66,6 +66,10 @@ export const sortSeries = memoize(
 );
 
 export const calculateDataFrameChangepoints = (data: DataFrame) => {
+  if (!wasmSupported()) {
+    throw new Error('WASM not supported, fall back to stdDev');
+  }
+
   const fields = data.fields.filter((f) => f.type === FieldType.number);
 
   const dataPoints = fields[0].values.length;
@@ -100,8 +104,46 @@ export const sortSeriesByName = (series: DataFrame[], direction: string) => {
   return sortedSeries;
 };
 
-export const sortSeriesByOutliers = (series: DataFrame[], direction: string) => {
-  return series;
+const initOutlierDetector = (series: DataFrame[]) => {
+  if (!wasmSupported()) {
+    return;
+  }
+
+  // Combine all frames into one by joining on time.
+  const joined = outerJoinDataFrames({ frames: series });
+  if (!joined) {
+    return;
+  }
+
+  // Get number fields: these are our series.
+  const joinedSeries = joined.fields.filter((f) => f.type === FieldType.number);
+  const nTimestamps = joinedSeries[0].values.length;
+  const points = new Float64Array(joinedSeries.flatMap((series) => series.values as number[]));
+
+  try {
+    const detector = OutlierDetector.dbscan({ sensitivity: 0.4 }).preprocess(points, nTimestamps);
+    outliers = detector.detect();
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+let outliers: OutlierOutput | undefined = undefined;
+
+export const calculateOutlierValue = (series: DataFrame[], data: DataFrame): number => {
+  if (!wasmSupported()) {
+    throw new Error('WASM not supported, fall back to stdDev');
+  }
+  if (!outliers) {
+    throw new Error('Initialize outlier detector first');
+  }
+
+  const index = series.indexOf(data);
+  if (outliers.seriesResults[index].isOutlier) {
+    return outliers.seriesResults[index].outlierIntervals.length;
+  }
+
+  return 0;
 };
 
 const wasmSupported = () => {
