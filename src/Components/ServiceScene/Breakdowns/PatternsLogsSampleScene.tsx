@@ -112,7 +112,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
 
   private removePatternFromFilterExclusion() {
     const patternsViewTableScene = sceneGraph.getAncestor(this, PatternsViewTableScene);
-    const patternsNotMatchingFilters = patternsViewTableScene.state.patternsThatDontMatchCurrentFilters ?? [];
+    const patternsNotMatchingFilters = patternsViewTableScene.state.patternsNotMatchingFilters ?? [];
 
     const index = patternsNotMatchingFilters.findIndex((pattern) => pattern === this.state.pattern);
 
@@ -120,7 +120,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
       patternsNotMatchingFilters.splice(index, 1);
       // remove this pattern, as they can filter by this pattern again
       patternsViewTableScene.setState({
-        patternsThatDontMatchCurrentFilters: patternsNotMatchingFilters,
+        patternsNotMatchingFilters: patternsNotMatchingFilters,
       });
     }
   }
@@ -247,11 +247,11 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
 
   private excludeThisPatternFromFiltering() {
     const patternsViewTableScene = sceneGraph.getAncestor(this, PatternsViewTableScene);
-    const patternsThatDontMatchCurrentFilters = patternsViewTableScene.state.patternsThatDontMatchCurrentFilters ?? [];
+    const patternsThatDontMatchCurrentFilters = patternsViewTableScene.state.patternsNotMatchingFilters ?? [];
 
     // Add this pattern to the array of patterns that don't match current filters
     patternsViewTableScene.setState({
-      patternsThatDontMatchCurrentFilters: [...patternsThatDontMatchCurrentFilters, this.state.pattern],
+      patternsNotMatchingFilters: [...patternsThatDontMatchCurrentFilters, this.state.pattern],
     });
   }
 
