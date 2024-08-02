@@ -29,6 +29,11 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
           description: 'Smart ordering of graphs based on the most significant spikes in the data',
         },
         {
+          value: 'outliers',
+          label: 'Detected outliers',
+          description: 'Order by the amount of detected outliers in the data',
+        },
+        {
           value: ReducerID.stdDev,
           label: 'Widest spread',
           description: 'Sort graphs by deviation from the average value',
