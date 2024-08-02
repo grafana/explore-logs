@@ -145,7 +145,7 @@ export const calculateOutlierValue = (series: DataFrame[], data: DataFrame): num
   return 0;
 };
 
-const wasmSupported = () => {
+export const wasmSupported = () => {
   const support = typeof WebAssembly === 'object';
 
   if (!support) {
