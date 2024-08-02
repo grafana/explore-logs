@@ -31,7 +31,7 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
         {
           value: 'outliers',
           label: 'Detected outliers',
-          description: 'Order by detected outliers in the data',
+          description: 'Order by the amount of detected outliers in the data',
         },
         {
           value: ReducerID.stdDev,
