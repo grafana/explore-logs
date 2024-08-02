@@ -462,6 +462,5 @@ yvasiyarov
 zipkin
 prioritise
 logspanel
-inital
 lezer
 logql

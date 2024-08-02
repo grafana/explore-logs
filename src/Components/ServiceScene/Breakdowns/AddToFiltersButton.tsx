@@ -12,6 +12,7 @@ import { ServiceScene } from '../ServiceScene';
 export interface AddToFiltersButtonState extends SceneObjectState {
   frame: DataFrame;
   variableName: string;
+  labelName?: string;
 }
 
 /**
@@ -106,7 +107,12 @@ function resolveVariableNameForField(field: string, scene: SceneObject) {
 
 export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState> {
   public onClick = (type: FilterType) => {
-    const filter = getFilter(this.state.frame);
+    let filter = getFilter(this.state.frame);
+
+    if (this.state.labelName && !filter) {
+      filter = { name: this.state.labelName, value: '""' };
+    }
+
     if (!filter) {
       return;
     }

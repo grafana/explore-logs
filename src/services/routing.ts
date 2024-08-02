@@ -152,8 +152,12 @@ export const UrlParameters = {
 } as const;
 export type UrlParameterType = (typeof UrlParameters)[keyof typeof UrlParameters];
 
-export function setUrlParameter(key: UrlParameterType, value: string, initalParams?: URLSearchParams): URLSearchParams {
-  const searchParams = new URLSearchParams(initalParams?.toString() ?? location.search);
+export function setUrlParameter(
+  key: UrlParameterType,
+  value: string,
+  initialParams?: URLSearchParams
+): URLSearchParams {
+  const searchParams = new URLSearchParams(initialParams?.toString() ?? location.search);
   searchParams.set(key, value);
 
   return searchParams;
@@ -162,9 +166,9 @@ export function setUrlParameter(key: UrlParameterType, value: string, initalPara
 export function appendUrlParameter(
   key: UrlParameterType,
   value: string,
-  initalParams?: URLSearchParams
+  initialParams?: URLSearchParams
 ): URLSearchParams {
-  const searchParams = new URLSearchParams(initalParams?.toString() ?? location.search);
+  const searchParams = new URLSearchParams(initialParams?.toString() ?? location.search);
   searchParams.append(key, value);
 
   return searchParams;

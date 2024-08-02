@@ -283,7 +283,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         continue;
       }
 
-      const query = buildLokiQuery(getExpr(optionValue), {
+      const query = buildLokiQuery(getExpr(optionValue, false), {
         legendFormat: `{{${optionValue}}}`,
         refId: optionValue,
       });
@@ -340,7 +340,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   buildValuesLayout(variableState: CustomConstantVariableState) {
     const tagKey = String(variableState.value);
-    const query = buildLokiQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
+    const query = buildLokiQuery(getExpr(tagKey, true), { legendFormat: `{{${tagKey}}}` });
 
     const { sortBy, direction } = getSortByPreference('fields', ReducerID.stdDev, 'desc');
     const getFilter = () => this.state.search.state.filter ?? '';
@@ -377,9 +377,10 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
             isLazy: true,
           }),
           getLayoutChild: getFilterBreakdownValueScene(
-            getLabelValue,
+            (df) => getLabelValue(df, tagKey),
             query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-            VAR_FIELDS
+            VAR_FIELDS,
+            tagKey
           ),
           sortBy,
           direction,
@@ -401,7 +402,8 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
           getLayoutChild: getFilterBreakdownValueScene(
             getLabelValue,
             query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-            VAR_FIELDS
+            VAR_FIELDS,
+            tagKey
           ),
           sortBy,
           direction,
@@ -503,11 +505,11 @@ function getStyles(theme: GrafanaTheme2) {
 
 const avgFields = ['duration', 'count', 'total', 'bytes'];
 
-function isAvgField(field: string) {
+export function isAvgField(field: string) {
   return avgFields.includes(field);
 }
 
-function getExpr(field: string) {
+function getExpr(field: string, isValueDrilldown = false) {
   if (isAvgField(field)) {
     return (
       `avg_over_time(${LOG_STREAM_SELECTOR_EXPR} | unwrap ` +
@@ -515,6 +517,11 @@ function getExpr(field: string) {
       `(${field}) [$__auto]) by ()`
     );
   }
+
+  if (isValueDrilldown) {
+    return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__  [$__auto]))`;
+  }
+
   return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${field}!=""   [$__auto]))`;
 }
 

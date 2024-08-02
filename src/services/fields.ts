@@ -5,6 +5,7 @@ import { getColorByIndex } from './scenes';
 import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { getLogsFormatVariable, VAR_FIELDS, VAR_LABELS } from './variables';
 import { setLeverColorOverrides } from './panel';
+import { getLabelValueFromDataFrame } from './levels';
 
 export type DetectedLabel = {
   label: string;
@@ -52,7 +53,8 @@ export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
 export function getFilterBreakdownValueScene(
   getTitle: (df: DataFrame) => string,
   style: DrawStyle,
-  variableName: typeof VAR_FIELDS | typeof VAR_LABELS
+  variableName: typeof VAR_FIELDS | typeof VAR_LABELS,
+  labelName?: string
 ) {
   return (data: PanelData, frame: DataFrame, frameIndex: number) => {
     const panel = PanelBuilders.timeseries() //
@@ -62,7 +64,7 @@ export function getFilterBreakdownValueScene(
       .setData(new SceneDataNode({ data: { ...data, series: [frame] } }))
       .setColor({ mode: 'fixed', fixedColor: getColorByIndex(frameIndex) })
       .setOverrides(setLeverColorOverrides)
-      .setHeaderActions(new AddToFiltersButton({ frame, variableName }));
+      .setHeaderActions(new AddToFiltersButton({ frame, variableName, labelName }));
 
     if (style === DrawStyle.Bars) {
       panel
@@ -73,6 +75,13 @@ export function getFilterBreakdownValueScene(
         .setOverrides(setLeverColorOverrides)
         .setCustomFieldConfig('drawStyle', DrawStyle.Bars);
     }
+
+    if (!getLabelValueFromDataFrame(frame)) {
+      panel.setDescription(`Displays the volume of logs without the ${labelName ? `"${labelName}"` : ''} field`);
+      panel.setCustomFieldConfig('fillOpacity', 60);
+      panel.setColor({ mode: 'fixed', fixedColor: 'gray' });
+    }
+
     return new SceneCSSGridItem({
       body: panel.build(),
     });
