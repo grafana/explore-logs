@@ -58,7 +58,6 @@ interface ServiceSelectionSceneState extends SceneObjectState {
   serviceLevel: Map<string, string[]>;
   // Logs volume API response as dataframe with SceneQueryRunner
   $data: SceneDataProvider;
-  loading: boolean;
 }
 
 function getMetricExpression(service: string) {
@@ -89,7 +88,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           }),
         ],
       }),
-      loading: true,
       $data: getQueryRunner(buildResourceQuery(`{${SERVICE_NAME}=~\`${VAR_SERVICE_EXPR}.+\`}`, 'volume')),
       serviceLevel: new Map<string, string[]>(),
       ...state,
@@ -101,9 +99,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   private onReferencedVariableValueChanged(variable: SceneVariable) {
     if (variable.state.name === VAR_DATASOURCE) {
       if (this.state.$data instanceof SceneQueryRunner) {
-        this.setState({
-          loading: true,
-        });
         this.state.$data.runQueries();
       }
       return;
@@ -137,9 +132,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   }
 
   private updateBody() {
-    this.setState({
-      loading: false,
-    });
     const { servicesToQuery } = this.getServices(this.state.$data.state.data?.series);
     // If no services are to be queried, clear the body
     if (!servicesToQuery || servicesToQuery.length === 0) {
@@ -314,14 +306,15 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
   public static Component = ({ model }: SceneComponentProps<ServiceSelectionScene>) => {
     const styles = useStyles2(getStyles);
-    const { body, $data, loading } = model.useState();
+    const { body, $data } = model.useState();
     const { data } = $data.useState();
 
     const serviceStringVariable = getServiceSelectionStringVariable(model);
     const { value } = serviceStringVariable.useState();
 
     const { servicesByVolume, servicesToQuery } = model.getServices(data?.series);
-    const isLogVolumeLoading = data === undefined || loading;
+    const isLogVolumeLoading =
+      data?.state === LoadingState.Loading || data?.state === LoadingState.Streaming || data === undefined;
     const volumeApiError = $data.state.data?.state === LoadingState.Error;
 
     const onSearchChange = (serviceName: string) => {
@@ -355,7 +348,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           {/** If we don't have any servicesByVolume, volume endpoint is probably not enabled */}
           {!isLogVolumeLoading && volumeApiError && <ConfigureVolumeError />}
           {!isLogVolumeLoading && !volumeApiError && !servicesByVolume?.length && <NoVolumeError />}
-          {!isLogVolumeLoading && servicesToQuery && servicesToQuery.length > 0 && (
+          {servicesToQuery && servicesToQuery.length > 0 && (
             <div className={styles.body}>
               <body.Component model={body} />
             </div>
