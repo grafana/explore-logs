@@ -12,7 +12,7 @@ import {
 } from '@grafana/scenes';
 import React from 'react';
 import { getQueryRunner } from '../../../services/panel';
-import { buildLokiQuery, LokiQuery, renderPatternFilters } from '../../../services/query';
+import { buildDataQuery, LokiQuery, renderPatternFilters } from '../../../services/query';
 import {
   getFieldsVariable,
   getLevelsVariable,
@@ -44,7 +44,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
     }
 
     // We start by querying with the users current query context
-    const queryWithFilters = buildLokiQuery(LOG_STREAM_SELECTOR_EXPR);
+    const queryWithFilters = buildDataQuery(LOG_STREAM_SELECTOR_EXPR);
     this.replacePatternsInQuery(queryWithFilters);
 
     // but if that fails to return results, we fire the query without the filters, instead of showing no-data in the viz
@@ -195,7 +195,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
    * @param value
    */
   private onQueryWithFiltersResult = (value: SceneDataProviderResult) => {
-    const queryWithoutFilters = buildLokiQuery(PATTERNS_SAMPLE_SELECTOR_EXPR);
+    const queryWithoutFilters = buildDataQuery(PATTERNS_SAMPLE_SELECTOR_EXPR);
     this.replacePatternsInQuery(queryWithoutFilters);
 
     const queryRunnerWithoutFilters = getQueryRunner(queryWithoutFilters);
