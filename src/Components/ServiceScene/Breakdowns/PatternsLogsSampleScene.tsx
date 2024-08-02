@@ -33,51 +33,51 @@ interface PatternsLogsSampleSceneState extends SceneObjectState {
 }
 export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleSceneState> {
   constructor(state: PatternsLogsSampleSceneState) {
-    super({
-      ...state,
-    });
+    super(state);
 
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
   private onActivate() {
     if (!this.state.body) {
-      // We start by querying with the users current query context
-      const queryWithFilters = buildLokiQuery(LOG_STREAM_SELECTOR_EXPR);
-      this.replacePatternsInQueryWithThisPattern(queryWithFilters);
-
-      // but if that fails to return results, we fire the query without the filters, instead of showing no-data in the viz
-      const queryRunnerWithFilters = getQueryRunner(queryWithFilters);
-      queryRunnerWithFilters.getResultsStream().subscribe((value) => {
-        this.onQueryWithFiltersResult(value);
-      });
-
-      this.setState({
-        body: new SceneFlexLayout({
-          direction: 'column',
-          children: [
-            new SceneFlexItem({
-              body: undefined,
-              width: '100%',
-              height: 0,
-            }),
-            new SceneFlexItem({
-              height: 300,
-              width: '100%',
-              body: PanelBuilders.logs()
-                .setHoverHeader(true)
-                .setOption('showLogContextToggle', true)
-                .setOption('showTime', true)
-                .setData(queryRunnerWithFilters)
-                .build(),
-            }),
-          ],
-        }),
-      });
+      return;
     }
+
+    // We start by querying with the users current query context
+    const queryWithFilters = buildLokiQuery(LOG_STREAM_SELECTOR_EXPR);
+    this.replacePatternsInQuery(queryWithFilters);
+
+    // but if that fails to return results, we fire the query without the filters, instead of showing no-data in the viz
+    const queryRunnerWithFilters = getQueryRunner(queryWithFilters);
+    queryRunnerWithFilters.getResultsStream().subscribe((value) => {
+      this.onQueryWithFiltersResult(value);
+    });
+
+    this.setState({
+      body: new SceneFlexLayout({
+        direction: 'column',
+        children: [
+          new SceneFlexItem({
+            body: undefined,
+            width: '100%',
+            height: 0,
+          }),
+          new SceneFlexItem({
+            height: 300,
+            width: '100%',
+            body: PanelBuilders.logs()
+              .setHoverHeader(true)
+              .setOption('showLogContextToggle', true)
+              .setOption('showTime', true)
+              .setData(queryRunnerWithFilters)
+              .build(),
+          }),
+        ],
+      }),
+    });
   }
 
-  private replacePatternsInQueryWithThisPattern(queryWithFilters: LokiQuery) {
+  private replacePatternsInQuery(queryWithFilters: LokiQuery) {
     const pendingPattern: AppliedPattern = {
       pattern: this.state.pattern,
       type: 'include',
@@ -106,21 +106,21 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
         isHidden: true,
       });
 
-      this.removeThisPatternFromFilterExclusion();
+      this.removePatternFromFilterExclusion();
     }
   };
 
-  private removeThisPatternFromFilterExclusion() {
+  private removePatternFromFilterExclusion() {
     const patternsViewTableScene = sceneGraph.getAncestor(this, PatternsViewTableScene);
-    const patternsThatDontMatchCurrentFilters = patternsViewTableScene.state.patternsThatDontMatchCurrentFilters ?? [];
+    const patternsNotMatchingFilters = patternsViewTableScene.state.patternsThatDontMatchCurrentFilters ?? [];
 
-    const index = patternsThatDontMatchCurrentFilters.findIndex((pattern) => pattern === this.state.pattern);
+    const index = patternsNotMatchingFilters.findIndex((pattern) => pattern === this.state.pattern);
 
     if (index !== -1) {
-      patternsThatDontMatchCurrentFilters.splice(index, 1);
+      patternsNotMatchingFilters.splice(index, 1);
       // remove this pattern, as they can filter by this pattern again
       patternsViewTableScene.setState({
-        patternsThatDontMatchCurrentFilters: patternsThatDontMatchCurrentFilters,
+        patternsThatDontMatchCurrentFilters: patternsNotMatchingFilters,
       });
     }
   }
@@ -196,7 +196,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
    */
   private onQueryWithFiltersResult = (value: SceneDataProviderResult) => {
     const queryWithoutFilters = buildLokiQuery(PATTERNS_SAMPLE_SELECTOR_EXPR);
-    this.replacePatternsInQueryWithThisPattern(queryWithoutFilters);
+    this.replacePatternsInQuery(queryWithoutFilters);
 
     const queryRunnerWithoutFilters = getQueryRunner(queryWithoutFilters);
 
