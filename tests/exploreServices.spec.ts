@@ -28,6 +28,41 @@ test.describe('explore services page', () => {
     await expect(page.getByText('Showing 4 services')).toBeVisible();
   });
 
+  test('should filter service labels on exact search', async ({ page }) => {
+    await explorePage.servicesSearch.click();
+    await explorePage.servicesSearch.pressSequentially('mimir-ingester');
+    // service name should be in time series panel
+    await expect(page.getByTestId('data-testid Panel header mimir-ingester').nth(0)).toBeVisible();
+    // service name should also be in logs panel, just not visible to the user
+    await expect(page.getByTestId('data-testid Panel header mimir-ingester').nth(1)).toBeVisible();
+
+    // Exit out of the dropdown
+    await page.keyboard.press('Escape');
+    // The matched string should exist in the search dropdown
+    await expect(page.getByText('mimir-ingester').nth(0)).toBeVisible()
+    // And the panel title
+    await expect(page.getByText('mimir-ingester').nth(1)).toBeVisible()
+    // And the logs panel title should be hidden
+    await expect(page.getByText('mimir-ingester').nth(2)).not.toBeVisible()
+    await expect(page.getByText('Showing 1 service')).toBeVisible();
+  });
+
+  test('should filter service labels on partial string', async ({ page }) => {
+    await explorePage.servicesSearch.click();
+    await explorePage.servicesSearch.pressSequentially('imi');
+    // service name should be in time series panel
+    await expect(page.getByTestId('data-testid Panel header mimir-ingester').nth(0)).toBeVisible();
+    // service name should also be in logs panel, just not visible to the user
+    await expect(page.getByTestId('data-testid Panel header mimir-ingester').nth(1)).toBeVisible();
+
+    // Exit out of the dropdown
+    await page.keyboard.press('Escape');
+    // Only the first title is visible
+    await expect(page.getByText('mimir-ingester').nth(0)).toBeVisible()
+    await expect(page.getByText('mimir-ingester').nth(1)).not.toBeVisible()
+    await expect(page.getByText('Showing 4 services')).toBeVisible();
+  });
+
   test('should select a service label value and navigate to log view', async ({ page }) => {
     await explorePage.addServiceName();
     await expect(explorePage.logVolumeGraph).toBeVisible();

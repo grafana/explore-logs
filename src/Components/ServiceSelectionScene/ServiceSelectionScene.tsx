@@ -88,7 +88,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           }),
         ],
       }),
-      $data: getQueryRunner(buildResourceQuery(`{${SERVICE_NAME}=~\`${VAR_SERVICE_EXPR}.+\`}`, 'volume')),
+      $data: getQueryRunner(buildResourceQuery(`{${SERVICE_NAME}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')),
       serviceLevel: new Map<string, string[]>(),
       ...state,
     });

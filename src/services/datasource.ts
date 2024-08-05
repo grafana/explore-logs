@@ -89,11 +89,12 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     }
 
     const targetsInterpolated = ds.interpolateVariablesInQueries(request.targets, request.scopedVars);
+    const expression = targetsInterpolated[0].expr.replace('.*.*', '.+');
 
     const dsResponse = ds.getResource(
       'index/volume',
       {
-        query: targetsInterpolated[0].expr,
+        query: expression,
         from: request.range.from.utc().toISOString(),
         to: request.range.to.utc().toISOString(),
         limit: 1000,
