@@ -118,7 +118,7 @@ export const TableWrap = (props: TableWrapProps) => {
         <Table
           logsFrame={logsFrame}
           timeZone={timeZone}
-          height={panelWrapSize.height}
+          height={panelWrapSize.height - 50}
           width={panelWrapSize.width - 25}
           labels={labels}
         />

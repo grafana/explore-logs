@@ -1,7 +1,6 @@
-import { expect, test } from '@grafana/plugin-e2e';
-import { ExplorePage } from './fixtures/explore';
-import { testIds } from '../src/services/testIds';
-import { FilterOp } from '../src/services/filters';
+import {expect, test} from '@grafana/plugin-e2e';
+import {ExplorePage} from './fixtures/explore';
+import {testIds} from '../src/services/testIds';
 
 test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;
@@ -49,7 +48,7 @@ test.describe('explore services breakdown page', () => {
     // Click the filter button
     await pillContextMenu.click()
     // New level filter should be added
-    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label level')).toBeVisible()
+    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label detected_level')).toBeVisible()
   })
 
   test('should show inspect modal', async ({ page }) => {
@@ -74,6 +73,18 @@ test.describe('explore services breakdown page', () => {
     await expect(page1.getByText('{service_name=`tempo-distributor`}')).toBeVisible();
   });
 
+  test('should select a label, label added to url', async ({ page }) => {
+    await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
+    const labelsUrlArray = page.url().split('/')
+    expect(labelsUrlArray[labelsUrlArray.length - 1].startsWith('labels')).toEqual(true)
+
+    await page.getByLabel('Select detected_level').click();
+    const urlArray = page.url().split('/')
+    expect(urlArray[urlArray.length - 1].startsWith('detected_level')).toEqual(true)
+    // Can't import the enum as it's in the same file as the PLUGIN_ID which doesn't like being imported
+    expect(urlArray[urlArray.length - 2]).toEqual('label')
+  });
+
   test('should exclude a label, update filters, open log panel', async ({ page }) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
     await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
@@ -81,7 +92,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId(testIds.exploreServiceDetails.searchLogs)).toBeVisible();
     // Adhoc err filter should be added
     await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
-    await expect(page.getByText(FilterOp.NotEqual)).toBeVisible();
+    await expect(page.getByText('!=')).toBeVisible();
   });
 
 
@@ -258,7 +269,7 @@ test.describe('explore services breakdown page', () => {
   });
 
   test('should update a filter and run new logs', async ({ page }) => {
-    await page.getByTestId('AdHocFilter-service_name').getByRole('img').nth(1).click();
+    await page.getByTestId('AdHocFilter-service_name').locator('svg').nth(2).click();
     await page.getByText('mimir-distributor').click();
 
     // Assert the panel is done loading before going on

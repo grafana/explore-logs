@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DataFrame, FieldType, GrafanaTheme2 } from '@grafana/data';
+import { DataFrame, dateTime, FieldType, GrafanaTheme2 } from '@grafana/data';
 import {
   CustomVariable,
   SceneComponentProps,
@@ -12,14 +12,15 @@ import {
   SceneObjectState,
   SceneVariableSet,
 } from '@grafana/scenes';
-import { Text, TextLink, useStyles2 } from '@grafana/ui';
+import { Text, useStyles2 } from '@grafana/ui';
 import { StatusWrapper } from 'Components/ServiceScene/Breakdowns/StatusWrapper';
-import { GrotError } from 'Components/GrotError';
 import { VAR_LABEL_GROUP_BY } from 'services/variables';
 import { LokiPattern, ServiceScene } from '../../ServiceScene';
 import { IndexScene } from '../../../IndexScene/IndexScene';
 import { PatternsFrameScene } from './PatternsFrameScene';
 import { PatternsViewTextSearch } from './PatternsViewTextSearch';
+import { PatternsNotDetected, PatternsTooOld } from './PatternsNotDetected';
+import { areArraysEqual } from '../../../../services/comparison';
 
 export interface PatternsBreakdownSceneState extends SceneObjectState {
   body?: SceneFlexLayout;
@@ -42,6 +43,8 @@ export type PatternFrame = {
   status?: 'include' | 'exclude';
 };
 
+export const PATTERNS_MAX_AGE_HOURS = 3;
+
 export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSceneState> {
   constructor(state: Partial<PatternsBreakdownSceneState>) {
     super({
@@ -61,9 +64,12 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
   // parent render
   public static Component = ({ model }: SceneComponentProps<PatternsBreakdownScene>) => {
     const { body, loading, blockingMessage } = model.useState();
+    const { value: timeRange } = sceneGraph.getTimeRange(model).useState();
     const logsByServiceScene = sceneGraph.getAncestor(model, ServiceScene);
     const { patterns } = logsByServiceScene.useState();
     const styles = useStyles2(getStyles);
+    const timeRangeTooOld = dateTime().diff(timeRange.to, 'hours') >= PATTERNS_MAX_AGE_HOURS;
+
     return (
       <div className={styles.container}>
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
@@ -80,22 +86,9 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
               </Text>
             </div>
           )}
-          {!loading && patterns?.length === 0 && (
-            <GrotError>
-              <div>
-                <p>
-                  <strong>Sorry, we could not detect any patterns.</strong>
-                </p>
-                <p>
-                  Check back later or reach out to the team in the{' '}
-                  <TextLink href="https://slack.grafana.com/" external>
-                    Grafana Labs community Slack channel
-                  </TextLink>
-                </p>
-                <p>Patterns let you detect similar log lines to include or exclude from your search.</p>
-              </div>
-            </GrotError>
-          )}
+
+          {!loading && patterns?.length === 0 && timeRangeTooOld && <PatternsTooOld />}
+          {!loading && patterns?.length === 0 && !timeRangeTooOld && <PatternsNotDetected />}
           {!loading && patterns && patterns.length > 0 && (
             <div className={styles.content}>{body && <body.Component model={body} />}</div>
           )}
@@ -116,7 +109,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     // Subscribe to changes from pattern API call
     this._subs.add(
       serviceScene.subscribeToState((newState, prevState) => {
-        if (JSON.stringify(newState.patterns) !== JSON.stringify(prevState.patterns)) {
+        if (!areArraysEqual(newState.patterns, prevState.patterns)) {
           this.updatePatternFrames(newState.patterns);
         }
       })

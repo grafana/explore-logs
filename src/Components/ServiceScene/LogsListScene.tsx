@@ -1,6 +1,7 @@
 import React from 'react';
 
 import {
+  AdHocFiltersVariable,
   PanelBuilders,
   SceneComponentProps,
   SceneFlexItem,
@@ -21,8 +22,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '..
 import { DataFrame } from '@grafana/data';
 import { addToFilters, FilterType } from './Breakdowns/AddToFiltersButton';
 import { getLabelTypeFromFrame, LabelType } from 'services/fields';
-import { VAR_FIELDS, VAR_LABELS } from 'services/variables';
-import { getAdHocFiltersVariable } from 'services/scenes';
+import { getAdHocFiltersVariable, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from 'services/variables';
 import { locationService } from '@grafana/runtime';
 import { LogOptionsScene } from './LogOptionsScene';
 import { getLogOption } from 'services/store';
@@ -106,11 +106,13 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       this.updateLogsPanel();
     }
 
-    this.subscribeToState((newState, prevState) => {
-      if (newState.visualizationType !== prevState.visualizationType) {
-        this.updateLogsPanel();
-      }
-    });
+    this._subs.add(
+      this.subscribeToState((newState, prevState) => {
+        if (newState.visualizationType !== prevState.visualizationType) {
+          this.updateLogsPanel();
+        }
+      })
+    );
   }
 
   private setStateFromUrl(searchParams: URLSearchParams) {
@@ -164,18 +166,17 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   };
 
   public handleIsFilterLabelActive = (key: string, value: string) => {
-    const filters = getAdHocFiltersVariable(VAR_LABELS, this);
+    const labels = getAdHocFiltersVariable(VAR_LABELS, this);
     const fields = getAdHocFiltersVariable(VAR_FIELDS, this);
-    return (
-      (filters &&
-        filters.state.filters.findIndex(
-          (filter) => filter.operator === '=' && filter.key === key && filter.value === value
-        ) >= 0) ||
-      (fields &&
-        fields.state.filters.findIndex(
-          (filter) => filter.operator === '=' && filter.key === key && filter.value === value
-        ) >= 0)
-    );
+    const levels = getAdHocFiltersVariable(VAR_LEVELS, this);
+
+    const hasKeyValueFilter = (filter: AdHocFiltersVariable | null) =>
+      filter &&
+      filter.state.filters.findIndex(
+        (filter) => filter.operator === '=' && filter.key === key && filter.value === value
+      ) >= 0;
+
+    return hasKeyValueFilter(labels) || hasKeyValueFilter(fields) || hasKeyValueFilter(levels);
   };
 
   public handleFilterStringClick = (value: string) => {
@@ -214,6 +215,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
         .setOption('onClickFilterString', this.handleFilterStringClick)
         .setOption('wrapLogMessage', Boolean(getLogOption('wrapLines')))
+        .setOption('showLogContextToggle', true)
         .setHeaderActions(<LogsPanelHeaderActions vizType={visualizationType} onChange={this.setVisualizationType} />)
         .build(),
     });

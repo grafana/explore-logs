@@ -1,13 +1,12 @@
-import { DataFrame } from '@grafana/data';
-import { SceneDataTransformer, SceneQueryRunner } from '@grafana/scenes';
+import { DataFrame, FieldConfig, FieldMatcherID } from '@grafana/data';
+import { FieldConfigOverridesBuilder, SceneDataTransformer, SceneQueryRunner } from '@grafana/scenes';
 import { map, Observable } from 'rxjs';
 import { LokiQuery } from './query';
-import { EXPLORATION_DS } from './variables';
+import { HideSeriesConfig } from '@grafana/schema';
+import { WRAPPED_LOKI_DS_UID } from './datasource';
 
 const UNKNOWN_LEVEL_LOGS = 'logs';
-// TODO: `FieldConfigOverridesBuilder` is not exported, so it can not be used
-// here.
-export function setLeverColorOverrides(overrides: any) {
+export function setLeverColorOverrides(overrides: FieldConfigOverridesBuilder<FieldConfig>) {
   overrides.matchFieldsWithName('info').overrideColor({
     mode: 'fixed',
     fixedColor: 'semi-dark-green',
@@ -28,6 +27,32 @@ export function setLeverColorOverrides(overrides: any) {
     mode: 'fixed',
     fixedColor: 'darkgray',
   });
+}
+
+interface TimeSeriesFieldConfig extends FieldConfig {
+  hideFrom: HideSeriesConfig;
+}
+export function setLevelSeriesOverrides(levels: string[], overrideConfig: FieldConfigOverridesBuilder<FieldConfig>) {
+  overrideConfig
+    .match({
+      id: FieldMatcherID.byNames,
+      options: {
+        mode: 'exclude',
+        names: levels,
+        prefix: 'All except:',
+        readOnly: true,
+      },
+    })
+    .overrideCustomFieldConfig<TimeSeriesFieldConfig, 'hideFrom'>('hideFrom', {
+      legend: false,
+      tooltip: false,
+      viz: true,
+    });
+
+  // Setting __systemRef to hideSeriesFrom, allows the override to be changed by interacting with the viz
+  const overrides = overrideConfig.build();
+  // @ts-expect-error
+  overrides[overrides.length - 1].__systemRef = 'hideSeriesFrom';
 }
 
 export function sortLevelTransformation() {
@@ -61,7 +86,7 @@ export function getQueryRunner(query: LokiQuery) {
   if (query.legendFormat?.toLowerCase().includes('level')) {
     return new SceneDataTransformer({
       $data: new SceneQueryRunner({
-        datasource: EXPLORATION_DS,
+        datasource: { uid: WRAPPED_LOKI_DS_UID },
         queries: [query],
       }),
       transformations: [sortLevelTransformation],
@@ -69,7 +94,7 @@ export function getQueryRunner(query: LokiQuery) {
   }
 
   return new SceneQueryRunner({
-    datasource: EXPLORATION_DS,
+    datasource: { uid: WRAPPED_LOKI_DS_UID },
     queries: [query],
   });
 }

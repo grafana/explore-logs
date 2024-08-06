@@ -1,6 +1,6 @@
 import { SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import React from 'react';
-import { BusEventBase, DataFrame, ReducerID, SelectableValue, fieldReducers } from '@grafana/data';
+import { BusEventBase, DataFrame, FieldReducerInfo, ReducerID, SelectableValue, fieldReducers } from '@grafana/data';
 import { getLabelValueFromDataFrame } from 'services/levels';
 import { InlineField, Select } from '@grafana/ui';
 import { getSortByPreference, setSortByPreference } from 'services/store';
@@ -12,7 +12,7 @@ export interface SortBySceneState extends SceneObjectState {
 }
 
 export class SortCriteriaChanged extends BusEventBase {
-  constructor(public sortBy: string, public direction: string) {
+  constructor(public target: 'fields' | 'labels', public sortBy: string, public direction: string) {
     super();
   }
   public static type = 'sort-criteria-changed';
@@ -21,16 +21,44 @@ export class SortCriteriaChanged extends BusEventBase {
 export class SortByScene extends SceneObjectBase<SortBySceneState> {
   public sortingOptions = [
     {
-      value: 'changepoint',
-      label: 'Most relevant',
-      description: 'Smart ordering of graphs based on the data',
+      label: '',
+      options: [
+        {
+          value: 'changepoint',
+          label: 'Most relevant',
+          description: 'Smart ordering of graphs based on the most significant spikes in the data',
+        },
+        {
+          value: 'outliers',
+          label: 'Detected outliers',
+          description: 'Order by the amount of detected outliers in the data',
+        },
+        {
+          value: ReducerID.stdDev,
+          label: 'Widest spread',
+          description: 'Sort graphs by deviation from the average value',
+        },
+        {
+          value: 'alphabetical',
+          label: 'Name',
+          description: 'Alphabetical order',
+        },
+        {
+          value: ReducerID.max,
+          label: 'Highest spike',
+          description: 'Sort graphs by the highest values (max)',
+        },
+        {
+          value: ReducerID.min,
+          label: 'Lowest dip',
+          description: 'Sort graphs by the smallest values (min)',
+        },
+      ],
     },
     {
-      value: ReducerID.stdDev,
-      label: 'Dispersion',
-      description: 'Standard deviation of all values in a field',
+      label: 'Percentiles',
+      options: [...fieldReducers.selectOptions([], filterReducerOptions).options],
     },
-    ...fieldReducers.selectOptions([], (ext) => ext.id !== ReducerID.stdDev).options,
   ];
 
   constructor(state: Pick<SortBySceneState, 'target'>) {
@@ -48,7 +76,7 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
     }
     this.setState({ sortBy: criteria.value });
     setSortByPreference(this.state.target, criteria.value, this.state.direction);
-    this.publishEvent(new SortCriteriaChanged(criteria.value, this.state.direction), true);
+    this.publishEvent(new SortCriteriaChanged(this.state.target, criteria.value, this.state.direction), true);
   };
 
   public onDirectionChange = (direction: SelectableValue<string>) => {
@@ -57,12 +85,13 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
     }
     this.setState({ direction: direction.value });
     setSortByPreference(this.state.target, this.state.sortBy, direction.value);
-    this.publishEvent(new SortCriteriaChanged(this.state.sortBy, direction.value), true);
+    this.publishEvent(new SortCriteriaChanged(this.state.target, this.state.sortBy, direction.value), true);
   };
 
   public static Component = ({ model }: SceneComponentProps<SortByScene>) => {
     const { sortBy, direction } = model.useState();
-    const value = model.sortingOptions.find(({ value }) => value === sortBy);
+    const group = model.sortingOptions.find((group) => group.options.find((option) => option.value === sortBy));
+    const value = group?.options.find((option) => option.value === sortBy);
     return (
       <>
         <InlineField>
@@ -90,7 +119,7 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
         >
           <Select
             value={value}
-            width={18}
+            width={20}
             isSearchable={true}
             options={model.sortingOptions}
             placeholder={'Choose criteria'}
@@ -101,6 +130,14 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
       </>
     );
   };
+}
+
+const ENABLED_PERCENTILES = ['p10', 'p25', 'p75', 'p90', 'p99'];
+function filterReducerOptions(ext: FieldReducerInfo) {
+  if (ext.id >= 'p1' && ext.id <= 'p99') {
+    return ENABLED_PERCENTILES.includes(ext.id);
+  }
+  return false;
 }
 
 export function getLabelValue(frame: DataFrame) {

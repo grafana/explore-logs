@@ -1,19 +1,42 @@
 import { GrafanaTheme2 } from '@grafana/data';
-import { SceneComponentProps, SceneObjectBase, VariableValueSelectors } from '@grafana/scenes';
+import { SceneComponentProps, SceneObjectBase, SceneObjectState, VariableValueSelectors } from '@grafana/scenes';
 import { useStyles2 } from '@grafana/ui';
 import React from 'react';
 import { PatternControls } from './PatternControls';
 import { AppliedPattern, IndexSceneState } from './IndexScene';
 import { css } from '@emotion/css';
 import { GiveFeedbackButton } from './GiveFeedbackButton';
+import { InterceptBanner } from './InterceptBanner';
+import { PLUGIN_ID } from '../../services/routing';
 
-export class LayoutScene extends SceneObjectBase {
+interface LayoutSceneState extends SceneObjectState {
+  interceptDismissed: boolean;
+}
+
+const interceptBannerStorageKey = `${PLUGIN_ID}.interceptBannerStorageKey`;
+
+export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
+  constructor(state: Partial<LayoutSceneState>) {
+    super({
+      ...state,
+      interceptDismissed: !!localStorage.getItem(interceptBannerStorageKey),
+    });
+  }
+
+  public dismiss() {
+    this.setState({
+      interceptDismissed: true,
+    });
+    localStorage.setItem(interceptBannerStorageKey, 'true');
+  }
+
   static Component = ({ model }: SceneComponentProps<LayoutScene>) => {
     if (!model.parent) {
       return null;
     }
 
     const { controls, contentScene, patterns } = model.parent.useState() as IndexSceneState;
+    const { interceptDismissed } = model.useState();
     if (!contentScene) {
       return null;
     }
@@ -21,6 +44,13 @@ export class LayoutScene extends SceneObjectBase {
     const styles = useStyles2(getStyles);
     return (
       <div className={styles.bodyContainer}>
+        {!interceptDismissed && (
+          <InterceptBanner
+            onRemove={() => {
+              model.dismiss();
+            }}
+          />
+        )}
         <div className={styles.container}>
           {controls && (
             <div className={styles.controlsContainer}>
@@ -31,13 +61,15 @@ export class LayoutScene extends SceneObjectBase {
                   ) : null
                 )}
               </div>
-              <div className={styles.controls}>
+              <div className={styles.controlsWrapper}>
                 <GiveFeedbackButton />
-                {controls.map((control) =>
-                  control instanceof VariableValueSelectors === false ? (
-                    <control.Component key={control.state.key} model={control} />
-                  ) : null
-                )}
+                <div className={styles.controls}>
+                  {controls.map((control) =>
+                    control instanceof VariableValueSelectors === false ? (
+                      <control.Component key={control.state.key} model={control} />
+                    ) : null
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -135,10 +167,16 @@ function getStyles(theme: GrafanaTheme2) {
         margin: 0,
       },
     }),
+    controlsWrapper: css({
+      display: 'flex',
+      flexDirection: 'column',
+    }),
     controls: css({
       display: 'flex',
-      paddingTop: theme.spacing(3),
       gap: theme.spacing(1),
+    }),
+    feedback: css({
+      textAlign: 'end',
     }),
     rotateIcon: css({
       svg: { transform: 'rotate(180deg)' },

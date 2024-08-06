@@ -9,7 +9,6 @@ import { useTableCellContext } from 'Components/Table/Context/TableCellContext';
 import { useTableColumnContext } from 'Components/Table/Context/TableColumnsContext';
 import { DefaultCellWrapComponent } from 'Components/Table/DefaultCellWrapComponent';
 import { DefaultPill } from 'Components/Table/DefaultPill';
-import { getFieldMappings } from 'Components/Table/Table';
 import { LineActionIcons } from 'Components/Table/LineActionIcons';
 
 const getStyles = (theme: GrafanaTheme2, fieldType?: FieldType) => ({
@@ -34,18 +33,6 @@ const getStyles = (theme: GrafanaTheme2, fieldType?: FieldType) => ({
     },
   }),
 });
-
-export function getBgColorForCell(props: CustomCellRendererProps): string | undefined {
-  // This solution will only color the cell if it is the level field.
-  const mappings = getFieldMappings().options;
-
-  const value: string = props.field.values[props.rowIndex];
-  if (props.field.name === 'level' && value in mappings) {
-    return mappings[value].color;
-  }
-
-  return undefined;
-}
 
 interface DefaultCellComponentCustomProps {
   fieldIndex: number;

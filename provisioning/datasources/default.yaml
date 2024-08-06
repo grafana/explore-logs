@@ -2,7 +2,7 @@ apiVersion: 1
 
 datasources:
   - name: gdev-testdata
-    isDefault: false
+    isDefault: true
     type: testdata
   - name: gdev-loki
     type: loki

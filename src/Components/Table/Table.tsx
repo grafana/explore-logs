@@ -433,7 +433,7 @@ function getInitialFieldWidth(
   const maxWidth = numberOfFields <= 2 ? tableWidth : Math.min(tableWidth / 2);
 
   // First field gets icons, and a little extra width
-  const extraPadding = fieldIndex === 0 ? 50 : 0;
+  const extraPadding = fieldIndex === 0 ? 30 : 0;
 
   // Time fields have consistent widths
   if (field.type === FieldType.time) {

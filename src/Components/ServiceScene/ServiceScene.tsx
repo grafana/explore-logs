@@ -3,8 +3,6 @@ import React from 'react';
 
 import { GrafanaTheme2, LoadingState } from '@grafana/data';
 import {
-  AdHocFiltersVariable,
-  CustomVariable,
   SceneComponentProps,
   SceneFlexItem,
   SceneFlexLayout,
@@ -15,26 +13,30 @@ import {
   SceneVariable,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
-import { Unsubscribable } from 'rxjs';
+import { Box, LoadingPlaceholder, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { DetectedLabelsResponse, extractParserAndFieldsFromDataFrame } from 'services/fields';
+import { DetectedLabel, DetectedLabelsResponse, updateParserFromDataFrame } from 'services/fields';
 import { getQueryRunner } from 'services/panel';
-import { buildLokiQuery, renderLogQLStreamSelector } from 'services/query';
-import { getSlug, navigateToBreakdown, navigateToIndex, PLUGIN_ID, PageSlugs } from 'services/routing';
+import { buildDataQuery, renderLogQLStreamSelector } from 'services/query';
+import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, PLUGIN_ID, ValueSlugs } from 'services/routing';
 import { getExplorationFor, getLokiDatasource } from 'services/scenes';
 import {
   ALL_VARIABLE_VALUE,
+  getFieldsVariable,
+  getLabelsVariable,
   LEVEL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_LABELS,
-  VAR_LOGS_FORMAT,
+  VAR_LEVELS,
   VAR_PATTERNS,
 } from 'services/variables';
-import { buildFieldsBreakdownActionScene } from './Breakdowns/FieldsBreakdownScene';
-import { buildLabelBreakdownActionScene } from './Breakdowns/LabelBreakdownScene';
+import {
+  buildFieldsBreakdownActionScene,
+  buildFieldValuesBreakdownActionScene,
+} from './Breakdowns/FieldsBreakdownScene';
+import { buildLabelBreakdownActionScene, buildLabelValuesBreakdownActionScene } from './Breakdowns/LabelBreakdownScene';
 import { buildPatternsScene } from './Breakdowns/Patterns/PatternsBreakdownScene';
 import { GoToExploreButton } from './GoToExploreButton';
 import { buildLogsListScene } from './LogsListScene';
@@ -42,6 +44,8 @@ import { testIds } from 'services/testIds';
 import { sortLabelsByCardinality } from 'services/filters';
 import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
 import { getMetadataService } from '../../services/metadata';
+import { navigateToDrilldownPage, navigateToIndex } from '../../services/navigate';
+import { areArraysEqual } from '../../services/comparison';
 
 export interface LokiPattern {
   pattern: string;
@@ -55,30 +59,38 @@ interface BreakdownViewDefinition {
   getScene: (changeFields: (f: string[]) => void) => SceneObject;
 }
 
+interface ValueBreakdownViewDefinition {
+  displayName: string;
+  value: ValueSlugs;
+  testId: string;
+  getScene: (value: string) => SceneObject;
+}
+
 type MakeOptional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
 export interface ServiceSceneCustomState {
   fields?: string[];
-  labels?: string[];
+  labels?: DetectedLabel[];
   patterns?: LokiPattern[];
   fieldsCount?: number;
   loading?: boolean;
 }
 
 export interface ServiceSceneState extends SceneObjectState, ServiceSceneCustomState {
-  body: SceneFlexLayout;
+  body: SceneFlexLayout | undefined;
+  drillDownLabel?: string;
 }
 
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
-    variableNames: [VAR_DATASOURCE, VAR_LABELS, VAR_FIELDS, VAR_PATTERNS],
+    variableNames: [VAR_DATASOURCE, VAR_LABELS, VAR_FIELDS, VAR_PATTERNS, VAR_LEVELS],
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
   });
 
   public constructor(state: MakeOptional<ServiceSceneState, 'body'>) {
     super({
       body: state.body ?? buildGraphScene(),
-      $data: getQueryRunner(buildLokiQuery(LOG_STREAM_SELECTOR_EXPR)),
+      $data: getQueryRunner(buildDataQuery(LOG_STREAM_SELECTOR_EXPR)),
       loading: true,
       ...state,
     });
@@ -86,34 +98,31 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
-  public getFiltersVariable(): AdHocFiltersVariable {
-    const variable = sceneGraph.lookupVariable(VAR_LABELS, this)!;
-
-    if (!(variable instanceof AdHocFiltersVariable)) {
-      throw new Error('Filters variable not found');
-    }
-
-    return variable;
-  }
-
   private setEmptyFiltersRedirection() {
-    const variable = this.getFiltersVariable();
+    const variable = getLabelsVariable(this);
     if (variable.state.filters.length === 0) {
       this.redirectToStart();
       return;
     }
-    variable.subscribeToState((newState) => {
-      if (newState.filters.length === 0) {
-        this.redirectToStart();
-      }
-      // If we remove the service name filter, we should redirect to the start
-      if (!newState.filters.some((f) => f.key === SERVICE_NAME)) {
-        this.redirectToStart();
-      }
-    });
+    this._subs.add(
+      variable.subscribeToState((newState) => {
+        if (newState.filters.length === 0) {
+          this.redirectToStart();
+        }
+        // If we remove the service name filter, we should redirect to the start
+        if (!newState.filters.some((f) => f.key === SERVICE_NAME)) {
+          this.redirectToStart();
+        }
+      })
+    );
   }
 
   private redirectToStart() {
+    // Clear ongoing queries
+    this.setState({
+      $data: undefined,
+      body: undefined,
+    });
     // Redirect to root with updated params, which will trigger history push back to index route, preventing empty page or empty service query bugs
     navigateToIndex();
   }
@@ -136,14 +145,17 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
   private onActivate() {
     this.getMetadata();
-    this.setBreakdownView(getSlug());
+    this.resetBodyAndData();
+
+    this.setBreakdownView();
     this.setEmptyFiltersRedirection();
 
-    const unsubs: Unsubscribable[] = [];
     if (this.state.$data) {
-      unsubs.push(
-        this.state.$data?.subscribeToState(() => {
-          this.updateFields();
+      this._subs.add(
+        this.state.$data?.subscribeToState((newState) => {
+          if (newState.data?.state === LoadingState.Done) {
+            this.updateFields();
+          }
         })
       );
     }
@@ -151,14 +163,28 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.updateLabels();
     this.updatePatterns();
 
-    unsubs.push(
+    this._subs.add(
       sceneGraph.getTimeRange(this).subscribeToState(() => {
         this.updateLabels();
         this.updatePatterns();
       })
     );
+  }
 
-    return () => unsubs.forEach((u) => u.unsubscribe());
+  private resetBodyAndData() {
+    let stateUpdate: Partial<ServiceSceneState> = {};
+
+    if (!this.state.$data) {
+      stateUpdate.$data = getQueryRunner(buildDataQuery(LOG_STREAM_SELECTOR_EXPR));
+    }
+
+    if (!this.state.body) {
+      stateUpdate.body = buildGraphScene();
+    }
+
+    if (Object.keys(stateUpdate).length) {
+      this.setState(stateUpdate);
+    }
   }
 
   private onReferencedVariableValueChanged(variable: SceneVariable) {
@@ -167,7 +193,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       return;
     }
 
-    const filterVariable = this.getFiltersVariable();
+    const filterVariable = getLabelsVariable(this);
     if (filterVariable.state.filters.length === 0) {
       return;
     }
@@ -175,7 +201,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       .finally(() => {
         // For patterns, we don't want to reload to logs as we allow users to select multiple patterns
         if (variable.state.name !== VAR_PATTERNS) {
-          navigateToBreakdown(PageSlugs.logs, this.state);
+          navigateToDrilldownPage(PageSlugs.logs, this);
         }
       })
       .catch((err) => {
@@ -183,16 +209,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       });
   }
 
-  private getLogsFormatVariable() {
-    const variable = sceneGraph.lookupVariable(VAR_LOGS_FORMAT, this);
-    if (!(variable instanceof CustomVariable)) {
-      throw new Error('Logs format variable not found');
-    }
-    return variable;
-  }
-
   private updateFields() {
-    const variable = this.getLogsFormatVariable();
     const disabledFields = [
       '__time',
       'timestamp',
@@ -213,17 +230,13 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     if (newState.data?.state === LoadingState.Done) {
       const frame = newState.data?.series[0];
       if (frame) {
-        const res = extractParserAndFieldsFromDataFrame(frame);
+        const res = updateParserFromDataFrame(frame, this);
         const fields = res.fields.filter((f) => !disabledFields.includes(f)).sort((a, b) => a.localeCompare(b));
-        if (JSON.stringify(fields) !== JSON.stringify(this.state.fields)) {
+        if (!areArraysEqual(fields, this.state.fields)) {
           this.setState({
             fields: fields,
             loading: false,
           });
-        }
-        const newType = res.type ? ` | ${res.type}` : '';
-        if (variable.getValue() !== newType) {
-          variable.changeValueTo(newType);
         }
       } else {
         this.setState({
@@ -246,8 +259,9 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
 
     const timeRange = sceneGraph.getTimeRange(this).state.value;
-    const labels = sceneGraph.lookupVariable(VAR_LABELS, this)! as AdHocFiltersVariable;
-    const fields = sceneGraph.lookupVariable(VAR_FIELDS, this)! as AdHocFiltersVariable;
+    const labels = getLabelsVariable(this);
+    const fields = getFieldsVariable(this);
+
     const excludeLabels = [ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE];
 
     const { data } = await ds.getResource(
@@ -259,7 +273,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
           // only include fields that are an indexed label
           ...fields.state.filters.filter(
             // we manually add level as a label, but it'll be structured metadata mostly, so we skip it here
-            (field) => this.state.labels?.includes(field.key) && !excludeLabels.includes(field.key)
+            (field) =>
+              this.state.labels?.find((label) => label.label === field.key) && !excludeLabels.includes(field.key)
           ),
         ]),
         start: timeRange.from.utc().toISOString(),
@@ -280,14 +295,17 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     if (!ds) {
       return;
     }
-    const timeRange = sceneGraph.getTimeRange(this).state.value;
-    const filters = sceneGraph.lookupVariable(VAR_LABELS, this)! as AdHocFiltersVariable;
+    const timeRange = sceneGraph.getTimeRange(this);
+
+    const timeRangeValue = timeRange.state.value;
+    const filters = getLabelsVariable(this);
+
     const { detectedLabels } = await ds.getResource<DetectedLabelsResponse>(
       'detected_labels',
       {
         query: filters.state.filterExpression,
-        start: timeRange.from.utc().toISOString(),
-        end: timeRange.to.utc().toISOString(),
+        start: timeRangeValue.from.utc().toISOString(),
+        end: timeRangeValue.to.utc().toISOString(),
       },
       {
         headers: {
@@ -300,18 +318,23 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       return;
     }
 
-    const labels = detectedLabels.sort((a, b) => sortLabelsByCardinality(a, b)).map((l) => l.label);
-    if (!labels.includes(LEVEL_VARIABLE_VALUE)) {
-      labels.unshift(LEVEL_VARIABLE_VALUE);
-    }
-    if (JSON.stringify(labels) !== JSON.stringify(this.state.labels)) {
+    const labels = detectedLabels
+      .sort((a, b) => sortLabelsByCardinality(a, b))
+      .filter((label) => label.label !== LEVEL_VARIABLE_VALUE);
+
+    if (!areArraysEqual(labels, this.state.labels)) {
       this.setState({ labels });
     }
   }
 
-  public setBreakdownView(breakdownView?: PageSlugs) {
+  public setBreakdownView() {
     const { body } = this.state;
+    const breakdownView = getDrilldownSlug();
     const breakdownViewDef = breakdownViewsDefinitions.find((v) => v.value === breakdownView);
+
+    if (!body) {
+      throw new Error('body is not defined in setBreakdownView!');
+    }
 
     if (breakdownViewDef) {
       body.setState({
@@ -325,13 +348,26 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         ],
       });
     } else {
-      console.error('not setting breakdown view');
+      const valueBreakdownView = getDrilldownValueSlug();
+      const valueBreakdownViewDef = valueBreakdownViews.find((v) => v.value === valueBreakdownView);
+
+      if (valueBreakdownViewDef && this.state.drillDownLabel) {
+        body.setState({
+          children: [...body.state.children.slice(0, 1), valueBreakdownViewDef.getScene(this.state.drillDownLabel)],
+        });
+      } else {
+        console.error('not setting breakdown view');
+      }
     }
   }
 
   static Component = ({ model }: SceneComponentProps<ServiceScene>) => {
     const { body } = model.useState();
-    return <body.Component model={body} />;
+    if (body) {
+      return <body.Component model={body} />;
+    }
+
+    return <LoadingPlaceholder text={'Loading...'} />;
   };
 }
 
@@ -362,13 +398,40 @@ const breakdownViewsDefinitions: BreakdownViewDefinition[] = [
   },
 ];
 
+const valueBreakdownViews: ValueBreakdownViewDefinition[] = [
+  {
+    displayName: 'Label',
+    value: ValueSlugs.label,
+    getScene: (value: string) => buildLabelValuesBreakdownActionScene(value),
+    testId: testIds.exploreServiceDetails.tabLabels,
+  },
+  {
+    displayName: 'Field',
+    value: ValueSlugs.field,
+    getScene: (value: string) => buildFieldValuesBreakdownActionScene(value),
+    testId: testIds.exploreServiceDetails.tabFields,
+  },
+];
+
 export interface LogsActionBarState extends SceneObjectState {}
 
 export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
   public static Component = ({ model }: SceneComponentProps<LogsActionBar>) => {
     const styles = useStyles2(getStyles);
     const exploration = getExplorationFor(model);
-    const currentBreakdownViewSlug = getSlug();
+    let currentBreakdownViewSlug = getDrilldownSlug();
+    let allowNavToParent = false;
+
+    if (!Object.values(PageSlugs).includes(currentBreakdownViewSlug)) {
+      const drilldownValueSlug = getDrilldownValueSlug();
+      allowNavToParent = true;
+      if (drilldownValueSlug === ValueSlugs.field) {
+        currentBreakdownViewSlug = PageSlugs.fields;
+      }
+      if (drilldownValueSlug === ValueSlugs.label) {
+        currentBreakdownViewSlug = PageSlugs.labels;
+      }
+    }
 
     const getCounter = (tab: BreakdownViewDefinition, state: ServiceSceneState) => {
       switch (tab.value) {
@@ -377,7 +440,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
         case 'patterns':
           return state.patterns?.length;
         case 'labels':
-          return (state.labels?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []).length;
+          return (state.labels?.filter((l) => l.label !== ALL_VARIABLE_VALUE) ?? []).length;
         default:
           return undefined;
       }
@@ -404,7 +467,7 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                 counter={!loading ? getCounter(tab, state) : undefined}
                 icon={loading ? 'spinner' : undefined}
                 onChangeTab={() => {
-                  if (tab.value !== currentBreakdownViewSlug) {
+                  if (tab.value !== currentBreakdownViewSlug || allowNavToParent) {
                     reportAppInteraction(
                       USER_EVENTS_PAGES.service_details,
                       USER_EVENTS_ACTIONS.service_details.action_view_changed,
@@ -415,11 +478,11 @@ export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
                     );
                     if (tab.value) {
                       const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
-                      const variable = serviceScene.getFiltersVariable();
+                      const variable = getLabelsVariable(serviceScene);
                       const service = variable.state.filters.find((f) => f.key === SERVICE_NAME);
 
                       if (service?.value) {
-                        navigateToBreakdown(tab.value, serviceScene.state);
+                        navigateToDrilldownPage(tab.value, serviceScene);
                       } else {
                         navigateToIndex();
                       }

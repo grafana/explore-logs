@@ -1,6 +1,6 @@
 {
   "name": "grafana-lokiexplore-app",
-  "version": "0.0.15",
+  "version": "0.1.2",
   "description": "Query less exploration of log data stored in Loki",
   "scripts": {
     "build": "webpack -c ./webpack.config.ts --env production",
@@ -14,11 +14,12 @@
     "e2e:debug": "playwright test --debug -x --trace on /test",
     "e2e:codegen": "playwright install && playwright codegen",
     "generate-logs": "pushd generator; go mod download; go run . -url http://localhost:3100/loki/api/v1/push; popd",
-    "server": "docker-compose -f docker-compose.dev.yaml up --build",
-    "server:ci": "docker-compose -f docker-compose.dev.yaml up --build -d",
+    "server": "docker compose -f docker-compose.dev.yaml up --build",
+    "server:ci": "docker compose -f docker-compose.dev.yaml up --build -d",
     "sign": "npx --yes @grafana/sign-plugin@latest",
     "prepare": "husky",
-    "docs": "cd docs && make docs"
+    "docs": "cd docs && make docs",
+    "spellcheck": "cspell -c cspell.config.json \"**/*.{ts,tsx,js,go,md,mdx,yml,yaml,json,scss,css}\""
   },
   "author": "Grafana",
   "license": "AGPL-3.0-only",
@@ -44,6 +45,7 @@
     "@types/react-table": "^7.7.20",
     "@types/testing-library__jest-dom": "5.14.8",
     "copy-webpack-plugin": "^11.0.0",
+    "cspell": "6.13.3",
     "css-loader": "^6.7.3",
     "eslint-plugin-deprecation": "^2.0.0",
     "eslint-webpack-plugin": "^4.0.1",
@@ -74,18 +76,21 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@bsull/augurs": "^0.2.0",
+    "@bsull/augurs": "^0.3.1",
     "@emotion/css": "^11.10.6",
-    "@grafana/data": "^11.0.0",
-    "@grafana/runtime": "^11.0.0",
-    "@grafana/scenes": "5.2.0",
-    "@grafana/ui": "^11.0.0",
+    "@grafana/data": "^11.1.1",
+    "@grafana/lezer-logql": "^0.2.6",
+    "@grafana/runtime": "^11.1.1",
+    "@grafana/scenes": "5.7.2",
+    "@grafana/ui": "^11.1.1",
+    "@lezer/common": "^1.2.1",
+    "@lezer/lr": "^1.4.1",
     "@playwright/test": "^1.43.1",
     "@types/react-table": "^7.7.20",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-router-dom": "^5.2.0",
-    "rxjs": "7.8.0",
+    "rxjs": "7.8.1",
     "tslib": "2.5.3"
   },
   "resolutions": {

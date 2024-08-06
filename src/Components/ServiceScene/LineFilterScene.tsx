@@ -1,9 +1,9 @@
 import { css } from '@emotion/css';
-import { CustomVariable, SceneComponentProps, SceneObjectBase, SceneObjectState, sceneGraph } from '@grafana/scenes';
+import { SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { Field } from '@grafana/ui';
 import { debounce, escapeRegExp } from 'lodash';
 import React, { ChangeEvent } from 'react';
-import { VAR_LINE_FILTER } from 'services/variables';
+import { getLineFilterVariable } from 'services/variables';
 import { testIds } from 'services/testIds';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
 import { SearchInput } from './Breakdowns/SearchInput';
@@ -21,7 +21,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   }
 
   private onActivate = () => {
-    const lineFilterValue = this.getVariable().getValue();
+    const lineFilterValue = getLineFilterVariable(this).getValue();
     if (!lineFilterValue) {
       return;
     }
@@ -33,14 +33,6 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
       lineFilter: matches[1].replace(/\\(.)/g, '$1'),
     });
   };
-
-  private getVariable() {
-    const variable = sceneGraph.lookupVariable(VAR_LINE_FILTER, this);
-    if (!(variable instanceof CustomVariable)) {
-      throw new Error('Logs format variable not found');
-    }
-    return variable;
-  }
 
   updateFilter(lineFilter: string) {
     this.setState({
@@ -54,7 +46,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   };
 
   updateVariable = debounce((search: string) => {
-    const variable = this.getVariable();
+    const variable = getLineFilterVariable(this);
     variable.changeValueTo(`|~ \`(?i)${escapeRegExp(search)}\``);
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
