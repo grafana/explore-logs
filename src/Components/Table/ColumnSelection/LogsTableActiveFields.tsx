@@ -52,6 +52,7 @@ export const LogsTableActiveFields = (props: {
   reorderColumn: (cols: FieldNameMetaStore, sourceIndex: number, destinationIndex: number) => void;
   id: string;
 }): ReactElement => {
+  const { columnWidthMap, setColumnWidthMap } = useTableColumnContext();
   const { reorderColumn, labels, valueFilter, toggleColumn } = props;
   const theme = useTheme2();
   const { columns } = useTableColumnContext();
@@ -91,6 +92,8 @@ export const LogsTableActiveFields = (props: {
                       title={renderTitle(labelName)}
                     >
                       <LogsTableNavField
+                        setColumnWidthMap={setColumnWidthMap}
+                        columnWidthMap={columnWidthMap}
                         label={labelName}
                         onChange={() => toggleColumn(labelName)}
                         labels={labels}
