@@ -2,6 +2,7 @@ import { AdHocVariableFilter, DataSourceApi } from '@grafana/data';
 import { AppliedPattern } from 'Components/IndexScene/IndexScene';
 import { PLUGIN_ID } from './routing';
 import { SceneDataQueryResourceRequest } from './datasource';
+import { VAR_DATASOURCE_EXPR } from './variables';
 
 export type LokiQuery = {
   refId: string;
@@ -20,6 +21,7 @@ export type LokiQuery = {
  * @param expr string to be interpolated and executed in the resource request
  * @param resource
  * @param queryParamsOverrides
+ * @param datasource
  */
 export const buildResourceQuery = (
   expr: string,
@@ -30,6 +32,7 @@ export const buildResourceQuery = (
     ...defaultQueryParams,
     resource,
     ...queryParamsOverrides,
+    datasource: { uid: VAR_DATASOURCE_EXPR } as DataSourceApi,
     expr,
   };
 };

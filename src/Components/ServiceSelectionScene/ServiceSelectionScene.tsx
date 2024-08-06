@@ -12,10 +12,7 @@ import {
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
-  SceneQueryRunner,
-  SceneVariable,
   SceneVariableSet,
-  VariableDependencyConfig,
   VizPanel,
 } from '@grafana/scenes';
 import {
@@ -34,7 +31,6 @@ import {
   getLabelsVariable,
   getServiceSelectionStringVariable,
   LEVEL_VARIABLE_VALUE,
-  VAR_DATASOURCE,
   VAR_SERVICE,
   VAR_SERVICE_EXPR,
 } from 'services/variables';
@@ -69,11 +65,6 @@ function getLogExpression(service: string, levelFilter: string) {
 }
 
 export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionSceneState> {
-  protected _variableDependency = new VariableDependencyConfig(this, {
-    variableNames: [VAR_DATASOURCE],
-    onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
-  });
-
   constructor(state: Partial<ServiceSelectionSceneState>) {
     super({
       body: new SceneCSSGridLayout({ children: [] }),
@@ -94,15 +85,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     });
 
     this.addActivationHandler(this.onActivate.bind(this));
-  }
-
-  private onReferencedVariableValueChanged(variable: SceneVariable) {
-    if (variable.state.name === VAR_DATASOURCE) {
-      if (this.state.$data instanceof SceneQueryRunner) {
-        this.state.$data.runQueries();
-      }
-      return;
-    }
   }
 
   private onActivate() {
