@@ -37,6 +37,12 @@ export class LogsTableScene extends SceneObjectBase {
       }
     };
 
+    const clearSelectedLine = () => {
+      if (parentModel.state.selectedLine) {
+        parentModel.clearSelectedLine();
+      }
+    };
+
     const styles = getStyles();
 
     return (
@@ -55,6 +61,7 @@ export class LogsTableScene extends SceneObjectBase {
               urlColumns={urlColumns ?? []}
               setUrlColumns={setUrlColumns}
               dataFrame={data?.series[0]}
+              clearSelectedLine={clearSelectedLine}
             />
           )}
         </PanelChrome>

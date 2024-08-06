@@ -84,9 +84,12 @@ export const Table = (props: Props) => {
   const styles = getStyles();
 
   const [tableFrame, setTableFrame] = useState<DataFrame | undefined>(undefined);
-  const { columns, visible, setVisible, setFilteredColumns, setColumns } = useTableColumnContext();
+  const { columns, visible, setVisible, setFilteredColumns, setColumns, clearSelectedLine } = useTableColumnContext();
 
   const { selectedLine } = useQueryContext();
+
+  // Create a local state for selected line so we can clear the state tied to the URL
+  const [localSelectedLine] = useState(selectedLine);
 
   const reorderColumn = getReorderColumn(setColumns);
 
@@ -202,12 +205,21 @@ export const Table = (props: Props) => {
     prepare();
   }, [logsFrame.raw, logsFrame.bodyField, logsFrame.timeField, logsFrame.extraFields, prepareTableFrame, columns]);
 
+  // Clear selected line from URL so it doesn't pollute future queries
+  useEffect(() => {
+    if (localSelectedLine && selectedLine) {
+      clearSelectedLine();
+      return;
+    }
+  }, [localSelectedLine, clearSelectedLine, selectedLine]);
+
+  const idField = logsFrame.raw.fields.find((field) => field.name === getIdName(logsFrame));
+  const lineIndex = idField?.values.findIndex((v) => v === localSelectedLine?.id);
+  const cleanLineIndex = lineIndex && lineIndex !== -1 ? lineIndex : undefined;
+
   if (!tableFrame) {
     return <></>;
   }
-
-  const idField = logsFrame.raw.fields.find((field) => field.name === getIdName(logsFrame));
-  const lineIndex = idField?.values.findIndex((v) => v === selectedLine?.id);
 
   return (
     <div data-testid={testIds.table.wrapper} className={styles.section}>
@@ -228,7 +240,7 @@ export const Table = (props: Props) => {
           <ScrollSync horizontal={true} vertical={false} proportional={false}>
             <TableAndContext
               logsFrame={logsFrame}
-              selectedLine={lineIndex ?? selectedLine?.row}
+              selectedLine={cleanLineIndex}
               data={tableFrame}
               height={height}
               width={width}
@@ -421,7 +433,7 @@ function getInitialFieldWidth(
   const maxWidth = numberOfFields <= 2 ? tableWidth : Math.min(tableWidth / 2);
 
   // First field gets icons, and a little extra width
-  const extraPadding = fieldIndex === 0 ? 30 : 0;
+  const extraPadding = fieldIndex === 0 ? 50 : 0;
 
   // Time fields have consistent widths
   if (field.type === FieldType.time) {
