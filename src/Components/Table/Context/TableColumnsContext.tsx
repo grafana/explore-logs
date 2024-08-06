@@ -16,6 +16,7 @@ type TableColumnsContextType = {
   setVisible: (v: boolean) => void;
   bodyState: LogLineState;
   setBodyState: (s: LogLineState) => void;
+  clearSelectedLine: () => void;
 };
 
 export enum LogLineState {
@@ -33,6 +34,7 @@ const TableColumnsContext = createContext<TableColumnsContextType>({
   visible: false,
   bodyState: LogLineState.auto,
   setBodyState: () => {},
+  clearSelectedLine: () => {},
 });
 
 function setDefaultColumns(
@@ -64,11 +66,13 @@ export const TableColumnContextProvider = ({
   initialColumns,
   logsFrame,
   setUrlColumns,
+  clearSelectedLine,
 }: {
   children: ReactNode;
   initialColumns: FieldNameMetaStore;
   logsFrame: LogsFrame;
   setUrlColumns: (columns: string[]) => void;
+  clearSelectedLine: () => void;
 }) => {
   const [columns, setColumns] = useState<FieldNameMetaStore>(removeExtraColumns(initialColumns));
   const [bodyState, setBodyState] = useState<LogLineState>(LogLineState.auto);
@@ -104,6 +108,10 @@ export const TableColumnContextProvider = ({
     },
     [setUrlColumns]
   );
+
+  const handleClearSelectedLine = () => {
+    clearSelectedLine();
+  };
 
   const handleSetVisible = useCallback((isVisible: boolean) => {
     setVisible(isVisible);
@@ -143,6 +151,7 @@ export const TableColumnContextProvider = ({
         setColumns: handleSetColumns,
         visible: visible,
         setVisible: handleSetVisible,
+        clearSelectedLine: handleClearSelectedLine,
       }}
     >
       {children}

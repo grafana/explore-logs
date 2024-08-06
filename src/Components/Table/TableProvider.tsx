@@ -14,6 +14,7 @@ interface TableProviderProps {
   selectedLine?: SelectedTableRow;
   timeRange?: TimeRange;
   panelWrap: React.RefObject<HTMLDivElement>;
+  clearSelectedLine: () => void;
 }
 
 export const TableProvider = ({
@@ -24,6 +25,7 @@ export const TableProvider = ({
   selectedLine,
   timeRange,
   panelWrap,
+  clearSelectedLine,
 }: TableProviderProps) => {
   if (!dataFrame) {
     return null;
@@ -36,7 +38,12 @@ export const TableProvider = ({
 
   return (
     <QueryContextProvider addFilter={addFilter} selectedLine={selectedLine} timeRange={timeRange} logsFrame={logsFrame}>
-      <TableWrap setUrlColumns={setUrlColumns} urlColumns={urlColumns} panelWrap={panelWrap} />
+      <TableWrap
+        setUrlColumns={setUrlColumns}
+        urlColumns={urlColumns}
+        panelWrap={panelWrap}
+        clearSelectedLine={clearSelectedLine}
+      />
     </QueryContextProvider>
   );
 };

@@ -166,13 +166,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     if (serviceIndex === undefined || serviceIndex < 0) {
       return;
     }
-    this.state.body.forEachChild((scene) => {
-      if (scene instanceof SceneCSSGridLayout) {
-        let newChildren = [...scene.state.children];
-        newChildren.splice(serviceIndex * 2 + 1, 1, this.buildServiceLogsLayout(service));
-        scene.setState({ children: newChildren });
-      }
-    });
+    if (this.state.body) {
+      let newChildren = [...this.state.body.state.children];
+      newChildren.splice(serviceIndex * 2 + 1, 1, this.buildServiceLogsLayout(service));
+      this.state.body.setState({ children: newChildren });
+    }
   }
 
   private extendTimeSeriesLegendBus = (service: string, context: PanelContext, panel: VizPanel) => {
@@ -302,13 +300,14 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     const onSearchChange = (serviceName: string) => {
       model.onSearchServicesChange(serviceName);
     };
+    const serviceCount = servicesToQuery?.length ?? 0;
     return (
       <div className={styles.container}>
         <div className={styles.bodyWrapper}>
           <div>
             {/** When services fetched, show how many services are we showing */}
             {isLogVolumeLoading && <LoadingPlaceholder text={'Loading services'} className={styles.loadingText} />}
-            {!isLogVolumeLoading && <>Showing {servicesToQuery?.length ?? 0} services</>}
+            {!isLogVolumeLoading && <>Showing {serviceCount} service{serviceCount > 1 ? 's' : ''}</>}
           </div>
           <Field className={styles.searchField}>
             <ServiceFieldSelector

@@ -92,6 +92,12 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     }
   }
 
+  clearSelectedLine() {
+    this.setState({
+      selectedLine: undefined,
+    });
+  }
+
   public onActivate() {
     const searchParams = new URLSearchParams(locationService.getLocation().search);
     this.setStateFromUrl(searchParams);
