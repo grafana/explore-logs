@@ -21,7 +21,6 @@ export type LokiQuery = {
  * @param expr string to be interpolated and executed in the resource request
  * @param resource
  * @param queryParamsOverrides
- * @param datasource
  */
 export const buildResourceQuery = (
   expr: string,
