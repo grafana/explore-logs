@@ -1,4 +1,5 @@
-import { AdHocVariableFilter, DataSourceApi } from '@grafana/data';
+import { AdHocVariableFilter } from '@grafana/data';
+import { DataSourceRef } from '@grafana/schema';
 import { AppliedPattern } from 'Components/IndexScene/IndexScene';
 import { PLUGIN_ID } from './routing';
 import { SceneDataQueryResourceRequest } from './datasource';
@@ -12,8 +13,7 @@ export type LokiQuery = {
   expr: string;
   legendFormat?: string;
   splitDuration?: string;
-
-  datasource?: DataSourceApi;
+  datasource?: DataSourceRef;
 };
 
 /**
@@ -31,7 +31,7 @@ export const buildResourceQuery = (
     ...defaultQueryParams,
     resource,
     ...queryParamsOverrides,
-    datasource: { uid: VAR_DATASOURCE_EXPR } as DataSourceApi,
+    datasource: { uid: VAR_DATASOURCE_EXPR },
     expr,
   };
 };
