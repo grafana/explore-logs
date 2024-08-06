@@ -7,7 +7,7 @@ import { parseLogsFrame } from '../../services/logsFrame';
 import { SelectedTableRow } from './LogLineCellComponent';
 
 interface TableProviderProps {
-  dataFrame: DataFrame;
+  dataFrame?: DataFrame;
   setUrlColumns: (columns: string[]) => void;
   urlColumns: string[];
   addFilter: (filter: AdHocVariableFilter) => void;

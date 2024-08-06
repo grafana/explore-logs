@@ -12,7 +12,7 @@ import {
   VizPanel,
 } from '@grafana/scenes';
 import { LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode } from '@grafana/ui';
-import { ServiceScene } from '../../ServiceScene';
+import { getPatternsFrames, ServiceScene } from '../../ServiceScene';
 import { onPatternClick } from './FilterByPatternsButton';
 import { IndexScene } from '../../../IndexScene/IndexScene';
 import { PatternsViewTableScene } from './PatternsViewTableScene';
@@ -44,7 +44,9 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
   public static Component = ({ model }: SceneComponentProps<PatternsFrameScene>) => {
     const { body, loading } = model.useState();
     const logsByServiceScene = sceneGraph.getAncestor(model, ServiceScene);
-    const { patterns } = logsByServiceScene.useState();
+    const { $data } = logsByServiceScene.useState();
+    const patterns = getPatternsFrames($data?.state.data);
+
     return (
       <div className={styles.container}>
         {!loading && patterns && patterns.length > 0 && <>{body && <body.Component model={body} />}</>}
@@ -58,7 +60,10 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
     // If the patterns have changed, recalculate the dataframes
     this._subs.add(
       sceneGraph.getAncestor(this, ServiceScene).subscribeToState((newState, prevState) => {
-        if (!areArraysEqual(newState.patterns, prevState.patterns)) {
+        const newFrame = getPatternsFrames(newState?.$data?.state?.data);
+        const prevFrame = getPatternsFrames(prevState?.$data?.state?.data);
+
+        if (!areArraysEqual(newFrame, prevFrame)) {
           const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
           this.updatePatterns(patternsBreakdownScene.state.patternFrames);
 
@@ -107,11 +112,14 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
     const patternFrames = patternsBreakdownScene.state.patternFrames;
 
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
-    const lokiPatterns = serviceScene.state.patterns;
+
+    const lokiPatterns = getPatternsFrames(serviceScene.state.$data?.state.data);
     if (!lokiPatterns || !patternFrames) {
       console.warn('Failed to update PatternsFrameScene body');
       return;
     }
+
+    console.log('patterns update body', lokiPatterns);
 
     this.setState({
       body: this.getSingleViewLayout(),

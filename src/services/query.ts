@@ -29,6 +29,7 @@ export const buildResourceQuery = (
   return {
     ...defaultQueryParams,
     resource,
+    refId: resource,
     ...queryParamsOverrides,
     expr,
   };

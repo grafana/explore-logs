@@ -8,6 +8,7 @@ import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 import { css } from '@emotion/css';
 import { addAdHocFilter } from './Breakdowns/AddToFiltersButton';
 import { areArraysEqual } from '../../services/comparison';
+import { getLogsPanelFrame } from './ServiceScene';
 
 export class LogsTableScene extends SceneObjectBase {
   public static Component = ({ model }: SceneComponentProps<LogsTableScene>) => {
@@ -44,6 +45,7 @@ export class LogsTableScene extends SceneObjectBase {
     };
 
     const styles = getStyles();
+    const dataFrame = getLogsPanelFrame(data);
 
     return (
       <div className={styles.panelWrapper} ref={panelWrap}>
@@ -60,7 +62,7 @@ export class LogsTableScene extends SceneObjectBase {
               selectedLine={selectedLine}
               urlColumns={urlColumns ?? []}
               setUrlColumns={setUrlColumns}
-              dataFrame={data?.series[0]}
+              dataFrame={dataFrame}
               clearSelectedLine={clearSelectedLine}
             />
           )}
