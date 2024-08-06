@@ -78,16 +78,19 @@ export function sortLevelTransformation() {
   };
 }
 
-export function getQueryRunner(query: LokiQuery) {
+export function getQueryRunner(queries: LokiQuery[]) {
   // if there's a legendFormat related to any `level` like label, we want to
   // sort the output equally. That's purposefully not `LEVEL_VARIABLE_VALUE`,
   // such that the `detected_level` graph looks the same as a graph for the
   // `level` label.
-  if (query.legendFormat?.toLowerCase().includes('level')) {
+
+  const hasLevel = queries.find((query) => query.legendFormat?.toLowerCase().includes('level'));
+
+  if (hasLevel) {
     return new SceneDataTransformer({
       $data: new SceneQueryRunner({
         datasource: { uid: WRAPPED_LOKI_DS_UID },
-        queries: [query],
+        queries: queries,
       }),
       transformations: [sortLevelTransformation],
     });
@@ -95,6 +98,6 @@ export function getQueryRunner(query: LokiQuery) {
 
   return new SceneQueryRunner({
     datasource: { uid: WRAPPED_LOKI_DS_UID },
-    queries: [query],
+    queries: queries,
   });
 }

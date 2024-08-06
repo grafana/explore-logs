@@ -48,7 +48,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
     this.replacePatternsInQuery(queryWithFilters);
 
     // but if that fails to return results, we fire the query without the filters, instead of showing no-data in the viz
-    const queryRunnerWithFilters = getQueryRunner(queryWithFilters);
+    const queryRunnerWithFilters = getQueryRunner([queryWithFilters]);
     queryRunnerWithFilters.getResultsStream().subscribe((value) => {
       this.onQueryWithFiltersResult(value);
     });
@@ -198,7 +198,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
     const queryWithoutFilters = buildDataQuery(PATTERNS_SAMPLE_SELECTOR_EXPR);
     this.replacePatternsInQuery(queryWithoutFilters);
 
-    const queryRunnerWithoutFilters = getQueryRunner(queryWithoutFilters);
+    const queryRunnerWithoutFilters = getQueryRunner([queryWithoutFilters]);
 
     // Subscribe to the secondary query, so we can log errors and update the UI
     queryRunnerWithoutFilters.getResultsStream().subscribe(this.onQueryError);

@@ -287,7 +287,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         legendFormat: `{{${optionValue}}}`,
         refId: optionValue,
       });
-      const queryRunner = getQueryRunner(query);
+      const queryRunner = getQueryRunner([query]);
       let body = PanelBuilders.timeseries().setTitle(optionValue).setData(queryRunner);
 
       if (!isAvgField(optionValue)) {
@@ -346,7 +346,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     const getFilter = () => this.state.search.state.filter ?? '';
 
     return new LayoutSwitcher({
-      $data: getQueryRunner(query),
+      $data: getQueryRunner([query]),
       options: [
         { value: 'single', label: 'Single' },
         { value: 'grid', label: 'Grid' },

@@ -90,7 +90,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   public constructor(state: MakeOptional<ServiceSceneState, 'body'>) {
     super({
       body: state.body ?? buildGraphScene(),
-      $data: getQueryRunner(buildDataQuery(LOG_STREAM_SELECTOR_EXPR)),
+      $data: getQueryRunner([buildDataQuery(LOG_STREAM_SELECTOR_EXPR)]),
       loading: true,
       ...state,
     });
@@ -175,7 +175,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     let stateUpdate: Partial<ServiceSceneState> = {};
 
     if (!this.state.$data) {
-      stateUpdate.$data = getQueryRunner(buildDataQuery(LOG_STREAM_SELECTOR_EXPR));
+      stateUpdate.$data = getQueryRunner([buildDataQuery(LOG_STREAM_SELECTOR_EXPR)]);
     }
 
     if (!this.state.body) {

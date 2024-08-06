@@ -218,9 +218,9 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
           body: PanelBuilders.timeseries()
             .setTitle(optionValue)
             .setData(
-              getQueryRunner(
-                buildDataQuery(getTimeSeriesExpr(this, optionValue), { legendFormat: `{{${optionValue}}}` })
-              )
+              getQueryRunner([
+                buildDataQuery(getTimeSeriesExpr(this, optionValue), { legendFormat: `{{${optionValue}}}` }),
+              ])
             )
             .setHeaderActions(new SelectLabelAction({ labelName: optionValue }))
             .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
@@ -276,7 +276,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     const getFilter = () => this.state.search.state.filter ?? '';
 
     return new LayoutSwitcher({
-      $data: getQueryRunner(query),
+      $data: getQueryRunner([query]),
       options: [
         { value: 'single', label: 'Single' },
         { value: 'grid', label: 'Grid' },

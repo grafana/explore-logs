@@ -59,7 +59,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
             }
             case 'patterns': {
               console.warn('not yet implemented');
-              // this.transformPatternResponse(request, ds, subscriber);
+              this.getPatterns(request, ds, subscriber);
               break;
             }
             default: {
@@ -76,6 +76,51 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
             }
           }
         });
+    });
+  }
+
+  private getPatterns(
+    request: DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest>,
+    ds: DataSourceWithBackend<LokiQuery>,
+    subscriber: Subscriber<DataQueryResponse>
+  ) {
+    if (request.targets.length !== 1) {
+      throw new Error('Patterns query can only have a single target!');
+    }
+
+    const targetsInterpolated = ds.interpolateVariablesInQueries(request.targets, request.scopedVars);
+    const expression = targetsInterpolated[0].expr;
+
+    const dsResponse = ds.getResource(
+      'patterns',
+      {
+        query: expression,
+        from: request.range.from.utc().toISOString(),
+        to: request.range.to.utc().toISOString(),
+        limit: 1000,
+      },
+      {
+        requestId: request.requestId ?? 'volume',
+        headers: {
+          'X-Query-Tags': `Source=${PLUGIN_ID}`,
+        },
+      }
+    );
+    dsResponse.then((response: IndexVolumeResponse | undefined) => {
+      response?.data.result.sort((lhs: VolumeResult, rhs: VolumeResult) => {
+        const lVolumeCount: VolumeCount = lhs.value[1];
+        const rVolumeCount: VolumeCount = rhs.value[1];
+        return Number(rVolumeCount) - Number(lVolumeCount);
+      });
+      // Scenes will only emit dataframes from the SceneQueryRunner, so for now we need to convert the API response to a dataframe
+      const df = createDataFrame({
+        fields: [
+          { name: 'service_name', values: response?.data.result.map((r) => r.metric.service_name) },
+          { name: 'volume', values: response?.data.result.map((r) => Number(r.value[1])) },
+        ],
+      });
+      subscriber.next({ data: [df] });
+      subscriber.complete();
     });
   }
 
