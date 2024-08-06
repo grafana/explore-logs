@@ -100,7 +100,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByText('!=')).toBeVisible();
   });
 
-  test.only('should only load fields that are in the viewport', async ({page}) => {
+  test('should only load fields that are in the viewport', async ({page}) => {
     let requestCount = 0;
 
     // We don't need to mock the response, but it speeds up the test
