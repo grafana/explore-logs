@@ -1,6 +1,11 @@
 import {expect, test} from '@grafana/plugin-e2e';
 import {ExplorePage} from './fixtures/explore';
 import {testIds} from '../src/services/testIds';
+import {mockVolumeApiResponse} from "./mocks/mockVolumeApiResponse";
+import {mockEmptyQueryApiResponse} from "./mocks/mockEmptyQueryApiResponse";
+import {LokiQuery} from "../src/services/query";
+import {DataQueryRequest} from "@grafana/data";
+import {DataQuery} from "@grafana/schema";
 
 test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;
@@ -94,6 +99,57 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
   });
+
+  test('should only load fields that are in the viewport', async ({page}) => {
+    let requestCount = 0;
+
+    // We don't need to mock the response, but it speeds up the test
+    await page.route('**/api/ds/query*', async (route, request) => {
+      const mockResponse = mockEmptyQueryApiResponse;
+      const rawPostData= request.postData()
+
+      // We only want to mock the actual field requests, and not the initial request that returns us our list of fields
+      if(rawPostData){
+        const postData = JSON.parse(rawPostData);
+        const refId = postData.queries[0].refId
+        // Field subqueries have a refId of the field name
+        if(refId !== 'A'){
+          requestCount++
+          return await route.fulfill({json: mockResponse})
+        }
+      }
+
+      // Otherwise let the request go through normally
+      const response = await route.fetch();
+      const json = await response.json()
+      return route.fulfill({response, json})
+    })
+
+    // Navigate to fields tab
+    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
+
+    // Make sure the panels have started to render
+    await expect(page.getByTestId('data-testid Panel header detected_level')).toBeInViewport()
+
+    // Fields on top should be loaded
+    expect(requestCount).toEqual(6)
+
+    const main = page.locator('main#pageContent')
+
+    // Scroll the page container to the bottom
+    await main.evaluate((main) => main.scrollTo(0, main.scrollHeight));
+
+    // Panel on the bottom should be visible
+    await expect(page.getByTestId('data-testid Panel header version')).toBeInViewport()
+
+    // Panel on the top should not
+    await expect(page.getByTestId('data-testid Panel header detected_level')).not.toBeInViewport()
+
+    // if this flakes we could just assert that it's greater then 3
+    expect(requestCount).toEqual(15)
+
+    await page.unrouteAll();
+  })
 
 
   test('should select a field, update filters, open log panel', async ({ page }) => {
