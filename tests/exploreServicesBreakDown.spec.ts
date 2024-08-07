@@ -147,6 +147,8 @@ test.describe('explore services breakdown page', () => {
 
     // if this flakes we could just assert that it's greater then 3
     expect(requestCount).toEqual(15)
+
+    await page.unrouteAll();
   })
 
 
