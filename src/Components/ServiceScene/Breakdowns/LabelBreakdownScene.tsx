@@ -295,6 +295,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
         }),
         new ByFrameRepeater({
           body: new SceneCSSGridLayout({
+            isLazy: true,
             templateColumns: GRID_TEMPLATE_COLUMNS,
             autoRows: '200px',
             children: [
