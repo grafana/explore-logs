@@ -110,8 +110,6 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
       tap((response) => {
         if (response.state === LoadingState.Done || response.state === LoadingState.Error) {
           numberOfQueriesThatResolved++;
-          // @todo errors and cancelled queries (switch tabs while loading)
-          // @todo useDatasourcesFromTargets error in logs panel breaking context
           if (numberOfQueriesThatResolved < numberOfQueries) {
             response.state = LoadingState.Loading;
           }

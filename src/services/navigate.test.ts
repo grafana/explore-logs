@@ -55,15 +55,7 @@ describe('navigate', () => {
 
       mockServiceSceneState = {
         labels,
-        // patterns: [
-        //   {
-        //     pattern: 'error <_> message',
-        //     samples: [
-        //       [1721220640, '270'],
-        //       [1721220650, '341'],
-        //     ],
-        //   },
-        // ],
+        patternsCount: 2,
         fields: ['field1', 'field2'],
         fieldsCount: 2,
         loading: true,
