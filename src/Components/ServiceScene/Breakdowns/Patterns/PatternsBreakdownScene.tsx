@@ -5,6 +5,7 @@ import { DataFrame, dateTime, GrafanaTheme2 } from '@grafana/data';
 import {
   CustomVariable,
   SceneComponentProps,
+  SceneDataState,
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
@@ -21,6 +22,7 @@ import { PatternsFrameScene } from './PatternsFrameScene';
 import { PatternsViewTextSearch } from './PatternsViewTextSearch';
 import { PatternsNotDetected, PatternsTooOld } from './PatternsNotDetected';
 import { areArraysEqual } from '../../../../services/comparison';
+import { Unsubscribable } from 'rxjs';
 
 export interface PatternsBreakdownSceneState extends SceneObjectState {
   body?: SceneFlexLayout;
@@ -34,6 +36,7 @@ export interface PatternsBreakdownSceneState extends SceneObjectState {
   // Subset of patternFrames, undefined if empty, empty array if search results returned nothing (no data)
   filteredPatterns?: PatternFrame[];
   patternFilter: string;
+  dataSub?: Unsubscribable;
 }
 
 export type PatternFrame = {
@@ -110,17 +113,32 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     }
 
     // Subscribe to changes from pattern API call
-    this._subs.add(
-      serviceScene.subscribeToState((newState, prevState) => {
-        const newFrame = getPatternsFrames(newState?.$data?.state?.data);
-        const prevFrame = getPatternsFrames(prevState?.$data?.state?.data);
-        console.log('newFrame', newFrame);
-        if (!areArraysEqual(newFrame, prevFrame)) {
-          this.updatePatternFrames(newFrame);
-        }
-      })
-    );
+    const dataSub = serviceScene.state.$data.subscribeToState(this.onDataProviderChange);
+    this.setState({
+      dataSub,
+    });
+    this._subs.add(dataSub);
+
+    // Subscribe to changes to the query provider
+    serviceScene.subscribeToState((newState, prevState) => {
+      if (newState.$data.state.key !== prevState.$data.state.key) {
+        const dataSub = serviceScene.state.$data.subscribeToState(this.onDataProviderChange);
+        this.state.dataSub?.unsubscribe();
+        this.setState({
+          dataSub,
+          loading: true,
+        });
+      }
+    });
   }
+
+  private onDataProviderChange = (newState: SceneDataState, prevState: SceneDataState) => {
+    const newFrame = getPatternsFrames(newState.data);
+    const prevFrame = getPatternsFrames(prevState.data);
+    if (!areArraysEqual(newFrame, prevFrame) || this.state.loading) {
+      this.updatePatternFrames(newFrame);
+    }
+  };
 
   private setBody() {
     this.setState({
@@ -140,13 +158,13 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
   }
 
   private updatePatternFrames(lokiPatterns?: DataFrame[]) {
-    console.log('update pattern frames');
     if (!lokiPatterns) {
       console.warn('failed to update pattern frames');
       return;
     }
 
     const patternFrames = this.buildPatterns(lokiPatterns);
+
     this.setState({
       patternFrames,
       loading: false,

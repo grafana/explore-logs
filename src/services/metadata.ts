@@ -21,7 +21,7 @@ export class MetadataService {
     this.serviceSceneState = {
       fields: state.fields,
       labels: state.labels,
-      // patterns: state.patterns,
+      patternsCount: state.patternsCount,
       fieldsCount: state.fieldsCount,
       loading: state.loading,
     };

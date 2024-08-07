@@ -73,21 +73,28 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
             throw new Error('Invalid datasource!');
           }
 
-          request.targets.forEach((target) => {
+          const dataQueryRequest = { ...request };
+          // override the target datasource to Loki
+          dataQueryRequest.targets = request.targets.map((target) => {
+            target.datasource = ds;
+            return target;
+          });
+
+          dataQueryRequest.targets.forEach((target) => {
             const requestType = target?.resource;
             let newSubscriber: Subscriber<DataQueryResponse>;
 
             switch (requestType) {
               case 'volume': {
-                newSubscriber = this.getVolume(request, ds, subscriber);
+                newSubscriber = this.getVolume(dataQueryRequest, ds, subscriber);
                 break;
               }
               case 'patterns': {
-                newSubscriber = this.getPatterns(request, ds, subscriber);
+                newSubscriber = this.getPatterns(dataQueryRequest, ds, subscriber);
                 break;
               }
               default: {
-                newSubscriber = this.getData(request, ds, subscriber);
+                newSubscriber = this.getData(dataQueryRequest, ds, subscriber);
                 break;
               }
             }
@@ -122,14 +129,9 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
   ) {
     const dataQueryRequest = { ...request };
     // override the target datasource to Loki
-    dataQueryRequest.targets = request.targets
-      .filter((target) => {
-        return !target.resource;
-      })
-      .map((target) => {
-        target.datasource = ds;
-        return target;
-      });
+    dataQueryRequest.targets = request.targets.filter((target) => {
+      return !target.resource;
+    });
 
     // query the datasource and return either observable or promise
     const dsResponse = ds.query(dataQueryRequest);

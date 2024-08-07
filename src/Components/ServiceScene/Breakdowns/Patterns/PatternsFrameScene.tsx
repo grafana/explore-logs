@@ -32,7 +32,7 @@ export interface PatternsFrameSceneState extends SceneObjectState {
 export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState> {
   constructor(state?: Partial<PatternsFrameSceneState>) {
     super({
-      loading: true,
+      loading: false,
       ...state,
       legendSyncPatterns: new Set(),
     });
@@ -118,8 +118,6 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
       console.warn('Failed to update PatternsFrameScene body');
       return;
     }
-
-    console.log('patterns update body', lokiPatterns);
 
     this.setState({
       body: this.getSingleViewLayout(),
