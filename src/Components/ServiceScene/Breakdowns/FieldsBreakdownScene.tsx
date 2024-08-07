@@ -328,11 +328,13 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
           templateColumns: GRID_TEMPLATE_COLUMNS,
           autoRows: '200px',
           children: children,
+          isLazy: true,
         }),
         new SceneCSSGridLayout({
           templateColumns: '1fr',
           autoRows: '200px',
           children: children.map((child) => child.clone()),
+          isLazy: true,
         }),
       ],
     });
