@@ -181,7 +181,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
       const sum: number = dataFrame.meta?.custom?.sum;
       const patternFrame: PatternFrame = {
         dataFrame,
-        pattern: dataFrame.name as string,
+        pattern: dataFrame.name ?? '',
         sum,
         status: existingPattern?.type,
       };

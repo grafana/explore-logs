@@ -32,7 +32,7 @@ export interface PatternsFrameSceneState extends SceneObjectState {
 export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState> {
   constructor(state?: Partial<PatternsFrameSceneState>) {
     super({
-      loading: false,
+      loading: true,
       ...state,
       legendSyncPatterns: new Set(),
     });
