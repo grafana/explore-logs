@@ -154,6 +154,7 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
     return new SceneCSSGridLayout({
       templateColumns: '100%',
       autoRows: '200px',
+      isLazy: true,
 
       children: [
         timeSeries,
