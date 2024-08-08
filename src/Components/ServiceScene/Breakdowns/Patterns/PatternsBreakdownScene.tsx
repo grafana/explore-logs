@@ -1,10 +1,11 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DataFrame, dateTime, FieldType, GrafanaTheme2 } from '@grafana/data';
+import { DataFrame, dateTime, GrafanaTheme2 } from '@grafana/data';
 import {
   CustomVariable,
   SceneComponentProps,
+  SceneDataState,
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
@@ -15,12 +16,13 @@ import {
 import { Text, useStyles2 } from '@grafana/ui';
 import { StatusWrapper } from 'Components/ServiceScene/Breakdowns/StatusWrapper';
 import { VAR_LABEL_GROUP_BY } from 'services/variables';
-import { LokiPattern, ServiceScene } from '../../ServiceScene';
+import { getPatternsFrames, ServiceScene } from '../../ServiceScene';
 import { IndexScene } from '../../../IndexScene/IndexScene';
 import { PatternsFrameScene } from './PatternsFrameScene';
 import { PatternsViewTextSearch } from './PatternsViewTextSearch';
 import { PatternsNotDetected, PatternsTooOld } from './PatternsNotDetected';
 import { areArraysEqual } from '../../../../services/comparison';
+import { Unsubscribable } from 'rxjs';
 
 export interface PatternsBreakdownSceneState extends SceneObjectState {
   body?: SceneFlexLayout;
@@ -34,6 +36,7 @@ export interface PatternsBreakdownSceneState extends SceneObjectState {
   // Subset of patternFrames, undefined if empty, empty array if search results returned nothing (no data)
   filteredPatterns?: PatternFrame[];
   patternFilter: string;
+  dataSub?: Unsubscribable;
 }
 
 export type PatternFrame = {
@@ -53,8 +56,8 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
         new SceneVariableSet({
           variables: [new CustomVariable({ name: VAR_LABEL_GROUP_BY, defaultToAll: true, includeAll: true })],
         }),
-      patternFilter: '',
       loading: true,
+      patternFilter: '',
       ...state,
     });
 
@@ -66,7 +69,8 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     const { body, loading, blockingMessage } = model.useState();
     const { value: timeRange } = sceneGraph.getTimeRange(model).useState();
     const logsByServiceScene = sceneGraph.getAncestor(model, ServiceScene);
-    const { patterns } = logsByServiceScene.useState();
+    const { $data } = logsByServiceScene.useState();
+    const patterns = getPatternsFrames($data?.state.data);
     const styles = useStyles2(getStyles);
     const timeRangeTooOld = dateTime().diff(timeRange.to, 'hours') >= PATTERNS_MAX_AGE_HOURS;
 
@@ -101,20 +105,40 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     this.setBody();
 
+    const patterns = getPatternsFrames(serviceScene.state.$data?.state.data);
+
     // If the patterns exist already, update the dataframe
-    if (serviceScene.state.patterns) {
-      this.updatePatternFrames(serviceScene.state.patterns);
+    if (patterns) {
+      this.updatePatternFrames(patterns);
     }
 
     // Subscribe to changes from pattern API call
-    this._subs.add(
-      serviceScene.subscribeToState((newState, prevState) => {
-        if (!areArraysEqual(newState.patterns, prevState.patterns)) {
-          this.updatePatternFrames(newState.patterns);
-        }
-      })
-    );
+    const dataSub = serviceScene.state.$data.subscribeToState(this.onDataProviderChange);
+    this.setState({
+      dataSub,
+    });
+    this._subs.add(dataSub);
+
+    // Subscribe to changes to the query provider
+    serviceScene.subscribeToState((newState, prevState) => {
+      if (newState.$data.state.key !== prevState.$data.state.key) {
+        const dataSub = serviceScene.state.$data.subscribeToState(this.onDataProviderChange);
+        this.state.dataSub?.unsubscribe();
+        this.setState({
+          dataSub,
+          loading: true,
+        });
+      }
+    });
   }
+
+  private onDataProviderChange = (newState: SceneDataState, prevState: SceneDataState) => {
+    const newFrame = getPatternsFrames(newState.data);
+    const prevFrame = getPatternsFrames(prevState.data);
+    if (!areArraysEqual(newFrame, prevFrame) || this.state.loading) {
+      this.updatePatternFrames(newFrame);
+    }
+  };
 
   private setBody() {
     this.setState({
@@ -133,74 +157,37 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     });
   }
 
-  private updatePatternFrames(lokiPatterns?: LokiPattern[]) {
+  private updatePatternFrames(lokiPatterns?: DataFrame[]) {
     if (!lokiPatterns) {
       console.warn('failed to update pattern frames');
       return;
     }
 
     const patternFrames = this.buildPatterns(lokiPatterns);
+
     this.setState({
       patternFrames,
       loading: false,
     });
   }
 
-  private buildPatterns(patterns: LokiPattern[]): PatternFrame[] {
+  private buildPatterns(patterns: DataFrame[]): PatternFrame[] {
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     const appliedPatterns = sceneGraph.getAncestor(serviceScene, IndexScene).state.patterns;
 
-    let maxValue = -Infinity;
-    let minValue = 0;
+    return patterns.map((dataFrame) => {
+      const existingPattern = appliedPatterns?.find((appliedPattern) => appliedPattern.pattern === dataFrame.name);
 
-    return patterns
-      .map((pat) => {
-        const timeValues: number[] = [];
-        const sampleValues: number[] = [];
-        let sum = 0;
-        pat.samples.forEach(([time, value]) => {
-          timeValues.push(time * 1000);
-          const sample = parseFloat(value);
-          sampleValues.push(sample);
-          if (sample > maxValue) {
-            maxValue = sample;
-          }
-          if (sample < minValue) {
-            minValue = sample;
-          }
-          sum += sample;
-        });
-        const dataFrame: DataFrame = {
-          refId: pat.pattern,
-          fields: [
-            {
-              name: 'time',
-              type: FieldType.time,
-              values: timeValues,
-              config: {},
-            },
-            {
-              name: pat.pattern,
-              type: FieldType.number,
-              values: sampleValues,
-              config: {},
-            },
-          ],
-          length: pat.samples.length,
-          meta: {
-            preferredVisualisationType: 'graph',
-          },
-        };
-        const existingPattern = appliedPatterns?.find((appliedPattern) => appliedPattern.pattern === pat.pattern);
+      const sum: number = dataFrame.meta?.custom?.sum;
+      const patternFrame: PatternFrame = {
+        dataFrame,
+        pattern: dataFrame.name ?? '',
+        sum,
+        status: existingPattern?.type,
+      };
 
-        return {
-          dataFrame,
-          pattern: pat.pattern,
-          sum,
-          status: existingPattern?.type,
-        };
-      })
-      .sort((a, b) => b.sum - a.sum);
+      return patternFrame;
+    });
   }
 }
 

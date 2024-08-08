@@ -1,77 +1,52 @@
-import { css } from '@emotion/css';
 import React from 'react';
 
-import { GrafanaTheme2, LoadingState } from '@grafana/data';
+import { PanelData } from '@grafana/data';
 import {
   SceneComponentProps,
+  SceneDataProvider,
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
-  SceneObject,
   SceneObjectBase,
   SceneObjectState,
+  SceneQueryRunner,
   SceneVariable,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import { Box, LoadingPlaceholder, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
-import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
+import { LoadingPlaceholder } from '@grafana/ui';
 import { DetectedLabel, DetectedLabelsResponse, updateParserFromDataFrame } from 'services/fields';
 import { getQueryRunner } from 'services/panel';
-import { buildDataQuery, renderLogQLStreamSelector } from 'services/query';
-import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, PLUGIN_ID, ValueSlugs } from 'services/routing';
-import { getExplorationFor, getLokiDatasource } from 'services/scenes';
+import { buildDataQuery, buildResourceQuery } from 'services/query';
+import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, PLUGIN_ID } from 'services/routing';
+import { getLokiDatasource } from 'services/scenes';
 import {
-  ALL_VARIABLE_VALUE,
-  getFieldsVariable,
   getLabelsVariable,
   LEVEL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_LABELS,
+  VAR_LABELS_EXPR,
   VAR_LEVELS,
   VAR_PATTERNS,
 } from 'services/variables';
-import {
-  buildFieldsBreakdownActionScene,
-  buildFieldValuesBreakdownActionScene,
-} from './Breakdowns/FieldsBreakdownScene';
-import { buildLabelBreakdownActionScene, buildLabelValuesBreakdownActionScene } from './Breakdowns/LabelBreakdownScene';
-import { buildPatternsScene } from './Breakdowns/Patterns/PatternsBreakdownScene';
-import { GoToExploreButton } from './GoToExploreButton';
-import { buildLogsListScene } from './LogsListScene';
-import { testIds } from 'services/testIds';
 import { sortLabelsByCardinality } from 'services/filters';
 import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
 import { getMetadataService } from '../../services/metadata';
 import { navigateToDrilldownPage, navigateToIndex } from '../../services/navigate';
 import { areArraysEqual } from '../../services/comparison';
+import { LogsActionBarScene } from './LogsActionBarScene';
+import { breakdownViewsDefinitions, valueBreakdownViews } from './BreakdownViews';
 
-export interface LokiPattern {
-  pattern: string;
-  samples: Array<[number, string]>;
-}
-
-interface BreakdownViewDefinition {
-  displayName: string;
-  value: PageSlugs;
-  testId: string;
-  getScene: (changeFields: (f: string[]) => void) => SceneObject;
-}
-
-interface ValueBreakdownViewDefinition {
-  displayName: string;
-  value: ValueSlugs;
-  testId: string;
-  getScene: (value: string) => SceneObject;
-}
+const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
+const PATTERNS_QUERY_REFID = 'patterns';
 
 type MakeOptional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
 export interface ServiceSceneCustomState {
   fields?: string[];
   labels?: DetectedLabel[];
-  patterns?: LokiPattern[];
+  patternsCount?: number;
   fieldsCount?: number;
   loading?: boolean;
 }
@@ -79,6 +54,15 @@ export interface ServiceSceneCustomState {
 export interface ServiceSceneState extends SceneObjectState, ServiceSceneCustomState {
   body: SceneFlexLayout | undefined;
   drillDownLabel?: string;
+  $data: SceneDataProvider;
+}
+
+export function getLogsPanelFrame(data: PanelData | undefined) {
+  return data?.series.find((series) => series.refId === LOGS_PANEL_QUERY_REFID);
+}
+
+export function getPatternsFrames(data: PanelData | undefined) {
+  return data?.series.filter((series) => series.refId === PATTERNS_QUERY_REFID);
 }
 
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
@@ -87,10 +71,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
   });
 
-  public constructor(state: MakeOptional<ServiceSceneState, 'body'>) {
+  public constructor(state: MakeOptional<ServiceSceneState, 'body' | '$data'>) {
     super({
       body: state.body ?? buildGraphScene(),
-      $data: getQueryRunner(buildDataQuery(LOG_STREAM_SELECTOR_EXPR)),
+      $data: getServiceSceneQueryRunner(),
       loading: true,
       ...state,
     });
@@ -150,23 +134,50 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.setBreakdownView();
     this.setEmptyFiltersRedirection();
 
-    if (this.state.$data) {
-      this._subs.add(
-        this.state.$data?.subscribeToState((newState) => {
-          if (newState.data?.state === LoadingState.Done) {
-            this.updateFields();
-          }
-        })
-      );
-    }
+    this._subs.add(
+      this.state.$data.subscribeToState((newState) => {
+        const logsPanelResponse = getLogsPanelFrame(newState.data);
+        const patternsResponse = getPatternsFrames(newState.data);
+        if (logsPanelResponse) {
+          this.updateFields();
+        }
+
+        if (patternsResponse?.length) {
+          // Save the count of patterns to state
+          this.setState({
+            patternsCount: patternsResponse.length,
+          });
+        }
+      })
+    );
 
     this.updateLabels();
-    this.updatePatterns();
 
+    const labels = getLabelsVariable(this);
+    this._subs.add(
+      labels.subscribeToState((newState, prevState) => {
+        if (!areArraysEqual(newState.filters, prevState.filters)) {
+          const queryRunner = getQueryRunnerFromProvider(this.state.$data);
+          const newQueryRunner = getQueryRunnerFromProvider(getServiceSceneQueryRunner(true));
+
+          // If the queries changed, update the data provider
+          if (!areArraysEqual(queryRunner.state.queries, newQueryRunner.state.queries)) {
+            this.setState({
+              $data: newQueryRunner,
+            });
+          }
+        }
+      })
+    );
+
+    // Update query runner on manual time range change
     this._subs.add(
       sceneGraph.getTimeRange(this).subscribeToState(() => {
+        this.setState({
+          $data: getServiceSceneQueryRunner(true),
+        });
+
         this.updateLabels();
-        this.updatePatterns();
       })
     );
   }
@@ -175,7 +186,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     let stateUpdate: Partial<ServiceSceneState> = {};
 
     if (!this.state.$data) {
-      stateUpdate.$data = getQueryRunner(buildDataQuery(LOG_STREAM_SELECTOR_EXPR));
+      stateUpdate.$data = getServiceSceneQueryRunner();
     }
 
     if (!this.state.body) {
@@ -197,7 +208,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     if (filterVariable.state.filters.length === 0) {
       return;
     }
-    Promise.all([this.updatePatterns(), this.updateLabels()])
+    Promise.all([this.updateLabels()])
       .finally(() => {
         // For patterns, we don't want to reload to logs as we allow users to select multiple patterns
         if (variable.state.name !== VAR_PATTERNS) {
@@ -227,66 +238,22 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       'user_identifier',
     ];
     const newState = sceneGraph.getData(this).state;
-    if (newState.data?.state === LoadingState.Done) {
-      const frame = newState.data?.series[0];
-      if (frame) {
-        const res = updateParserFromDataFrame(frame, this);
-        const fields = res.fields.filter((f) => !disabledFields.includes(f)).sort((a, b) => a.localeCompare(b));
-        if (!areArraysEqual(fields, this.state.fields)) {
-          this.setState({
-            fields: fields,
-            loading: false,
-          });
-        }
-      } else {
+    const frame = getLogsPanelFrame(newState.data);
+    if (frame) {
+      const res = updateParserFromDataFrame(frame, this);
+      const fields = res.fields.filter((f) => !disabledFields.includes(f)).sort((a, b) => a.localeCompare(b));
+      if (!areArraysEqual(fields, this.state.fields)) {
         this.setState({
-          fields: [],
+          fields: fields,
           loading: false,
         });
       }
-    } else if (newState.data?.state === LoadingState.Error) {
+    } else {
       this.setState({
         fields: [],
         loading: false,
       });
     }
-  }
-
-  private async updatePatterns() {
-    const ds = await getLokiDatasource(this);
-    if (!ds) {
-      return;
-    }
-
-    const timeRange = sceneGraph.getTimeRange(this).state.value;
-    const labels = getLabelsVariable(this);
-    const fields = getFieldsVariable(this);
-
-    const excludeLabels = [ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE];
-
-    const { data } = await ds.getResource(
-      'patterns',
-      {
-        query: renderLogQLStreamSelector([
-          // this will only be the service name for now
-          ...labels.state.filters,
-          // only include fields that are an indexed label
-          ...fields.state.filters.filter(
-            // we manually add level as a label, but it'll be structured metadata mostly, so we skip it here
-            (field) =>
-              this.state.labels?.find((label) => label.label === field.key) && !excludeLabels.includes(field.key)
-          ),
-        ]),
-        start: timeRange.from.utc().toISOString(),
-        end: timeRange.to.utc().toISOString(),
-      },
-      {
-        headers: {
-          'X-Query-Tags': `Source=${PLUGIN_ID}`,
-        },
-      }
-    );
-    this.setState({ patterns: data });
   }
 
   private async updateLabels() {
@@ -371,153 +338,42 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   };
 }
 
-const breakdownViewsDefinitions: BreakdownViewDefinition[] = [
-  {
-    displayName: 'Logs',
-    value: PageSlugs.logs,
-    getScene: () => buildLogsListScene(),
-    testId: testIds.exploreServiceDetails.tabLogs,
-  },
-  {
-    displayName: 'Labels',
-    value: PageSlugs.labels,
-    getScene: () => buildLabelBreakdownActionScene(),
-    testId: testIds.exploreServiceDetails.tabLabels,
-  },
-  {
-    displayName: 'Fields',
-    value: PageSlugs.fields,
-    getScene: (f) => buildFieldsBreakdownActionScene(f),
-    testId: testIds.exploreServiceDetails.tabFields,
-  },
-  {
-    displayName: 'Patterns',
-    value: PageSlugs.patterns,
-    getScene: () => buildPatternsScene(),
-    testId: testIds.exploreServiceDetails.tabPatterns,
-  },
-];
-
-const valueBreakdownViews: ValueBreakdownViewDefinition[] = [
-  {
-    displayName: 'Label',
-    value: ValueSlugs.label,
-    getScene: (value: string) => buildLabelValuesBreakdownActionScene(value),
-    testId: testIds.exploreServiceDetails.tabLabels,
-  },
-  {
-    displayName: 'Field',
-    value: ValueSlugs.field,
-    getScene: (value: string) => buildFieldValuesBreakdownActionScene(value),
-    testId: testIds.exploreServiceDetails.tabFields,
-  },
-];
-
-export interface LogsActionBarState extends SceneObjectState {}
-
-export class LogsActionBar extends SceneObjectBase<LogsActionBarState> {
-  public static Component = ({ model }: SceneComponentProps<LogsActionBar>) => {
-    const styles = useStyles2(getStyles);
-    const exploration = getExplorationFor(model);
-    let currentBreakdownViewSlug = getDrilldownSlug();
-    let allowNavToParent = false;
-
-    if (!Object.values(PageSlugs).includes(currentBreakdownViewSlug)) {
-      const drilldownValueSlug = getDrilldownValueSlug();
-      allowNavToParent = true;
-      if (drilldownValueSlug === ValueSlugs.field) {
-        currentBreakdownViewSlug = PageSlugs.fields;
-      }
-      if (drilldownValueSlug === ValueSlugs.label) {
-        currentBreakdownViewSlug = PageSlugs.labels;
-      }
-    }
-
-    const getCounter = (tab: BreakdownViewDefinition, state: ServiceSceneState) => {
-      switch (tab.value) {
-        case 'fields':
-          return state.fieldsCount ?? (state.fields?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []).length;
-        case 'patterns':
-          return state.patterns?.length;
-        case 'labels':
-          return (state.labels?.filter((l) => l.label !== ALL_VARIABLE_VALUE) ?? []).length;
-        default:
-          return undefined;
-      }
-    };
-
-    const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
-    const { loading, ...state } = serviceScene.useState();
-    return (
-      <Box paddingY={0}>
-        <div className={styles.actions}>
-          <Stack gap={1}>
-            <GoToExploreButton exploration={exploration} />
-          </Stack>
-        </div>
-
-        <TabsBar>
-          {breakdownViewsDefinitions.map((tab, index) => {
-            return (
-              <Tab
-                data-testid={tab.testId}
-                key={index}
-                label={tab.displayName}
-                active={currentBreakdownViewSlug === tab.value}
-                counter={!loading ? getCounter(tab, state) : undefined}
-                icon={loading ? 'spinner' : undefined}
-                onChangeTab={() => {
-                  if (tab.value !== currentBreakdownViewSlug || allowNavToParent) {
-                    reportAppInteraction(
-                      USER_EVENTS_PAGES.service_details,
-                      USER_EVENTS_ACTIONS.service_details.action_view_changed,
-                      {
-                        newActionView: tab.value,
-                        previousActionView: currentBreakdownViewSlug,
-                      }
-                    );
-                    if (tab.value) {
-                      const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
-                      const variable = getLabelsVariable(serviceScene);
-                      const service = variable.state.filters.find((f) => f.key === SERVICE_NAME);
-
-                      if (service?.value) {
-                        navigateToDrilldownPage(tab.value, serviceScene);
-                      } else {
-                        navigateToIndex();
-                      }
-                    }
-                  }
-                }}
-              />
-            );
-          })}
-        </TabsBar>
-      </Box>
-    );
-  };
-}
-
-function getStyles(theme: GrafanaTheme2) {
-  return {
-    actions: css({
-      [theme.breakpoints.up(theme.breakpoints.values.md)]: {
-        position: 'absolute',
-        right: 0,
-        zIndex: 2,
-      },
-    }),
-  };
-}
-
 function buildGraphScene() {
   return new SceneFlexLayout({
     direction: 'column',
     children: [
       new SceneFlexItem({
         ySizing: 'content',
-        body: new LogsActionBar({}),
+        body: new LogsActionBarScene({}),
       }),
     ],
   });
+}
+
+function getServiceSceneQueryRunner(forceRefresh = false) {
+  const slug = getDrilldownSlug();
+  const metadataService = getMetadataService();
+  const state = metadataService.getServiceSceneState();
+
+  // We only need to query patterns on pages besides the patterns view to show the number of patterns in the tab. If that's already been set, let's skip requesting it again.
+  if (slug !== PageSlugs.patterns && state?.patternsCount !== undefined && !forceRefresh) {
+    return getQueryRunner([buildDataQuery(LOG_STREAM_SELECTOR_EXPR, { refId: LOGS_PANEL_QUERY_REFID })]);
+  }
+
+  return getQueryRunner([
+    buildDataQuery(LOG_STREAM_SELECTOR_EXPR, { refId: LOGS_PANEL_QUERY_REFID }),
+    buildResourceQuery(VAR_LABELS_EXPR, 'patterns', { refId: PATTERNS_QUERY_REFID }),
+  ]);
+}
+
+function getQueryRunnerFromProvider(queryRunner: SceneDataProvider): SceneQueryRunner {
+  if (queryRunner instanceof SceneQueryRunner) {
+    return queryRunner;
+  }
+
+  if (queryRunner.state.$data instanceof SceneQueryRunner) {
+    return queryRunner.state.$data;
+  }
+
+  throw new Error('Cannot find query runner');
 }

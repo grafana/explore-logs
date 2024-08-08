@@ -47,11 +47,11 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       .setOption('legend', { showLegend: true, calcs: ['sum'], displayMode: LegendDisplayMode.List })
       .setUnit('short')
       .setData(
-        getQueryRunner(
+        getQueryRunner([
           buildDataQuery(getTimeSeriesExpr(this, LEVEL_VARIABLE_VALUE, false), {
             legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`,
-          })
-        )
+          }),
+        ])
       )
       .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
       .setCustomFieldConfig('fillOpacity', 100)

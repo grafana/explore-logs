@@ -6,6 +6,7 @@ import {mockEmptyQueryApiResponse} from "./mocks/mockEmptyQueryApiResponse";
 import {LokiQuery} from "../src/services/query";
 import {DataQueryRequest} from "@grafana/data";
 import {DataQuery} from "@grafana/schema";
+import {LOGS_PANEL_QUERY_REFID} from "../src/Components/ServiceScene/ServiceScene";
 
 test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;
@@ -113,7 +114,7 @@ test.describe('explore services breakdown page', () => {
         const postData = JSON.parse(rawPostData);
         const refId = postData.queries[0].refId
         // Field subqueries have a refId of the field name
-        if(refId !== 'A'){
+        if(refId !== 'logsPanelQuery' && refId !== 'A'){
           requestCount++
           return await route.fulfill({json: mockResponse})
         }
