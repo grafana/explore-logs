@@ -11,12 +11,12 @@ import { areArraysEqual } from '../../services/comparison';
 import { getLogsPanelFrame } from './ServiceScene';
 
 interface LogsTableSceneState extends SceneObjectState {
-  data?: SceneDataState;
+  data: SceneDataState;
   loading?: LoadingState;
 }
 
 export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
-  constructor(state: Partial<LogsTableSceneState>) {
+  constructor(state: Partial<LogsTableSceneState> & { data: SceneDataState }) {
     super(state);
 
     this.addActivationHandler(this.onActivate.bind(this));

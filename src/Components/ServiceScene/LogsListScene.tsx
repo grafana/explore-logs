@@ -160,6 +160,18 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
 
   private getVizPanel() {
     this.lineFilterScene = new LineFilterScene();
+
+    // If this is called before the query has executed, we need to return an empty data node to init the loading state, instead of no-data
+    const data =
+      sceneGraph.getData(this).state ??
+      new SceneDataNode({
+        data: {
+          state: LoadingState.Loading,
+          series: [],
+          timeRange: sceneGraph.getTimeRange(this).state.value,
+        },
+      }).state;
+
     return new SceneFlexLayout({
       direction: 'column',
       children:
@@ -178,13 +190,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
                 height: 'calc(100vh - 220px)',
                 body: new LogsPanelScene({
                   // this data node is just for the initial loading state before we get our first response back
-                  data: new SceneDataNode({
-                    data: {
-                      state: LoadingState.Loading,
-                      series: [],
-                      timeRange: sceneGraph.getTimeRange(this).state.value,
-                    },
-                  }).state,
+                  data,
                 }),
               }),
             ]
@@ -195,7 +201,9 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
               }),
               new SceneFlexItem({
                 height: 'calc(100vh - 220px)',
-                body: new LogsTableScene({}),
+                body: new LogsTableScene({
+                  data,
+                }),
               }),
             ],
     });
