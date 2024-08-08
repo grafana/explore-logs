@@ -49,6 +49,8 @@ import { getLabelOptions } from '../../../services/filters';
 import { navigateToValueBreakdown } from '../../../services/navigate';
 import { ValueSlugs } from '../../../services/routing';
 import { areArraysEqual } from '../../../services/comparison';
+import { getTimeSeriesExpr } from '../../../services/expressions';
+import { FieldValueBreakdownScene } from './FieldValueBreakdownScene';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -163,11 +165,11 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     );
   };
 
-  private updateBody(newState: CustomConstantVariableState) {
+  private updateBody(variableState: CustomConstantVariableState) {
     const logsScene = sceneGraph.getAncestor(this, ServiceScene);
 
     const stateUpdate: Partial<FieldsBreakdownSceneState> = {
-      value: String(newState.value),
+      value: String(variableState.value),
       blockingMessage: undefined,
       loading: logsScene.state.loading,
     };
@@ -196,10 +198,18 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         stateUpdate.body = this.buildEmptyLayout();
       }
     } else {
+      const tagKey = String(variableState?.value);
+      const query = buildDataQuery(getTimeSeriesExpr(this, tagKey), {
+        legendFormat: `{{${tagKey}}}`,
+        refId: 'label-value-breakdown',
+      });
+
       stateUpdate.body =
-        newState.value === ALL_VARIABLE_VALUE
-          ? this.buildFieldsLayout(newState.options.map((opt) => ({ label: opt.label, value: String(opt.value) })))
-          : this.buildValuesLayout(newState);
+        variableState.value === ALL_VARIABLE_VALUE
+          ? this.buildFieldsLayout(variableState.options.map((opt) => ({ label: opt.label, value: String(opt.value) })))
+          : new FieldValueBreakdownScene({
+              $data: getQueryRunner([query]),
+            });
     }
 
     this.setState(stateUpdate);
@@ -325,7 +335,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       active: 'grid',
       layouts: [
         new SceneCSSGridLayout({
-          templateColumns: GRID_TEMPLATE_COLUMNS,
+          templateColumns: FIELD_LAYOUT_GRID_TEMPLATE_COLUMNS,
           autoRows: '200px',
           children: children,
           isLazy: true,
@@ -367,7 +377,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         }),
         new ByFrameRepeater({
           body: new SceneCSSGridLayout({
-            templateColumns: GRID_TEMPLATE_COLUMNS,
+            templateColumns: FIELD_LAYOUT_GRID_TEMPLATE_COLUMNS,
             autoRows: '200px',
             children: [
               new SceneFlexItem({
@@ -520,7 +530,7 @@ function getExpr(field: string) {
   return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${field}!=""   [$__auto]))`;
 }
 
-const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
+export const FIELD_LAYOUT_GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
 export function buildFieldsBreakdownActionScene(changeFieldNumber: (n: string[]) => void) {
   return new SceneFlexLayout({
