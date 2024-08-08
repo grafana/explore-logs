@@ -12,14 +12,12 @@ import {
 } from '@grafana/scenes';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { getLabelValue } from './SortByScene';
-import { buildDataQuery } from '../../../services/query';
 import { DrawStyle, LoadingPlaceholder } from '@grafana/ui';
-import { getQueryRunner } from '../../../services/panel';
 import { getSortByPreference } from '../../../services/store';
 import { ReducerID } from '@grafana/data';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { getFilterBreakdownValueScene } from '../../../services/fields';
-import { getFieldGroupByVariable, LOG_STREAM_SELECTOR_EXPR, VAR_FIELDS } from '../../../services/variables';
+import { getFieldGroupByVariable, VAR_FIELDS } from '../../../services/variables';
 import React from 'react';
 import { FIELD_LAYOUT_GRID_TEMPLATE_COLUMNS, FieldsBreakdownScene } from './FieldsBreakdownScene';
 
@@ -48,13 +46,11 @@ export class FieldValueBreakdownScene extends SceneObjectBase<FieldValueBreakdow
     const fieldsBreakdownScene = sceneGraph.getAncestor(this, FieldsBreakdownScene);
     const tagKey = String(variableState.value);
 
-    const query = buildDataQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
-
+    const isAvg = isAvgField(tagKey);
     const { sortBy, direction } = getSortByPreference('fields', ReducerID.stdDev, 'desc');
     const getFilter = () => fieldsBreakdownScene.state.search.state.filter ?? '';
 
     return new LayoutSwitcher({
-      $data: getQueryRunner([query]),
       options: [
         { value: 'single', label: 'Single' },
         { value: 'grid', label: 'Grid' },
@@ -86,7 +82,7 @@ export class FieldValueBreakdownScene extends SceneObjectBase<FieldValueBreakdow
           }),
           getLayoutChild: getFilterBreakdownValueScene(
             getLabelValue,
-            query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
+            isAvg ? DrawStyle.Bars : DrawStyle.Line,
             VAR_FIELDS
           ),
           sortBy,
@@ -108,7 +104,7 @@ export class FieldValueBreakdownScene extends SceneObjectBase<FieldValueBreakdow
           }),
           getLayoutChild: getFilterBreakdownValueScene(
             getLabelValue,
-            query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
+            isAvg ? DrawStyle.Bars : DrawStyle.Line,
             VAR_FIELDS
           ),
           sortBy,
@@ -134,16 +130,16 @@ export class FieldValueBreakdownScene extends SceneObjectBase<FieldValueBreakdow
   };
 }
 
-function getExpr(field: string) {
-  if (isAvgField(field)) {
-    return (
-      `avg_over_time(${LOG_STREAM_SELECTOR_EXPR} | unwrap ` +
-      (field === 'duration' ? `duration` : field === 'bytes' ? `bytes` : ``) +
-      `(${field}) [$__auto]) by ()`
-    );
-  }
-  return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${field}!=""   [$__auto]))`;
-}
+// function getExpr(field: string) {
+//   if (isAvgField(field)) {
+//     return (
+//       `avg_over_time(${LOG_STREAM_SELECTOR_EXPR} | unwrap ` +
+//       (field === 'duration' ? `duration` : field === 'bytes' ? `bytes` : ``) +
+//       `(${field}) [$__auto]) by ()`
+//     );
+//   }
+//   return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${field}!=""   [$__auto]))`;
+// }
 
 function isAvgField(field: string) {
   return avgFields.includes(field);

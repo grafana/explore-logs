@@ -49,7 +49,6 @@ import { getLabelOptions } from '../../../services/filters';
 import { navigateToValueBreakdown } from '../../../services/navigate';
 import { ValueSlugs } from '../../../services/routing';
 import { areArraysEqual } from '../../../services/comparison';
-import { getTimeSeriesExpr } from '../../../services/expressions';
 import { FieldValueBreakdownScene } from './FieldValueBreakdownScene';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
@@ -199,9 +198,9 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       }
     } else {
       const tagKey = String(variableState?.value);
-      const query = buildDataQuery(getTimeSeriesExpr(this, tagKey), {
+      const query = buildDataQuery(getExpr(tagKey), {
         legendFormat: `{{${tagKey}}}`,
-        refId: 'label-value-breakdown',
+        refId: 'fields-value-breakdown',
       });
 
       stateUpdate.body =
