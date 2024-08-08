@@ -196,10 +196,6 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       error: false,
     };
 
-    // stateUpdate.body = variable.hasAllValue()
-    //   ? this.buildLabelsLayout(variableState.options)
-    //   : this.buildLabelValuesLayout(variableState);
-
     const tagKey = String(variableState?.value);
     const query = buildDataQuery(getTimeSeriesExpr(this, tagKey), {
       legendFormat: `{{${tagKey}}}`,

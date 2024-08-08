@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { PanelData } from '@grafana/data';
+import { AdHocVariableFilter, PanelData } from '@grafana/data';
 import {
   SceneComponentProps,
   SceneDataProvider,
@@ -11,6 +11,7 @@ import {
   SceneObjectState,
   SceneQueryRunner,
   SceneVariable,
+  SceneVariableState,
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { LoadingPlaceholder } from '@grafana/ui';
@@ -20,6 +21,7 @@ import { buildDataQuery, buildResourceQuery } from 'services/query';
 import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, PLUGIN_ID } from 'services/routing';
 import { getLokiDatasource } from 'services/scenes';
 import {
+  getFieldsVariable,
   getLabelsVariable,
   LEVEL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
@@ -55,6 +57,11 @@ export interface ServiceSceneState extends SceneObjectState, ServiceSceneCustomS
   body: SceneFlexLayout | undefined;
   drillDownLabel?: string;
   $data: SceneDataProvider;
+}
+
+interface AdHocFilterWithLabels extends AdHocVariableFilter {
+  keyLabel?: string;
+  valueLabel?: string;
 }
 
 export function getLogsPanelFrame(data: PanelData | undefined) {
@@ -135,18 +142,22 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.setEmptyFiltersRedirection();
 
     this._subs.add(
-      this.state.$data.subscribeToState((newState) => {
+      this.state.$data.subscribeToState((newState, prevState) => {
         const logsPanelResponse = getLogsPanelFrame(newState.data);
+        const prevLogsPanelResponse = getLogsPanelFrame(prevState.data);
+
         const patternsResponse = getPatternsFrames(newState.data);
-        if (logsPanelResponse) {
+
+        if (logsPanelResponse && !areArraysEqual(prevLogsPanelResponse?.fields, logsPanelResponse.fields)) {
           this.updateFields();
         }
 
-        if (patternsResponse?.length) {
+        if (patternsResponse?.length && this.state.patternsCount !== patternsResponse.length) {
           // Save the count of patterns to state
           this.setState({
             patternsCount: patternsResponse.length,
           });
+          getMetadataService().setServiceSceneState(this.state);
         }
       })
     );
@@ -156,17 +167,14 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     const labels = getLabelsVariable(this);
     this._subs.add(
       labels.subscribeToState((newState, prevState) => {
-        if (!areArraysEqual(newState.filters, prevState.filters)) {
-          const queryRunner = getQueryRunnerFromProvider(this.state.$data);
-          const newQueryRunner = getQueryRunnerFromProvider(getServiceSceneQueryRunner(true));
+        this.updateQueryRunnerOnChange(newState, prevState, true);
+      })
+    );
 
-          // If the queries changed, update the data provider
-          if (!areArraysEqual(queryRunner.state.queries, newQueryRunner.state.queries)) {
-            this.setState({
-              $data: newQueryRunner,
-            });
-          }
-        }
+    const fields = getFieldsVariable(this);
+    this._subs.add(
+      fields.subscribeToState((newState, prevState) => {
+        this.updateQueryRunnerOnChange(newState, prevState, false);
       })
     );
 
@@ -182,12 +190,30 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     );
   }
 
+  // @todo scenes doesn't export AdHocFiltersVariableState
+  // @todo set patterns count
+  private updateQueryRunnerOnChange(
+    newState: SceneVariableState & { filters: AdHocFilterWithLabels[] },
+    prevState: SceneVariableState & { filters: AdHocFilterWithLabels[] },
+    forceRefresh: boolean
+  ) {
+    if (!areArraysEqual(newState.filters, prevState.filters)) {
+      const queryRunner = getQueryRunnerFromProvider(this.state.$data);
+      const newQueryRunner = getQueryRunnerFromProvider(getServiceSceneQueryRunner(forceRefresh));
+
+      // If the queries changed, update the data provider
+      if (!areArraysEqual(queryRunner.state.queries, newQueryRunner.state.queries)) {
+        this.setState({
+          $data: newQueryRunner,
+        });
+      }
+    }
+  }
+
   private resetBodyAndData() {
     let stateUpdate: Partial<ServiceSceneState> = {};
 
-    if (!this.state.$data) {
-      stateUpdate.$data = getServiceSceneQueryRunner();
-    }
+    stateUpdate.$data = getServiceSceneQueryRunner();
 
     if (!this.state.body) {
       stateUpdate.body = buildGraphScene();
@@ -343,6 +369,10 @@ function buildGraphScene() {
   });
 }
 
+/**
+ * @todo find a better way to do this?
+ * @param forceRefresh
+ */
 function getServiceSceneQueryRunner(forceRefresh = false) {
   const slug = getDrilldownSlug();
   const metadataService = getMetadataService();
