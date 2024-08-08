@@ -121,36 +121,17 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
         filterType: this.state.variableName,
         key: filter.name,
         action: type,
-        filtersLength: variable?.state.filters.length || 0,
+        filtersLength: variable.state.filters.length,
       }
     );
-  };
 
-  isSelected = () => {
-    const filter = getFilter(this.state.frame);
-    if (!filter) {
-      return { isIncluded: false, isExcluded: false };
-    }
-
-    const variable = getAdHocFiltersVariable(validateVariableNameForField(filter.name, this.state.variableName), this);
-
-    // Check if the filter is already there
-    const filterInSelectedFilters = variable.state.filters.find((f) => {
-      return f.key === filter.name && f.value === filter.value;
-    });
-
-    if (!filterInSelectedFilters) {
-      return { isIncluded: false, isExcluded: false };
-    }
-
-    return {
-      isIncluded: filterInSelectedFilters.operator === FilterOp.Equal,
-      isExcluded: filterInSelectedFilters.operator === FilterOp.NotEqual,
-    };
+    // Updating the variables doesn't change the props passed into this scene, so we need to manually re-trigger a render to update the buttons
+    this.forceRender();
   };
 
   public static Component = ({ model }: SceneComponentProps<AddToFiltersButton>) => {
-    const { isIncluded, isExcluded } = model.isSelected();
+    const { frame, variableName } = model.useState();
+    const { isIncluded, isExcluded } = isSelected(frame, variableName, model);
     return (
       <FilterButton
         isIncluded={isIncluded}
@@ -173,4 +154,27 @@ const getFilter = (frame: DataFrame) => {
   const name = Object.keys(filterNameAndValueObj)[0];
   const value = filterNameAndValueObj[name];
   return { name, value };
+};
+
+const isSelected = (frame: DataFrame, variableName: string, sceneRef: SceneObject) => {
+  const filter = getFilter(frame);
+  if (!filter) {
+    return { isIncluded: false, isExcluded: false };
+  }
+
+  const variable = getAdHocFiltersVariable(validateVariableNameForField(filter.name, variableName), sceneRef);
+
+  // Check if the filter is already there
+  const filterInSelectedFilters = variable.state.filters.find((f) => {
+    return f.key === filter.name && f.value === filter.value;
+  });
+
+  if (!filterInSelectedFilters) {
+    return { isIncluded: false, isExcluded: false };
+  }
+
+  return {
+    isIncluded: filterInSelectedFilters.operator === FilterOp.Equal,
+    isExcluded: filterInSelectedFilters.operator === FilterOp.NotEqual,
+  };
 };

@@ -33,7 +33,7 @@ import {
 import { sortLabelsByCardinality } from 'services/filters';
 import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
 import { getMetadataService } from '../../services/metadata';
-import { navigateToDrilldownPage, navigateToIndex } from '../../services/navigate';
+import { navigateToIndex } from '../../services/navigate';
 import { areArraysEqual } from '../../services/comparison';
 import { LogsActionBarScene } from './LogsActionBarScene';
 import { breakdownViewsDefinitions, valueBreakdownViews } from './BreakdownViews';
@@ -208,16 +208,9 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     if (filterVariable.state.filters.length === 0) {
       return;
     }
-    Promise.all([this.updateLabels()])
-      .finally(() => {
-        // For patterns, we don't want to reload to logs as we allow users to select multiple patterns
-        if (variable.state.name !== VAR_PATTERNS) {
-          navigateToDrilldownPage(PageSlugs.logs, this);
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to update', err);
-      });
+    Promise.all([this.updateLabels()]).catch((err) => {
+      console.error('Failed to update', err);
+    });
   }
 
   private updateFields() {
