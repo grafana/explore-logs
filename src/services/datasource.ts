@@ -90,6 +90,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
                 break;
               }
               case 'patterns': {
+                console.log('patterns called');
                 newSubscriber = this.getPatterns(dataQueryRequest, ds, subscriber);
                 break;
               }

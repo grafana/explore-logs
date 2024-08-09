@@ -4,6 +4,7 @@ import { map, Observable } from 'rxjs';
 import { LokiQuery } from './query';
 import { HideSeriesConfig } from '@grafana/schema';
 import { WRAPPED_LOKI_DS_UID } from './datasource';
+import { LogsSceneQueryRunner } from './LogsSceneQueryRunner';
 
 const UNKNOWN_LEVEL_LOGS = 'logs';
 export function setLeverColorOverrides(overrides: FieldConfigOverridesBuilder<FieldConfig>) {
@@ -76,6 +77,13 @@ export function sortLevelTransformation() {
       })
     );
   };
+}
+
+export function getResourceQueryRunner(queries: LokiQuery[]) {
+  return new LogsSceneQueryRunner({
+    datasource: { uid: WRAPPED_LOKI_DS_UID },
+    queries: queries,
+  });
 }
 
 export function getQueryRunner(queries: LokiQuery[]) {

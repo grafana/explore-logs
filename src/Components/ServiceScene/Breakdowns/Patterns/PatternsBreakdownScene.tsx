@@ -22,7 +22,6 @@ import { PatternsFrameScene } from './PatternsFrameScene';
 import { PatternsViewTextSearch } from './PatternsViewTextSearch';
 import { PatternsNotDetected, PatternsTooOld } from './PatternsNotDetected';
 import { areArraysEqual } from '../../../../services/comparison';
-import { Unsubscribable } from 'rxjs';
 
 export interface PatternsBreakdownSceneState extends SceneObjectState {
   body?: SceneFlexLayout;
@@ -36,7 +35,6 @@ export interface PatternsBreakdownSceneState extends SceneObjectState {
   // Subset of patternFrames, undefined if empty, empty array if search results returned nothing (no data)
   filteredPatterns?: PatternFrame[];
   patternFilter: string;
-  dataSub?: Unsubscribable;
 }
 
 export type PatternFrame = {
@@ -69,8 +67,8 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     const { body, loading, blockingMessage } = model.useState();
     const { value: timeRange } = sceneGraph.getTimeRange(model).useState();
     const logsByServiceScene = sceneGraph.getAncestor(model, ServiceScene);
-    const { $data } = logsByServiceScene.useState();
-    const patterns = getPatternsFrames($data?.state.data);
+    const { $patternsData } = logsByServiceScene.useState();
+    const patterns = getPatternsFrames($patternsData?.state.data);
     const styles = useStyles2(getStyles);
     const timeRangeTooOld = dateTime().diff(timeRange.to, 'hours') >= PATTERNS_MAX_AGE_HOURS;
 
@@ -105,7 +103,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     this.setBody();
 
-    const patterns = getPatternsFrames(serviceScene.state.$data?.state.data);
+    const patterns = getPatternsFrames(serviceScene.state.$patternsData?.state.data);
 
     // If the patterns exist already, update the dataframe
     if (patterns) {
@@ -113,23 +111,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     }
 
     // Subscribe to changes from pattern API call
-    const dataSub = serviceScene.state.$data.subscribeToState(this.onDataProviderChange);
-    this.setState({
-      dataSub,
-    });
-    this._subs.add(dataSub);
-
-    // Subscribe to changes to the query provider
-    serviceScene.subscribeToState((newState, prevState) => {
-      if (newState.$data.state.key !== prevState.$data.state.key) {
-        const dataSub = serviceScene.state.$data.subscribeToState(this.onDataProviderChange);
-        this.state.dataSub?.unsubscribe();
-        this.setState({
-          dataSub,
-          loading: true,
-        });
-      }
-    });
+    this._subs.add(serviceScene.state.$patternsData.subscribeToState(this.onDataProviderChange));
   }
 
   private onDataProviderChange = (newState: SceneDataState, prevState: SceneDataState) => {

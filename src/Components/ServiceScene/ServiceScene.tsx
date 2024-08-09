@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { PanelData } from '@grafana/data';
+import { LoadingState, PanelData } from '@grafana/data';
 import {
   SceneComponentProps,
   SceneDataProvider,
@@ -15,7 +15,7 @@ import {
 } from '@grafana/scenes';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { DetectedLabel, DetectedLabelsResponse, updateParserFromDataFrame } from 'services/fields';
-import { getQueryRunner } from 'services/panel';
+import { getQueryRunner, getResourceQueryRunner } from 'services/panel';
 import { buildDataQuery, buildResourceQuery } from 'services/query';
 import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, PLUGIN_ID } from 'services/routing';
 import { getLokiDatasource } from 'services/scenes';
@@ -55,6 +55,7 @@ export interface ServiceSceneState extends SceneObjectState, ServiceSceneCustomS
   body: SceneFlexLayout | undefined;
   drillDownLabel?: string;
   $data: SceneDataProvider;
+  $patternsData: SceneQueryRunner;
 }
 
 export function getLogsPanelFrame(data: PanelData | undefined) {
@@ -71,11 +72,12 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
   });
 
-  public constructor(state: MakeOptional<ServiceSceneState, 'body' | '$data'>) {
+  public constructor(state: MakeOptional<ServiceSceneState, 'body' | '$data' | '$patternsData'>) {
     super({
+      loading: true,
       body: state.body ?? buildGraphScene(),
       $data: getServiceSceneQueryRunner(),
-      loading: true,
+      $patternsData: getPatternsQueryRunner(),
       ...state,
     });
 
@@ -106,7 +108,11 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.setState({
       $data: undefined,
       body: undefined,
+      $patternsData: undefined,
+      patternsCount: undefined,
     });
+    getMetadataService().setServiceSceneState(this.state);
+    this._subs.unsubscribe();
     // Redirect to root with updated params, which will trigger history push back to index route, preventing empty page or empty service query bugs
     navigateToIndex();
   }
@@ -133,20 +139,35 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
     this.setBreakdownView();
     this.setEmptyFiltersRedirection();
+    const slug = getDrilldownSlug();
+
+    // If we don't have a patterns count in the tabs, or we are activating the patterns scene, run the pattern query
+    if (this.state.patternsCount === undefined || slug === 'patterns') {
+      this.state.$patternsData.runQueries();
+    }
 
     this._subs.add(
       this.state.$data.subscribeToState((newState) => {
-        const logsPanelResponse = getLogsPanelFrame(newState.data);
-        const patternsResponse = getPatternsFrames(newState.data);
-        if (logsPanelResponse) {
-          this.updateFields();
+        if (newState.data?.state === LoadingState.Done) {
+          const logsPanelResponse = getLogsPanelFrame(newState.data);
+          if (logsPanelResponse) {
+            this.updateFields();
+          }
         }
+      })
+    );
 
-        if (patternsResponse?.length) {
-          // Save the count of patterns to state
-          this.setState({
-            patternsCount: patternsResponse.length,
-          });
+    this._subs.add(
+      this.state.$patternsData.subscribeToState((newState) => {
+        if (newState.data?.state === LoadingState.Done) {
+          const patternsResponse = getPatternsFrames(newState.data);
+          if (patternsResponse?.length !== undefined) {
+            // Save the count of patterns to state
+            this.setState({
+              patternsCount: patternsResponse.length,
+            });
+            getMetadataService().setPatternsCount(patternsResponse.length);
+          }
         }
       })
     );
@@ -157,15 +178,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this._subs.add(
       labels.subscribeToState((newState, prevState) => {
         if (!areArraysEqual(newState.filters, prevState.filters)) {
-          const queryRunner = getQueryRunnerFromProvider(this.state.$data);
-          const newQueryRunner = getQueryRunnerFromProvider(getServiceSceneQueryRunner(true));
-
-          // If the queries changed, update the data provider
-          if (!areArraysEqual(queryRunner.state.queries, newQueryRunner.state.queries)) {
-            this.setState({
-              $data: newQueryRunner,
-            });
-          }
+          this.state.$patternsData.runQueries();
         }
       })
     );
@@ -173,11 +186,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     // Update query runner on manual time range change
     this._subs.add(
       sceneGraph.getTimeRange(this).subscribeToState(() => {
-        this.setState({
-          $data: getServiceSceneQueryRunner(true),
-        });
-
         this.updateLabels();
+        this.state.$patternsData.runQueries();
       })
     );
   }
@@ -187,6 +197,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
     if (!this.state.$data) {
       stateUpdate.$data = getServiceSceneQueryRunner();
+    }
+
+    if (!this.state.$patternsData) {
+      stateUpdate.$patternsData = getPatternsQueryRunner();
     }
 
     if (!this.state.body) {
@@ -263,7 +277,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       return;
     }
     const timeRange = sceneGraph.getTimeRange(this);
-
     const timeRangeValue = timeRange.state.value;
     const filters = getLabelsVariable(this);
 
@@ -350,30 +363,23 @@ function buildGraphScene() {
   });
 }
 
-function getServiceSceneQueryRunner(forceRefresh = false) {
-  const slug = getDrilldownSlug();
-  const metadataService = getMetadataService();
-  const state = metadataService.getServiceSceneState();
-
-  // We only need to query patterns on pages besides the patterns view to show the number of patterns in the tab. If that's already been set, let's skip requesting it again.
-  if (slug !== PageSlugs.patterns && state?.patternsCount !== undefined && !forceRefresh) {
-    return getQueryRunner([buildDataQuery(LOG_STREAM_SELECTOR_EXPR, { refId: LOGS_PANEL_QUERY_REFID })]);
-  }
-
-  return getQueryRunner([
-    buildDataQuery(LOG_STREAM_SELECTOR_EXPR, { refId: LOGS_PANEL_QUERY_REFID }),
-    buildResourceQuery(VAR_LABELS_EXPR, 'patterns', { refId: PATTERNS_QUERY_REFID }),
-  ]);
+// @todo move to datasource or queries?
+export function getPatternsQueryRunner() {
+  return getResourceQueryRunner([buildResourceQuery(VAR_LABELS_EXPR, 'patterns', { refId: PATTERNS_QUERY_REFID })]);
 }
 
-function getQueryRunnerFromProvider(queryRunner: SceneDataProvider): SceneQueryRunner {
-  if (queryRunner instanceof SceneQueryRunner) {
-    return queryRunner;
-  }
-
-  if (queryRunner.state.$data instanceof SceneQueryRunner) {
-    return queryRunner.state.$data;
-  }
-
-  throw new Error('Cannot find query runner');
+function getServiceSceneQueryRunner() {
+  return getQueryRunner([buildDataQuery(LOG_STREAM_SELECTOR_EXPR, { refId: LOGS_PANEL_QUERY_REFID })]);
 }
+//
+// function getQueryRunnerFromProvider(queryRunner: SceneDataProvider): SceneQueryRunner {
+//   if (queryRunner instanceof SceneQueryRunner) {
+//     return queryRunner;
+//   }
+//
+//   if (queryRunner.state.$data instanceof SceneQueryRunner) {
+//     return queryRunner.state.$data;
+//   }
+//
+//   throw new Error('Cannot find query runner');
+// }

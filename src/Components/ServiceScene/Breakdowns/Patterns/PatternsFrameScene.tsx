@@ -44,8 +44,8 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
   public static Component = ({ model }: SceneComponentProps<PatternsFrameScene>) => {
     const { body, loading } = model.useState();
     const logsByServiceScene = sceneGraph.getAncestor(model, ServiceScene);
-    const { $data } = logsByServiceScene.useState();
-    const patterns = getPatternsFrames($data?.state.data);
+    const { $patternsData } = logsByServiceScene.useState();
+    const patterns = getPatternsFrames($patternsData?.state.data);
 
     return (
       <div className={styles.container}>
@@ -60,8 +60,8 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
     // If the patterns have changed, recalculate the dataframes
     this._subs.add(
       sceneGraph.getAncestor(this, ServiceScene).subscribeToState((newState, prevState) => {
-        const newFrame = getPatternsFrames(newState?.$data?.state?.data);
-        const prevFrame = getPatternsFrames(prevState?.$data?.state?.data);
+        const newFrame = getPatternsFrames(newState?.$patternsData?.state?.data);
+        const prevFrame = getPatternsFrames(prevState?.$patternsData?.state?.data);
 
         if (!areArraysEqual(newFrame, prevFrame)) {
           const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
@@ -113,7 +113,7 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
 
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
 
-    const lokiPatterns = getPatternsFrames(serviceScene.state.$data?.state.data);
+    const lokiPatterns = getPatternsFrames(serviceScene.state.$patternsData?.state.data);
     if (!lokiPatterns || !patternFrames) {
       console.warn('Failed to update PatternsFrameScene body');
       return;
