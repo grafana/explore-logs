@@ -52,6 +52,9 @@ Using Explore Logs you can:
 - Browse automatic visualizations of your log data based on its characteristics.
 - Do all of this without writing LogQL queries.
 
+{{< docs/play title="Explore Logs" url="https://play.grafana.org/a/grafana-lokiexplore-app/explore" >}}
+
+
 ## Who is Explore Logs for?
 
 Explore Logs is for engineers of all levels of operational expertise. You no longer need to be an SRE wizard to get value from your logs.
