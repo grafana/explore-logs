@@ -522,26 +522,6 @@ function getExpr(field: string) {
 
 const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
-export function buildFieldsBreakdownActionScene(changeFieldNumber: (n: string[]) => void) {
-  return new SceneFlexLayout({
-    children: [
-      new SceneFlexItem({
-        body: new FieldsBreakdownScene({ changeFields: changeFieldNumber }),
-      }),
-    ],
-  });
-}
-
-export function buildFieldValuesBreakdownActionScene(value: string) {
-  return new SceneFlexLayout({
-    children: [
-      new SceneFlexItem({
-        body: new FieldsBreakdownScene({ value }),
-      }),
-    ],
-  });
-}
-
 interface SelectLabelActionState extends SceneObjectState {
   labelName: string;
 }

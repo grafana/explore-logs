@@ -1,13 +1,11 @@
 import { PageSlugs, ValueSlugs } from '../../services/routing';
-import { buildLogsListScene } from './LogsListScene';
+import { LogsListScene } from './LogsListScene';
 import { testIds } from '../../services/testIds';
-import { buildLabelBreakdownActionScene, buildLabelValuesBreakdownActionScene } from './Breakdowns/LabelBreakdownScene';
-import {
-  buildFieldsBreakdownActionScene,
-  buildFieldValuesBreakdownActionScene,
-} from './Breakdowns/FieldsBreakdownScene';
-import { buildPatternsScene } from './Breakdowns/Patterns/PatternsBreakdownScene';
-import { SceneObject } from '@grafana/scenes';
+import { buildLabelValuesBreakdownActionScene, LabelBreakdownScene } from './Breakdowns/LabelBreakdownScene';
+import { FieldsBreakdownScene } from './Breakdowns/FieldsBreakdownScene';
+import { PatternsBreakdownScene } from './Breakdowns/Patterns/PatternsBreakdownScene';
+import { SceneFlexItem, SceneFlexLayout, SceneObject } from '@grafana/scenes';
+import { LogsVolumePanel } from './LogsVolumePanel';
 
 interface ValueBreakdownViewDefinition {
   displayName: string;
@@ -63,3 +61,60 @@ export const valueBreakdownViews: ValueBreakdownViewDefinition[] = [
     testId: testIds.exploreServiceDetails.tabFields,
   },
 ];
+
+function buildPatternsScene() {
+  return new SceneFlexLayout({
+    children: [
+      new SceneFlexItem({
+        body: new PatternsBreakdownScene({}),
+      }),
+    ],
+  });
+}
+
+function buildFieldsBreakdownActionScene(changeFieldNumber: (n: string[]) => void) {
+  return new SceneFlexLayout({
+    children: [
+      new SceneFlexItem({
+        body: new FieldsBreakdownScene({ changeFields: changeFieldNumber }),
+      }),
+    ],
+  });
+}
+
+function buildFieldValuesBreakdownActionScene(value: string) {
+  return new SceneFlexLayout({
+    children: [
+      new SceneFlexItem({
+        body: new FieldsBreakdownScene({ value }),
+      }),
+    ],
+  });
+}
+
+function buildLogsListScene() {
+  return new SceneFlexLayout({
+    direction: 'column',
+    children: [
+      new SceneFlexItem({
+        minHeight: 200,
+        body: new LogsVolumePanel({}),
+      }),
+      new SceneFlexItem({
+        minHeight: '470px',
+        height: 'calc(100vh - 500px)',
+        body: new LogsListScene({}),
+      }),
+    ],
+  });
+}
+
+function buildLabelBreakdownActionScene() {
+  return new SceneFlexLayout({
+    children: [
+      new SceneFlexItem({
+        body: new LabelBreakdownScene({}),
+      }),
+    ],
+  });
+}

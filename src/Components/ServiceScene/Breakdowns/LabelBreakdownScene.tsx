@@ -424,16 +424,6 @@ function getStyles(theme: GrafanaTheme2) {
 
 const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
-export function buildLabelBreakdownActionScene() {
-  return new SceneFlexLayout({
-    children: [
-      new SceneFlexItem({
-        body: new LabelBreakdownScene({}),
-      }),
-    ],
-  });
-}
-
 export function buildLabelValuesBreakdownActionScene(value: string) {
   return new SceneFlexLayout({
     children: [

@@ -13,7 +13,6 @@ import {
 import { LineFilterScene } from './LineFilterScene';
 import { SelectedTableRow } from '../Table/LogLineCellComponent';
 import { LogsTableScene } from './LogsTableScene';
-import { LogsVolumePanel } from './LogsVolumePanel';
 import { css } from '@emotion/css';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { locationService } from '@grafana/runtime';
@@ -203,23 +202,6 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       </div>
     );
   };
-}
-
-export function buildLogsListScene() {
-  return new SceneFlexLayout({
-    direction: 'column',
-    children: [
-      new SceneFlexItem({
-        minHeight: 200,
-        body: new LogsVolumePanel({}),
-      }),
-      new SceneFlexItem({
-        minHeight: '470px',
-        height: 'calc(100vh - 500px)',
-        body: new LogsListScene({}),
-      }),
-    ],
-  });
 }
 
 const styles = {

@@ -111,10 +111,10 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     }
 
     // Subscribe to changes from pattern API call
-    this._subs.add(serviceScene.state.$patternsData.subscribeToState(this.onDataProviderChange));
+    this._subs.add(serviceScene.state.$patternsData.subscribeToState(this.onDataChange));
   }
 
-  private onDataProviderChange = (newState: SceneDataState, prevState: SceneDataState) => {
+  private onDataChange = (newState: SceneDataState, prevState: SceneDataState) => {
     const newFrame = getPatternsFrames(newState.data);
     const prevFrame = getPatternsFrames(prevState.data);
     if (!areArraysEqual(newFrame, prevFrame) || this.state.loading) {
@@ -208,14 +208,4 @@ function getStyles(theme: GrafanaTheme2) {
       padding: theme.spacing(2),
     }),
   };
-}
-
-export function buildPatternsScene() {
-  return new SceneFlexLayout({
-    children: [
-      new SceneFlexItem({
-        body: new PatternsBreakdownScene({}),
-      }),
-    ],
-  });
 }
