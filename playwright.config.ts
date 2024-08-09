@@ -35,7 +35,7 @@ export default defineConfig<PluginOptions>({
 
     // Turn on when debugging local tests
     video: {
-      mode: 'on-first-retry',
+      mode: 'on',
     }
   },
   expect: { timeout: 15000 },
