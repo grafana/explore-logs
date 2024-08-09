@@ -2,15 +2,12 @@ import {
   AdHocFiltersVariable,
   PanelBuilders,
   SceneComponentProps,
-  SceneDataNode,
-  SceneDataState,
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
   VizPanel,
 } from '@grafana/scenes';
-import { DataFrame, LoadingState } from '@grafana/data';
-import { getLogsPanelFrame } from './ServiceScene';
+import { DataFrame } from '@grafana/data';
 import { getLogOption } from '../../services/store';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 import React from 'react';
@@ -20,15 +17,13 @@ import { addToFilters, FilterType } from './Breakdowns/AddToFiltersButton';
 import { getLabelTypeFromFrame, LabelType } from '../../services/fields';
 import { getAdHocFiltersVariable, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from '../../services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
-import { areArraysEqual } from '../../services/comparison';
 
 interface LogsPanelSceneState extends SceneObjectState {
-  data: SceneDataState;
   body?: VizPanel;
 }
 
 export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
-  constructor(state: Partial<LogsPanelSceneState> & { data: SceneDataState }) {
+  constructor(state: Partial<LogsPanelSceneState>) {
     super({
       ...state,
     });
@@ -42,52 +37,15 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         body: this.getLogsPanel(),
       });
     }
-
-    this._subs.add(
-      sceneGraph.getData(this).subscribeToState((newState, prevState) => {
-        if (!areArraysEqual(newState.data?.series, prevState.data?.series)) {
-          const dataFrame = getLogsPanelFrame(newState.data);
-
-          // If we have a response, set it
-          if (dataFrame && newState.data) {
-            this.setState({
-              data: newState,
-            });
-
-            // And update data node loading state
-            this.state.body?.state.$data?.setState({
-              data: {
-                ...newState.data,
-                state: LoadingState.Done,
-              },
-            });
-          } else if (this.state.body?.state.$data && this.state.body?.state.$data.state.data) {
-            // otherwise set a loading state in the viz
-            this.state.body.state.$data.setState({
-              ...this.state.body.state.$data.state,
-              data: {
-                ...this.state.body.state.$data.state.data,
-                state: LoadingState.Loading,
-              },
-            });
-          }
-        }
-      })
-    );
   }
 
   private getLogsPanel() {
     const parentModel = sceneGraph.getAncestor(this, LogsListScene);
     const visualizationType = parentModel.state.visualizationType;
 
-    const dataNode = new SceneDataNode({
-      data: this.state.data?.data,
-    });
-
     return (
       PanelBuilders.logs()
         .setTitle('Logs')
-        .setData(dataNode)
         .setOption('showTime', true)
         // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
         .setOption('onClickFilterLabel', this.handleLabelFilterClick)

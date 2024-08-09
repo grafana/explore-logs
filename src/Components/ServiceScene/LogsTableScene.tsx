@@ -1,4 +1,4 @@
-import { SceneComponentProps, SceneDataState, sceneGraph, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
+import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { LogsListScene } from './LogsListScene';
 import { AdHocVariableFilter, LoadingState } from '@grafana/data';
 import { TableProvider } from '../Table/TableProvider';
@@ -11,12 +11,11 @@ import { areArraysEqual } from '../../services/comparison';
 import { getLogsPanelFrame } from './ServiceScene';
 
 interface LogsTableSceneState extends SceneObjectState {
-  data: SceneDataState;
   loading?: LoadingState;
 }
 
 export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
-  constructor(state: Partial<LogsTableSceneState> & { data: SceneDataState }) {
+  constructor(state: Partial<LogsTableSceneState>) {
     super(state);
 
     this.addActivationHandler(this.onActivate.bind(this));
@@ -26,34 +25,16 @@ export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
    * We can't subscribe to the state of the data provider anymore, because there are multiple queries running in each data provider
    * So we need to manually update the data state to prevent unnecessary re-renders that cause flickering and break loading states
    */
-  public onActivate() {
-    this._subs.add(
-      sceneGraph.getData(this).subscribeToState((newState, prevState) => {
-        const dataFrame = getLogsPanelFrame(newState.data);
-
-        // Just this query is done
-        if (dataFrame) {
-          this.setState({
-            data: newState,
-            loading: newState.data?.state,
-          });
-        } else {
-          // Query is loading
-          this.setState({
-            loading: newState.data?.state,
-          });
-        }
-      })
-    );
-  }
+  public onActivate() {}
   public static Component = ({ model }: SceneComponentProps<LogsTableScene>) => {
     const styles = getStyles();
     // Get state from parent model
     const parentModel = sceneGraph.getAncestor(model, LogsListScene);
+    const { data } = sceneGraph.getData(model).useState();
     const { selectedLine, urlColumns, visualizationType } = parentModel.useState();
 
     // Get data state
-    const { data, loading } = model.useState();
+    const { loading } = model.useState();
 
     // Get time range
     const timeRange = sceneGraph.getTimeRange(model);
@@ -80,7 +61,7 @@ export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
       }
     };
 
-    const dataFrame = getLogsPanelFrame(data?.data);
+    const dataFrame = getLogsPanelFrame(data);
 
     return (
       <div className={styles.panelWrapper} ref={panelWrap}>

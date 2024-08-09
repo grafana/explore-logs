@@ -2,10 +2,8 @@ import React from 'react';
 
 import {
   SceneComponentProps,
-  SceneDataNode,
   SceneFlexItem,
   SceneFlexLayout,
-  sceneGraph,
   SceneObjectBase,
   SceneObjectState,
   SceneObjectUrlSyncConfig,
@@ -21,7 +19,6 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '..
 import { locationService } from '@grafana/runtime';
 import { LogOptionsScene } from './LogOptionsScene';
 import { LogsPanelScene } from './LogsPanelScene';
-import { LoadingState } from '@grafana/data';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -161,17 +158,6 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   private getVizPanel() {
     this.lineFilterScene = new LineFilterScene();
 
-    // If this is called before the query has executed, we need to return an empty data node to init the loading state, instead of no-data
-    const data =
-      sceneGraph.getData(this).state ??
-      new SceneDataNode({
-        data: {
-          state: LoadingState.Loading,
-          series: [],
-          timeRange: sceneGraph.getTimeRange(this).state.value,
-        },
-      }).state;
-
     return new SceneFlexLayout({
       direction: 'column',
       children:
@@ -188,10 +174,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
               }),
               new SceneFlexItem({
                 height: 'calc(100vh - 220px)',
-                body: new LogsPanelScene({
-                  // this data node is just for the initial loading state before we get our first response back
-                  data,
-                }),
+                body: new LogsPanelScene({}),
               }),
             ]
           : [
@@ -201,9 +184,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
               }),
               new SceneFlexItem({
                 height: 'calc(100vh - 220px)',
-                body: new LogsTableScene({
-                  data,
-                }),
+                body: new LogsTableScene({}),
               }),
             ],
     });
