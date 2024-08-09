@@ -1,4 +1,4 @@
-import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
+import { SceneComponentProps, sceneGraph, SceneObjectBase } from '@grafana/scenes';
 import { LogsListScene } from './LogsListScene';
 import { AdHocVariableFilter } from '@grafana/data';
 import { TableProvider } from '../Table/TableProvider';
@@ -10,20 +10,7 @@ import { addAdHocFilter } from './Breakdowns/AddToFiltersButton';
 import { areArraysEqual } from '../../services/comparison';
 import { getLogsPanelFrame } from './ServiceScene';
 
-interface LogsTableSceneState extends SceneObjectState {}
-
-export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
-  constructor(state: Partial<LogsTableSceneState>) {
-    super(state);
-
-    this.addActivationHandler(this.onActivate.bind(this));
-  }
-
-  /**
-   * We can't subscribe to the state of the data provider anymore, because there are multiple queries running in each data provider
-   * So we need to manually update the data state to prevent unnecessary re-renders that cause flickering and break loading states
-   */
-  public onActivate() {}
+export class LogsTableScene extends SceneObjectBase {
   public static Component = ({ model }: SceneComponentProps<LogsTableScene>) => {
     const styles = getStyles();
     // Get state from parent model
