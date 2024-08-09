@@ -1,6 +1,6 @@
 import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { LogsListScene } from './LogsListScene';
-import { AdHocVariableFilter, LoadingState } from '@grafana/data';
+import { AdHocVariableFilter } from '@grafana/data';
 import { TableProvider } from '../Table/TableProvider';
 import React, { useRef } from 'react';
 import { PanelChrome } from '@grafana/ui';
@@ -10,9 +10,7 @@ import { addAdHocFilter } from './Breakdowns/AddToFiltersButton';
 import { areArraysEqual } from '../../services/comparison';
 import { getLogsPanelFrame } from './ServiceScene';
 
-interface LogsTableSceneState extends SceneObjectState {
-  loading?: LoadingState;
-}
+interface LogsTableSceneState extends SceneObjectState {}
 
 export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
   constructor(state: Partial<LogsTableSceneState>) {
@@ -32,9 +30,6 @@ export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
     const parentModel = sceneGraph.getAncestor(model, LogsListScene);
     const { data } = sceneGraph.getData(model).useState();
     const { selectedLine, urlColumns, visualizationType } = parentModel.useState();
-
-    // Get data state
-    const { loading } = model.useState();
 
     // Get time range
     const timeRange = sceneGraph.getTimeRange(model);
@@ -66,7 +61,7 @@ export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
     return (
       <div className={styles.panelWrapper} ref={panelWrap}>
         <PanelChrome
-          loadingState={loading}
+          loadingState={data?.state}
           title={'Logs'}
           actions={<LogsPanelHeaderActions vizType={visualizationType} onChange={parentModel.setVisualizationType} />}
         >
