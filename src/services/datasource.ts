@@ -58,10 +58,12 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
   }
 
   query(request: SceneDataQueryRequest): Promise<DataQueryResponse> | Observable<DataQueryResponse> {
+    console.log('calling query', request)
     const numberOfQueries = request.targets.length;
     let numberOfQueriesThatResolved = 0;
 
     const observable = new Observable<DataQueryResponse>((subscriber) => {
+
       if (!request.scopedVars?.__sceneObject) {
         throw new Error('Scene object not found in request');
       }
@@ -73,35 +75,30 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
             throw new Error('Invalid datasource!');
           }
 
-          const dataQueryRequest = { ...request };
           // override the target datasource to Loki
-          dataQueryRequest.targets = request.targets.map((target) => {
+          request.targets = request.targets.map((target) => {
             target.datasource = ds;
             return target;
           });
 
-          dataQueryRequest.targets.forEach((target) => {
+          request.targets.forEach((target) => {
             const requestType = target?.resource;
-            let newSubscriber: Subscriber<DataQueryResponse>;
 
             switch (requestType) {
               case 'volume': {
-                newSubscriber = this.getVolume(dataQueryRequest, ds, subscriber);
+                this.getVolume(request, ds, subscriber);
                 break;
               }
               case 'patterns': {
-                newSubscriber = this.getPatterns(dataQueryRequest, ds, subscriber);
+                this.getPatterns(request, ds, subscriber);
                 break;
               }
               default: {
-                newSubscriber = this.getData(dataQueryRequest, ds, subscriber);
+                this.getData(request, ds, subscriber);
                 break;
               }
             }
 
-            if (newSubscriber) {
-              subscriber.add(newSubscriber);
-            }
           });
         });
     });
@@ -110,6 +107,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
       tap((response) => {
         if (response.state === LoadingState.Done || response.state === LoadingState.Error) {
           numberOfQueriesThatResolved++;
+
           if (numberOfQueriesThatResolved < numberOfQueries) {
             response.state = LoadingState.Loading;
           }
@@ -144,6 +142,9 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     ds: DataSourceWithBackend<LokiQuery>,
     subscriber: Subscriber<DataQueryResponse>
   ) {
+    console.log('get patterns', {
+      request, ds, subscriber, closed: subscriber.closed
+    })
     const targets = request.targets.filter((target) => {
       return target.resource === 'patterns';
     });
@@ -156,77 +157,87 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     const interpolatedTarget = targetsInterpolated[0];
     const expression = interpolatedTarget.expr;
 
-    const dsResponse = ds.getResource(
-      'patterns',
-      {
-        query: expression,
-        start: request.range.from.utc().toISOString(),
-        end: request.range.to.utc().toISOString(),
-      },
-      {
-        requestId: request.requestId ?? 'patterns',
-        headers: {
-          'X-Query-Tags': `Source=${PLUGIN_ID}`,
-        },
-      }
-    );
-    dsResponse.then((response: PatternsResponse | undefined) => {
-      const lokiPatterns = response?.data;
-
-      let maxValue = -Infinity;
-      let minValue = 0;
-
-      const frames =
-        lokiPatterns?.map((pattern: LokiPattern) => {
-          const timeValues: number[] = [];
-          const countValues: number[] = [];
-          let sum = 0;
-          pattern.samples.forEach(([time, count]) => {
-            timeValues.push(time * 1000);
-            countValues.push(count);
-            if (count > maxValue) {
-              maxValue = count;
-            }
-            if (count < minValue) {
-              minValue = count;
-            }
-            if (count > maxValue) {
-              maxValue = count;
-            }
-            if (count < minValue) {
-              minValue = count;
-            }
-            sum += count;
-          });
-          return createDataFrame({
-            refId: interpolatedTarget.refId,
-            name: pattern.pattern,
-            fields: [
-              {
-                name: 'time',
-                type: FieldType.time,
-                values: timeValues,
-                config: {},
-              },
-              {
-                name: pattern.pattern,
-                type: FieldType.number,
-                values: countValues,
-                config: {},
-              },
-            ],
-            meta: {
-              preferredVisualisationType: 'graph',
-              custom: {
-                sum,
-              },
+    try{
+      ds.getResource(
+          'patterns',
+          {
+            query: expression,
+            start: request.range.from.utc().toISOString(),
+            end: request.range.to.utc().toISOString(),
+          },
+          {
+            requestId: request.requestId ?? 'patterns',
+            headers: {
+              'X-Query-Tags': `Source=${PLUGIN_ID}`,
             },
-          });
-        }) ?? [];
+          }
+      ).then((response: PatternsResponse | undefined) => {
+        const lokiPatterns = response?.data;
 
-      frames.sort((a, b) => (b.meta?.custom?.sum as number) - (a.meta?.custom?.sum as number));
-      subscriber.next({ data: frames, state: LoadingState.Done });
-    });
+        let maxValue = -Infinity;
+        let minValue = 0;
+
+        const frames =
+            lokiPatterns?.map((pattern: LokiPattern) => {
+              const timeValues: number[] = [];
+              const countValues: number[] = [];
+              let sum = 0;
+              pattern.samples.forEach(([time, count]) => {
+                timeValues.push(time * 1000);
+                countValues.push(count);
+                if (count > maxValue) {
+                  maxValue = count;
+                }
+                if (count < minValue) {
+                  minValue = count;
+                }
+                if (count > maxValue) {
+                  maxValue = count;
+                }
+                if (count < minValue) {
+                  minValue = count;
+                }
+                sum += count;
+              });
+              return createDataFrame({
+                refId: interpolatedTarget.refId,
+                name: pattern.pattern,
+                fields: [
+                  {
+                    name: 'time',
+                    type: FieldType.time,
+                    values: timeValues,
+                    config: {},
+                  },
+                  {
+                    name: pattern.pattern,
+                    type: FieldType.number,
+                    values: countValues,
+                    config: {},
+                  },
+                ],
+                meta: {
+                  preferredVisualisationType: 'graph',
+                  custom: {
+                    sum,
+                  },
+                },
+              });
+            }) ?? [];
+
+        frames.sort((a, b) => (b.meta?.custom?.sum as number) - (a.meta?.custom?.sum as number));
+        subscriber.next({ data: frames, state: LoadingState.Done });
+      });
+
+    } catch (e: unknown) {
+      console.error('Failed to get patterns', e)
+      if(e instanceof Error){
+        throw e
+      }else{
+        throw new Error('Failed to get patterns!')
+      }
+
+    }
 
     return subscriber;
   }
@@ -253,7 +264,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
         limit: 1000,
       },
       {
-        requestId: request.requestId ?? 'volume',
+        requestId: `${request.requestId}-volume` ?? 'volume',
         headers: {
           'X-Query-Tags': `Source=${PLUGIN_ID}`,
         },

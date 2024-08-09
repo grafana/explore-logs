@@ -8,11 +8,13 @@ import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 import { css } from '@emotion/css';
 import { addAdHocFilter } from './Breakdowns/AddToFiltersButton';
 import { areArraysEqual } from '../../services/comparison';
-import { getLogsPanelFrame } from './ServiceScene';
+import {getLogsPanelFrame, ServiceScene} from './ServiceScene';
+import {Unsubscribable} from "rxjs";
 
 interface LogsTableSceneState extends SceneObjectState {
   data: SceneDataState;
   loading?: LoadingState;
+  dataSubscriber?: Unsubscribable
 }
 
 export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
@@ -27,25 +29,58 @@ export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
    * So we need to manually update the data state to prevent unnecessary re-renders that cause flickering and break loading states
    */
   public onActivate() {
-    this._subs.add(
-      sceneGraph.getData(this).subscribeToState((newState, prevState) => {
-        const dataFrame = getLogsPanelFrame(newState.data);
+    this.subscribeToDataProvider();
 
-        // Just this query is done
-        if (dataFrame) {
-          this.setState({
-            data: newState,
-            loading: newState.data?.state,
-          });
-        } else {
-          // Query is loading
-          this.setState({
-            loading: newState.data?.state,
-          });
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene)
+    this._subs.add(
+      serviceScene.subscribeToState((newState, prevState) => {
+        if(newState.$data.state.key !== prevState.$data.state.key){
+          this.subscribeToDataProvider();
         }
       })
+    )
+
+    // Need manual clean up or subscriptions will stay active
+    return () => {
+      const sub = this.state.dataSubscriber
+
+      if(sub){
+        sub?.unsubscribe()
+      }
+      this._subs.remove(this._subs)
+      this._subs.unsubscribe()
+    }
+  }
+
+  private subscribeToDataProvider() {
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene)
+    this.state.dataSubscriber?.unsubscribe()
+    const dataSubscriber = sceneGraph.getData(serviceScene).subscribeToState((newState, prevState) => {
+      const dataFrame = getLogsPanelFrame(newState.data);
+
+      // Just this query is done
+      if (dataFrame) {
+        this.setState({
+          data: newState,
+          loading: newState.data?.state,
+        });
+      } else {
+        // Query is loading
+        this.setState({
+          loading: newState.data?.state,
+        });
+      }
+    })
+
+    this.setState({
+      dataSubscriber
+    })
+
+    this._subs.add(
+        dataSubscriber
     );
   }
+
   public static Component = ({ model }: SceneComponentProps<LogsTableScene>) => {
     const styles = getStyles();
     // Get state from parent model

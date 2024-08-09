@@ -1,7 +1,8 @@
 import React from 'react';
 
-import { AdHocVariableFilter, PanelData } from '@grafana/data';
+import {AdHocVariableFilter, LoadingState, PanelData} from '@grafana/data';
 import {
+  QueryRunnerState,
   SceneComponentProps,
   SceneDataProvider,
   SceneFlexItem,
@@ -14,15 +15,16 @@ import {
   SceneVariableState,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import { LoadingPlaceholder } from '@grafana/ui';
-import { DetectedLabel, DetectedLabelsResponse, updateParserFromDataFrame } from 'services/fields';
-import { getQueryRunner } from 'services/panel';
-import { buildDataQuery, buildResourceQuery } from 'services/query';
-import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, PLUGIN_ID } from 'services/routing';
-import { getLokiDatasource } from 'services/scenes';
+import {LoadingPlaceholder} from '@grafana/ui';
+import {DetectedLabel, DetectedLabelsResponse, updateParserFromDataFrame} from 'services/fields';
+import {getQueryRunner} from 'services/panel';
+import {buildDataQuery, buildResourceQuery} from 'services/query';
+import {getDrilldownSlug, getDrilldownValueSlug, PageSlugs, PLUGIN_ID} from 'services/routing';
+import {getLokiDatasource} from 'services/scenes';
 import {
   getFieldsVariable,
   getLabelsVariable,
+  getLevelsVariable,
   LEVEL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE,
@@ -32,13 +34,14 @@ import {
   VAR_LEVELS,
   VAR_PATTERNS,
 } from 'services/variables';
-import { sortLabelsByCardinality } from 'services/filters';
-import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
-import { getMetadataService } from '../../services/metadata';
-import { navigateToIndex } from '../../services/navigate';
-import { areArraysEqual } from '../../services/comparison';
-import { LogsActionBarScene } from './LogsActionBarScene';
-import { breakdownViewsDefinitions, valueBreakdownViews } from './BreakdownViews';
+import {sortLabelsByCardinality} from 'services/filters';
+import {SERVICE_NAME} from 'Components/ServiceSelectionScene/ServiceSelectionScene';
+import {getMetadataService} from '../../services/metadata';
+import {navigateToIndex} from '../../services/navigate';
+import {areArraysEqual} from '../../services/comparison';
+import {LogsActionBarScene} from './LogsActionBarScene';
+import {breakdownViewsDefinitions, valueBreakdownViews} from './BreakdownViews';
+import {Unsubscribable} from "rxjs";
 
 const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 const PATTERNS_QUERY_REFID = 'patterns';
@@ -57,6 +60,7 @@ export interface ServiceSceneState extends SceneObjectState, ServiceSceneCustomS
   body: SceneFlexLayout | undefined;
   drillDownLabel?: string;
   $data: SceneDataProvider;
+  dataSubscriber?: Unsubscribable
 }
 
 interface AdHocFilterWithLabels extends AdHocVariableFilter {
@@ -97,6 +101,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
     this._subs.add(
       variable.subscribeToState((newState) => {
+        console.log('service scene set empty filters labels variable on change', newState)
         if (newState.filters.length === 0) {
           this.redirectToStart();
         }
@@ -140,58 +145,117 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
     this.setBreakdownView();
     this.setEmptyFiltersRedirection();
-
-    this._subs.add(
-      this.state.$data.subscribeToState((newState, prevState) => {
-        const logsPanelResponse = getLogsPanelFrame(newState.data);
-        const prevLogsPanelResponse = getLogsPanelFrame(prevState.data);
-
-        const patternsResponse = getPatternsFrames(newState.data);
-
-        if (logsPanelResponse && !areArraysEqual(prevLogsPanelResponse?.fields, logsPanelResponse.fields)) {
-          this.updateFields();
-        }
-
-        if (patternsResponse?.length && this.state.patternsCount !== patternsResponse.length) {
-          // Save the count of patterns to state
-          this.setState({
-            patternsCount: patternsResponse.length,
-          });
-          getMetadataService().setServiceSceneState(this.state);
-        }
-      })
-    );
-
     this.updateLabels();
 
-    const labels = getLabelsVariable(this);
-    this._subs.add(
-      labels.subscribeToState((newState, prevState) => {
-        this.updateQueryRunnerOnChange(newState, prevState, true);
-      })
-    );
+    this.onDataChange();
+    this.updateQueryRunnerOnVariableChange();
+    this.updateQueryRunnerOnTimeChange();
 
-    const fields = getFieldsVariable(this);
-    this._subs.add(
-      fields.subscribeToState((newState, prevState) => {
-        this.updateQueryRunnerOnChange(newState, prevState, false);
-      })
-    );
+    return () => {
+      console.log('deactivate service scene', this)
+      const sub = this.state.dataSubscriber
 
-    // Update query runner on manual time range change
+      if(sub){
+        sub?.unsubscribe()
+      }
+      this._subs.unsubscribe()
+      this._subs.remove(this._subs)
+    }
+  }
+
+  private onDataChange() {
+    const dataSubscriber = this.state.$data.subscribeToState((newStateUntyped, prevState) => {
+      console.log('service scene data change', newStateUntyped)
+      const newState = newStateUntyped as QueryRunnerState;
+      const logsPanelResponse = getLogsPanelFrame(newState.data);
+      const prevLogsPanelResponse = getLogsPanelFrame(prevState.data);
+
+      const patternsResponse = getPatternsFrames(newState.data);
+
+      if (logsPanelResponse && !areArraysEqual(prevLogsPanelResponse?.fields, logsPanelResponse.fields)) {
+        this.updateFields();
+      }
+
+      if (
+          newState.data?.state === LoadingState.Done &&
+          patternsResponse?.length !== undefined &&
+          this.state.patternsCount !== patternsResponse.length &&
+          newState.queries.some(query => query.refId === PATTERNS_QUERY_REFID)
+      ) {
+        console.log('setting pattern length', {
+          length: patternsResponse.length,
+          newState,
+          prevState,
+          patternsResponse
+        })
+        // Save the count of patterns to state
+        this.setState({
+          patternsCount: patternsResponse.length,
+        });
+        getMetadataService().setPatternsCount(patternsResponse.length);
+      }
+    })
+
+    this.setState({
+      dataSubscriber
+    })
+
+    this._subs.add(
+        dataSubscriber
+    );
+  }
+
+  /**
+   * Update query runner on manual time range change
+   * @private
+   */
+  private updateQueryRunnerOnTimeChange() {
+
     this._subs.add(
       sceneGraph.getTimeRange(this).subscribeToState(() => {
-        this.setState({
-          $data: getServiceSceneQueryRunner(true),
-        });
+        // console.log('update query runner on time range change')
+        // this.setState({
+        //   $data: getServiceSceneQueryRunner(true),
+        // });
 
-        this.updateLabels();
+        // this.updateLabels();
       })
     );
   }
 
-  // @todo scenes doesn't export AdHocFiltersVariableState
-  // @todo set patterns count
+
+  /**
+   * Update query runners
+   * @private
+   */
+  private updateQueryRunnerOnVariableChange() {
+    const labels = getLabelsVariable(this);
+    this._subs.add(
+        labels.subscribeToState((newState, prevState) => {
+          console.log('service scene labels change', newState)
+          this.updateQueryRunnerOnChange(newState, prevState, true);
+        })
+    );
+
+    const fields = getFieldsVariable(this);
+    this._subs.add(
+        fields.subscribeToState((newState, prevState) => {
+          console.log('service scene fields change', newState)
+          this.updateQueryRunnerOnChange(newState, prevState, false);
+        })
+    );
+
+    const levels = getLevelsVariable(this);
+    this._subs.add(
+      levels.subscribeToState((newState, prevState) => {
+        console.log('service scene levels change', newState)
+        this.updateQueryRunnerOnChange(newState, prevState, false);
+      })
+    );
+
+  }
+
+// @todo scenes doesn't export AdHocFiltersVariableState
   private updateQueryRunnerOnChange(
     newState: SceneVariableState & { filters: AdHocFilterWithLabels[] },
     prevState: SceneVariableState & { filters: AdHocFilterWithLabels[] },
@@ -203,6 +267,11 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
       // If the queries changed, update the data provider
       if (!areArraysEqual(queryRunner.state.queries, newQueryRunner.state.queries)) {
+        console.log('queries changed, new data provider')
+        // Clear out the old provider
+        if(this.state.dataSubscriber){
+          this.state.dataSubscriber.unsubscribe()
+        }
         this.setState({
           $data: newQueryRunner,
         });
@@ -373,16 +442,18 @@ function buildGraphScene() {
  * @todo find a better way to do this?
  * @param forceRefresh
  */
-function getServiceSceneQueryRunner(forceRefresh = false) {
+export function getServiceSceneQueryRunner(forceRefresh = false) {
   const slug = getDrilldownSlug();
   const metadataService = getMetadataService();
   const state = metadataService.getServiceSceneState();
 
   // We only need to query patterns on pages besides the patterns view to show the number of patterns in the tab. If that's already been set, let's skip requesting it again.
   if (slug !== PageSlugs.patterns && state?.patternsCount !== undefined && !forceRefresh) {
+    console.log('updating query runner, logs only')
     return getQueryRunner([buildDataQuery(LOG_STREAM_SELECTOR_EXPR, { refId: LOGS_PANEL_QUERY_REFID })]);
   }
 
+  console.log('updating query runner, both')
   return getQueryRunner([
     buildDataQuery(LOG_STREAM_SELECTOR_EXPR, { refId: LOGS_PANEL_QUERY_REFID }),
     buildResourceQuery(VAR_LABELS_EXPR, 'patterns', { refId: PATTERNS_QUERY_REFID }),

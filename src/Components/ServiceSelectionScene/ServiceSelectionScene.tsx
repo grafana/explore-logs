@@ -100,9 +100,12 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     // Reset search after routing back
     serviceVariable.changeValueTo('');
 
+    console.warn('service selection scene')
+
     this._subs.add(
       this.state.$data.subscribeToState((newState, prevState) => {
         // update body if the data is done loading, and the dataframes have changed
+        console.warn('service selection scene data changed')
         if (
           newState.data?.state === LoadingState.Done &&
           !areArraysEqual(prevState?.data?.series, newState?.data?.series)

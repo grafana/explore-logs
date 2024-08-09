@@ -121,9 +121,11 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
 
     // Subscribe to changes to the query provider
     serviceScene.subscribeToState((newState, prevState) => {
+      console.log('serviceScene change', newState)
       if (newState.$data.state.key !== prevState.$data.state.key) {
-        const dataSub = serviceScene.state.$data.subscribeToState(this.onDataProviderChange);
+        console.warn('serviceScene data provider change', newState)
         this.state.dataSub?.unsubscribe();
+        const dataSub = serviceScene.state.$data.subscribeToState(this.onDataProviderChange);
         this.setState({
           dataSub,
           loading: true,

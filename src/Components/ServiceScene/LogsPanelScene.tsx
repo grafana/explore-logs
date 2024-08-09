@@ -10,7 +10,7 @@ import {
   VizPanel,
 } from '@grafana/scenes';
 import { DataFrame, LoadingState } from '@grafana/data';
-import { getLogsPanelFrame } from './ServiceScene';
+import {getLogsPanelFrame, ServiceScene} from './ServiceScene';
 import { getLogOption } from '../../services/store';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 import React from 'react';
@@ -21,10 +21,12 @@ import { getLabelTypeFromFrame, LabelType } from '../../services/fields';
 import { getAdHocFiltersVariable, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from '../../services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { areArraysEqual } from '../../services/comparison';
+import {Unsubscribable} from "rxjs";
 
 interface LogsPanelSceneState extends SceneObjectState {
   data: SceneDataState;
   body?: VizPanel;
+  dataSubscriber?: Unsubscribable
 }
 
 export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
@@ -43,37 +45,68 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
       });
     }
 
+    this.subscribeToDataProvider();
+
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene)
+
+    // subscribe to service scene data provider updates
     this._subs.add(
-      sceneGraph.getData(this).subscribeToState((newState, prevState) => {
-        if (!areArraysEqual(newState.data?.series, prevState.data?.series)) {
-          const dataFrame = getLogsPanelFrame(newState.data);
-
-          // If we have a response, set it
-          if (dataFrame && newState.data) {
-            this.setState({
-              data: newState,
-            });
-
-            // And update data node loading state
-            this.state.body?.state.$data?.setState({
-              data: {
-                ...newState.data,
-                state: LoadingState.Done,
-              },
-            });
-          } else if (this.state.body?.state.$data && this.state.body?.state.$data.state.data) {
-            // otherwise set a loading state in the viz
-            this.state.body.state.$data.setState({
-              ...this.state.body.state.$data.state,
-              data: {
-                ...this.state.body.state.$data.state.data,
-                state: LoadingState.Loading,
-              },
-            });
-          }
+      serviceScene.subscribeToState((newState, prevState) => {
+        if(newState.$data.state.key !== prevState.$data.state.key && newState.$data.state.key){
+          this.state.dataSubscriber?.unsubscribe()
+          this.subscribeToDataProvider();
         }
       })
-    );
+    )
+
+    return () => {
+      console.log('deactivate logs panel scene', this)
+      const sub = this.state.dataSubscriber
+
+      if(sub){
+        sub?.unsubscribe()
+      }
+      this._subs.remove(this._subs)
+      this._subs.unsubscribe()
+    }
+  }
+
+  private subscribeToDataProvider() {
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene)
+    const dataSubscriber = sceneGraph.getData(serviceScene).subscribeToState((newState, prevState) => {
+      if (!areArraysEqual(newState.data?.series, prevState.data?.series)) {
+        const dataFrame = getLogsPanelFrame(newState.data);
+
+        // If we have a response, set it
+        if (dataFrame && newState.data) {
+          this.setState({
+            data: newState,
+          });
+
+          // And update data node loading state
+          this.state.body?.state.$data?.setState({
+            data: {
+              ...newState.data,
+              state: LoadingState.Done,
+            },
+          });
+        } else if (this.state.body?.state.$data && this.state.body?.state.$data.state.data) {
+          // otherwise set a loading state in the viz
+          this.state.body.state.$data.setState({
+            ...this.state.body.state.$data.state,
+            data: {
+              ...this.state.body.state.$data.state.data,
+              state: LoadingState.Loading,
+            },
+          });
+        }
+      }
+    })
+
+    console.log('setting sub', dataSubscriber)
+    this.setState({
+      dataSubscriber
+    })
   }
 
   private getLogsPanel() {

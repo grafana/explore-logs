@@ -1,4 +1,4 @@
-import { AdHocVariableFilter } from '@grafana/data';
+import {AdHocVariableFilter} from '@grafana/data';
 import { DataSourceRef } from '@grafana/schema';
 import { AppliedPattern } from 'Components/IndexScene/IndexScene';
 import { PLUGIN_ID } from './routing';
@@ -43,6 +43,7 @@ export const buildResourceQuery = (
  * @returns LokiQuery
  */
 export const buildDataQuery = (expr: string, queryParamsOverrides?: Record<string, unknown>): LokiQuery => {
+  console.log('buildData query', expr, queryParamsOverrides)
   return {
     ...defaultQueryParams,
     ...queryParamsOverrides,
@@ -50,7 +51,7 @@ export const buildDataQuery = (expr: string, queryParamsOverrides?: Record<strin
   };
 };
 
-const defaultQueryParams = {
+const defaultQueryParams: Omit<LokiQuery, 'expr'> = {
   refId: 'A',
   queryType: 'range',
   editorMode: 'code',

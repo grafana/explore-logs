@@ -108,6 +108,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
     this._subs.add(
       this.subscribeToState((newState) => {
+        console.log('index scene update patterns')
         this.updatePatterns(newState, getPatternsVariable(this));
       })
     );
@@ -223,6 +224,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
   });
 
   const unsub = dsVariable.subscribeToState((newState) => {
+    console.log('ds variable changed', newState)
     const dsValue = `${newState.value}`;
     newState.value && addLastUsedDataSourceToStorage(dsValue);
   });
