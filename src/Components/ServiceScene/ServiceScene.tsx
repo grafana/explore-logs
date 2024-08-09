@@ -253,7 +253,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     ];
     const newState = sceneGraph.getData(this).state;
     const frame = getLogsPanelFrame(newState.data);
-    if (frame) {
+    if (frame && newState.data?.state === LoadingState.Done) {
       const res = updateParserFromDataFrame(frame, this);
       const fields = res.fields.filter((f) => !disabledFields.includes(f)).sort((a, b) => a.localeCompare(b));
       if (!areArraysEqual(fields, this.state.fields)) {
