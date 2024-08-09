@@ -82,26 +82,20 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
           dataQueryRequest.targets.forEach((target) => {
             const requestType = target?.resource;
-            let newSubscriber: Subscriber<DataQueryResponse>;
 
             switch (requestType) {
               case 'volume': {
-                newSubscriber = this.getVolume(dataQueryRequest, ds, subscriber);
+                this.getVolume(dataQueryRequest, ds, subscriber);
                 break;
               }
               case 'patterns': {
-                console.log('patterns called');
-                newSubscriber = this.getPatterns(dataQueryRequest, ds, subscriber);
+                this.getPatterns(dataQueryRequest, ds, subscriber);
                 break;
               }
               default: {
-                newSubscriber = this.getData(dataQueryRequest, ds, subscriber);
+                this.getData(dataQueryRequest, ds, subscriber);
                 break;
               }
-            }
-
-            if (newSubscriber) {
-              subscriber.add(newSubscriber);
             }
           });
         });
