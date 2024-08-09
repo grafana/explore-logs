@@ -34,9 +34,9 @@ export default defineConfig<PluginOptions>({
     trace: 'on-first-retry',
 
     // Turn on when debugging local tests
-    // video: {
-    //   mode: 'on',
-    // }
+    video: {
+      mode: 'on-first-retry',
+    }
   },
   expect: { timeout: 15000 },
 
