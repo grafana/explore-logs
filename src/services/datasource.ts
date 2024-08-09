@@ -9,7 +9,7 @@ import {
 import { DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
 import { RuntimeDataSource, SceneObject, sceneUtils } from '@grafana/scenes';
 import { DataQuery } from '@grafana/schema';
-import { Observable, Subscriber, tap } from 'rxjs';
+import { Observable, Subscriber } from 'rxjs';
 import { getDataSource } from './scenes';
 import { LokiQuery } from './query';
 import { PLUGIN_ID } from './routing';
@@ -58,10 +58,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
   }
 
   query(request: SceneDataQueryRequest): Promise<DataQueryResponse> | Observable<DataQueryResponse> {
-    const numberOfQueries = request.targets.length;
-    let numberOfQueriesThatResolved = 0;
-
-    const observable = new Observable<DataQueryResponse>((subscriber) => {
+    return new Observable<DataQueryResponse>((subscriber) => {
       if (!request.scopedVars?.__sceneObject) {
         throw new Error('Scene object not found in request');
       }
@@ -100,19 +97,6 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
           });
         });
     });
-
-    return observable.pipe(
-      tap((response) => {
-        if (response.state === LoadingState.Done || response.state === LoadingState.Error) {
-          numberOfQueriesThatResolved++;
-          if (numberOfQueriesThatResolved < numberOfQueries) {
-            response.state = LoadingState.Loading;
-          }
-        }
-
-        return response;
-      })
-    );
   }
 
   private getData(
@@ -125,6 +109,10 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     dataQueryRequest.targets = request.targets.filter((target) => {
       return !target.resource;
     });
+
+    if (!dataQueryRequest.targets.length) {
+      throw new Error('No valid queries!');
+    }
 
     // query the datasource and return either observable or promise
     const dsResponse = ds.query(dataQueryRequest);
