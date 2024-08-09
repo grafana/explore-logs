@@ -11,8 +11,8 @@ export class LogsSceneQueryRunner extends SceneQueryRunner {
     // We don't want to subscribe to time range changes, or we'll get duplicate queries
     // this.subscribeToTimeRangeChanges(timeRange);
 
+    // @todo can we make runWithTimeRange protected? (https://github.com/grafana/scenes/pull/866)
     // Hack to call private method
-    // @todo can we make runWithTimeRange protected?
     this['runWithTimeRange'](timeRange);
   }
 }
