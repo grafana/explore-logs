@@ -363,23 +363,10 @@ function buildGraphScene() {
   });
 }
 
-// @todo move to datasource or queries?
-export function getPatternsQueryRunner() {
+function getPatternsQueryRunner() {
   return getResourceQueryRunner([buildResourceQuery(VAR_LABELS_EXPR, 'patterns', { refId: PATTERNS_QUERY_REFID })]);
 }
 
 function getServiceSceneQueryRunner() {
   return getQueryRunner([buildDataQuery(LOG_STREAM_SELECTOR_EXPR, { refId: LOGS_PANEL_QUERY_REFID })]);
 }
-//
-// function getQueryRunnerFromProvider(queryRunner: SceneDataProvider): SceneQueryRunner {
-//   if (queryRunner instanceof SceneQueryRunner) {
-//     return queryRunner;
-//   }
-//
-//   if (queryRunner.state.$data instanceof SceneQueryRunner) {
-//     return queryRunner.state.$data;
-//   }
-//
-//   throw new Error('Cannot find query runner');
-// }
