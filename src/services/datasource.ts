@@ -1,7 +1,8 @@
 import {
   createDataFrame,
   DataQueryRequest,
-  DataQueryResponse, Field,
+  DataQueryResponse,
+  Field,
   FieldType,
   LoadingState,
   TestDataSourceResponse,
@@ -13,9 +14,9 @@ import { Observable, Subscriber } from 'rxjs';
 import { getDataSource } from './scenes';
 import { LokiQuery } from './query';
 import { PLUGIN_ID } from './routing';
-import {DetectedLabelsResponse} from "./fields";
-import {sortLabelsByCardinality} from "./filters";
-import {LEVEL_VARIABLE_VALUE} from "./variables";
+import { DetectedLabelsResponse } from './fields';
+import { sortLabelsByCardinality } from './filters';
+import { LEVEL_VARIABLE_VALUE } from './variables';
 
 export const WRAPPED_LOKI_DS_UID = 'wrapped-loki-ds-uid';
 
@@ -75,7 +76,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
           const dataQueryRequest = { ...request };
           // override the target datasource to Loki
-          dataQueryRequest.targets = request.targets.map((target) => {
+          dataQueryRequest.targets = request.targets?.map((target) => {
             target.datasource = ds;
             return target;
           });
@@ -222,9 +223,9 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
   }
 
   private getDetectedLabels(
-      request: DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest>,
-      ds: DataSourceWithBackend<LokiQuery>,
-      subscriber: Subscriber<DataQueryResponse>
+    request: DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest>,
+    ds: DataSourceWithBackend<LokiQuery>,
+    subscriber: Subscriber<DataQueryResponse>
   ) {
     const targets = request.targets.filter((target) => {
       return target.resource === 'detected_labels';
@@ -238,44 +239,41 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     const interpolatedTarget = targetsInterpolated[0];
     const expression = interpolatedTarget.expr;
 
-    const detectedLabels  = ds.getResource<DetectedLabelsResponse>(
-        'detected_labels',
-        {
-          query: expression,
-          start: request.range.from.utc().toISOString(),
-          end: request.range.to.utc().toISOString(),
+    const detectedLabels = ds.getResource<DetectedLabelsResponse>(
+      'detected_labels',
+      {
+        query: expression,
+        start: request.range.from.utc().toISOString(),
+        end: request.range.to.utc().toISOString(),
+      },
+      {
+        headers: {
+          'X-Query-Tags': `Source=${PLUGIN_ID}`,
         },
-        {
-          headers: {
-            'X-Query-Tags': `Source=${PLUGIN_ID}`,
-          },
-        }
+      }
     );
     detectedLabels.then((response) => {
-
-
       const labels = response.detectedLabels
-          .sort((a, b) => sortLabelsByCardinality(a, b))
-          .filter((label) => label.label !== LEVEL_VARIABLE_VALUE);
+        ?.sort((a, b) => sortLabelsByCardinality(a, b))
+        ?.filter((label) => label.label !== LEVEL_VARIABLE_VALUE);
 
-      const detectedLabelFields: Array<Partial<Field>> = labels.map(label => {
+      const detectedLabelFields: Array<Partial<Field>> = labels?.map((label) => {
         return {
           name: label.label,
-          values: [label.cardinality]
-        }
+          values: [label.cardinality],
+        };
       });
 
       const dataFrame = createDataFrame({
         refId: interpolatedTarget.refId,
-        fields: detectedLabelFields
-      })
+        fields: detectedLabelFields ?? [],
+      });
 
       subscriber.next({ data: [dataFrame], state: LoadingState.Done });
     });
 
     return subscriber;
   }
-
 
   //@todo doesn't work with multiple queries
   private getVolume(
@@ -314,8 +312,8 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
       // Scenes will only emit dataframes from the SceneQueryRunner, so for now we need to convert the API response to a dataframe
       const df = createDataFrame({
         fields: [
-          { name: 'service_name', values: response?.data.result.map((r) => r.metric.service_name) },
-          { name: 'volume', values: response?.data.result.map((r) => Number(r.value[1])) },
+          { name: 'service_name', values: response?.data.result?.map((r) => r.metric.service_name) },
+          { name: 'volume', values: response?.data.result?.map((r) => Number(r.value[1])) },
         ],
       });
       subscriber.next({ data: [df] });

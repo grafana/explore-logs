@@ -1,5 +1,10 @@
 import { DataFrame, FieldConfig, FieldMatcherID } from '@grafana/data';
-import { FieldConfigOverridesBuilder, SceneDataTransformer, SceneQueryRunner } from '@grafana/scenes';
+import {
+  FieldConfigOverridesBuilder,
+  SceneDataProvider,
+  SceneDataTransformer,
+  SceneQueryRunner,
+} from '@grafana/scenes';
 import { map, Observable } from 'rxjs';
 import { LokiQuery } from './query';
 import { HideSeriesConfig } from '@grafana/schema';
@@ -108,4 +113,16 @@ export function getQueryRunner(queries: LokiQuery[]) {
     datasource: { uid: WRAPPED_LOKI_DS_UID },
     queries: queries,
   });
+}
+
+export function getQueryRunnerFromProvider(provider: SceneDataProvider): SceneQueryRunner {
+  if (provider instanceof SceneQueryRunner) {
+    return provider;
+  }
+
+  if (provider.state.$data instanceof SceneQueryRunner) {
+    return provider.state.$data;
+  }
+
+  throw new Error('SceneDataProvider is missing SceneQueryRunner');
 }
