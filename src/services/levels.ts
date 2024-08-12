@@ -1,5 +1,7 @@
 import { DataFrame } from '@grafana/data';
 import { SeriesVisibilityChangeMode } from '@grafana/ui';
+import { getAdHocFiltersVariable, VAR_LEVELS } from './variables';
+import { SceneObject } from '@grafana/scenes';
 
 export function toggleLevelFromFilter(
   level: string,
@@ -43,4 +45,13 @@ export function getLabelValueFromDataFrame(frame: DataFrame) {
   }
 
   return labels[keys[0]];
+}
+
+export function getVisibleLevels(sceneRef: SceneObject) {
+  const fieldFilters = getAdHocFiltersVariable(VAR_LEVELS, sceneRef);
+  const levels = fieldFilters.state.filters.map((filter) => filter.value);
+  const excludedLevels = fieldFilters.state.filters
+    .filter((filter) => filter.operator === '!=')
+    .map((filter) => filter.value);
+  return levels.filter((level) => !excludedLevels.includes(level));
 }

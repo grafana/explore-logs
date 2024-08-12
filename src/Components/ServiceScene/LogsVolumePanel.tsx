@@ -9,6 +9,7 @@ import { addToFilters, replaceFilter } from './Breakdowns/AddToFiltersButton';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getTimeSeriesExpr } from '../../services/expressions';
 import { SERVICE_NAME } from '../ServiceSelectionScene/ServiceSelectionScene';
+import { getVisibleLevels } from 'services/levels';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
@@ -60,10 +61,9 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
       .setOverrides(setLeverColorOverrides);
 
-    const fieldFilters = getAdHocFiltersVariable(VAR_LEVELS, this);
-    const filteredLevels = fieldFilters?.state.filters.map((filter) => filter.value);
-    if (filteredLevels?.length) {
-      viz.setOverrides(setLevelSeriesOverrides.bind(null, filteredLevels));
+    const focusedLevels = getVisibleLevels(this);
+    if (focusedLevels?.length) {
+      viz.setOverrides(setLevelSeriesOverrides.bind(null, focusedLevels));
     }
 
     const panel = viz.build();
@@ -101,9 +101,6 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       }
 
       const levelFilter = getAdHocFiltersVariable(VAR_LEVELS, this);
-      if (!levelFilter) {
-        return;
-      }
       const hadLevel = levelFilter.state.filters.find(
         (filter) => filter.key === LEVEL_VARIABLE_VALUE && filter.value !== level
       );
