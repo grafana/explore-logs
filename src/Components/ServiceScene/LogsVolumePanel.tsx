@@ -10,6 +10,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'se
 import { getTimeSeriesExpr } from '../../services/expressions';
 import { SERVICE_NAME } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { getVisibleLevels } from 'services/levels';
+import { FilterOp } from 'services/filters';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
@@ -101,16 +102,17 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       }
 
       const levelFilter = getAdHocFiltersVariable(VAR_LEVELS, this);
-      const hadLevel = levelFilter.state.filters.find(
-        (filter) => filter.key === LEVEL_VARIABLE_VALUE && filter.value !== level
+      const empty = levelFilter.state.filters.length === 0;
+      const filterExists = levelFilter.state.filters.find(
+        (filter) => filter.value === level && filter.operator === FilterOp.Equal
       );
       let action;
-      if (hadLevel) {
+      if (empty || !filterExists) {
         replaceFilter(LEVEL_VARIABLE_VALUE, level, 'include', this);
-        action = 'remove';
+        action = 'add';
       } else {
         addToFilters(LEVEL_VARIABLE_VALUE, level, 'toggle', this);
-        action = 'add';
+        action = 'remove';
       }
 
       reportAppInteraction(
