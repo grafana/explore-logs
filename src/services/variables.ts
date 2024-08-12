@@ -11,6 +11,7 @@ export const VAR_LEVELS = 'levels';
 export const VAR_LEVELS_EXPR = '${levels}';
 export const VAR_FIELD_GROUP_BY = 'fieldBy';
 export const VAR_LABEL_GROUP_BY = 'labelBy';
+export const VAR_LABEL_GROUP_BY_EXPR = '${labelBy}';
 export const VAR_SERVICE = 'service';
 export const VAR_SERVICE_EXPR = '${service}';
 export const VAR_DATASOURCE = 'ds';

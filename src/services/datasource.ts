@@ -1,7 +1,7 @@
 import {
   createDataFrame,
   DataQueryRequest,
-  DataQueryResponse,
+  DataQueryResponse, Field,
   FieldType,
   LoadingState,
   TestDataSourceResponse,
@@ -13,6 +13,9 @@ import { Observable, Subscriber } from 'rxjs';
 import { getDataSource } from './scenes';
 import { LokiQuery } from './query';
 import { PLUGIN_ID } from './routing';
+import {DetectedLabelsResponse} from "./fields";
+import {sortLabelsByCardinality} from "./filters";
+import {LEVEL_VARIABLE_VALUE} from "./variables";
 
 export const WRAPPED_LOKI_DS_UID = 'wrapped-loki-ds-uid';
 
@@ -87,6 +90,10 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
               }
               case 'patterns': {
                 this.getPatterns(dataQueryRequest, ds, subscriber);
+                break;
+              }
+              case 'detected_labels': {
+                this.getDetectedLabels(dataQueryRequest, ds, subscriber);
                 break;
               }
               default: {
@@ -213,6 +220,62 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
     return subscriber;
   }
+
+  private getDetectedLabels(
+      request: DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest>,
+      ds: DataSourceWithBackend<LokiQuery>,
+      subscriber: Subscriber<DataQueryResponse>
+  ) {
+    const targets = request.targets.filter((target) => {
+      return target.resource === 'detected_labels';
+    });
+
+    if (targets.length !== 1) {
+      throw new Error('Detected labels query can only have a single target!');
+    }
+
+    const targetsInterpolated = ds.interpolateVariablesInQueries(targets, request.scopedVars);
+    const interpolatedTarget = targetsInterpolated[0];
+    const expression = interpolatedTarget.expr;
+
+    const detectedLabels  = ds.getResource<DetectedLabelsResponse>(
+        'detected_labels',
+        {
+          query: expression,
+          start: request.range.from.utc().toISOString(),
+          end: request.range.to.utc().toISOString(),
+        },
+        {
+          headers: {
+            'X-Query-Tags': `Source=${PLUGIN_ID}`,
+          },
+        }
+    );
+    detectedLabels.then((response) => {
+
+
+      const labels = response.detectedLabels
+          .sort((a, b) => sortLabelsByCardinality(a, b))
+          .filter((label) => label.label !== LEVEL_VARIABLE_VALUE);
+
+      const detectedLabelFields: Array<Partial<Field>> = labels.map(label => {
+        return {
+          name: label.label,
+          values: [label.cardinality]
+        }
+      });
+
+      const dataFrame = createDataFrame({
+        refId: interpolatedTarget.refId,
+        fields: detectedLabelFields
+      })
+
+      subscriber.next({ data: [dataFrame], state: LoadingState.Done });
+    });
+
+    return subscriber;
+  }
+
 
   //@todo doesn't work with multiple queries
   private getVolume(

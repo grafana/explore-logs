@@ -1,9 +1,10 @@
-import { css } from '@emotion/css';
+import {css} from '@emotion/css';
 import React from 'react';
 
-import { GrafanaTheme2, ReducerID } from '@grafana/data';
+import {DataFrame, GrafanaTheme2, LoadingState, ReducerID} from '@grafana/data';
 import {
   PanelBuilders,
+  QueryRunnerState,
   SceneComponentProps,
   SceneCSSGridItem,
   SceneCSSGridLayout,
@@ -18,27 +19,33 @@ import {
   VariableDependencyConfig,
   VariableValueOption,
 } from '@grafana/scenes';
-import { Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
-import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { DetectedLabel, getFilterBreakdownValueScene } from 'services/fields';
-import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
-import { buildDataQuery } from 'services/query';
-import { ValueSlugs } from 'services/routing';
-import { getLokiDatasource } from 'services/scenes';
-import { ALL_VARIABLE_VALUE, getLabelGroupByVariable, VAR_LABEL_GROUP_BY, VAR_LABELS } from 'services/variables';
-import { ByFrameRepeater } from './ByFrameRepeater';
-import { FieldSelector } from './FieldSelector';
-import { LayoutSwitcher } from './LayoutSwitcher';
-import { StatusWrapper } from './StatusWrapper';
-import { getLabelOptions, sortLabelsByCardinality } from 'services/filters';
-import { BreakdownSearchReset, BreakdownSearchScene } from './BreakdownSearchScene';
-import { getSortByPreference } from 'services/store';
-import { getLabelValue, SortByScene, SortCriteriaChanged } from './SortByScene';
-import { ServiceScene, ServiceSceneState } from '../ServiceScene';
-import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
-import { navigateToValueBreakdown } from '../../../services/navigate';
-import { areArraysEqual } from '../../../services/comparison';
-import { getTimeSeriesExpr } from '../../../services/expressions';
+import {Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2} from '@grafana/ui';
+import {reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES} from 'services/analytics';
+import {getFilterBreakdownValueScene} from 'services/fields';
+import {getQueryRunner, setLeverColorOverrides} from 'services/panel';
+import {buildDataQuery} from 'services/query';
+import {ValueSlugs} from 'services/routing';
+import {getLokiDatasource} from 'services/scenes';
+import {
+  ALL_VARIABLE_VALUE,
+  getLabelGroupByVariable, LOG_STREAM_SELECTOR_EXPR,
+  VAR_LABEL_GROUP_BY, VAR_LABEL_GROUP_BY_EXPR,
+  VAR_LABELS, VAR_LABELS_EXPR,
+  VAR_LINE_FILTER_EXPR, VAR_PATTERNS_EXPR
+} from 'services/variables';
+import {ByFrameRepeater} from './ByFrameRepeater';
+import {FieldSelector} from './FieldSelector';
+import {LayoutSwitcher} from './LayoutSwitcher';
+import {StatusWrapper} from './StatusWrapper';
+import {getLabelOptions} from 'services/filters';
+import {BreakdownSearchReset, BreakdownSearchScene} from './BreakdownSearchScene';
+import {getSortByPreference} from 'services/store';
+import {getLabelValue, SortByScene, SortCriteriaChanged} from './SortByScene';
+import {ServiceScene} from '../ServiceScene';
+import {CustomConstantVariable, CustomConstantVariableState} from '../../../services/CustomConstantVariable';
+import {navigateToValueBreakdown} from '../../../services/navigate';
+import {areArraysEqual} from '../../../services/comparison';
+import {getTimeSeriesExpr} from '../../../services/expressions';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -99,11 +106,15 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
 
     // Need to update labels with current state
-    if (serviceScene.state.labels) {
-      this.updateLabels(serviceScene.state.labels);
+    if (serviceScene.state.$detectedLabelsData.state.data?.series?.[0]) {
+      this.updateLabels(serviceScene.state.$detectedLabelsData.state.data?.series?.[0]);
     }
 
-    this._subs.add(serviceScene.subscribeToState(this.onServiceStateChange));
+    this._subs.add(serviceScene.subscribeToState((newState) => {
+      console.log('service scene change', newState)
+      this.updateLabels(serviceScene.state.$detectedLabelsData.state.data?.series?.[0]);
+    }));
+    this._subs.add(serviceScene.state.$detectedLabelsData.subscribeToState(this.onLabelsChange));
     this._subs.add(variable.subscribeToState(this.onVariableStateChange));
   }
 
@@ -128,12 +139,9 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
    * @param newState
    * @param prevState
    */
-  private onServiceStateChange = (newState: ServiceSceneState, prevState: ServiceSceneState) => {
-    const variable = this.getVariable();
-    if (!areArraysEqual(newState.labels, prevState.labels)) {
-      this.updateLabels(newState.labels);
-    } else if (newState.labels?.length && !variable.state.options.length) {
-      this.updateLabels(newState.labels);
+  private onLabelsChange = (newState: QueryRunnerState, prevState: QueryRunnerState) => {
+    if(newState.data?.state === LoadingState.Done){
+      this.updateLabels(newState.data.series?.[0]);
     }
   };
 
@@ -163,13 +171,12 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     );
   };
 
-  private updateLabels(detectedLabels: DetectedLabel[] | undefined) {
+  private updateLabels(detectedLabels: DataFrame | undefined) {
     if (!detectedLabels || !detectedLabels.length) {
       return;
     }
     const variable = this.getVariable();
-    const labels = detectedLabels.sort((a, b) => sortLabelsByCardinality(a, b)).map((l) => l.label);
-    const options = getLabelOptions(labels);
+    const options = getLabelOptions(detectedLabels.fields.map(label => label.name));
 
     variable.setState({
       options,
@@ -258,8 +265,11 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   }
 
   private buildLabelValuesLayout(variableState: CustomConstantVariableState) {
+    console.log('buildLabelValuesLayout', {
+      variableState
+    })
     const tagKey = String(variableState?.value);
-    const query = buildDataQuery(getTimeSeriesExpr(this, tagKey), { legendFormat: `{{${tagKey}}}` });
+    const query = buildDataQuery(`sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR} [$__auto])) by (${VAR_LABEL_GROUP_BY_EXPR})`, { legendFormat: `{{${VAR_LABEL_GROUP_BY_EXPR}}}`, refId: 'LABEL_BREAKDOWN_VALUES' });
 
     let bodyOpts = PanelBuilders.timeseries();
     bodyOpts = bodyOpts
@@ -274,6 +284,8 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     const body = bodyOpts.build();
     const { sortBy, direction } = getSortByPreference('labels', ReducerID.stdDev, 'desc');
     const getFilter = () => this.state.search.state.filter ?? '';
+    const queryRunner = getQueryRunner([query]);
+    console.log('whats going on with my query runner', queryRunner)
 
     return new LayoutSwitcher({
       $data: getQueryRunner([query]),

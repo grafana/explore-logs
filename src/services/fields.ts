@@ -55,6 +55,7 @@ export function getFilterBreakdownValueScene(
   variableName: typeof VAR_FIELDS | typeof VAR_LABELS
 ) {
   return (data: PanelData, frame: DataFrame, frameIndex: number) => {
+    console.log('getFilterBreakdownValueScene', data, frame, frameIndex)
     const panel = PanelBuilders.timeseries() //
       .setOption('legend', { showLegend: false })
       .setCustomFieldConfig('fillOpacity', 9)

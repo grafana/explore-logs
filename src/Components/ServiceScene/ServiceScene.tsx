@@ -1,7 +1,8 @@
 import React from 'react';
 
-import { LoadingState, PanelData } from '@grafana/data';
+import {LoadingState, PanelData} from '@grafana/data';
 import {
+  AdHocFiltersVariable,
   SceneComponentProps,
   SceneDataProvider,
   SceneFlexItem,
@@ -13,15 +14,13 @@ import {
   SceneVariable,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import { LoadingPlaceholder } from '@grafana/ui';
-import { DetectedLabel, DetectedLabelsResponse, updateParserFromDataFrame } from 'services/fields';
-import { getQueryRunner, getResourceQueryRunner } from 'services/panel';
-import { buildDataQuery, buildResourceQuery } from 'services/query';
-import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, PLUGIN_ID } from 'services/routing';
-import { getLokiDatasource } from 'services/scenes';
+import {LoadingPlaceholder} from '@grafana/ui';
+import {updateParserFromDataFrame} from 'services/fields';
+import {getQueryRunner, getResourceQueryRunner} from 'services/panel';
+import {buildDataQuery, buildResourceQuery} from 'services/query';
+import {getDrilldownSlug, getDrilldownValueSlug, PageSlugs} from 'services/routing';
 import {
   getLabelsVariable,
-  LEVEL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE,
   VAR_FIELDS,
@@ -30,22 +29,22 @@ import {
   VAR_LEVELS,
   VAR_PATTERNS,
 } from 'services/variables';
-import { sortLabelsByCardinality } from 'services/filters';
-import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
-import { getMetadataService } from '../../services/metadata';
-import { navigateToDrilldownPage, navigateToIndex } from '../../services/navigate';
-import { areArraysEqual } from '../../services/comparison';
-import { LogsActionBarScene } from './LogsActionBarScene';
-import { breakdownViewsDefinitions, valueBreakdownViews } from './BreakdownViews';
+import {SERVICE_NAME} from 'Components/ServiceSelectionScene/ServiceSelectionScene';
+import {getMetadataService} from '../../services/metadata';
+import {navigateToDrilldownPage, navigateToIndex} from '../../services/navigate';
+import {areArraysEqual} from '../../services/comparison';
+import {LogsActionBarScene} from './LogsActionBarScene';
+import {breakdownViewsDefinitions, valueBreakdownViews} from './BreakdownViews';
 
 const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 const PATTERNS_QUERY_REFID = 'patterns';
+const DETECTED_LABELS_QUERY_REFID = 'detectedLabels';
 
 type MakeOptional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
 export interface ServiceSceneCustomState {
   fields?: string[];
-  labels?: DetectedLabel[];
+  labelsCount?: number;
   patternsCount?: number;
   fieldsCount?: number;
   loading?: boolean;
@@ -56,6 +55,7 @@ export interface ServiceSceneState extends SceneObjectState, ServiceSceneCustomS
   drillDownLabel?: string;
   $data: SceneDataProvider;
   $patternsData: SceneQueryRunner;
+  $detectedLabelsData: SceneQueryRunner
 }
 
 export function getLogsPanelFrame(data: PanelData | undefined) {
@@ -72,12 +72,13 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
   });
 
-  public constructor(state: MakeOptional<ServiceSceneState, 'body' | '$data' | '$patternsData'>) {
+  public constructor(state: MakeOptional<ServiceSceneState, 'body' | '$data' | '$patternsData' | '$detectedLabelsData'>) {
     super({
       loading: true,
       body: state.body ?? buildGraphScene(),
       $data: getServiceSceneQueryRunner(),
       $patternsData: getPatternsQueryRunner(),
+      $detectedLabelsData: getDetectedLabelsQueryRunner(),
       ...state,
     });
 
@@ -109,7 +110,9 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       $data: undefined,
       body: undefined,
       $patternsData: undefined,
+      $detectedLabelsData: undefined,
       patternsCount: undefined,
+      labelsCount: undefined
     });
     getMetadataService().setServiceSceneState(this.state);
     this._subs.unsubscribe();
@@ -142,8 +145,13 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     const slug = getDrilldownSlug();
 
     // If we don't have a patterns count in the tabs, or we are activating the patterns scene, run the pattern query
-    if (this.state.patternsCount === undefined || slug === 'patterns') {
+    if (this.state.patternsCount === undefined || slug === PageSlugs.patterns) {
       this.state.$patternsData.runQueries();
+    }
+
+    // If we don't have a detected labels count, or we are activating the labels scene, run the detected labels query
+    if(this.state.labelsCount === undefined || slug === PageSlugs.labels){
+      this.state.$detectedLabelsData.runQueries();
     }
 
     this._subs.add(
@@ -172,13 +180,28 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       })
     );
 
-    this.updateLabels();
+    this._subs.add(
+      this.state.$detectedLabelsData.subscribeToState(newState => {
+        if (newState.data?.state === LoadingState.Done) {
+          const detectedLabelsResponse = newState.data;
+          // Detected labels API call always returns a single frame, with a field for each label
+          const detectedLabelsFields = detectedLabelsResponse.series[0].fields;
+          if(detectedLabelsResponse.series.length !== undefined && detectedLabelsFields.length !== undefined){
+            this.setState({
+              labelsCount: detectedLabelsFields.length
+            })
+            getMetadataService().setLabelsCount(detectedLabelsFields.length);
+          }
+        }
+      })
+    )
 
     const labels = getLabelsVariable(this);
     this._subs.add(
       labels.subscribeToState((newState, prevState) => {
         if (!areArraysEqual(newState.filters, prevState.filters)) {
           this.state.$patternsData.runQueries();
+          this.state.$detectedLabelsData.runQueries();
         }
       })
     );
@@ -186,8 +209,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     // Update query runner on manual time range change
     this._subs.add(
       sceneGraph.getTimeRange(this).subscribeToState(() => {
-        this.updateLabels();
         this.state.$patternsData.runQueries();
+        this.state.$detectedLabelsData.runQueries();
       })
     );
   }
@@ -201,6 +224,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
     if (!this.state.$patternsData) {
       stateUpdate.$patternsData = getPatternsQueryRunner();
+    }
+
+    if(!this.state.$detectedLabelsData){
+      stateUpdate.$detectedLabelsData = getDetectedLabelsQueryRunner()
     }
 
     if (!this.state.body) {
@@ -218,20 +245,25 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       return;
     }
 
+    if(variable instanceof AdHocFiltersVariable){
+      // Don't navigate if exclude filter was added
+      if(!variable.state.filters.filter(filter => filter.operator === '=' && filter.key !== "service_name").length){
+        return
+      }
+    }
+
     const filterVariable = getLabelsVariable(this);
-    if (filterVariable.state.filters.length === 0) {
+    if (!filterVariable.state.filters.length) {
       return;
     }
-    Promise.all([this.updateLabels()])
-      .finally(() => {
-        // For patterns, we don't want to reload to logs as we allow users to select multiple patterns
-        if (variable.state.name !== VAR_PATTERNS) {
-          navigateToDrilldownPage(PageSlugs.logs, this);
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to update', err);
-      });
+
+    console.log('about to nav', {
+      slug: getDrilldownSlug(),
+    })
+
+    if (variable.state.name !== VAR_PATTERNS) {
+      navigateToDrilldownPage(PageSlugs.logs, this);
+    }
   }
 
   private updateFields() {
@@ -267,43 +299,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         fields: [],
         loading: false,
       });
-    }
-  }
-
-  private async updateLabels() {
-    const ds = await getLokiDatasource(this);
-
-    if (!ds) {
-      return;
-    }
-    const timeRange = sceneGraph.getTimeRange(this);
-    const timeRangeValue = timeRange.state.value;
-    const filters = getLabelsVariable(this);
-
-    const { detectedLabels } = await ds.getResource<DetectedLabelsResponse>(
-      'detected_labels',
-      {
-        query: filters.state.filterExpression,
-        start: timeRangeValue.from.utc().toISOString(),
-        end: timeRangeValue.to.utc().toISOString(),
-      },
-      {
-        headers: {
-          'X-Query-Tags': `Source=${PLUGIN_ID}`,
-        },
-      }
-    );
-
-    if (!detectedLabels || !Array.isArray(detectedLabels)) {
-      return;
-    }
-
-    const labels = detectedLabels
-      .sort((a, b) => sortLabelsByCardinality(a, b))
-      .filter((label) => label.label !== LEVEL_VARIABLE_VALUE);
-
-    if (!areArraysEqual(labels, this.state.labels)) {
-      this.setState({ labels });
     }
   }
 
@@ -366,6 +361,11 @@ function buildGraphScene() {
 function getPatternsQueryRunner() {
   return getResourceQueryRunner([buildResourceQuery(VAR_LABELS_EXPR, 'patterns', { refId: PATTERNS_QUERY_REFID })]);
 }
+
+function getDetectedLabelsQueryRunner() {
+  return getResourceQueryRunner([buildResourceQuery(VAR_LABELS_EXPR, 'detected_labels', { refId: DETECTED_LABELS_QUERY_REFID })]);
+}
+
 
 function getServiceSceneQueryRunner() {
   return getQueryRunner([buildDataQuery(LOG_STREAM_SELECTOR_EXPR, { refId: LOGS_PANEL_QUERY_REFID })]);
