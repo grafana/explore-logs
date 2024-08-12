@@ -94,7 +94,7 @@
     "tslib": "2.5.3"
   },
   "resolutions": {
-    "jackspeak": "2.1.1"
+    "**/fast-loops": "^1.1.4"
   },
   "packageManager": "yarn@1.22.21"
 }
