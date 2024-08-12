@@ -82,15 +82,24 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     if (levelFilter) {
       this._subs.add(
         levelFilter?.subscribeToState((newState, prevState) => {
-          const hadLevel = prevState.filters.find((filter) => filter.key === LEVEL_VARIABLE_VALUE);
-          const removedLevel = newState.filters.findIndex((filter) => filter.key === LEVEL_VARIABLE_VALUE) < 0;
-          if (hadLevel && removedLevel) {
-            originalOnToggleSeriesVisibility?.(hadLevel.value, SeriesVisibilityChangeMode.ToggleSelection);
-          }
-          const addedLevel = newState.filters.find((filter) => filter.key === LEVEL_VARIABLE_VALUE);
-          if (addedLevel) {
-            originalOnToggleSeriesVisibility?.(addedLevel.value, SeriesVisibilityChangeMode.ToggleSelection);
-          }
+          const prevLevels = prevState.filters
+            .filter((filter) => filter.operator === FilterOp.Equal)
+            .map((filter) => filter.value);
+          const newLevels = newState.filters
+            .filter((filter) => filter.operator === FilterOp.Equal)
+            .map((filter) => filter.value);
+          prevLevels.forEach((prevLevel) => {
+            if (!newLevels.includes(prevLevel)) {
+              // prevLevel was removed, toggle
+              originalOnToggleSeriesVisibility?.(prevLevel, SeriesVisibilityChangeMode.ToggleSelection);
+            }
+          });
+          newLevels.forEach((newLevel) => {
+            if (!prevLevels.includes(newLevel)) {
+              // newLevel is new, toggle
+              originalOnToggleSeriesVisibility?.(newLevel, SeriesVisibilityChangeMode.ToggleSelection);
+            }
+          });
         })
       );
     }
