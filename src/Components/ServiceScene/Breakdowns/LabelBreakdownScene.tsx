@@ -195,8 +195,14 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       error: false,
     };
 
+    let fieldExpressionToAdd = '';
+
+    if (variable.state.value) {
+      fieldExpressionToAdd = `| ${variable.state.value} != ""`;
+    }
+
     const query = buildDataQuery(
-      `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR} [$__auto])) by (${VAR_LABEL_GROUP_BY_EXPR})`,
+      `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR} ${fieldExpressionToAdd} [$__auto])) by (${VAR_LABEL_GROUP_BY_EXPR})`,
       { legendFormat: `{{${VAR_LABEL_GROUP_BY_EXPR}}}`, refId: 'LABEL_BREAKDOWN_VALUES' }
     );
 

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { LoadingState, PanelData } from '@grafana/data';
+import { AdHocVariableFilter, LoadingState, PanelData } from '@grafana/data';
 import {
   SceneComponentProps,
   SceneDataProvider,
@@ -10,6 +10,7 @@ import {
   SceneObjectBase,
   SceneObjectState,
   SceneQueryRunner,
+  SceneVariableState,
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { LoadingPlaceholder } from '@grafana/ui';
@@ -21,6 +22,7 @@ import {
   getDataSourceVariable,
   getFieldsVariable,
   getLabelsVariable,
+  getLevelsVariable,
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE,
   VAR_FIELDS,
@@ -144,29 +146,41 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     // Run queries on activate
     this.runQueries();
 
-    // Subscriptions
+    // Query Subscriptions
     this._subs.add(this.subscribeToData());
+    this._subs.add(this.subscribeToPatternsQuery());
+    this._subs.add(this.subscribeToDetectedLabelsQuery());
 
-    this._subs.add(this.subscribeToPatterns());
-
-    this._subs.add(this.subscribeToDetectedLabels());
-
+    // Variable subscriptions
     this._subs.add(this.subscribeToLabelsVariable());
-
-    this._subs.add(
-      getFieldsVariable(this).subscribeToState((newState, prevState) => {
-        // @todo wip
-      })
-    );
+    this._subs.add(this.subscribeToFields());
+    this._subs.add(this.subscribeToLevels());
+    this._subs.add(this.subscribeToDataSourceVariable());
 
     // Update query runner on manual time range change
     this._subs.add(this.subscribeToTimeRange());
+  }
 
-    this._subs.add(
-      getDataSourceVariable(this).subscribeToState((newState) => {
-        this.redirectToStart();
-      })
-    );
+  private subscribeToDataSourceVariable() {
+    return getDataSourceVariable(this).subscribeToState(() => {
+      this.redirectToStart();
+    });
+  }
+
+  private subscribeToLevels() {
+    return getLevelsVariable(this).subscribeToState((newState, prevState) => {
+      if (!areArraysEqual(newState.filters, prevState.filters)) {
+        this.navigateOnAdHocVariableChange(newState, prevState);
+      }
+    });
+  }
+
+  private subscribeToFields() {
+    return getFieldsVariable(this).subscribeToState((newState, prevState) => {
+      if (!areArraysEqual(newState.filters, prevState.filters)) {
+        this.navigateOnAdHocVariableChange(newState, prevState);
+      }
+    });
   }
 
   private subscribeToLabelsVariable() {
@@ -175,64 +189,44 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         // We want to update the counts
         this.state.$patternsData?.runQueries();
         this.state.$detectedLabelsData?.runQueries();
-        const lastFilter = newState.filters[newState.filters.length - 1];
-
-        if (newState.filters.length > prevState.filters.length) {
-          // User added a filter
-
-          if (lastFilter.operator === '=') {
-            navigateToDrilldownPage(PageSlugs.logs, this);
-          }
-        } else if (newState.filters.length < prevState.filters.length) {
-          // user removed a filter do nothing
-        } else {
-          // user modified a filter
-          // Do we want to move folks that change the service name?
-          if (lastFilter.operator === '=' && lastFilter.key !== SERVICE_NAME) {
-            navigateToDrilldownPage(PageSlugs.logs, this);
-          }
-        }
-        // Routing
+        this.navigateOnAdHocVariableChange(newState, prevState);
       }
     });
   }
-  // @todo wip
-  // private onReferencedVariableValueChanged(variable: SceneVariable) {
-  //   // if (variable.state.name === VAR_DATASOURCE) {
-  //   //   this.redirectToStart();
-  //   //   return;
-  //   // }
-  //
-  //   // Need to exclude removing a filter from the UI here.
-  //   // Right now if you remove a filter and the new last is an include it will auto-nav
-  //
-  //   if (variable instanceof AdHocFiltersVariable) {
-  //     // If the filter we just added was exclude, don't bother navigating
-  //     const lastFilter = variable.state.filters[variable.state.filters.length - 1];
-  //     if (lastFilter.operator === '!=') {
-  //       return;
-  //     }
-  //   }
-  //
-  //   const filterVariable = getLabelsVariable(this);
-  //   if (!filterVariable.state.filters.length) {
-  //     return;
-  //   }
-  //
-  //   if (variable.state.name !== VAR_PATTERNS) {
-  //     navigateToDrilldownPage(PageSlugs.logs, this);
-  //   }
-  // }
+
+  /**
+   * Navigate when the user adds a positive filter to the ad hoc filter variables
+   * Note: AdHocFilterVariableState is not currently exported from scenes.
+   * @param newState
+   * @param prevState
+   * @private
+   */
+  private navigateOnAdHocVariableChange(
+    newState: SceneVariableState & { filters: AdHocVariableFilter[] },
+    prevState: SceneVariableState & { filters: AdHocVariableFilter[] }
+  ) {
+    const lastFilter = newState.filters[newState.filters.length - 1];
+    if (newState.filters.length > prevState.filters.length) {
+      // User added a filter
+
+      if (lastFilter.operator === '=') {
+        navigateToDrilldownPage(PageSlugs.logs, this);
+      }
+    } else if (newState.filters.length === prevState.filters.length) {
+      // user modified a filter
+      // Do we want to move folks that change the service name?
+      if (lastFilter.operator === '=' && lastFilter.key !== SERVICE_NAME) {
+        navigateToDrilldownPage(PageSlugs.logs, this);
+      }
+    }
+  }
 
   private runQueries() {
     const slug = getDrilldownSlug();
     const parentSlug = getDrilldownValueSlug();
 
     // If we don't have a patterns count in the tabs, or we are activating the patterns scene, run the pattern query
-    if (
-      (this.state.patternsCount === undefined || slug === PageSlugs.patterns) &&
-      !this.state.$patternsData?.state.data
-    ) {
+    if (slug === PageSlugs.patterns || this.state.patternsCount === undefined) {
       this.state.$patternsData?.runQueries();
     }
 
@@ -257,7 +251,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     });
   }
 
-  private subscribeToPatterns() {
+  private subscribeToPatternsQuery() {
     return this.state.$patternsData?.subscribeToState((newState) => {
       if (newState.data?.state === LoadingState.Done) {
         const patternsResponse = newState.data.series;
@@ -272,7 +266,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     });
   }
 
-  private subscribeToDetectedLabels() {
+  private subscribeToDetectedLabelsQuery() {
     return this.state.$detectedLabelsData?.subscribeToState((newState) => {
       if (newState.data?.state === LoadingState.Done) {
         const detectedLabelsResponse = newState.data;
