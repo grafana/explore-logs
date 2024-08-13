@@ -81,6 +81,18 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
             return target.resource;
           });
 
+          const resourceCount = queriesPartitionedByResource.reduce((acc, queries) => {
+            if (queries[0]?.resource) {
+              return acc++;
+            }
+            return acc;
+          }, 0);
+
+          // Don't mix queries that call different endpoints!
+          if (resourceCount > 1) {
+            throw new Error('Each request can only query a single resource!');
+          }
+
           queriesPartitionedByResource.forEach((queries) => {
             if (queries.length !== 0) {
               // All resource strings in the partition will be the same
