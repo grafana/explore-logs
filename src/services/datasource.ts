@@ -13,6 +13,7 @@ import { Observable, Subscriber } from 'rxjs';
 import { getDataSource } from './scenes';
 import { LokiQuery } from './query';
 import { PLUGIN_ID } from './routing';
+import { partition } from 'lodash';
 
 export const WRAPPED_LOKI_DS_UID = 'wrapped-loki-ds-uid';
 
@@ -76,21 +77,28 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
             return target;
           });
 
-          request.targets.forEach((target) => {
-            const requestType = target?.resource;
+          const queriesPartitionedByResource = partition(request.targets, (target) => {
+            return target.resource;
+          });
 
-            switch (requestType) {
-              case 'volume': {
-                this.getVolume(request, ds, subscriber);
-                break;
-              }
-              case 'patterns': {
-                this.getPatterns(request, ds, subscriber);
-                break;
-              }
-              default: {
-                this.getData(request, ds, subscriber);
-                break;
+          queriesPartitionedByResource.forEach((queries) => {
+            if (queries.length !== 0) {
+              // All resource strings in the partition will be the same
+              const requestType = queries[0]?.resource;
+
+              switch (requestType) {
+                case 'volume': {
+                  this.getVolume(request, ds, subscriber);
+                  break;
+                }
+                case 'patterns': {
+                  this.getPatterns(request, ds, subscriber);
+                  break;
+                }
+                default: {
+                  this.getData(request, ds, subscriber);
+                  break;
+                }
               }
             }
           });
