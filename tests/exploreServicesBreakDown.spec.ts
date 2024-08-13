@@ -91,14 +91,23 @@ test.describe('explore services breakdown page', () => {
     expect(urlArray[urlArray.length - 2]).toEqual('label')
   });
 
-  test('should exclude a label, update filters, open log panel', async ({ page }) => {
+  test('should exclude a label, update filters', async ({ page }) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
     await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
     await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
-    await expect(page.getByTestId(testIds.exploreServiceDetails.searchLogs)).toBeVisible();
     // Adhoc err filter should be added
     await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
+  });
+
+  test('should include a label, update filters, open log panel', async ({ page }) => {
+    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
+    await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
+    await page.getByRole('button', { name: 'Include' }).nth(0).click();
+    await expect(page.getByTestId(testIds.exploreServiceDetails.searchLogs)).toBeVisible();
+    // Adhoc err filter should be added
+    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
+    await expect(page.getByText('=').nth(1)).toBeVisible();
   });
 
   test('should only load fields that are in the viewport', async ({page}) => {
@@ -115,6 +124,7 @@ test.describe('explore services breakdown page', () => {
         const refId = postData.queries[0].refId
         // Field subqueries have a refId of the field name
         if(refId !== 'logsPanelQuery' && refId !== 'A'){
+          console.log('refId', refId)
           requestCount++
           return await route.fulfill({json: mockResponse})
         }
