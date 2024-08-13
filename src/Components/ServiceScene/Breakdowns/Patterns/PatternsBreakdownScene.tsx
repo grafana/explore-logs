@@ -138,7 +138,6 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
 
   private updatePatternFrames(lokiPatterns?: DataFrame[]) {
     if (!lokiPatterns) {
-      console.warn('failed to update pattern frames');
       return;
     }
 
