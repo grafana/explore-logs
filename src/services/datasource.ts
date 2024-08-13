@@ -78,31 +78,29 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
           const targetsSet = new Set();
           request.targets.forEach((target) => {
-            targetsSet.add(target.resource);
+            targetsSet.add(target.resource ?? '');
           });
 
           if (targetsSet.size !== 1) {
             throw new Error('A request cannot contain queries to multiple endpoints');
           }
 
-          request.targets.forEach((target) => {
-            const requestType = target?.resource;
+          const requestType = request.targets[0].resource;
 
-            switch (requestType) {
-              case 'volume': {
-                this.getVolume(request, ds, subscriber);
-                break;
-              }
-              case 'patterns': {
-                this.getPatterns(request, ds, subscriber);
-                break;
-              }
-              default: {
-                this.getData(request, ds, subscriber);
-                break;
-              }
+          switch (requestType) {
+            case 'volume': {
+              this.getVolume(request, ds, subscriber);
+              break;
             }
-          });
+            case 'patterns': {
+              this.getPatterns(request, ds, subscriber);
+              break;
+            }
+            default: {
+              this.getData(request, ds, subscriber);
+              break;
+            }
+          }
         });
     });
   }
