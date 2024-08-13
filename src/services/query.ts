@@ -30,6 +30,7 @@ export const buildResourceQuery = (
   return {
     ...defaultQueryParams,
     resource,
+    refId: resource,
     ...queryParamsOverrides,
     datasource: { uid: VAR_DATASOURCE_EXPR },
     expr,

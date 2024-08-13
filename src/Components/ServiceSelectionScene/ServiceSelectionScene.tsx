@@ -79,7 +79,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           }),
         ],
       }),
-      $data: getQueryRunner(buildResourceQuery(`{${SERVICE_NAME}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')),
+      $data: getQueryRunner([buildResourceQuery(`{${SERVICE_NAME}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')]),
       serviceLevel: new Map<string, string[]>(),
       ...state,
     });
@@ -197,13 +197,13 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       // If service was previously selected, we show it in the title
       .setTitle(service)
       .setData(
-        getQueryRunner(
+        getQueryRunner([
           buildDataQuery(getMetricExpression(service), {
             legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`,
             splitDuration,
             refId: `ts-${service}`,
-          })
-        )
+          }),
+        ])
       )
       .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
       .setCustomFieldConfig('fillOpacity', 100)
@@ -255,13 +255,13 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         // Hover header set to true removes unused header padding, displaying more logs
         .setHoverHeader(true)
         .setData(
-          getQueryRunner(
+          getQueryRunner([
             buildDataQuery(getLogExpression(service, levelFilter), {
               maxLines: 100,
               refId: `logs-${service}`,
               // range: timeRange
-            })
-          )
+            }),
+          ])
         )
         .setTitle(service)
         .setOption('showTime', true)
@@ -307,7 +307,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           <div>
             {/** When services fetched, show how many services are we showing */}
             {isLogVolumeLoading && <LoadingPlaceholder text={'Loading services'} className={styles.loadingText} />}
-            {!isLogVolumeLoading && <>Showing {serviceCount} service{serviceCount > 1 ? 's' : ''}</>}
+            {!isLogVolumeLoading && (
+              <>
+                Showing {serviceCount} service{serviceCount > 1 ? 's' : ''}
+              </>
+            )}
           </div>
           <Field className={styles.searchField}>
             <ServiceFieldSelector

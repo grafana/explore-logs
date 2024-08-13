@@ -17,11 +17,20 @@ export class MetadataService {
     return this.serviceSceneState;
   }
 
+  public setPatternsCount(count: number) {
+    if (this.serviceSceneState) {
+      this.serviceSceneState.patternsCount = count;
+    } else {
+      this.serviceSceneState = {};
+      this.serviceSceneState.patternsCount = count;
+    }
+  }
+
   public setServiceSceneState(state: ServiceSceneCustomState) {
     this.serviceSceneState = {
       fields: state.fields,
       labels: state.labels,
-      patterns: state.patterns,
+      patternsCount: state.patternsCount,
       fieldsCount: state.fieldsCount,
       loading: state.loading,
     };

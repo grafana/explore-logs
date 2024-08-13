@@ -287,7 +287,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         legendFormat: `{{${optionValue}}}`,
         refId: optionValue,
       });
-      const queryRunner = getQueryRunner(query);
+      const queryRunner = getQueryRunner([query]);
       let body = PanelBuilders.timeseries().setTitle(optionValue).setData(queryRunner);
 
       if (!isAvgField(optionValue)) {
@@ -348,7 +348,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     const getFilter = () => this.state.search.state.filter ?? '';
 
     return new LayoutSwitcher({
-      $data: getQueryRunner(query),
+      $data: getQueryRunner([query]),
       options: [
         { value: 'single', label: 'Single' },
         { value: 'grid', label: 'Grid' },
@@ -521,26 +521,6 @@ function getExpr(field: string) {
 }
 
 const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
-
-export function buildFieldsBreakdownActionScene(changeFieldNumber: (n: string[]) => void) {
-  return new SceneFlexLayout({
-    children: [
-      new SceneFlexItem({
-        body: new FieldsBreakdownScene({ changeFields: changeFieldNumber }),
-      }),
-    ],
-  });
-}
-
-export function buildFieldValuesBreakdownActionScene(value: string) {
-  return new SceneFlexLayout({
-    children: [
-      new SceneFlexItem({
-        body: new FieldsBreakdownScene({ value }),
-      }),
-    ],
-  });
-}
 
 interface SelectLabelActionState extends SceneObjectState {
   labelName: string;

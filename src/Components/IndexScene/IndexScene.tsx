@@ -161,7 +161,9 @@ function getContentScene(drillDownLabel?: string) {
     return new ServiceSelectionScene({});
   }
 
-  return new ServiceScene({ drillDownLabel });
+  return new ServiceScene({
+    drillDownLabel,
+  });
 }
 
 function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVariableFilter[]) {

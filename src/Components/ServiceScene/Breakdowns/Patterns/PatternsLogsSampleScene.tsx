@@ -11,8 +11,9 @@ import {
   VizPanel,
 } from '@grafana/scenes';
 import React from 'react';
-import { getQueryRunner } from '../../../services/panel';
-import { buildDataQuery, LokiQuery, renderPatternFilters } from '../../../services/query';
+
+import { LoadingState } from '@grafana/data';
+import { Alert, Button } from '@grafana/ui';
 import {
   getFieldsVariable,
   getLevelsVariable,
@@ -20,12 +21,12 @@ import {
   LOG_STREAM_SELECTOR_EXPR,
   PATTERNS_SAMPLE_SELECTOR_EXPR,
   VAR_PATTERNS_EXPR,
-} from '../../../services/variables';
-import { AppliedPattern } from '../../IndexScene/IndexScene';
-import { LoadingState } from '@grafana/data';
-import { Alert, Button } from '@grafana/ui';
-import { PatternsViewTableScene } from './Patterns/PatternsViewTableScene';
-import { emptyStateStyles } from './FieldsBreakdownScene';
+} from '../../../../services/variables';
+import { buildDataQuery, LokiQuery, renderPatternFilters } from '../../../../services/query';
+import { getQueryRunner } from '../../../../services/panel';
+import { AppliedPattern } from '../../../IndexScene/IndexScene';
+import { PatternsViewTableScene } from './PatternsViewTableScene';
+import { emptyStateStyles } from '../FieldsBreakdownScene';
 
 interface PatternsLogsSampleSceneState extends SceneObjectState {
   pattern: string;
