@@ -148,7 +148,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     const parentSlug = getDrilldownValueSlug();
 
     // If we don't have a patterns count in the tabs, or we are activating the patterns scene, run the pattern query
-    if (this.state.patternsCount === undefined || slug === PageSlugs.patterns) {
+    if (
+      (this.state.patternsCount === undefined || slug === PageSlugs.patterns) &&
+      !this.state.$patternsData.state.data
+    ) {
       this.state.$patternsData.runQueries();
     }
 
