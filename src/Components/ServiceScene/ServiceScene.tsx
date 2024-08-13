@@ -54,8 +54,8 @@ export interface ServiceSceneCustomState {
 export interface ServiceSceneState extends SceneObjectState, ServiceSceneCustomState {
   body: SceneFlexLayout | undefined;
   drillDownLabel?: string;
-  $data: SceneDataProvider;
-  $patternsData: SceneQueryRunner;
+  $data: SceneDataProvider | undefined;
+  $patternsData: SceneQueryRunner | undefined;
 }
 
 export function getLogsPanelFrame(data: PanelData | undefined) {
@@ -138,12 +138,12 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     const slug = getDrilldownSlug();
 
     // If we don't have a patterns count in the tabs, or we are activating the patterns scene, run the pattern query
-    if ((this.state.patternsCount === undefined || slug === 'patterns') && !this.state.$patternsData.state.data) {
-      this.state.$patternsData.runQueries();
+    if ((this.state.patternsCount === undefined || slug === 'patterns') && !this.state.$patternsData?.state.data) {
+      this.state.$patternsData?.runQueries();
     }
 
     this._subs.add(
-      this.state.$data.subscribeToState((newState) => {
+      this.state.$data?.subscribeToState((newState) => {
         if (newState.data?.state === LoadingState.Done) {
           const logsPanelResponse = getLogsPanelFrame(newState.data);
           if (logsPanelResponse) {
@@ -154,7 +154,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     );
 
     this._subs.add(
-      this.state.$patternsData.subscribeToState((newState) => {
+      this.state.$patternsData?.subscribeToState((newState) => {
         if (newState.data?.state === LoadingState.Done) {
           const patternsResponse = newState.data.series;
           if (patternsResponse?.length !== undefined) {
@@ -174,7 +174,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this._subs.add(
       labels.subscribeToState((newState, prevState) => {
         if (!areArraysEqual(newState.filters, prevState.filters)) {
-          this.state.$patternsData.runQueries();
+          this.state.$patternsData?.runQueries();
         }
       })
     );
@@ -183,7 +183,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this._subs.add(
       sceneGraph.getTimeRange(this).subscribeToState(() => {
         this.updateLabels();
-        this.state.$patternsData.runQueries();
+        this.state.$patternsData?.runQueries();
       })
     );
   }
