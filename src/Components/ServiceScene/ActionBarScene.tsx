@@ -13,10 +13,10 @@ import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 import { BreakdownViewDefinition, breakdownViewsDefinitions } from './BreakdownViews';
 
-export interface LogsActionBarSceneState extends SceneObjectState {}
+export interface ActionBarSceneState extends SceneObjectState {}
 
-export class LogsActionBarScene extends SceneObjectBase<LogsActionBarSceneState> {
-  public static Component = ({ model }: SceneComponentProps<LogsActionBarScene>) => {
+export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
+  public static Component = ({ model }: SceneComponentProps<ActionBarScene>) => {
     const styles = useStyles2(getStyles);
     const exploration = getExplorationFor(model);
     let currentBreakdownViewSlug = getDrilldownSlug();

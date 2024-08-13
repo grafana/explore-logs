@@ -35,7 +35,7 @@ import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionS
 import { getMetadataService } from '../../services/metadata';
 import { navigateToDrilldownPage, navigateToIndex } from '../../services/navigate';
 import { areArraysEqual } from '../../services/comparison';
-import { LogsActionBarScene } from './LogsActionBarScene';
+import { ActionBarScene } from './ActionBarScene';
 import { breakdownViewsDefinitions, valueBreakdownViews } from './BreakdownViews';
 
 const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
@@ -353,7 +353,7 @@ function buildGraphScene() {
     children: [
       new SceneFlexItem({
         ySizing: 'content',
-        body: new LogsActionBarScene({}),
+        body: new ActionBarScene({}),
       }),
     ],
   });
