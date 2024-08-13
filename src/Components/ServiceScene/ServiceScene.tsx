@@ -62,10 +62,6 @@ export function getLogsPanelFrame(data: PanelData | undefined) {
   return data?.series.find((series) => series.refId === LOGS_PANEL_QUERY_REFID);
 }
 
-export function getPatternsFrames(data: PanelData | undefined) {
-  return data?.series.filter((series) => series.refId === PATTERNS_QUERY_REFID);
-}
-
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
     variableNames: [VAR_DATASOURCE, VAR_LABELS, VAR_FIELDS, VAR_PATTERNS, VAR_LEVELS],
@@ -160,7 +156,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this._subs.add(
       this.state.$patternsData.subscribeToState((newState) => {
         if (newState.data?.state === LoadingState.Done) {
-          const patternsResponse = getPatternsFrames(newState.data);
+          const patternsResponse = newState.data.series;
           if (patternsResponse?.length !== undefined) {
             // Save the count of patterns to state
             this.setState({

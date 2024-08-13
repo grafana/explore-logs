@@ -16,7 +16,7 @@ import {
 import { Text, useStyles2 } from '@grafana/ui';
 import { StatusWrapper } from 'Components/ServiceScene/Breakdowns/StatusWrapper';
 import { VAR_LABEL_GROUP_BY } from 'services/variables';
-import { getPatternsFrames, ServiceScene } from '../../ServiceScene';
+import { ServiceScene } from '../../ServiceScene';
 import { IndexScene } from '../../../IndexScene/IndexScene';
 import { PatternsFrameScene } from './PatternsFrameScene';
 import { PatternsViewTextSearch } from './PatternsViewTextSearch';
@@ -100,11 +100,11 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     this.setBody();
 
-    const patterns = getPatternsFrames(serviceScene.state.$patternsData?.state.data);
+    const dataFrames = serviceScene.state.$patternsData?.state.data?.series;
 
     // If the patterns exist already, update the dataframe
-    if (patterns) {
-      this.updatePatternFrames(patterns);
+    if (dataFrames) {
+      this.updatePatternFrames(dataFrames);
     }
 
     // Subscribe to changes from pattern API call
@@ -112,10 +112,10 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
   }
 
   private onDataChange = (newState: SceneDataState, prevState: SceneDataState) => {
-    const newFrame = getPatternsFrames(newState.data);
-    const prevFrame = getPatternsFrames(prevState.data);
-    if (!areArraysEqual(newFrame, prevFrame) || this.state.loading) {
-      this.updatePatternFrames(newFrame);
+    const newFrames = newState.data?.series;
+    const prevFrames = prevState.data?.series;
+    if (!areArraysEqual(newFrames, prevFrames) || this.state.loading) {
+      this.updatePatternFrames(newFrames);
     }
   };
 
@@ -136,12 +136,12 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     });
   }
 
-  private updatePatternFrames(lokiPatterns?: DataFrame[]) {
-    if (!lokiPatterns) {
+  private updatePatternFrames(dataFrames?: DataFrame[]) {
+    if (!dataFrames) {
       return;
     }
 
-    const patternFrames = this.buildPatterns(lokiPatterns);
+    const patternFrames = this.dataFrameToPatternFrame(dataFrames);
 
     this.setState({
       patternFrames,
@@ -149,11 +149,11 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     });
   }
 
-  private buildPatterns(patterns: DataFrame[]): PatternFrame[] {
+  private dataFrameToPatternFrame(dataFrame: DataFrame[]): PatternFrame[] {
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     const appliedPatterns = sceneGraph.getAncestor(serviceScene, IndexScene).state.patterns;
 
-    return patterns.map((dataFrame) => {
+    return dataFrame.map((dataFrame) => {
       const existingPattern = appliedPatterns?.find((appliedPattern) => appliedPattern.pattern === dataFrame.name);
 
       const sum: number = dataFrame.meta?.custom?.sum;

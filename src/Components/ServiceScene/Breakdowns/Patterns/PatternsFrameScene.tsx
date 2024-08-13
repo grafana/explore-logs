@@ -12,7 +12,7 @@ import {
   VizPanel,
 } from '@grafana/scenes';
 import { LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode } from '@grafana/ui';
-import { getPatternsFrames, ServiceScene } from '../../ServiceScene';
+import { ServiceScene } from '../../ServiceScene';
 import { onPatternClick } from './FilterByPatternsButton';
 import { IndexScene } from '../../../IndexScene/IndexScene';
 import { PatternsViewTableScene } from './PatternsViewTableScene';
@@ -45,7 +45,7 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
     const { body, loading } = model.useState();
     const logsByServiceScene = sceneGraph.getAncestor(model, ServiceScene);
     const { $patternsData } = logsByServiceScene.useState();
-    const patterns = getPatternsFrames($patternsData?.state.data);
+    const patterns = $patternsData?.state.data?.series;
 
     return (
       <div className={styles.container}>
@@ -60,8 +60,8 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
     // If the patterns have changed, recalculate the dataframes
     this._subs.add(
       sceneGraph.getAncestor(this, ServiceScene).subscribeToState((newState, prevState) => {
-        const newFrame = getPatternsFrames(newState?.$patternsData?.state?.data);
-        const prevFrame = getPatternsFrames(prevState?.$patternsData?.state?.data);
+        const newFrame = newState?.$patternsData?.state?.data?.series;
+        const prevFrame = prevState?.$patternsData?.state?.data?.series;
 
         if (!areArraysEqual(newFrame, prevFrame)) {
           const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
@@ -113,7 +113,7 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
 
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
 
-    const lokiPatterns = getPatternsFrames(serviceScene.state.$patternsData?.state.data);
+    const lokiPatterns = serviceScene.state.$patternsData?.state.data?.series;
     if (!lokiPatterns || !patternFrames) {
       console.warn('Failed to update PatternsFrameScene body');
       return;
