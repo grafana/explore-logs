@@ -64,18 +64,15 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
 
   // parent render
   public static Component = ({ model }: SceneComponentProps<PatternsBreakdownScene>) => {
-    const { body, loading, blockingMessage } = model.useState();
+    const { body, loading, blockingMessage, patternFrames } = model.useState();
     const { value: timeRange } = sceneGraph.getTimeRange(model).useState();
-    const logsByServiceScene = sceneGraph.getAncestor(model, ServiceScene);
-    const { $patternsData } = logsByServiceScene.useState();
-    const patterns = getPatternsFrames($patternsData?.state.data);
     const styles = useStyles2(getStyles);
     const timeRangeTooOld = dateTime().diff(timeRange.to, 'hours') >= PATTERNS_MAX_AGE_HOURS;
 
     return (
       <div className={styles.container}>
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
-          {!loading && !patterns && (
+          {!loading && !patternFrames && (
             <div className={styles.patternMissingText}>
               <Text textAlignment="center" color="primary">
                 <p>There are no pattern matches.</p>
@@ -89,9 +86,9 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
             </div>
           )}
 
-          {!loading && patterns?.length === 0 && timeRangeTooOld && <PatternsTooOld />}
-          {!loading && patterns?.length === 0 && !timeRangeTooOld && <PatternsNotDetected />}
-          {!loading && patterns && patterns.length > 0 && (
+          {!loading && patternFrames?.length === 0 && timeRangeTooOld && <PatternsTooOld />}
+          {!loading && patternFrames?.length === 0 && !timeRangeTooOld && <PatternsNotDetected />}
+          {!loading && patternFrames && patternFrames.length > 0 && (
             <div className={styles.content}>{body && <body.Component model={body} />}</div>
           )}
         </StatusWrapper>
