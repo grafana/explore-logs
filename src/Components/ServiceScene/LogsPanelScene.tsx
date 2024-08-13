@@ -17,6 +17,7 @@ import { addToFilters, FilterType } from './Breakdowns/AddToFiltersButton';
 import { getLabelTypeFromFrame, LabelType } from '../../services/fields';
 import { getAdHocFiltersVariable, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from '../../services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
+import { SERVICE_NAME } from '../ServiceSelectionScene/ServiceSelectionScene';
 
 interface LogsPanelSceneState extends SceneObjectState {
   body?: VizPanel;
@@ -103,7 +104,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
 
   private handleLabelFilter(key: string, value: string, frame: DataFrame | undefined, operator: FilterType) {
     // @TODO: NOOP. We need a way to let the user know why this is not possible.
-    if (key === 'service_name') {
+    if (key === SERVICE_NAME) {
       return;
     }
     const type = frame ? getLabelTypeFromFrame(key, frame) : LabelType.Parsed;

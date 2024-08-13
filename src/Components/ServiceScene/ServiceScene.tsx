@@ -2,7 +2,6 @@ import React from 'react';
 
 import { LoadingState, PanelData } from '@grafana/data';
 import {
-  AdHocFiltersVariable,
   SceneComponentProps,
   SceneDataProvider,
   SceneFlexItem,
@@ -11,7 +10,6 @@ import {
   SceneObjectBase,
   SceneObjectState,
   SceneQueryRunner,
-  SceneVariable,
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { LoadingPlaceholder } from '@grafana/ui';
@@ -20,6 +18,8 @@ import { getQueryRunner, getResourceQueryRunner } from 'services/panel';
 import { buildDataQuery, buildResourceQuery } from 'services/query';
 import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, ValueSlugs } from 'services/routing';
 import {
+  getDataSourceVariable,
+  getFieldsVariable,
   getLabelsVariable,
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE,
@@ -69,7 +69,7 @@ export function getPatternsFrames(data: PanelData | undefined) {
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
     variableNames: [VAR_DATASOURCE, VAR_LABELS, VAR_FIELDS, VAR_PATTERNS, VAR_LEVELS],
-    onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
+    // onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
   });
 
   public constructor(
@@ -144,6 +144,91 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
     this.setBreakdownView();
     this.setEmptyFiltersRedirection();
+
+    // Run queries on activate
+    this.runQueries();
+
+    // Subscriptions
+    this._subs.add(this.subscribeToData());
+
+    this._subs.add(this.subscribeToPatterns());
+
+    this._subs.add(this.subscribeToDetectedLabels());
+
+    this._subs.add(this.subscribeToLabelsVariable());
+
+    this._subs.add(
+      getFieldsVariable(this).subscribeToState((newState, prevState) => {
+        // @todo wip
+      })
+    );
+
+    // Update query runner on manual time range change
+    this._subs.add(this.subscribeToTimeRange());
+
+    this._subs.add(
+      getDataSourceVariable(this).subscribeToState((newState) => {
+        this.redirectToStart();
+      })
+    );
+  }
+
+  private subscribeToLabelsVariable() {
+    return getLabelsVariable(this).subscribeToState((newState, prevState) => {
+      if (!areArraysEqual(newState.filters, prevState.filters)) {
+        // We want to update the counts
+        this.state.$patternsData.runQueries();
+        this.state.$detectedLabelsData.runQueries();
+        const lastFilter = newState.filters[newState.filters.length - 1];
+
+        if (newState.filters.length > prevState.filters.length) {
+          // User added a filter
+
+          if (lastFilter.operator === '=') {
+            navigateToDrilldownPage(PageSlugs.logs, this);
+          }
+        } else if (newState.filters.length < prevState.filters.length) {
+          // user removed a filter do nothing
+        } else {
+          // user modified a filter
+          // Do we want to move folks that change the service name?
+          if (lastFilter.operator === '=' && lastFilter.key !== SERVICE_NAME) {
+            navigateToDrilldownPage(PageSlugs.logs, this);
+          }
+        }
+        // Routing
+      }
+    });
+  }
+  // @todo wip
+  // private onReferencedVariableValueChanged(variable: SceneVariable) {
+  //   // if (variable.state.name === VAR_DATASOURCE) {
+  //   //   this.redirectToStart();
+  //   //   return;
+  //   // }
+  //
+  //   // Need to exclude removing a filter from the UI here.
+  //   // Right now if you remove a filter and the new last is an include it will auto-nav
+  //
+  //   if (variable instanceof AdHocFiltersVariable) {
+  //     // If the filter we just added was exclude, don't bother navigating
+  //     const lastFilter = variable.state.filters[variable.state.filters.length - 1];
+  //     if (lastFilter.operator === '!=') {
+  //       return;
+  //     }
+  //   }
+  //
+  //   const filterVariable = getLabelsVariable(this);
+  //   if (!filterVariable.state.filters.length) {
+  //     return;
+  //   }
+  //
+  //   if (variable.state.name !== VAR_PATTERNS) {
+  //     navigateToDrilldownPage(PageSlugs.logs, this);
+  //   }
+  // }
+
+  private runQueries() {
     const slug = getDrilldownSlug();
     const parentSlug = getDrilldownValueSlug();
 
@@ -157,71 +242,61 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
     // If we don't have a detected labels count, or we are activating the labels scene, run the detected labels query
     // @todo we don't need to re-query detected_labels when selecting an individual value (navigating from labels -> label) as nothing in the query has changed, but scenes forces us to as each route has its own instantiation of this class. We could put the labels on the metadataservice?
-    if (this.state.labelsCount === undefined || slug === PageSlugs.labels || parentSlug === ValueSlugs.label) {
-      if (!this.state.$detectedLabelsData.state.data) {
-        this.state.$detectedLabelsData.runQueries();
-      }
+    if (
+      (this.state.labelsCount === undefined || slug === PageSlugs.labels || parentSlug === ValueSlugs.label) &&
+      !this.state.$detectedLabelsData.state.data
+    ) {
+      this.state.$detectedLabelsData.runQueries();
     }
+  }
 
-    this._subs.add(
-      this.state.$data.subscribeToState((newState) => {
-        if (newState.data?.state === LoadingState.Done) {
-          const logsPanelResponse = getLogsPanelFrame(newState.data);
-          if (logsPanelResponse) {
-            this.updateFields();
-          }
+  private subscribeToData() {
+    return this.state.$data.subscribeToState((newState) => {
+      if (newState.data?.state === LoadingState.Done) {
+        const logsPanelResponse = getLogsPanelFrame(newState.data);
+        if (logsPanelResponse) {
+          this.updateFields();
         }
-      })
-    );
+      }
+    });
+  }
 
-    this._subs.add(
-      this.state.$patternsData.subscribeToState((newState) => {
-        if (newState.data?.state === LoadingState.Done) {
-          const patternsResponse = getPatternsFrames(newState.data);
-          if (patternsResponse?.length !== undefined) {
-            // Save the count of patterns to state
-            this.setState({
-              patternsCount: patternsResponse.length,
-            });
-            getMetadataService().setPatternsCount(patternsResponse.length);
-          }
+  private subscribeToPatterns() {
+    return this.state.$patternsData.subscribeToState((newState) => {
+      if (newState.data?.state === LoadingState.Done) {
+        const patternsResponse = getPatternsFrames(newState.data);
+        if (patternsResponse?.length !== undefined) {
+          // Save the count of patterns to state
+          this.setState({
+            patternsCount: patternsResponse.length,
+          });
+          getMetadataService().setPatternsCount(patternsResponse.length);
         }
-      })
-    );
+      }
+    });
+  }
 
-    this._subs.add(
-      this.state.$detectedLabelsData.subscribeToState((newState) => {
-        if (newState.data?.state === LoadingState.Done) {
-          const detectedLabelsResponse = newState.data;
-          // Detected labels API call always returns a single frame, with a field for each label
-          const detectedLabelsFields = detectedLabelsResponse.series[0].fields;
-          if (detectedLabelsResponse.series.length !== undefined && detectedLabelsFields.length !== undefined) {
-            this.setState({
-              labelsCount: detectedLabelsFields.length,
-            });
-            getMetadataService().setLabelsCount(detectedLabelsFields.length);
-          }
+  private subscribeToDetectedLabels() {
+    return this.state.$detectedLabelsData.subscribeToState((newState) => {
+      if (newState.data?.state === LoadingState.Done) {
+        const detectedLabelsResponse = newState.data;
+        // Detected labels API call always returns a single frame, with a field for each label
+        const detectedLabelsFields = detectedLabelsResponse.series[0].fields;
+        if (detectedLabelsResponse.series.length !== undefined && detectedLabelsFields.length !== undefined) {
+          this.setState({
+            labelsCount: detectedLabelsFields.length,
+          });
+          getMetadataService().setLabelsCount(detectedLabelsFields.length);
         }
-      })
-    );
+      }
+    });
+  }
 
-    const labels = getLabelsVariable(this);
-    this._subs.add(
-      labels.subscribeToState((newState, prevState) => {
-        if (!areArraysEqual(newState.filters, prevState.filters)) {
-          this.state.$patternsData.runQueries();
-          this.state.$detectedLabelsData.runQueries();
-        }
-      })
-    );
-
-    // Update query runner on manual time range change
-    this._subs.add(
-      sceneGraph.getTimeRange(this).subscribeToState(() => {
-        this.state.$patternsData.runQueries();
-        this.state.$detectedLabelsData.runQueries();
-      })
-    );
+  private subscribeToTimeRange() {
+    return sceneGraph.getTimeRange(this).subscribeToState(() => {
+      this.state.$patternsData.runQueries();
+      this.state.$detectedLabelsData.runQueries();
+    });
   }
 
   private resetBodyAndData() {
@@ -245,33 +320,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
     if (Object.keys(stateUpdate).length) {
       this.setState(stateUpdate);
-    }
-  }
-
-  private onReferencedVariableValueChanged(variable: SceneVariable) {
-    if (variable.state.name === VAR_DATASOURCE) {
-      this.redirectToStart();
-      return;
-    }
-
-    // Need to exclude removing a filter from the UI here.
-    // Right now if you remove a filter and the new last is an include it will auto-nav
-
-    if (variable instanceof AdHocFiltersVariable) {
-      // If the filter we just added was exclude, don't bother navigating
-      const lastFilter = variable.state.filters[variable.state.filters.length - 1];
-      if (lastFilter.operator === '!=') {
-        return;
-      }
-    }
-
-    const filterVariable = getLabelsVariable(this);
-    if (!filterVariable.state.filters.length) {
-      return;
-    }
-
-    if (variable.state.name !== VAR_PATTERNS) {
-      navigateToDrilldownPage(PageSlugs.logs, this);
     }
   }
 
