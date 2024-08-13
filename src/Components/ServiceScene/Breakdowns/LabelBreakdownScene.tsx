@@ -93,7 +93,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   private onActivate() {
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     this.setState({
-      loading: serviceScene.state.$detectedLabelsData.state.data?.state !== LoadingState.Done,
+      loading: serviceScene.state.$detectedLabelsData?.state.data?.state !== LoadingState.Done,
     });
 
     this._subs.add(
@@ -106,11 +106,11 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     const variable = this.getVariable();
 
     // Need to update labels with current state
-    if (serviceScene.state.$detectedLabelsData.state.data?.series?.[0]) {
+    if (serviceScene.state.$detectedLabelsData?.state.data?.series?.[0]) {
       this.updateLabels(serviceScene.state.$detectedLabelsData.state.data?.series?.[0]);
     }
 
-    this._subs.add(serviceScene.state.$detectedLabelsData.subscribeToState(this.onLabelsChange));
+    this._subs.add(serviceScene.state.$detectedLabelsData?.subscribeToState(this.onLabelsChange));
     this._subs.add(variable.subscribeToState(this.onVariableStateChange));
 
     this.updateBody();
@@ -360,7 +360,7 @@ export function buildLabelValuesBreakdownActionScene(value: string) {
 interface SelectLabelActionState extends SceneObjectState {
   labelName: string;
 }
-export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
+class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
   public onClick = () => {
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     navigateToValueBreakdown(ValueSlugs.label, this.state.labelName, serviceScene);

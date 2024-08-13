@@ -108,7 +108,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     }
 
     // Subscribe to changes from pattern API call
-    this._subs.add(serviceScene.state.$patternsData.subscribeToState(this.onDataChange));
+    this._subs.add(serviceScene.state.$patternsData?.subscribeToState(this.onDataChange));
   }
 
   private onDataChange = (newState: SceneDataState, prevState: SceneDataState) => {

@@ -525,7 +525,7 @@ const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 interface SelectLabelActionState extends SceneObjectState {
   labelName: string;
 }
-export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
+class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
   public onClick = () => {
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     navigateToValueBreakdown(ValueSlugs.field, this.state.labelName, serviceScene);

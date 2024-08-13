@@ -53,9 +53,9 @@ export interface ServiceSceneCustomState {
 export interface ServiceSceneState extends SceneObjectState, ServiceSceneCustomState {
   body: SceneFlexLayout | undefined;
   drillDownLabel?: string;
-  $data: SceneDataProvider;
-  $patternsData: SceneQueryRunner;
-  $detectedLabelsData: SceneQueryRunner;
+  $data: SceneDataProvider | undefined;
+  $patternsData: SceneQueryRunner | undefined;
+  $detectedLabelsData: SceneQueryRunner | undefined;
 }
 
 export function getLogsPanelFrame(data: PanelData | undefined) {
@@ -173,8 +173,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     return getLabelsVariable(this).subscribeToState((newState, prevState) => {
       if (!areArraysEqual(newState.filters, prevState.filters)) {
         // We want to update the counts
-        this.state.$patternsData.runQueries();
-        this.state.$detectedLabelsData.runQueries();
+        this.state.$patternsData?.runQueries();
+        this.state.$detectedLabelsData?.runQueries();
         const lastFilter = newState.filters[newState.filters.length - 1];
 
         if (newState.filters.length > prevState.filters.length) {
@@ -231,23 +231,23 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     // If we don't have a patterns count in the tabs, or we are activating the patterns scene, run the pattern query
     if (
       (this.state.patternsCount === undefined || slug === PageSlugs.patterns) &&
-      !this.state.$patternsData.state.data
+      !this.state.$patternsData?.state.data
     ) {
-      this.state.$patternsData.runQueries();
+      this.state.$patternsData?.runQueries();
     }
 
     // If we don't have a detected labels count, or we are activating the labels scene, run the detected labels query
     // @todo we don't need to re-query detected_labels when selecting an individual value (navigating from labels -> label) as nothing in the query has changed, but scenes forces us to as each route has its own instantiation of this class. We could put the labels on the metadataservice?
     if (
       (this.state.labelsCount === undefined || slug === PageSlugs.labels || parentSlug === ValueSlugs.label) &&
-      !this.state.$detectedLabelsData.state.data
+      !this.state.$detectedLabelsData?.state.data
     ) {
-      this.state.$detectedLabelsData.runQueries();
+      this.state.$detectedLabelsData?.runQueries();
     }
   }
 
   private subscribeToData() {
-    return this.state.$data.subscribeToState((newState) => {
+    return this.state.$data?.subscribeToState((newState) => {
       if (newState.data?.state === LoadingState.Done) {
         const logsPanelResponse = getLogsPanelFrame(newState.data);
         if (logsPanelResponse) {
@@ -258,7 +258,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private subscribeToPatterns() {
-    return this.state.$patternsData.subscribeToState((newState) => {
+    return this.state.$patternsData?.subscribeToState((newState) => {
       if (newState.data?.state === LoadingState.Done) {
         const patternsResponse = newState.data.series;
         if (patternsResponse?.length !== undefined) {
@@ -273,7 +273,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private subscribeToDetectedLabels() {
-    return this.state.$detectedLabelsData.subscribeToState((newState) => {
+    return this.state.$detectedLabelsData?.subscribeToState((newState) => {
       if (newState.data?.state === LoadingState.Done) {
         const detectedLabelsResponse = newState.data;
         // Detected labels API call always returns a single frame, with a field for each label
@@ -290,8 +290,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
   private subscribeToTimeRange() {
     return sceneGraph.getTimeRange(this).subscribeToState(() => {
-      this.state.$patternsData.runQueries();
-      this.state.$detectedLabelsData.runQueries();
+      this.state.$patternsData?.runQueries();
+      this.state.$detectedLabelsData?.runQueries();
     });
   }
 
