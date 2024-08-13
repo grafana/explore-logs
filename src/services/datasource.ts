@@ -74,35 +74,41 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
             throw new Error('Invalid datasource!');
           }
 
-          const dataQueryRequest = { ...request };
           // override the target datasource to Loki
-          dataQueryRequest.targets = request.targets?.map((target) => {
+          request.targets = request.targets?.map((target) => {
             target.datasource = ds;
             return target;
           });
 
-          dataQueryRequest.targets.forEach((target) => {
-            const requestType = target?.resource;
-
-            switch (requestType) {
-              case 'volume': {
-                this.getVolume(dataQueryRequest, ds, subscriber);
-                break;
-              }
-              case 'patterns': {
-                this.getPatterns(dataQueryRequest, ds, subscriber);
-                break;
-              }
-              case 'detected_labels': {
-                this.getDetectedLabels(dataQueryRequest, ds, subscriber);
-                break;
-              }
-              default: {
-                this.getData(dataQueryRequest, ds, subscriber);
-                break;
-              }
-            }
+          const targetsSet = new Set();
+          request.targets.forEach((target) => {
+            targetsSet.add(target.resource ?? '');
           });
+
+          if (targetsSet.size !== 1) {
+            throw new Error('A request cannot contain queries to multiple endpoints');
+          }
+
+          const requestType = request.targets[0].resource;
+
+          switch (requestType) {
+            case 'volume': {
+              this.getVolume(request, ds, subscriber);
+              break;
+            }
+            case 'patterns': {
+              this.getPatterns(request, ds, subscriber);
+              break;
+            }
+            case 'detected_labels': {
+              this.getDetectedLabels(request, ds, subscriber);
+              break;
+            }
+            default: {
+              this.getData(request, ds, subscriber);
+              break;
+            }
+          }
         });
     });
   }
@@ -112,19 +118,8 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     ds: DataSourceWithBackend<DataQuery>,
     subscriber: Subscriber<DataQueryResponse>
   ) {
-    const dataQueryRequest = { ...request };
-    // override the target datasource to Loki
-    dataQueryRequest.targets = request.targets.filter((target) => {
-      return !target.resource;
-    });
-
-    if (!dataQueryRequest.targets.length) {
-      throw new Error('No valid queries!');
-    }
-
     // query the datasource and return either observable or promise
-    const dsResponse = ds.query(dataQueryRequest);
-
+    const dsResponse = ds.query(request);
     dsResponse.subscribe(subscriber);
 
     return subscriber;

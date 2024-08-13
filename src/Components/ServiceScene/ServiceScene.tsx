@@ -33,7 +33,7 @@ import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionS
 import { getMetadataService } from '../../services/metadata';
 import { navigateToDrilldownPage, navigateToIndex } from '../../services/navigate';
 import { areArraysEqual } from '../../services/comparison';
-import { LogsActionBarScene } from './LogsActionBarScene';
+import { ActionBarScene } from './ActionBarScene';
 import { breakdownViewsDefinitions, valueBreakdownViews } from './BreakdownViews';
 
 const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
@@ -60,10 +60,6 @@ export interface ServiceSceneState extends SceneObjectState, ServiceSceneCustomS
 
 export function getLogsPanelFrame(data: PanelData | undefined) {
   return data?.series.find((series) => series.refId === LOGS_PANEL_QUERY_REFID);
-}
-
-export function getPatternsFrames(data: PanelData | undefined) {
-  return data?.series.filter((series) => series.refId === PATTERNS_QUERY_REFID);
 }
 
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
@@ -264,7 +260,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   private subscribeToPatterns() {
     return this.state.$patternsData.subscribeToState((newState) => {
       if (newState.data?.state === LoadingState.Done) {
-        const patternsResponse = getPatternsFrames(newState.data);
+        const patternsResponse = newState.data.series;
         if (patternsResponse?.length !== undefined) {
           // Save the count of patterns to state
           this.setState({
@@ -409,7 +405,7 @@ function buildGraphScene() {
     children: [
       new SceneFlexItem({
         ySizing: 'content',
-        body: new LogsActionBarScene({}),
+        body: new ActionBarScene({}),
       }),
     ],
   });

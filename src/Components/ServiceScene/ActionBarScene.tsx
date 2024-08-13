@@ -13,10 +13,10 @@ import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 import { BreakdownViewDefinition, breakdownViewsDefinitions } from './BreakdownViews';
 
-export interface LogsActionBarSceneState extends SceneObjectState {}
+export interface ActionBarSceneState extends SceneObjectState {}
 
-export class LogsActionBarScene extends SceneObjectBase<LogsActionBarSceneState> {
-  public static Component = ({ model }: SceneComponentProps<LogsActionBarScene>) => {
+export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
+  public static Component = ({ model }: SceneComponentProps<ActionBarScene>) => {
     const styles = useStyles2(getStyles);
     const exploration = getExplorationFor(model);
     let currentBreakdownViewSlug = getDrilldownSlug();
@@ -52,10 +52,10 @@ export class LogsActionBarScene extends SceneObjectBase<LogsActionBarSceneState>
                 key={index}
                 label={tab.displayName}
                 active={currentBreakdownViewSlug === tab.value}
-                counter={!loading ? getCounter(tab, { ...state, $data }) : undefined}
+                counter={loading ? undefined : getCounter(tab, { ...state, $data })}
                 icon={loading ? 'spinner' : undefined}
                 onChangeTab={() => {
-                  if (tab.value !== currentBreakdownViewSlug || allowNavToParent) {
+                  if ((tab.value && tab.value !== currentBreakdownViewSlug) || allowNavToParent) {
                     reportAppInteraction(
                       USER_EVENTS_PAGES.service_details,
                       USER_EVENTS_ACTIONS.service_details.action_view_changed,
@@ -64,16 +64,15 @@ export class LogsActionBarScene extends SceneObjectBase<LogsActionBarSceneState>
                         previousActionView: currentBreakdownViewSlug,
                       }
                     );
-                    if (tab.value) {
-                      const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
-                      const variable = getLabelsVariable(serviceScene);
-                      const service = variable.state.filters.find((f) => f.key === SERVICE_NAME);
 
-                      if (service?.value) {
-                        navigateToDrilldownPage(tab.value, serviceScene);
-                      } else {
-                        navigateToIndex();
-                      }
+                    const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
+                    const variable = getLabelsVariable(serviceScene);
+                    const service = variable.state.filters.find((f) => f.key === SERVICE_NAME);
+
+                    if (service?.value) {
+                      navigateToDrilldownPage(tab.value, serviceScene);
+                    } else {
+                      navigateToIndex();
                     }
                   }
                 }}
@@ -92,7 +91,7 @@ const getCounter = (tab: BreakdownViewDefinition, state: ServiceSceneState) => {
     case 'patterns':
       return state.patternsCount;
     case 'labels':
-      return state.labelsCount
+      return state.labelsCount;
     default:
       return undefined;
   }
