@@ -13,7 +13,6 @@ import { Observable, Subscriber } from 'rxjs';
 import { getDataSource } from './scenes';
 import { LokiQuery } from './query';
 import { PLUGIN_ID } from './routing';
-import { partition } from 'lodash';
 
 export const WRAPPED_LOKI_DS_UID = 'wrapped-loki-ds-uid';
 
@@ -77,40 +76,30 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
             return target;
           });
 
-          const queriesPartitionedByResource = partition(request.targets, (target) => {
-            return target.resource;
+          const targetsSet = new Set();
+          request.targets.forEach((target) => {
+            targetsSet.add(target.resource);
           });
 
-          const resourceCount = queriesPartitionedByResource.reduce((acc, queries) => {
-            if (queries[0]?.resource) {
-              return acc++;
-            }
-            return acc;
-          }, 0);
-
-          // Don't mix queries that call different endpoints!
-          if (resourceCount > 1) {
-            throw new Error('Each request can only query a single resource!');
+          if (targetsSet.size !== 1) {
+            throw new Error('A request cannot contain queries to multiple endpoints');
           }
 
-          queriesPartitionedByResource.forEach((queries) => {
-            if (queries.length !== 0) {
-              // All resource strings in the partition will be the same
-              const requestType = queries[0]?.resource;
+          request.targets.forEach((target) => {
+            const requestType = target?.resource;
 
-              switch (requestType) {
-                case 'volume': {
-                  this.getVolume(request, ds, subscriber);
-                  break;
-                }
-                case 'patterns': {
-                  this.getPatterns(request, ds, subscriber);
-                  break;
-                }
-                default: {
-                  this.getData(request, ds, subscriber);
-                  break;
-                }
+            switch (requestType) {
+              case 'volume': {
+                this.getVolume(request, ds, subscriber);
+                break;
+              }
+              case 'patterns': {
+                this.getPatterns(request, ds, subscriber);
+                break;
+              }
+              default: {
+                this.getData(request, ds, subscriber);
+                break;
               }
             }
           });
