@@ -55,7 +55,7 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
                 counter={loading ? undefined : getCounter(tab, { ...state, $data })}
                 icon={loading ? 'spinner' : undefined}
                 onChangeTab={() => {
-                  if (tab.value !== currentBreakdownViewSlug || allowNavToParent) {
+                  if ((tab.value && tab.value !== currentBreakdownViewSlug) || allowNavToParent) {
                     reportAppInteraction(
                       USER_EVENTS_PAGES.service_details,
                       USER_EVENTS_ACTIONS.service_details.action_view_changed,
@@ -64,16 +64,15 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
                         previousActionView: currentBreakdownViewSlug,
                       }
                     );
-                    if (tab.value) {
-                      const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
-                      const variable = getLabelsVariable(serviceScene);
-                      const service = variable.state.filters.find((f) => f.key === SERVICE_NAME);
 
-                      if (service?.value) {
-                        navigateToDrilldownPage(tab.value, serviceScene);
-                      } else {
-                        navigateToIndex();
-                      }
+                    const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
+                    const variable = getLabelsVariable(serviceScene);
+                    const service = variable.state.filters.find((f) => f.key === SERVICE_NAME);
+
+                    if (service?.value) {
+                      navigateToDrilldownPage(tab.value, serviceScene);
+                    } else {
+                      navigateToIndex();
                     }
                   }
                 }}
