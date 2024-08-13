@@ -52,7 +52,7 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
                 key={index}
                 label={tab.displayName}
                 active={currentBreakdownViewSlug === tab.value}
-                counter={!loading ? getCounter(tab, { ...state, $data }) : undefined}
+                counter={loading ? undefined : getCounter(tab, { ...state, $data })}
                 icon={loading ? 'spinner' : undefined}
                 onChangeTab={() => {
                   if (tab.value !== currentBreakdownViewSlug || allowNavToParent) {
