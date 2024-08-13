@@ -105,8 +105,8 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     this.setState(stateUpdate);
 
     this.updatePatterns(this.state, getPatternsVariable(this));
-    this.syncFieldsWithUrl(getFieldsVariable(this), 'var-fields');
-    this.syncFieldsWithUrl(getLevelsVariable(this), 'var-levels');
+    this.resetVariablesIfNotInUrl(getFieldsVariable(this), 'var-fields');
+    this.resetVariablesIfNotInUrl(getLevelsVariable(this), 'var-levels');
 
     this._subs.add(
       this.subscribeToState((newState) => {
@@ -125,7 +125,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
    * @param urlParamName
    * @private
    */
-  private syncFieldsWithUrl(variable: AdHocFiltersVariable, urlParamName: string) {
+  private resetVariablesIfNotInUrl(variable: AdHocFiltersVariable, urlParamName: string) {
     const location = locationService.getLocation();
     const search = new URLSearchParams(location.search);
     const filtersFromUrl = search.get(urlParamName);
