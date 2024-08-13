@@ -23,6 +23,7 @@ import {
 import {
   EXPLORATION_DS,
   getFieldsVariable,
+  getLevelsVariable,
   getPatternsVariable,
   VAR_DATASOURCE,
   VAR_FIELDS,
@@ -104,7 +105,8 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     this.setState(stateUpdate);
 
     this.updatePatterns(this.state, getPatternsVariable(this));
-    this.syncFieldsWithUrl(getFieldsVariable(this));
+    this.syncFieldsWithUrl(getFieldsVariable(this), 'var-fields');
+    this.syncFieldsWithUrl(getLevelsVariable(this), 'var-levels');
 
     this._subs.add(
       this.subscribeToState((newState) => {
@@ -118,18 +120,19 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   }
 
   /**
-   * @todo why do we need to manually sync fields, but nothing else?
-   * @param fieldsVariable
+   * @todo why do we need to manually sync fields and levels, but not other ad hoc variables?
+   * @param variable
+   * @param urlParamName
    * @private
    */
-  private syncFieldsWithUrl(fieldsVariable: AdHocFiltersVariable) {
+  private syncFieldsWithUrl(variable: AdHocFiltersVariable, urlParamName: string) {
     const location = locationService.getLocation();
     const search = new URLSearchParams(location.search);
-    const filtersFromUrl = search.get('var-fields');
+    const filtersFromUrl = search.get(urlParamName);
 
     // If the filters aren't in the URL, then they're coming from the cache, set the state to sync with url
     if (filtersFromUrl === null) {
-      fieldsVariable.setState({ filters: [] });
+      variable.setState({ filters: [] });
     }
   }
 
