@@ -1,9 +1,9 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import { AddToFiltersButton, FilterType, addAdHocFilter, addToFilters } from './AddToFiltersButton';
-import { FieldType, createDataFrame } from '@grafana/data';
+import { addAdHocFilter, addToFilters, AddToFiltersButton, FilterType } from './AddToFiltersButton';
+import { createDataFrame, Field, FieldType, LoadingState, PanelData } from '@grafana/data';
 import userEvent from '@testing-library/user-event';
-import { AdHocFiltersVariable, SceneObject, sceneGraph } from '@grafana/scenes';
+import { AdHocFiltersVariable, sceneGraph, SceneObject, SceneQueryRunner } from '@grafana/scenes';
 import { LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from 'services/variables';
 import { ServiceSceneState } from '../ServiceScene';
 
@@ -68,15 +68,37 @@ describe('AddToFiltersButton', () => {
 describe('addToFilters and addAdHocFilter', () => {
   let adHocVariable: AdHocFiltersVariable;
   beforeEach(() => {
+    const labels = [
+      {
+        label: 'indexed',
+        cardinality: 1,
+      },
+    ];
+    const detectedLabelFields: Array<Partial<Field>> = labels?.map((label) => {
+      return {
+        name: label.label,
+        values: [label.cardinality],
+      };
+    });
+    const dataFrame = createDataFrame({
+      refId: 'detected_labels',
+      fields: detectedLabelFields ?? [],
+    });
+    const panelData: Partial<PanelData> = {
+      state: LoadingState.Done,
+      series: [dataFrame],
+    };
+    const state: Partial<ServiceSceneState> = {
+      $detectedLabelsData: {
+        state: {
+          data: panelData,
+          queries: [],
+        },
+      } as unknown as SceneQueryRunner,
+    };
+
     jest.spyOn(sceneGraph, 'getAncestor').mockReturnValue({
-      state: {
-        labels: [
-          {
-            label: 'indexed',
-            cardinality: 1,
-          },
-        ],
-      } as Partial<ServiceSceneState>,
+      state: state,
     });
     adHocVariable = new AdHocFiltersVariable({
       filters: [
@@ -133,7 +155,7 @@ describe('addToFilters and addAdHocFilter', () => {
       expect(lookupVariable).toHaveBeenCalledWith(variableName, expect.anything());
     });
 
-    it('identifies indexed lables and uses the appropriate variable', () => {
+    it('identifies indexed labels and uses the appropriate variable', () => {
       const lookupVariable = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(adHocVariable);
       addToFilters('indexed', 'value', 'include', {} as SceneObject);
 
@@ -188,7 +210,7 @@ describe('addToFilters and addAdHocFilter', () => {
       expect(lookupVariable).toHaveBeenCalledWith(variableName, expect.anything());
     });
 
-    it('identifies indexed lables and uses the appropriate variable', () => {
+    it('identifies indexed labels and uses the appropriate variable', () => {
       const lookupVariable = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(adHocVariable);
       addAdHocFilter({ key: 'indexed', value: 'value', operator: '=' }, {} as SceneObject);
 
