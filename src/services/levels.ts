@@ -18,7 +18,7 @@ export function toggleLevelVisibility(
   if (mode === SeriesVisibilityChangeMode.ToggleSelection) {
     const levels = visibleLevels ?? [];
     if (levels.length === 1 && levels.includes(level)) {
-      return levels.filter((existingLevel) => existingLevel !== level);
+      return [];
     }
     return [level];
   }
@@ -57,11 +57,20 @@ export function getLabelValueFromDataFrame(frame: DataFrame) {
  * From the current state of the levels filter, return the level names that
  * the user wants to see.
  */
-export function getVisibleLevels(sceneRef: SceneObject) {
+export function getVisibleLevels(allLevels: string[], sceneRef: SceneObject) {
   const levelsFilter = getLevelsVariable(sceneRef);
-  return levelsFilter.state.filters
+  const wantedLevels = levelsFilter.state.filters
     .filter((filter) => filter.operator === FilterOp.Equal)
     .map((filter) => filter.value);
+  const unwantedLevels = levelsFilter.state.filters
+    .filter((filter) => filter.operator === FilterOp.NotEqual)
+    .map((filter) => filter.value);
+  return allLevels.filter((level) => {
+    if (unwantedLevels.includes(level)) {
+      return false;
+    }
+    return wantedLevels.length === 0 || wantedLevels.includes(level);
+  });
 }
 
 /**

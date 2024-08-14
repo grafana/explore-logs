@@ -1,15 +1,24 @@
 import React from 'react';
 
-import { PanelBuilders, SceneComponentProps, SceneObjectBase, SceneObjectState, VizPanel } from '@grafana/scenes';
-import { DrawStyle, LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode, StackingMode } from '@grafana/ui';
-import { getQueryRunner, setLevelSeriesOverrides, setLeverColorOverrides } from 'services/panel';
+import {
+  FieldConfigBuilder,
+  FieldConfigBuilders,
+  PanelBuilders,
+  SceneComponentProps,
+  SceneObjectBase,
+  SceneObjectState,
+  VizPanel,
+} from '@grafana/scenes';
+import { LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode } from '@grafana/ui';
+import { getQueryRunner, setLevelSeriesOverrides, setLogsVolumeFieldConfigs } from 'services/panel';
 import { buildDataQuery } from 'services/query';
 import { getLabelsVariable, getLevelsVariable, LEVEL_VARIABLE_VALUE } from 'services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getTimeSeriesExpr } from '../../services/expressions';
 import { SERVICE_NAME } from '../ServiceSelectionScene/ServiceSelectionScene';
-import { getVisibleLevels, toggleLevelFromFilter } from 'services/levels';
+import { getLabelsFromSeries, getVisibleLevels, toggleLevelFromFilter } from 'services/levels';
 import { FilterOp } from 'services/filters';
+import { LoadingState } from '@grafana/data';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
@@ -53,23 +62,31 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
             legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`,
           }),
         ])
-      )
-      .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
-      .setCustomFieldConfig('fillOpacity', 100)
-      .setCustomFieldConfig('lineWidth', 0)
-      .setCustomFieldConfig('pointSize', 0)
-      .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-      .setOverrides(setLeverColorOverrides);
+      );
 
-    const focusedLevels = getVisibleLevels(this);
-    if (focusedLevels?.length) {
-      viz.setOverrides(setLevelSeriesOverrides.bind(null, focusedLevels));
-    }
+    setLogsVolumeFieldConfigs(viz);
 
     const panel = viz.build();
     panel.setState({
       extendPanelContext: (_, context) => this.extendTimeSeriesLegendBus(context),
     });
+
+    this._subs.add(
+      panel.state.$data?.subscribeToState((newState) => {
+        if (newState.data?.state !== LoadingState.Done) {
+          return;
+        }
+        const focusedLevels = getVisibleLevels(getLabelsFromSeries(newState.data.series), this);
+        if (focusedLevels?.length) {
+          const config = setLogsVolumeFieldConfigs(FieldConfigBuilders.timeseries()).setOverrides(
+            setLevelSeriesOverrides.bind(null, focusedLevels)
+          );
+          if (config instanceof FieldConfigBuilder) {
+            panel.onFieldConfigChange(config.build(), true);
+          }
+        }
+      })
+    );
 
     return panel;
   }

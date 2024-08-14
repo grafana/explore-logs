@@ -110,12 +110,17 @@ describe('getVisibleLevels', () => {
     jest.mocked(getLevelsVariable).mockReturnValue(levelsVariable);
   }
 
-  it('Returns an empty array when the filter is empty', () => {
+  it('Returns an empty array when everything is empty', () => {
     setup([]);
-    expect(getVisibleLevels(scene)).toEqual([]);
+    expect(getVisibleLevels([], scene)).toEqual([]);
   });
 
-  it('Returns an empty array when the filters are negative', () => {
+  it('Returns all levels when there are no filters', () => {
+    setup([]);
+    expect(getVisibleLevels(['error', 'info'], scene)).toEqual(['error', 'info']);
+  });
+
+  it('Removes negatively filtered levels', () => {
     setup([
       {
         key: 'detected_level',
@@ -123,7 +128,7 @@ describe('getVisibleLevels', () => {
         value: 'error',
       },
     ]);
-    expect(getVisibleLevels(scene)).toEqual([]);
+    expect(getVisibleLevels(['error', 'info'], scene)).toEqual(['info']);
   });
 
   it('Returns the positive levels from the filters', () => {
@@ -144,7 +149,28 @@ describe('getVisibleLevels', () => {
         value: 'info',
       },
     ]);
-    expect(getVisibleLevels(scene)).toEqual(['info']);
+    expect(getVisibleLevels(['info'], scene)).toEqual(['info']);
+  });
+
+  it('Filters the levels by the current filters', () => {
+    setup([
+      {
+        key: 'detected_level',
+        operator: FilterOp.NotEqual,
+        value: 'error',
+      },
+      {
+        key: 'detected_level',
+        operator: FilterOp.NotEqual,
+        value: 'warn',
+      },
+      {
+        key: 'detected_level',
+        operator: FilterOp.Equal,
+        value: 'info',
+      },
+    ]);
+    expect(getVisibleLevels(['error', 'warn', 'info', 'debug'], scene)).toEqual(['info']);
   });
 });
 

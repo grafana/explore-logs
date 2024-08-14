@@ -1,10 +1,17 @@
 import { DataFrame, FieldConfig, FieldMatcherID } from '@grafana/data';
-import { FieldConfigOverridesBuilder, SceneDataTransformer, SceneQueryRunner } from '@grafana/scenes';
+import {
+  FieldConfigBuilders,
+  FieldConfigOverridesBuilder,
+  PanelBuilders,
+  SceneDataTransformer,
+  SceneQueryRunner,
+} from '@grafana/scenes';
 import { map, Observable } from 'rxjs';
 import { LokiQuery } from './query';
 import { HideSeriesConfig } from '@grafana/schema';
 import { WRAPPED_LOKI_DS_UID } from './datasource';
 import { LogsSceneQueryRunner } from './LogsSceneQueryRunner';
+import { DrawStyle, StackingMode } from '@grafana/ui';
 
 const UNKNOWN_LEVEL_LOGS = 'logs';
 export function setLeverColorOverrides(overrides: FieldConfigOverridesBuilder<FieldConfig>) {
@@ -30,9 +37,22 @@ export function setLeverColorOverrides(overrides: FieldConfigOverridesBuilder<Fi
   });
 }
 
+export function setLogsVolumeFieldConfigs(
+  viz: ReturnType<typeof PanelBuilders.timeseries> | ReturnType<typeof FieldConfigBuilders.timeseries>
+) {
+  return viz
+    .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
+    .setCustomFieldConfig('fillOpacity', 100)
+    .setCustomFieldConfig('lineWidth', 0)
+    .setCustomFieldConfig('pointSize', 0)
+    .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+    .setOverrides(setLeverColorOverrides);
+}
+
 interface TimeSeriesFieldConfig extends FieldConfig {
   hideFrom: HideSeriesConfig;
 }
+
 export function setLevelSeriesOverrides(levels: string[], overrideConfig: FieldConfigOverridesBuilder<FieldConfig>) {
   overrideConfig
     .match({
