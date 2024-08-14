@@ -1,0 +1,134 @@
+import {
+  PanelBuilders,
+  SceneComponentProps,
+  SceneCSSGridItem,
+  SceneCSSGridLayout,
+  SceneDataProvider,
+  SceneFlexItemLike,
+  sceneGraph,
+  SceneObjectBase,
+  SceneObjectState,
+  VariableValueOption,
+} from '@grafana/scenes';
+import { LayoutSwitcher } from './LayoutSwitcher';
+import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
+import { getQueryRunner, setLeverColorOverrides } from '../../../services/panel';
+import {
+  ALL_VARIABLE_VALUE,
+  getLabelGroupByVariable,
+  getLogsStreamSelector,
+  LEVEL_VARIABLE_VALUE,
+} from '../../../services/variables';
+import React from 'react';
+import { LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS, LabelBreakdownScene } from './LabelBreakdownScene';
+import { buildDataQuery } from '../../../services/query';
+import { SelectLabelAction } from './SelectLabelAction';
+
+export interface LabelNamesBreakdownSceneState extends SceneObjectState {
+  body?: LayoutSwitcher;
+  $data?: SceneDataProvider;
+}
+
+export class LabelNamesBreakdownScene extends SceneObjectBase<LabelNamesBreakdownSceneState> {
+  constructor(state: Partial<LabelNamesBreakdownSceneState>) {
+    super({
+      ...state,
+    });
+
+    this.addActivationHandler(this.onActivate.bind(this));
+  }
+
+  onActivate() {
+    this.setState({
+      body: this.build(),
+    });
+  }
+
+  private build(): LayoutSwitcher {
+    const variable = getLabelGroupByVariable(this);
+    const labelBreakdownScene = sceneGraph.getAncestor(this, LabelBreakdownScene);
+    labelBreakdownScene.state.search.reset();
+    const children: SceneFlexItemLike[] = [];
+
+    for (const option of variable.state.options) {
+      const { value } = option;
+      const optionValue = String(value);
+      if (value === ALL_VARIABLE_VALUE || !value) {
+        continue;
+      }
+      const query = this.buildQuery(option);
+
+      children.push(
+        new SceneCSSGridItem({
+          body: PanelBuilders.timeseries()
+            .setTitle(optionValue)
+            .setData(getQueryRunner([query]))
+            .setHeaderActions(new SelectLabelAction({ labelName: optionValue }))
+            .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
+            .setCustomFieldConfig('fillOpacity', 100)
+            .setCustomFieldConfig('lineWidth', 0)
+            .setCustomFieldConfig('pointSize', 0)
+            .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+            .setOverrides(setLeverColorOverrides)
+            .build(),
+        })
+      );
+    }
+
+    return new LayoutSwitcher({
+      options: [
+        { value: 'grid', label: 'Grid' },
+        { value: 'rows', label: 'Rows' },
+      ],
+      active: 'grid',
+      layouts: [
+        new SceneCSSGridLayout({
+          isLazy: true,
+          templateColumns: LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS,
+          autoRows: '200px',
+          children: children,
+        }),
+        new SceneCSSGridLayout({
+          isLazy: true,
+          templateColumns: '1fr',
+          autoRows: '200px',
+          children: children.map((child) => child.clone()),
+        }),
+      ],
+    });
+  }
+
+  private buildQuery(option: VariableValueOption) {
+    const optionValue = String(option.value);
+    let labelExpressionToAdd = '';
+    let structuredMetadataToAdd = '';
+
+    if (option.value && option.value !== LEVEL_VARIABLE_VALUE) {
+      labelExpressionToAdd = `, ${option.value}!=""`;
+    } else if (option.value && option.value === LEVEL_VARIABLE_VALUE) {
+      structuredMetadataToAdd = ` | ${option.value} != ""`;
+    }
+
+    return buildDataQuery(
+      `sum(count_over_time(${getLogsStreamSelector({
+        labelExpressionToAdd,
+        structuredMetadataToAdd,
+      })}[$__auto])) by (${optionValue})`,
+      { legendFormat: `{{${optionValue}}}`, refId: 'LABEL_BREAKDOWN_NAMES' }
+    );
+  }
+
+  public static Selector({ model }: SceneComponentProps<LabelNamesBreakdownScene>) {
+    const { body } = model.useState();
+    return <>{body && <body.Selector model={body} />}</>;
+  }
+
+  public static Component = ({ model }: SceneComponentProps<LabelNamesBreakdownScene>) => {
+    const { body } = model.useState();
+    if (body) {
+      return <>{body && <body.Component model={body} />}</>;
+    }
+
+    return <LoadingPlaceholder text={'Loading...'} />;
+  };
+}

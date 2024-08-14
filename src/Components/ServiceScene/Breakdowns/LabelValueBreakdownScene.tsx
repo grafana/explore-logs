@@ -13,22 +13,33 @@ import {
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { getLabelValue } from './SortByScene';
 import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
-import { setLeverColorOverrides } from '../../../services/panel';
+import { getQueryRunner, setLeverColorOverrides } from '../../../services/panel';
 import { getSortByPreference } from '../../../services/store';
 import { LoadingState, ReducerID } from '@grafana/data';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { getFilterBreakdownValueScene } from '../../../services/fields';
-import { getLabelGroupByVariable, getLabelsVariable, VAR_LABELS } from '../../../services/variables';
+import {
+  ALL_VARIABLE_VALUE,
+  getLabelGroupByVariable,
+  getLogsStreamSelector,
+  LEVEL_VARIABLE_VALUE,
+  VAR_LABEL_GROUP_BY_EXPR,
+  VAR_LABELS,
+} from '../../../services/variables';
 import React from 'react';
 import { LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS, LabelBreakdownScene } from './LabelBreakdownScene';
+import { buildDataQuery } from '../../../services/query';
+import { navigateToDrilldownPage } from '../../../services/navigate';
+import { PageSlugs } from '../../../services/routing';
+import { ServiceScene } from '../ServiceScene';
 
 export interface LabelValueBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
-  $data: SceneDataProvider;
+  $data?: SceneDataProvider;
 }
 
 export class LabelValueBreakdownScene extends SceneObjectBase<LabelValueBreakdownSceneState> {
-  constructor(state: Partial<LabelValueBreakdownSceneState> & { $data: SceneDataProvider }) {
+  constructor(state: Partial<LabelValueBreakdownSceneState>) {
     super({
       ...state,
     });
@@ -39,24 +50,53 @@ export class LabelValueBreakdownScene extends SceneObjectBase<LabelValueBreakdow
   onActivate() {
     this.setState({
       body: this.build(),
+      $data: getQueryRunner([this.buildQuery()]),
     });
 
-    console.log('label value breakdown activate');
-
-    const labelsVariable = getLabelsVariable(this);
-
-    labelsVariable.subscribeToState((newState, prevState) => {
-      console.log('labelsVariable change', newState);
-    });
+    const groupByVariable = getLabelGroupByVariable(this);
+    this._subs.add(
+      groupByVariable.subscribeToState((newState, prevState) => {
+        if (newState.value === ALL_VARIABLE_VALUE) {
+          this.setState({
+            $data: undefined,
+            body: undefined,
+          });
+        }
+      })
+    );
 
     // This is only triggered when the filters are updated, or the time range changes
-    this.state.$data.subscribeToState((newState, prevState) => {
+    this.state.$data?.subscribeToState((newState, prevState) => {
       if (newState.data?.state === LoadingState.Done) {
         this.setState({
           body: this.build(),
         });
+        // No panels for the user to select, presumably because everything has been excluded
+        if (!newState.data.series.length) {
+          navigateToDrilldownPage(PageSlugs.labels, sceneGraph.getAncestor(this, ServiceScene));
+        }
       }
     });
+  }
+
+  private buildQuery() {
+    const variable = getLabelGroupByVariable(this);
+    let labelExpressionToAdd = '';
+    let structuredMetadataToAdd = '';
+
+    if (variable.state.value && variable.state.value !== LEVEL_VARIABLE_VALUE) {
+      labelExpressionToAdd = ` ,${variable.state.value} != ""`;
+    } else if (variable.state.value && variable.state.value === LEVEL_VARIABLE_VALUE) {
+      structuredMetadataToAdd = ` | ${variable.state.value} != ""`;
+    }
+
+    return buildDataQuery(
+      `sum(count_over_time(${getLogsStreamSelector({
+        labelExpressionToAdd,
+        structuredMetadataToAdd,
+      })} [$__auto])) by (${VAR_LABEL_GROUP_BY_EXPR})`,
+      { legendFormat: `{{${VAR_LABEL_GROUP_BY_EXPR}}}`, refId: 'LABEL_BREAKDOWN_VALUES' }
+    );
   }
 
   private build(): LayoutSwitcher {

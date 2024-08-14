@@ -27,12 +27,12 @@ export const ALL_VARIABLE_VALUE = '$__all';
 export const LEVEL_VARIABLE_VALUE = 'detected_level';
 export const PATTERNS_TEXT_FILTER = 'patternsFilter';
 
-//@todo options object instead
-export function getLogsStreamSelector(
-  labelExpressionToAdd = '',
-  structuredMetadataToAdd = '',
-  fieldExpressionToAdd = ''
-) {
+export function getLogsStreamSelector(options: {
+  labelExpressionToAdd?: string;
+  structuredMetadataToAdd?: string;
+  fieldExpressionToAdd?: string;
+}) {
+  const { labelExpressionToAdd = '', structuredMetadataToAdd = '', fieldExpressionToAdd = '' } = options;
   return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_LEVELS_EXPR} ${VAR_FIELDS_EXPR} ${VAR_LINE_FILTER_EXPR}`;
 }
 
