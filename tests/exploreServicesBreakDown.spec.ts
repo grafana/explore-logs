@@ -1,12 +1,7 @@
 import {expect, test} from '@grafana/plugin-e2e';
 import {ExplorePage} from './fixtures/explore';
 import {testIds} from '../src/services/testIds';
-import {mockVolumeApiResponse} from "./mocks/mockVolumeApiResponse";
 import {mockEmptyQueryApiResponse} from "./mocks/mockEmptyQueryApiResponse";
-import {LokiQuery} from "../src/services/query";
-import {DataQueryRequest} from "@grafana/data";
-import {DataQuery} from "@grafana/schema";
-import {LOGS_PANEL_QUERY_REFID} from "../src/Components/ServiceScene/ServiceScene";
 
 test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;
@@ -130,7 +125,7 @@ test.describe('explore services breakdown page', () => {
     await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
 
     // Make sure the panels have started to render
-    await expect(page.getByTestId('data-testid Panel header detected_level')).toBeInViewport()
+    await expect(page.getByTestId('data-testid Panel header active_series')).toBeInViewport()
 
     // Fields on top should be loaded
     expect(requestCount).toEqual(6)
@@ -147,7 +142,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId('data-testid Panel header detected_level')).not.toBeInViewport()
 
     // if this flakes we could just assert that it's greater then 3
-    expect(requestCount).toEqual(15)
+    expect(requestCount).toEqual(13)
 
     await page.unrouteAll();
   })
