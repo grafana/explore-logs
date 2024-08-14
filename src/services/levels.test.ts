@@ -1,11 +1,13 @@
 import { SeriesVisibilityChangeMode } from '@grafana/ui';
-import { getLabelsFromSeries, getVisibleLevels, toggleLevelVisibility } from './levels';
+import { getLabelsFromSeries, getVisibleLevels, toggleLevelFromFilter, toggleLevelVisibility } from './levels';
 import { AdHocVariableFilter, FieldType, toDataFrame } from '@grafana/data';
 import { getLevelsVariable, VAR_LEVELS } from './variables';
 import { AdHocFiltersVariable, SceneObject } from '@grafana/scenes';
 import { FilterOp } from './filters';
+import { addToFilters, replaceFilter } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 
 jest.mock('./variables');
+jest.mock('Components/ServiceScene/Breakdowns/AddToFiltersButton');
 
 const ALL_LEVELS = ['logs', 'debug', 'info', 'warn', 'error', 'crit'];
 
@@ -103,11 +105,6 @@ describe('getVisibleLevels', () => {
   function setup(filters: AdHocVariableFilter[]) {
     const levelsVariable = new AdHocFiltersVariable({
       name: VAR_LEVELS,
-      label: 'Filters',
-      applyMode: 'manual',
-      layout: 'vertical',
-      getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
-      getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
       filters,
     });
     jest.mocked(getLevelsVariable).mockReturnValue(levelsVariable);
@@ -148,5 +145,42 @@ describe('getVisibleLevels', () => {
       },
     ]);
     expect(getVisibleLevels(scene)).toEqual(['info']);
+  });
+});
+
+describe('toggleLevelFromFilter', () => {
+  const scene = {} as SceneObject;
+  function setup(filters: AdHocVariableFilter[]) {
+    const levelsVariable = new AdHocFiltersVariable({
+      name: VAR_LEVELS,
+      filters,
+    });
+    jest.mocked(getLevelsVariable).mockReturnValue(levelsVariable);
+  }
+
+  beforeEach(() => {
+    jest.mocked(replaceFilter).mockClear();
+    jest.mocked(addToFilters).mockClear();
+  });
+
+  it('Sets the filter when it is empty', () => {
+    setup([]);
+
+    expect(toggleLevelFromFilter('info', scene)).toBe('add');
+    expect(replaceFilter).toHaveBeenCalledTimes(1);
+  });
+
+  it('Overwrites the filter if exists with a different value', () => {
+    setup([{ key: 'detected_level', operator: FilterOp.Equal, value: 'error' }]);
+
+    expect(toggleLevelFromFilter('info', scene)).toBe('add');
+    expect(replaceFilter).toHaveBeenCalledTimes(1);
+  });
+
+  it('Toggles it off if the filter with the same value exists', () => {
+    setup([{ key: 'detected_level', operator: FilterOp.Equal, value: 'info' }]);
+
+    expect(toggleLevelFromFilter('info', scene)).toBe('remove');
+    expect(addToFilters).toHaveBeenCalledTimes(1);
   });
 });
