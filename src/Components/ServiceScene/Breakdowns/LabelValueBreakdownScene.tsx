@@ -18,7 +18,7 @@ import { getSortByPreference } from '../../../services/store';
 import { LoadingState, ReducerID } from '@grafana/data';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { getFilterBreakdownValueScene } from '../../../services/fields';
-import { getLabelGroupByVariable, VAR_LABELS } from '../../../services/variables';
+import { getLabelGroupByVariable, getLabelsVariable, VAR_LABELS } from '../../../services/variables';
 import React from 'react';
 import { LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS, LabelBreakdownScene } from './LabelBreakdownScene';
 
@@ -39,6 +39,14 @@ export class LabelValueBreakdownScene extends SceneObjectBase<LabelValueBreakdow
   onActivate() {
     this.setState({
       body: this.build(),
+    });
+
+    console.log('label value breakdown activate');
+
+    const labelsVariable = getLabelsVariable(this);
+
+    labelsVariable.subscribeToState((newState, prevState) => {
+      console.log('labelsVariable change', newState);
     });
 
     // This is only triggered when the filters are updated, or the time range changes

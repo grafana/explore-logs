@@ -27,6 +27,7 @@ import { ValueSlugs } from 'services/routing';
 import {
   ALL_VARIABLE_VALUE,
   getLabelGroupByVariable,
+  getLabelsVariable,
   LOG_STREAM_SELECTOR_EXPR,
   VAR_LABEL_GROUP_BY,
   VAR_LABEL_GROUP_BY_EXPR,
@@ -41,10 +42,9 @@ import { BreakdownSearchReset, BreakdownSearchScene } from './BreakdownSearchSce
 import { getSortByPreference } from 'services/store';
 import { SortByScene, SortCriteriaChanged } from './SortByScene';
 import { ServiceScene } from '../ServiceScene';
-import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
+import { CustomConstantVariable } from '../../../services/CustomConstantVariable';
 import { navigateToValueBreakdown } from '../../../services/navigate';
 import { areArraysEqual } from '../../../services/comparison';
-import { getTimeSeriesExpr } from '../../../services/expressions';
 import { LabelValueBreakdownScene } from './LabelValueBreakdownScene';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
@@ -94,6 +94,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     this.setState({
       loading: serviceScene.state.$detectedLabelsData?.state.data?.state !== LoadingState.Done,
+      error: serviceScene.state.$detectedLabelsData?.state.data?.state === LoadingState.Error,
     });
 
     this._subs.add(
@@ -103,47 +104,63 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     );
     this._subs.add(this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange));
 
-    const variable = this.getVariable();
-
     // Need to update labels with current state
     if (serviceScene.state.$detectedLabelsData?.state.data?.series?.[0]) {
       this.updateLabels(serviceScene.state.$detectedLabelsData.state.data?.series?.[0]);
     }
 
     this._subs.add(serviceScene.state.$detectedLabelsData?.subscribeToState(this.onLabelsChange));
-    this._subs.add(variable.subscribeToState(this.onVariableStateChange));
+    // const variable = getLabelGroupByVariable(this);
+    // this._subs.add(variable.subscribeToState(this.onVariableStateChange));
+
+    this._subs.add(
+      getLabelsVariable(this).subscribeToState((newState, prevState) => {
+        // If we're in the label breakdown, and not the value breakdown
+        if (this.state.body instanceof LayoutSwitcher) {
+          console.log('clear body, set loading');
+          // Clear body and set loading state so we don't fire queries before the new detected_labels response has come back which will update the options
+          this.setState({
+            loading: true,
+            body: undefined,
+          });
+        }
+      })
+    );
 
     this.updateBody();
   }
-
-  /**
-   * Update body when variable state is updated
-   * @param newState
-   * @param oldState
-   */
-  private onVariableStateChange = (newState: CustomConstantVariableState, oldState: CustomConstantVariableState) => {
-    if (
-      !areArraysEqual(newState.options, oldState.options) ||
-      newState.value !== oldState.value ||
-      (newState.loading !== oldState.loading && newState.loading === false)
-    ) {
-      this.updateBody();
-    }
-  };
+  //
+  // /**
+  //  * Update body when variable state is updated, although I think we want this to happen whenever the $detectedLabels response changes instead?
+  //  * @param newState
+  //  * @param oldState
+  //  */
+  // private onVariableStateChange = (newState: CustomConstantVariableState, oldState: CustomConstantVariableState) => {
+  //   console.log('group variable ANY change', newState, oldState)
+  //   if (
+  //     !areArraysEqual(newState.options, oldState.options) ||
+  //     newState.value !== oldState.value ||
+  //     (newState.loading !== oldState.loading && newState.loading === false)
+  //   ) {
+  //
+  //     console.log('group by variable action change', newState, oldState, this.state.body)
+  //     this.updateBody();
+  //   }
+  // };
 
   /**
    * Pull the detected_labels from our service scene, update the variable when they change
    * @param newState
    */
-  private onLabelsChange = (newState: QueryRunnerState) => {
-    if (newState.data?.state === LoadingState.Done) {
+  private onLabelsChange = (newState: QueryRunnerState, prevState: QueryRunnerState) => {
+    if (
+      newState.data?.state === LoadingState.Done &&
+      !areArraysEqual(newState.data.series?.[0]?.fields, prevState.data?.series?.[0]?.fields)
+    ) {
       this.updateLabels(newState.data.series?.[0]);
+      this.updateBody();
     }
   };
-
-  private getVariable(): CustomConstantVariable {
-    return getLabelGroupByVariable(this);
-  }
 
   private handleSortByChange = (event: SortCriteriaChanged) => {
     if (event.target !== 'labels') {
@@ -172,7 +189,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       console.warn('detectedLabels empty', detectedLabels);
       return;
     }
-    const variable = this.getVariable();
+    const variable = getLabelGroupByVariable(this);
     const options = getLabelOptions(detectedLabels.fields.map((label) => label.name));
 
     variable.setState({
@@ -183,7 +200,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   }
 
   private updateBody() {
-    const variable = this.getVariable();
+    const variable = getLabelGroupByVariable(this);
     // We get the labels from the service scene, if we don't have them yet, assume we're loading
     if (!variable.state.options || !variable.state.options.length) {
       return;
@@ -206,9 +223,14 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       { legendFormat: `{{${VAR_LABEL_GROUP_BY_EXPR}}}`, refId: 'LABEL_BREAKDOWN_VALUES' }
     );
 
-    stateUpdate.body = variable.hasAllValue()
-      ? this.buildLabelsLayout(variable.state.options)
-      : new LabelValueBreakdownScene({ $data: getQueryRunner([query]) });
+    // We don't want to re-instantiate the labelValueBreakdown scene, as it has a query runner that will re-run when the variable dependecies change
+    // But we do want to rebuild the body for labels as we clear out the body on change of labels
+    // @todo, create new scene for labelsLayout?
+    if (!(this.state.body instanceof LabelValueBreakdownScene && !variable.hasAllValue())) {
+      stateUpdate.body = variable.hasAllValue()
+        ? this.buildLabelsLayout(variable.state.options)
+        : new LabelValueBreakdownScene({ $data: getQueryRunner([query]) });
+    }
 
     this.setState({ ...stateUpdate });
   }
@@ -224,13 +246,25 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
         continue;
       }
 
+      let fieldExpressionToAdd = '';
+
+      if (option.value) {
+        fieldExpressionToAdd = `| ${option.value} != ""`;
+      }
+
+      const query = buildDataQuery(
+        `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR} ${fieldExpressionToAdd} [$__auto])) by (${optionValue})`,
+        { legendFormat: `{{${optionValue}}}`, refId: 'LABEL_BREAKDOWN_NAMES' }
+      );
+
       children.push(
         new SceneCSSGridItem({
           body: PanelBuilders.timeseries()
             .setTitle(optionValue)
             .setData(
               getQueryRunner([
-                buildDataQuery(getTimeSeriesExpr(this, optionValue), { legendFormat: `{{${optionValue}}}` }),
+                // buildDataQuery(getTimeSeriesExpr(this, optionValue), { legendFormat: `{{${optionValue}}}` }),
+                query,
               ])
             )
             .setHeaderActions(new SelectLabelAction({ labelName: optionValue }))
@@ -273,7 +307,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       return;
     }
 
-    const variable = this.getVariable();
+    const variable = getLabelGroupByVariable(this);
     variable.changeValueTo(value);
 
     const { sortBy, direction } = getSortByPreference('labels', ReducerID.stdDev, 'desc');
@@ -295,9 +329,14 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
 
   public static Component = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
     const { body, loading, blockingMessage, error, search, sort } = model.useState();
-    const variable = model.getVariable();
+    const variable = getLabelGroupByVariable(model);
     const { options, value } = variable.useState();
     const styles = useStyles2(getStyles);
+    console.log('render', {
+      loading,
+      body,
+      error,
+    });
 
     return (
       <div className={styles.container}>
