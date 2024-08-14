@@ -4,7 +4,7 @@ import { PanelBuilders, SceneComponentProps, SceneObjectBase, SceneObjectState, 
 import { DrawStyle, LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode, StackingMode } from '@grafana/ui';
 import { getQueryRunner, setLevelSeriesOverrides, setLeverColorOverrides } from 'services/panel';
 import { buildDataQuery } from 'services/query';
-import { getAdHocFiltersVariable, getLabelsVariable, LEVEL_VARIABLE_VALUE, VAR_LEVELS } from 'services/variables';
+import { getLabelsVariable, getLevelsVariable, LEVEL_VARIABLE_VALUE } from 'services/variables';
 import { addToFilters, replaceFilter } from './Breakdowns/AddToFiltersButton';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getTimeSeriesExpr } from '../../services/expressions';
@@ -78,7 +78,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
   private extendTimeSeriesLegendBus = (context: PanelContext) => {
     const originalOnToggleSeriesVisibility = context.onToggleSeriesVisibility;
 
-    const levelFilter = getAdHocFiltersVariable(VAR_LEVELS, this);
+    const levelFilter = getLevelsVariable(this);
     if (levelFilter) {
       this._subs.add(
         levelFilter?.subscribeToState((newState, prevState) => {
@@ -110,7 +110,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
         return;
       }
 
-      const levelFilter = getAdHocFiltersVariable(VAR_LEVELS, this);
+      const levelFilter = getLevelsVariable(this);
       const empty = levelFilter.state.filters.length === 0;
       const filterExists = levelFilter.state.filters.find(
         (filter) => filter.value === level && filter.operator === FilterOp.Equal
