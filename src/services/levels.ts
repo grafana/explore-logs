@@ -58,7 +58,7 @@ export function getVisibleLevels(sceneRef: SceneObject) {
   return levels.filter((level) => !excludedLevels.includes(level));
 }
 
-export function toggleLevelFromLogsVolume(level: string, sceneRef: SceneObject) {
+export function toggleLevelFromFilter(level: string, sceneRef: SceneObject) {
   const levelFilter = getLevelsVariable(sceneRef);
   const empty = levelFilter.state.filters.length === 0;
   const filterExists = levelFilter.state.filters.find(

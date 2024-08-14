@@ -8,7 +8,7 @@ import { getLabelsVariable, getLevelsVariable, LEVEL_VARIABLE_VALUE } from 'serv
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getTimeSeriesExpr } from '../../services/expressions';
 import { SERVICE_NAME } from '../ServiceSelectionScene/ServiceSelectionScene';
-import { getVisibleLevels, toggleLevelFromLogsVolume } from 'services/levels';
+import { getVisibleLevels, toggleLevelFromFilter } from 'services/levels';
 import { FilterOp } from 'services/filters';
 
 export interface LogsVolumePanelState extends SceneObjectState {
@@ -98,7 +98,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
         return;
       }
 
-      const action = toggleLevelFromLogsVolume(level, this);
+      const action = toggleLevelFromFilter(level, this);
 
       reportAppInteraction(
         USER_EVENTS_PAGES.service_details,
