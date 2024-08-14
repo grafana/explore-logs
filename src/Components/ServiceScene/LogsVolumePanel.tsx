@@ -1,23 +1,14 @@
 import React from 'react';
 
-import {
-  FieldConfigBuilder,
-  FieldConfigBuilders,
-  PanelBuilders,
-  SceneComponentProps,
-  SceneObjectBase,
-  SceneObjectState,
-  VizPanel,
-} from '@grafana/scenes';
+import { PanelBuilders, SceneComponentProps, SceneObjectBase, SceneObjectState, VizPanel } from '@grafana/scenes';
 import { LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode } from '@grafana/ui';
-import { getQueryRunner, setLevelSeriesOverrides, setLogsVolumeFieldConfigs } from 'services/panel';
+import { getQueryRunner, setLogsVolumeFieldConfigs, syncLogsPanelVisibleSeries } from 'services/panel';
 import { buildDataQuery } from 'services/query';
 import { getLabelsVariable, getLevelsVariable, LEVEL_VARIABLE_VALUE } from 'services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getTimeSeriesExpr } from '../../services/expressions';
 import { SERVICE_NAME } from '../ServiceSelectionScene/ServiceSelectionScene';
-import { getLabelsFromSeries, getVisibleLevels, toggleLevelFromFilter } from 'services/levels';
-import { FilterOp } from 'services/filters';
+import { toggleLevelFromFilter } from 'services/levels';
 import { LoadingState } from '@grafana/data';
 
 export interface LogsVolumePanelState extends SceneObjectState {
@@ -76,15 +67,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
         if (newState.data?.state !== LoadingState.Done) {
           return;
         }
-        const focusedLevels = getVisibleLevels(getLabelsFromSeries(newState.data.series), this);
-        if (focusedLevels?.length) {
-          const config = setLogsVolumeFieldConfigs(FieldConfigBuilders.timeseries()).setOverrides(
-            setLevelSeriesOverrides.bind(null, focusedLevels)
-          );
-          if (config instanceof FieldConfigBuilder) {
-            panel.onFieldConfigChange(config.build(), true);
-          }
-        }
+        syncLogsPanelVisibleSeries(panel, newState.data.series, this);
       })
     );
 
@@ -92,27 +75,17 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
   }
 
   private extendTimeSeriesLegendBus = (context: PanelContext) => {
-    const originalOnToggleSeriesVisibility = context.onToggleSeriesVisibility;
-
     const levelFilter = getLevelsVariable(this);
-    if (levelFilter) {
-      this._subs.add(
-        levelFilter?.subscribeToState((newState, prevState) => {
-          const oldLevel = prevState.filters.find((filter) => filter.operator === FilterOp.Equal);
-          const newLevel = newState.filters.find((filter) => filter.operator === FilterOp.Equal);
+    this._subs.add(
+      levelFilter?.subscribeToState(() => {
+        const panel = this.state.panel;
+        if (!panel?.state.$data?.state.data?.series) {
+          return;
+        }
 
-          if (oldLevel === newLevel) {
-            return;
-          }
-
-          if (newLevel) {
-            originalOnToggleSeriesVisibility?.(newLevel.value, SeriesVisibilityChangeMode.ToggleSelection);
-          } else if (oldLevel) {
-            originalOnToggleSeriesVisibility?.(oldLevel.value, SeriesVisibilityChangeMode.ToggleSelection);
-          }
-        })
-      );
-    }
+        syncLogsPanelVisibleSeries(panel, panel?.state.$data?.state.data?.series, this);
+      })
+    );
 
     context.onToggleSeriesVisibility = (level: string, mode: SeriesVisibilityChangeMode) => {
       // @TODO. We don't yet support filters with multiple values.
