@@ -1,6 +1,11 @@
 import { SeriesVisibilityChangeMode } from '@grafana/ui';
-import { getLabelsFromSeries, toggleLevelVisibility } from './levels';
-import { FieldType, toDataFrame } from '@grafana/data';
+import { getLabelsFromSeries, getVisibleLevels, toggleLevelVisibility } from './levels';
+import { AdHocVariableFilter, FieldType, toDataFrame } from '@grafana/data';
+import { getLevelsVariable, VAR_LEVELS } from './variables';
+import { AdHocFiltersVariable, SceneObject } from '@grafana/scenes';
+import { FilterOp } from './filters';
+
+jest.mock('./variables');
 
 const ALL_LEVELS = ['logs', 'debug', 'info', 'warn', 'error', 'crit'];
 
@@ -90,5 +95,58 @@ describe('getLabelsFromSeries', () => {
   ];
   it('returns the label value from time series', () => {
     expect(getLabelsFromSeries(series)).toEqual(['error', 'warn', 'logs']);
+  });
+});
+
+describe('getVisibleLevels', () => {
+  const scene = {} as SceneObject;
+  function setup(filters: AdHocVariableFilter[]) {
+    const levelsVariable = new AdHocFiltersVariable({
+      name: VAR_LEVELS,
+      label: 'Filters',
+      applyMode: 'manual',
+      layout: 'vertical',
+      getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
+      getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
+      filters,
+    });
+    jest.mocked(getLevelsVariable).mockReturnValue(levelsVariable);
+  }
+
+  it('Returns an empty array when the filter is empty', () => {
+    setup([]);
+    expect(getVisibleLevels(scene)).toEqual([]);
+  });
+
+  it('Returns an empty array when the filters are negative', () => {
+    setup([
+      {
+        key: 'detected_level',
+        operator: FilterOp.NotEqual,
+        value: 'error',
+      },
+    ]);
+    expect(getVisibleLevels(scene)).toEqual([]);
+  });
+
+  it('Returns the positive levels from the filters', () => {
+    setup([
+      {
+        key: 'detected_level',
+        operator: FilterOp.NotEqual,
+        value: 'error',
+      },
+      {
+        key: 'detected_level',
+        operator: FilterOp.NotEqual,
+        value: 'warn',
+      },
+      {
+        key: 'detected_level',
+        operator: FilterOp.Equal,
+        value: 'info',
+      },
+    ]);
+    expect(getVisibleLevels(scene)).toEqual(['info']);
   });
 });

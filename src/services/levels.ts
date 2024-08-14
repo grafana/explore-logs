@@ -1,6 +1,6 @@
 import { DataFrame } from '@grafana/data';
 import { SeriesVisibilityChangeMode } from '@grafana/ui';
-import { getAdHocFiltersVariable, getLevelsVariable, LEVEL_VARIABLE_VALUE, VAR_LEVELS } from './variables';
+import { getLevelsVariable, LEVEL_VARIABLE_VALUE } from './variables';
 import { SceneObject } from '@grafana/scenes';
 import { FilterOp } from './filters';
 import { addToFilters, replaceFilter } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
@@ -58,12 +58,10 @@ export function getLabelValueFromDataFrame(frame: DataFrame) {
  * the user wants to see.
  */
 export function getVisibleLevels(sceneRef: SceneObject) {
-  const fieldFilters = getAdHocFiltersVariable(VAR_LEVELS, sceneRef);
-  const levels = fieldFilters.state.filters.map((filter) => filter.value);
-  const excludedLevels = fieldFilters.state.filters
-    .filter((filter) => filter.operator === '!=')
+  const levelsFilter = getLevelsVariable(sceneRef);
+  return levelsFilter.state.filters
+    .filter((filter) => filter.operator === FilterOp.Equal)
     .map((filter) => filter.value);
-  return levels.filter((level) => !excludedLevels.includes(level));
 }
 
 /**
