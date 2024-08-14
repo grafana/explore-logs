@@ -25,6 +25,7 @@ import {
   getFieldsVariable,
   getLevelsVariable,
   getPatternsVariable,
+  getUrlParamNameForVariable,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_LABELS,
@@ -105,8 +106,8 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     this.setState(stateUpdate);
 
     this.updatePatterns(this.state, getPatternsVariable(this));
-    this.resetVariablesIfNotInUrl(getFieldsVariable(this), 'var-fields');
-    this.resetVariablesIfNotInUrl(getLevelsVariable(this), 'var-levels');
+    this.resetVariablesIfNotInUrl(getFieldsVariable(this), getUrlParamNameForVariable(VAR_FIELDS));
+    this.resetVariablesIfNotInUrl(getLevelsVariable(this), getUrlParamNameForVariable(VAR_LEVELS));
 
     this._subs.add(
       this.subscribeToState((newState) => {
