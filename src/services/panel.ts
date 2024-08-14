@@ -38,9 +38,9 @@ export function setLevelColorOverrides(overrides: FieldConfigOverridesBuilder<Fi
 }
 
 export function setLogsVolumeFieldConfigs(
-  viz: ReturnType<typeof PanelBuilders.timeseries> | ReturnType<typeof FieldConfigBuilders.timeseries>
+  builder: ReturnType<typeof PanelBuilders.timeseries> | ReturnType<typeof FieldConfigBuilders.timeseries>
 ) {
-  return viz
+  return builder
     .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
     .setCustomFieldConfig('fillOpacity', 100)
     .setCustomFieldConfig('lineWidth', 0)
