@@ -240,7 +240,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       if (level === 'logs') {
         level = '';
       }
-      return `detected_level=\`${level}\``;
+      return `${LEVEL_VARIABLE_VALUE}=\`${level}\``;
     });
     return ` | ${filters.join(' or ')} `;
   };
