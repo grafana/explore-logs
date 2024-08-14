@@ -58,7 +58,7 @@ const defaultQueryParams = {
 };
 
 export function renderLogQLStreamSelector(filters: AdHocVariableFilter[]) {
-  return '{' + filters.map((filter) => renderFilter(filter)).join(', ') + '}';
+  return filters.map((filter) => renderFilter(filter)).join(', ');
 }
 
 export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {

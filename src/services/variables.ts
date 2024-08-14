@@ -20,14 +20,21 @@ export const VAR_LOGS_FORMAT = 'logsFormat';
 export const VAR_LOGS_FORMAT_EXPR = '${logsFormat}';
 export const VAR_LINE_FILTER = 'lineFilter';
 export const VAR_LINE_FILTER_EXPR = '${lineFilter}';
-export const LOG_STREAM_SELECTOR_EXPR = `${VAR_LABELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_LEVELS_EXPR} ${VAR_FIELDS_EXPR} ${VAR_LINE_FILTER_EXPR}`;
-export const LOG_VOLUME_STREAM_SELECTOR_EXPR = `${VAR_LABELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_FIELDS_EXPR} ${VAR_LINE_FILTER_EXPR}`;
-
-export const PATTERNS_SAMPLE_SELECTOR_EXPR = `${VAR_LABELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR}`;
+export const LOG_STREAM_SELECTOR_EXPR = `{${VAR_LABELS_EXPR}} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_LEVELS_EXPR} ${VAR_FIELDS_EXPR} ${VAR_LINE_FILTER_EXPR}`;
+export const PATTERNS_SAMPLE_SELECTOR_EXPR = `{${VAR_LABELS_EXPR}} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR}`;
 export const EXPLORATION_DS = { uid: VAR_DATASOURCE_EXPR };
 export const ALL_VARIABLE_VALUE = '$__all';
 export const LEVEL_VARIABLE_VALUE = 'detected_level';
 export const PATTERNS_TEXT_FILTER = 'patternsFilter';
+
+//@todo options object instead
+export function getLogsStreamSelector(
+  labelExpressionToAdd = '',
+  structuredMetadataToAdd = '',
+  fieldExpressionToAdd = ''
+) {
+  return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_LEVELS_EXPR} ${VAR_FIELDS_EXPR} ${VAR_LINE_FILTER_EXPR}`;
+}
 
 export function getPatternsVariable(scene: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_PATTERNS, scene);

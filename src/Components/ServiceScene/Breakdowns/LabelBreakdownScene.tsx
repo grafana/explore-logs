@@ -28,7 +28,8 @@ import {
   ALL_VARIABLE_VALUE,
   getLabelGroupByVariable,
   getLabelsVariable,
-  LOG_STREAM_SELECTOR_EXPR,
+  getLogsStreamSelector,
+  LEVEL_VARIABLE_VALUE,
   VAR_LABEL_GROUP_BY,
   VAR_LABEL_GROUP_BY_EXPR,
   VAR_LABELS,
@@ -155,9 +156,12 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   private onLabelsChange = (newState: QueryRunnerState, prevState: QueryRunnerState) => {
     if (
       newState.data?.state === LoadingState.Done &&
+      newState.data.series?.[0] &&
       !areArraysEqual(newState.data.series?.[0]?.fields, prevState.data?.series?.[0]?.fields)
     ) {
       this.updateLabels(newState.data.series?.[0]);
+      this.updateBody();
+    } else if (this.state.body === undefined) {
       this.updateBody();
     }
   };
@@ -212,14 +216,20 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       error: false,
     };
 
-    let fieldExpressionToAdd = '';
+    let labelExpressionToAdd = '';
+    let metadataExpressionToAdd = '';
 
-    if (variable.state.value) {
-      fieldExpressionToAdd = `| ${variable.state.value} != ""`;
+    if (variable.state.value && variable.state.value !== LEVEL_VARIABLE_VALUE) {
+      labelExpressionToAdd = ` ,${variable.state.value} != ""`;
+    } else if (variable.state.value && variable.state.value === LEVEL_VARIABLE_VALUE) {
+      metadataExpressionToAdd = ` | ${variable.state.value} != ""`;
     }
 
     const query = buildDataQuery(
-      `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR} ${fieldExpressionToAdd} [$__auto])) by (${VAR_LABEL_GROUP_BY_EXPR})`,
+      `sum(count_over_time(${getLogsStreamSelector(
+        labelExpressionToAdd,
+        metadataExpressionToAdd
+      )} [$__auto])) by (${VAR_LABEL_GROUP_BY_EXPR})`,
       { legendFormat: `{{${VAR_LABEL_GROUP_BY_EXPR}}}`, refId: 'LABEL_BREAKDOWN_VALUES' }
     );
 
@@ -230,6 +240,8 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       stateUpdate.body = variable.hasAllValue()
         ? this.buildLabelsLayout(variable.state.options)
         : new LabelValueBreakdownScene({ $data: getQueryRunner([query]) });
+    } else {
+      console.log('not updating body', this.state.body);
     }
 
     this.setState({ ...stateUpdate });
@@ -246,14 +258,20 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
         continue;
       }
 
-      let fieldExpressionToAdd = '';
+      let labelExpressionToAdd = '';
+      let metadataExpressionToAdd = '';
 
-      if (option.value) {
-        fieldExpressionToAdd = `| ${option.value} != ""`;
+      if (option.value && option.value !== LEVEL_VARIABLE_VALUE) {
+        labelExpressionToAdd = `, ${option.value}!=""`;
+      } else if (option.value && option.value === LEVEL_VARIABLE_VALUE) {
+        metadataExpressionToAdd = ` | ${option.value} != ""`;
       }
 
       const query = buildDataQuery(
-        `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR} ${fieldExpressionToAdd} [$__auto])) by (${optionValue})`,
+        `sum(count_over_time(${getLogsStreamSelector(
+          labelExpressionToAdd,
+          metadataExpressionToAdd
+        )}[$__auto])) by (${optionValue})`,
         { legendFormat: `{{${optionValue}}}`, refId: 'LABEL_BREAKDOWN_NAMES' }
       );
 

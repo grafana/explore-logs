@@ -406,12 +406,14 @@ function buildGraphScene() {
 }
 
 function getPatternsQueryRunner() {
-  return getResourceQueryRunner([buildResourceQuery(VAR_LABELS_EXPR, 'patterns', { refId: PATTERNS_QUERY_REFID })]);
+  return getResourceQueryRunner([
+    buildResourceQuery(`{${VAR_LABELS_EXPR}}`, 'patterns', { refId: PATTERNS_QUERY_REFID }),
+  ]);
 }
 
 function getDetectedLabelsQueryRunner() {
   return getResourceQueryRunner([
-    buildResourceQuery(VAR_LABELS_EXPR, 'detected_labels', { refId: DETECTED_LABELS_QUERY_REFID }),
+    buildResourceQuery(`{${VAR_LABELS_EXPR}}`, 'detected_labels', { refId: DETECTED_LABELS_QUERY_REFID }),
   ]);
 }
 
