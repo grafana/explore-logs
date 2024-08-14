@@ -45,7 +45,7 @@ import { getSortByPreference } from 'services/store';
 import { GrotError } from '../../GrotError';
 import { IndexScene } from '../../IndexScene/IndexScene';
 import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
-import { getLabelOptions } from '../../../services/filters';
+import { getFieldOptions } from '../../../services/filters';
 import { navigateToValueBreakdown } from '../../../services/navigate';
 import { ValueSlugs } from '../../../services/routing';
 import { areArraysEqual } from '../../../services/comparison';
@@ -118,7 +118,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   private updateFields(state: ServiceSceneState) {
     const variable = this.getVariable();
-    const options = state.fields ? getLabelOptions(state.fields) : [];
+    const options = state.fields ? getFieldOptions(state.fields) : [];
 
     variable.setState({
       options,
