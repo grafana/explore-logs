@@ -5,7 +5,7 @@ import { SceneObject } from '@grafana/scenes';
 import { FilterOp } from './filters';
 import { addToFilters, replaceFilter } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 
-export function toggleLevelFromFilter(
+export function toggleLevelVisibility(
   level: string,
   serviceLevels: string[] | undefined,
   mode: SeriesVisibilityChangeMode,

@@ -40,7 +40,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'se
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
 import { NoVolumeError } from './NoVolumeError';
-import { getLabelsFromSeries, toggleLevelFromFilter } from 'services/levels';
+import { getLabelsFromSeries, toggleLevelVisibility } from 'services/levels';
 import { ServiceFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
 import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 import { areArraysEqual } from '../../services/comparison';
@@ -180,7 +180,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       originalOnToggleSeriesVisibility?.(level, mode);
 
       const allLevels = getLabelsFromSeries(panel.state.$data?.state.data?.series ?? []);
-      const levels = toggleLevelFromFilter(level, this.state.serviceLevel.get(service), mode, allLevels);
+      const levels = toggleLevelVisibility(level, this.state.serviceLevel.get(service), mode, allLevels);
       this.state.serviceLevel.set(service, levels);
 
       this.updateServiceLogs(service);
