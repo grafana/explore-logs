@@ -83,6 +83,11 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
         levelFilter?.subscribeToState((newState, prevState) => {
           const oldLevel = prevState.filters.find((filter) => filter.operator === FilterOp.Equal);
           const newLevel = newState.filters.find((filter) => filter.operator === FilterOp.Equal);
+
+          if (oldLevel === newLevel) {
+            return;
+          }
+
           if (newLevel) {
             originalOnToggleSeriesVisibility?.(newLevel.value, SeriesVisibilityChangeMode.ToggleSelection);
           } else if (oldLevel) {
