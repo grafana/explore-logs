@@ -82,24 +82,13 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     if (levelFilter) {
       this._subs.add(
         levelFilter?.subscribeToState((newState, prevState) => {
-          const prevLevels = prevState.filters
-            .filter((filter) => filter.operator === FilterOp.Equal)
-            .map((filter) => filter.value);
-          const newLevels = newState.filters
-            .filter((filter) => filter.operator === FilterOp.Equal)
-            .map((filter) => filter.value);
-          prevLevels.forEach((prevLevel) => {
-            if (!newLevels.includes(prevLevel)) {
-              // prevLevel was removed, toggle
-              originalOnToggleSeriesVisibility?.(prevLevel, SeriesVisibilityChangeMode.ToggleSelection);
-            }
-          });
-          newLevels.forEach((newLevel) => {
-            if (!prevLevels.includes(newLevel)) {
-              // newLevel is new, toggle
-              originalOnToggleSeriesVisibility?.(newLevel, SeriesVisibilityChangeMode.ToggleSelection);
-            }
-          });
+          const oldLevel = prevState.filters.find((filter) => filter.operator === FilterOp.Equal);
+          const newLevel = newState.filters.find((filter) => filter.operator === FilterOp.Equal);
+          if (newLevel) {
+            originalOnToggleSeriesVisibility?.(newLevel.value, SeriesVisibilityChangeMode.ToggleSelection);
+          } else if (oldLevel) {
+            originalOnToggleSeriesVisibility?.(oldLevel.value, SeriesVisibilityChangeMode.ToggleSelection);
+          }
         })
       );
     }
