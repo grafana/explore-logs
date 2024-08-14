@@ -5,11 +5,10 @@ import { DrawStyle, LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode,
 import { getQueryRunner, setLevelSeriesOverrides, setLeverColorOverrides } from 'services/panel';
 import { buildDataQuery } from 'services/query';
 import { getLabelsVariable, getLevelsVariable, LEVEL_VARIABLE_VALUE } from 'services/variables';
-import { addToFilters, replaceFilter } from './Breakdowns/AddToFiltersButton';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getTimeSeriesExpr } from '../../services/expressions';
 import { SERVICE_NAME } from '../ServiceSelectionScene/ServiceSelectionScene';
-import { getVisibleLevels } from 'services/levels';
+import { getVisibleLevels, toggleLevelFromLogsVolume } from 'services/levels';
 import { FilterOp } from 'services/filters';
 
 export interface LogsVolumePanelState extends SceneObjectState {
@@ -99,19 +98,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
         return;
       }
 
-      const levelFilter = getLevelsVariable(this);
-      const empty = levelFilter.state.filters.length === 0;
-      const filterExists = levelFilter.state.filters.find(
-        (filter) => filter.value === level && filter.operator === FilterOp.Equal
-      );
-      let action;
-      if (empty || !filterExists) {
-        replaceFilter(LEVEL_VARIABLE_VALUE, level, 'include', this);
-        action = 'add';
-      } else {
-        addToFilters(LEVEL_VARIABLE_VALUE, level, 'toggle', this);
-        action = 'remove';
-      }
+      const action = toggleLevelFromLogsVolume(level, this);
 
       reportAppInteraction(
         USER_EVENTS_PAGES.service_details,

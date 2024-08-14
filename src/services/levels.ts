@@ -1,7 +1,9 @@
 import { DataFrame } from '@grafana/data';
 import { SeriesVisibilityChangeMode } from '@grafana/ui';
-import { getAdHocFiltersVariable, VAR_LEVELS } from './variables';
+import { getAdHocFiltersVariable, getLevelsVariable, LEVEL_VARIABLE_VALUE, VAR_LEVELS } from './variables';
 import { SceneObject } from '@grafana/scenes';
+import { FilterOp } from './filters';
+import { addToFilters, replaceFilter } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 
 export function toggleLevelFromFilter(
   level: string,
@@ -54,4 +56,22 @@ export function getVisibleLevels(sceneRef: SceneObject) {
     .filter((filter) => filter.operator === '!=')
     .map((filter) => filter.value);
   return levels.filter((level) => !excludedLevels.includes(level));
+}
+
+export function toggleLevelFromLogsVolume(level: string, sceneRef: SceneObject) {
+  const levelFilter = getLevelsVariable(sceneRef);
+  const empty = levelFilter.state.filters.length === 0;
+  const filterExists = levelFilter.state.filters.find(
+    (filter) => filter.value === level && filter.operator === FilterOp.Equal
+  );
+  let action;
+  if (empty || !filterExists) {
+    replaceFilter(LEVEL_VARIABLE_VALUE, level, 'include', sceneRef);
+    action = 'add';
+  } else {
+    addToFilters(LEVEL_VARIABLE_VALUE, level, 'toggle', sceneRef);
+    action = 'remove';
+  }
+
+  return action;
 }
