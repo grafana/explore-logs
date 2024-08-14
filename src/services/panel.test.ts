@@ -1,8 +1,8 @@
 import { FieldType, createDataFrame } from '@grafana/data';
-import { setLeverColorOverrides, sortLevelTransformation } from './panel';
+import { setLevelColorOverrides, sortLevelTransformation } from './panel';
 import { lastValueFrom, of } from 'rxjs';
 
-describe('setLeverColorOverrides', () => {
+describe('setLevelColorOverrides', () => {
   test('Sets the color overrides for log levels', () => {
     const overrideColorMock = jest.fn();
     const matchFieldsWithNameMock = jest.fn().mockImplementation(() => ({ overrideColor: overrideColorMock }));
@@ -11,7 +11,7 @@ describe('setLeverColorOverrides', () => {
       matchFieldsWithName: matchFieldsWithNameMock,
     };
     // @ts-expect-error
-    setLeverColorOverrides(overrides);
+    setLevelColorOverrides(overrides);
 
     expect(matchFieldsWithNameMock).toHaveBeenCalledTimes(5);
     expect(overrideColorMock).toHaveBeenCalledTimes(5);

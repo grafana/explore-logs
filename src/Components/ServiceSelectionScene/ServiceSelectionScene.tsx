@@ -37,7 +37,7 @@ import {
 import { selectService, SelectServiceButton } from './SelectServiceButton';
 import { buildDataQuery, buildResourceQuery } from 'services/query';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
+import { getQueryRunner, setLevelColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
 import { NoVolumeError } from './NoVolumeError';
 import { getLabelsFromSeries, toggleLevelVisibility } from 'services/levels';
@@ -211,7 +211,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       .setCustomFieldConfig('pointSize', 0)
       .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
       .setUnit('short')
-      .setOverrides(setLeverColorOverrides)
+      .setOverrides(setLevelColorOverrides)
       .setOption('legend', {
         showLegend: true,
         calcs: ['sum'],

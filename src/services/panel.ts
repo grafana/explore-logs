@@ -14,7 +14,7 @@ import { LogsSceneQueryRunner } from './LogsSceneQueryRunner';
 import { DrawStyle, StackingMode } from '@grafana/ui';
 
 const UNKNOWN_LEVEL_LOGS = 'logs';
-export function setLeverColorOverrides(overrides: FieldConfigOverridesBuilder<FieldConfig>) {
+export function setLevelColorOverrides(overrides: FieldConfigOverridesBuilder<FieldConfig>) {
   overrides.matchFieldsWithName('info').overrideColor({
     mode: 'fixed',
     fixedColor: 'semi-dark-green',
@@ -46,7 +46,7 @@ export function setLogsVolumeFieldConfigs(
     .setCustomFieldConfig('lineWidth', 0)
     .setCustomFieldConfig('pointSize', 0)
     .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-    .setOverrides(setLeverColorOverrides);
+    .setOverrides(setLevelColorOverrides);
 }
 
 interface TimeSeriesFieldConfig extends FieldConfig {
