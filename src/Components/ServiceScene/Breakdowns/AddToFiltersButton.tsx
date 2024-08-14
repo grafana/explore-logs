@@ -27,6 +27,7 @@ export function addAdHocFilter(filter: AdHocVariableFilter, scene: SceneObject, 
   addToFilters(filter.key, filter.value, type, scene, variableName);
 }
 
+// @todo bubble up event
 export function addToFilters(
   key: string,
   value: string,

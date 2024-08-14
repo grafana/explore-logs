@@ -197,6 +197,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   /**
    * Navigate when the user adds a positive filter to the ad hoc filter variables
    * Note: AdHocFilterVariableState is not currently exported from scenes.
+   * Kinda annoying that if users change a filter from exclude to include directly in the variables we have the same behavior as selecting something in the breakdown
+   * @todo can we not navigate at the top level and leave it up to the leaf scenes? I think the desired functionality should push users back up one level in the hierarchy instead of taking them all the way to the logs tab,
+   * i.e. when including or excluding everything in a label value breakdown, you should be pushed to the ALL labels view.
+   *
    * @param newState
    * @param prevState
    * @private
