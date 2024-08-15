@@ -242,6 +242,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
         end: request.range.to.utc().toISOString(),
       },
       {
+        requestId: request.requestId ?? 'detected_labels',
         headers: {
           'X-Query-Tags': `Source=${PLUGIN_ID}`,
         },
