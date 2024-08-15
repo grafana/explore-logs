@@ -102,7 +102,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
 
     // Need to update labels with current state
     if (serviceScene.state.$detectedLabelsData?.state.data?.series?.[0]) {
-      this.updateLabels(serviceScene.state.$detectedLabelsData.state.data?.series?.[0]);
+      this.updateOptions(serviceScene.state.$detectedLabelsData.state.data?.series?.[0]);
     }
 
     this._subs.add(serviceScene.state.$detectedLabelsData?.subscribeToState(this.onLabelsChange));
@@ -115,7 +115,6 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
 
         // If the user changes the service
         if (variable.state.value === ALL_VARIABLE_VALUE && newService !== prevService) {
-          // @todo can we update the panels without destroying everything?
           this.setState({
             loading: true,
             body: undefined,
@@ -149,7 +148,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       newState.data.series?.[0] &&
       !areArraysEqual(newState.data.series?.[0]?.fields, prevState.data?.series?.[0]?.fields)
     ) {
-      this.updateLabels(newState.data.series?.[0]);
+      this.updateOptions(newState.data.series?.[0]);
     }
   };
 
@@ -175,7 +174,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     );
   };
 
-  private updateLabels(detectedLabels: DataFrame | undefined) {
+  private updateOptions(detectedLabels: DataFrame | undefined) {
     if (!detectedLabels || !detectedLabels.length) {
       console.warn('detectedLabels empty', detectedLabels);
       return;

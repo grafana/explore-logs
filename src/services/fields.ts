@@ -1,6 +1,6 @@
 import { DataFrame, PanelData } from '@grafana/data';
 import { DrawStyle, StackingMode } from '@grafana/ui';
-import { PanelBuilders, SceneCSSGridItem, SceneDataNode, SceneObject } from '@grafana/scenes';
+import { PanelBuilders, SceneCSSGridItem, SceneObject } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
 import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { getLogsFormatVariable, VAR_FIELDS, VAR_LABELS } from './variables';
@@ -59,7 +59,6 @@ export function getFilterBreakdownValueScene(
       .setOption('legend', { showLegend: false })
       .setCustomFieldConfig('fillOpacity', 9)
       .setTitle(getTitle(frame))
-      .setData(new SceneDataNode({ data: { ...data, series: [frame] } }))
       .setColor({ mode: 'fixed', fixedColor: getColorByIndex(frameIndex) })
       .setOverrides(setLeverColorOverrides)
       .setHeaderActions(new AddToFiltersButton({ frame, variableName }));

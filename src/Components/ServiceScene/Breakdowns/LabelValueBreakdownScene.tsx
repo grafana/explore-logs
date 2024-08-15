@@ -68,9 +68,6 @@ export class LabelValueBreakdownScene extends SceneObjectBase<LabelValueBreakdow
     // This is only triggered when the filters are updated, or the time range changes
     this.state.$data?.subscribeToState((newState, prevState) => {
       if (newState.data?.state === LoadingState.Done) {
-        this.setState({
-          body: this.build(),
-        });
         // No panels for the user to select, presumably because everything has been excluded
         if (!newState.data.series.length) {
           navigateToDrilldownPage(PageSlugs.labels, sceneGraph.getAncestor(this, ServiceScene));
