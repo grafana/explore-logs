@@ -76,13 +76,33 @@ export function mergeFrames(dest: DataFrame, source: DataFrame) {
       }
       // Same value, accumulate
       if (sourceTimeValues[i] === destTimeValues[destIdx]) {
-        // Time already exists
         if (dest.fields[f].type === FieldType.time) {
+          // Time already exists, skip
           continue;
+        } else if (dest.fields[f].type === FieldType.number) {
+          // Number, add
+          dest.fields[f].values[destIdx] = (dest.fields[f].values[destIdx] ?? 0) + sourceField.values[i];
+        } else if (dest.fields[f].type === FieldType.other) {
+          // Possibly labels, combine
+          if (typeof sourceField.values[i] === 'object') {
+            dest.fields[f].values[destIdx] = {
+              ...dest.fields[f].values[destIdx],
+              ...sourceField.values[i],
+            };
+          } else if (sourceField.values[i]) {
+            dest.fields[f].values[destIdx] = sourceField.values[i];
+          }
+        } else {
+          // Replace value
+          dest.fields[f].values[destIdx] = sourceField.values[i];
         }
-        dest.fields[f].values[destIdx] = (dest.fields[f].values[destIdx] ?? 0) + sourceField.values[i];
-      } else {
+      } else if (sourceField.values[i] !== undefined) {
+        // Insert in the `destIdx` position
         dest.fields[f].values.splice(destIdx, 0, sourceField.values[i]);
+        if (sourceField.nanos) {
+          dest.fields[f].nanos = dest.fields[f].nanos ?? [];
+          dest.fields[f].nanos?.splice(destIdx, 0, sourceField.nanos[i]);
+        }
       }
     }
   }
