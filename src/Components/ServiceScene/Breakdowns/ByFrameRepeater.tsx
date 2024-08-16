@@ -11,6 +11,7 @@ import {
   SceneLayout,
   SceneFlexLayout,
   SceneReactObject,
+  SceneDataProvider,
 } from '@grafana/scenes';
 import { sortSeries } from 'services/sorting';
 import { fuzzySearch } from '../../../services/search';
@@ -21,7 +22,7 @@ import { BreakdownSearchReset } from './BreakdownSearchScene';
 
 interface ByFrameRepeaterState extends SceneObjectState {
   body: SceneLayout;
-  getLayoutChild(data: PanelData, frame: DataFrame, frameIndex: number): SceneFlexItem;
+  getLayoutChild(data: PanelData, frame: DataFrame, frameIndex: number, $data: SceneDataProvider): SceneFlexItem;
 }
 
 type FrameFilterCallback = (frame: DataFrame) => boolean;
@@ -75,8 +76,10 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     const newChildren: SceneFlexItem[] = [];
     const sortedSeries = sortSeries(data.series, this.sortBy, this.direction);
 
+    const $data = sceneGraph.getData(this);
+
     for (let seriesIndex = 0; seriesIndex < sortedSeries.length; seriesIndex++) {
-      const layoutChild = this.state.getLayoutChild(data, sortedSeries[seriesIndex], seriesIndex);
+      const layoutChild = this.state.getLayoutChild(data, sortedSeries[seriesIndex], seriesIndex, $data);
       newChildren.push(layoutChild);
     }
 
