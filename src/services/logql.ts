@@ -1,8 +1,9 @@
 import { NodeType, SyntaxNode, Tree } from '@lezer/common';
 
-import { Identifier, Matcher, parser, Selector, String } from '@grafana/lezer-logql';
+import { Identifier, Matcher, MetricExpr, parser, Selector, String } from '@grafana/lezer-logql';
 import { Filter, FilterOp } from './filters';
 import { LabelType } from './fields';
+import { LokiQuery } from './query';
 
 export class NodePosition {
   from: number;
@@ -91,3 +92,42 @@ export function getMatcherFromQuery(query: string): Filter[] {
 
   return filter;
 }
+
+export function isQueryWithNode(query: string, nodeType: number): boolean {
+  let isQueryWithNode = false;
+  const tree = parser.parse(query);
+  tree.iterate({
+    enter: ({ type }): false | void => {
+      if (type.id === nodeType) {
+        isQueryWithNode = true;
+        return false;
+      }
+    },
+  });
+  return isQueryWithNode;
+}
+
+export function isLogsQuery(query: string): boolean {
+  // As a safeguard we are checking for a length of 2, because at least the query should be `{}`
+  return query.trim().length > 2 && !isQueryWithNode(query, MetricExpr);
+}
+
+const SHARDING_PLACEHOLDER = '__stream_shard_number__';
+export const addShardingPlaceholderSelector = (query: string) => {
+  return query.replace('}', `, __stream_shard__="${SHARDING_PLACEHOLDER}"}`);
+};
+
+export const interpolateShardingSelector = (queries: LokiQuery[], shard?: number) => {
+  if (shard === undefined) {
+    return queries.map((query) => ({
+      ...query,
+      expr: query.expr.replace(`, __stream_shard__="${SHARDING_PLACEHOLDER}"}`, '}'),
+    }));
+  }
+
+  const shardValue = shard < 0 ? '' : shard.toString();
+  return queries.map((query) => ({
+    ...query,
+    expr: query.expr.replace(new RegExp(`${SHARDING_PLACEHOLDER}`, 'g'), shardValue),
+  }));
+};

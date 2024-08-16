@@ -16,6 +16,7 @@ export type LokiQuery = {
   legendFormat?: string;
   splitDuration?: string;
   datasource?: DataSourceRef;
+  maxLines?: number;
 };
 
 /**
