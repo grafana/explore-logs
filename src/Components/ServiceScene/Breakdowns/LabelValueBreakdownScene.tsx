@@ -32,10 +32,12 @@ import { buildDataQuery } from '../../../services/query';
 import { navigateToDrilldownPage } from '../../../services/navigate';
 import { PageSlugs } from '../../../services/routing';
 import { ServiceScene } from '../ServiceScene';
+import { AddFilterEvent } from './AddToFiltersButton';
 
 export interface LabelValueBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
   $data?: SceneDataProvider;
+  lastFilterEvent?: AddFilterEvent;
 }
 
 export class LabelValueBreakdownScene extends SceneObjectBase<LabelValueBreakdownSceneState> {
@@ -65,15 +67,37 @@ export class LabelValueBreakdownScene extends SceneObjectBase<LabelValueBreakdow
       })
     );
 
-    // This is only triggered when the filters are updated, or the time range changes
+    this.subscribeToEvent(AddFilterEvent, (event) => {
+      this.setState({
+        lastFilterEvent: event,
+      });
+    });
+
     this.state.$data?.subscribeToState((newState, prevState) => {
       if (newState.data?.state === LoadingState.Done) {
         // No panels for the user to select, presumably because everything has been excluded
-        if (!newState.data.series.length) {
-          navigateToDrilldownPage(PageSlugs.labels, sceneGraph.getAncestor(this, ServiceScene));
+        const event = this.state.lastFilterEvent;
+
+        // @todo discuss: Do we want to let users exclude all labels? Or should we redirect when excluding the penultimate panel?
+        if (newState.data?.state === LoadingState.Done && event) {
+          if (event.operator === 'exclude' && newState.data.series.length < 1) {
+            this.navigateToLabels();
+          }
+
+          // @todo discuss: wouldn't include always return in 1 result? Do we need to wait for the query to run or should we navigate on receiving the include event and cancel the ongoing query?
+          if (event.operator === 'include' && newState.data.series.length <= 1) {
+            this.navigateToLabels();
+          }
         }
       }
     });
+  }
+
+  private navigateToLabels() {
+    this.setState({
+      lastFilterEvent: undefined,
+    });
+    navigateToDrilldownPage(PageSlugs.labels, sceneGraph.getAncestor(this, ServiceScene));
   }
 
   private buildQuery() {

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { AdHocVariableFilter, DataFrame } from '@grafana/data';
+import { AdHocVariableFilter, BusEventBase, DataFrame } from '@grafana/data';
 import { SceneObjectState, SceneObjectBase, SceneComponentProps, SceneObject, sceneGraph } from '@grafana/scenes';
 import { VariableHide } from '@grafana/schema';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
@@ -12,6 +12,13 @@ import { ServiceScene } from '../ServiceScene';
 export interface AddToFiltersButtonState extends SceneObjectState {
   frame: DataFrame;
   variableName: string;
+}
+
+export class AddFilterEvent extends BusEventBase {
+  constructor(public operator: FilterType, public key: string, public value: string) {
+    super();
+  }
+  public static type = 'add-filter';
 }
 
 /**
@@ -58,6 +65,9 @@ export function addToFilters(
       },
     ];
   }
+
+  // Emit event
+  scene.publishEvent(new AddFilterEvent(operator, key, value), true);
 
   variable.setState({
     filters,

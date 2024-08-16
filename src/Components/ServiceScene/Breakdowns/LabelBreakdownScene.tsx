@@ -202,7 +202,13 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       error: false,
     };
 
-    stateUpdate.body = variable.hasAllValue() ? new LabelNamesBreakdownScene({}) : new LabelValueBreakdownScene({});
+    if (variable.hasAllValue() && this.state.body instanceof LabelValueBreakdownScene) {
+      stateUpdate.body = new LabelNamesBreakdownScene({});
+    } else if (!variable.hasAllValue() && this.state.body instanceof LabelNamesBreakdownScene) {
+      stateUpdate.body = new LabelValueBreakdownScene({});
+    } else if (this.state.body === undefined) {
+      stateUpdate.body = variable.hasAllValue() ? new LabelNamesBreakdownScene({}) : new LabelValueBreakdownScene({});
+    }
 
     this.setState({ ...stateUpdate });
   }
