@@ -74,6 +74,10 @@ export function mergeFrames(dest: DataFrame, source: DataFrame) {
       if (!sourceField) {
         continue;
       }
+      if (sourceField.nanos) {
+        dest.fields[f].nanos = dest.fields[f].nanos ?? [];
+        dest.fields[f].nanos?.splice(destIdx, 0, sourceField.nanos[i]);
+      }
       // Same value, accumulate
       if (sourceTimeValues[i] === destTimeValues[destIdx]) {
         if (dest.fields[f].type === FieldType.time) {
@@ -96,12 +100,10 @@ export function mergeFrames(dest: DataFrame, source: DataFrame) {
           // Replace value
           dest.fields[f].values[destIdx] = sourceField.values[i];
         }
-      } else if (sourceField.values[i] !== undefined) {
+      } else {
         // Insert in the `destIdx` position
-        dest.fields[f].values.splice(destIdx, 0, sourceField.values[i]);
-        if (sourceField.nanos) {
-          dest.fields[f].nanos = dest.fields[f].nanos ?? [];
-          dest.fields[f].nanos?.splice(destIdx, 0, sourceField.nanos[i]);
+        if (sourceField.values[i] !== undefined) {
+          dest.fields[f].values.splice(destIdx, 0, sourceField.values[i]);
         }
       }
     }
