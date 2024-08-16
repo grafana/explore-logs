@@ -1,10 +1,11 @@
 import { Observable, Subscriber, Subscription } from 'rxjs';
 import { v4 as uuidv4 } from 'uuid';
 
-import { DataQueryRequest, LoadingState, DataQueryResponse, DataSourceApi } from '@grafana/data';
+import { DataQueryRequest, LoadingState, DataQueryResponse } from '@grafana/data';
 import { LokiQuery } from './query';
 import { addShardingPlaceholderSelector, interpolateShardingSelector, isLogsQuery } from './logql';
 import { combineResponses } from './combineResponses';
+import { DataSourceWithBackend } from '@grafana/runtime';
 
 /**
  * Based in the state of the current response, if any, adjust target parameters such as `maxLines`.
@@ -36,10 +37,9 @@ function adjustTargetsFromResponseState(targets: LokiQuery[], response: DataQuer
 }
 
 export function splitQueriesByStreamShard(
-  datasource: DataSourceApi,
+  datasource: DataSourceWithBackend<LokiQuery>,
   request: DataQueryRequest<LokiQuery>,
-  splittingTargets: LokiQuery[],
-  nonSplittingTargets: LokiQuery[] = []
+  splittingTargets: LokiQuery[]
 ) {
   let endShard = 0;
   let shouldStop = false;
@@ -80,7 +80,7 @@ export function splitQueriesByStreamShard(
     const subRequest = { ...request, targets: interpolateShardingSelector(targets, shard) };
     // Request may not have a request id
     if (request.requestId) {
-      subRequest.requestId = `${request.requestId}_shard_${shard}`;
+      subRequest.requestId = `${request.requestId}_shard_${shard !== undefined ? shard : 'no-shard'}`;
     }
 
     // @ts-expect-error
@@ -136,15 +136,14 @@ export function splitQueriesByStreamShard(
   return response;
 }
 
-export function runShardSplitQuery(datasource: DataSourceApi, request: DataQueryRequest<LokiQuery>) {
-  const queries = request.targets
-    // @ts-expect-error
-    .filter((query) => !query.hide)
+export function runShardSplitQuery(datasource: DataSourceWithBackend<LokiQuery>, request: DataQueryRequest<LokiQuery>) {
+  const queries = datasource
+    .interpolateVariablesInQueries(request.targets, request.scopedVars)
     .filter((query) => query.expr)
     .map((target) => ({
       ...target,
       expr: addShardingPlaceholderSelector(target.expr),
     }));
 
-  return splitQueriesByStreamShard(datasource, request, queries, []);
+  return splitQueriesByStreamShard(datasource, request, queries);
 }
