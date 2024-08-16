@@ -8,7 +8,6 @@ import {
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
-  SceneObject,
   SceneObjectBase,
   SceneObjectState,
   SceneReactObject,
@@ -21,6 +20,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'se
 import {
   ALL_VARIABLE_VALUE,
   getFieldGroupByVariable,
+  getFieldsVariable,
   LOG_STREAM_SELECTOR_EXPR,
   VAR_FIELD_GROUP_BY,
   VAR_LABELS,
@@ -42,12 +42,14 @@ import { areArraysEqual } from '../../../services/comparison';
 import { AddFilterEvent } from './AddToFiltersButton';
 import { FieldsAggregatedBreakdownScene } from './FieldsAggregatedBreakdownScene';
 import { FieldValuesBreakdownScene } from './FieldValuesBreakdownScene';
+import { SERVICE_NAME } from '../../ServiceSelectionScene/ServiceSelectionScene';
+import { LayoutSwitcher } from './LayoutSwitcher';
 
 export const averageFields = ['duration', 'count', 'total', 'bytes'];
 export const FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
-  body?: SceneObject;
+  body?: SceneReactObject | FieldsAggregatedBreakdownScene | FieldValuesBreakdownScene | SceneFlexLayout;
   search: BreakdownSearchScene;
   sort: SortByScene;
   value?: string;
@@ -94,6 +96,22 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this._subs.add(serviceScene.subscribeToState(this.serviceFieldsChanged));
     this._subs.add(groupByVariable.subscribeToState(this.variableChanged));
 
+    this._subs.add(
+      getFieldsVariable(this).subscribeToState((newState, prevState) => {
+        const variable = getFieldGroupByVariable(this);
+        const newService = newState.filters.find((filter) => filter.key === SERVICE_NAME);
+        const prevService = prevState.filters.find((filter) => filter.key === SERVICE_NAME);
+
+        // If the user changes the service
+        if (variable.state.value === ALL_VARIABLE_VALUE && newService !== prevService) {
+          this.setState({
+            loading: true,
+            body: undefined,
+          });
+        }
+      })
+    );
+
     this.subscribeToEvent(AddFilterEvent, (event) => {
       this.setState({
         lastFilterEvent: event,
@@ -104,11 +122,12 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   }
 
   private variableChanged = (newState: CustomConstantVariableState, oldState: CustomConstantVariableState) => {
+    console.log('variable changed', newState, oldState);
     if (
-      newState.loading === false &&
+      !newState.loading &&
       (!areArraysEqual(newState.options, oldState.options) || newState.value !== oldState.value)
     ) {
-      this.updateBody(newState, oldState);
+      this.updateBody(newState);
     }
   };
 
@@ -127,13 +146,23 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       options,
       value: state.drillDownLabel ?? ALL_VARIABLE_VALUE,
     });
+
+    // If we were in an error state or undefined, let's update the new body
+    if (
+      !(
+        this.state.body instanceof FieldsAggregatedBreakdownScene ||
+        this.state.body instanceof FieldValuesBreakdownScene
+      )
+    ) {
+      this.updateBody(getFieldGroupByVariable(this).state);
+    }
   }
 
   private handleSortByChange = (event: SortCriteriaChanged) => {
     if (event.target !== 'fields') {
       return;
     }
-    if (this.state.body instanceof FieldValuesBreakdownScene) {
+    if (this.state.body instanceof FieldValuesBreakdownScene && this.state.body.state.body instanceof LayoutSwitcher) {
       this.state.body.state.body?.state.layouts.forEach((layout) => {
         if (layout instanceof ByFrameRepeater) {
           layout.sort(event.sortBy, event.direction);
@@ -151,8 +180,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     );
   };
 
-  private updateBody(newState: CustomConstantVariableState, prevState: CustomConstantVariableState) {
-    console.log('update body', newState);
+  private updateBody(newState: CustomConstantVariableState) {
     const logsScene = sceneGraph.getAncestor(this, ServiceScene);
 
     const stateUpdate: Partial<FieldsBreakdownSceneState> = {
@@ -186,11 +214,21 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         stateUpdate.body = this.buildEmptyLayout();
       }
     } else {
-      // Otherwise update the body
-      stateUpdate.body =
-        newState.value === ALL_VARIABLE_VALUE
-          ? new FieldsAggregatedBreakdownScene({})
-          : new FieldValuesBreakdownScene({});
+      // Otherwise update the body, but don't re-instantiate if it's already the right class
+      if (newState.value === ALL_VARIABLE_VALUE && this.state.body instanceof FieldValuesBreakdownScene) {
+        stateUpdate.body = new FieldsAggregatedBreakdownScene({});
+      } else if (newState.value !== ALL_VARIABLE_VALUE && this.state.body instanceof FieldsAggregatedBreakdownScene) {
+        stateUpdate.body = new FieldValuesBreakdownScene({});
+      } else if (
+        this.state.body === undefined ||
+        this.state.body instanceof SceneFlexLayout ||
+        this.state.body instanceof SceneReactObject
+      ) {
+        stateUpdate.body =
+          newState.value === ALL_VARIABLE_VALUE
+            ? new FieldsAggregatedBreakdownScene({})
+            : new FieldValuesBreakdownScene({});
+      }
     }
 
     this.setState(stateUpdate);
@@ -285,7 +323,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     );
 
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
-    console.log('navigate to value breakdown');
     navigateToValueBreakdown(ValueSlugs.field, value, serviceScene);
   };
 
@@ -297,6 +334,8 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     console.log('render', {
       loading,
       body,
+      value,
+      options,
     });
 
     return (
@@ -321,7 +360,20 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
               />
             )}
           </div>
-          <div className={styles.content}>{body && <body.Component model={body} />}</div>
+
+          {/* @todo why are the types like this? */}
+          <div className={styles.content}>
+            {body && body instanceof FieldsAggregatedBreakdownScene && <body.Component model={body} />}
+          </div>
+          <div className={styles.content}>
+            {body && body instanceof FieldValuesBreakdownScene && <body.Component model={body} />}
+          </div>
+          <div className={styles.content}>
+            {body && body instanceof SceneReactObject && <body.Component model={body} />}
+          </div>
+          <div className={styles.content}>
+            {body && body instanceof SceneFlexLayout && <body.Component model={body} />}
+          </div>
         </StatusWrapper>
       </div>
     );
