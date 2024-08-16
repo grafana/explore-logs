@@ -1,17 +1,16 @@
 import React from 'react';
 
-import { LoadingState, PanelData, DataFrame } from '@grafana/data';
+import { DataFrame, LoadingState, PanelData } from '@grafana/data';
 import {
-  SceneObjectState,
-  SceneFlexItem,
-  SceneObjectBase,
-  sceneGraph,
-  SceneComponentProps,
   SceneByFrameRepeater,
-  SceneLayout,
+  SceneComponentProps,
+  SceneFlexItem,
   SceneFlexLayout,
+  sceneGraph,
+  SceneLayout,
+  SceneObjectBase,
+  SceneObjectState,
   SceneReactObject,
-  SceneDataProvider,
 } from '@grafana/scenes';
 import { sortSeries } from 'services/sorting';
 import { fuzzySearch } from '../../../services/search';
@@ -22,7 +21,7 @@ import { BreakdownSearchReset } from './BreakdownSearchScene';
 
 interface ByFrameRepeaterState extends SceneObjectState {
   body: SceneLayout;
-  getLayoutChild(data: PanelData, frame: DataFrame, frameIndex: number, $data: SceneDataProvider): SceneFlexItem;
+  getLayoutChild(frame: DataFrame, frameIndex: number): SceneFlexItem;
 }
 
 type FrameFilterCallback = (frame: DataFrame) => boolean;
@@ -76,10 +75,8 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     const newChildren: SceneFlexItem[] = [];
     const sortedSeries = sortSeries(data.series, this.sortBy, this.direction);
 
-    const $data = sceneGraph.getData(this);
-
     for (let seriesIndex = 0; seriesIndex < sortedSeries.length; seriesIndex++) {
-      const layoutChild = this.state.getLayoutChild(data, sortedSeries[seriesIndex], seriesIndex, $data);
+      const layoutChild = this.state.getLayoutChild(sortedSeries[seriesIndex], seriesIndex);
       newChildren.push(layoutChild);
     }
 

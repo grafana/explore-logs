@@ -1,6 +1,6 @@
-import { DataFrame, PanelData } from '@grafana/data';
+import { DataFrame } from '@grafana/data';
 import { DrawStyle, StackingMode } from '@grafana/ui';
-import { PanelBuilders, SceneCSSGridItem, SceneDataProvider, SceneDataTransformer, SceneObject } from '@grafana/scenes';
+import { PanelBuilders, SceneCSSGridItem, SceneDataTransformer, SceneObject } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
 import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { getLogsFormatVariable, VAR_FIELDS, VAR_LABELS } from './variables';
@@ -55,16 +55,14 @@ export function getFilterBreakdownValueScene(
   style: DrawStyle,
   variableName: typeof VAR_FIELDS | typeof VAR_LABELS
 ) {
-  return (data: PanelData, frame: DataFrame, frameIndex: number, $data: SceneDataProvider) => {
-    console.log('$data', $data);
-    console.log('data', data);
+  return (frame: DataFrame, frameIndex: number) => {
     const panel = PanelBuilders.timeseries() //
       .setOption('legend', { showLegend: false })
       .setCustomFieldConfig('fillOpacity', 9)
       .setTitle(getTitle(frame))
       .setData(
         new SceneDataTransformer({
-          transformations: [(source) => selectFrameTransformation(frameIndex)],
+          transformations: [() => selectFrameTransformation(frameIndex)],
         })
       )
       .setColor({ mode: 'fixed', fixedColor: getColorByIndex(frameIndex) })
