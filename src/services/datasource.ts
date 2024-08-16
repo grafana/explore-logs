@@ -18,6 +18,7 @@ import { PLUGIN_ID } from './routing';
 import { DetectedLabelsResponse } from './fields';
 import { sortLabelsByCardinality } from './filters';
 import { LEVEL_VARIABLE_VALUE, SERVICE_NAME } from './variables';
+import { runShardSplitQuery } from './shardQuerySplitting';
 
 export const WRAPPED_LOKI_DS_UID = 'wrapped-loki-ds-uid';
 
@@ -116,11 +117,11 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
   private getData(
     request: SceneDataQueryRequest,
-    ds: DataSourceWithBackend<DataQuery>,
+    ds: DataSourceWithBackend<LokiQuery>,
     subscriber: Subscriber<DataQueryResponse>
   ) {
     // query the datasource and return either observable or promise
-    const dsResponse = ds.query(request);
+    const dsResponse = runShardSplitQuery(ds, request);
     dsResponse.subscribe(subscriber);
 
     return subscriber;
