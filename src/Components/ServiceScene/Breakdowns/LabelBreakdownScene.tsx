@@ -36,8 +36,8 @@ import { ServiceScene } from '../ServiceScene';
 import { CustomConstantVariable } from '../../../services/CustomConstantVariable';
 import { navigateToValueBreakdown } from '../../../services/navigate';
 import { areArraysEqual } from '../../../services/comparison';
-import { LabelValueBreakdownScene } from './LabelValueBreakdownScene';
-import { LabelNamesBreakdownScene } from './LabelNamesBreakdownScene';
+import { LabelValuesBreakdownScene } from './LabelValuesBreakdownScene';
+import { LabelsAggregatedBreakdownScene } from './LabelsAggregatedBreakdownScene';
 import { SERVICE_NAME } from '../../ServiceSelectionScene/ServiceSelectionScene';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
@@ -156,7 +156,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     if (event.target !== 'labels') {
       return;
     }
-    if (this.state.body instanceof LabelValueBreakdownScene) {
+    if (this.state.body instanceof LabelValuesBreakdownScene) {
       this.state.body?.state.body?.state.layouts.forEach((layout) => {
         if (layout instanceof ByFrameRepeater) {
           layout.sort(event.sortBy, event.direction);
@@ -202,12 +202,14 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       error: false,
     };
 
-    if (variable.hasAllValue() && this.state.body instanceof LabelValueBreakdownScene) {
-      stateUpdate.body = new LabelNamesBreakdownScene({});
-    } else if (!variable.hasAllValue() && this.state.body instanceof LabelNamesBreakdownScene) {
-      stateUpdate.body = new LabelValueBreakdownScene({});
+    if (variable.hasAllValue() && this.state.body instanceof LabelValuesBreakdownScene) {
+      stateUpdate.body = new LabelsAggregatedBreakdownScene({});
+    } else if (!variable.hasAllValue() && this.state.body instanceof LabelsAggregatedBreakdownScene) {
+      stateUpdate.body = new LabelValuesBreakdownScene({});
     } else if (this.state.body === undefined) {
-      stateUpdate.body = variable.hasAllValue() ? new LabelNamesBreakdownScene({}) : new LabelValueBreakdownScene({});
+      stateUpdate.body = variable.hasAllValue()
+        ? new LabelsAggregatedBreakdownScene({})
+        : new LabelValuesBreakdownScene({});
     }
 
     this.setState({ ...stateUpdate });
@@ -248,8 +250,8 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       <div className={styles.container}>
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
           <div className={styles.controls}>
-            {body instanceof LabelValueBreakdownScene && <LabelValueBreakdownScene.Selector model={body} />}
-            {body instanceof LabelNamesBreakdownScene && <LabelNamesBreakdownScene.Selector model={body} />}
+            {body instanceof LabelValuesBreakdownScene && <LabelValuesBreakdownScene.Selector model={body} />}
+            {body instanceof LabelsAggregatedBreakdownScene && <LabelsAggregatedBreakdownScene.Selector model={body} />}
             {!loading && value !== ALL_VARIABLE_VALUE && (
               <>
                 <sort.Component model={sort} />

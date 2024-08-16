@@ -40,7 +40,7 @@ export interface LabelValueBreakdownSceneState extends SceneObjectState {
   lastFilterEvent?: AddFilterEvent;
 }
 
-export class LabelValueBreakdownScene extends SceneObjectBase<LabelValueBreakdownSceneState> {
+export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdownSceneState> {
   constructor(state: Partial<LabelValueBreakdownSceneState>) {
     super({
       ...state,
@@ -197,12 +197,12 @@ export class LabelValueBreakdownScene extends SceneObjectBase<LabelValueBreakdow
     });
   }
 
-  public static Selector({ model }: SceneComponentProps<LabelValueBreakdownScene>) {
+  public static Selector({ model }: SceneComponentProps<LabelValuesBreakdownScene>) {
     const { body } = model.useState();
     return <>{body && <body.Selector model={body} />}</>;
   }
 
-  public static Component = ({ model }: SceneComponentProps<LabelValueBreakdownScene>) => {
+  public static Component = ({ model }: SceneComponentProps<LabelValuesBreakdownScene>) => {
     const { body } = model.useState();
     if (body) {
       return <>{body && <body.Component model={body} />}</>;

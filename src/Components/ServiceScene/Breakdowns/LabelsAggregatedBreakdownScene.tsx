@@ -22,15 +22,15 @@ import {
 import React from 'react';
 import { LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS, LabelBreakdownScene } from './LabelBreakdownScene';
 import { buildDataQuery } from '../../../services/query';
-import { SelectLabelAction } from './SelectLabelAction';
+import { SelectLabelActionScene } from './SelectLabelActionScene';
 
-export interface LabelNamesBreakdownSceneState extends SceneObjectState {
+export interface LabelsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
   $data?: SceneDataProvider;
 }
 
-export class LabelNamesBreakdownScene extends SceneObjectBase<LabelNamesBreakdownSceneState> {
-  constructor(state: Partial<LabelNamesBreakdownSceneState>) {
+export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggregatedBreakdownSceneState> {
+  constructor(state: Partial<LabelsAggregatedBreakdownSceneState>) {
     super({
       ...state,
     });
@@ -63,7 +63,7 @@ export class LabelNamesBreakdownScene extends SceneObjectBase<LabelNamesBreakdow
           body: PanelBuilders.timeseries()
             .setTitle(optionValue)
             .setData(getQueryRunner([query]))
-            .setHeaderActions(new SelectLabelAction({ labelName: optionValue }))
+            .setHeaderActions(new SelectLabelActionScene({ labelName: optionValue }))
             .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
             .setCustomFieldConfig('fillOpacity', 100)
             .setCustomFieldConfig('lineWidth', 0)
@@ -118,12 +118,12 @@ export class LabelNamesBreakdownScene extends SceneObjectBase<LabelNamesBreakdow
     );
   }
 
-  public static Selector({ model }: SceneComponentProps<LabelNamesBreakdownScene>) {
+  public static Selector({ model }: SceneComponentProps<LabelsAggregatedBreakdownScene>) {
     const { body } = model.useState();
     return <>{body && <body.Selector model={body} />}</>;
   }
 
-  public static Component = ({ model }: SceneComponentProps<LabelNamesBreakdownScene>) => {
+  public static Component = ({ model }: SceneComponentProps<LabelsAggregatedBreakdownScene>) => {
     const { body } = model.useState();
     if (body) {
       return <>{body && <body.Component model={body} />}</>;
