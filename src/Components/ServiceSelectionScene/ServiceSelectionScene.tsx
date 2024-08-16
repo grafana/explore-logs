@@ -35,7 +35,6 @@ import {
   VAR_DATASOURCE,
 } from 'services/variables';
 import { selectService, SelectServiceButton } from './SelectServiceButton';
-import { PLUGIN_ID } from 'services/routing';
 import { buildLokiQuery } from 'services/query';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
@@ -178,26 +177,46 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
     try {
       const serviceSearch = service ? `(?i).*${escapeRegExp(service)}.*` : '.+';
-      const volumeResponse = await ds.getResource(
-        'index/volume',
-        {
-          query: `{${SERVICE_NAME}=~\`${serviceSearch}\`}`,
-          from: timeRange.from.utc().toISOString(),
-          to: timeRange.to.utc().toISOString(),
-          limit: 1000,
-        },
-        {
-          headers: {
-            'X-Query-Tags': `Source=${PLUGIN_ID}`,
-          },
-        }
-      );
+      const queryString = `sum by (__aggregated_metric__)(sum_over_time({__aggregated_metric__=~"${serviceSearch}"} | logfmt | unwrap bytes(bytes) [$__range]))`;
+
       const serviceMetrics: { [key: string]: number } = {};
-      volumeResponse.data.result.forEach((item: any) => {
-        const serviceName = item['metric'][SERVICE_NAME];
-        const value = Number(item['value'][1]);
-        serviceMetrics[serviceName] = value;
-      });
+
+      //TODO(twhitney): How do I add the header?
+      await ds
+        .query({
+          requestId: 'volume',
+          interval: '',
+          intervalMs: 0,
+          range: timeRange,
+          scopedVars: {},
+          targets: [buildLokiQuery(queryString, { queryType: 'instant' })],
+          timezone: '',
+          app: '',
+          startTime: 0,
+        })
+        .forEach((result: any) => {
+          let serviceNameIndex = 0;
+          let volumeIndex = 0;
+          for (let i = 0; i < result.data[0].fields.length; i++) {
+            if (result.data[0].fields[i].name === '__aggregated_metric__') {
+              serviceNameIndex = i;
+            }
+
+            if (result.data[0].fields[i].name === 'Value #A') {
+              volumeIndex = i;
+            }
+          }
+
+          result.data?.forEach((result: any) => {
+            const num = result.fields[serviceNameIndex].values.length;
+
+            for (let i = 0; i < num; i++) {
+              const value = result.fields[volumeIndex].values[i];
+              const serviceName = result.fields[serviceNameIndex].values[i];
+              serviceMetrics[serviceName] = value;
+            }
+          });
+        });
 
       const servicesByVolume = Object.entries(serviceMetrics)
         .sort((a, b) => b[1] - a[1]) // Sort by value in descending order
