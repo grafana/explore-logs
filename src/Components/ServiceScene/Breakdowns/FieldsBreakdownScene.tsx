@@ -122,7 +122,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   }
 
   private variableChanged = (newState: CustomConstantVariableState, oldState: CustomConstantVariableState) => {
-    console.log('variable changed', newState, oldState);
     if (
       !newState.loading &&
       (!areArraysEqual(newState.options, oldState.options) || newState.value !== oldState.value)
@@ -138,7 +137,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   };
 
   private updateFields(state: ServiceSceneState) {
-    console.log('update fields', state);
     const variable = getFieldGroupByVariable(this);
     const options = state.fields ? getFieldOptions(state.fields) : [];
 
@@ -331,12 +329,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     const variable = getFieldGroupByVariable(model);
     const { options, value } = variable.useState();
     const styles = useStyles2(getStyles);
-    console.log('render', {
-      loading,
-      body,
-      value,
-      options,
-    });
 
     return (
       <div className={styles.container}>
@@ -364,14 +356,8 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
           {/* @todo why are the types like this? */}
           <div className={styles.content}>
             {body && body instanceof FieldsAggregatedBreakdownScene && <body.Component model={body} />}
-          </div>
-          <div className={styles.content}>
             {body && body instanceof FieldValuesBreakdownScene && <body.Component model={body} />}
-          </div>
-          <div className={styles.content}>
             {body && body instanceof SceneReactObject && <body.Component model={body} />}
-          </div>
-          <div className={styles.content}>
             {body && body instanceof SceneFlexLayout && <body.Component model={body} />}
           </div>
         </StatusWrapper>

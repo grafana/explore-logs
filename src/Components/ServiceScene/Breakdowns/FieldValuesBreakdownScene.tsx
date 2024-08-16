@@ -86,7 +86,6 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
           }
         }
         if (newState.data?.state === LoadingState.Error) {
-          console.log('need to set error state, show error message please', newState);
           this.setErrorState(newState.data.errors);
         }
       })
@@ -216,7 +215,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
 
   public static Component = ({ model }: SceneComponentProps<FieldValuesBreakdownScene>) => {
     const { body } = model.useState();
-    console.log('render fields aggregated breakdown scene', model.state);
+    // @todo why are the types like this?
     if (body instanceof LayoutSwitcher) {
       return <>{body && <body.Component model={body} />}</>;
     } else if (body instanceof SceneReactObject) {
