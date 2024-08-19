@@ -188,7 +188,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
 
     // If we don't have a detected labels count, or we are activating the labels scene, run the detected labels query
-    // @todo we don't need to re-query detected_labels when selecting an individual value (navigating from labels -> label) as nothing in the query has changed, but scenes forces us to as each route has its own instantiation of this class. We could put the labels on the metadata service?
     if (
       ((slug === PageSlugs.labels || parentSlug === ValueSlugs.label) && !this.state.$detectedLabelsData?.state.data) ||
       this.state.labelsCount === undefined

@@ -3,6 +3,7 @@ import {
   SceneComponentProps,
   SceneCSSGridLayout,
   SceneDataProvider,
+  SceneDataState,
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
@@ -61,39 +62,41 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
       })
     );
 
-    // @todo DRY, same imp in Labels
     this._subs.add(
       this.state.$data?.subscribeToState((newState) => {
-        if (newState.data?.state === LoadingState.Done) {
-          // No panels for the user to select, presumably because everything has been excluded
-          const event = this.state.lastFilterEvent;
-
-          // @todo discuss: Do we want to let users exclude all fields? Or should we redirect when excluding the penultimate panel?
-          if (newState.data?.state === LoadingState.Done && event) {
-            if (event.operator === 'exclude' && newState.data.series.length < 1) {
-              this.navigateToFields();
-            }
-
-            // @todo discuss: wouldn't include always return in 1 result? Do we need to wait for the query to run or should we navigate on receiving the include event and cancel the ongoing query?
-            if (event.operator === 'include' && newState.data.series.length <= 1) {
-              this.navigateToFields();
-            }
-          }
-
-          if (this.state.body instanceof SceneReactObject) {
-            this.setState({
-              body: this.build(query),
-            });
-          }
-        }
-        if (newState.data?.state === LoadingState.Error) {
-          this.setErrorState(newState.data.errors);
-        }
+        this.onValuesDataQueryChange(newState, query);
       })
     );
   }
 
-  // @todo better error state
+  private onValuesDataQueryChange(newState: SceneDataState, query: LokiQuery) {
+    if (newState.data?.state === LoadingState.Done) {
+      // No panels for the user to select, presumably because everything has been excluded
+      const event = this.state.lastFilterEvent;
+
+      // @todo discuss: Do we want to let users exclude all fields? Or should we redirect when excluding the penultimate panel?
+      if (newState.data?.state === LoadingState.Done && event) {
+        if (event.operator === 'exclude' && newState.data.series.length < 1) {
+          this.navigateToFields();
+        }
+
+        // @todo discuss: wouldn't include always return in 1 result? Do we need to wait for the query to run or should we navigate on receiving the include event and cancel the ongoing query?
+        if (event.operator === 'include' && newState.data.series.length <= 1) {
+          this.navigateToFields();
+        }
+      }
+
+      if (this.state.body instanceof SceneReactObject) {
+        this.setState({
+          body: this.build(query),
+        });
+      }
+    }
+    if (newState.data?.state === LoadingState.Error) {
+      this.setErrorState(newState.data.errors);
+    }
+  }
+
   private setErrorState(errors: DataQueryError[] | undefined) {
     this.setState({
       body: new SceneReactObject({

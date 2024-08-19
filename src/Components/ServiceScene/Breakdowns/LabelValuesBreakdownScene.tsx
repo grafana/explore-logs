@@ -3,6 +3,7 @@ import {
   SceneComponentProps,
   SceneCSSGridLayout,
   SceneDataProvider,
+  SceneDataState,
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
@@ -74,24 +75,28 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       });
     });
 
-    this.state.$data?.subscribeToState((newState, prevState) => {
-      if (newState.data?.state === LoadingState.Done) {
-        // No panels for the user to select, presumably because everything has been excluded
-        const event = this.state.lastFilterEvent;
+    this.state.$data?.subscribeToState((newState) => {
+      this.onValuesDataQueryChange(newState);
+    });
+  }
 
-        // @todo discuss: Do we want to let users exclude all labels? Or should we redirect when excluding the penultimate panel?
-        if (newState.data?.state === LoadingState.Done && event) {
-          if (event.operator === 'exclude' && newState.data.series.length < 1) {
-            this.navigateToLabels();
-          }
+  private onValuesDataQueryChange(newState: SceneDataState) {
+    if (newState.data?.state === LoadingState.Done) {
+      // No panels for the user to select, presumably because everything has been excluded
+      const event = this.state.lastFilterEvent;
 
-          // @todo discuss: wouldn't include always return in 1 result? Do we need to wait for the query to run or should we navigate on receiving the include event and cancel the ongoing query?
-          if (event.operator === 'include' && newState.data.series.length <= 1) {
-            this.navigateToLabels();
-          }
+      // @todo discuss: Do we want to let users exclude all labels? Or should we redirect when excluding the penultimate panel?
+      if (newState.data?.state === LoadingState.Done && event) {
+        if (event.operator === 'exclude' && newState.data.series.length < 1) {
+          this.navigateToLabels();
+        }
+
+        // @todo discuss: wouldn't include always return in 1 result? Do we need to wait for the query to run or should we navigate on receiving the include event and cancel the ongoing query?
+        if (event.operator === 'include' && newState.data.series.length <= 1) {
+          this.navigateToLabels();
         }
       }
-    });
+    }
   }
 
   private navigateToLabels() {

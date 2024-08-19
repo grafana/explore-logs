@@ -143,76 +143,80 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     const interpolatedTarget = targetsInterpolated[0];
     const expression = interpolatedTarget.expr;
 
-    const dsResponse = ds.getResource(
-      'patterns',
-      {
-        query: expression,
-        start: request.range.from.utc().toISOString(),
-        end: request.range.to.utc().toISOString(),
-      },
-      {
-        requestId: request.requestId ?? 'patterns',
-        headers: {
-          'X-Query-Tags': `Source=${PLUGIN_ID}`,
+    try {
+      const dsResponse = ds.getResource(
+        'patterns',
+        {
+          query: expression,
+          start: request.range.from.utc().toISOString(),
+          end: request.range.to.utc().toISOString(),
         },
-      }
-    );
-    const response: PatternsResponse = await dsResponse;
-    const lokiPatterns = response?.data;
-
-    let maxValue = -Infinity;
-    let minValue = 0;
-
-    const frames: DataFrame[] =
-      lokiPatterns?.map((pattern: LokiPattern) => {
-        const timeValues: number[] = [];
-        const countValues: number[] = [];
-        let sum = 0;
-        pattern.samples.forEach(([time, count]) => {
-          timeValues.push(time * 1000);
-          countValues.push(count);
-          if (count > maxValue) {
-            maxValue = count;
-          }
-          if (count < minValue) {
-            minValue = count;
-          }
-          if (count > maxValue) {
-            maxValue = count;
-          }
-          if (count < minValue) {
-            minValue = count;
-          }
-          sum += count;
-        });
-        return createDataFrame({
-          refId: interpolatedTarget.refId,
-          name: pattern.pattern,
-          fields: [
-            {
-              name: 'time',
-              type: FieldType.time,
-              values: timeValues,
-              config: {},
-            },
-            {
-              name: pattern.pattern,
-              type: FieldType.number,
-              values: countValues,
-              config: {},
-            },
-          ],
-          meta: {
-            preferredVisualisationType: 'graph',
-            custom: {
-              sum,
-            },
+        {
+          requestId: request.requestId ?? 'patterns',
+          headers: {
+            'X-Query-Tags': `Source=${PLUGIN_ID}`,
           },
-        });
-      }) ?? [];
+        }
+      );
+      const response: PatternsResponse = await dsResponse;
+      const lokiPatterns = response?.data;
 
-    frames.sort((a, b) => (b.meta?.custom?.sum as number) - (a.meta?.custom?.sum as number));
-    subscriber.next({ data: frames, state: LoadingState.Done });
+      let maxValue = -Infinity;
+      let minValue = 0;
+
+      const frames: DataFrame[] =
+        lokiPatterns?.map((pattern: LokiPattern) => {
+          const timeValues: number[] = [];
+          const countValues: number[] = [];
+          let sum = 0;
+          pattern.samples.forEach(([time, count]) => {
+            timeValues.push(time * 1000);
+            countValues.push(count);
+            if (count > maxValue) {
+              maxValue = count;
+            }
+            if (count < minValue) {
+              minValue = count;
+            }
+            if (count > maxValue) {
+              maxValue = count;
+            }
+            if (count < minValue) {
+              minValue = count;
+            }
+            sum += count;
+          });
+          return createDataFrame({
+            refId: interpolatedTarget.refId,
+            name: pattern.pattern,
+            fields: [
+              {
+                name: 'time',
+                type: FieldType.time,
+                values: timeValues,
+                config: {},
+              },
+              {
+                name: pattern.pattern,
+                type: FieldType.number,
+                values: countValues,
+                config: {},
+              },
+            ],
+            meta: {
+              preferredVisualisationType: 'graph',
+              custom: {
+                sum,
+              },
+            },
+          });
+        }) ?? [];
+
+      frames.sort((a, b) => (b.meta?.custom?.sum as number) - (a.meta?.custom?.sum as number));
+      subscriber.next({ data: frames, state: LoadingState.Done });
+    } catch (e) {
+      subscriber.next({ data: [], state: LoadingState.Error });
+    }
 
     return subscriber;
   }
@@ -234,37 +238,41 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     const interpolatedTarget = targetsInterpolated[0];
     const expression = interpolatedTarget.expr;
 
-    const response = await ds.getResource<DetectedLabelsResponse>(
-      'detected_labels',
-      {
-        query: expression,
-        start: request.range.from.utc().toISOString(),
-        end: request.range.to.utc().toISOString(),
-      },
-      {
-        requestId: request.requestId ?? 'detected_labels',
-        headers: {
-          'X-Query-Tags': `Source=${PLUGIN_ID}`,
+    try {
+      const response = await ds.getResource<DetectedLabelsResponse>(
+        'detected_labels',
+        {
+          query: expression,
+          start: request.range.from.utc().toISOString(),
+          end: request.range.to.utc().toISOString(),
         },
-      }
-    );
-    const labels = response.detectedLabels
-      ?.sort((a, b) => sortLabelsByCardinality(a, b))
-      ?.filter((label) => label.label !== LEVEL_VARIABLE_VALUE);
+        {
+          requestId: request.requestId ?? 'detected_labels',
+          headers: {
+            'X-Query-Tags': `Source=${PLUGIN_ID}`,
+          },
+        }
+      );
+      const labels = response.detectedLabels
+        ?.sort((a, b) => sortLabelsByCardinality(a, b))
+        ?.filter((label) => label.label !== LEVEL_VARIABLE_VALUE);
 
-    const detectedLabelFields: Array<Partial<Field>> = labels?.map((label) => {
-      return {
-        name: label.label,
-        values: [label.cardinality],
-      };
-    });
+      const detectedLabelFields: Array<Partial<Field>> = labels?.map((label) => {
+        return {
+          name: label.label,
+          values: [label.cardinality],
+        };
+      });
 
-    const dataFrame = createDataFrame({
-      refId: interpolatedTarget.refId,
-      fields: detectedLabelFields ?? [],
-    });
+      const dataFrame = createDataFrame({
+        refId: interpolatedTarget.refId,
+        fields: detectedLabelFields ?? [],
+      });
 
-    subscriber.next({ data: [dataFrame], state: LoadingState.Done });
+      subscriber.next({ data: [dataFrame], state: LoadingState.Done });
+    } catch (e) {
+      subscriber.next({ data: [], state: LoadingState.Error });
+    }
 
     return subscriber;
   }
@@ -282,34 +290,39 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     const targetsInterpolated = ds.interpolateVariablesInQueries(request.targets, request.scopedVars);
     const expression = targetsInterpolated[0].expr.replace('.*.*', '.+');
 
-    const volumeResponse: IndexVolumeResponse = await ds.getResource(
-      'index/volume',
-      {
-        query: expression,
-        start: request.range.from.utc().toISOString(),
-        end: request.range.to.utc().toISOString(),
-        limit: 1000,
-      },
-      {
-        requestId: request.requestId ?? 'volume',
-        headers: {
-          'X-Query-Tags': `Source=${PLUGIN_ID}`,
+    try {
+      const volumeResponse: IndexVolumeResponse = await ds.getResource(
+        'index/volume',
+        {
+          query: expression,
+          start: request.range.from.utc().toISOString(),
+          end: request.range.to.utc().toISOString(),
+          limit: 1000,
         },
-      }
-    );
-    volumeResponse?.data.result.sort((lhs: VolumeResult, rhs: VolumeResult) => {
-      const lVolumeCount: VolumeCount = lhs.value[1];
-      const rVolumeCount: VolumeCount = rhs.value[1];
-      return Number(rVolumeCount) - Number(lVolumeCount);
-    });
-    // Scenes will only emit dataframes from the SceneQueryRunner, so for now we need to convert the API response to a dataframe
-    const df = createDataFrame({
-      fields: [
-        { name: 'service_name', values: volumeResponse?.data.result?.map((r) => r.metric.service_name) },
-        { name: 'volume', values: volumeResponse?.data.result?.map((r) => Number(r.value[1])) },
-      ],
-    });
-    subscriber.next({ data: [df] });
+        {
+          requestId: request.requestId ?? 'volume',
+          headers: {
+            'X-Query-Tags': `Source=${PLUGIN_ID}`,
+          },
+        }
+      );
+      volumeResponse?.data.result.sort((lhs: VolumeResult, rhs: VolumeResult) => {
+        const lVolumeCount: VolumeCount = lhs.value[1];
+        const rVolumeCount: VolumeCount = rhs.value[1];
+        return Number(rVolumeCount) - Number(lVolumeCount);
+      });
+      // Scenes will only emit dataframes from the SceneQueryRunner, so for now we need to convert the API response to a dataframe
+      const df = createDataFrame({
+        fields: [
+          { name: 'service_name', values: volumeResponse?.data.result?.map((r) => r.metric.service_name) },
+          { name: 'volume', values: volumeResponse?.data.result?.map((r) => Number(r.value[1])) },
+        ],
+      });
+      subscriber.next({ data: [df] });
+    } catch (e) {
+      subscriber.next({ data: [], state: LoadingState.Error });
+    }
+
     subscriber.complete();
 
     return subscriber;
