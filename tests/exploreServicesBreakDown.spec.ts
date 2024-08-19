@@ -87,7 +87,7 @@ test.describe('explore services breakdown page', () => {
   });
 
 
-  test.only('should update labels sort order', async ({page}) => {
+  test('should update labels sort order', async ({page}) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
     await page.getByLabel('Select detected_level').click();
 
@@ -123,7 +123,7 @@ test.describe('explore services breakdown page', () => {
       expect(await panels.nth(i).getByRole('heading').textContent()).toEqual(panelTitles[panelTitles.length - i - 1])
     }
   })
-  test.only('should update fields sort order', async ({page}) => {
+  test('should update fields sort order', async ({page}) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
     // Use the dropdown since the tenant field might not be visible
     await page.getByText('FieldAll').click();
