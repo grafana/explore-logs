@@ -113,37 +113,6 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     return panel;
   }
 
-  // private hasSingleServiceSelector(): boolean {
-  //   const fields = sceneGraph.lookupVariable(VAR_FIELDS, this) as AdHocFiltersVariable;
-  //   const patterns = sceneGraph.lookupVariable(VAR_PATTERNS, this) as CustomVariable;
-  //   const lineFilter = sceneGraph.lookupVariable(VAR_LINE_FILTER, this) as CustomVariable;
-
-  //   if (fields.state.filters.length !== 0 || patterns.state.value !== '') {
-  //     return false;
-  //   }
-
-  //   const labels = sceneGraph.lookupVariable(VAR_LABELS, this) as AdHocFiltersVariable;
-  //   if (labels.state.filters.length > 1) {
-  //     return false;
-  //   }
-
-  //   const filter = (lineFilter.state.value as string).trim();
-  //   if (labels.state.filters[0].key === SERVICE_NAME) {
-  //     if (filter === '|~ `(?i)`' || !filter) {
-  //       return true;
-  //     }
-  //   }
-
-  //   return false;
-  // }
-
-  // private service(): string {
-  //   const labels = sceneGraph.lookupVariable(VAR_LABELS, this) as AdHocFiltersVariable;
-  //   const filters = labels?.state.filters ?? [];
-
-  //   return filters.find((filter) => filter.key === SERVICE_NAME)?.value ?? '';
-  // }
-
   private extendTimeSeriesLegendBus = (context: PanelContext) => {
     const originalOnToggleSeriesVisibility = context.onToggleSeriesVisibility;
 

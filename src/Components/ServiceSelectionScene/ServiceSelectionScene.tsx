@@ -177,7 +177,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
     try {
       const serviceSearch = service ? `(?i).*${escapeRegExp(service)}.*` : '.+';
-      const queryString = `sum by (__aggregated_metric__)(sum_over_time({__aggregated_metric__=~"${serviceSearch}"} | logfmt | unwrap bytes(bytes) [$__range]))`;
+      const queryString = `sort_desc(
+        sum by (__aggregated_metric__)(
+          sum_over_time({__aggregated_metric__=~"${serviceSearch}"} | logfmt | unwrap bytes(bytes) [$__range]
+        ))
+      )`;
 
       const serviceMetrics: { [key: string]: number } = {};
 
@@ -208,7 +212,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           }
 
           result.data?.forEach((result: any) => {
-            const num = result.fields[serviceNameIndex].values.length;
+            let num = result.fields[serviceNameIndex].values.length;
+            // limit to 1000 services
+            if (num > 1000) {
+              num = 1000;
+            }
 
             for (let i = 0; i < num; i++) {
               const value = result.fields[volumeIndex].values[i];
@@ -218,9 +226,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           });
         });
 
-      const servicesByVolume = Object.entries(serviceMetrics)
-        .sort((a, b) => b[1] - a[1]) // Sort by value in descending order
-        .map(([serviceName]) => serviceName); // Extract service names
+      const servicesByVolume = Object.entries(serviceMetrics).map(([serviceName]) => serviceName); // Extract service names
 
       this.setState({
         volumeApiError: false,
