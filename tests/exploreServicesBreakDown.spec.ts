@@ -177,9 +177,7 @@ test.describe('explore services breakdown page', () => {
     await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
     await page.getByRole('button', { name: 'Include' }).nth(0).click();
 
-    // Assert the fields tab is selected
-    expect(await page.getByTestId('data-testid tab-fields').getAttribute('aria-selected')).toEqual('true')
-    // Adhoc err filter should be added
+    await explorePage.assertFieldsIndex()
     await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
     await expect(page.getByText('=').nth(1)).toBeVisible();
   });
@@ -240,8 +238,7 @@ test.describe('explore services breakdown page', () => {
     await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
     await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
     await page.getByRole('button', { name: 'Include' }).nth(0).click();
-    // Should see the logs panel full of errors
-    await expect(page.getByTestId(testIds.exploreServiceDetails.searchLogs)).toBeVisible();
+    await explorePage.assertFieldsIndex()
     // Adhoc err filter should be added
     await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
   });
