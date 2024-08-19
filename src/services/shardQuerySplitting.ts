@@ -41,12 +41,11 @@ export function splitQueriesByStreamShard(
   request: DataQueryRequest<LokiQuery>,
   splittingTargets: LokiQuery[]
 ) {
-  const endShard = -1;
   let shouldStop = false;
   let mergedResponse: DataQueryResponse = { data: [], state: LoadingState.Streaming, key: uuidv4() };
   let subquerySubsciption: Subscription | null = null;
 
-  const runNextRequest = (subscriber: Subscriber<DataQueryResponse>, shard?: number) => {
+  const runNextRequest = (subscriber: Subscriber<DataQueryResponse>, cycle?: number, shardRequests?: number[][]) => {
     if (shouldStop) {
       subscriber.complete();
       return;
@@ -59,13 +58,14 @@ export function splitQueriesByStreamShard(
     };
 
     const nextRequest = () => {
-      if (shard === undefined) {
+      if (cycle === undefined || shardRequests === undefined) {
         done();
         return;
       }
-      const nextShard = shard - 1;
-      if (nextShard >= endShard) {
-        runNextRequest(subscriber, nextShard);
+
+      const nextCycle = cycle + 1;
+      if (nextCycle < shardRequests.length) {
+        runNextRequest(subscriber, nextCycle, shardRequests);
         return;
       }
       done();
@@ -77,10 +77,10 @@ export function splitQueriesByStreamShard(
       return;
     }
 
-    const subRequest = { ...request, targets: interpolateShardingSelector(targets, shard) };
+    const subRequest = { ...request, targets: interpolateShardingSelector(targets, shardRequests, cycle) };
     // Request may not have a request id
     if (request.requestId) {
-      subRequest.requestId = `${request.requestId}_shard_${shard !== undefined ? shard : 'no-shard'}`;
+      subRequest.requestId = `${request.requestId}_shard_${cycle !== undefined ? cycle : 'no-shard'}`;
     }
 
     // @ts-expect-error
@@ -107,24 +107,21 @@ export function splitQueriesByStreamShard(
     datasource.languageProvider
       .fetchLabelValues('__stream_shard__', { timeRange: request.range })
       .then((values: string[]) => {
-        let startShard: number | undefined = undefined;
-        values.forEach((shard) => {
-          if (startShard === undefined || parseInt(shard, 10) > startShard) {
-            startShard = parseInt(shard, 10);
-          }
-        });
+        const shards = values.map((value) => parseInt(value, 10));
+        const startShard = shards.length ? Math.max(...shards) : undefined;
         if (startShard === undefined) {
           console.warn(`Shard splitting not supported. Issuing a regular query.`);
           runNextRequest(subscriber);
         } else {
+          const shardRequests = getShardRequests(startShard, shards);
           console.log(`Querying up to ${startShard} shards`);
-          runNextRequest(subscriber, startShard);
+          runNextRequest(subscriber, 0, shardRequests);
         }
       })
       .catch((e: unknown) => {
         console.error(e);
         shouldStop = true;
-        runNextRequest(subscriber, 0);
+        runNextRequest(subscriber);
       });
     return () => {
       shouldStop = true;
@@ -147,4 +144,19 @@ export function runShardSplitQuery(datasource: DataSourceWithBackend<LokiQuery>,
     }));
 
   return splitQueriesByStreamShard(datasource, request, queries);
+}
+
+function getShardRequests(maxShard: number, shards: number[]) {
+  const maxRequests = Math.min(5, shards.length - 1);
+  const groupSize = Math.ceil(maxShard / maxRequests);
+  const requests: number[][] = [];
+  for (let i = maxShard; i >= 0; i -= groupSize) {
+    const request: number[] = [];
+    for (let j = i; j >= i - groupSize && j >= 0 && shards.length > 0; j -= 1) {
+      request.push(shards[j]);
+    }
+    requests.push(request);
+  }
+  requests.push([-1]);
+  return requests;
 }
