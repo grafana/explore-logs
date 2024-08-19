@@ -31,13 +31,10 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
   constructor(state: Partial<FieldsAggregatedBreakdownSceneState>) {
     super(state);
 
-    console.log('FieldsAggregatedBreakdownScene constructor', state);
-
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
   onActivate() {
-    console.log('FieldsAggregatedBreakdownScene activation', this.state);
     this.setState({
       body: this.build(),
     });
@@ -130,7 +127,6 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
 
   public static Component = ({ model }: SceneComponentProps<FieldsAggregatedBreakdownScene>) => {
     const { body } = model.useState();
-    console.log('render fields aggregated breakdown scene', model.state);
     if (body) {
       return <>{body && <body.Component model={body} />}</>;
     }

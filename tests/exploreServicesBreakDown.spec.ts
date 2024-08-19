@@ -86,6 +86,50 @@ test.describe('explore services breakdown page', () => {
     expect(urlArray[urlArray.length - 2]).toEqual('label')
   });
 
+  test.only('should change sort order', async ({page}) => {
+    await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
+    await page.getByLabel('Select detected_level').click();
+
+    // Assert loading is done and panels are showing
+    const panels = page.getByTestId(/data-testid Panel header/)
+    await expect(panels.first()).toBeVisible()
+    const panelTitles: Array<string | null> = [];
+
+   for (const panel of await panels.all()){
+      const panelTitle = await panel.getByRole('heading').textContent()
+      panelTitles.push(panelTitle)
+    }
+
+    expect(panelTitles.length).toBeGreaterThan(0)
+
+    await page.getByTestId('data-testid SortBy direction').click()
+    // Desc is the default option, this should be a noop
+    await page.getByRole('option', { name: 'Desc' }).click()
+
+    await expect(panels.first()).toBeVisible()
+    // assert the sort order hasn't changed
+    for(let i = 0; i < panelTitles.length; i++){
+      await page.pause()
+      expect(await panels.nth(i).getByRole('heading').textContent()).toEqual(panelTitles[i])
+    }
+
+    await page.pause()
+
+    await page.getByTestId('data-testid SortBy direction').click()
+    // Now change the sort order
+    await page.getByRole('option', { name: 'Asc' }).click()
+
+    await expect(panels.first()).toBeVisible()
+    // assert the sort order hasn't changed
+    for(let i = 0; i < panelTitles.length; i++){
+      await page.pause()
+      expect(await panels.nth(i).getByRole('heading').textContent()).toEqual(panelTitles[panelTitles.length - i - 1])
+    }
+
+    await page.pause()
+
+  })
+
   test('should exclude a label, update filters', async ({ page }) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
     await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
@@ -119,7 +163,6 @@ test.describe('explore services breakdown page', () => {
         const refId = postData.queries[0].refId
         // Field subqueries have a refId of the field name
         if(refId !== 'logsPanelQuery' && refId !== 'A'){
-          console.log('refId', refId)
           requestCount++
           return await route.fulfill({json: mockResponse})
         }

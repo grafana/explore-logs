@@ -19,6 +19,14 @@ export const testIds = {
       label: 'data-testid Dashboard template variables submenu Label service_name',
     },
   },
+  breakdowns: {
+    labels: {},
+    fields: {},
+    common: {
+      sortByFunction: 'data-testid SortBy function',
+      sortByDirection: 'data-testid SortBy direction',
+    },
+  },
 
   exploreServiceDetails: {
     searchLogs: 'data-testid search-logs',

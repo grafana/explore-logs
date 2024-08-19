@@ -13,7 +13,6 @@ interface SelectFieldActionSceneState extends SceneObjectState {
 export class SelectFieldActionScene extends SceneObjectBase<SelectFieldActionSceneState> {
   public onClick = () => {
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
-    console.log('nav to value breakdown', this.state.labelName);
     navigateToValueBreakdown(ValueSlugs.field, this.state.labelName, serviceScene);
   };
 

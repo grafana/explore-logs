@@ -15,7 +15,7 @@ import { getLabelValue } from './SortByScene';
 import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
 import { getQueryRunner, setLeverColorOverrides } from '../../../services/panel';
 import { getSortByPreference } from '../../../services/store';
-import { LoadingState, ReducerID } from '@grafana/data';
+import { LoadingState } from '@grafana/data';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { getFilterBreakdownValueScene } from '../../../services/fields';
 import {
@@ -33,6 +33,7 @@ import { navigateToDrilldownPage } from '../../../services/navigate';
 import { PageSlugs } from '../../../services/routing';
 import { ServiceScene } from '../ServiceScene';
 import { AddFilterEvent } from './AddToFiltersButton';
+import { DEFAULT_SORT_BY } from '../../../services/sorting';
 
 export interface LabelValueBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -137,7 +138,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       .setTitle(tagKey);
 
     const body = bodyOpts.build();
-    const { sortBy, direction } = getSortByPreference('labels', ReducerID.stdDev, 'desc');
+    const { sortBy, direction } = getSortByPreference('labels', DEFAULT_SORT_BY, 'desc');
 
     const getFilter = () => labelBreakdownScene.state.search.state.filter ?? '';
 

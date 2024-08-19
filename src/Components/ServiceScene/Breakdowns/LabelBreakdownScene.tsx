@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DataFrame, GrafanaTheme2, LoadingState, ReducerID } from '@grafana/data';
+import { DataFrame, GrafanaTheme2, LoadingState } from '@grafana/data';
 import {
   QueryRunnerState,
   SceneComponentProps,
@@ -39,6 +39,7 @@ import { areArraysEqual } from '../../../services/comparison';
 import { LabelValuesBreakdownScene } from './LabelValuesBreakdownScene';
 import { LabelsAggregatedBreakdownScene } from './LabelsAggregatedBreakdownScene';
 import { SERVICE_NAME } from '../../ServiceSelectionScene/ServiceSelectionScene';
+import { DEFAULT_SORT_BY } from '../../../services/sorting';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -223,7 +224,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     const variable = getLabelGroupByVariable(this);
     variable.changeValueTo(value);
 
-    const { sortBy, direction } = getSortByPreference('labels', ReducerID.stdDev, 'desc');
+    const { sortBy, direction } = getSortByPreference('labels', DEFAULT_SORT_BY, 'desc');
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.select_field_in_breakdown_clicked,

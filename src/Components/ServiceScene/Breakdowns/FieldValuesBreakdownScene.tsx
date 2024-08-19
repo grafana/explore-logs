@@ -12,7 +12,7 @@ import {
 } from '@grafana/scenes';
 import { buildDataQuery, LokiQuery } from '../../../services/query';
 import { getSortByPreference } from '../../../services/store';
-import { DataQueryError, LoadingState, ReducerID } from '@grafana/data';
+import { DataQueryError, LoadingState } from '@grafana/data';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { getQueryRunner } from '../../../services/panel';
 import { ByFrameRepeater } from './ByFrameRepeater';
@@ -30,6 +30,7 @@ import { AddFilterEvent } from './AddToFiltersButton';
 import { navigateToDrilldownPage } from '../../../services/navigate';
 import { PageSlugs } from '../../../services/routing';
 import { ServiceScene } from '../ServiceScene';
+import { DEFAULT_SORT_BY } from '../../../services/sorting';
 
 export interface FieldValuesBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher | SceneReactObject;
@@ -134,7 +135,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
     const groupByVariable = getFieldGroupByVariable(this);
     const tagKey = String(groupByVariable.state.value);
 
-    const { sortBy, direction } = getSortByPreference('fields', ReducerID.stdDev, 'desc');
+    const { sortBy, direction } = getSortByPreference('fields', DEFAULT_SORT_BY, 'desc');
 
     const fieldsBreakdownScene = sceneGraph.getAncestor(this, FieldsBreakdownScene);
     const getFilter = () => fieldsBreakdownScene.state.search.state.filter ?? '';

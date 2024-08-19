@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { GrafanaTheme2, ReducerID } from '@grafana/data';
+import { GrafanaTheme2 } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   SceneComponentProps,
@@ -44,6 +44,7 @@ import { FieldsAggregatedBreakdownScene } from './FieldsAggregatedBreakdownScene
 import { FieldValuesBreakdownScene } from './FieldValuesBreakdownScene';
 import { SERVICE_NAME } from '../../ServiceSelectionScene/ServiceSelectionScene';
 import { LayoutSwitcher } from './LayoutSwitcher';
+import { DEFAULT_SORT_BY } from '../../../services/sorting';
 
 export const averageFields = ['duration', 'count', 'total', 'bytes'];
 export const FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
@@ -306,7 +307,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     }
 
     const variable = getFieldGroupByVariable(this);
-    const { sortBy, direction } = getSortByPreference('fields', ReducerID.stdDev, 'desc');
+    const { sortBy, direction } = getSortByPreference('fields', DEFAULT_SORT_BY, 'desc');
 
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
