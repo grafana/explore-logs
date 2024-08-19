@@ -18,19 +18,27 @@ export class MetadataService {
   }
 
   public setPatternsCount(count: number) {
-    if(!this.serviceSceneState){
-      this.serviceSceneState = {}
+    if (!this.serviceSceneState) {
+      this.serviceSceneState = {};
     }
 
     this.serviceSceneState.patternsCount = count;
   }
 
   public setLabelsCount(count: number) {
-    if(!this.serviceSceneState){
-      this.serviceSceneState = {}
+    if (!this.serviceSceneState) {
+      this.serviceSceneState = {};
     }
 
-    this.serviceSceneState.labelsCount = count
+    this.serviceSceneState.labelsCount = count;
+  }
+
+  public setFieldsCount(count: number) {
+    if (!this.serviceSceneState) {
+      this.serviceSceneState = {};
+    }
+
+    this.serviceSceneState.fieldsCount = count;
   }
 
   public setServiceSceneState(state: ServiceSceneCustomState) {

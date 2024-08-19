@@ -289,6 +289,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       if (!areArraysEqual(fields, this.state.fields)) {
         this.setState({
           fields: fields,
+          fieldsCount: fields.length,
           loading: false,
         });
       }

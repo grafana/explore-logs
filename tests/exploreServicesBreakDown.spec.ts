@@ -172,11 +172,13 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByText('!=')).toBeVisible();
   });
 
-  test('should include a label, update filters, open log panel', async ({ page }) => {
+  test('should include a label, update filters, open filters breakdown', async ({ page }) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
     await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
     await page.getByRole('button', { name: 'Include' }).nth(0).click();
-    await expect(page.getByTestId(testIds.exploreServiceDetails.searchLogs)).toBeVisible();
+
+    // Assert the fields tab is selected
+    expect(await page.getByTestId('data-testid tab-fields').getAttribute('aria-selected')).toEqual('true')
     // Adhoc err filter should be added
     await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
     await expect(page.getByText('=').nth(1)).toBeVisible();

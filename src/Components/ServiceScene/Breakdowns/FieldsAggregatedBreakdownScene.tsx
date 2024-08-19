@@ -8,7 +8,7 @@ import {
   SceneObjectBase,
   SceneObjectState,
 } from '@grafana/scenes';
-import { ALL_VARIABLE_VALUE, getFieldGroupByVariable } from '../../../services/variables';
+import { ALL_VARIABLE_VALUE, getFieldGroupByVariable, getFieldsVariable } from '../../../services/variables';
 import { buildDataQuery } from '../../../services/query';
 import { getQueryRunner, setLeverColorOverrides } from '../../../services/panel';
 import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
@@ -22,6 +22,7 @@ import {
 import { ServiceScene } from '../ServiceScene';
 import React from 'react';
 import { SelectFieldActionScene } from './SelectFieldActionScene';
+import { areArraysEqual } from '../../../services/comparison';
 
 export interface FieldsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -38,6 +39,37 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     this.setState({
       body: this.build(),
     });
+
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
+    const fieldsVariable = getFieldsVariable(this);
+    const fieldsBreakdownScene = sceneGraph.getAncestor(this, FieldsBreakdownScene);
+
+    fieldsVariable.subscribeToState((newState, prevState) => {
+      if (!areArraysEqual(newState.filters, prevState.filters)) {
+        // Variables changing could cause a different set of filters to be returned, to prevent the current panels from executing queries that will get cancelled we null out the body
+        this.setState({
+          body: undefined,
+        });
+
+        // But what if the filters change, but the list of fields doesn't? We won't re-build the body, so let's clear out the fields
+        serviceScene.setState({
+          fields: undefined,
+        });
+
+        // And set the loading state on parent
+        fieldsBreakdownScene.setState({
+          loading: true,
+        });
+      }
+    });
+
+    serviceScene.subscribeToState((newState, prevState) => {
+      if (!areArraysEqual(newState.fields, prevState.fields)) {
+        this.setState({
+          body: this.build(),
+        });
+      }
+    });
   }
   private build() {
     const groupByVariable = getFieldGroupByVariable(this);
@@ -46,6 +78,32 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     const fieldsBreakdownScene = sceneGraph.getAncestor(this, FieldsBreakdownScene);
     fieldsBreakdownScene.state.search.reset();
 
+    const children = this.buildChildren(options);
+
+    return new LayoutSwitcher({
+      options: [
+        { value: 'grid', label: 'Grid' },
+        { value: 'rows', label: 'Rows' },
+      ],
+      active: 'grid',
+      layouts: [
+        new SceneCSSGridLayout({
+          templateColumns: FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS,
+          autoRows: '200px',
+          children: children,
+          isLazy: true,
+        }),
+        new SceneCSSGridLayout({
+          templateColumns: '1fr',
+          autoRows: '200px',
+          children: children.map((child) => child.clone()),
+          isLazy: true,
+        }),
+      ],
+    });
+  }
+
+  private buildChildren(options: Array<{ label: string; value: string }>) {
     const children: SceneFlexItemLike[] = [];
     for (const option of options) {
       const { value: optionValue } = option;
@@ -86,28 +144,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
 
       children.push(gridItem);
     }
-
-    return new LayoutSwitcher({
-      options: [
-        { value: 'grid', label: 'Grid' },
-        { value: 'rows', label: 'Rows' },
-      ],
-      active: 'grid',
-      layouts: [
-        new SceneCSSGridLayout({
-          templateColumns: FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS,
-          autoRows: '200px',
-          children: children,
-          isLazy: true,
-        }),
-        new SceneCSSGridLayout({
-          templateColumns: '1fr',
-          autoRows: '200px',
-          children: children.map((child) => child.clone()),
-          isLazy: true,
-        }),
-      ],
-    });
+    return children;
   }
 
   private hideField(field: string) {
