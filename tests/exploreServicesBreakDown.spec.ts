@@ -86,7 +86,6 @@ test.describe('explore services breakdown page', () => {
     expect(urlArray[urlArray.length - 2]).toEqual('label')
   });
 
-
   test('should update labels sort order', async ({page}) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
     await page.getByLabel('Select detected_level').click();
@@ -123,6 +122,7 @@ test.describe('explore services breakdown page', () => {
       expect(await panels.nth(i).getByRole('heading').textContent()).toEqual(panelTitles[panelTitles.length - i - 1])
     }
   })
+
   test('should update fields sort order', async ({page}) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
     // Use the dropdown since the tenant field might not be visible
@@ -161,6 +161,28 @@ test.describe('explore services breakdown page', () => {
     for (let i = 0; i < panelTitles.length; i++) {
       expect(await panels.nth(i).getByRole('heading').textContent()).toEqual(panelTitles[panelTitles.length - i - 1])
     }
+  })
+
+  test('should search labels', async({page}) => {
+    await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
+    await page.getByLabel('Select detected_level').click();
+    await page.getByPlaceholder('Search for value').click()
+    const panels = page.getByTestId(/data-testid Panel header/)
+    await expect(panels.first()).toBeVisible()
+    expect(await panels.count()).toEqual(4)
+    await page.keyboard.type('errr')
+    expect(await panels.count()).toEqual(1)
+  })
+
+  test('should search fields', async({page}) => {
+    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
+    await page.getByLabel('Select caller').click();
+    await page.getByPlaceholder('Search for value').click()
+    const panels = page.getByTestId(/data-testid Panel header/)
+    await expect(panels.first()).toBeVisible()
+    expect(await panels.count()).toBeGreaterThan(1)
+    await page.keyboard.type('brod')
+    expect(await panels.count()).toEqual(1)
   })
 
   test('should exclude a label, update filters', async ({ page }) => {
@@ -232,7 +254,6 @@ test.describe('explore services breakdown page', () => {
 
     await page.unrouteAll();
   })
-
 
   test('should select a field, update filters, open log panel', async ({ page }) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
