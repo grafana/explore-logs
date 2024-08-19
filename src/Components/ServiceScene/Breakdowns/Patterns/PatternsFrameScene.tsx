@@ -229,6 +229,7 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
           // Mutating the dataframe config here means that we don't need to update the colors in the table view
           const dataFrame = patternFrame.dataFrame;
           dataFrame.fields[1].config.color = overrideToFixedColor(seriesIndex);
+          dataFrame.fields[1].name = '';
           return dataFrame;
         }),
         state: LoadingState.Done,
