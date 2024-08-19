@@ -129,7 +129,6 @@ test.describe('explore services breakdown page', () => {
     await page.getByText('FieldAll').click();
     await page.keyboard.type('tenan');
     await page.keyboard.press('Enter');
-    await page.pause()
 
     // Assert loading is done and panels are showing
     const panels = page.getByTestId(/data-testid Panel header/)
