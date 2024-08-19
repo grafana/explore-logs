@@ -114,18 +114,27 @@ export function isLogsQuery(query: string): boolean {
 
 const SHARDING_PLACEHOLDER = '__stream_shard_number__';
 export const addShardingPlaceholderSelector = (query: string) => {
-  return query.replace('}', `, __stream_shard__="${SHARDING_PLACEHOLDER}"}`);
+  return query.replace('}', `, __stream_shard__=~"${SHARDING_PLACEHOLDER}"}`);
 };
 
-export const interpolateShardingSelector = (queries: LokiQuery[], shard?: number) => {
-  if (shard === undefined) {
+export const interpolateShardingSelector = (queries: LokiQuery[], shards?: number[][], i?: number) => {
+  if (shards === undefined || i === undefined) {
     return queries.map((query) => ({
       ...query,
-      expr: query.expr.replace(`, __stream_shard__="${SHARDING_PLACEHOLDER}"}`, '}'),
+      expr: query.expr.replace(`, __stream_shard__=~"${SHARDING_PLACEHOLDER}"}`, '}'),
     }));
   }
 
-  const shardValue = shard < 0 ? '' : shard.toString();
+  const shardValue = shards[i].join('|');
+
+  // -1 means empty shard value
+  if (shardValue === '-1') {
+    return queries.map((query) => ({
+      ...query,
+      expr: query.expr.replace(`, __stream_shard__=~"${SHARDING_PLACEHOLDER}"}`, `, __stream_shard__=""}`),
+    }));
+  }
+
   return queries.map((query) => ({
     ...query,
     expr: query.expr.replace(new RegExp(`${SHARDING_PLACEHOLDER}`, 'g'), shardValue),
