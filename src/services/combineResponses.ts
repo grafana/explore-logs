@@ -63,6 +63,10 @@ export function mergeFrames(dest: DataFrame, source: DataFrame) {
     const destTimeValues = destTimeField?.values.slice(0) ?? [];
     const destIdx = resolveIdx(sourceTimeValues[i], destTimeValues);
 
+    if (sourceTimeValues[i] !== destTimeValues[destIdx]) {
+      dest.length += 1;
+    }
+
     for (let f = 0; f < totalFields; f++) {
       // For now, skip undefined fields that exist in the new frame
       if (!dest.fields[f]) {
@@ -73,10 +77,6 @@ export function mergeFrames(dest: DataFrame, source: DataFrame) {
       const sourceField = findSourceField(dest.fields[f], source.fields, f);
       if (!sourceField) {
         continue;
-      }
-      if (sourceField.nanos) {
-        dest.fields[f].nanos = dest.fields[f].nanos ?? [];
-        dest.fields[f].nanos?.splice(destIdx, 0, sourceField.nanos[i]);
       }
       // Same value, accumulate
       if (sourceTimeValues[i] === destTimeValues[destIdx]) {
@@ -101,15 +101,18 @@ export function mergeFrames(dest: DataFrame, source: DataFrame) {
           dest.fields[f].values[destIdx] = sourceField.values[i];
         }
       } else {
-        // Insert in the `destIdx` position
+        if (sourceField.nanos) {
+          dest.fields[f].nanos = dest.fields[f].nanos ?? [];
+          dest.fields[f].nanos?.splice(destIdx, 0, sourceField.nanos[i]);
+        }
         if (sourceField.values[i] !== undefined) {
+          // Insert in the `destIdx` position
           dest.fields[f].values.splice(destIdx, 0, sourceField.values[i]);
         }
       }
     }
   }
 
-  dest.length += source.length;
   dest.meta = {
     ...dest.meta,
     stats: getCombinedMetadataStats(dest.meta?.stats ?? [], source.meta?.stats ?? []),
