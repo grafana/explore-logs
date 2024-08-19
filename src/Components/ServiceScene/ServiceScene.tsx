@@ -7,6 +7,7 @@ import {
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
+  SceneObject,
   SceneObjectBase,
   SceneObjectState,
   SceneQueryRunner,
@@ -59,6 +60,11 @@ export interface ServiceSceneState extends SceneObjectState, ServiceSceneCustomS
 
 export function getLogsPanelFrame(data: PanelData | undefined) {
   return data?.series.find((series) => series.refId === LOGS_PANEL_QUERY_REFID);
+}
+
+export function getDetectedLabelsFrame(sceneRef: SceneObject) {
+  const serviceScene = sceneGraph.getAncestor(sceneRef, ServiceScene);
+  return serviceScene.state.$detectedLabelsData?.state.data?.series?.[0];
 }
 
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {

@@ -238,11 +238,7 @@ test.describe('explore services breakdown page', () => {
     // Fields on top should be loaded
     expect(requestCount).toEqual(6)
 
-    const main = page.locator('main#pageContent')
-
-    // Scroll the page container to the bottom
-    await main.evaluate((main) => main.scrollTo(0, main.scrollHeight));
-
+    await explorePage.scrollToBottom()
     // Panel on the bottom should be visible
     await expect(page.getByTestId('data-testid Panel header version')).toBeInViewport()
 

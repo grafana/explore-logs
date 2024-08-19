@@ -32,7 +32,7 @@ import { getLabelOptions } from 'services/filters';
 import { BreakdownSearchReset, BreakdownSearchScene } from './BreakdownSearchScene';
 import { getSortByPreference } from 'services/store';
 import { SortByScene, SortCriteriaChanged } from './SortByScene';
-import { ServiceScene } from '../ServiceScene';
+import { getDetectedLabelsFrame, ServiceScene } from '../ServiceScene';
 import { CustomConstantVariable } from '../../../services/CustomConstantVariable';
 import { navigateToValueBreakdown } from '../../../services/navigate';
 import { areArraysEqual } from '../../../services/comparison';
@@ -101,9 +101,10 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     );
     this._subs.add(this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange));
 
+    const detectedLabelsFrame = getDetectedLabelsFrame(this);
     // Need to update labels with current state
-    if (serviceScene.state.$detectedLabelsData?.state.data?.series?.[0]) {
-      this.updateOptions(serviceScene.state.$detectedLabelsData.state.data?.series?.[0]);
+    if (detectedLabelsFrame) {
+      this.updateOptions(detectedLabelsFrame);
     }
 
     this._subs.add(serviceScene.state.$detectedLabelsData?.subscribeToState(this.onLabelsChange));
@@ -119,6 +120,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
           this.setState({
             loading: true,
             body: undefined,
+            error: undefined,
           });
         }
       })

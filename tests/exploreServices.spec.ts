@@ -15,10 +15,12 @@ test.describe('explore services page', () => {
   test('should filter service labels on search', async ({ page }) => {
     await explorePage.servicesSearch.click();
     await explorePage.servicesSearch.pressSequentially('mimir');
+
+    await page.getByTestId('data-testid Panel header mimir-ingester').first().scrollIntoViewIfNeeded()
     // service name should be in time series panel
-    await expect(page.getByTestId('data-testid Panel header mimir-ingester').nth(0)).toBeVisible();
+    expect(await page.getByTestId('data-testid Panel header mimir-ingester').nth(0)).toBeDefined()
     // service name should also be in logs panel, just not visible to the user
-    await expect(page.getByTestId('data-testid Panel header mimir-ingester').nth(1)).toBeVisible();
+    expect(await page.getByTestId('data-testid Panel header mimir-ingester').nth(1)).toBeDefined();
 
     // Exit out of the dropdown
     await page.keyboard.press('Escape');

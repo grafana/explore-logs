@@ -69,7 +69,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
       getDataSourceSrv()
         .get(getDataSource(request.scopedVars.__sceneObject.valueOf()))
-        .then((ds) => {
+        .then(async (ds) => {
           if (!(ds instanceof DataSourceWithBackend)) {
             throw new Error('Invalid datasource!');
           }
@@ -101,7 +101,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
               break;
             }
             case 'detected_labels': {
-              this.getDetectedLabels(request, ds, subscriber);
+              await this.getDetectedLabels(request, ds, subscriber);
               break;
             }
             default: {
@@ -217,7 +217,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     return subscriber;
   }
 
-  private getDetectedLabels(
+  private async getDetectedLabels(
     request: DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest>,
     ds: DataSourceWithBackend<LokiQuery>,
     subscriber: Subscriber<DataQueryResponse>
@@ -234,7 +234,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     const interpolatedTarget = targetsInterpolated[0];
     const expression = interpolatedTarget.expr;
 
-    const detectedLabels = ds.getResource<DetectedLabelsResponse>(
+    const response = await ds.getResource<DetectedLabelsResponse>(
       'detected_labels',
       {
         query: expression,
@@ -248,25 +248,23 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
         },
       }
     );
-    detectedLabels.then((response) => {
-      const labels = response.detectedLabels
-        ?.sort((a, b) => sortLabelsByCardinality(a, b))
-        ?.filter((label) => label.label !== LEVEL_VARIABLE_VALUE);
+    const labels = response.detectedLabels
+      ?.sort((a, b) => sortLabelsByCardinality(a, b))
+      ?.filter((label) => label.label !== LEVEL_VARIABLE_VALUE);
 
-      const detectedLabelFields: Array<Partial<Field>> = labels?.map((label) => {
-        return {
-          name: label.label,
-          values: [label.cardinality],
-        };
-      });
-
-      const dataFrame = createDataFrame({
-        refId: interpolatedTarget.refId,
-        fields: detectedLabelFields ?? [],
-      });
-
-      subscriber.next({ data: [dataFrame], state: LoadingState.Done });
+    const detectedLabelFields: Array<Partial<Field>> = labels?.map((label) => {
+      return {
+        name: label.label,
+        values: [label.cardinality],
+      };
     });
+
+    const dataFrame = createDataFrame({
+      refId: interpolatedTarget.refId,
+      fields: detectedLabelFields ?? [],
+    });
+
+    subscriber.next({ data: [dataFrame], state: LoadingState.Done });
 
     return subscriber;
   }

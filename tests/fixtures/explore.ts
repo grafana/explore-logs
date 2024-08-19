@@ -28,6 +28,13 @@ export class ExplorePage {
     await this.firstServicePageSelect.click();
   }
 
+  async scrollToBottom() {
+    const main = this.page.locator('main#pageContent')
+
+    // Scroll the page container to the bottom
+    await main.evaluate((main) => main.scrollTo(0, main.scrollHeight));
+  }
+
   async assertFieldsIndex() {
     // Assert the fields tab is active
     expect(await this.page.getByTestId('data-testid tab-fields').getAttribute('aria-selected')).toEqual('true')
