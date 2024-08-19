@@ -736,7 +736,7 @@ describe('mergeFrames', () => {
               },
             },
           ],
-          length: 4,
+          length: 3,
           meta: {
             type: 'timeseries-multi',
             stats: [
@@ -856,7 +856,88 @@ describe('mergeFrames', () => {
               values: ['id3', 'id4', 'id2'],
             },
           ],
-          length: 4,
+          length: 3,
+          meta: {
+            custom: {
+              frameType: 'LabeledTimeValues',
+            },
+            stats: [
+              {
+                displayName: 'Summary: total bytes processed',
+                unit: 'decbytes',
+                value: 33,
+              },
+            ],
+          },
+          refId: 'A',
+        },
+      ],
+    });
+  });
+
+  it('merges frames with nanoseconds', () => {
+    const { logFrameA, logFrameB } = getMockFrames();
+
+    logFrameA.fields[0].values = [3, 4];
+    logFrameA.fields[0].nanos = [333333, 444444];
+
+    // 3 overlaps with logFrameA
+    logFrameB.fields[0].values = [2, 3];
+    logFrameB.fields[0].nanos = [222222, 333333];
+
+    const responseA: DataQueryResponse = {
+      data: [logFrameA],
+    };
+    const responseB: DataQueryResponse = {
+      data: [logFrameB],
+    };
+    expect(combineResponses(responseA, responseB)).toEqual({
+      data: [
+        {
+          fields: [
+            {
+              config: {},
+              name: 'Time',
+              type: 'time',
+              values: [2, 3, 4],
+              nanos: [222222, 333333, 444444],
+            },
+            {
+              config: {},
+              name: 'Line',
+              type: 'string',
+              values: ['line3', 'line4', 'line2'],
+            },
+            {
+              config: {},
+              name: 'labels',
+              type: 'other',
+              values: [
+                {
+                  otherLabel: 'other value',
+                },
+                {
+                  label: 'value',
+                },
+                {
+                  otherLabel: 'other value',
+                },
+              ],
+            },
+            {
+              config: {},
+              name: 'tsNs',
+              type: 'string',
+              values: ['1000000', '2000000', '4000000'],
+            },
+            {
+              config: {},
+              name: 'id',
+              type: 'string',
+              values: ['id3', 'id4', 'id2'],
+            },
+          ],
+          length: 3,
           meta: {
             custom: {
               frameType: 'LabeledTimeValues',
