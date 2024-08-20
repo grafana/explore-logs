@@ -12,7 +12,7 @@ import {
 } from '@grafana/scenes';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
-import { getQueryRunner, setLeverColorOverrides } from '../../../services/panel';
+import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
 import {
   ALL_VARIABLE_VALUE,
   getLabelGroupByVariable,
@@ -69,7 +69,7 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
             .setCustomFieldConfig('lineWidth', 0)
             .setCustomFieldConfig('pointSize', 0)
             .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-            .setOverrides(setLeverColorOverrides)
+            .setOverrides(setLevelColorOverrides)
             .build(),
         })
       );

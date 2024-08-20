@@ -10,7 +10,7 @@ import {
 } from '@grafana/scenes';
 import { ALL_VARIABLE_VALUE, getFieldGroupByVariable, getFieldsVariable } from '../../../services/variables';
 import { buildDataQuery } from '../../../services/query';
-import { getQueryRunner, setLeverColorOverrides } from '../../../services/panel';
+import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
 import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import {
@@ -126,7 +126,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
           .setCustomFieldConfig('lineWidth', 0)
           .setCustomFieldConfig('pointSize', 0)
           .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-          .setOverrides(setLeverColorOverrides);
+          .setOverrides(setLevelColorOverrides);
       }
       const gridItem = new SceneCSSGridItem({
         body: body.build(),

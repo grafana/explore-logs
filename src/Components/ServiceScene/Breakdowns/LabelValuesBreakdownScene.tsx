@@ -14,7 +14,7 @@ import {
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { getLabelValue } from './SortByScene';
 import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
-import { getQueryRunner, setLeverColorOverrides } from '../../../services/panel';
+import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
 import { getSortByPreference } from '../../../services/store';
 import { LoadingState } from '@grafana/data';
 import { ByFrameRepeater } from './ByFrameRepeater';
@@ -139,7 +139,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       .setCustomFieldConfig('lineWidth', 0)
       .setCustomFieldConfig('pointSize', 0)
       .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-      .setOverrides(setLeverColorOverrides)
+      .setOverrides(setLevelColorOverrides)
       .setTitle(tagKey);
 
     const body = bodyOpts.build();
