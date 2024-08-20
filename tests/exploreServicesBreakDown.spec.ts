@@ -158,9 +158,16 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
   });
 
-  test('should search patterns by text', async ({
-    page
-  }) => {
+  test('should filter patterns in table on legend click', async ({page}) => {
+    await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
+    const row = page.getByTestId(testIds.patterns.tableWrapper).getByRole('table').getByRole('row')
+    await expect(page.getByTestId('data-testid panel content').getByRole('button').nth(1)).toBeVisible()
+    expect(await row.count()).toBeGreaterThan(2)
+    await page.getByTestId('data-testid panel content').getByRole('button').nth(1).click()
+    expect(await row.count()).toEqual(2)
+  })
+
+  test('should search patterns by text', async ({page}) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
 
     // Get the cell within the second row
