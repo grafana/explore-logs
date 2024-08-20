@@ -39,7 +39,6 @@ import { getFieldOptions } from '../../../services/filters';
 import { navigateToValueBreakdown } from '../../../services/navigate';
 import { ValueSlugs } from '../../../services/routing';
 import { areArraysEqual } from '../../../services/comparison';
-import { AddFilterEvent } from './AddToFiltersButton';
 import { FieldsAggregatedBreakdownScene } from './FieldsAggregatedBreakdownScene';
 import { FieldValuesBreakdownScene } from './FieldValuesBreakdownScene';
 import { SERVICE_NAME } from '../../ServiceSelectionScene/ServiceSelectionScene';
@@ -58,7 +57,6 @@ export interface FieldsBreakdownSceneState extends SceneObjectState {
   error?: string;
   blockingMessage?: string;
   changeFields?: (n: string[]) => void;
-  lastFilterEvent?: AddFilterEvent;
 }
 
 export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneState> {
@@ -112,12 +110,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         }
       })
     );
-
-    this.subscribeToEvent(AddFilterEvent, (event) => {
-      this.setState({
-        lastFilterEvent: event,
-      });
-    });
 
     this.updateFields(serviceScene.state);
   }

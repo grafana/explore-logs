@@ -65,7 +65,6 @@ export function addToFilters(
     ];
   }
 
-  // Emit event
   scene.publishEvent(new AddFilterEvent(operator, key, value), true);
 
   variable.setState({
