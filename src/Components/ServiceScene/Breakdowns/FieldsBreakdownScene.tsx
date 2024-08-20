@@ -8,6 +8,7 @@ import {
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
+  SceneObject,
   SceneObjectBase,
   SceneObjectState,
   SceneReactObject,
@@ -49,7 +50,11 @@ export const averageFields = ['duration', 'count', 'total', 'bytes'];
 export const FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
-  body?: SceneReactObject | FieldsAggregatedBreakdownScene | FieldValuesBreakdownScene | SceneFlexLayout;
+  body?:
+    | (SceneReactObject & SceneObject)
+    | (FieldsAggregatedBreakdownScene & SceneObject)
+    | (FieldValuesBreakdownScene & SceneObject)
+    | (SceneFlexLayout & SceneObject);
   search: BreakdownSearchScene;
   sort: SortByScene;
   value?: string;
@@ -328,7 +333,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       <div className={styles.container}>
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
           <div className={styles.controls}>
-            {/*{body instanceof LayoutSwitcher && <body.Selector model={body} />}*/}
             {body instanceof FieldsAggregatedBreakdownScene && <FieldsAggregatedBreakdownScene.Selector model={body} />}
             {body instanceof FieldValuesBreakdownScene && <FieldValuesBreakdownScene.Selector model={body} />}
             {!loading && value !== ALL_VARIABLE_VALUE && (
@@ -347,13 +351,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
             )}
           </div>
 
-          {/* @todo why are the types like this? */}
-          <div className={styles.content}>
-            {body && body instanceof FieldsAggregatedBreakdownScene && <body.Component model={body} />}
-            {body && body instanceof FieldValuesBreakdownScene && <body.Component model={body} />}
-            {body && body instanceof SceneReactObject && <body.Component model={body} />}
-            {body && body instanceof SceneFlexLayout && <body.Component model={body} />}
-          </div>
+          <div className={styles.content}>{body && <body.Component model={body} />}</div>
         </StatusWrapper>
       </div>
     );
