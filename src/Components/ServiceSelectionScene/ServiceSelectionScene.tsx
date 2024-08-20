@@ -37,10 +37,10 @@ import {
 import { selectService, SelectServiceButton } from './SelectServiceButton';
 import { buildDataQuery, buildResourceQuery } from 'services/query';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
+import { getQueryRunner, setLevelColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
 import { NoVolumeError } from './NoVolumeError';
-import { getLabelsFromSeries, toggleLevelFromFilter } from 'services/levels';
+import { getLabelsFromSeries, toggleLevelVisibility } from 'services/levels';
 import { ServiceFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
 import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 import { areArraysEqual } from '../../services/comparison';
@@ -180,7 +180,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       originalOnToggleSeriesVisibility?.(level, mode);
 
       const allLevels = getLabelsFromSeries(panel.state.$data?.state.data?.series ?? []);
-      const levels = toggleLevelFromFilter(level, this.state.serviceLevel.get(service), mode, allLevels);
+      const levels = toggleLevelVisibility(level, this.state.serviceLevel.get(service), mode, allLevels);
       this.state.serviceLevel.set(service, levels);
 
       this.updateServiceLogs(service);
@@ -211,7 +211,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       .setCustomFieldConfig('pointSize', 0)
       .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
       .setUnit('short')
-      .setOverrides(setLeverColorOverrides)
+      .setOverrides(setLevelColorOverrides)
       .setOption('legend', {
         showLegend: true,
         calcs: ['sum'],

@@ -75,9 +75,6 @@ export function replaceFilter(
     validateVariableNameForField(key, resolveVariableNameForField(key, scene)),
     scene
   );
-  if (!variable) {
-    return;
-  }
 
   variable.setState({
     filters: [

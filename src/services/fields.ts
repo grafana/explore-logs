@@ -4,7 +4,7 @@ import { PanelBuilders, SceneCSSGridItem, SceneDataNode, SceneObject } from '@gr
 import { getColorByIndex } from './scenes';
 import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { getLogsFormatVariable, VAR_FIELDS, VAR_LABELS } from './variables';
-import { setLeverColorOverrides } from './panel';
+import { setLevelColorOverrides } from './panel';
 import { getLabelValueFromDataFrame } from './levels';
 
 export type DetectedLabel = {
@@ -63,7 +63,7 @@ export function getFilterBreakdownValueScene(
       .setTitle(getTitle(frame))
       .setData(new SceneDataNode({ data: { ...data, series: [frame] } }))
       .setColor({ mode: 'fixed', fixedColor: getColorByIndex(frameIndex) })
-      .setOverrides(setLeverColorOverrides)
+      .setOverrides(setLevelColorOverrides)
       .setHeaderActions(new AddToFiltersButton({ frame, variableName, labelName }));
 
     if (style === DrawStyle.Bars) {
@@ -72,7 +72,7 @@ export function getFilterBreakdownValueScene(
         .setCustomFieldConfig('fillOpacity', 100)
         .setCustomFieldConfig('lineWidth', 0)
         .setCustomFieldConfig('pointSize', 0)
-        .setOverrides(setLeverColorOverrides)
+        .setOverrides(setLevelColorOverrides)
         .setCustomFieldConfig('drawStyle', DrawStyle.Bars);
     }
 

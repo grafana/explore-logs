@@ -1,13 +1,24 @@
 import { DataFrame, FieldConfig, FieldMatcherID } from '@grafana/data';
-import { FieldConfigOverridesBuilder, SceneDataTransformer, SceneQueryRunner } from '@grafana/scenes';
+import {
+  FieldConfigBuilder,
+  FieldConfigBuilders,
+  FieldConfigOverridesBuilder,
+  PanelBuilders,
+  SceneDataTransformer,
+  SceneObject,
+  SceneQueryRunner,
+  VizPanel,
+} from '@grafana/scenes';
 import { map, Observable } from 'rxjs';
 import { LokiQuery } from './query';
 import { HideSeriesConfig } from '@grafana/schema';
 import { WRAPPED_LOKI_DS_UID } from './datasource';
 import { LogsSceneQueryRunner } from './LogsSceneQueryRunner';
+import { DrawStyle, StackingMode } from '@grafana/ui';
+import { getLabelsFromSeries, getVisibleLevels } from './levels';
 
 const UNKNOWN_LEVEL_LOGS = 'logs';
-export function setLeverColorOverrides(overrides: FieldConfigOverridesBuilder<FieldConfig>) {
+export function setLevelColorOverrides(overrides: FieldConfigOverridesBuilder<FieldConfig>) {
   overrides.matchFieldsWithName('info').overrideColor({
     mode: 'fixed',
     fixedColor: 'semi-dark-green',
@@ -30,9 +41,22 @@ export function setLeverColorOverrides(overrides: FieldConfigOverridesBuilder<Fi
   });
 }
 
+export function setLogsVolumeFieldConfigs(
+  builder: ReturnType<typeof PanelBuilders.timeseries> | ReturnType<typeof FieldConfigBuilders.timeseries>
+) {
+  return builder
+    .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
+    .setCustomFieldConfig('fillOpacity', 100)
+    .setCustomFieldConfig('lineWidth', 0)
+    .setCustomFieldConfig('pointSize', 0)
+    .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+    .setOverrides(setLevelColorOverrides);
+}
+
 interface TimeSeriesFieldConfig extends FieldConfig {
   hideFrom: HideSeriesConfig;
 }
+
 export function setLevelSeriesOverrides(levels: string[], overrideConfig: FieldConfigOverridesBuilder<FieldConfig>) {
   overrideConfig
     .match({
@@ -54,6 +78,18 @@ export function setLevelSeriesOverrides(levels: string[], overrideConfig: FieldC
   const overrides = overrideConfig.build();
   // @ts-expect-error
   overrides[overrides.length - 1].__systemRef = 'hideSeriesFrom';
+}
+
+export function syncLogsPanelVisibleSeries(panel: VizPanel, series: DataFrame[], sceneRef: SceneObject) {
+  const focusedLevels = getVisibleLevels(getLabelsFromSeries(series), sceneRef);
+  if (focusedLevels?.length) {
+    const config = setLogsVolumeFieldConfigs(FieldConfigBuilders.timeseries()).setOverrides(
+      setLevelSeriesOverrides.bind(null, focusedLevels)
+    );
+    if (config instanceof FieldConfigBuilder) {
+      panel.onFieldConfigChange(config.build(), true);
+    }
+  }
 }
 
 export function sortLevelTransformation() {
