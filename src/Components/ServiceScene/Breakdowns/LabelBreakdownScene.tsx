@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DataFrame, GrafanaTheme2, LoadingState } from '@grafana/data';
+import { AdHocVariableFilter, DataFrame, GrafanaTheme2, LoadingState } from '@grafana/data';
 import {
   QueryRunnerState,
   SceneComponentProps,
@@ -12,6 +12,7 @@ import {
   SceneObjectBase,
   SceneObjectState,
   SceneVariableSet,
+  SceneVariableState,
   VariableDependencyConfig,
   VariableValueOption,
 } from '@grafana/scenes';
@@ -33,7 +34,7 @@ import { BreakdownSearchReset, BreakdownSearchScene } from './BreakdownSearchSce
 import { getSortByPreference } from 'services/store';
 import { SortByScene, SortCriteriaChanged } from './SortByScene';
 import { getDetectedLabelsFrame, ServiceScene } from '../ServiceScene';
-import { CustomConstantVariable } from '../../../services/CustomConstantVariable';
+import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
 import { navigateToValueBreakdown } from '../../../services/navigate';
 import { areArraysEqual } from '../../../services/comparison';
 import { LabelValuesBreakdownScene } from './LabelValuesBreakdownScene';
@@ -93,7 +94,6 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       error: serviceScene.state.$detectedLabelsData?.state.data?.state === LoadingState.Error,
     });
 
-    //@todo audit
     this._subs.add(
       this.subscribeToEvent(BreakdownSearchReset, () => {
         this.state.search.clearValueFilter();
@@ -101,43 +101,54 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     );
     this._subs.add(this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange));
 
-    const detectedLabelsFrame = getDetectedLabelsFrame(this);
-    // Need to update labels with current state
-    if (detectedLabelsFrame) {
-      this.updateOptions(detectedLabelsFrame);
-    }
-
-    this._subs.add(serviceScene.state.$detectedLabelsData?.subscribeToState(this.onLabelsChange));
+    this._subs.add(serviceScene.state.$detectedLabelsData?.subscribeToState(this.onDetectedLabelsDataChange));
 
     this._subs.add(
       getLabelsVariable(this).subscribeToState((newState, prevState) => {
-        const variable = getLabelGroupByVariable(this);
-        const newService = newState.filters.find((filter) => filter.key === SERVICE_NAME);
-        const prevService = prevState.filters.find((filter) => filter.key === SERVICE_NAME);
-
-        // If the user changes the service
-        if (variable.state.value === ALL_VARIABLE_VALUE && newService !== prevService) {
-          this.setState({
-            loading: true,
-            body: undefined,
-            error: undefined,
-          });
-        }
+        this.onLabelsVariableChange(newState, prevState);
       })
     );
 
     this._subs.add(
       groupByVariable.subscribeToState((newState, prevState) => {
-        // If the aggregation value changed, or the body is not yet defined
-        if (
-          newState.value !== prevState.value ||
-          !areArraysEqual(newState.options, prevState.options) ||
-          this.state.body === undefined
-        ) {
-          this.updateBody();
-        }
+        this.onGroupByVariableChange(newState, prevState);
       })
     );
+
+    const detectedLabelsFrame = getDetectedLabelsFrame(this);
+    // Need to update labels with current state
+    if (detectedLabelsFrame) {
+      this.updateOptions(detectedLabelsFrame);
+    }
+  }
+
+  private onGroupByVariableChange(newState: CustomConstantVariableState, prevState: CustomConstantVariableState) {
+    // If the aggregation value changed, or the body is not yet defined
+    if (
+      newState.value !== prevState.value ||
+      !areArraysEqual(newState.options, prevState.options) ||
+      this.state.body === undefined
+    ) {
+      this.updateBody();
+    }
+  }
+
+  private onLabelsVariableChange(
+    newState: SceneVariableState & { filters: AdHocVariableFilter[] },
+    prevState: SceneVariableState & { filters: AdHocVariableFilter[] }
+  ) {
+    const variable = getLabelGroupByVariable(this);
+    const newService = newState.filters.find((filter) => filter.key === SERVICE_NAME);
+    const prevService = prevState.filters.find((filter) => filter.key === SERVICE_NAME);
+
+    // If the user changes the service
+    if (variable.state.value === ALL_VARIABLE_VALUE && newService !== prevService) {
+      this.setState({
+        loading: true,
+        body: undefined,
+        error: undefined,
+      });
+    }
   }
 
   /**
@@ -145,7 +156,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
    * @param newState
    * @param prevState
    */
-  private onLabelsChange = (newState: QueryRunnerState, prevState: QueryRunnerState) => {
+  private onDetectedLabelsDataChange = (newState: QueryRunnerState, prevState: QueryRunnerState) => {
     if (
       newState.data?.state === LoadingState.Done &&
       newState.data.series?.[0] &&

@@ -211,6 +211,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       } else if (newState.value !== ALL_VARIABLE_VALUE && this.state.body instanceof FieldsAggregatedBreakdownScene) {
         stateUpdate.body = new FieldValuesBreakdownScene({});
       } else if (
+        // If the body hasn't been created, or the no-data views are active, we want to replace and render the correct scene
         this.state.body === undefined ||
         this.state.body instanceof SceneFlexLayout ||
         this.state.body instanceof SceneReactObject
