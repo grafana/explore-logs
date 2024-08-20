@@ -21,7 +21,7 @@ import {
 import { Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { DetectedLabel, getFilterBreakdownValueScene } from 'services/fields';
-import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
+import { getQueryRunner, setLevelColorOverrides } from 'services/panel';
 import { buildDataQuery } from 'services/query';
 import { ValueSlugs } from 'services/routing';
 import { getLokiDatasource } from 'services/scenes';
@@ -228,7 +228,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
             .setCustomFieldConfig('lineWidth', 0)
             .setCustomFieldConfig('pointSize', 0)
             .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-            .setOverrides(setLeverColorOverrides)
+            .setOverrides(setLevelColorOverrides)
             .build(),
         })
       );
@@ -268,7 +268,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       .setCustomFieldConfig('lineWidth', 0)
       .setCustomFieldConfig('pointSize', 0)
       .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-      .setOverrides(setLeverColorOverrides)
+      .setOverrides(setLevelColorOverrides)
       .setTitle(tagKey);
 
     const body = bodyOpts.build();

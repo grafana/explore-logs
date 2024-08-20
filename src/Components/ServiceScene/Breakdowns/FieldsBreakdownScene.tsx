@@ -24,7 +24,7 @@ import {
 import { Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getFilterBreakdownValueScene } from 'services/fields';
-import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
+import { getQueryRunner, setLevelColorOverrides } from 'services/panel';
 import { buildDataQuery } from 'services/query';
 import {
   ALL_VARIABLE_VALUE,
@@ -298,7 +298,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
           .setCustomFieldConfig('lineWidth', 0)
           .setCustomFieldConfig('pointSize', 0)
           .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-          .setOverrides(setLeverColorOverrides);
+          .setOverrides(setLevelColorOverrides);
       }
       const gridItem = new SceneCSSGridItem({
         body: body.build(),
