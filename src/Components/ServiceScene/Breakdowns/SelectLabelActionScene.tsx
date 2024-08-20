@@ -17,7 +17,7 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
   public static Component = ({ model }: SceneComponentProps<SelectLabelActionScene>) => {
     return (
       <Button variant="secondary" size="sm" onClick={model.onClick} aria-label={`Select ${model.useState().labelName}`}>
-        Select
+        Values
       </Button>
     );
   };

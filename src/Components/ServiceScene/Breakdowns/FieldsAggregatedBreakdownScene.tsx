@@ -127,6 +127,10 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
           .setCustomFieldConfig('pointSize', 0)
           .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
           .setOverrides(setLevelColorOverrides);
+      } else {
+        body = body.setHeaderActions(
+          new SelectFieldActionScene({ labelName: String(optionValue), hideValueDrilldown: true })
+        );
       }
       const gridItem = new SceneCSSGridItem({
         body: body.build(),
