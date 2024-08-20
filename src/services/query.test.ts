@@ -1,7 +1,7 @@
-import { buildLokiQuery } from './query';
+import { buildDataQuery } from './query';
 
 test('Given an expression outputs a Loki query', () => {
-  expect(buildLokiQuery('{place="luna"}')).toEqual({
+  expect(buildDataQuery('{place="luna"}')).toEqual({
     editorMode: 'code',
     expr: '{place="luna"}',
     queryType: 'range',
@@ -11,7 +11,7 @@ test('Given an expression outputs a Loki query', () => {
 });
 
 test('Given an expression and overrides outputs a Loki query', () => {
-  expect(buildLokiQuery('{place="luna"}', { editorMode: 'gpt', refId: 'C' })).toEqual({
+  expect(buildDataQuery('{place="luna"}', { editorMode: 'gpt', refId: 'C' })).toEqual({
     editorMode: 'gpt',
     expr: '{place="luna"}',
     queryType: 'range',

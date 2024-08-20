@@ -33,6 +33,27 @@ export function getLabelOptions(labels: string[]) {
   if (!labels.includes(LEVEL_VARIABLE_VALUE)) {
     options.unshift(LEVEL_VARIABLE_VALUE);
   }
+  const labelsIndex = options.indexOf('level');
+  if (labelsIndex !== -1) {
+    options.splice(labelsIndex, 1);
+  }
+
+  const labelOptions: VariableValueOption[] = options.map((label) => ({
+    label,
+    value: String(label),
+  }));
+
+  return [{ label: 'All', value: ALL_VARIABLE_VALUE }, ...labelOptions];
+}
+
+export function getFieldOptions(labels: string[]) {
+  const options = [...labels];
+
+  const labelsIndex = options.indexOf('level_extracted');
+  if (labelsIndex !== -1) {
+    options.splice(labelsIndex, 1);
+  }
+
   const labelOptions: VariableValueOption[] = options.map((label) => ({
     label,
     value: String(label),

@@ -4,7 +4,7 @@ import { Spinner, Toggletip, useStyles2 } from '@grafana/ui';
 import { getLokiDatasource } from 'services/scenes';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
 import { getLabelsVariable } from 'services/variables';
-import { buildLokiQuery } from 'services/query';
+import { buildDataQuery } from 'services/query';
 import { PatternFieldLabelStats } from './PatternFieldLabelStats';
 import { GrafanaTheme2, LoadingState, LogLabelStatsModel, TimeRange } from '@grafana/data';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
@@ -49,7 +49,7 @@ export const PatternNameLabel = ({ exploration, pattern }: PatternNameLabelProps
         intervalMs: 0,
         scopedVars: {},
         range: currentTimeRange,
-        targets: [buildLokiQuery(query, { maxLines: LINE_LIMIT })],
+        targets: [buildDataQuery(query, { maxLines: LINE_LIMIT })],
         timezone: '',
         app: '',
         startTime: 0,

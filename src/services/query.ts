@@ -1,6 +1,9 @@
-import { AdHocVariableFilter, DataSourceApi } from '@grafana/data';
+import { AdHocVariableFilter } from '@grafana/data';
+import { DataSourceRef } from '@grafana/schema';
 import { AppliedPattern } from 'Components/IndexScene/IndexScene';
 import { PLUGIN_ID } from './routing';
+import { SceneDataQueryResourceRequest } from './datasource';
+import { VAR_DATASOURCE_EXPR } from './variables';
 
 export type LokiQuery = {
   refId: string;
@@ -10,10 +13,36 @@ export type LokiQuery = {
   expr: string;
   legendFormat?: string;
   splitDuration?: string;
-
-  datasource?: DataSourceApi;
+  datasource?: DataSourceRef;
 };
-export const buildLokiQuery = (expr: string, queryParamsOverrides?: Record<string, unknown>): LokiQuery => {
+
+/**
+ * Builds the resource query
+ * @param expr string to be interpolated and executed in the resource request
+ * @param resource
+ * @param queryParamsOverrides
+ */
+export const buildResourceQuery = (
+  expr: string,
+  resource: 'volume' | 'patterns' | 'detected_labels',
+  queryParamsOverrides?: Record<string, unknown>
+): LokiQuery & SceneDataQueryResourceRequest => {
+  return {
+    ...defaultQueryParams,
+    resource,
+    refId: resource,
+    ...queryParamsOverrides,
+    datasource: { uid: VAR_DATASOURCE_EXPR },
+    expr,
+  };
+};
+/**
+ * Builds a loki data query
+ * @param expr
+ * @param queryParamsOverrides
+ * @returns LokiQuery
+ */
+export const buildDataQuery = (expr: string, queryParamsOverrides?: Record<string, unknown>): LokiQuery => {
   return {
     ...defaultQueryParams,
     ...queryParamsOverrides,

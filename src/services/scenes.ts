@@ -1,7 +1,7 @@
 import { urlUtil } from '@grafana/data';
-import { DataSourceWithBackend, config, getDataSourceSrv } from '@grafana/runtime';
+import { config, DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
 import { getUrlSyncManager, sceneGraph, SceneObject, SceneObjectUrlValues } from '@grafana/scenes';
-import { VAR_DATASOURCE_EXPR, LOG_STREAM_SELECTOR_EXPR } from './variables';
+import { LOG_STREAM_SELECTOR_EXPR, VAR_DATASOURCE_EXPR, VAR_LABELS_EXPR } from './variables';
 import { EXPLORATIONS_ROUTE } from './routing';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
 
@@ -23,6 +23,10 @@ export function getDataSource(sceneObject: SceneObject) {
 
 export function getQueryExpr(exploration: IndexScene) {
   return sceneGraph.interpolate(exploration, LOG_STREAM_SELECTOR_EXPR).replace(/\s+/g, ' ');
+}
+
+export function getPatternExpr(exploration: IndexScene) {
+  return sceneGraph.interpolate(exploration, VAR_LABELS_EXPR).replace(/\s+/g, ' ');
 }
 
 export function getColorByIndex(index: number) {

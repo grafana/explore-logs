@@ -14,8 +14,8 @@
     "e2e:debug": "playwright test --debug -x --trace on /test",
     "e2e:codegen": "playwright install && playwright codegen",
     "generate-logs": "pushd generator; go mod download; go run . -url http://localhost:3100/loki/api/v1/push; popd",
-    "server": "docker-compose -f docker-compose.dev.yaml up --build",
-    "server:ci": "docker-compose -f docker-compose.dev.yaml up --build -d",
+    "server": "docker compose -f docker-compose.dev.yaml up --build",
+    "server:ci": "docker compose -f docker-compose.dev.yaml up --build -d",
     "sign": "npx --yes @grafana/sign-plugin@latest",
     "prepare": "husky",
     "docs": "cd docs && make docs",
@@ -78,11 +78,11 @@
   "dependencies": {
     "@bsull/augurs": "^0.3.1",
     "@emotion/css": "^11.10.6",
-    "@grafana/data": "^11.0.0",
+    "@grafana/data": "^11.1.1",
     "@grafana/lezer-logql": "^0.2.6",
-    "@grafana/runtime": "^11.0.0",
+    "@grafana/runtime": "^11.1.1",
     "@grafana/scenes": "5.7.2",
-    "@grafana/ui": "^11.0.0",
+    "@grafana/ui": "^11.1.1",
     "@lezer/common": "^1.2.1",
     "@lezer/lr": "^1.4.1",
     "@playwright/test": "^1.43.1",
@@ -94,7 +94,7 @@
     "tslib": "2.5.3"
   },
   "resolutions": {
-    "jackspeak": "2.1.1"
+    "**/fast-loops": "^1.1.4"
   },
   "packageManager": "yarn@1.22.21"
 }

@@ -25,7 +25,7 @@ import { Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getFilterBreakdownValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
-import { buildLokiQuery } from 'services/query';
+import { buildDataQuery } from 'services/query';
 import {
   ALL_VARIABLE_VALUE,
   getFieldGroupByVariable,
@@ -45,7 +45,7 @@ import { getSortByPreference } from 'services/store';
 import { GrotError } from '../../GrotError';
 import { IndexScene } from '../../IndexScene/IndexScene';
 import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
-import { getLabelOptions } from '../../../services/filters';
+import { getFieldOptions } from '../../../services/filters';
 import { navigateToValueBreakdown } from '../../../services/navigate';
 import { ValueSlugs } from '../../../services/routing';
 import { areArraysEqual } from '../../../services/comparison';
@@ -118,7 +118,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   private updateFields(state: ServiceSceneState) {
     const variable = this.getVariable();
-    const options = state.fields ? getLabelOptions(state.fields) : [];
+    const options = state.fields ? getFieldOptions(state.fields) : [];
 
     variable.setState({
       options,
@@ -283,11 +283,11 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         continue;
       }
 
-      const query = buildLokiQuery(getExpr(optionValue, false), {
+      const query = buildDataQuery(getExpr(optionValue, false), {
         legendFormat: `{{${optionValue}}}`,
         refId: optionValue,
       });
-      const queryRunner = getQueryRunner(query);
+      const queryRunner = getQueryRunner([query]);
       let body = PanelBuilders.timeseries().setTitle(optionValue).setData(queryRunner);
 
       if (!isAvgField(optionValue)) {
@@ -328,11 +328,13 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
           templateColumns: GRID_TEMPLATE_COLUMNS,
           autoRows: '200px',
           children: children,
+          isLazy: true,
         }),
         new SceneCSSGridLayout({
           templateColumns: '1fr',
           autoRows: '200px',
           children: children.map((child) => child.clone()),
+          isLazy: true,
         }),
       ],
     });
@@ -340,13 +342,13 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   buildValuesLayout(variableState: CustomConstantVariableState) {
     const tagKey = String(variableState.value);
-    const query = buildLokiQuery(getExpr(tagKey, true), { legendFormat: `{{${tagKey}}}` });
+    const query = buildDataQuery(getExpr(tagKey, true), { legendFormat: `{{${tagKey}}}` });
 
     const { sortBy, direction } = getSortByPreference('fields', ReducerID.stdDev, 'desc');
     const getFilter = () => this.state.search.state.filter ?? '';
 
     return new LayoutSwitcher({
-      $data: getQueryRunner(query),
+      $data: getQueryRunner([query]),
       options: [
         { value: 'single', label: 'Single' },
         { value: 'grid', label: 'Grid' },
@@ -470,7 +472,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   };
 }
 
-const emptyStateStyles = {
+export const emptyStateStyles = {
   link: css({
     textDecoration: 'underline',
   }),
@@ -526,26 +528,6 @@ function getExpr(field: string, isValueDrilldown = false) {
 }
 
 const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
-
-export function buildFieldsBreakdownActionScene(changeFieldNumber: (n: string[]) => void) {
-  return new SceneFlexLayout({
-    children: [
-      new SceneFlexItem({
-        body: new FieldsBreakdownScene({ changeFields: changeFieldNumber }),
-      }),
-    ],
-  });
-}
-
-export function buildFieldValuesBreakdownActionScene(value: string) {
-  return new SceneFlexLayout({
-    children: [
-      new SceneFlexItem({
-        body: new FieldsBreakdownScene({ value }),
-      }),
-    ],
-  });
-}
 
 interface SelectLabelActionState extends SceneObjectState {
   labelName: string;

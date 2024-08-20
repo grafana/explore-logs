@@ -22,7 +22,7 @@ import { Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { DetectedLabel, getFilterBreakdownValueScene } from 'services/fields';
 import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
-import { buildLokiQuery } from 'services/query';
+import { buildDataQuery } from 'services/query';
 import { ValueSlugs } from 'services/routing';
 import { getLokiDatasource } from 'services/scenes';
 import { ALL_VARIABLE_VALUE, getLabelGroupByVariable, VAR_LABEL_GROUP_BY, VAR_LABELS } from 'services/variables';
@@ -218,9 +218,9 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
           body: PanelBuilders.timeseries()
             .setTitle(optionValue)
             .setData(
-              getQueryRunner(
-                buildLokiQuery(getTimeSeriesExpr(this, optionValue), { legendFormat: `{{${optionValue}}}` })
-              )
+              getQueryRunner([
+                buildDataQuery(getTimeSeriesExpr(this, optionValue), { legendFormat: `{{${optionValue}}}` }),
+              ])
             )
             .setHeaderActions(new SelectLabelAction({ labelName: optionValue }))
             .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
@@ -259,7 +259,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
 
   private buildLabelValuesLayout(variableState: CustomConstantVariableState) {
     const tagKey = String(variableState?.value);
-    const query = buildLokiQuery(getTimeSeriesExpr(this, tagKey), { legendFormat: `{{${tagKey}}}` });
+    const query = buildDataQuery(getTimeSeriesExpr(this, tagKey), { legendFormat: `{{${tagKey}}}` });
 
     let bodyOpts = PanelBuilders.timeseries();
     bodyOpts = bodyOpts
@@ -276,7 +276,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     const getFilter = () => this.state.search.state.filter ?? '';
 
     return new LayoutSwitcher({
-      $data: getQueryRunner(query),
+      $data: getQueryRunner([query]),
       options: [
         { value: 'single', label: 'Single' },
         { value: 'grid', label: 'Grid' },
@@ -295,6 +295,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
         }),
         new ByFrameRepeater({
           body: new SceneCSSGridLayout({
+            isLazy: true,
             templateColumns: GRID_TEMPLATE_COLUMNS,
             autoRows: '200px',
             children: [
@@ -422,16 +423,6 @@ function getStyles(theme: GrafanaTheme2) {
 }
 
 const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
-
-export function buildLabelBreakdownActionScene() {
-  return new SceneFlexLayout({
-    children: [
-      new SceneFlexItem({
-        body: new LabelBreakdownScene({}),
-      }),
-    ],
-  });
-}
 
 export function buildLabelValuesBreakdownActionScene(value: string) {
   return new SceneFlexLayout({

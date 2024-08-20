@@ -13,7 +13,7 @@ import {
 import { Button } from '@grafana/ui';
 import { VariableHide } from '@grafana/schema';
 import { addToFavoriteServicesInStorage } from 'services/store';
-import { getDataSourceVariable, getLabelsVariable } from 'services/variables';
+import { getDataSourceVariable, getLabelsVariable, getServiceSelectionStringVariable } from 'services/variables';
 import { SERVICE_NAME, ServiceSelectionScene } from './ServiceSelectionScene';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { FilterOp } from 'services/filters';
@@ -63,11 +63,9 @@ export function selectService(service: string, sceneRef: SceneObject) {
 
   setParserIfFrameExistsForService(service, sceneRef);
 
-  const serviceSelectionScene = sceneGraph.getAncestor(sceneRef, ServiceSelectionScene);
-  // Setting the service variable state triggers a re-query of the services with invalid queries, so we clear out the body state to avoid triggering queries since
-  serviceSelectionScene.setState({
-    servicesToQuery: undefined,
-  });
+  const serviceSelectionVariable = getServiceSelectionStringVariable(sceneRef);
+  // Reset the service selection search to show all services
+  serviceSelectionVariable.changeValueTo('');
 
   variable.setState({
     filters: [

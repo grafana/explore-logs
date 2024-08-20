@@ -8,6 +8,7 @@ export class ExplorePage {
   servicesSearch: Locator;
   serviceBreakdownSearch: Locator;
   serviceBreakdownOpenExplore: Locator;
+  refreshPicker: Locator;
 
   constructor(public readonly page: Page) {
     this.firstServicePageSelect = this.page.getByText('Select').first();
@@ -15,6 +16,7 @@ export class ExplorePage {
     this.servicesSearch = this.page.getByTestId(testIds.exploreServiceSearch.search);
     this.serviceBreakdownSearch = this.page.getByTestId(testIds.exploreServiceDetails.searchLogs);
     this.serviceBreakdownOpenExplore = this.page.getByTestId(testIds.exploreServiceDetails.openExplore);
+    this.refreshPicker = this.page.getByTestId(testIds.header.refreshPicker)
   }
 
   async gotoServices() {

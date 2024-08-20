@@ -8,15 +8,15 @@ import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 import { css } from '@emotion/css';
 import { addAdHocFilter } from './Breakdowns/AddToFiltersButton';
 import { areArraysEqual } from '../../services/comparison';
+import { getLogsPanelFrame } from './ServiceScene';
 
 export class LogsTableScene extends SceneObjectBase {
   public static Component = ({ model }: SceneComponentProps<LogsTableScene>) => {
+    const styles = getStyles();
     // Get state from parent model
     const parentModel = sceneGraph.getAncestor(model, LogsListScene);
-    const { selectedLine, urlColumns, visualizationType } = parentModel.useState();
-
-    // Get dataFrame
     const { data } = sceneGraph.getData(model).useState();
+    const { selectedLine, urlColumns, visualizationType } = parentModel.useState();
 
     // Get time range
     const timeRange = sceneGraph.getTimeRange(model);
@@ -37,7 +37,13 @@ export class LogsTableScene extends SceneObjectBase {
       }
     };
 
-    const styles = getStyles();
+    const clearSelectedLine = () => {
+      if (parentModel.state.selectedLine) {
+        parentModel.clearSelectedLine();
+      }
+    };
+
+    const dataFrame = getLogsPanelFrame(data);
 
     return (
       <div className={styles.panelWrapper} ref={panelWrap}>
@@ -46,7 +52,7 @@ export class LogsTableScene extends SceneObjectBase {
           title={'Logs'}
           actions={<LogsPanelHeaderActions vizType={visualizationType} onChange={parentModel.setVisualizationType} />}
         >
-          {data?.series[0] && (
+          {dataFrame && (
             <TableProvider
               panelWrap={panelWrap}
               addFilter={addFilter}
@@ -54,7 +60,8 @@ export class LogsTableScene extends SceneObjectBase {
               selectedLine={selectedLine}
               urlColumns={urlColumns ?? []}
               setUrlColumns={setUrlColumns}
-              dataFrame={data?.series[0]}
+              dataFrame={dataFrame}
+              clearSelectedLine={clearSelectedLine}
             />
           )}
         </PanelChrome>
