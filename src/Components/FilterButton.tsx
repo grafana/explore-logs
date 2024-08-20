@@ -25,6 +25,7 @@ export const FilterButton = (props: Props) => {
         variant={isIncluded ? 'primary' : 'secondary'}
         fill="outline"
         size="sm"
+        aria-selected={isIncluded}
         className={styles.includeButton}
         onClick={isIncluded ? onClear : onInclude}
         data-testid={testIds.exploreServiceDetails.buttonFilterInclude}
@@ -36,6 +37,7 @@ export const FilterButton = (props: Props) => {
         variant={isExcluded ? 'primary' : 'secondary'}
         fill="outline"
         size="sm"
+        aria-selected={isExcluded}
         className={styles.excludeButton}
         onClick={isExcluded ? onClear : onExclude}
         title={titles?.exclude}

@@ -2,6 +2,8 @@ import {expect, test} from '@grafana/plugin-e2e';
 import {ExplorePage} from './fixtures/explore';
 import {testIds} from '../src/services/testIds';
 import {mockEmptyQueryApiResponse} from "./mocks/mockEmptyQueryApiResponse";
+import {DataQueryRequest} from "@grafana/data";
+import {LokiQuery} from "../src/services/query";
 
 test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;
@@ -444,4 +446,73 @@ test.describe('explore services breakdown page', () => {
       page.getByRole('cell', { name: 'Fields Ad-hoc statistics' }).getByText('mimir-distributor').nth(0)
     ).toBeVisible();
   });
+
+  test('should include all logs that contain field', async ({page}) => {
+
+    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
+
+    const bytesIncludeButton = page.getByTestId('data-testid Panel header bytes').getByTestId('data-testid button-filter-include')
+    // Assert button isn't selected so we wait for things to load
+    expect(await bytesIncludeButton.getAttribute('aria-selected')).toEqual('false')
+    let numberOfQueries = 0;
+
+    // Wait for all panels to finish loading, or we might intercept an ongoing query below
+    await expect(page.getByLabel('Panel loading bar')).toHaveCount(0)
+
+    // Now we'll intercept any further queries
+    await page.route('**/ds/query*', async route => {
+      const post = route.request().postDataJSON()
+      const queries = post.queries as LokiQuery[]
+
+      expect(queries[0].expr).toContain('bytes!=""')
+      numberOfQueries++
+
+      await route.continue()
+    })
+
+    await page.pause()
+
+    // Click the button
+    await bytesIncludeButton.click()
+    // Assert that it has been rendered, and shows as selected
+    expect(await bytesIncludeButton.getAttribute('aria-selected')).toEqual('true')
+
+    await page.pause()
+    expect(numberOfQueries).toBeGreaterThan(0)
+  })
+
+  test('should exclude all logs that contain field', async ({page}) => {
+
+    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
+
+    const bytesIncludeButton = page.getByTestId('data-testid Panel header bytes').getByTestId('data-testid button-filter-exclude')
+    // Assert button isn't selected so we wait for things to load
+    expect(await bytesIncludeButton.getAttribute('aria-selected')).toEqual('false')
+    let numberOfQueries = 0;
+
+    // Wait for all panels to finish loading, or we might intercept an ongoing query below
+    await expect(page.getByLabel('Panel loading bar')).toHaveCount(0)
+
+    // Now we'll intercept any further queries
+    await page.route('**/ds/query*', async route => {
+      const post = route.request().postDataJSON()
+      const queries = post.queries as LokiQuery[]
+
+      expect(queries[0].expr).toContain('bytes=""')
+      numberOfQueries++
+
+      await route.continue()
+    })
+
+    await page.pause()
+
+    // Click the button
+    await bytesIncludeButton.click()
+    // Assert that it has been rendered, and has been removed from the view
+    await expect(bytesIncludeButton).not.toBeInViewport()
+
+    await page.pause()
+    expect(numberOfQueries).toBeGreaterThan(0)
+  })
+
 });
