@@ -44,6 +44,7 @@ export function splitQueriesByStreamShard(
   let shouldStop = false;
   let mergedResponse: DataQueryResponse = { data: [], state: LoadingState.Streaming, key: uuidv4() };
   let subquerySubsciption: Subscription | null = null;
+  let retriesMap = new Map<number, number>();
 
   const runNextRequest = (subscriber: Subscriber<DataQueryResponse>, cycle?: number, shardRequests?: number[][]) => {
     if (shouldStop) {
@@ -71,6 +72,20 @@ export function splitQueriesByStreamShard(
       done();
     };
 
+    const retry = () => {
+      const key = cycle !== undefined ? cycle : 0;
+      const retries = retriesMap.get(key) ?? 0;
+      if (retries > 2) {
+        return;
+      }
+
+      retriesMap.set(key, 1);
+
+      console.log(`Retrying ${cycle} (${retries + 1})`);
+      runNextRequest(subscriber, cycle, shardRequests);
+      return true;
+    };
+
     const targets = adjustTargetsFromResponseState(splittingTargets, mergedResponse);
     if (!targets.length) {
       nextRequest();
@@ -86,10 +101,12 @@ export function splitQueriesByStreamShard(
     // @ts-expect-error
     subquerySubsciption = datasource.runQuery(subRequest).subscribe({
       next: (partialResponse: DataQueryResponse) => {
-        mergedResponse = combineResponses(mergedResponse, partialResponse);
-        if ((mergedResponse.errors ?? []).length > 0 || mergedResponse.error != null) {
-          shouldStop = true;
+        if ((partialResponse.errors ?? []).length > 0 || partialResponse.error != null) {
+          if (retry()) {
+            return;
+          }
         }
+        mergedResponse = combineResponses(mergedResponse, partialResponse);
       },
       complete: () => {
         subscriber.next(mergedResponse);
@@ -98,6 +115,9 @@ export function splitQueriesByStreamShard(
       error: (error: unknown) => {
         console.error(error);
         subscriber.next(mergedResponse);
+        if (retry()) {
+          return;
+        }
         nextRequest();
       },
     });
