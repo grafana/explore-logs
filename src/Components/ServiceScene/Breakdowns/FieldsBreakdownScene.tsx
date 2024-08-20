@@ -8,6 +8,7 @@ import {
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
+  SceneObject,
   SceneObjectBase,
   SceneObjectState,
   SceneReactObject,
@@ -39,7 +40,6 @@ import { getFieldOptions } from '../../../services/filters';
 import { navigateToValueBreakdown } from '../../../services/navigate';
 import { ValueSlugs } from '../../../services/routing';
 import { areArraysEqual } from '../../../services/comparison';
-import { AddFilterEvent } from './AddToFiltersButton';
 import { FieldsAggregatedBreakdownScene } from './FieldsAggregatedBreakdownScene';
 import { FieldValuesBreakdownScene } from './FieldValuesBreakdownScene';
 import { SERVICE_NAME } from '../../ServiceSelectionScene/ServiceSelectionScene';
@@ -50,7 +50,11 @@ export const averageFields = ['duration', 'count', 'total', 'bytes'];
 export const FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
-  body?: SceneReactObject | FieldsAggregatedBreakdownScene | FieldValuesBreakdownScene | SceneFlexLayout;
+  body?:
+    | (SceneReactObject & SceneObject)
+    | (FieldsAggregatedBreakdownScene & SceneObject)
+    | (FieldValuesBreakdownScene & SceneObject)
+    | (SceneFlexLayout & SceneObject);
   search: BreakdownSearchScene;
   sort: SortByScene;
   value?: string;
@@ -58,7 +62,6 @@ export interface FieldsBreakdownSceneState extends SceneObjectState {
   error?: string;
   blockingMessage?: string;
   changeFields?: (n: string[]) => void;
-  lastFilterEvent?: AddFilterEvent;
 }
 
 export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneState> {
@@ -112,12 +115,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         }
       })
     );
-
-    this.subscribeToEvent(AddFilterEvent, (event) => {
-      this.setState({
-        lastFilterEvent: event,
-      });
-    });
 
     this.updateFields(serviceScene.state);
   }
@@ -219,6 +216,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       } else if (newState.value !== ALL_VARIABLE_VALUE && this.state.body instanceof FieldsAggregatedBreakdownScene) {
         stateUpdate.body = new FieldValuesBreakdownScene({});
       } else if (
+        // If the body hasn't been created, or the no-data views are active, we want to replace and render the correct scene
         this.state.body === undefined ||
         this.state.body instanceof SceneFlexLayout ||
         this.state.body instanceof SceneReactObject
@@ -335,7 +333,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       <div className={styles.container}>
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
           <div className={styles.controls}>
-            {/*{body instanceof LayoutSwitcher && <body.Selector model={body} />}*/}
             {body instanceof FieldsAggregatedBreakdownScene && <FieldsAggregatedBreakdownScene.Selector model={body} />}
             {body instanceof FieldValuesBreakdownScene && <FieldValuesBreakdownScene.Selector model={body} />}
             {!loading && value !== ALL_VARIABLE_VALUE && (
@@ -354,13 +351,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
             )}
           </div>
 
-          {/* @todo why are the types like this? */}
-          <div className={styles.content}>
-            {body && body instanceof FieldsAggregatedBreakdownScene && <body.Component model={body} />}
-            {body && body instanceof FieldValuesBreakdownScene && <body.Component model={body} />}
-            {body && body instanceof SceneReactObject && <body.Component model={body} />}
-            {body && body instanceof SceneFlexLayout && <body.Component model={body} />}
-          </div>
+          <div className={styles.content}>{body && <body.Component model={body} />}</div>
         </StatusWrapper>
       </div>
     );

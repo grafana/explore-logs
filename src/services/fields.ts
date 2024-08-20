@@ -62,7 +62,7 @@ export function getFilterBreakdownValueScene(
       .setTitle(getTitle(frame))
       .setData(
         new SceneDataTransformer({
-          transformations: [() => selectFrameTransformation(frameIndex)],
+          transformations: [() => selectFrameTransformation(frame)],
         })
       )
       .setColor({ mode: 'fixed', fixedColor: getColorByIndex(frameIndex) })
@@ -84,11 +84,11 @@ export function getFilterBreakdownValueScene(
   };
 }
 
-export function selectFrameTransformation(frameIndex: number) {
+export function selectFrameTransformation(frame: DataFrame) {
   return (source: Observable<DataFrame[]>) => {
     return source.pipe(
-      map((data: DataFrame[]) => {
-        return [data[frameIndex]];
+      map(() => {
+        return [frame];
       })
     );
   };
