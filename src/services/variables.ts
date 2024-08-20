@@ -112,3 +112,7 @@ export function getServiceSelectionStringVariable(sceneRef: SceneObject) {
   }
   return variable;
 }
+
+export function getUrlParamNameForVariable(variableName: string) {
+  return `var-${variableName}`;
+}

@@ -81,6 +81,36 @@ test.describe('explore services page', () => {
     await expect(page.getByText(/level=info/)).not.toBeVisible();
   });
 
+  test('should clear filters and levels when navigating back to previously activated service', async ({page}) => {
+    await explorePage.addServiceName();
+
+    // Add detected_level filter
+    await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click()
+    await page.getByLabel('Select detected_level').click()
+    await page.getByTestId(testIds.exploreServiceDetails.buttonFilterInclude).nth(1).click()
+
+    await expect(page.getByTestId('AdHocFilter-detected_level')).toBeVisible()
+
+    // Navigate to patterns so the scene is cached
+    await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
+
+    await expect(page.getByTestId('AdHocFilter-detected_level')).toBeVisible()
+
+    // Remove service so we're redirected back to the start
+    await page.getByTestId(testIds.variables.serviceName.label).click()
+
+    // Assert we're rendering the right scene and the services have loaded
+    await expect(page.getByText(/Showing \d+ services/)).toBeVisible();
+
+    await explorePage.addServiceName();
+
+    await expect(page.getByTestId('AdHocFilter-detected_level')).not.toBeVisible()
+
+    await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
+
+    await expect(page.getByTestId('AdHocFilter-detected_level')).not.toBeVisible()
+  })
+
   test.describe('mock volume API calls', () => {
     let logsVolumeCount: number, logsQueryCount: number;
 
@@ -142,4 +172,5 @@ test.describe('explore services page', () => {
       expect(logsVolumeCount).toEqual(2)
     })
   })
+
 });
