@@ -115,13 +115,20 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
   }
 
   private getData(
-    request: SceneDataQueryRequest,
-    ds: DataSourceWithBackend<DataQuery>,
+    request: DataQueryRequest<LokiQuery>,
+    ds: DataSourceWithBackend<LokiQuery>,
     subscriber: Subscriber<DataQueryResponse>
   ) {
     // query the datasource and return either observable or promise
     const dsResponse = ds.query(request);
     dsResponse.subscribe(subscriber);
+
+    console.log('request', request);
+
+    const targetsInterpolated = ds.interpolateVariablesInQueries(request.targets, request.scopedVars);
+    const interpolatedTarget = targetsInterpolated[0];
+    const expression = interpolatedTarget.expr;
+    console.log('expression', expression);
 
     return subscriber;
   }

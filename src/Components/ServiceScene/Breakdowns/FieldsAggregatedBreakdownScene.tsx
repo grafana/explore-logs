@@ -129,7 +129,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
           .setOverrides(setLevelColorOverrides);
       } else {
         body = body.setHeaderActions(
-          new SelectFieldActionScene({ labelName: String(optionValue), hideValueDrilldown: true })
+          new SelectFieldActionScene({ labelName: String(optionValue), hideValueDrilldown: true, numericFilter: true })
         );
       }
       const gridItem = new SceneCSSGridItem({

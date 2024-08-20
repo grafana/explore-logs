@@ -66,7 +66,7 @@ export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
 }
 
 function renderFilter(filter: AdHocVariableFilter) {
-  if (filter.value === '""') {
+  if (filter.value === '""' || filter.operator === '<' || filter.operator === '>') {
     return `${filter.key}${filter.operator}${filter.value}`;
   }
   return `${filter.key}${filter.operator}\`${filter.value}\``;

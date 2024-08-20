@@ -176,6 +176,13 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     value,
   }));
 
+  const fieldOperators = [FilterOp.Equal, FilterOp.NotEqual, FilterOp.LessThan, FilterOp.GreaterThan].map<
+    SelectableValue<string>
+  >((value) => ({
+    label: value,
+    value,
+  }));
+
   const labelVariable = new AdHocFiltersVariable({
     name: VAR_LABELS,
     datasource: EXPLORATION_DS,
@@ -203,7 +210,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
   });
 
   fieldsVariable._getOperators = () => {
-    return operators;
+    return fieldOperators;
   };
 
   const levelsVariable = new AdHocFiltersVariable({

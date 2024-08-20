@@ -5,12 +5,14 @@ import { VariableValueOption } from '@grafana/scenes';
 export enum FilterOp {
   Equal = '=',
   NotEqual = '!=',
+  GreaterThan = '>',
+  LessThan = '<',
 }
 
 export type Filter = {
   key: string;
   operator: FilterOp;
-  value: string;
+  value: string | number;
   type?: LabelType;
 };
 

@@ -34,6 +34,32 @@ export function addAdHocFilter(filter: AdHocVariableFilter, scene: SceneObject, 
   addToFilters(filter.key, filter.value, type, scene, variableName);
 }
 
+export function addNumericFilter(key: string, value: string, operator: FilterOp, scene: SceneObject) {
+  const variableName = resolveVariableNameForField(key, scene);
+  const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableName), scene);
+
+  let filters = variable.state.filters.filter((filter) => {
+    return !(filter.key === key && filter.value === value);
+  });
+
+  filters = [
+    ...filters,
+    {
+      key,
+      operator,
+      value,
+    },
+  ];
+
+  variable.setState({
+    filters,
+    label: operator,
+    type: 'constant',
+
+    // hide: VariableHide.hideLabel,
+  });
+}
+
 export function addToFilters(
   key: string,
   value: string,
