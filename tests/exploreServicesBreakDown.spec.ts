@@ -448,18 +448,27 @@ test.describe('explore services breakdown page', () => {
   });
 
   test('should include all logs that contain field', async ({page}) => {
-
-    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
-
-    const bytesIncludeButton = page.getByTestId('data-testid Panel header bytes').getByTestId('data-testid button-filter-include')
-    // Assert button isn't selected so we wait for things to load
-    expect(await bytesIncludeButton.getAttribute('aria-selected')).toEqual('false')
     let numberOfQueries = 0;
+    // Let's not wait for all these queries
+    await page.route('**/ds/query*', async route => {
+      const post = route.request().postDataJSON()
+      const queries = post.queries as LokiQuery[]
 
+      if(queries[0].refId === 'logsPanelQuery'){
+        await route.continue()
+      }else{
+        await route.fulfill({json: []})
+      }
+    })
+    // Click on the fields tab
+    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
+    // Selector
+    const bytesIncludeButton = page.getByTestId('data-testid Panel header bytes').getByTestId('data-testid button-filter-include')
+    // Assert button isn't selected
+    expect(await bytesIncludeButton.getAttribute('aria-selected')).toEqual('false')
     // Wait for all panels to finish loading, or we might intercept an ongoing query below
     await expect(page.getByLabel('Panel loading bar')).toHaveCount(0)
-
-    // Now we'll intercept any further queries
+    // Now we'll intercept any further queries, note that the intercept above is still-preventing the actual request so the panels will return with no-data instantly
     await page.route('**/ds/query*', async route => {
       const post = route.request().postDataJSON()
       const queries = post.queries as LokiQuery[]
@@ -469,31 +478,36 @@ test.describe('explore services breakdown page', () => {
 
       await route.continue()
     })
-
-    await page.pause()
-
     // Click the button
     await bytesIncludeButton.click()
     // Assert that it has been rendered, and shows as selected
     expect(await bytesIncludeButton.getAttribute('aria-selected')).toEqual('true')
-
-    await page.pause()
+    // Assert that we actually had some queries
     expect(numberOfQueries).toBeGreaterThan(0)
   })
 
   test('should exclude all logs that contain field', async ({page}) => {
-
-    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
-
-    const bytesIncludeButton = page.getByTestId('data-testid Panel header bytes').getByTestId('data-testid button-filter-exclude')
-    // Assert button isn't selected so we wait for things to load
-    expect(await bytesIncludeButton.getAttribute('aria-selected')).toEqual('false')
     let numberOfQueries = 0;
+    // Let's not wait for all these queries
+    await page.route('**/ds/query*', async route => {
+      const post = route.request().postDataJSON()
+      const queries = post.queries as LokiQuery[]
 
+      if(queries[0].refId === 'logsPanelQuery'){
+        await route.continue()
+      }else{
+        await route.fulfill({json: []})
+      }
+    })
+    // Click on the fields tab
+    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
+    // Selector
+    const bytesIncludeButton = page.getByTestId('data-testid Panel header bytes').getByTestId('data-testid button-filter-exclude')
+    // Assert button isn't selected
+    expect(await bytesIncludeButton.getAttribute('aria-selected')).toEqual('false')
     // Wait for all panels to finish loading, or we might intercept an ongoing query below
     await expect(page.getByLabel('Panel loading bar')).toHaveCount(0)
-
-    // Now we'll intercept any further queries
+    // Now we'll intercept any further queries, note that the intercept above is still-preventing the actual request so the panels will return with no-data instantly
     await page.route('**/ds/query*', async route => {
       const post = route.request().postDataJSON()
       const queries = post.queries as LokiQuery[]
@@ -503,16 +517,11 @@ test.describe('explore services breakdown page', () => {
 
       await route.continue()
     })
-
-    await page.pause()
-
     // Click the button
     await bytesIncludeButton.click()
-    // Assert that it has been rendered, and has been removed from the view
-    await expect(bytesIncludeButton).not.toBeInViewport()
-
-    await page.pause()
+    // Assert that the panel is no longer rendered
+    expect(await bytesIncludeButton).not.toBeInViewport()
+    // Assert that we actually had some queries
     expect(numberOfQueries).toBeGreaterThan(0)
   })
-
 });
