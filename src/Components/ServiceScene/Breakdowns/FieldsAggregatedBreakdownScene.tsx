@@ -21,8 +21,9 @@ import {
 } from './FieldsBreakdownScene';
 import { ServiceScene } from '../ServiceScene';
 import React from 'react';
-import { SelectFieldActionScene } from './SelectFieldActionScene';
+import { SelectLabelActionScene } from './SelectLabelActionScene';
 import { areArraysEqual } from '../../../services/comparison';
+import { ValueSlugs } from '../../../services/routing';
 
 export interface FieldsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -120,7 +121,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
 
       if (!isAvgField(optionValue)) {
         body = body
-          .setHeaderActions(new SelectFieldActionScene({ labelName: String(optionValue) }))
+          .setHeaderActions(new SelectLabelActionScene({ labelName: String(optionValue), fieldType: ValueSlugs.field }))
           .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
           .setCustomFieldConfig('fillOpacity', 100)
           .setCustomFieldConfig('lineWidth', 0)
@@ -129,7 +130,11 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
           .setOverrides(setLevelColorOverrides);
       } else {
         body = body.setHeaderActions(
-          new SelectFieldActionScene({ labelName: String(optionValue), hideValueDrilldown: true })
+          new SelectLabelActionScene({
+            labelName: String(optionValue),
+            hideValueDrilldown: true,
+            fieldType: ValueSlugs.field,
+          })
         );
       }
       const gridItem = new SceneCSSGridItem({
