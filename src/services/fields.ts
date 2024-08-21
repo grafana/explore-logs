@@ -33,7 +33,6 @@ export function updateParserFromDataFrame(frame: DataFrame, sceneRef: SceneObjec
     newType = ` | ${res.type}`;
   }
 
-  // const newType = res.type ? ` | ${res.type}` : '';
   if (variable.getValue() !== newType) {
     variable.changeValueTo(newType);
   }
