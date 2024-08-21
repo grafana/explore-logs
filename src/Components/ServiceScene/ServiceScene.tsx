@@ -23,6 +23,7 @@ import {
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
+  getLogsFormatVariable,
   LOG_STREAM_SELECTOR_EXPR,
   VAR_DATASOURCE,
   VAR_FIELDS,
@@ -50,6 +51,7 @@ export interface ServiceSceneCustomState {
   patternsCount?: number;
   fieldsCount?: number;
   loading?: boolean;
+  wrongParserFlag?: boolean;
 }
 
 export interface ServiceSceneState extends SceneObjectState, ServiceSceneCustomState {
@@ -175,9 +177,22 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     // Variable subscriptions
     this._subs.add(this.subscribeToLabelsVariable());
     this._subs.add(this.subscribeToDataSourceVariable());
+    this._subs.add(this.subscribeToLogsFmtVariable());
 
     // Update query runner on manual time range change
     this._subs.add(this.subscribeToTimeRange());
+  }
+
+  private subscribeToLogsFmtVariable() {
+    return getLogsFormatVariable(this).subscribeToState((newState, prevState) => {
+      if (newState.value !== prevState.value) {
+        this.setState({
+          fields: undefined,
+          fieldsCount: undefined,
+          wrongParserFlag: true,
+        });
+      }
+    });
   }
 
   private subscribeToDataSourceVariable() {
@@ -215,12 +230,20 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private subscribeToData() {
-    return this.state.$data?.subscribeToState((newState) => {
+    return this.state.$data?.subscribeToState((newState, prevState) => {
       if (newState.data?.state === LoadingState.Done) {
         const logsPanelResponse = getLogsPanelFrame(newState.data);
         if (logsPanelResponse) {
           this.updateFields();
+        } else {
+          this.setState({
+            loading: false,
+          });
         }
+      } else {
+        this.setState({
+          loading: true,
+        });
       }
     });
   }
@@ -310,11 +333,21 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       const res = updateParserFromDataFrame(frame, this);
       const fields = res.fields.filter((f) => !disabledFields.includes(f)).sort((a, b) => a.localeCompare(b));
       if (!areArraysEqual(fields, this.state.fields)) {
-        this.setState({
-          fields: fields,
-          fieldsCount: fields.length,
-          loading: false,
-        });
+        // We tried a parser and it was incorrect for the new dataframe, let's not show the user the partial fields count, and we should retain the loading state until the subsequent query is run
+        if (this.state.wrongParserFlag) {
+          this.setState({
+            fields: undefined,
+            loading: true,
+            fieldsCount: undefined,
+            wrongParserFlag: false,
+          });
+        } else {
+          this.setState({
+            fields: fields,
+            fieldsCount: fields.length,
+            loading: false,
+          });
+        }
       }
     } else {
       this.setState({
