@@ -23,7 +23,15 @@ interface ExtractedFields {
 export function updateParserFromDataFrame(frame: DataFrame, sceneRef: SceneObject): ExtractedFields {
   const variable = getLogsFormatVariable(sceneRef);
   const res = extractParserAndFieldsFromDataFrame(frame);
-  const newType = res.type ? ` | ${res.type}` : '';
+
+  // Nested ternary?
+  const newType = res.type
+    ? res.type === 'json'
+      ? `| json  | logfmt | drop __error__, __error_details__`
+      : ` | ${res.type}`
+    : '';
+
+  // const newType = res.type ? ` | ${res.type}` : '';
   if (variable.getValue() !== newType) {
     variable.changeValueTo(newType);
   }
