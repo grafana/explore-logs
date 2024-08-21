@@ -1,26 +1,82 @@
-import { FieldType, createDataFrame, toDataFrame } from '@grafana/data';
+import { createDataFrame, FieldType, toDataFrame } from '@grafana/data';
 
-import { LabelType, extractParserAndFieldsFromDataFrame, getLabelTypeFromFrame } from './fields';
+import {
+  extractParserAndFieldsFromDataFrame,
+  getLabelTypeFromFrame,
+  LabelType,
+  updateParserFromDataFrame,
+} from './fields';
+import { getLogsFormatVariable, VAR_LOGS_FORMAT } from './variables';
+import { CustomVariable, SceneObject } from '@grafana/scenes';
+jest.mock('./variables');
 
 describe('extractParserAndFieldsFromDataFrame', () => {
-  const dataFrame = createDataFrame({
-    refId: 'A',
-    fields: [
-      { name: 'Time', type: FieldType.time, values: [0] },
-      {
-        name: 'Line',
-        type: FieldType.string,
-        values: ['line1'],
-      },
-      { name: 'labelTypes', type: FieldType.other, values: [{ field1: 'I', field2: 'P', field3: 'S' }] },
-    ],
-  });
+  it('Extracts parser and fields from a logfmt data frame', () => {
+    const dataFrame = createDataFrame({
+      refId: 'A',
+      fields: [
+        { name: 'Time', type: FieldType.time, values: [0] },
+        {
+          name: 'Line',
+          type: FieldType.string,
+          values: ['line1'],
+        },
+        { name: 'labelTypes', type: FieldType.other, values: [{ field1: 'I', field2: 'P', field3: 'S' }] },
+      ],
+    });
 
-  test('Extracts parser and fields from a data frame', () => {
     expect(extractParserAndFieldsFromDataFrame(dataFrame)).toEqual({
       type: 'logfmt',
       fields: ['field2'],
     });
+  });
+  it('Extracts parser and fields from a json data frame', () => {
+    const dataFrame = createDataFrame({
+      refId: 'A',
+      fields: [
+        { name: 'Time', type: FieldType.time, values: [0] },
+        {
+          name: 'Line',
+          type: FieldType.string,
+          values: ['{"jsonLabel": "jsonValue"}'],
+        },
+        { name: 'labelTypes', type: FieldType.other, values: [{ field1: 'I', field2: 'P', field3: 'S' }] },
+      ],
+    });
+
+    expect(extractParserAndFieldsFromDataFrame(dataFrame)).toEqual({
+      type: 'json',
+      fields: ['field2'],
+    });
+  });
+});
+
+describe('updateParserFromDataFrame', () => {
+  const logsFmtVariable = new CustomVariable({
+    name: VAR_LOGS_FORMAT,
+  });
+  jest.mocked(getLogsFormatVariable).mockReturnValue(logsFmtVariable);
+
+  it('should exclude json errors', () => {
+    const dataFrame = createDataFrame({
+      refId: 'A',
+      fields: [
+        { name: 'Time', type: FieldType.time, values: [0] },
+        {
+          name: 'Line',
+          type: FieldType.string,
+          values: ['{"jsonLabel": "jsonValue"}'],
+        },
+        { name: 'labelTypes', type: FieldType.other, values: [{ field1: 'I', field2: 'P', field3: 'S' }] },
+      ],
+    });
+    const scene = {} as SceneObject;
+
+    expect(updateParserFromDataFrame(dataFrame, scene)).toEqual({
+      type: 'json',
+      fields: ['field2'],
+    });
+    expect(logsFmtVariable.state.value).toEqual('| json  | logfmt | drop __error__, __error_details__');
   });
 });
 
