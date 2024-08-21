@@ -71,10 +71,6 @@ export function mergeFrames(dest: DataFrame, source: DataFrame) {
     const destNanosValues = destTimeField.nanos?.slice(0);
     const destIdx = resolveIdx(destTimeField, sourceTimeField, i);
 
-    if (equalNsTimestamps(sourceTimeField, i, destTimeField, destIdx) === false) {
-      dest.length += 1;
-    }
-
     for (let f = 0; f < totalFields; f++) {
       // For now, skip undefined fields that exist in the new frame
       if (!dest.fields[f]) {
@@ -125,6 +121,8 @@ export function mergeFrames(dest: DataFrame, source: DataFrame) {
       }
     }
   }
+
+  dest.length = dest.fields[0].values.length;
 
   dest.meta = {
     ...dest.meta,
