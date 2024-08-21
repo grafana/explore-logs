@@ -56,14 +56,22 @@ export function combineResponses(currentResult: DataQueryResponse | null, newRes
  */
 export function mergeFrames(dest: DataFrame, source: DataFrame) {
   const destTimeField = dest.fields.find((field) => field.type === FieldType.time);
-  const sourceTimeValues = source.fields.find((field) => field.type === FieldType.time)?.values.slice(0) ?? [];
+  const sourceTimeField = source.fields.find((field) => field.type === FieldType.time);
+
+  if (!destTimeField || !sourceTimeField) {
+    console.error(`Time fields not found in the data frames`);
+    return;
+  }
+
+  const sourceTimeValues = sourceTimeField?.values.slice(0) ?? [];
   const totalFields = Math.max(dest.fields.length, source.fields.length);
 
   for (let i = 0; i < sourceTimeValues.length; i++) {
-    const destTimeValues = destTimeField?.values.slice(0) ?? [];
-    const destIdx = resolveIdx(sourceTimeValues[i], destTimeValues);
+    const destTimeValues = destTimeField.values.slice(0) ?? [];
+    const destNanosValues = destTimeField.nanos?.slice(0);
+    const destIdx = resolveIdx(destTimeField, sourceTimeField, i);
 
-    if (sourceTimeValues[i] !== destTimeValues[destIdx]) {
+    if (equalNsTimestamps(sourceTimeField, i, destTimeField, destIdx) === false) {
       dest.length += 1;
     }
 
@@ -79,7 +87,14 @@ export function mergeFrames(dest: DataFrame, source: DataFrame) {
         continue;
       }
       // Same value, accumulate
-      if (sourceTimeValues[i] === destTimeValues[destIdx]) {
+      if (
+        equalNsTimestamps(
+          sourceTimeField,
+          i,
+          { ...destTimeField, values: destTimeValues, nanos: destNanosValues },
+          destIdx
+        )
+      ) {
         if (dest.fields[f].type === FieldType.time) {
           // Time already exists, skip
           continue;
@@ -100,14 +115,12 @@ export function mergeFrames(dest: DataFrame, source: DataFrame) {
           // Replace value
           dest.fields[f].values[destIdx] = sourceField.values[i];
         }
-      } else {
+      } else if (sourceField.values[i] !== undefined) {
+        // Insert in the `destIdx` position
+        dest.fields[f].values.splice(destIdx, 0, sourceField.values[i]);
         if (sourceField.nanos) {
           dest.fields[f].nanos = dest.fields[f].nanos ?? [];
           dest.fields[f].nanos?.splice(destIdx, 0, sourceField.nanos[i]);
-        }
-        if (sourceField.values[i] !== undefined) {
-          // Insert in the `destIdx` position
-          dest.fields[f].values.splice(destIdx, 0, sourceField.values[i]);
         }
       }
     }
@@ -119,12 +132,30 @@ export function mergeFrames(dest: DataFrame, source: DataFrame) {
   };
 }
 
-function resolveIdx(timestamp: number, series: number[]) {
-  const idx = closestIdx(timestamp, series);
-  if (timestamp > series[idx]) {
+function resolveIdx(destField: Field, sourceField: Field, index: number) {
+  const idx = closestIdx(sourceField.values[index], destField.values);
+
+  if (sourceField.values[index] === destField.values[idx] && sourceField.nanos && destField.nanos) {
+    return sourceField.nanos[index] > destField.nanos[idx] ? idx + 1 : idx;
+  }
+
+  if (sourceField.values[index] > destField.values[idx]) {
     return idx + 1;
   }
   return idx;
+}
+
+function equalNsTimestamps(destField: Field, destIndex: number, sourceField: Field, sourceIndex: number) {
+  if (!destField.nanos && !sourceField.nanos) {
+    return destField.values[destIndex] === sourceField.values[sourceIndex];
+  }
+  if (destField.nanos && sourceField.nanos) {
+    return (
+      destField.values[destIndex] === sourceField.values[sourceIndex] &&
+      destField.nanos[destIndex] === sourceField.nanos[sourceIndex]
+    );
+  }
+  return false;
 }
 
 function findSourceField(referenceField: Field, sourceFields: Field[], index: number) {
