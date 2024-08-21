@@ -24,12 +24,14 @@ export function updateParserFromDataFrame(frame: DataFrame, sceneRef: SceneObjec
   const variable = getLogsFormatVariable(sceneRef);
   const res = extractParserAndFieldsFromDataFrame(frame);
 
-  // Nested ternary?
-  const newType = res.type
-    ? res.type === 'json'
-      ? `| json  | logfmt | drop __error__, __error_details__`
-      : ` | ${res.type}`
-    : '';
+  let newType;
+  if (!res.type) {
+    newType = '';
+  } else if (res.type === 'json') {
+    newType = `| json  | logfmt | drop __error__, __error_details__`;
+  } else {
+    newType = ` | ${res.type}`;
+  }
 
   // const newType = res.type ? ` | ${res.type}` : '';
   if (variable.getValue() !== newType) {
