@@ -26,14 +26,15 @@ export type SceneDataQueryRequest = DataQueryRequest<LokiQuery & SceneDataQueryR
 };
 
 export type SceneDataQueryResourceRequest = {
-  resource: 'volume' | 'patterns' | 'detected_labels';
+  resource: 'volume' | 'patterns' | 'detected_labels' | 'labels';
 };
 type TimeStampOfVolumeEval = number;
 type VolumeCount = string;
 type VolumeValue = [TimeStampOfVolumeEval, VolumeCount];
 type VolumeResult = {
   metric: {
-    service_name: string;
+    service_name?: string;
+    __aggregated_metric__?: string;
   };
   value: VolumeValue;
 };
@@ -42,6 +43,11 @@ type IndexVolumeResponse = {
   data: {
     result: VolumeResult[];
   };
+};
+
+type LabelsResponse = {
+  status: string;
+  data: string[];
 };
 
 type SampleTimeStamp = number;
@@ -104,6 +110,9 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
             case 'detected_labels': {
               await this.getDetectedLabels(request, ds, subscriber);
               break;
+            }
+            case 'labels': {
+              await this.getLabels(request, ds, subscriber);
             }
             default: {
               this.getData(request, ds, subscriber);
@@ -314,11 +323,52 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
       // Scenes will only emit dataframes from the SceneQueryRunner, so for now we need to convert the API response to a dataframe
       const df = createDataFrame({
         fields: [
-          { name: 'service_name', values: volumeResponse?.data.result?.map((r) => r.metric.service_name) },
+          {
+            name: 'service_name',
+            values: volumeResponse?.data.result?.map((r) => r.metric.service_name ?? r.metric.__aggregated_metric__),
+          },
           { name: 'volume', values: volumeResponse?.data.result?.map((r) => Number(r.value[1])) },
         ],
       });
-      subscriber.next({ data: [df] });
+      subscriber.next({ data: [df], state: LoadingState.Done });
+    } catch (e) {
+      subscriber.next({ data: [], state: LoadingState.Error });
+    }
+
+    subscriber.complete();
+
+    return subscriber;
+  }
+
+  private async getLabels(
+    request: DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest>,
+    ds: DataSourceWithBackend<LokiQuery>,
+    subscriber: Subscriber<DataQueryResponse>
+  ) {
+    if (request.targets.length !== 1) {
+      throw new Error('Volume query can only have a single target!');
+    }
+
+    try {
+      const labelsResponse: LabelsResponse = await ds.getResource(
+        'labels',
+        {
+          start: request.range.from.utc().toISOString(),
+          end: request.range.to.utc().toISOString(),
+        },
+        {
+          requestId: request.requestId ?? 'labels',
+          headers: {
+            'X-Query-Tags': `Source=${PLUGIN_ID}`,
+          },
+        }
+      );
+
+      // Scenes will only emit dataframes from the SceneQueryRunner, so for now we need to convert the API response to a dataframe
+      const df = createDataFrame({
+        fields: [{ name: 'labels', values: labelsResponse?.data }],
+      });
+      subscriber.next({ data: [df], state: LoadingState.Done });
     } catch (e) {
       subscriber.next({ data: [], state: LoadingState.Error });
     }

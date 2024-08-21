@@ -5,13 +5,14 @@ import { DashboardCursorSync, DataFrame, GrafanaTheme2, LoadingState, TimeRange,
 import {
   behaviors,
   PanelBuilders,
+  QueryRunnerState,
   SceneComponentProps,
   SceneCSSGridItem,
   SceneCSSGridLayout,
-  SceneDataProvider,
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
+  SceneQueryRunner,
   SceneVariableSet,
   VizPanel,
 } from '@grafana/scenes';
@@ -37,7 +38,7 @@ import {
 import { selectService, SelectServiceButton } from './SelectServiceButton';
 import { buildDataQuery, buildResourceQuery } from 'services/query';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { getQueryRunner, setLevelColorOverrides } from 'services/panel';
+import { getQueryRunner, getSceneQueryRunner, setLevelColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
 import { NoVolumeError } from './NoVolumeError';
 import { getLabelsFromSeries, toggleLevelVisibility } from 'services/levels';
@@ -46,6 +47,8 @@ import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 import { areArraysEqual } from '../../services/comparison';
 
 export const SERVICE_NAME = 'service_name';
+// Don't export AGGREGATED_SERVICE_NAME, we want to rename things so the rest of the application is agnostic to how we got the services
+const AGGREGATED_SERVICE_NAME = '__aggregated_metric__';
 
 interface ServiceSelectionSceneState extends SceneObjectState {
   // The body of the component
@@ -53,15 +56,13 @@ interface ServiceSelectionSceneState extends SceneObjectState {
   // Show logs of a certain level for a given service
   serviceLevel: Map<string, string[]>;
   // Logs volume API response as dataframe with SceneQueryRunner
-  $data: SceneDataProvider;
+  $data: SceneQueryRunner;
+  $labels: SceneQueryRunner;
+  serviceName: typeof SERVICE_NAME | typeof AGGREGATED_SERVICE_NAME;
 }
 
 function getMetricExpression(service: string) {
   return `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`;
-}
-
-function getLogExpression(service: string, levelFilter: string) {
-  return `{${SERVICE_NAME}=\`${service}\`}${levelFilter}`;
 }
 
 export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionSceneState> {
@@ -79,11 +80,17 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           }),
         ],
       }),
-      $data: getQueryRunner([buildResourceQuery(`{${SERVICE_NAME}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')]),
+      $data: getSceneQueryRunner({
+        queries: [buildResourceQuery(`{${SERVICE_NAME}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')],
+        runQueriesMode: 'manual',
+      }),
+      $labels: getSceneQueryRunner({ queries: [buildResourceQuery('', 'labels')], runQueriesMode: 'manual' }),
       serviceLevel: new Map<string, string[]>(),
+      serviceName: SERVICE_NAME,
       ...state,
     });
 
+    this.state.$labels.activate();
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
@@ -111,6 +118,51 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         }
       })
     );
+
+    // Get labels
+    this.state.$labels.runQueries();
+
+    // Update labels on time range change
+    this._subs.add(
+      sceneGraph.getTimeRange(this).subscribeToState((newState, prevState) => {
+        this.state.$labels.runQueries();
+      })
+    );
+
+    this._subs.add(
+      getDataSourceVariable(this).subscribeToState((newState, prevState) => {
+        this.state.$labels.runQueries();
+      })
+    );
+
+    // Run queries on update of labels
+    this._subs.add(
+      this.state.$labels.subscribeToState((newState, prevState) => {
+        this.onLabelsChange(newState);
+      })
+    );
+  }
+
+  private onLabelsChange(newState: QueryRunnerState) {
+    if (newState.data?.state === LoadingState.Done) {
+      const labels = newState.data.series[0].fields[0].values;
+      if (labels.includes(AGGREGATED_SERVICE_NAME)) {
+        this.setState({
+          serviceName: AGGREGATED_SERVICE_NAME,
+        });
+        this.state.$data.setState({
+          queries: [buildResourceQuery(`{${AGGREGATED_SERVICE_NAME}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')],
+        });
+      } else {
+        this.setState({
+          serviceName: SERVICE_NAME,
+        });
+        this.state.$data.setState({
+          queries: [buildResourceQuery(`{${SERVICE_NAME}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')],
+        });
+      }
+      this.state.$data.runQueries();
+    }
   }
 
   private updateBody() {
@@ -171,6 +223,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       newChildren.splice(serviceIndex * 2 + 1, 1, this.buildServiceLogsLayout(service));
       this.state.body.setState({ children: newChildren });
     }
+  }
+
+  private getLogExpression(service: string, levelFilter: string) {
+    return `{${this.state.serviceName}=\`${service}\`}${levelFilter}`;
   }
 
   private extendTimeSeriesLegendBus = (service: string, context: PanelContext, panel: VizPanel) => {
@@ -256,10 +312,9 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         .setHoverHeader(true)
         .setData(
           getQueryRunner([
-            buildDataQuery(getLogExpression(service, levelFilter), {
+            buildDataQuery(this.getLogExpression(service, levelFilter), {
               maxLines: 100,
               refId: `logs-${service}`,
-              // range: timeRange
             }),
           ])
         )
@@ -274,6 +329,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   public onSearchServicesChange = debounce((serviceString?: string) => {
     const variable = getServiceSelectionStringVariable(this);
     variable.changeValueTo(serviceString ?? '');
+    this.state.$data.runQueries();
 
     reportAppInteraction(
       USER_EVENTS_PAGES.service_selection,

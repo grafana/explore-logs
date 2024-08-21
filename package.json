@@ -83,7 +83,7 @@
     "@grafana/data": "^11.1.1",
     "@grafana/lezer-logql": "^0.2.6",
     "@grafana/runtime": "^11.1.1",
-    "@grafana/scenes": "5.7.2",
+    "@grafana/scenes": "5.9.0",
     "@grafana/ui": "^11.1.1",
     "@lezer/common": "^1.2.1",
     "@lezer/lr": "^1.4.1",
