@@ -1036,6 +1036,34 @@ describe('mergeFrames', () => {
     });
   });
 
+  it('correctly handles empty responses', () => {
+    const { emptyFrame, logFrameB } = getMockFrames();
+
+    logFrameB.fields[0].values = [1, 2];
+    logFrameB.fields[0].nanos = [222222, 333333];
+
+    const responseA: DataQueryResponse = {
+      data: [emptyFrame],
+    };
+    const responseB: DataQueryResponse = {
+      data: [logFrameB],
+    };
+    expect(combineResponses(responseA, responseB)).toEqual({
+      data: [
+        {
+          ...logFrameB,
+          meta: {
+            custom: {
+              frameType: 'LabeledTimeValues',
+            },
+            stats: [{ displayName: 'Summary: total bytes processed', unit: 'decbytes', value: 22 }],
+          },
+          length: 2,
+        },
+      ],
+    });
+  });
+
   it('merging exactly the same data produces the same data', () => {
     const { logFrameA } = getMockFrames();
 
@@ -1243,11 +1271,58 @@ export function getMockFrames() {
     length: 2,
   };
 
+  const emptyFrame: DataFrame = {
+    refId: 'A',
+    fields: [
+      {
+        name: 'Time',
+        type: FieldType.time,
+        config: {},
+        values: [],
+      },
+      {
+        name: 'Line',
+        type: FieldType.string,
+        config: {},
+        values: [],
+      },
+      {
+        name: 'labels',
+        type: FieldType.other,
+        config: {},
+        values: [],
+      },
+      {
+        name: 'tsNs',
+        type: FieldType.string,
+        config: {},
+        values: [],
+      },
+      {
+        name: 'id',
+        type: FieldType.string,
+        config: {},
+        values: [],
+      },
+    ],
+    meta: {
+      custom: {
+        frameType: 'LabeledTimeValues',
+      },
+      stats: [
+        { displayName: 'Summary: total bytes processed', unit: 'decbytes', value: 0 },
+        { displayName: 'Ingester: total reached', value: 0 },
+      ],
+    },
+    length: 2,
+  };
+
   return {
     logFrameA,
     logFrameB,
     metricFrameA,
     metricFrameB,
     metricFrameC,
+    emptyFrame,
   };
 }
