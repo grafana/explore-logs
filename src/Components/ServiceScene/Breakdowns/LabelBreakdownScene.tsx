@@ -163,6 +163,12 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       !areArraysEqual(newState.data.series?.[0]?.fields, prevState.data?.series?.[0]?.fields)
     ) {
       this.updateOptions(newState.data.series?.[0]);
+    } else if (newState.data?.state === LoadingState.Done) {
+      // we got a new response, but nothing changed, just need to clear loading
+      const variable = getLabelGroupByVariable(this);
+      variable.setState({
+        loading: false,
+      });
     }
   };
 
