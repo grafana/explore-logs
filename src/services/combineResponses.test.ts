@@ -1035,6 +1035,20 @@ describe('mergeFrames', () => {
       ],
     });
   });
+
+  it('merging exactly the same data produces the same data', () => {
+    const { logFrameA } = getMockFrames();
+
+    const responseA: DataQueryResponse = {
+      data: [logFrameA],
+    };
+    const responseB: DataQueryResponse = {
+      data: [logFrameA],
+    };
+    expect(combineResponses(responseA, responseB)).toEqual({
+      data: [logFrameA],
+    });
+  });
 });
 
 export function getMockFrames() {
