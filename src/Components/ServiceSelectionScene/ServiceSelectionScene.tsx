@@ -61,10 +61,6 @@ interface ServiceSelectionSceneState extends SceneObjectState {
   serviceName: typeof SERVICE_NAME | typeof AGGREGATED_SERVICE_NAME;
 }
 
-function getMetricExpression(service: string) {
-  return `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`;
-}
-
 export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionSceneState> {
   constructor(state: Partial<ServiceSelectionSceneState>) {
     super({
@@ -229,6 +225,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     return `{${this.state.serviceName}=\`${service}\`}${levelFilter}`;
   }
 
+  private getMetricExpression(service: string) {
+    return `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${this.state.serviceName}=\`${service}\`} | drop __error__ [$__auto]))`;
+  }
+
   private extendTimeSeriesLegendBus = (service: string, context: PanelContext, panel: VizPanel) => {
     const originalOnToggleSeriesVisibility = context.onToggleSeriesVisibility;
 
@@ -254,7 +254,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       .setTitle(service)
       .setData(
         getQueryRunner([
-          buildDataQuery(getMetricExpression(service), {
+          buildDataQuery(this.getMetricExpression(service), {
             legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`,
             splitDuration,
             refId: `ts-${service}`,
