@@ -18,9 +18,9 @@ test.describe('explore services page', () => {
 
     await page.getByTestId('data-testid Panel header mimir-ingester').first().scrollIntoViewIfNeeded()
     // service name should be in time series panel
-    expect(await page.getByTestId('data-testid Panel header mimir-ingester').nth(0)).toBeDefined()
+    expect(await page.getByTestId('data-testid Panel header mimir-ingester').nth(0)).toBeVisible()
     // service name should also be in logs panel, just not visible to the user
-    expect(await page.getByTestId('data-testid Panel header mimir-ingester').nth(1)).toBeDefined();
+    expect(await page.getByTestId('data-testid Panel header mimir-ingester').nth(1)).toBeVisible();
 
     // Exit out of the dropdown
     await page.keyboard.press('Escape');

@@ -72,7 +72,6 @@ export function getDetectedLabelsFrame(sceneRef: SceneObject) {
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
     variableNames: [VAR_DATASOURCE, VAR_LABELS, VAR_FIELDS, VAR_PATTERNS, VAR_LEVELS],
-    // onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
   });
 
   public constructor(

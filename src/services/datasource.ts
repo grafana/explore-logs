@@ -138,10 +138,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     if (targets.length !== 1) {
       throw new Error('Patterns query can only have a single target!');
     }
-
-    const targetsInterpolated = ds.interpolateVariablesInQueries(targets, request.scopedVars);
-    const interpolatedTarget = targetsInterpolated[0];
-    const expression = interpolatedTarget.expr;
+    const { interpolatedTarget, expression } = this.interpolate(ds, targets, request);
 
     try {
       const dsResponse = ds.getResource(
@@ -221,6 +218,20 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     return subscriber;
   }
 
+  private interpolate(
+    ds: DataSourceWithBackend<LokiQuery>,
+    targets: Array<LokiQuery & SceneDataQueryResourceRequest>,
+    request: DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest>
+  ) {
+    const targetsInterpolated = ds.interpolateVariablesInQueries(targets, request.scopedVars);
+    if (!targetsInterpolated.length) {
+      throw new Error('Datasource failed to interpolate query!');
+    }
+    const interpolatedTarget = targetsInterpolated[0];
+    const expression = interpolatedTarget.expr;
+    return { interpolatedTarget, expression };
+  }
+
   private async getDetectedLabels(
     request: DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest>,
     ds: DataSourceWithBackend<LokiQuery>,
@@ -234,9 +245,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
       throw new Error('Detected labels query can only have a single target!');
     }
 
-    const targetsInterpolated = ds.interpolateVariablesInQueries(targets, request.scopedVars);
-    const interpolatedTarget = targetsInterpolated[0];
-    const expression = interpolatedTarget.expr;
+    const { interpolatedTarget, expression } = this.interpolate(ds, targets, request);
 
     try {
       const response = await ds.getResource<DetectedLabelsResponse>(
