@@ -1,7 +1,7 @@
 import { Observable, Subscriber, Subscription } from 'rxjs';
 import { v4 as uuidv4 } from 'uuid';
 
-import { DataQueryRequest, LoadingState, DataQueryResponse } from '@grafana/data';
+import { DataQueryRequest, LoadingState, DataQueryResponse, TimeRange } from '@grafana/data';
 import { LokiQuery } from './query';
 import { addShardingPlaceholderSelector, interpolateShardingSelector, isLogsQuery } from './logql';
 import { combineResponses } from './combineResponses';
@@ -133,7 +133,7 @@ export function splitQueriesByStreamShard(
           console.warn(`Shard splitting not supported. Issuing a regular query.`);
           runNextRequest(subscriber);
         } else {
-          const shardRequests = getShardRequests(startShard, shards);
+          const shardRequests = getShardRequests(startShard, shards, request.range);
           console.log(`Querying up to ${startShard} shards`);
           runNextRequest(subscriber, 0, shardRequests);
         }
@@ -166,18 +166,29 @@ export function runShardSplitQuery(datasource: DataSourceWithBackend<LokiQuery>,
   return splitQueriesByStreamShard(datasource, request, queries);
 }
 
-function getShardRequests(maxShard: number, shards: number[]) {
-  shards.sort((a, b) => a - b).reverse();
-  const maxRequests = Math.min(2, shards.length - 1);
+function getShardRequests(maxShard: number, shards: number[], range: TimeRange) {
+  const hours = range.to.diff(range.from, 'hour');
+
+  shards.sort((a, b) => a - b);
+  const maxRequests = Math.min(4, shards.length - 1);
   const groupSize = Math.ceil(maxShard / maxRequests);
   const requests: number[][] = [];
-  for (let i = maxShard; i >= 0; i -= groupSize) {
+  for (let i = maxShard; i > 0; i -= groupSize) {
     const request: number[] = [];
     for (let j = i; j >= i - groupSize && j >= 0 && shards.length > 0; j -= 1) {
       request.push(shards[j]);
     }
     requests.push(request);
   }
-  requests.push([-1]);
+
+  // With shorter intervals, this gives a similar UX to non-sharded requests.
+  if (hours <= 6) {
+    requests.push([-1]);
+    requests.reverse();
+  } else {
+    requests.reverse();
+    requests.push([-1]);
+  }
+
   return requests;
 }
