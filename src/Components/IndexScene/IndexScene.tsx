@@ -43,7 +43,7 @@ import { getDrilldownSlug, PageSlugs } from '../../services/routing';
 import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { locationService } from '@grafana/runtime';
-import { renderLogQLFieldFilters, renderLogQLStreamSelector, renderPatternFilters } from 'services/query';
+import { renderLogQLFieldFilters, renderLogQLStreamLabels, renderPatternFilters } from 'services/query';
 
 export interface AppliedPattern {
   pattern: string;
@@ -182,7 +182,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     layout: 'vertical',
     label: 'Service',
     filters: initialFilters ?? [],
-    expressionBuilder: renderLogQLStreamSelector,
+    expressionBuilder: renderLogQLStreamLabels,
     hide: VariableHide.hideLabel,
     key: 'adhoc_service_filter',
   });

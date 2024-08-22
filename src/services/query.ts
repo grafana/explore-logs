@@ -57,7 +57,7 @@ const defaultQueryParams = {
   supportingQueryType: PLUGIN_ID,
 };
 
-export function renderLogQLStreamSelector(filters: AdHocVariableFilter[]) {
+export function renderLogQLStreamLabels(filters: AdHocVariableFilter[]) {
   return filters.map((filter) => renderFilter(filter)).join(', ');
 }
 
