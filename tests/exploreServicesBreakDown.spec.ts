@@ -476,12 +476,18 @@ test.describe('explore services breakdown page', () => {
       expect(queries[0].expr).toContain('bytes!=""')
       numberOfQueries++
 
-      await route.continue()
+      await route.fulfill({json: []})
+      // await route.continue()
     })
     // Click the button
     await bytesIncludeButton.click()
-    // Assert that it has been rendered, and shows as selected
-    expect(await bytesIncludeButton.getAttribute('aria-selected')).toEqual('true')
+
+    // Assert the panel is still there
+    expect(page.getByTestId('data-testid Panel header bytes')).toBeDefined()
+
+    // Assert that the button has been removed, as "bytes" is now on 100% of the logs
+    await expect(bytesIncludeButton).not.toBeVisible()
+
     // Assert that we actually had some queries
     expect(numberOfQueries).toBeGreaterThan(0)
   })
@@ -515,12 +521,16 @@ test.describe('explore services breakdown page', () => {
       expect(queries[0].expr).toContain('bytes=""')
       numberOfQueries++
 
-      await route.continue()
+      await route.fulfill({json: []})
     })
     // Click the button
     await bytesIncludeButton.click()
     // Assert that the panel is no longer rendered
-    expect(await bytesIncludeButton).not.toBeInViewport()
+    await expect(bytesIncludeButton).not.toBeInViewport()
+
+    await page.pause()
+    // Assert that the viz was excluded
+    await expect(page.getByTestId('data-testid Panel header bytes')).toHaveCount(0)
     // Assert that we actually had some queries
     expect(numberOfQueries).toBeGreaterThan(0)
   })
