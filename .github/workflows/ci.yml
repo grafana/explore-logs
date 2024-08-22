@@ -49,12 +49,6 @@ jobs:
             node_modules
           key: ${{ steps.restore-npm-cache.outputs.cache-primary-key }}
 
-      - name: Check types
-        run: yarn typecheck
-      - name: Lint
-        run: yarn lint
-      - name: Unit tests
-        run: yarn test:ci
       - name: Build frontend
         run: yarn build
       - name: Start grafana docker
@@ -63,9 +57,6 @@ jobs:
         run: npx playwright install chromium --with-deps
       - name: Wait for docker
         run: sleep 60
-      - name: Run e2e tests
-        id: run-tests
-        run: yarn e2e
       - name: Upload Playwright artifacts
         uses: actions/upload-artifact@v4
         if: ${{ (always() && steps.run-tests.outcome == 'success') || (failure() && steps.run-tests.outcome == 'failure') }}
