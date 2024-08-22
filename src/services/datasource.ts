@@ -339,7 +339,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
           { name: 'volume', values: volumeResponse?.data.result?.map((r) => Number(r.value[1])) },
         ],
       });
-      subscriber.next({ data: [df], state: LoadingState.Done });
+      subscriber.next({ data: [df] });
     } catch (e) {
       subscriber.next({ data: [], state: LoadingState.Error });
     }
