@@ -167,7 +167,8 @@ export function runShardSplitQuery(datasource: DataSourceWithBackend<LokiQuery>,
 }
 
 function getShardRequests(maxShard: number, shards: number[]) {
-  const maxRequests = Math.min(5, shards.length - 1);
+  shards.sort((a, b) => a - b).reverse();
+  const maxRequests = Math.min(2, shards.length - 1);
   const groupSize = Math.ceil(maxShard / maxRequests);
   const requests: number[][] = [];
   for (let i = maxShard; i >= 0; i -= groupSize) {
