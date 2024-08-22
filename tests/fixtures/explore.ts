@@ -1,6 +1,7 @@
 import type { Page, Locator } from '@playwright/test';
 import pluginJson from '../../src/plugin.json';
 import { testIds } from '../../src/services/testIds';
+import {expect} from "@grafana/plugin-e2e";
 
 export class ExplorePage {
   private readonly firstServicePageSelect: Locator;
@@ -25,6 +26,20 @@ export class ExplorePage {
 
   async addServiceName() {
     await this.firstServicePageSelect.click();
+  }
+
+  async scrollToBottom() {
+    const main = this.page.locator('main#pageContent')
+
+    // Scroll the page container to the bottom
+    await main.evaluate((main) => main.scrollTo(0, main.scrollHeight));
+  }
+
+  async assertFieldsIndex() {
+    // Assert the fields tab is active
+    expect(await this.page.getByTestId('data-testid tab-fields').getAttribute('aria-selected')).toEqual('true')
+    // Assert the all option is selected
+    await expect(this.page.getByText('FieldAll')).toBeVisible()
   }
 
   //@todo pull service from url if not in params

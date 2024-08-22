@@ -86,14 +86,122 @@ test.describe('explore services breakdown page', () => {
     expect(urlArray[urlArray.length - 2]).toEqual('label')
   });
 
-  test('should exclude a label, update filters, open log panel', async ({ page }) => {
+  test('should update labels sort order', async ({page}) => {
+    await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
+    await page.getByLabel('Select detected_level').click();
+
+    // Assert loading is done and panels are showing
+    const panels = page.getByTestId(/data-testid Panel header/)
+    await expect(panels.first()).toBeVisible()
+    const panelTitles: Array<string | null> = [];
+
+    for (const panel of await panels.all()) {
+      const panelTitle = await panel.getByRole('heading').textContent()
+      panelTitles.push(panelTitle)
+    }
+
+    expect(panelTitles.length).toBeGreaterThan(0)
+
+    await page.getByTestId('data-testid SortBy direction').click()
+    // Desc is the default option, this should be a noop
+    await page.getByRole('option', {name: 'Desc'}).click()
+
+    await expect(panels.first()).toBeVisible()
+    // assert the sort order hasn't changed
+    for (let i = 0; i < panelTitles.length; i++) {
+      expect(await panels.nth(i).getByRole('heading').textContent()).toEqual(panelTitles[i])
+    }
+
+    await page.getByTestId('data-testid SortBy direction').click()
+    // Now change the sort order
+    await page.getByRole('option', {name: 'Asc'}).click()
+
+    await expect(panels.first()).toBeVisible()
+    // assert the sort order hasn't changed
+    for (let i = 0; i < panelTitles.length; i++) {
+      expect(await panels.nth(i).getByRole('heading').textContent()).toEqual(panelTitles[panelTitles.length - i - 1])
+    }
+  })
+
+  test('should update fields sort order', async ({page}) => {
+    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
+    // Use the dropdown since the tenant field might not be visible
+    await page.getByText('FieldAll').click();
+    await page.keyboard.type('tenan');
+    await page.keyboard.press('Enter');
+
+    // Assert loading is done and panels are showing
+    const panels = page.getByTestId(/data-testid Panel header/)
+    await expect(panels.first()).toBeVisible()
+    const panelTitles: Array<string | null> = [];
+
+    for (const panel of await panels.all()) {
+      const panelTitle = await panel.getByRole('heading').textContent()
+      panelTitles.push(panelTitle)
+    }
+
+    expect(panelTitles.length).toBeGreaterThan(0)
+
+    await page.getByTestId('data-testid SortBy direction').click()
+    // Desc is the default option, this should be a noop
+    await page.getByRole('option', {name: 'Desc'}).click()
+
+    await expect(panels.first()).toBeVisible()
+    // assert the sort order hasn't changed
+    for (let i = 0; i < panelTitles.length; i++) {
+      expect(await panels.nth(i).getByRole('heading').textContent()).toEqual(panelTitles[i])
+    }
+
+    await page.getByTestId('data-testid SortBy direction').click()
+    // Now change the sort order
+    await page.getByRole('option', {name: 'Asc'}).click()
+
+    await expect(panels.first()).toBeVisible()
+    // assert the sort order hasn't changed
+    for (let i = 0; i < panelTitles.length; i++) {
+      expect(await panels.nth(i).getByRole('heading').textContent()).toEqual(panelTitles[panelTitles.length - i - 1])
+    }
+  })
+
+  test('should search labels', async({page}) => {
+    await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
+    await page.getByLabel('Select detected_level').click();
+    await page.getByPlaceholder('Search for value').click()
+    const panels = page.getByTestId(/data-testid Panel header/)
+    await expect(panels.first()).toBeVisible()
+    expect(await panels.count()).toEqual(4)
+    await page.keyboard.type('errr')
+    expect(await panels.count()).toEqual(1)
+  })
+
+  test('should search fields', async({page}) => {
+    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
+    await page.getByLabel('Select caller').click();
+    await page.getByPlaceholder('Search for value').click()
+    const panels = page.getByTestId(/data-testid Panel header/)
+    await expect(panels.first()).toBeVisible()
+    expect(await panels.count()).toBeGreaterThan(1)
+    await page.keyboard.type('brod')
+    expect(await panels.count()).toEqual(1)
+  })
+
+  test('should exclude a label, update filters', async ({ page }) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
     await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
     await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
-    await expect(page.getByTestId(testIds.exploreServiceDetails.searchLogs)).toBeVisible();
     // Adhoc err filter should be added
     await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
+  });
+
+  test('should include a label, update filters, open filters breakdown', async ({ page }) => {
+    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
+    await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
+    await page.getByRole('button', { name: 'Include' }).nth(0).click();
+
+    await explorePage.assertFieldsIndex()
+    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
+    await expect(page.getByText('=').nth(1)).toBeVisible();
   });
 
   test('should only load fields that are in the viewport', async ({page}) => {
@@ -130,11 +238,7 @@ test.describe('explore services breakdown page', () => {
     // Fields on top should be loaded
     expect(requestCount).toEqual(6)
 
-    const main = page.locator('main#pageContent')
-
-    // Scroll the page container to the bottom
-    await main.evaluate((main) => main.scrollTo(0, main.scrollHeight));
-
+    await explorePage.scrollToBottom()
     // Panel on the bottom should be visible
     await expect(page.getByTestId('data-testid Panel header version')).toBeInViewport()
 
@@ -147,13 +251,11 @@ test.describe('explore services breakdown page', () => {
     await page.unrouteAll();
   })
 
-
   test('should select a field, update filters, open log panel', async ({ page }) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
     await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
     await page.getByRole('button', { name: 'Include' }).nth(0).click();
-    // Should see the logs panel full of errors
-    await expect(page.getByTestId(testIds.exploreServiceDetails.searchLogs)).toBeVisible();
+    await explorePage.assertFieldsIndex()
     // Adhoc err filter should be added
     await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
   });

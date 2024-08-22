@@ -1,10 +1,11 @@
-import { DataFrame, PanelData } from '@grafana/data';
+import { DataFrame } from '@grafana/data';
 import { DrawStyle, StackingMode } from '@grafana/ui';
-import { PanelBuilders, SceneCSSGridItem, SceneDataNode, SceneObject } from '@grafana/scenes';
+import { PanelBuilders, SceneCSSGridItem, SceneDataTransformer, SceneObject } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
 import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { getLogsFormatVariable, VAR_FIELDS, VAR_LABELS } from './variables';
 import { setLevelColorOverrides } from './panel';
+import { map, Observable } from 'rxjs';
 
 export type DetectedLabel = {
   label: string;
@@ -63,12 +64,16 @@ export function getFilterBreakdownValueScene(
   style: DrawStyle,
   variableName: typeof VAR_FIELDS | typeof VAR_LABELS
 ) {
-  return (data: PanelData, frame: DataFrame, frameIndex: number) => {
+  return (frame: DataFrame, frameIndex: number) => {
     const panel = PanelBuilders.timeseries() //
       .setOption('legend', { showLegend: false })
       .setCustomFieldConfig('fillOpacity', 9)
       .setTitle(getTitle(frame))
-      .setData(new SceneDataNode({ data: { ...data, series: [frame] } }))
+      .setData(
+        new SceneDataTransformer({
+          transformations: [() => selectFrameTransformation(frame)],
+        })
+      )
       .setColor({ mode: 'fixed', fixedColor: getColorByIndex(frameIndex) })
       .setOverrides(setLevelColorOverrides)
       .setHeaderActions(new AddToFiltersButton({ frame, variableName }));
@@ -85,6 +90,16 @@ export function getFilterBreakdownValueScene(
     return new SceneCSSGridItem({
       body: panel.build(),
     });
+  };
+}
+
+export function selectFrameTransformation(frame: DataFrame) {
+  return (source: Observable<DataFrame[]>) => {
+    return source.pipe(
+      map(() => {
+        return [frame];
+      })
+    );
   };
 }
 

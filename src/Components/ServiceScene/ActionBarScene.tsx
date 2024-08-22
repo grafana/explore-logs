@@ -91,7 +91,7 @@ const getCounter = (tab: BreakdownViewDefinition, state: ServiceSceneState) => {
     case 'patterns':
       return state.patternsCount;
     case 'labels':
-      return (state.labels?.filter((l) => l.label !== ALL_VARIABLE_VALUE) ?? []).length;
+      return state.labelsCount;
     default:
       return undefined;
   }

@@ -4,6 +4,8 @@ import { BusEventBase, DataFrame, FieldReducerInfo, ReducerID, SelectableValue, 
 import { getLabelValueFromDataFrame } from 'services/levels';
 import { InlineField, Select } from '@grafana/ui';
 import { getSortByPreference, setSortByPreference } from 'services/store';
+import { testIds } from '../../../services/testIds';
+import { DEFAULT_SORT_BY } from '../../../services/sorting';
 
 export interface SortBySceneState extends SceneObjectState {
   target: 'fields' | 'labels';
@@ -62,7 +64,7 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
   ];
 
   constructor(state: Pick<SortBySceneState, 'target'>) {
-    const { sortBy, direction } = getSortByPreference(state.target, 'changepoint', 'desc');
+    const { sortBy, direction } = getSortByPreference(state.target, DEFAULT_SORT_BY, 'desc');
     super({
       target: state.target,
       sortBy,
@@ -96,6 +98,7 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
       <>
         <InlineField>
           <Select
+            data-testid={testIds.breakdowns.common.sortByDirection}
             onChange={model.onDirectionChange}
             aria-label="Sort direction"
             placeholder=""
@@ -118,6 +121,7 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
           tooltip="Calculate a derived quantity from the values in your time series and sort by this criteria. Defaults to standard deviation."
         >
           <Select
+            data-testid={testIds.breakdowns.common.sortByFunction}
             value={value}
             width={20}
             isSearchable={true}

@@ -1,17 +1,24 @@
 import React from 'react';
 
-import { AdHocVariableFilter, DataFrame } from '@grafana/data';
-import { SceneObjectState, SceneObjectBase, SceneComponentProps, SceneObject, sceneGraph } from '@grafana/scenes';
+import { AdHocVariableFilter, BusEventBase, DataFrame } from '@grafana/data';
+import { SceneComponentProps, SceneObject, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { VariableHide } from '@grafana/schema';
-import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
+import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getAdHocFiltersVariable, LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from 'services/variables';
 import { FilterButton } from 'Components/FilterButton';
 import { FilterOp } from 'services/filters';
-import { ServiceScene } from '../ServiceScene';
+import { getDetectedLabelsFrame } from '../ServiceScene';
 
 export interface AddToFiltersButtonState extends SceneObjectState {
   frame: DataFrame;
   variableName: string;
+}
+
+export class AddFilterEvent extends BusEventBase {
+  constructor(public operator: FilterType, public key: string, public value: string) {
+    super();
+  }
+  public static type = 'add-filter';
 }
 
 /**
@@ -58,6 +65,8 @@ export function addToFilters(
     ];
   }
 
+  scene.publishEvent(new AddFilterEvent(operator, key, value), true);
+
   variable.setState({
     filters,
     hide: VariableHide.hideLabel,
@@ -96,8 +105,7 @@ function validateVariableNameForField(field: string, variableName: string) {
 }
 
 function resolveVariableNameForField(field: string, scene: SceneObject) {
-  const serviceScene = sceneGraph.getAncestor(scene, ServiceScene);
-  const indexedLabel = serviceScene.state.labels?.find((label) => label.label === field);
+  const indexedLabel = getDetectedLabelsFrame(scene)?.fields?.find((label) => label.name === field);
   return indexedLabel ? VAR_LABELS : VAR_FIELDS;
 }
 

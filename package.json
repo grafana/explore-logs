@@ -11,6 +11,8 @@
     "lint": "eslint --cache --ignore-path ./.gitignore --ext .js,.jsx,.ts,.tsx .",
     "lint:fix": "npm run lint -- --fix",
     "e2e": "playwright test -x --trace on",
+    "e2e:10x": "playwright test -x --trace on --repeat-each=10 --workers 1",
+    "e2e:flake": "yarn e2e:10x",
     "e2e:debug": "playwright test --debug -x --trace on /test",
     "e2e:codegen": "playwright install && playwright codegen",
     "generate-logs": "pushd generator; go mod download; go run . -url http://localhost:3100/loki/api/v1/push; popd",

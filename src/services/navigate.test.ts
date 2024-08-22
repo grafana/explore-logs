@@ -9,7 +9,6 @@ import { ServiceScene, ServiceSceneCustomState } from '../Components/ServiceScen
 import { locationService } from '@grafana/runtime';
 import { IndexScene } from '../Components/IndexScene/IndexScene';
 import { getMetadataService, initializeMetadataService } from './metadata';
-import { DetectedLabel } from './fields';
 
 const locationSpy = jest.spyOn(locationService, 'push');
 let mockIndexScene: IndexScene;
@@ -27,7 +26,6 @@ describe('navigate', () => {
   describe('navigateToValueBreakdown', () => {
     let drillDownLabel: string,
       serviceLabel: string,
-      labels: DetectedLabel[],
       mockServiceSceneState: ServiceSceneCustomState;
     beforeAll(() => {
       drillDownLabel = 'label_name';
@@ -46,15 +44,7 @@ describe('navigate', () => {
         },
       } as IndexScene;
 
-      labels = [
-        {
-          label: drillDownLabel,
-          cardinality: 10,
-        },
-      ];
-
       mockServiceSceneState = {
-        labels,
         patternsCount: 2,
         fields: ['field1', 'field2'],
         fieldsCount: 2,

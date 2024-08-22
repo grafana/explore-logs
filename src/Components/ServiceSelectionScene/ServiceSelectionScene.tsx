@@ -344,8 +344,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   };
 
   private getServices(series?: DataFrame[]) {
-    const servicesByVolume: string[] =
-      series?.[0]?.fields?.find((field) => field.name === 'service_name')?.values ?? [];
+    const servicesByVolume: string[] = series?.[0]?.fields?.find((field) => field.name === SERVICE_NAME)?.values ?? [];
     const dsString = getDataSourceVariable(this).getValue()?.toString();
     const searchString = getServiceSelectionStringVariable(this).getValue();
     const servicesToQuery = createListOfServicesToQuery(servicesByVolume, dsString, String(searchString));

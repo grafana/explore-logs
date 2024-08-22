@@ -18,19 +18,26 @@ export class MetadataService {
   }
 
   public setPatternsCount(count: number) {
-    if (this.serviceSceneState) {
-      this.serviceSceneState.patternsCount = count;
-    } else {
+    if (!this.serviceSceneState) {
       this.serviceSceneState = {};
-      this.serviceSceneState.patternsCount = count;
     }
+
+    this.serviceSceneState.patternsCount = count;
+  }
+
+  public setLabelsCount(count: number) {
+    if (!this.serviceSceneState) {
+      this.serviceSceneState = {};
+    }
+
+    this.serviceSceneState.labelsCount = count;
   }
 
   public setServiceSceneState(state: ServiceSceneCustomState) {
     this.serviceSceneState = {
       fields: state.fields,
-      labels: state.labels,
       patternsCount: state.patternsCount,
+      labelsCount: state.labelsCount,
       fieldsCount: state.fieldsCount,
       loading: state.loading,
     };

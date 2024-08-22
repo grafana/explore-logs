@@ -24,13 +24,13 @@ export function getTimeSeriesExpr(sceneRef: SceneObject, streamSelectorName: str
   const levelsVariables = getLevelsVariable(sceneRef);
 
   let labelExpressionToAdd;
-  let fieldExpressionToAdd = '';
+  let metadataExpressionToAdd = '';
   if (excludeEmpty) {
     // `LEVEL_VARIABLE_VALUE` is a special case where we don't want to add this to the stream selector
     if (streamSelectorName !== LEVEL_VARIABLE_VALUE) {
       labelExpressionToAdd = { key: streamSelectorName, operator: '!=', value: '' };
     } else {
-      fieldExpressionToAdd = `| ${LEVEL_VARIABLE_VALUE} != ""`;
+      metadataExpressionToAdd = `| ${LEVEL_VARIABLE_VALUE} != ""`;
     }
   }
 
@@ -44,7 +44,7 @@ export function getTimeSeriesExpr(sceneRef: SceneObject, streamSelectorName: str
 
   // if we have fields, we also need to add `VAR_LOGS_FORMAT_EXPR`
   if (fields.length || levels.length) {
-    return `sum(count_over_time({${streamSelectors}} ${fieldExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_FIELDS_EXPR} [$__auto])) by (${streamSelectorName})`;
+    return `sum(count_over_time({${streamSelectors}} ${metadataExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_FIELDS_EXPR} [$__auto])) by (${streamSelectorName})`;
   }
-  return `sum(count_over_time({${streamSelectors}} ${fieldExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} [$__auto])) by (${streamSelectorName})`;
+  return `sum(count_over_time({${streamSelectors}} ${metadataExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} [$__auto])) by (${streamSelectorName})`;
 }

@@ -4,6 +4,7 @@ import {
   FieldConfigBuilders,
   FieldConfigOverridesBuilder,
   PanelBuilders,
+  SceneDataProvider,
   SceneDataTransformer,
   SceneObject,
   SceneQueryRunner,
@@ -144,4 +145,16 @@ export function getQueryRunner(queries: LokiQuery[]) {
     datasource: { uid: WRAPPED_LOKI_DS_UID },
     queries: queries,
   });
+}
+
+export function getQueryRunnerFromProvider(provider: SceneDataProvider): SceneQueryRunner {
+  if (provider instanceof SceneQueryRunner) {
+    return provider;
+  }
+
+  if (provider.state.$data instanceof SceneQueryRunner) {
+    return provider.state.$data;
+  }
+
+  throw new Error('SceneDataProvider is missing SceneQueryRunner');
 }

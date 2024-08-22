@@ -4,6 +4,8 @@ import { getLabelValueFromDataFrame } from './levels';
 import { memoize } from 'lodash';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from './analytics';
 
+export const DEFAULT_SORT_BY = 'changepoint';
+
 export const sortSeries = memoize(
   (series: DataFrame[], sortBy: string, direction: string) => {
     if (sortBy === 'alphabetical') {
