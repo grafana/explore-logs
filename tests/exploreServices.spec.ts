@@ -12,7 +12,7 @@ test.describe('explore services page', () => {
     await explorePage.gotoServices();
   });
 
-  test.only('should filter service labels on search', async ({ page }) => {
+  test('should filter service labels on search', async ({ page }) => {
     await explorePage.servicesSearch.click();
     await explorePage.servicesSearch.pressSequentially('mimir');
 
