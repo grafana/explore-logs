@@ -79,7 +79,7 @@ export function splitQueriesByStreamShard(
         return;
       }
 
-      retriesMap.set(key, 1);
+      retriesMap.set(key, retries + 1);
 
       console.log(`Retrying ${cycle} (${retries + 1})`);
       runNextRequest(subscriber, cycle, shardRequests);
