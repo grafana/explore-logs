@@ -4,6 +4,8 @@ import { AppliedPattern } from 'Components/IndexScene/IndexScene';
 import { PLUGIN_ID } from './routing';
 import { SceneDataQueryResourceRequest } from './datasource';
 import { VAR_DATASOURCE_EXPR } from './variables';
+import { FilterOp } from './filters';
+import { groupBy } from 'lodash';
 
 export type LokiQuery = {
   refId: string;
@@ -62,7 +64,19 @@ export function joinFilters(filters: AdHocVariableFilter[]) {
 }
 
 export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
-  return filters.map((filter) => `| ${renderFilter(filter)}`).join(' ');
+  const positive = filters.filter((filter) => filter.operator === FilterOp.Equal);
+  const negative = filters.filter((filter) => filter.operator === FilterOp.NotEqual);
+
+  const positiveGroups = groupBy(positive, (filter) => filter.key);
+
+  let positiveFilters = '';
+  for (const key in positiveGroups) {
+    positiveFilters += ' | ' + positiveGroups[key].map((filter) => `${renderFilter(filter)}`).join(' or ');
+  }
+
+  const negativeFilters = negative.map((filter) => `| ${renderFilter(filter)}`).join(' ');
+
+  return `${positiveFilters} ${negativeFilters}`.trim();
 }
 
 function renderFilter(filter: AdHocVariableFilter) {
