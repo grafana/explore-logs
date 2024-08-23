@@ -75,8 +75,6 @@ export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
     }
   }
 
-  console.log(types);
-
   result.type = types.length === 1 ? types[0] : 'mixed';
 
   return result;
