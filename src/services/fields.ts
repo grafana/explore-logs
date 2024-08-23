@@ -64,10 +64,7 @@ export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
     return result;
   }
 
-  for (let i = 0; i < linesField.values.length; i++) {
-    if (types.length === 2) {
-      break;
-    }
+  for (let i = 0; i < linesField.values.length && types.length < 2; i++) {
     const line = linesField.values[i].trim();
     if (line.startsWith('{') && line.endsWith('}')) {
       if (!types.includes('json')) {
@@ -77,6 +74,8 @@ export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
       types.push('logfmt');
     }
   }
+
+  console.log(types);
 
   result.type = types.length === 1 ? types[0] : 'mixed';
 
