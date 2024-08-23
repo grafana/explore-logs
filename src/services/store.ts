@@ -1,4 +1,5 @@
 import pluginJson from '../plugin.json';
+import {SortBy, SortDirection} from "../Components/ServiceScene/Breakdowns/SortByScene";
 
 const SERVICES_LOCALSTORAGE_KEY = `${pluginJson.id}.services.favorite`;
 const DS_LOCALSTORAGE_KEY = `${pluginJson.id}.datasource`;
@@ -59,13 +60,15 @@ export function addLastUsedDataSourceToStorage(dsKey: string) {
 }
 
 const SORT_BY_LOCALSTORAGE_KEY = `${pluginJson.id}.values.sort`;
-export function getSortByPreference(target: string, defaultSortBy: string, defaultDirection: 'desc' | 'asc') {
-  const preference = localStorage.getItem(`${SORT_BY_LOCALSTORAGE_KEY}.${target}.by`) ?? '';
+export function getSortByPreference(target: string, defaultSortBy: SortBy, defaultDirection: SortDirection): {sortBy: SortBy | '', direction: SortDirection} {
+  const preference  = (localStorage.getItem(`${SORT_BY_LOCALSTORAGE_KEY}.${target}.by`) ?? '');
   const parts = preference.split('.');
   if (!parts[0] || !parts[1]) {
     return { sortBy: defaultSortBy, direction: defaultDirection };
   }
-  return { sortBy: parts[0], direction: parts[1] };
+  const sortBy = parts[0] as SortBy
+  const direction = parts[1] as SortDirection
+  return { sortBy, direction };
 }
 
 export function setSortByPreference(target: string, sortBy: string, direction: string) {

@@ -11,27 +11,27 @@ import {
   SceneObjectState,
   SceneReactObject,
 } from '@grafana/scenes';
-import { buildDataQuery, LokiQuery } from '../../../services/query';
-import { getSortByPreference } from '../../../services/store';
-import { DataQueryError, LoadingState } from '@grafana/data';
-import { LayoutSwitcher } from './LayoutSwitcher';
-import { getQueryRunner } from '../../../services/panel';
-import { ByFrameRepeater } from './ByFrameRepeater';
-import { Alert, DrawStyle, LoadingPlaceholder } from '@grafana/ui';
-import { getFilterBreakdownValueScene } from '../../../services/fields';
-import { getLabelValue } from './SortByScene';
-import { getFieldGroupByVariable, VAR_FIELDS } from '../../../services/variables';
+import {buildDataQuery, LokiQuery} from '../../../services/query';
+import {getSortByPreference} from '../../../services/store';
+import {DataQueryError, LoadingState} from '@grafana/data';
+import {LayoutSwitcher} from './LayoutSwitcher';
+import {getQueryRunner} from '../../../services/panel';
+import {ByFrameRepeater} from './ByFrameRepeater';
+import {Alert, DrawStyle, LoadingPlaceholder} from '@grafana/ui';
+import {getFilterBreakdownValueScene} from '../../../services/fields';
+import {getLabelValue} from './SortByScene';
+import {getFieldGroupByVariable, VAR_FIELDS} from '../../../services/variables';
 import React from 'react';
 import {
   FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS,
   FieldsBreakdownScene,
   getFieldBreakdownExpr,
 } from './FieldsBreakdownScene';
-import { AddFilterEvent } from './AddToFiltersButton';
-import { navigateToDrilldownPage } from '../../../services/navigate';
-import { PageSlugs } from '../../../services/routing';
-import { ServiceScene } from '../ServiceScene';
-import { DEFAULT_SORT_BY } from '../../../services/sorting';
+import {AddFilterEvent} from './AddToFiltersButton';
+import {navigateToDrilldownPage} from '../../../services/navigate';
+import {PageSlugs} from '../../../services/routing';
+import {ServiceScene} from '../ServiceScene';
+import {DEFAULT_SORT_BY} from '../../../services/sorting';
 
 export interface FieldValuesBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher | SceneReactObject;
@@ -176,7 +176,8 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
           getLayoutChild: getFilterBreakdownValueScene(
             getLabelValue,
             query?.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-            VAR_FIELDS
+            VAR_FIELDS,
+            sceneGraph.getAncestor(this, FieldsBreakdownScene).state.sort
           ),
           sortBy,
           direction,
@@ -198,7 +199,8 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
           getLayoutChild: getFilterBreakdownValueScene(
             getLabelValue,
             query?.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-            VAR_FIELDS
+            VAR_FIELDS,
+            sceneGraph.getAncestor(this, FieldsBreakdownScene).state.sort
           ),
           sortBy,
           direction,

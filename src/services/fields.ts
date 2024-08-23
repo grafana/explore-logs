@@ -1,11 +1,12 @@
-import { DataFrame } from '@grafana/data';
+import {DataFrame, ReducerID} from '@grafana/data';
 import { DrawStyle, StackingMode } from '@grafana/ui';
-import { PanelBuilders, SceneCSSGridItem, SceneDataTransformer, SceneObject } from '@grafana/scenes';
+import {PanelBuilders, SceneCSSGridItem, SceneDataTransformer, sceneGraph, SceneObject} from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
 import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { getLogsFormatVariable, VAR_FIELDS, VAR_LABELS } from './variables';
 import { setLevelColorOverrides } from './panel';
 import { map, Observable } from 'rxjs';
+import {SortByScene} from "../Components/ServiceScene/Breakdowns/SortByScene";
 
 export type DetectedLabel = {
   label: string;
@@ -62,8 +63,19 @@ export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
 export function getFilterBreakdownValueScene(
   getTitle: (df: DataFrame) => string,
   style: DrawStyle,
-  variableName: typeof VAR_FIELDS | typeof VAR_LABELS
+  variableName: typeof VAR_FIELDS | typeof VAR_LABELS,
+  sort: SortByScene
 ) {
+  console.log('sort', sort)
+  let reducerID: ReducerID;
+  if(sort.state.sortBy){
+    // Is there a way to avoid the type assertion?
+    const values: string[] = Object.values(ReducerID);
+    if(values.includes(sort.state.sortBy)){
+      reducerID = sort.state.sortBy as ReducerID
+    }
+  }
+
   return (frame: DataFrame, frameIndex: number) => {
     const panel = PanelBuilders.timeseries() //
       .setOption('legend', { showLegend: false })
@@ -87,6 +99,14 @@ export function getFilterBreakdownValueScene(
         .setOverrides(setLevelColorOverrides)
         .setCustomFieldConfig('drawStyle', DrawStyle.Bars);
     }
+
+    if(reducerID){
+      panel.setOption('legend', {
+        showLegend: true,
+        calcs: [reducerID]
+      })
+    }
+
     return new SceneCSSGridItem({
       body: panel.build(),
     });
