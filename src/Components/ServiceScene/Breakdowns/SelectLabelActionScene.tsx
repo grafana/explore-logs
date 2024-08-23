@@ -6,7 +6,7 @@ import { Button } from '@grafana/ui';
 import React from 'react';
 import { addToFilters } from './AddToFiltersButton';
 import { FilterButton } from '../../FilterButton';
-import { getFieldsVariable } from '../../../services/variables';
+import { EmptyVariableValue, getFieldsVariable } from '../../../services/variables';
 import { Field, Labels, LoadingState } from '@grafana/data';
 import { FilterOp } from '../../../services/filters';
 
@@ -89,16 +89,16 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectFieldActionSce
   };
 
   public onClickExcludeEmpty = () => {
-    addToFilters(this.state.labelName, '""', 'exclude', this);
+    addToFilters(this.state.labelName, EmptyVariableValue, 'exclude', this);
   };
 
   public onClickIncludeEmpty = () => {
     // If json do we want != '{}'?
-    addToFilters(this.state.labelName, '""', 'include', this);
+    addToFilters(this.state.labelName, EmptyVariableValue, 'include', this);
   };
 
   public clearFilter = () => {
-    addToFilters(this.state.labelName, '""', 'clear', this);
+    addToFilters(this.state.labelName, EmptyVariableValue, 'clear', this);
   };
 
   private calculateSparsity() {

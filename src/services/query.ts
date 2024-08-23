@@ -3,7 +3,7 @@ import { DataSourceRef } from '@grafana/schema';
 import { AppliedPattern } from 'Components/IndexScene/IndexScene';
 import { PLUGIN_ID } from './routing';
 import { SceneDataQueryResourceRequest } from './datasource';
-import { VAR_DATASOURCE_EXPR } from './variables';
+import { EmptyVariableValue, VAR_DATASOURCE_EXPR } from './variables';
 import { FilterOp } from './filters';
 import { groupBy, trim } from 'lodash';
 
@@ -95,7 +95,7 @@ export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
 }
 
 function renderFilter(filter: AdHocVariableFilter) {
-  if (filter.value === '""') {
+  if (filter.value === EmptyVariableValue) {
     return `${filter.key}${filter.operator}${filter.value}`;
   }
   return `${filter.key}${filter.operator}\`${filter.value}\``;
