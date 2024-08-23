@@ -14,7 +14,7 @@ import React from 'react';
 import { addToFilters } from './AddToFiltersButton';
 import { FilterButton } from '../../FilterButton';
 import {
-  EmptyVariableValue,
+  EMPTY_VARIABLE_VALUE,
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
@@ -106,16 +106,16 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectFieldActionSce
   };
 
   public onClickExcludeEmpty = (variableName: string) => {
-    addToFilters(this.state.labelName, EmptyVariableValue, 'exclude', this, variableName);
+    addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'exclude', this, variableName);
   };
 
   public onClickIncludeEmpty = (variableName: string) => {
     // If json do we want != '{}'?
-    addToFilters(this.state.labelName, EmptyVariableValue, 'include', this, variableName);
+    addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'include', this, variableName);
   };
 
   public clearFilter = (variableName: string) => {
-    addToFilters(this.state.labelName, EmptyVariableValue, 'clear', this, variableName);
+    addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'clear', this, variableName);
   };
 
   private calculateSparsity() {
