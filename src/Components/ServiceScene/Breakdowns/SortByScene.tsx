@@ -7,9 +7,8 @@ import { getSortByPreference, setSortByPreference } from 'services/store';
 import { testIds } from '../../../services/testIds';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
 
-
-export type SortBy = 'changepoint' | 'outliers' | ReducerID
-export type SortDirection = 'asc' | 'desc'
+export type SortBy = 'changepoint' | 'outliers' | ReducerID | '';
+export type SortDirection = 'asc' | 'desc';
 export interface SortBySceneState extends SceneObjectState {
   target: 'fields' | 'labels';
   sortBy: SortBy;
@@ -24,7 +23,7 @@ export class SortCriteriaChanged extends BusEventBase {
 }
 
 export class SortByScene extends SceneObjectBase<SortBySceneState> {
-  public sortingOptions: Array<{label: string, options: SelectableValue<SortBy>}> = [
+  public sortingOptions: Array<{ label: string; options: SelectableValue<SortBy> }> = [
     {
       label: '',
       options: [
@@ -100,8 +99,12 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
 
   public static Component = ({ model }: SceneComponentProps<SortByScene>) => {
     const { sortBy, direction } = model.useState();
-    const group = model.sortingOptions.find((group) => group.options.find((option: SelectableValue<SortBy>) => option.value === sortBy));
-    const sortByValue: SelectableValue<SortBy> | undefined = group?.options.find((option: SelectableValue<SortBy>) => option.value === sortBy);
+    const group = model.sortingOptions.find((group) =>
+      group.options.find((option: SelectableValue<SortBy>) => option.value === sortBy)
+    );
+    const sortByValue: SelectableValue<SortBy> | undefined = group?.options.find(
+      (option: SelectableValue<SortBy>) => option.value === sortBy
+    );
     return (
       <>
         <InlineField>

@@ -1,12 +1,13 @@
-import {DataFrame, ReducerID} from '@grafana/data';
+import { DataFrame, ReducerID } from '@grafana/data';
 import { DrawStyle, StackingMode } from '@grafana/ui';
-import {PanelBuilders, SceneCSSGridItem, SceneDataTransformer, sceneGraph, SceneObject} from '@grafana/scenes';
+import { PanelBuilders, SceneCSSGridItem, SceneDataTransformer, SceneObject } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
 import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { getLogsFormatVariable, VAR_FIELDS, VAR_LABELS } from './variables';
 import { setLevelColorOverrides } from './panel';
 import { map, Observable } from 'rxjs';
-import {SortByScene} from "../Components/ServiceScene/Breakdowns/SortByScene";
+import { SortBy, SortByScene } from '../Components/ServiceScene/Breakdowns/SortByScene';
+import { memoize } from 'lodash';
 
 export type DetectedLabel = {
   label: string;
@@ -60,23 +61,26 @@ export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
   return result;
 }
 
+const getReducerId = memoize((sortBy: SortBy) => {
+  let reducerID: ReducerID | undefined = undefined;
+  if (sortBy) {
+    // Is there a way to avoid the type assertion?
+    const values: string[] = Object.values(ReducerID);
+    if (values.includes(sortBy)) {
+      reducerID = sortBy as ReducerID;
+    }
+  }
+  return reducerID;
+});
+
 export function getFilterBreakdownValueScene(
   getTitle: (df: DataFrame) => string,
   style: DrawStyle,
   variableName: typeof VAR_FIELDS | typeof VAR_LABELS,
   sort: SortByScene
 ) {
-  console.log('sort', sort)
-  let reducerID: ReducerID;
-  if(sort.state.sortBy){
-    // Is there a way to avoid the type assertion?
-    const values: string[] = Object.values(ReducerID);
-    if(values.includes(sort.state.sortBy)){
-      reducerID = sort.state.sortBy as ReducerID
-    }
-  }
-
   return (frame: DataFrame, frameIndex: number) => {
+    const reducerID = getReducerId(sort.state.sortBy);
     const panel = PanelBuilders.timeseries() //
       .setOption('legend', { showLegend: false })
       .setCustomFieldConfig('fillOpacity', 9)
@@ -100,11 +104,13 @@ export function getFilterBreakdownValueScene(
         .setCustomFieldConfig('drawStyle', DrawStyle.Bars);
     }
 
-    if(reducerID){
+    if (reducerID) {
       panel.setOption('legend', {
         showLegend: true,
-        calcs: [reducerID]
-      })
+        calcs: [reducerID],
+      });
+      // These will only have a single series, no need to show the title twice
+      panel.setDisplayName(' ');
     }
 
     return new SceneCSSGridItem({
