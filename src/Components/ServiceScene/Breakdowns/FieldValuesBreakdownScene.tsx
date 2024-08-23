@@ -11,38 +11,60 @@ import {
   SceneObjectState,
   SceneReactObject,
 } from '@grafana/scenes';
-import {buildDataQuery, LokiQuery} from '../../../services/query';
-import {getSortByPreference} from '../../../services/store';
-import {DataQueryError, LoadingState} from '@grafana/data';
-import {LayoutSwitcher} from './LayoutSwitcher';
-import {getQueryRunner} from '../../../services/panel';
-import {ByFrameRepeater} from './ByFrameRepeater';
-import {Alert, DrawStyle, LoadingPlaceholder} from '@grafana/ui';
-import {getFilterBreakdownValueScene} from '../../../services/fields';
-import {getLabelValue} from './SortByScene';
-import {getFieldGroupByVariable, VAR_FIELDS} from '../../../services/variables';
+import { buildDataQuery, LokiQuery } from '../../../services/query';
+import { getSortByPreference } from '../../../services/store';
+import { DataQueryError, LoadingState } from '@grafana/data';
+import { LayoutSwitcher } from './LayoutSwitcher';
+import { getQueryRunner } from '../../../services/panel';
+import { ByFrameRepeater } from './ByFrameRepeater';
+import { Alert, DrawStyle, LoadingPlaceholder } from '@grafana/ui';
+import { getFilterBreakdownValueScene } from '../../../services/fields';
+import { getLabelValue } from './SortByScene';
+import { getFieldGroupByVariable, VAR_FIELDS } from '../../../services/variables';
 import React from 'react';
 import {
   FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS,
   FieldsBreakdownScene,
   getFieldBreakdownExpr,
 } from './FieldsBreakdownScene';
-import {AddFilterEvent} from './AddToFiltersButton';
-import {navigateToDrilldownPage} from '../../../services/navigate';
-import {PageSlugs} from '../../../services/routing';
-import {ServiceScene} from '../ServiceScene';
-import {DEFAULT_SORT_BY} from '../../../services/sorting';
+import { AddFilterEvent } from './AddToFiltersButton';
+import { navigateToDrilldownPage } from '../../../services/navigate';
+import { PageSlugs } from '../../../services/routing';
+import { ServiceScene } from '../ServiceScene';
+import { DEFAULT_SORT_BY } from '../../../services/sorting';
 
 export interface FieldValuesBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher | SceneReactObject;
   $data?: SceneDataProvider;
   lastFilterEvent?: AddFilterEvent;
 }
+
 export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakdownSceneState> {
   constructor(state: Partial<FieldValuesBreakdownSceneState>) {
     super(state);
     this.addActivationHandler(this.onActivate.bind(this));
   }
+
+  public static Selector({ model }: SceneComponentProps<FieldValuesBreakdownScene>) {
+    const { body } = model.useState();
+    if (body instanceof LayoutSwitcher) {
+      return <>{body && <body.Selector model={body} />}</>;
+    }
+
+    return <></>;
+  }
+
+  public static Component = ({ model }: SceneComponentProps<FieldValuesBreakdownScene>) => {
+    const { body } = model.useState();
+    // @todo why are the types like this?
+    if (body instanceof LayoutSwitcher) {
+      return <>{body && <body.Component model={body} />}</>;
+    } else if (body instanceof SceneReactObject) {
+      return <>{body && <body.Component model={body} />}</>;
+    }
+
+    return <LoadingPlaceholder text={'Loading...'} />;
+  };
 
   onActivate() {
     const groupByVariable = getFieldGroupByVariable(this);
@@ -209,25 +231,4 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
       ],
     });
   }
-
-  public static Selector({ model }: SceneComponentProps<FieldValuesBreakdownScene>) {
-    const { body } = model.useState();
-    if (body instanceof LayoutSwitcher) {
-      return <>{body && <body.Selector model={body} />}</>;
-    }
-
-    return <></>;
-  }
-
-  public static Component = ({ model }: SceneComponentProps<FieldValuesBreakdownScene>) => {
-    const { body } = model.useState();
-    // @todo why are the types like this?
-    if (body instanceof LayoutSwitcher) {
-      return <>{body && <body.Component model={body} />}</>;
-    } else if (body instanceof SceneReactObject) {
-      return <>{body && <body.Component model={body} />}</>;
-    }
-
-    return <LoadingPlaceholder text={'Loading...'} />;
-  };
 }
