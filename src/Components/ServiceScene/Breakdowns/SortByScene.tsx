@@ -47,7 +47,7 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
         },
         {
           value: ReducerID.sum,
-          label: 'Volume',
+          label: 'Count',
           description: 'Sort graphs by total number of logs',
         },
         {
