@@ -20,7 +20,7 @@ import {
   getLevelsVariable,
   LEVEL_VARIABLE_VALUE,
 } from '../../../services/variables';
-import { Field, Labels, LoadingState } from '@grafana/data';
+import { AdHocVariableFilter, Field, Labels, LoadingState } from '@grafana/data';
 import { FilterOp } from '../../../services/filters';
 
 interface SelectFieldActionSceneState extends SceneObjectState {
@@ -28,6 +28,7 @@ interface SelectFieldActionSceneState extends SceneObjectState {
   fieldType: ValueSlugs;
   hideValueDrilldown?: boolean;
   showFilterField?: boolean;
+  variable?: AdHocFiltersVariable;
 }
 
 export class SelectLabelActionScene extends SceneObjectBase<SelectFieldActionSceneState> {
@@ -37,28 +38,12 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectFieldActionSce
   }
 
   public static Component = ({ model }: SceneComponentProps<SelectLabelActionScene>) => {
-    const { hideValueDrilldown, labelName, showFilterField, fieldType } = model.useState();
-    let variable: AdHocFiltersVariable;
-    if (fieldType === ValueSlugs.field) {
-      variable = getFieldsVariable(model);
-    } else if (labelName === LEVEL_VARIABLE_VALUE) {
-      variable = getLevelsVariable(model);
-    } else {
-      variable = getLabelsVariable(model);
-    }
-
-    const existingFilter = variable.state.filters.find((filter) => {
-      return filter.key === model.state.labelName;
-    });
-
-    console.log('render', {
-      existingFilter,
-      fields: variable,
-    });
+    const { hideValueDrilldown, labelName, showFilterField, variable } = model.useState();
+    const existingFilter = model.getExistingFilter(variable);
 
     return (
       <>
-        {showFilterField === true && (
+        {variable && showFilterField === true && (
           <FilterButton
             isExcluded={existingFilter?.operator === FilterOp.Equal}
             isIncluded={existingFilter?.operator === FilterOp.NotEqual}
@@ -87,6 +72,12 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectFieldActionSce
       </>
     );
   };
+
+  private getExistingFilter(variable?: AdHocFiltersVariable): AdHocVariableFilter | undefined {
+    return variable?.state.filters.find((filter) => {
+      return filter.key === this.state.labelName;
+    });
+  }
 
   public onActivate() {
     this._subs.add(
@@ -138,6 +129,15 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectFieldActionSce
       });
       return;
     }
+
+    let variable: AdHocFiltersVariable;
+    if (this.state.fieldType === ValueSlugs.field) {
+      variable = getFieldsVariable(this);
+    } else if (this.state.labelName === LEVEL_VARIABLE_VALUE) {
+      variable = getLevelsVariable(this);
+    } else {
+      variable = getLabelsVariable(this);
+    }
     // iterate through all the labels on the log panel query result and count how many times this exists
     const logLinesWithLabelCount = labels.values.reduce((acc, labels) => {
       if (labels?.[this.state.labelName]) {
@@ -155,9 +155,11 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectFieldActionSce
       description,
     });
 
-    if (logLinesWithLabelCount < logsPanelData.length) {
+    if (logLinesWithLabelCount < logsPanelData.length || this.getExistingFilter(variable)) {
       this.setState({
         showFilterField: true,
+        //@todo not clone? set function to get variable to state?
+        variable: variable.clone(),
       });
     }
   }
