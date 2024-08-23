@@ -106,33 +106,33 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectFieldActionSce
     const logsPanelData = getLogsPanelFrame(serviceScene.state.$data?.state.data);
     const labels: Field<Labels> | undefined = logsPanelData?.fields.find((field) => field.name === 'labels');
 
-    if (labels && logsPanelData) {
-      // iterate through all the labels on the log panel query result and count how many times this exists
-      const logLinesWithLabelCount = labels.values.reduce((acc, labels) => {
-        if (labels?.[this.state.labelName]) {
-          acc++;
-        }
-        return acc;
-      }, 0);
-
-      const panel = sceneGraph.getAncestor(this, VizPanel);
-      const percentage = ((logLinesWithLabelCount / logsPanelData.length) * 100).toLocaleString();
-      const description = `${this.state.labelName} exists on ${percentage}% of ${logsPanelData.length} sampled log lines`;
-
-      // Update the desc
-      panel.setState({
-        description,
+    if (!labels || !logsPanelData) {
+      this.setState({
+        showFilterField: false,
       });
-
-      if (logLinesWithLabelCount < logsPanelData.length) {
-        this.setState({
-          showFilterField: true,
-        });
-      } else {
-        this.setState({
-          showFilterField: false,
-        });
+      return;
+    }
+    // iterate through all the labels on the log panel query result and count how many times this exists
+    const logLinesWithLabelCount = labels.values.reduce((acc, labels) => {
+      if (labels?.[this.state.labelName]) {
+        acc++;
       }
+      return acc;
+    }, 0);
+
+    const panel = sceneGraph.getAncestor(this, VizPanel);
+    const percentage = ((logLinesWithLabelCount / logsPanelData.length) * 100).toLocaleString();
+    const description = `${this.state.labelName} exists on ${percentage}% of ${logsPanelData.length} sampled log lines`;
+
+    // Update the desc
+    panel.setState({
+      description,
+    });
+
+    if (logLinesWithLabelCount < logsPanelData.length) {
+      this.setState({
+        showFilterField: true,
+      });
     }
   }
 }
