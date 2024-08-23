@@ -8,6 +8,7 @@ import { addToFilters } from './AddToFiltersButton';
 import { FilterButton } from '../../FilterButton';
 import { getFieldsVariable } from '../../../services/variables';
 import { Field, Labels, LoadingState } from '@grafana/data';
+import { FilterOp } from '../../../services/filters';
 
 interface SelectFieldActionSceneState extends SceneObjectState {
   labelName: string;
@@ -33,8 +34,8 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectFieldActionSce
       <>
         {showFilterField === true && (
           <FilterButton
-            isExcluded={existingFilter?.operator === '='}
-            isIncluded={existingFilter?.operator === '!='}
+            isExcluded={existingFilter?.operator === FilterOp.Equal}
+            isIncluded={existingFilter?.operator === FilterOp.NotEqual}
             onInclude={model.onClickExcludeEmpty}
             onExclude={model.onClickIncludeEmpty}
             onClear={model.clearFilter}
