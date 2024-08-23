@@ -46,6 +46,11 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
           description: 'Alphabetical order',
         },
         {
+          value: ReducerID.sum,
+          label: 'Count',
+          description: 'Sort graphs by total number of logs',
+        },
+        {
           value: ReducerID.max,
           label: 'Highest spike',
           description: 'Sort graphs by the highest values (max)',
