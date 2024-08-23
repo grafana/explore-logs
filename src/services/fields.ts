@@ -58,13 +58,17 @@ export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
   );
 
   const types: ExtractedFieldsType[] = [];
-
   const linesField = data.fields.find((f) => f.name === 'Line' || f.name === 'body');
-  linesField?.values.forEach((value: string) => {
+
+  if (!linesField) {
+    return result;
+  }
+
+  for (let i = 0; i < linesField.values.length; i++) {
     if (types.length === 2) {
-      return;
+      break;
     }
-    const line = value.trim();
+    const line = linesField.values[i].trim();
     if (line.startsWith('{') && line.endsWith('}')) {
       if (!types.includes('json')) {
         types.push('json');
@@ -72,7 +76,7 @@ export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
     } else if (!types.includes('logfmt')) {
       types.push('logfmt');
     }
-  });
+  }
 
   result.type = types.length === 1 ? types[0] : 'mixed';
 
