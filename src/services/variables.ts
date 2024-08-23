@@ -26,7 +26,6 @@ export const EXPLORATION_DS = { uid: VAR_DATASOURCE_EXPR };
 export const ALL_VARIABLE_VALUE = '$__all';
 export const LEVEL_VARIABLE_VALUE = 'detected_level';
 export const PATTERNS_TEXT_FILTER = 'patternsFilter';
-
 export const EmptyVariableValue = '""';
 
 export function getLogsStreamSelector(options: {

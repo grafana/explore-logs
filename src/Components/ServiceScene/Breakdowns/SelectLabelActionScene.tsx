@@ -1,4 +1,11 @@
-import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState, VizPanel } from '@grafana/scenes';
+import {
+  AdHocFiltersVariable,
+  SceneComponentProps,
+  sceneGraph,
+  SceneObjectBase,
+  SceneObjectState,
+  VizPanel,
+} from '@grafana/scenes';
 import { getLogsPanelFrame, ServiceScene } from '../ServiceScene';
 import { navigateToValueBreakdown } from '../../../services/navigate';
 import { ValueSlugs } from '../../../services/routing';
@@ -6,7 +13,13 @@ import { Button } from '@grafana/ui';
 import React from 'react';
 import { addToFilters } from './AddToFiltersButton';
 import { FilterButton } from '../../FilterButton';
-import { EmptyVariableValue, getFieldsVariable } from '../../../services/variables';
+import {
+  EmptyVariableValue,
+  getFieldsVariable,
+  getLabelsVariable,
+  getLevelsVariable,
+  LEVEL_VARIABLE_VALUE,
+} from '../../../services/variables';
 import { Field, Labels, LoadingState } from '@grafana/data';
 import { FilterOp } from '../../../services/filters';
 
@@ -24,10 +37,23 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectFieldActionSce
   }
 
   public static Component = ({ model }: SceneComponentProps<SelectLabelActionScene>) => {
-    const { hideValueDrilldown, labelName, showFilterField } = model.useState();
-    const fields = getFieldsVariable(model);
-    const existingFilter = fields.state.filters.find((filter) => {
+    const { hideValueDrilldown, labelName, showFilterField, fieldType } = model.useState();
+    let variable: AdHocFiltersVariable;
+    if (fieldType === ValueSlugs.field) {
+      variable = getFieldsVariable(model);
+    } else if (labelName === LEVEL_VARIABLE_VALUE) {
+      variable = getLevelsVariable(model);
+    } else {
+      variable = getLabelsVariable(model);
+    }
+
+    const existingFilter = variable.state.filters.find((filter) => {
       return filter.key === model.state.labelName;
+    });
+
+    console.log('render', {
+      existingFilter,
+      fields: variable,
     });
 
     return (
@@ -36,9 +62,9 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectFieldActionSce
           <FilterButton
             isExcluded={existingFilter?.operator === FilterOp.Equal}
             isIncluded={existingFilter?.operator === FilterOp.NotEqual}
-            onInclude={model.onClickExcludeEmpty}
-            onExclude={model.onClickIncludeEmpty}
-            onClear={model.clearFilter}
+            onInclude={() => model.onClickExcludeEmpty(variable.state.name)}
+            onExclude={() => model.onClickIncludeEmpty(variable.state.name)}
+            onClear={() => model.clearFilter(variable.state.name)}
             titles={{
               include: `Only show logs that contain ${labelName}`,
               exclude: `Hide all logs that contain ${labelName}`,
@@ -88,17 +114,17 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectFieldActionSce
     navigateToValueBreakdown(this.state.fieldType, this.state.labelName, serviceScene);
   };
 
-  public onClickExcludeEmpty = () => {
-    addToFilters(this.state.labelName, EmptyVariableValue, 'exclude', this);
+  public onClickExcludeEmpty = (variableName: string) => {
+    addToFilters(this.state.labelName, EmptyVariableValue, 'exclude', this, variableName);
   };
 
-  public onClickIncludeEmpty = () => {
+  public onClickIncludeEmpty = (variableName: string) => {
     // If json do we want != '{}'?
-    addToFilters(this.state.labelName, EmptyVariableValue, 'include', this);
+    addToFilters(this.state.labelName, EmptyVariableValue, 'include', this, variableName);
   };
 
-  public clearFilter = () => {
-    addToFilters(this.state.labelName, EmptyVariableValue, 'clear', this);
+  public clearFilter = (variableName: string) => {
+    addToFilters(this.state.labelName, EmptyVariableValue, 'clear', this, variableName);
   };
 
   private calculateSparsity() {
