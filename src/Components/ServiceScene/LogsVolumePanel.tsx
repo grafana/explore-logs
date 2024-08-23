@@ -4,10 +4,9 @@ import { PanelBuilders, SceneComponentProps, SceneObjectBase, SceneObjectState, 
 import { LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode } from '@grafana/ui';
 import { getQueryRunner, setLogsVolumeFieldConfigs, syncLogsPanelVisibleSeries } from 'services/panel';
 import { buildDataQuery } from 'services/query';
-import { getLabelsVariable, getLevelsVariable, LEVEL_VARIABLE_VALUE } from 'services/variables';
+import { getFieldsVariable, getLabelsVariable, getLevelsVariable, LEVEL_VARIABLE_VALUE } from 'services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getTimeSeriesExpr } from '../../services/expressions';
-import { SERVICE_NAME } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { toggleLevelFromFilter } from 'services/levels';
 import { LoadingState } from '@grafana/data';
 
@@ -30,15 +29,18 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     }
 
     const labels = getLabelsVariable(this);
+    const fields = getFieldsVariable(this);
 
-    labels.subscribeToState((newState, prevState) => {
-      const newService = newState.filters.find((f) => f.key === SERVICE_NAME);
-      const prevService = prevState.filters.find((f) => f.key === SERVICE_NAME);
-      if (newService !== prevService) {
-        this.setState({
-          panel: this.getVizPanel(),
-        });
-      }
+    labels.subscribeToState(() => {
+      this.setState({
+        panel: this.getVizPanel(),
+      });
+    });
+
+    fields.subscribeToState(() => {
+      this.setState({
+        panel: this.getVizPanel(),
+      });
     });
   }
 
