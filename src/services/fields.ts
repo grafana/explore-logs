@@ -77,10 +77,10 @@ export function getFilterBreakdownValueScene(
   getTitle: (df: DataFrame) => string,
   style: DrawStyle,
   variableName: typeof VAR_FIELDS | typeof VAR_LABELS,
-  sort: SortByScene
+  sortByScene: SortByScene
 ) {
   return (frame: DataFrame, frameIndex: number) => {
-    const reducerID = getReducerId(sort.state.sortBy);
+    const reducerID = getReducerId(sortByScene.state.sortBy);
     const panel = PanelBuilders.timeseries() //
       .setOption('legend', { showLegend: false })
       .setCustomFieldConfig('fillOpacity', 9)
