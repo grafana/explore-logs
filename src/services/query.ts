@@ -75,8 +75,6 @@ export function renderLogQLLabelFilters(filters: AdHocVariableFilter[]) {
 
   const negativeFilters = negative.map((filter) => renderFilter(filter)).join(', ');
 
-  console.log(trim(`${positiveFilters.join(', ')}, ${negativeFilters}`, ' ,'));
-
   return trim(`${positiveFilters.join(', ')}, ${negativeFilters}`, ' ,');
 }
 
