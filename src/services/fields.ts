@@ -64,11 +64,12 @@ export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
     if (types.length === 2) {
       return;
     }
-    try {
-      if (JSON.parse(value) && !types.includes('json')) {
+    const line = value.trim();
+    if (line.startsWith('{') && line.endsWith('}')) {
+      if (!types.includes('json')) {
         types.push('json');
       }
-    } catch (e) {
+    } else if (!types.includes('logfmt')) {
       types.push('logfmt');
     }
   });
