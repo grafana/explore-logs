@@ -5,7 +5,7 @@ import { PLUGIN_ID } from './routing';
 import { SceneDataQueryResourceRequest } from './datasource';
 import { VAR_DATASOURCE_EXPR } from './variables';
 import { FilterOp } from './filters';
-import { groupBy } from 'lodash';
+import { groupBy, trim } from 'lodash';
 
 export type LokiQuery = {
   refId: string;
@@ -59,8 +59,25 @@ const defaultQueryParams = {
   supportingQueryType: PLUGIN_ID,
 };
 
-export function joinFilters(filters: AdHocVariableFilter[]) {
-  return filters.map((filter) => renderFilter(filter)).join(', ');
+export function renderLogQLLabelFilters(filters: AdHocVariableFilter[]) {
+  const positive = filters.filter((filter) => filter.operator === FilterOp.Equal);
+  const negative = filters.filter((filter) => filter.operator === FilterOp.NotEqual);
+
+  const positiveGroups = groupBy(positive, (filter) => filter.key);
+
+  let positiveFilters: string[] = [];
+  for (const key in positiveGroups) {
+    const values = positiveGroups[key].map((filter) => filter.value);
+    positiveFilters.push(
+      values.length === 1 ? renderFilter(positiveGroups[key][0]) : renderRegexLabelFilter(key, values)
+    );
+  }
+
+  const negativeFilters = negative.map((filter) => renderFilter(filter)).join(', ');
+
+  console.log(trim(`${positiveFilters.join(', ')}, ${negativeFilters}`, ' ,'));
+
+  return trim(`${positiveFilters.join(', ')}, ${negativeFilters}`, ' ,');
 }
 
 export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
@@ -81,6 +98,10 @@ export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
 
 function renderFilter(filter: AdHocVariableFilter) {
   return `${filter.key}${filter.operator}\`${filter.value}\``;
+}
+
+function renderRegexLabelFilter(key: string, values: string[]) {
+  return `${key}=~"${values.join('|')}"`;
 }
 
 export function renderPatternFilters(patterns: AppliedPattern[]) {

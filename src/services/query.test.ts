@@ -1,5 +1,5 @@
 import { AdHocVariableFilter } from '@grafana/data';
-import { buildDataQuery, renderLogQLFieldFilters } from './query';
+import { buildDataQuery, renderLogQLFieldFilters, renderLogQLLabelFilters } from './query';
 import { FilterOp } from './filters';
 
 describe('buildDataQuery', () => {
@@ -107,6 +107,93 @@ describe('renderLogQLFieldFilters', () => {
 
     expect(renderLogQLFieldFilters(filters)).toEqual(
       '| level=`info` or level=`error` | cluster=`lil-cluster` | component!=`comp1` | pod!=`pod1`'
+    );
+  });
+});
+
+describe('renderLogQLLabelFilters', () => {
+  test('Renders positive filters', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: 'level',
+        operator: FilterOp.Equal,
+        value: 'info',
+      },
+      {
+        key: 'cluster',
+        operator: FilterOp.Equal,
+        value: 'lil-cluster',
+      },
+    ];
+
+    expect(renderLogQLLabelFilters(filters)).toEqual('level=`info`, cluster=`lil-cluster`');
+  });
+
+  test('Renders negative filters', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: 'level',
+        operator: FilterOp.NotEqual,
+        value: 'info',
+      },
+      {
+        key: 'cluster',
+        operator: FilterOp.NotEqual,
+        value: 'lil-cluster',
+      },
+    ];
+
+    expect(renderLogQLLabelFilters(filters)).toEqual('level!=`info`, cluster!=`lil-cluster`');
+  });
+
+  test('Groups positive filters', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: 'level',
+        operator: FilterOp.Equal,
+        value: 'info',
+      },
+      {
+        key: 'level',
+        operator: FilterOp.Equal,
+        value: 'error',
+      },
+    ];
+
+    expect(renderLogQLLabelFilters(filters)).toEqual('level=~"info|error"');
+  });
+
+  test('Renders grouped and ungrouped positive and negative filters', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: 'level',
+        operator: FilterOp.Equal,
+        value: 'info',
+      },
+      {
+        key: 'component',
+        operator: FilterOp.NotEqual,
+        value: 'comp1',
+      },
+      {
+        key: 'level',
+        operator: FilterOp.Equal,
+        value: 'error',
+      },
+      {
+        key: 'cluster',
+        operator: FilterOp.Equal,
+        value: 'lil-cluster',
+      },
+      {
+        key: 'pod',
+        operator: FilterOp.NotEqual,
+        value: 'pod1',
+      },
+    ];
+
+    expect(renderLogQLLabelFilters(filters)).toEqual(
+      'level=~"info|error", cluster=`lil-cluster`, component!=`comp1`, pod!=`pod1`'
     );
   });
 });
