@@ -133,7 +133,7 @@ export function splitQueriesByStreamShard(
           console.warn(`Shard splitting not supported. Issuing a regular query.`);
           runNextRequest(subscriber);
         } else {
-          const shardRequests = getShardRequests(startShard, shards, request.range);
+          const shardRequests = getShardRequests(shards, request.range);
           console.log(`Querying up to ${startShard} shards`);
           runNextRequest(subscriber, 0, shardRequests);
         }
@@ -166,11 +166,12 @@ export function runShardSplitQuery(datasource: DataSourceWithBackend<LokiQuery>,
   return splitQueriesByStreamShard(datasource, request, queries);
 }
 
-function getShardRequests(maxShard: number, shards: number[], range: TimeRange) {
+function getShardRequests(shards: number[], range: TimeRange) {
   const hours = range.to.diff(range.from, 'hour');
 
   shards.sort((a, b) => a - b);
   const maxRequests = calculateMaxRequests(shards.length);
+  const maxShard = shards.length - 1;
   const groupSize = Math.ceil(maxShard / maxRequests);
   const requests: number[][] = [];
   for (let i = maxShard; i > 0; i -= groupSize) {
