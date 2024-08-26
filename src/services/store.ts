@@ -1,5 +1,7 @@
 import pluginJson from '../plugin.json';
 import { SortBy, SortDirection } from '../Components/ServiceScene/Breakdowns/SortByScene';
+import { getDataSourceName, getServiceName } from './variables';
+import { SceneObject } from '@grafana/scenes';
 
 const SERVICES_LOCALSTORAGE_KEY = `${pluginJson.id}.services.favorite`;
 const DS_LOCALSTORAGE_KEY = `${pluginJson.id}.datasource`;
@@ -94,4 +96,24 @@ export function setLogOption(option: LogOption, value: string | number | boolean
     storedValue = '';
   }
   localStorage.setItem(`${LOG_OPTIONS_LOCALSTORAGE_KEY}.${option}`, storedValue);
+}
+
+function getExplorationPrefix(sceneRef: SceneObject) {
+  const ds = getDataSourceName(sceneRef);
+  const serviceName = getServiceName(sceneRef);
+  return `${ds}.${serviceName}`;
+}
+
+export function getDisplayedFields(sceneRef: SceneObject) {
+  const PREFIX = getExplorationPrefix(sceneRef);
+  const storedFields = localStorage.getItem(`${pluginJson.id}.${PREFIX}.logs.fields`);
+  if (storedFields) {
+    return JSON.parse(storedFields);
+  }
+  return [];
+}
+
+export function setDisplayedFields(sceneRef: SceneObject, fields: string[]) {
+  const PREFIX = getExplorationPrefix(sceneRef);
+  localStorage.setItem(`${pluginJson.id}.${PREFIX}.logs.fields`, JSON.stringify(fields));
 }
