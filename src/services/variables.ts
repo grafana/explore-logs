@@ -26,6 +26,7 @@ export const EXPLORATION_DS = { uid: VAR_DATASOURCE_EXPR };
 export const ALL_VARIABLE_VALUE = '$__all';
 export const LEVEL_VARIABLE_VALUE = 'detected_level';
 export const PATTERNS_TEXT_FILTER = 'patternsFilter';
+export const SERVICE_NAME = 'service_name';
 
 export function getLogsStreamSelector(options: {
   labelExpressionToAdd?: string;
@@ -120,7 +121,7 @@ export function getUrlParamNameForVariable(variableName: string) {
 export function getServiceName(scene: SceneObject) {
   const labelsVariable = getLabelsVariable(scene);
   const serviceName = labelsVariable.state.filters
-    .filter((filter) => filter.key === 'service_name')
+    .filter((filter) => filter.key === SERVICE_NAME)
     .map((filter) => filter.value);
 
   if (!serviceName) {

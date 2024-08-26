@@ -4,6 +4,7 @@ import { getMatcherFromQuery } from 'services/logql';
 
 import { LokiQuery } from 'services/query';
 import { appendUrlParameter, createAppUrl, setUrlParameter, UrlParameters } from 'services/routing';
+import { SERVICE_NAME } from 'services/variables';
 
 const title = 'Open in Explore Logs';
 const description = 'Open current query in the Explore Logs view';
@@ -39,13 +40,13 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
 
   const expr = lokiQuery.expr;
   const labelFilters = getMatcherFromQuery(expr);
-  const serviceSelector = labelFilters.find((selector) => selector.key === 'service_name');
+  const serviceSelector = labelFilters.find((selector) => selector.key === SERVICE_NAME);
   if (!serviceSelector) {
     return undefined;
   }
   const serviceName = serviceSelector.value;
   // sort `service_name` first
-  labelFilters.sort((a, b) => (a.key === 'service_name' ? -1 : 1));
+  labelFilters.sort((a, b) => (a.key === SERVICE_NAME ? -1 : 1));
 
   let params = setUrlParameter(UrlParameters.DatasourceId, lokiQuery.datasource?.uid);
   params = setUrlParameter(UrlParameters.TimeRangeFrom, context.timeRange.from.valueOf().toString(), params);
