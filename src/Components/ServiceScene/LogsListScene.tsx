@@ -132,7 +132,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     const selectedLineUrl = searchParams.get('selectedLine');
     const urlColumnsUrl = searchParams.get('urlColumns');
     const vizTypeUrl = searchParams.get('visualizationType');
-    const displayedFieldsUrl = searchParams.get('displayedFields');
+    const displayedFieldsUrl = searchParams.get('displayedFields') ?? JSON.stringify(getDisplayedFields(this));
 
     this.updateFromUrl({
       selectedLine: selectedLineUrl,
