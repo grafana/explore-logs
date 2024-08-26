@@ -24,6 +24,7 @@ interface LogsPanelSceneState extends SceneObjectState {
 }
 
 export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
+  displayedFields: string[] = [];
   constructor(state: Partial<LogsPanelSceneState>) {
     super({
       ...state,
@@ -39,6 +40,33 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
       });
     }
   }
+
+  onClickShowField = (field: string) => {
+    const index = this.displayedFields.indexOf(field);
+    if (index === -1 && this.state.body) {
+      this.displayedFields = [...this.displayedFields, field];
+      this.state.body.setState({
+        options: {
+          ...this.state.body.state.options,
+          displayedFields: this.displayedFields,
+        },
+      });
+    }
+  };
+
+  onClickHideField = (field: string) => {
+    const index = this.displayedFields.indexOf(field);
+
+    if (index >= 0 && this.state.body) {
+      this.displayedFields = this.displayedFields.filter((displayedField) => field !== displayedField);
+      this.state.body.setState({
+        options: {
+          ...this.state.body.state.options,
+          displayedFields: this.displayedFields,
+        },
+      });
+    }
+  };
 
   private getLogsPanel() {
     const parentModel = sceneGraph.getAncestor(this, LogsListScene);
@@ -56,6 +84,12 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         .setOption('isFilterLabelActive', this.handleIsFilterLabelActive)
         // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
         .setOption('onClickFilterString', this.handleFilterStringClick)
+        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
+        .setOption('onClickShowField', this.onClickShowField)
+        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
+        .setOption('onClickHideField', this.onClickHideField)
+        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
+        .setOption('displayedFields', this.displayedFields)
         .setOption('wrapLogMessage', Boolean(getLogOption('wrapLines')))
         .setOption('showLogContextToggle', true)
         .setHeaderActions(
