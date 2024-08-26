@@ -302,6 +302,8 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       model.onSearchServicesChange(serviceName);
     };
     const totalServices = servicesToQuery?.length ?? 0;
+    // To get the count of services that are currently displayed, divide the number of panels by 2, as there are 2 panels per service (logs and time series)
+    const renderedServices = body.state.children.length / 2;
     return (
       <div className={styles.container}>
         <div className={styles.bodyWrapper}>
@@ -310,7 +312,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
             {isLogVolumeLoading && <LoadingPlaceholder text={'Loading services'} className={styles.loadingText} />}
             {!isLogVolumeLoading && (
               <>
-                Showing {body.state.children.length / 2} of {totalServices} service{totalServices !== 1 ? 's' : ''}
+                Showing {renderedServices} of {totalServices} service{totalServices !== 1 ? 's' : ''}
               </>
             )}
           </div>
