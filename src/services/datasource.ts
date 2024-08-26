@@ -306,7 +306,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
           query: expression,
           start: request.range.from.utc().toISOString(),
           end: request.range.to.utc().toISOString(),
-          limit: 1000,
+          limit: 5000,
         },
         {
           requestId: request.requestId ?? 'volume',
