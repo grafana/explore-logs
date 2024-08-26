@@ -60,6 +60,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
       this.state.body.onOptionsChange({
         displayedFields: this.displayedFields,
       });
+      setDisplayedFields(this, this.displayedFields);
     }
   };
 
