@@ -18,8 +18,10 @@ export type DetectedLabelsResponse = {
   detectedLabels: DetectedLabel[];
 };
 
+type ExtractedFieldsType = 'logfmt' | 'json' | 'mixed';
+
 interface ExtractedFields {
-  type: 'logfmt' | 'json';
+  type: ExtractedFieldsType;
   fields: string[];
 }
 
@@ -30,7 +32,7 @@ export function updateParserFromDataFrame(frame: DataFrame, sceneRef: SceneObjec
   let newType;
   if (!res.type) {
     newType = '';
-  } else if (res.type === 'json') {
+  } else if (res.type === 'mixed') {
     newType = `| json  | logfmt | drop __error__, __error_details__`;
   } else {
     newType = ` | ${res.type}`;
@@ -55,8 +57,25 @@ export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
     }, {}) ?? {}
   );
 
+  const types: ExtractedFieldsType[] = [];
   const linesField = data.fields.find((f) => f.name === 'Line' || f.name === 'body');
-  result.type = linesField?.values[0]?.[0] === '{' ? 'json' : 'logfmt';
+
+  if (!linesField) {
+    return result;
+  }
+
+  for (let i = 0; i < linesField.values.length && types.length < 2; i++) {
+    const line = linesField.values[i].trim();
+    if (line.startsWith('{') && line.endsWith('}')) {
+      if (!types.includes('json')) {
+        types.push('json');
+      }
+    } else if (!types.includes('logfmt')) {
+      types.push('logfmt');
+    }
+  }
+
+  result.type = types.length === 1 ? types[0] : 'mixed';
 
   return result;
 }
