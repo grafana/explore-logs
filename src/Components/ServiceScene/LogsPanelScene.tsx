@@ -8,7 +8,7 @@ import {
   VizPanel,
 } from '@grafana/scenes';
 import { DataFrame } from '@grafana/data';
-import { getDisplayedFields, getLogOption, setDisplayedFields } from '../../services/store';
+import { getLogOption, setDisplayedFields } from '../../services/store';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 import React from 'react';
 import { LogsListScene } from './LogsListScene';
@@ -24,7 +24,6 @@ interface LogsPanelSceneState extends SceneObjectState {
 }
 
 export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
-  displayedFields: string[] = [];
   constructor(state: Partial<LogsPanelSceneState>) {
     super({
       ...state,
@@ -34,7 +33,6 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
   }
 
   public onActivate() {
-    this.displayedFields = getDisplayedFields(this);
     if (!this.state.body) {
       this.setState({
         body: this.getLogsPanel(),
@@ -43,29 +41,39 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
   }
 
   onClickShowField = (field: string) => {
-    const index = this.displayedFields.indexOf(field);
+    const parent = this.getParentScene();
+    const index = parent.state.displayedFields.indexOf(field);
+
     if (index === -1 && this.state.body) {
-      this.displayedFields = [...this.displayedFields, field];
+      const displayedFields = [...parent.state.displayedFields, field];
       this.state.body.onOptionsChange({
-        displayedFields: this.displayedFields,
+        displayedFields,
       });
-      setDisplayedFields(this, this.displayedFields);
+      parent.setState({ displayedFields });
+      setDisplayedFields(this, parent.state.displayedFields);
     }
   };
 
   onClickHideField = (field: string) => {
-    const index = this.displayedFields.indexOf(field);
+    const parent = this.getParentScene();
+    const index = parent.state.displayedFields.indexOf(field);
+
     if (index >= 0 && this.state.body) {
-      this.displayedFields = this.displayedFields.filter((displayedField) => field !== displayedField);
+      const displayedFields = parent.state.displayedFields.filter((displayedField) => field !== displayedField);
       this.state.body.onOptionsChange({
-        displayedFields: this.displayedFields,
+        displayedFields,
       });
-      setDisplayedFields(this, this.displayedFields);
+      parent.setState({ displayedFields });
+      setDisplayedFields(this, parent.state.displayedFields);
     }
   };
 
+  private getParentScene() {
+    return sceneGraph.getAncestor(this, LogsListScene);
+  }
+
   private getLogsPanel() {
-    const parentModel = sceneGraph.getAncestor(this, LogsListScene);
+    const parentModel = this.getParentScene();
     const visualizationType = parentModel.state.visualizationType;
 
     return (
@@ -85,7 +93,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
         .setOption('onClickHideField', this.onClickHideField)
         // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
-        .setOption('displayedFields', this.displayedFields)
+        .setOption('displayedFields', parentModel.state.displayedFields)
         .setOption('wrapLogMessage', Boolean(getLogOption('wrapLines')))
         .setOption('showLogContextToggle', true)
         .setHeaderActions(
