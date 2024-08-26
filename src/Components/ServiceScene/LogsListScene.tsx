@@ -18,6 +18,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '..
 import { locationService } from '@grafana/runtime';
 import { LogOptionsScene } from './LogOptionsScene';
 import { LogsPanelScene } from './LogsPanelScene';
+import { getDisplayedFields } from 'services/store';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -26,7 +27,7 @@ export interface LogsListSceneState extends SceneObjectState {
   urlColumns?: string[];
   selectedLine?: SelectedTableRow;
   $timeRange?: SceneTimeRangeLike;
-  displayedFields?: string[];
+  displayedFields: string[];
 }
 
 export type LogsVisualizationType = 'logs' | 'table';
@@ -42,6 +43,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     super({
       ...state,
       visualizationType: (localStorage.getItem(VISUALIZATION_TYPE_LOCALSTORAGE_KEY) as LogsVisualizationType) ?? 'logs',
+      displayedFields: [],
     });
 
     this.addActivationHandler(this.onActivate.bind(this));
@@ -51,7 +53,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     const urlColumns = this.state.urlColumns ?? [];
     const selectedLine = this.state.selectedLine;
     const visualizationType = this.state.visualizationType;
-    const displayedFields = this.state.displayedFields ?? [];
+    const displayedFields = this.state.displayedFields ?? getDisplayedFields(this) ?? [];
     return {
       urlColumns: JSON.stringify(urlColumns),
       selectedLine: JSON.stringify(selectedLine),
@@ -131,13 +133,6 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     const urlColumnsUrl = searchParams.get('urlColumns');
     const vizTypeUrl = searchParams.get('visualizationType');
     const displayedFieldsUrl = searchParams.get('displayedFields');
-
-    console.log({
-      selectedLine: selectedLineUrl,
-      urlColumns: urlColumnsUrl,
-      vizType: vizTypeUrl,
-      displayedFields: displayedFieldsUrl,
-    });
 
     this.updateFromUrl({
       selectedLine: selectedLineUrl,
