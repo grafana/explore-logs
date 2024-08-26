@@ -45,11 +45,8 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     const index = this.displayedFields.indexOf(field);
     if (index === -1 && this.state.body) {
       this.displayedFields = [...this.displayedFields, field];
-      this.state.body.setState({
-        options: {
-          ...this.state.body.state.options,
-          displayedFields: this.displayedFields,
-        },
+      this.state.body.onOptionsChange({
+        displayedFields: this.displayedFields,
       });
     }
   };
@@ -59,11 +56,8 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
 
     if (index >= 0 && this.state.body) {
       this.displayedFields = this.displayedFields.filter((displayedField) => field !== displayedField);
-      this.state.body.setState({
-        options: {
-          ...this.state.body.state.options,
-          displayedFields: this.displayedFields,
-        },
+      this.state.body.onOptionsChange({
+        displayedFields: this.displayedFields,
       });
     }
   };
