@@ -8,7 +8,7 @@ import {
   VizPanel,
 } from '@grafana/scenes';
 import { DataFrame } from '@grafana/data';
-import { getLogOption } from '../../services/store';
+import { getDisplayedFields, getLogOption, setDisplayedFields } from '../../services/store';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 import React from 'react';
 import { LogsListScene } from './LogsListScene';
@@ -34,6 +34,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
   }
 
   public onActivate() {
+    this.displayedFields = getDisplayedFields(this);
     if (!this.state.body) {
       this.setState({
         body: this.getLogsPanel(),
@@ -48,12 +49,12 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
       this.state.body.onOptionsChange({
         displayedFields: this.displayedFields,
       });
+      setDisplayedFields(this, this.displayedFields);
     }
   };
 
   onClickHideField = (field: string) => {
     const index = this.displayedFields.indexOf(field);
-
     if (index >= 0 && this.state.body) {
       this.displayedFields = this.displayedFields.filter((displayedField) => field !== displayedField);
       this.state.body.onOptionsChange({
