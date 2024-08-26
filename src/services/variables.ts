@@ -116,3 +116,20 @@ export function getServiceSelectionStringVariable(sceneRef: SceneObject) {
 export function getUrlParamNameForVariable(variableName: string) {
   return `var-${variableName}`;
 }
+
+export function getServiceName(scene: SceneObject) {
+  const labelsVariable = getLabelsVariable(scene);
+  const serviceName = labelsVariable.state.filters
+    .filter((filter) => filter.key === 'service_name')
+    .map((filter) => filter.value);
+
+  if (!serviceName) {
+    throw new Error('Service present in filters selected');
+  }
+  return serviceName[0];
+}
+
+export function getDataSourceName(scene: SceneObject) {
+  const dsVariable = getDataSourceVariable(scene);
+  return dsVariable.getValue();
+}
