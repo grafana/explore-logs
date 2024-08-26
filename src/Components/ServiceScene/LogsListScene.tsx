@@ -26,6 +26,7 @@ export interface LogsListSceneState extends SceneObjectState {
   urlColumns?: string[];
   selectedLine?: SelectedTableRow;
   $timeRange?: SceneTimeRangeLike;
+  displayedFields?: string[];
 }
 
 export type LogsVisualizationType = 'logs' | 'table';
@@ -34,7 +35,7 @@ const VISUALIZATION_TYPE_LOCALSTORAGE_KEY = 'grafana.explore.logs.visualisationT
 
 export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, {
-    keys: ['urlColumns', 'selectedLine', 'visualizationType'],
+    keys: ['urlColumns', 'selectedLine', 'visualizationType', 'displayedFields'],
   });
   private lineFilterScene?: LineFilterScene = undefined;
   constructor(state: Partial<LogsListSceneState>) {
@@ -50,10 +51,12 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     const urlColumns = this.state.urlColumns ?? [];
     const selectedLine = this.state.selectedLine;
     const visualizationType = this.state.visualizationType;
+    const displayedFields = this.state.displayedFields ?? [];
     return {
       urlColumns: JSON.stringify(urlColumns),
       selectedLine: JSON.stringify(selectedLine),
       visualizationType: JSON.stringify(visualizationType),
+      displayedFields: JSON.stringify(displayedFields),
     };
   }
 
@@ -79,7 +82,14 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       }
     }
 
-    if (stateUpdate.urlColumns || stateUpdate.selectedLine || stateUpdate.visualizationType) {
+    if (typeof values.displayedFields === 'string') {
+      const displayedFields = JSON.parse(values.displayedFields);
+      if (displayedFields && displayedFields.length) {
+        stateUpdate.displayedFields = displayedFields;
+      }
+    }
+
+    if (Object.keys(stateUpdate).length) {
       this.setState(stateUpdate);
     }
   }
@@ -112,25 +122,17 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   }
 
   private setStateFromUrl(searchParams: URLSearchParams) {
-    const state: Partial<LogsListSceneState> = {};
     const selectedLineUrl = searchParams.get('selectedLine');
     const urlColumnsUrl = searchParams.get('urlColumns');
     const vizTypeUrl = searchParams.get('visualizationType');
+    const displayedFieldsUrl = searchParams.get('displayedFields');
 
-    if (selectedLineUrl) {
-      state.selectedLine = JSON.parse(selectedLineUrl);
-    }
-    if (urlColumnsUrl) {
-      state.urlColumns = JSON.parse(urlColumnsUrl);
-    }
-    if (vizTypeUrl) {
-      state.visualizationType = JSON.parse(vizTypeUrl);
-    }
-
-    // If state is saved in url on activation, save to scene state
-    if (Object.keys(state).length) {
-      this.setState(state);
-    }
+    this.updateFromUrl({
+      selectedLine: selectedLineUrl,
+      urlColumns: urlColumnsUrl,
+      vizType: vizTypeUrl,
+      displayedFields: displayedFieldsUrl,
+    });
   }
 
   public updateLogsPanel = () => {
