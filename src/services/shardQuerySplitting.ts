@@ -170,7 +170,7 @@ function getShardRequests(maxShard: number, shards: number[], range: TimeRange) 
   const hours = range.to.diff(range.from, 'hour');
 
   shards.sort((a, b) => a - b);
-  const maxRequests = Math.min(4, shards.length - 1);
+  const maxRequests = calculateMaxRequests(shards.length);
   const groupSize = Math.ceil(maxShard / maxRequests);
   const requests: number[][] = [];
   for (let i = maxShard; i > 0; i -= groupSize) {
@@ -191,4 +191,8 @@ function getShardRequests(maxShard: number, shards: number[], range: TimeRange) 
   }
 
   return requests;
+}
+
+function calculateMaxRequests(shards: number) {
+  return Math.min(Math.ceil(Math.sqrt(shards)), shards - 1);
 }
