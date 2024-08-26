@@ -122,7 +122,7 @@ export function getUrlParamNameForVariable(variableName: string) {
 export function getServiceName(scene: SceneObject) {
   const labelsVariable = getLabelsVariable(scene);
   const serviceName = labelsVariable.state.filters
-    .filter((filter) => filter.key === 'service_name')
+    .filter((filter) => filter.key === SERVICE_NAME)
     .map((filter) => filter.value);
 
   if (!serviceName) {
