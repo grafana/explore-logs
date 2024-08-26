@@ -62,31 +62,36 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
 
   updateFromUrl(values: SceneObjectUrlValues) {
     const stateUpdate: Partial<LogsListSceneState> = {};
-    if (typeof values.urlColumns === 'string') {
-      const decodedUrlColumns: string[] = JSON.parse(values.urlColumns);
-      if (decodedUrlColumns !== this.state.urlColumns) {
-        stateUpdate.urlColumns = decodedUrlColumns;
+    try {
+      if (typeof values.urlColumns === 'string') {
+        const decodedUrlColumns: string[] = JSON.parse(values.urlColumns);
+        if (decodedUrlColumns !== this.state.urlColumns) {
+          stateUpdate.urlColumns = decodedUrlColumns;
+        }
       }
-    }
-    if (typeof values.selectedLine === 'string') {
-      const decodedSelectedTableRow: SelectedTableRow = JSON.parse(values.selectedLine);
-      if (decodedSelectedTableRow !== this.state.selectedLine) {
-        stateUpdate.selectedLine = decodedSelectedTableRow;
+      if (typeof values.selectedLine === 'string') {
+        const decodedSelectedTableRow: SelectedTableRow = JSON.parse(values.selectedLine);
+        if (decodedSelectedTableRow !== this.state.selectedLine) {
+          stateUpdate.selectedLine = decodedSelectedTableRow;
+        }
       }
-    }
 
-    if (typeof values.visualizationType === 'string') {
-      const decodedVisualizationType: LogsVisualizationType = JSON.parse(values.visualizationType);
-      if (decodedVisualizationType !== this.state.visualizationType) {
-        stateUpdate.visualizationType = decodedVisualizationType;
+      if (typeof values.visualizationType === 'string') {
+        const decodedVisualizationType: LogsVisualizationType = JSON.parse(values.visualizationType);
+        if (decodedVisualizationType !== this.state.visualizationType) {
+          stateUpdate.visualizationType = decodedVisualizationType;
+        }
       }
-    }
 
-    if (typeof values.displayedFields === 'string') {
-      const displayedFields = JSON.parse(values.displayedFields);
-      if (displayedFields && displayedFields.length) {
-        stateUpdate.displayedFields = displayedFields;
+      if (typeof values.displayedFields === 'string') {
+        const displayedFields = JSON.parse(values.displayedFields);
+        if (displayedFields && displayedFields.length) {
+          stateUpdate.displayedFields = displayedFields;
+        }
       }
+    } catch (e) {
+      // URL Params can be manually changed and it will make JSON.parse() fail.
+      console.error(e);
     }
 
     if (Object.keys(stateUpdate).length) {
@@ -126,6 +131,13 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     const urlColumnsUrl = searchParams.get('urlColumns');
     const vizTypeUrl = searchParams.get('visualizationType');
     const displayedFieldsUrl = searchParams.get('displayedFields');
+
+    console.log({
+      selectedLine: selectedLineUrl,
+      urlColumns: urlColumnsUrl,
+      vizType: vizTypeUrl,
+      displayedFields: displayedFieldsUrl,
+    });
 
     this.updateFromUrl({
       selectedLine: selectedLineUrl,
