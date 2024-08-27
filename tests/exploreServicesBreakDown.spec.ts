@@ -429,7 +429,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId(testIds.exploreServiceDetails.buttonRemovePattern).nth(1)).toBeVisible();
   });
 
-  test('should update a filter and run new logs', async ({ page }) => {
+  test.only('should update a filter and run new logs', async ({ page }) => {
     await page.getByTestId('AdHocFilter-service_name').locator('svg').nth(2).click();
     await page.getByText('mimir-distributor').click();
 
@@ -438,6 +438,9 @@ test.describe('explore services breakdown page', () => {
 
     // open logs panel
     await page.getByTitle('See log details').nth(1).click();
+
+    const adHocLocator = page.getByRole('cell', { name: 'Fields Ad-hoc statistics' }).getByText('mimir-distributor');
+    await adHocLocator.scrollIntoViewIfNeeded()
 
     // find text corresponding text to match adhoc filter
     await expect(
