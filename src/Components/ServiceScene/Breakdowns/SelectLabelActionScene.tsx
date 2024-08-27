@@ -24,15 +24,15 @@ import {
 import { AdHocVariableFilter, Field, Labels, LoadingState } from '@grafana/data';
 import { FilterOp } from '../../../services/filters';
 
-interface SelectFieldActionSceneState extends SceneObjectState {
+interface SelectLabelActionSceneState extends SceneObjectState {
   labelName: string;
   fieldType: ValueSlugs;
   hideValueDrilldown?: boolean;
   showFilterField?: boolean;
 }
 
-export class SelectLabelActionScene extends SceneObjectBase<SelectFieldActionSceneState> {
-  constructor(state: SelectFieldActionSceneState) {
+export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSceneState> {
+  constructor(state: SelectLabelActionSceneState) {
     super(state);
     this.addActivationHandler(this.onActivate.bind(this));
   }
