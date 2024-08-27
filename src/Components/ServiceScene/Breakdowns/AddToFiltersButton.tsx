@@ -158,7 +158,7 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
     const { isIncluded, isExcluded } = model.isSelected();
     return (
       <FilterButton
-        buttonFill={'text'}
+        buttonFill={'outline'}
         isIncluded={isIncluded}
         isExcluded={isExcluded}
         onInclude={() => model.onClick('include')}

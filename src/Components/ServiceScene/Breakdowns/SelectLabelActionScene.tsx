@@ -158,6 +158,10 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectFieldActionSce
       this.setState({
         showFilterField: true,
       });
+    } else {
+      this.setState({
+        showFilterField: false,
+      });
     }
   }
 
