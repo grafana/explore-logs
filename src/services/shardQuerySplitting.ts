@@ -77,11 +77,16 @@ export function splitQueriesByStreamShard(
       done();
     };
 
-    const retry = () => {
+    const retry = (errorResponse?: DataQueryResponse) => {
+      if (errorResponse?.errors && errorResponse.errors[0].message?.includes('maximum of series')) {
+        console.log(`Maximum series reached, skipping retry`);
+        return false;
+      }
+
       const key = cycle !== undefined ? cycle : 0;
       const retries = retriesMap.get(key) ?? 0;
       if (retries > 2) {
-        return;
+        return false;
       }
 
       retriesMap.set(key, retries + 1);
@@ -110,7 +115,7 @@ export function splitQueriesByStreamShard(
     subquerySubsciption = dsQueryMethod(subRequest).subscribe({
       next: (partialResponse: DataQueryResponse) => {
         if ((partialResponse.errors ?? []).length > 0 || partialResponse.error != null) {
-          if (retry()) {
+          if (retry(partialResponse)) {
             return;
           }
         }
