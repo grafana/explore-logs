@@ -45,7 +45,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
 
     if (index === -1 && this.state.body) {
       const displayedFields = [...parent.state.displayedFields, field];
-      this.state.body.onOptionsChange({
+      this.setLogsVizOption({
         displayedFields,
       });
       parent.setState({ displayedFields });
@@ -59,12 +59,29 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
 
     if (index >= 0 && this.state.body) {
       const displayedFields = parent.state.displayedFields.filter((displayedField) => field !== displayedField);
-      this.state.body.onOptionsChange({
+      this.setLogsVizOption({
         displayedFields,
       });
       parent.setState({ displayedFields });
       setDisplayedFields(this, parent.state.displayedFields);
     }
+  };
+
+  setLogsVizOption(options = {}) {
+    if (!this.state.body) {
+      return;
+    }
+    this.state.body.onOptionsChange(options);
+  }
+
+  clearDisplayedFields = () => {
+    if (!this.state.body) {
+      return;
+    }
+    this.setLogsVizOption({
+      displayedFields: [],
+    });
+    setDisplayedFields(this, []);
   };
 
   private getParentScene() {
