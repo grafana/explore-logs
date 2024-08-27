@@ -16,50 +16,26 @@ describe('LogOptionsScene', () => {
   test('Reads active state and stores changes', async () => {
     jest.mocked(getLogOption).mockReturnValueOnce('true');
     const scene = new LogsListScene({});
-    jest.spyOn(sceneGraph, 'getAncestor').mockReturnValue(scene);
+    jest.spyOn(sceneGraph, 'getAncestor').mockReturnValueOnce(scene);
 
     render(<scene.Component model={scene} />);
 
     await act(async () => userEvent.click(screen.getByLabelText('Wrap lines')));
     expect(setLogOption).toHaveBeenCalledTimes(1);
     expect(setLogOption).toHaveBeenCalledWith('wrapLines', false);
-    expect(scene.setLogsVizOption).toHaveBeenCalledWith({ wrapLogMessage: false });
+    expect(scene.updateLogsPanel).toHaveBeenCalled();
   });
 
   test('Reads active state and stores changes', async () => {
     jest.mocked(getLogOption).mockReturnValueOnce('');
     const scene = new LogsListScene({});
-    jest.spyOn(sceneGraph, 'getAncestor').mockReturnValue(scene);
+    jest.spyOn(sceneGraph, 'getAncestor').mockReturnValueOnce(scene);
 
     render(<scene.Component model={scene} />);
 
     await act(async () => userEvent.click(screen.getByLabelText('Wrap lines')));
     expect(setLogOption).toHaveBeenCalledTimes(1);
     expect(setLogOption).toHaveBeenCalledWith('wrapLines', true);
-    expect(scene.setLogsVizOption).toHaveBeenCalledWith({ wrapLogMessage: true });
-  });
-
-  test('Does not show the clear fields button with no fields in display', async () => {
-    jest.mocked(getLogOption).mockReturnValueOnce('true');
-    const scene = new LogsListScene({});
-    jest.spyOn(sceneGraph, 'getAncestor').mockReturnValue(scene);
-
-    render(<scene.Component model={scene} />);
-
-    expect(screen.queryByText('Show original log line')).not.toBeInTheDocument();
-  });
-
-  test('Shows the clear fields button with fields in display', async () => {
-    jest.mocked(getLogOption).mockReturnValueOnce('true');
-    const scene = new LogsListScene({ displayedFields: ['yass'] });
-    jest.spyOn(sceneGraph, 'getAncestor').mockReturnValue(scene);
-
-    render(<scene.Component model={scene} />);
-
-    expect(screen.getByText('Show original log line')).toBeInTheDocument();
-
-    await act(async () => userEvent.click(screen.getByText('Show original log line')));
-
-    expect(scene.clearDisplayedFields).toHaveBeenCalledTimes(1);
+    expect(scene.updateLogsPanel).toHaveBeenCalled();
   });
 });

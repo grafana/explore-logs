@@ -23,7 +23,6 @@ import {
   getFieldGroupByVariable,
   getFieldsVariable,
   LOG_STREAM_SELECTOR_EXPR,
-  SERVICE_NAME,
   VAR_FIELD_GROUP_BY,
   VAR_LABELS,
 } from 'services/variables';
@@ -43,6 +42,7 @@ import { ValueSlugs } from '../../../services/routing';
 import { areArraysEqual } from '../../../services/comparison';
 import { FieldsAggregatedBreakdownScene } from './FieldsAggregatedBreakdownScene';
 import { FieldValuesBreakdownScene } from './FieldValuesBreakdownScene';
+import { SERVICE_NAME } from '../../ServiceSelectionScene/ServiceSelectionScene';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
 
@@ -241,7 +241,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     variablesToClear.forEach((variable) => {
       if (variable instanceof AdHocFiltersVariable && variable.state.key === 'adhoc_service_filter') {
         variable.setState({
-          filters: variable.state.filters.filter((filter) => filter.key === SERVICE_NAME),
+          filters: variable.state.filters.filter((filter) => filter.key === 'service_name'),
         });
       } else if (variable instanceof AdHocFiltersVariable) {
         variable.setState({

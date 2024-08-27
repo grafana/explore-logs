@@ -8,15 +8,16 @@ import {
   VizPanel,
 } from '@grafana/scenes';
 import { DataFrame } from '@grafana/data';
-import { getLogOption, setDisplayedFields } from '../../services/store';
+import { getLogOption } from '../../services/store';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 import React from 'react';
 import { LogsListScene } from './LogsListScene';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { addToFilters, FilterType } from './Breakdowns/AddToFiltersButton';
 import { getLabelTypeFromFrame, LabelType } from '../../services/fields';
-import { getAdHocFiltersVariable, SERVICE_NAME, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from '../../services/variables';
+import { getAdHocFiltersVariable, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from '../../services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
+import { SERVICE_NAME } from '../ServiceSelectionScene/ServiceSelectionScene';
 
 interface LogsPanelSceneState extends SceneObjectState {
   body?: VizPanel;
@@ -39,57 +40,8 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     }
   }
 
-  onClickShowField = (field: string) => {
-    const parent = this.getParentScene();
-    const index = parent.state.displayedFields.indexOf(field);
-
-    if (index === -1 && this.state.body) {
-      const displayedFields = [...parent.state.displayedFields, field];
-      this.setLogsVizOption({
-        displayedFields,
-      });
-      parent.setState({ displayedFields });
-      setDisplayedFields(this, parent.state.displayedFields);
-    }
-  };
-
-  onClickHideField = (field: string) => {
-    const parent = this.getParentScene();
-    const index = parent.state.displayedFields.indexOf(field);
-
-    if (index >= 0 && this.state.body) {
-      const displayedFields = parent.state.displayedFields.filter((displayedField) => field !== displayedField);
-      this.setLogsVizOption({
-        displayedFields,
-      });
-      parent.setState({ displayedFields });
-      setDisplayedFields(this, parent.state.displayedFields);
-    }
-  };
-
-  setLogsVizOption(options = {}) {
-    if (!this.state.body) {
-      return;
-    }
-    this.state.body.onOptionsChange(options);
-  }
-
-  clearDisplayedFields = () => {
-    if (!this.state.body) {
-      return;
-    }
-    this.setLogsVizOption({
-      displayedFields: [],
-    });
-    setDisplayedFields(this, []);
-  };
-
-  private getParentScene() {
-    return sceneGraph.getAncestor(this, LogsListScene);
-  }
-
   private getLogsPanel() {
-    const parentModel = this.getParentScene();
+    const parentModel = sceneGraph.getAncestor(this, LogsListScene);
     const visualizationType = parentModel.state.visualizationType;
 
     return (
@@ -104,12 +56,6 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         .setOption('isFilterLabelActive', this.handleIsFilterLabelActive)
         // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
         .setOption('onClickFilterString', this.handleFilterStringClick)
-        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
-        .setOption('onClickShowField', this.onClickShowField)
-        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
-        .setOption('onClickHideField', this.onClickHideField)
-        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
-        .setOption('displayedFields', parentModel.state.displayedFields)
         .setOption('wrapLogMessage', Boolean(getLogOption('wrapLines')))
         .setOption('showLogContextToggle', true)
         .setHeaderActions(
