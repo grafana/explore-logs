@@ -163,6 +163,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
               onInclude={() => props.cell.row.original.includeLink()}
               onExclude={() => props.cell.row.original.excludeLink()}
               onClear={() => props.cell.row.original.undoLink()}
+              buttonFill={'outline'}
             />
           );
         },

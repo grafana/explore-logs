@@ -19,6 +19,7 @@ import {
   getLabelsVariable,
   getLevelsVariable,
   LEVEL_VARIABLE_VALUE,
+  SERVICE_NAME,
 } from '../../../services/variables';
 import { AdHocVariableFilter, Field, Labels, LoadingState } from '@grafana/data';
 import { FilterOp } from '../../../services/filters';
@@ -28,7 +29,6 @@ interface SelectFieldActionSceneState extends SceneObjectState {
   fieldType: ValueSlugs;
   hideValueDrilldown?: boolean;
   showFilterField?: boolean;
-  variable?: AdHocFiltersVariable;
 }
 
 export class SelectLabelActionScene extends SceneObjectBase<SelectFieldActionSceneState> {
@@ -38,18 +38,21 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectFieldActionSce
   }
 
   public static Component = ({ model }: SceneComponentProps<SelectLabelActionScene>) => {
-    const { hideValueDrilldown, labelName, showFilterField, variable } = model.useState();
+    const { hideValueDrilldown, labelName, showFilterField } = model.useState();
+    const variable = model.getVariable();
+    const variableName = variable.useState().name;
     const existingFilter = model.getExistingFilter(variable);
 
     return (
       <>
         {variable && showFilterField === true && (
           <FilterButton
-            isExcluded={existingFilter?.operator === FilterOp.Equal}
-            isIncluded={existingFilter?.operator === FilterOp.NotEqual}
-            onInclude={() => model.onClickExcludeEmpty(variable.state.name)}
-            onExclude={() => model.onClickIncludeEmpty(variable.state.name)}
-            onClear={() => model.clearFilter(variable.state.name)}
+            isExcluded={existingFilter?.operator === FilterOp.Equal && existingFilter.value === EMPTY_VARIABLE_VALUE}
+            isIncluded={existingFilter?.operator === FilterOp.NotEqual && existingFilter.value === EMPTY_VARIABLE_VALUE}
+            onInclude={() => model.onClickExcludeEmpty(variableName)}
+            onExclude={() => model.onClickIncludeEmpty(variableName)}
+            onClear={() => model.clearFilter(variableName)}
+            buttonFill={'text'}
             titles={{
               include: `Only show logs that contain ${labelName}`,
               exclude: `Hide all logs that contain ${labelName}`,
@@ -74,9 +77,13 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectFieldActionSce
   };
 
   private getExistingFilter(variable?: AdHocFiltersVariable): AdHocVariableFilter | undefined {
-    return variable?.state.filters.find((filter) => {
-      return filter.key === this.state.labelName;
-    });
+    if (this.state.labelName !== SERVICE_NAME) {
+      return variable?.state.filters.find((filter) => {
+        return filter.key === this.state.labelName && filter.value === EMPTY_VARIABLE_VALUE;
+      });
+    }
+
+    return undefined;
   }
 
   public onActivate() {
@@ -129,15 +136,7 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectFieldActionSce
       });
       return;
     }
-
-    let variable: AdHocFiltersVariable;
-    if (this.state.fieldType === ValueSlugs.field) {
-      variable = getFieldsVariable(this);
-    } else if (this.state.labelName === LEVEL_VARIABLE_VALUE) {
-      variable = getLevelsVariable(this);
-    } else {
-      variable = getLabelsVariable(this);
-    }
+    const variable = this.getVariable();
     // iterate through all the labels on the log panel query result and count how many times this exists
     const logLinesWithLabelCount = labels.values.reduce((acc, labels) => {
       if (labels?.[this.state.labelName]) {
@@ -158,9 +157,17 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectFieldActionSce
     if (logLinesWithLabelCount < logsPanelData.length || this.getExistingFilter(variable)) {
       this.setState({
         showFilterField: true,
-        //@todo not clone? set function to get variable to state?
-        variable: variable.clone(),
       });
+    }
+  }
+
+  private getVariable() {
+    if (this.state.fieldType === ValueSlugs.field) {
+      return getFieldsVariable(this);
+    } else if (this.state.labelName === LEVEL_VARIABLE_VALUE) {
+      return getLevelsVariable(this);
+    } else {
+      return getLabelsVariable(this);
     }
   }
 }

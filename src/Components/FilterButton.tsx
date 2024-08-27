@@ -10,6 +10,7 @@ type Props = {
   isIncluded: boolean;
   onExclude: () => void;
   isExcluded: boolean;
+  buttonFill: 'solid' | 'outline' | 'text';
   titles?: {
     include: string;
     exclude: string;
@@ -17,13 +18,13 @@ type Props = {
 };
 
 export const FilterButton = (props: Props) => {
-  const { isExcluded, isIncluded, onInclude, onExclude, onClear, titles } = props;
+  const { isExcluded, isIncluded, onInclude, onExclude, onClear, titles, buttonFill } = props;
   const styles = useStyles2(getStyles, isIncluded, isExcluded);
   return (
     <div className={styles.container}>
       <Button
         variant={isIncluded ? 'primary' : 'secondary'}
-        fill="outline"
+        fill={buttonFill}
         size="sm"
         aria-selected={isIncluded}
         className={styles.includeButton}
@@ -35,7 +36,7 @@ export const FilterButton = (props: Props) => {
       </Button>
       <Button
         variant={isExcluded ? 'primary' : 'secondary'}
-        fill="outline"
+        fill={buttonFill}
         size="sm"
         aria-selected={isExcluded}
         className={styles.excludeButton}
