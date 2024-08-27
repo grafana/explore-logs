@@ -13,8 +13,13 @@ import {
 import { Button } from '@grafana/ui';
 import { VariableHide } from '@grafana/schema';
 import { addToFavoriteServicesInStorage } from 'services/store';
-import { getDataSourceVariable, getLabelsVariable, getServiceSelectionStringVariable } from 'services/variables';
-import { SERVICE_NAME, ServiceSelectionScene } from './ServiceSelectionScene';
+import {
+  getDataSourceVariable,
+  getLabelsVariable,
+  getServiceSelectionStringVariable,
+  SERVICE_NAME,
+} from 'services/variables';
+import { ServiceSelectionScene } from './ServiceSelectionScene';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { FilterOp } from 'services/filters';
 import { navigateToInitialPageAfterServiceSelection } from '../../services/navigate';
