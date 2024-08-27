@@ -95,6 +95,7 @@ export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
 }
 
 function renderFilter(filter: AdHocVariableFilter) {
+  // If the filter value is an empty string, we don't want to wrap it in backticks!
   if (filter.value === EMPTY_VARIABLE_VALUE) {
     return `${filter.key}${filter.operator}${filter.value}`;
   }

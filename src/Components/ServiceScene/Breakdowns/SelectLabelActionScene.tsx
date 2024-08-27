@@ -45,7 +45,7 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
 
     return (
       <>
-        {variable && showFilterField === true && (
+        {showFilterField === true && (
           <FilterButton
             isExcluded={existingFilter?.operator === FilterOp.Equal && existingFilter.value === EMPTY_VARIABLE_VALUE}
             isIncluded={existingFilter?.operator === FilterOp.NotEqual && existingFilter.value === EMPTY_VARIABLE_VALUE}
