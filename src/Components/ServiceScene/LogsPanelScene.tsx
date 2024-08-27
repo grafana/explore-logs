@@ -50,6 +50,11 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
       });
       parent.setState({ displayedFields });
       setDisplayedFields(this, parent.state.displayedFields);
+
+      reportAppInteraction(
+        USER_EVENTS_PAGES.service_details,
+        USER_EVENTS_ACTIONS.service_details.logs_toggle_displayed_field
+      );
     }
   };
 
@@ -64,6 +69,11 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
       });
       parent.setState({ displayedFields });
       setDisplayedFields(this, parent.state.displayedFields);
+
+      reportAppInteraction(
+        USER_EVENTS_PAGES.service_details,
+        USER_EVENTS_ACTIONS.service_details.logs_toggle_displayed_field
+      );
     }
   };
 

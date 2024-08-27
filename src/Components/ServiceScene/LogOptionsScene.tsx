@@ -4,6 +4,7 @@ import { Button, InlineField, InlineSwitch, Tooltip } from '@grafana/ui';
 import React, { ChangeEvent } from 'react';
 import { getLogOption, setLogOption } from 'services/store';
 import { LogsListScene } from './LogsListScene';
+import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 
 interface LogOptionsState extends SceneObjectState {
   wrapLines?: boolean;
@@ -33,6 +34,10 @@ export class LogOptionsScene extends SceneObjectBase<LogOptionsState> {
   clearDisplayedFields = () => {
     const parentScene = this.getParentScene();
     parentScene.clearDisplayedFields();
+    reportAppInteraction(
+      USER_EVENTS_PAGES.service_details,
+      USER_EVENTS_ACTIONS.service_details.logs_clear_displayed_fields
+    );
   };
 }
 
