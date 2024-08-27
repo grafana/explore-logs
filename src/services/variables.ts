@@ -26,6 +26,7 @@ export const EXPLORATION_DS = { uid: VAR_DATASOURCE_EXPR };
 export const ALL_VARIABLE_VALUE = '$__all';
 export const LEVEL_VARIABLE_VALUE = 'detected_level';
 export const PATTERNS_TEXT_FILTER = 'patternsFilter';
+export const SERVICE_NAME = 'service_name';
 export const EMPTY_VARIABLE_VALUE = '""';
 
 export function getLogsStreamSelector(options: {
@@ -116,4 +117,21 @@ export function getServiceSelectionStringVariable(sceneRef: SceneObject) {
 
 export function getUrlParamNameForVariable(variableName: string) {
   return `var-${variableName}`;
+}
+
+export function getServiceName(scene: SceneObject) {
+  const labelsVariable = getLabelsVariable(scene);
+  const serviceName = labelsVariable.state.filters
+    .filter((filter) => filter.key === SERVICE_NAME)
+    .map((filter) => filter.value);
+
+  if (!serviceName) {
+    throw new Error('Service present in filters selected');
+  }
+  return serviceName[0];
+}
+
+export function getDataSourceName(scene: SceneObject) {
+  const dsVariable = getDataSourceVariable(scene);
+  return dsVariable.getValue();
 }
