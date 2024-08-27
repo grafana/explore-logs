@@ -24,7 +24,6 @@ import {
   getLabelsVariable,
   getLevelsVariable,
   LOG_STREAM_SELECTOR_EXPR,
-  SERVICE_NAME,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_LABELS,
@@ -32,6 +31,7 @@ import {
   VAR_LEVELS,
   VAR_PATTERNS,
 } from 'services/variables';
+import { SERVICE_NAME } from 'Components/ServiceSelectionScene/ServiceSelectionScene';
 import { getMetadataService } from '../../services/metadata';
 import { navigateToIndex } from '../../services/navigate';
 import { areArraysEqual } from '../../services/comparison';

@@ -12,13 +12,10 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       panel: new SceneFlexLayout({
         children: [new LogOptionsScene()],
       }),
-      displayedFields: state.displayedFields ?? [],
     });
   }
 
   public updateLogsPanel = jest.fn();
-  public setLogsVizOption = jest.fn();
-  public clearDisplayedFields = jest.fn();
 
   public static Component = ({ model }: SceneComponentProps<LogsListScene>) => {
     const { panel } = model.useState();
