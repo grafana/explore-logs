@@ -39,6 +39,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     keys: ['urlColumns', 'selectedLine', 'visualizationType', 'displayedFields'],
   });
   private lineFilterScene?: LineFilterScene = undefined;
+  private logsPanelScene?: LogsPanelScene = undefined;
   constructor(state: Partial<LogsListSceneState>) {
     super({
       ...state,
@@ -107,6 +108,13 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     });
   }
 
+  clearDisplayedFields = () => {
+    this.setState({ displayedFields: [] });
+    if (this.logsPanelScene) {
+      this.logsPanelScene.clearDisplayedFields();
+    }
+  };
+
   public onActivate() {
     const searchParams = new URLSearchParams(locationService.getLocation().search);
     this.setStateFromUrl(searchParams);
@@ -142,6 +150,12 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     });
   }
 
+  public setLogsVizOption = (options = {}) => {
+    if (this.logsPanelScene) {
+      this.logsPanelScene.setLogsVizOption(options);
+    }
+  };
+
   public updateLogsPanel = () => {
     this.setState({
       panel: this.getVizPanel(),
@@ -165,6 +179,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
 
   private getVizPanel() {
     this.lineFilterScene = new LineFilterScene();
+    this.logsPanelScene = new LogsPanelScene({});
 
     return new SceneFlexLayout({
       direction: 'column',
@@ -182,7 +197,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
               }),
               new SceneFlexItem({
                 height: 'calc(100vh - 220px)',
-                body: new LogsPanelScene({}),
+                body: this.logsPanelScene,
               }),
             ]
           : [
