@@ -23,6 +23,7 @@ import {
 import {
   EXPLORATION_DS,
   getFieldsVariable,
+  getLabelsVariable,
   getLevelsVariable,
   getPatternsVariable,
   getUrlParamNameForVariable,
@@ -44,6 +45,7 @@ import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelection
 import { LoadingPlaceholder } from '@grafana/ui';
 import { locationService } from '@grafana/runtime';
 import { renderLogQLFieldFilters, renderLogQLLabelFilters, renderPatternFilters } from 'services/query';
+import { getLokiDatasource } from '../../services/scenes';
 
 export interface AppliedPattern {
   pattern: string;
@@ -97,6 +99,8 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   };
 
   public onActivate() {
+    this.initLevelsTagValuesProvider();
+
     const stateUpdate: Partial<IndexSceneState> = {};
 
     if (!this.state.contentScene) {
@@ -118,6 +122,31 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     return () => {
       getUrlSyncManager().cleanUp(this);
     };
+  }
+
+  private initLevelsTagValuesProvider() {
+    const levelsVariable = getLevelsVariable(this);
+    const labelsVariable = getLabelsVariable(this);
+
+    const getTagValuesProvider = () =>
+      getLokiDatasource(this).then((ds) => {
+        if (ds && ds.getTagValues) {
+          return ds
+            .getTagValues({
+              filters: labelsVariable.state.filters,
+              key: levelsVariable.state.name,
+            })
+            .then((values) => {
+              return { replace: true, values };
+            });
+        }
+
+        return { replace: true, values: [] };
+      });
+
+    levelsVariable.setState({
+      getTagValuesProvider,
+    });
   }
 
   /**
@@ -212,7 +241,16 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     applyMode: 'manual',
     layout: 'vertical',
     getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
-    getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
+    // getTagValuesProvider: () => Promise.resolve({ replace: false, values: [
+    //     {
+    //   value: 'hallo',
+    //     text: 'hallo'
+    //   },
+    //     {
+    //       value: 'person',
+    //       text: 'person',
+    //     }
+    //   ] }),
     expressionBuilder: renderLogQLFieldFilters,
     hide: VariableHide.hideLabel,
   });
