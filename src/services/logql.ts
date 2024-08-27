@@ -140,3 +140,20 @@ export const interpolateShardingSelector = (queries: LokiQuery[], shards?: numbe
     expr: query.expr.replace(new RegExp(`${SHARDING_PLACEHOLDER}`, 'g'), shardValue),
   }));
 };
+
+export const getServiceNameFromQuery = (query: string) => {
+  const matchers = getNodesFromQuery(query, [Matcher]);
+  for (let i = 0; i < matchers.length; i++) {
+    const idNode = matchers[i].getChild(Identifier);
+    const stringNode = matchers[i].getChild(String);
+    if (!idNode || !stringNode) {
+      continue;
+    }
+    const identifier = query.substring(idNode.from, idNode.to);
+    const value = query.substring(stringNode.from, stringNode.to);
+    if (identifier === 'service_name') {
+      return value;
+    }
+  }
+  return '';
+};

@@ -3,7 +3,12 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { DataQueryRequest, LoadingState, DataQueryResponse, TimeRange } from '@grafana/data';
 import { LokiQuery } from './query';
-import { addShardingPlaceholderSelector, interpolateShardingSelector, isLogsQuery } from './logql';
+import {
+  addShardingPlaceholderSelector,
+  getServiceNameFromQuery,
+  interpolateShardingSelector,
+  isLogsQuery,
+} from './logql';
 import { combineResponses } from './combineResponses';
 import { DataSourceWithBackend } from '@grafana/runtime';
 
@@ -98,8 +103,11 @@ export function splitQueriesByStreamShard(
       subRequest.requestId = `${request.requestId}_shard_${cycle !== undefined ? cycle : 'no-shard'}`;
     }
 
-    // @ts-expect-error
-    subquerySubsciption = datasource.runQuery(subRequest).subscribe({
+    const dsQueryMethod =
+      // @ts-expect-error
+      shardRequests === undefined ? datasource.query.bind(datasource) : datasource.runQuery.bind(datasource);
+
+    subquerySubsciption = dsQueryMethod(subRequest).subscribe({
       next: (partialResponse: DataQueryResponse) => {
         if ((partialResponse.errors ?? []).length > 0 || partialResponse.error != null) {
           if (retry()) {
@@ -124,8 +132,12 @@ export function splitQueriesByStreamShard(
   };
 
   const response = new Observable<DataQueryResponse>((subscriber) => {
+    const serviceName = getServiceNameFromQuery(splittingTargets[0].expr);
     datasource.languageProvider
-      .fetchLabelValues('__stream_shard__', { timeRange: request.range })
+      .fetchLabelValues('__stream_shard__', {
+        timeRange: request.range,
+        streamSelector: serviceName ? `{service_name=${serviceName}}` : undefined,
+      })
       .then((values: string[]) => {
         const shards = values.map((value) => parseInt(value, 10));
         const startShard = shards.length ? Math.max(...shards) : undefined;
