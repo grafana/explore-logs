@@ -441,10 +441,11 @@ test.describe('explore services breakdown page', () => {
     // open logs panel
     await page.getByTitle('See log details').nth(1).click();
 
+    const adHocLocator = page.getByTestId('data-testid Panel header Logs').getByText('mimir-distributor', { exact: true })
+    await adHocLocator.scrollIntoViewIfNeeded()
+
     // find text corresponding text to match adhoc filter
-    await expect(
-      page.getByRole('cell', { name: 'Fields Ad-hoc statistics' }).getByText('mimir-distributor').nth(0)
-    ).toBeVisible();
+    await expect(adHocLocator).toBeVisible();
   });
 
   test('should include all logs that contain field', async ({page}) => {
