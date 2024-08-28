@@ -124,7 +124,6 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
   }
 
   private buildChildren(options: Array<{ label: string; value: string }>): SceneCSSGridItem[] {
-    console.log('build children', options);
     const children: SceneCSSGridItem[] = [];
     for (const option of options) {
       const { value: optionValue } = option;

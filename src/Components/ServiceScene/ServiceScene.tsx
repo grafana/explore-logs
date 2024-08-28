@@ -189,7 +189,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private onActivate() {
-    console.log('on activatre', this.state.$detectedFieldsData);
     this.getMetadata();
     this.resetBodyAndData();
 
@@ -301,9 +300,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     loadingStates[key] = newState.data?.state === LoadingState.Loading;
     // set loading state to true if any of the queries are loading
     const loading = Object.values(loadingStates).some((v) => v);
-    // console.log('updateLoadingState', {
-    //   loading, loadingStates
-    // })
     this.setState({ loading, loadingStates });
   }
 
