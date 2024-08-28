@@ -56,7 +56,9 @@ export function combineResponses(currentResult: DataQueryResponse | null, newRes
  */
 export function mergeFrames(dest: DataFrame, source: DataFrame) {
   const destTimeField = dest.fields.find((field) => field.type === FieldType.time);
+  const destIdField = dest.fields.find((field) => field.type === FieldType.string && field.name === 'id');
   const sourceTimeField = source.fields.find((field) => field.type === FieldType.time);
+  const sourceIdField = dest.fields.find((field) => field.type === FieldType.string && field.name === 'id');
 
   if (!destTimeField || !sourceTimeField) {
     console.error(`Time fields not found in the data frames`);
@@ -71,6 +73,15 @@ export function mergeFrames(dest: DataFrame, source: DataFrame) {
     const destNanosValues = destTimeField.nanos?.slice(0);
     const destIdx = resolveIdx(destTimeField, sourceTimeField, i);
 
+    const entryExistsInDest = areEqual(
+      { ...destTimeField, values: destTimeValues, nanos: destNanosValues },
+      destIdField,
+      destIdx,
+      sourceTimeField,
+      sourceIdField,
+      i
+    );
+
     for (let f = 0; f < totalFields; f++) {
       // For now, skip undefined fields that exist in the new frame
       if (!dest.fields[f]) {
@@ -83,14 +94,7 @@ export function mergeFrames(dest: DataFrame, source: DataFrame) {
         continue;
       }
       // Same value, accumulate
-      if (
-        equalNsTimestamps(
-          sourceTimeField,
-          i,
-          { ...destTimeField, values: destTimeValues, nanos: destNanosValues },
-          destIdx
-        )
-      ) {
+      if (entryExistsInDest) {
         if (dest.fields[f].type === FieldType.time) {
           // Time already exists, skip
           continue;
@@ -141,6 +145,26 @@ function resolveIdx(destField: Field, sourceField: Field, index: number) {
     return idx + 1;
   }
   return idx;
+}
+
+function areEqual(
+  destTimeField: Field,
+  destIdField: Field | undefined,
+  destIndex: number,
+  sourceTimeField: Field,
+  sourceIdField: Field | undefined,
+  sourceIndex: number
+) {
+  const sameTimestamp = equalNsTimestamps(destTimeField, destIndex, sourceTimeField, sourceIndex);
+  if (!sameTimestamp) {
+    return false;
+  }
+  if (!destIdField || !sourceIdField) {
+    return true;
+  }
+
+  // Log frames, check indexes
+  return destIdField.values[destIndex] === sourceIdField.values[sourceIndex];
 }
 
 function equalNsTimestamps(destField: Field, destIndex: number, sourceField: Field, sourceIndex: number) {
