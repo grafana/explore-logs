@@ -57,13 +57,13 @@ type PatternsResponse = {
   data: LokiPattern[];
 };
 
-const DETECTED_FIELDS_NAME_FIELD = 'name';
+export const DETECTED_FIELDS_NAME_FIELD = 'name';
 
-const DETECTED_FIELDS_CARDINALITY_NAME = 'cardinality';
+export const DETECTED_FIELDS_CARDINALITY_NAME = 'cardinality';
 
-const DETECTED_FIELDS_PARSER_NAME = 'parser';
+export const DETECTED_FIELDS_PARSER_NAME = 'parser';
 
-const DETECTED_FIELDS_TYPE_NAME = 'type';
+export const DETECTED_FIELDS_TYPE_NAME = 'type';
 
 class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
   constructor(pluginId: string, uid: string) {
@@ -339,7 +339,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
       const parserField: Field = { name: DETECTED_FIELDS_PARSER_NAME, type: FieldType.string, values: [], config: {} };
       const typeField: Field = { name: DETECTED_FIELDS_TYPE_NAME, type: FieldType.string, values: [], config: {} };
 
-      // @todo how do we want to sort the detected fields?
+      //@todo sort here?
       response.fields?.forEach((field) => {
         nameField.values.push(field.label);
         cardinalityField.values.push(field.cardinality);

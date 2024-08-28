@@ -51,20 +51,29 @@ export function updateParserFromDataFrame(frame: DataFrame, sceneRef: SceneObjec
 export function extractParserFromDetectedFields(data: DataFrame): ExtractedFieldsType {
   const parserField = data.fields.find((f) => f.name === 'parser');
 
+  const parsersSet = new Set(parserField?.values.map((v) => v.toString()) ?? []);
+
+  // Structured metadata doesn't change the parser we use, so remove it
+  parsersSet.delete('');
+
   // get unique values
-  const parsers = Array.from(new Set(parserField?.values.map((v) => v.toString()) ?? []));
-  if (parsers.length === 1) {
-    switch (parsers[0]) {
+  const parsersArray = Array.from(parsersSet);
+
+  if (parsersArray.length === 1) {
+    switch (parsersArray[0]) {
       case 'json':
         return 'json';
       case 'logfmt':
         return 'logfmt';
-
+      case '': // Structured metadata is empty
+        return '';
+      // if we get a parser with multiple
       default:
-        return 'logfmt';
+        return 'mixed';
     }
   }
-  if (parsers.length > 1) {
+
+  if (parsersSet.size > 1) {
     return 'mixed';
   }
 
