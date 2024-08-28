@@ -25,7 +25,9 @@ import {
   ALL_VARIABLE_VALUE,
   getFieldGroupByVariable,
   getFieldsVariable,
+  getLogsStreamSelector,
   LOG_STREAM_SELECTOR_EXPR,
+  LogsQueryOptions,
   SERVICE_NAME,
   VAR_FIELD_GROUP_BY,
   VAR_LABELS,
@@ -424,4 +426,16 @@ export function getFieldBreakdownExpr(field: string) {
     );
   }
   return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | ${field}!="" [$__auto]))`;
+}
+
+export function buildFieldsQuery(optionValue: string, options: LogsQueryOptions) {
+  if (isAvgField(optionValue)) {
+    return (
+      `avg_over_time(${getLogsStreamSelector(options)} | unwrap ` +
+      (optionValue === 'duration' ? `duration` : optionValue === 'bytes' ? `bytes` : ``) +
+      `(${optionValue}) [$__auto]) by ()`
+    );
+  } else {
+    return `sum by (${optionValue}) (count_over_time(${getLogsStreamSelector(options)} [$__auto]))`;
+  }
 }

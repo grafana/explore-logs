@@ -9,18 +9,24 @@ import {
   SceneObjectState,
   VizPanel,
 } from '@grafana/scenes';
-import { ALL_VARIABLE_VALUE, getFieldGroupByVariable } from '../../../services/variables';
+import {
+  ALL_VARIABLE_VALUE,
+  getFieldGroupByVariable,
+  getFieldsVariable,
+  LogsQueryOptions,
+} from '../../../services/variables';
 import { buildDataQuery } from '../../../services/query';
 import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
 import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import {
+  buildFieldsQuery,
   FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS,
   FieldsBreakdownScene,
-  getFieldBreakdownExpr,
   isAvgField,
 } from './FieldsBreakdownScene';
 import {
+  getDetectedFieldsFrame,
   getDetectedFieldsFrameFromQueryRunnerState,
   getDetectedFieldsNamesFromQueryRunnerState,
   ServiceScene,
@@ -29,7 +35,7 @@ import React from 'react';
 import { SelectLabelActionScene } from './SelectLabelActionScene';
 import { ValueSlugs } from '../../../services/routing';
 import { areArraysEqual } from '../../../services/comparison';
-import { LoadingState } from '@grafana/data';
+import { Field, LoadingState } from '@grafana/data';
 
 export interface FieldsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -160,16 +166,42 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
 
   private buildChildren(options: Array<{ label: string; value: string }>): SceneCSSGridItem[] {
     const children: SceneCSSGridItem[] = [];
+    const detectedFieldsFrame = getDetectedFieldsFrame(this);
+    const parserField: Field<string> | undefined = detectedFieldsFrame?.fields[2];
+    const namesField: Field<string> | undefined = detectedFieldsFrame?.fields[0];
+    const fieldsVariable = getFieldsVariable(this);
+
     for (const option of options) {
       const { value: optionValue } = option;
       if (optionValue === ALL_VARIABLE_VALUE || !optionValue) {
         continue;
       }
 
-      const query = buildDataQuery(getFieldBreakdownExpr(optionValue), {
+      let fieldExpressionToAdd = '';
+      let structuredMetadataToAdd = '';
+
+      const index = namesField?.values.indexOf(optionValue);
+      const parser = index && index !== -1 ? parserField?.values[index] : undefined;
+
+      if (parser === '') {
+        structuredMetadataToAdd = `| ${optionValue}!=""`;
+        // Structured metadata
+      } else {
+        fieldExpressionToAdd = `| ${optionValue}!=""`;
+      }
+
+      // is option structured metadata
+      const options: LogsQueryOptions = {
+        structuredMetadataToAdd,
+        fieldExpressionToAdd,
+        noParser: !fieldExpressionToAdd && fieldsVariable.state.filters.length === 0,
+      };
+      const queryString = buildFieldsQuery(optionValue, options);
+      const query = buildDataQuery(queryString, {
         legendFormat: `{{${optionValue}}}`,
         refId: optionValue,
       });
+
       const queryRunner = getQueryRunner([query]);
       let body = PanelBuilders.timeseries().setTitle(optionValue).setData(queryRunner);
 

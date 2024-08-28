@@ -21,8 +21,11 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'se
 import { ValueSlugs } from 'services/routing';
 import {
   ALL_VARIABLE_VALUE,
+  getFieldsVariable,
   getLabelGroupByVariable,
   getLabelsVariable,
+  getLogsStreamSelector,
+  LEVEL_VARIABLE_VALUE,
   SERVICE_NAME,
   VAR_LABEL_GROUP_BY,
   VAR_LABELS,
@@ -41,6 +44,7 @@ import { areArraysEqual } from '../../../services/comparison';
 import { LabelValuesBreakdownScene } from './LabelValuesBreakdownScene';
 import { LabelsAggregatedBreakdownScene } from './LabelsAggregatedBreakdownScene';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
+import { buildDataQuery } from '../../../services/query';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -328,4 +332,26 @@ export function buildLabelValuesBreakdownActionScene(value: string) {
       }),
     ],
   });
+}
+
+export function buildLabelsQuery(sceneRef: SceneObject, optionValue: string, optionName: string) {
+  let labelExpressionToAdd = '';
+  let structuredMetadataToAdd = '';
+
+  if (optionName && optionName !== LEVEL_VARIABLE_VALUE) {
+    labelExpressionToAdd = ` ,${optionName} != ""`;
+  } else if (optionName && optionName === LEVEL_VARIABLE_VALUE) {
+    structuredMetadataToAdd = ` | ${optionName} != ""`;
+  }
+
+  const fields = getFieldsVariable(sceneRef);
+
+  return buildDataQuery(
+    `sum(count_over_time(${getLogsStreamSelector({
+      labelExpressionToAdd,
+      structuredMetadataToAdd,
+      noParser: fields.state.filters.length === 0,
+    })} [$__auto])) by (${optionValue})`,
+    { legendFormat: `{{${optionValue}}}`, refId: 'LABEL_BREAKDOWN_VALUES' }
+  );
 }

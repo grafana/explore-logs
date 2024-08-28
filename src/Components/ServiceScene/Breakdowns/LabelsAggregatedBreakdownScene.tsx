@@ -7,20 +7,13 @@ import {
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
-  VariableValueOption,
 } from '@grafana/scenes';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
 import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
-import {
-  ALL_VARIABLE_VALUE,
-  getLabelGroupByVariable,
-  getLogsStreamSelector,
-  LEVEL_VARIABLE_VALUE,
-} from '../../../services/variables';
+import { ALL_VARIABLE_VALUE, getLabelGroupByVariable } from '../../../services/variables';
 import React from 'react';
-import { LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS, LabelBreakdownScene } from './LabelBreakdownScene';
-import { buildDataQuery } from '../../../services/query';
+import { buildLabelsQuery, LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS, LabelBreakdownScene } from './LabelBreakdownScene';
 import { SelectLabelActionScene } from './SelectLabelActionScene';
 import { ValueSlugs } from '../../../services/routing';
 
@@ -55,7 +48,7 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
       if (value === ALL_VARIABLE_VALUE || !value) {
         continue;
       }
-      const query = this.buildQuery(option);
+      const query = buildLabelsQuery(this, String(option.value), String(option.value));
 
       children.push(
         new SceneCSSGridItem({
@@ -95,26 +88,6 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
         }),
       ],
     });
-  }
-
-  private buildQuery(option: VariableValueOption) {
-    const optionValue = String(option.value);
-    let labelExpressionToAdd = '';
-    let structuredMetadataToAdd = '';
-
-    if (option.value && option.value !== LEVEL_VARIABLE_VALUE) {
-      labelExpressionToAdd = `, ${option.value}!=""`;
-    } else if (option.value && option.value === LEVEL_VARIABLE_VALUE) {
-      structuredMetadataToAdd = ` | ${option.value} != ""`;
-    }
-
-    return buildDataQuery(
-      `sum(count_over_time(${getLogsStreamSelector({
-        labelExpressionToAdd,
-        structuredMetadataToAdd,
-      })}[$__auto])) by (${optionValue})`,
-      { legendFormat: `{{${optionValue}}}`, refId: 'LABEL_BREAKDOWN_NAMES' }
-    );
   }
 
   public static Selector({ model }: SceneComponentProps<LabelsAggregatedBreakdownScene>) {
