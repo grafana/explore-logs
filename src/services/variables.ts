@@ -16,11 +16,11 @@ export const VAR_SERVICE = 'service';
 export const VAR_SERVICE_EXPR = '${service}';
 export const VAR_DATASOURCE = 'ds';
 export const VAR_DATASOURCE_EXPR = '${ds}';
-export const VAR_LOGS_FORMAT = 'logsFormat';
-export const VAR_LOGS_FORMAT_EXPR = '${logsFormat}';
+export const VAR_LOGS_FORMAT_EXPR = `| json  | logfmt | drop __error__, __error_details__`;
 export const VAR_LINE_FILTER = 'lineFilter';
 export const VAR_LINE_FILTER_EXPR = '${lineFilter}';
 export const LOG_STREAM_SELECTOR_EXPR = `{${VAR_LABELS_EXPR}} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_LEVELS_EXPR} ${VAR_FIELDS_EXPR} ${VAR_LINE_FILTER_EXPR}`;
+export const LOG_STREAM_SELECTOR_EXPR_NO_FIELDS = `{${VAR_LABELS_EXPR}} ${VAR_PATTERNS_EXPR} ${VAR_LEVELS_EXPR}`;
 export const PATTERNS_SAMPLE_SELECTOR_EXPR = `{${VAR_LABELS_EXPR}} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR}`;
 export const EXPLORATION_DS = { uid: VAR_DATASOURCE_EXPR };
 export const ALL_VARIABLE_VALUE = '$__all';
@@ -95,14 +95,6 @@ export function getAdHocFiltersVariable(variableName: string, scene: SceneObject
 
   if (!(variable instanceof AdHocFiltersVariable)) {
     throw new Error(`Could not get AdHocFiltersVariable ${variableName}. Variable not found.`);
-  }
-  return variable;
-}
-
-export function getLogsFormatVariable(sceneRef: SceneObject) {
-  const variable = sceneGraph.lookupVariable(VAR_LOGS_FORMAT, sceneRef);
-  if (!(variable instanceof CustomVariable)) {
-    throw new Error('VAR_LOGS_FORMAT not found');
   }
   return variable;
 }

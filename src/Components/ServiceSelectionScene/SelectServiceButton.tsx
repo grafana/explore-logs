@@ -1,15 +1,6 @@
 import React from 'react';
 
-import {
-  SceneComponentProps,
-  SceneCSSGridItem,
-  sceneGraph,
-  SceneObject,
-  SceneObjectBase,
-  SceneObjectState,
-  SceneQueryRunner,
-  VizPanel,
-} from '@grafana/scenes';
+import { SceneComponentProps, SceneObject, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { Button } from '@grafana/ui';
 import { VariableHide } from '@grafana/schema';
 import { addToFavoriteServicesInStorage } from 'services/store';
@@ -19,45 +10,43 @@ import {
   getServiceSelectionStringVariable,
   SERVICE_NAME,
 } from 'services/variables';
-import { ServiceSelectionScene } from './ServiceSelectionScene';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { FilterOp } from 'services/filters';
 import { navigateToInitialPageAfterServiceSelection } from '../../services/navigate';
-import { updateParserFromDataFrame } from '../../services/fields';
 
 export interface SelectServiceButtonState extends SceneObjectState {
   service: string;
 }
 
-function setParserIfFrameExistsForService(service: string, sceneRef: SceneObject) {
-  const serviceSelectionScene = sceneGraph.getAncestor(sceneRef, ServiceSelectionScene);
-
-  const gridItem: SceneCSSGridItem | SceneObject | undefined = serviceSelectionScene.state.body.state.children.find(
-    (child) => {
-      if (child instanceof SceneCSSGridItem) {
-        const body = child.state.body;
-
-        // The query runner is only defined for the logs panel
-        const queryRunner = body?.state.$data;
-        if (queryRunner instanceof SceneQueryRunner) {
-          return queryRunner?.state?.queries?.find((query) => {
-            return query.refId === `logs-${service}`;
-          });
-        }
-      }
-      return false;
-    }
-  );
-
-  if (gridItem && gridItem instanceof SceneCSSGridItem) {
-    const body = gridItem.state.body as VizPanel;
-    const frame = body.state.$data?.state.data?.series[0];
-
-    if (frame) {
-      updateParserFromDataFrame(frame, sceneRef);
-    }
-  }
-}
+// function setParserIfFrameExistsForService(service: string, sceneRef: SceneObject) {
+//   const serviceSelectionScene = sceneGraph.getAncestor(sceneRef, ServiceSelectionScene);
+//
+//   const gridItem: SceneCSSGridItem | SceneObject | undefined = serviceSelectionScene.state.body.state.children.find(
+//     (child) => {
+//       if (child instanceof SceneCSSGridItem) {
+//         const body = child.state.body;
+//
+//         // The query runner is only defined for the logs panel
+//         const queryRunner = body?.state.$data;
+//         if (queryRunner instanceof SceneQueryRunner) {
+//           return queryRunner?.state?.queries?.find((query) => {
+//             return query.refId === `logs-${service}`;
+//           });
+//         }
+//       }
+//       return false;
+//     }
+//   );
+//
+//   if (gridItem && gridItem instanceof SceneCSSGridItem) {
+//     // const body = gridItem.state.body as VizPanel;
+//     // const frame = body.state.$data?.state.data?.series[0];
+//
+//     // if (frame) {
+//     //   updateParserFromDataFrame(frame, sceneRef);
+//     // }
+//   }
+// }
 
 export function selectService(service: string, sceneRef: SceneObject) {
   const variable = getLabelsVariable(sceneRef);
@@ -66,7 +55,7 @@ export function selectService(service: string, sceneRef: SceneObject) {
     service: service,
   });
 
-  setParserIfFrameExistsForService(service, sceneRef);
+  // setParserIfFrameExistsForService(service, sceneRef);
 
   const serviceSelectionVariable = getServiceSelectionStringVariable(sceneRef);
   // Reset the service selection search to show all services

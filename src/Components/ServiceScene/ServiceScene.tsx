@@ -37,7 +37,6 @@ import { navigateToIndex } from '../../services/navigate';
 import { areArraysEqual } from '../../services/comparison';
 import { ActionBarScene } from './ActionBarScene';
 import { breakdownViewsDefinitions, valueBreakdownViews } from './BreakdownViews';
-import { updateParserFromDataFrame } from 'services/fields';
 
 const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 const PATTERNS_QUERY_REFID = 'patterns';
@@ -309,7 +308,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       if (newState.data?.state === LoadingState.Done) {
         const detectedFieldsResponse = newState.data;
         const detectedFieldsFields = detectedFieldsResponse.series[0];
-        updateParserFromDataFrame(detectedFieldsFields, this);
+        // updateParserFromDataFrame(detectedFieldsFields, this);
         if (detectedFieldsFields !== undefined && detectedFieldsFields.length !== this.state.fieldsCount) {
           this.setState({
             fieldsCount: detectedFieldsFields.length,

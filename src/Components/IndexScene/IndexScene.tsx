@@ -31,7 +31,6 @@ import {
   VAR_LABELS,
   VAR_LEVELS,
   VAR_LINE_FILTER,
-  VAR_LOGS_FORMAT,
   VAR_PATTERNS,
 } from 'services/variables';
 
@@ -246,7 +245,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
           hide: VariableHide.hideVariable,
         }),
         new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable }),
-        new CustomVariable({ name: VAR_LOGS_FORMAT, value: '', hide: VariableHide.hideVariable }),
+        // new CustomVariable({ name: VAR_LOGS_FORMAT, value: '', hide: VariableHide.hideVariable }),
       ],
     }),
     unsub,

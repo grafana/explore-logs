@@ -3,7 +3,7 @@ import { DrawStyle, StackingMode } from '@grafana/ui';
 import { PanelBuilders, SceneCSSGridItem, SceneDataTransformer, SceneObject } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
 import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
-import { getLogsFormatVariable, VAR_FIELDS, VAR_LABELS } from './variables';
+import { VAR_FIELDS, VAR_LABELS } from './variables';
 import { setLevelColorOverrides } from './panel';
 import { map, Observable } from 'rxjs';
 import { SortBy, SortByScene } from '../Components/ServiceScene/Breakdowns/SortByScene';
@@ -31,21 +31,22 @@ export type DetectedFieldsResponse = {
 type ExtractedFieldsType = 'logfmt' | 'json' | 'mixed' | '';
 
 export function updateParserFromDataFrame(frame: DataFrame, sceneRef: SceneObject) {
-  const variable = getLogsFormatVariable(sceneRef);
-  const type = extractParserFromDetectedFields(frame);
-
-  let newType;
-  if (!type) {
-    newType = '';
-  } else if (type === 'mixed') {
-    newType = `| json  | logfmt | drop __error__, __error_details__`;
-  } else {
-    newType = ` | ${type}`;
-  }
-
-  if (variable.getValue() !== newType) {
-    variable.changeValueTo(newType);
-  }
+  // const variable = getLogsFormatVariable(sceneRef);
+  // const type = extractParserFromDetectedFields(frame);
+  // console.log('type', type)
+  //
+  // let newType;
+  // if (!type) {
+  //   newType = '';
+  // } else if (type === 'mixed' || type === 'json') {
+  //   newType = `| json  | logfmt | drop __error__, __error_details__`;
+  // } else {
+  //   newType = ` | ${type}`;
+  // }
+  //
+  // if (variable.getValue() !== newType) {
+  //   variable.changeValueTo(newType);
+  // }
 }
 
 export function extractParserFromDetectedFields(data: DataFrame): ExtractedFieldsType {
