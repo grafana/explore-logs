@@ -31,6 +31,7 @@ import {
   getLabelsVariable,
   getServiceSelectionStringVariable,
   LEVEL_VARIABLE_VALUE,
+  SERVICE_NAME,
   VAR_SERVICE,
   VAR_SERVICE_EXPR,
 } from 'services/variables';
@@ -45,7 +46,6 @@ import { ServiceFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
 import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 import { areArraysEqual } from '../../services/comparison';
 
-export const SERVICE_NAME = 'service_name';
 export const SERVICES_LIMIT = 20;
 
 interface ServiceSelectionSceneState extends SceneObjectState {
