@@ -1,6 +1,6 @@
 import { DataFrame, ReducerID } from '@grafana/data';
 import { DrawStyle, StackingMode } from '@grafana/ui';
-import { PanelBuilders, SceneCSSGridItem, SceneDataTransformer, SceneObject } from '@grafana/scenes';
+import { PanelBuilders, SceneCSSGridItem, SceneDataTransformer } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
 import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { VAR_FIELDS, VAR_LABELS } from './variables';
@@ -28,58 +28,6 @@ export type DetectedField = {
 export type DetectedFieldsResponse = {
   fields: DetectedField[];
 };
-type ExtractedFieldsType = 'logfmt' | 'json' | 'mixed' | '';
-
-export function updateParserFromDataFrame(frame: DataFrame, sceneRef: SceneObject) {
-  // const variable = getLogsFormatVariable(sceneRef);
-  // const type = extractParserFromDetectedFields(frame);
-  // console.log('type', type)
-  //
-  // let newType;
-  // if (!type) {
-  //   newType = '';
-  // } else if (type === 'mixed' || type === 'json') {
-  //   newType = `| json  | logfmt | drop __error__, __error_details__`;
-  // } else {
-  //   newType = ` | ${type}`;
-  // }
-  //
-  // if (variable.getValue() !== newType) {
-  //   variable.changeValueTo(newType);
-  // }
-}
-
-export function extractParserFromDetectedFields(data: DataFrame): ExtractedFieldsType {
-  const parserField = data.fields.find((f) => f.name === 'parser');
-
-  const parsersSet = new Set(parserField?.values.map((v) => v.toString()) ?? []);
-
-  // Structured metadata doesn't change the parser we use, so remove it
-  parsersSet.delete('');
-
-  // get unique values
-  const parsersArray = Array.from(parsersSet);
-
-  if (parsersArray.length === 1) {
-    switch (parsersArray[0]) {
-      case 'json':
-        return 'json';
-      case 'logfmt':
-        return 'logfmt';
-      case '': // Structured metadata is empty
-        return '';
-      // if we get a parser with multiple
-      default:
-        return 'mixed';
-    }
-  }
-
-  if (parsersSet.size > 1) {
-    return 'mixed';
-  }
-
-  return '';
-}
 
 const getReducerId = memoize((sortBy: SortBy) => {
   let reducerID: ReducerID | undefined = undefined;
