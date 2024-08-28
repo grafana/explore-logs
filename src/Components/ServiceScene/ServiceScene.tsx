@@ -63,10 +63,10 @@ export interface ServiceSceneCustomState {
 export interface ServiceSceneState extends SceneObjectState, ServiceSceneCustomState {
   body: SceneFlexLayout | undefined;
   drillDownLabel?: string;
-  $data: SceneDataProvider | undefined;
-  $patternsData: SceneQueryRunner | undefined;
-  $detectedLabelsData: SceneQueryRunner | undefined;
-  $detectedFieldsData: SceneQueryRunner | undefined;
+  $data: SceneDataProvider;
+  $patternsData: SceneQueryRunner;
+  $detectedLabelsData: SceneQueryRunner;
+  $detectedFieldsData: SceneQueryRunner;
   loadingStates: ServiceSceneLoadingStates;
 }
 
@@ -81,8 +81,18 @@ export function getDetectedLabelsFrame(sceneRef: SceneObject) {
 
 export function getDetectedFieldsFrame(sceneRef: SceneObject) {
   const serviceScene = sceneGraph.getAncestor(sceneRef, ServiceScene);
-  return serviceScene.state.$detectedFieldsData?.state.data?.series?.[0];
+  return getDetectedFieldsFrameFromQueryRunnerState(serviceScene.state.$detectedFieldsData.state);
 }
+
+export const getDetectedFieldsFrameFromQueryRunnerState = (state: QueryRunnerState) => {
+  // Only ever one frame in the response
+  return state.data?.series?.[0];
+};
+
+export const getDetectedFieldsNamesFromQueryRunnerState = (state: QueryRunnerState) => {
+  // The first field, DETECTED_FIELDS_NAME_FIELD, has the list of names of the detected fields
+  return state.data?.series?.[0].fields?.[0];
+};
 
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
@@ -179,6 +189,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private onActivate() {
+    console.log('on activatre', this.state.$detectedFieldsData);
     this.getMetadata();
     this.resetBodyAndData();
 
@@ -195,6 +206,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
     // Variable subscriptions
     this._subs.add(this.subscribeToLabelsVariable());
+    this._subs.add(this.subscribeToFieldsVariable());
     this._subs.add(this.subscribeToDataSourceVariable());
 
     // Update query runner on manual time range change
@@ -210,10 +222,17 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   private subscribeToLabelsVariable() {
     return getLabelsVariable(this).subscribeToState((newState, prevState) => {
       if (!areArraysEqual(newState.filters, prevState.filters)) {
-        // We want to update the counts
-        this.state.$patternsData?.runQueries();
-        this.state.$detectedLabelsData?.runQueries();
-        this.state.$detectedFieldsData?.runQueries();
+        this.state.$patternsData.runQueries();
+        this.state.$detectedLabelsData.runQueries();
+        this.state.$detectedFieldsData.runQueries();
+      }
+    });
+  }
+
+  private subscribeToFieldsVariable() {
+    return getFieldsVariable(this).subscribeToState((newState, prevState) => {
+      if (!areArraysEqual(newState.filters, prevState.filters)) {
+        this.state.$detectedFieldsData.runQueries();
       }
     });
   }
@@ -280,9 +299,12 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   private updateLoadingState(newState: QueryRunnerState, key: keyof ServiceSceneLoadingStates) {
     const loadingStates = this.state.loadingStates;
     loadingStates[key] = newState.data?.state === LoadingState.Loading;
-    this.setState({ loadingStates });
     // set loading state to true if any of the queries are loading
-    this.setState({ loading: Object.values(loadingStates).some((v) => !!v) });
+    const loading = Object.values(loadingStates).some((v) => v);
+    // console.log('updateLoadingState', {
+    //   loading, loadingStates
+    // })
+    this.setState({ loading, loadingStates });
   }
 
   private subscribeToDetectedFieldsQuery() {

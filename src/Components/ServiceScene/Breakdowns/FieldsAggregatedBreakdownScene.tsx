@@ -1,14 +1,15 @@
 import {
   PanelBuilders,
+  QueryRunnerState,
   SceneComponentProps,
   SceneCSSGridItem,
   SceneCSSGridLayout,
-  SceneFlexItemLike,
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
+  VizPanel,
 } from '@grafana/scenes';
-import { ALL_VARIABLE_VALUE, getFieldGroupByVariable, getFieldsVariable } from '../../../services/variables';
+import { ALL_VARIABLE_VALUE, getFieldGroupByVariable } from '../../../services/variables';
 import { buildDataQuery } from '../../../services/query';
 import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
 import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
@@ -19,11 +20,12 @@ import {
   getFieldBreakdownExpr,
   isAvgField,
 } from './FieldsBreakdownScene';
-import { ServiceScene } from '../ServiceScene';
+import { getDetectedFieldsNamesFromQueryRunnerState, ServiceScene } from '../ServiceScene';
 import React from 'react';
 import { SelectLabelActionScene } from './SelectLabelActionScene';
-import { areArraysEqual } from '../../../services/comparison';
 import { ValueSlugs } from '../../../services/routing';
+import { areArraysEqual } from '../../../services/comparison';
+import { LoadingState } from '@grafana/data';
 
 export interface FieldsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -36,25 +38,58 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
+  private onDetectedFieldsChange(newState: QueryRunnerState, prevState: QueryRunnerState) {
+    const newFrame = getDetectedFieldsNamesFromQueryRunnerState(newState);
+    const prevFrame = getDetectedFieldsNamesFromQueryRunnerState(prevState);
+
+    if (newState.data?.state === LoadingState.Done && !areArraysEqual(newFrame?.values, prevFrame?.values)) {
+      // Iterate through all of the layouts
+      this.state.body?.state.layouts.forEach((layoutObj) => {
+        const layout = layoutObj as SceneCSSGridLayout;
+        // populate set of new list of fields
+        const newFieldsSet = new Set<string>(newFrame?.values);
+        const updatedChildren = layout.state.children as SceneCSSGridItem[];
+
+        // Itereate through all of the existing panels
+        for (let i = 0; i < updatedChildren.length; i++) {
+          const gridItem = layout.state.children[i] as SceneCSSGridItem;
+          const panel = gridItem.state.body as VizPanel;
+
+          if (newFieldsSet.has(panel.state.title)) {
+            // If the new response has this field, delete it from the set, but leave it in the layout
+            newFieldsSet.delete(panel.state.title);
+          } else {
+            // Otherwise if the panel doesn't exist in the response, delete it from the layout
+            updatedChildren.splice(i, 1);
+            // And make sure to update the index or we'll skip the next one
+            i--;
+          }
+        }
+
+        const fieldsToAdd = Array.from(newFieldsSet);
+        const options = fieldsToAdd.map((fieldName) => {
+          return {
+            label: fieldName,
+            value: fieldName,
+          };
+        });
+
+        updatedChildren.push(...this.buildChildren(options));
+
+        layout.setState({
+          children: updatedChildren,
+        });
+      });
+    }
+  }
+
   onActivate() {
     this.setState({
       body: this.build(),
     });
 
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
-
-    serviceScene.subscribeToState((newState, prevState) => {
-      if (
-        !areArraysEqual(
-          newState.$detectedFieldsData?.state.data?.series?.[0].fields,
-          prevState.$detectedFieldsData?.state.data?.series?.[0].fields
-        )
-      ) {
-        this.setState({
-          body: this.build(),
-        });
-      }
-    });
+    this._subs.add(serviceScene.state.$detectedFieldsData.subscribeToState(this.onDetectedFieldsChange));
   }
   private build() {
     const groupByVariable = getFieldGroupByVariable(this);
@@ -88,8 +123,9 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     });
   }
 
-  private buildChildren(options: Array<{ label: string; value: string }>) {
-    const children: SceneFlexItemLike[] = [];
+  private buildChildren(options: Array<{ label: string; value: string }>): SceneCSSGridItem[] {
+    console.log('build children', options);
+    const children: SceneCSSGridItem[] = [];
     for (const option of options) {
       const { value: optionValue } = option;
       if (optionValue === ALL_VARIABLE_VALUE || !optionValue) {

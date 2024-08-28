@@ -32,7 +32,7 @@ type ExtractedFieldsType = 'logfmt' | 'json' | 'mixed' | '';
 
 export function updateParserFromDataFrame(frame: DataFrame, sceneRef: SceneObject) {
   const variable = getLogsFormatVariable(sceneRef);
-  const type = extractPaserFromDetectedFields(frame);
+  const type = extractParserFromDetectedFields(frame);
 
   let newType;
   if (!type) {
@@ -48,7 +48,7 @@ export function updateParserFromDataFrame(frame: DataFrame, sceneRef: SceneObjec
   }
 }
 
-function extractPaserFromDetectedFields(data: DataFrame): ExtractedFieldsType {
+export function extractParserFromDetectedFields(data: DataFrame): ExtractedFieldsType {
   const parserField = data.fields.find((f) => f.name === 'parser');
 
   // get unique values

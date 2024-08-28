@@ -57,6 +57,14 @@ type PatternsResponse = {
   data: LokiPattern[];
 };
 
+const DETECTED_FIELDS_NAME_FIELD = 'name';
+
+const DETECTED_FIELDS_CARDINALITY_NAME = 'cardinality';
+
+const DETECTED_FIELDS_PARSER_NAME = 'parser';
+
+const DETECTED_FIELDS_TYPE_NAME = 'type';
+
 class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
   constructor(pluginId: string, uid: string) {
     super(pluginId, uid);
@@ -321,11 +329,17 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
         }
       );
 
-      const nameField: Field = { name: 'name', type: FieldType.string, values: [], config: {} };
-      const cardinalityField: Field = { name: 'cardinality', type: FieldType.number, values: [], config: {} };
-      const parserField: Field = { name: 'parser', type: FieldType.string, values: [], config: {} };
-      const typeField: Field = { name: 'type', type: FieldType.string, values: [], config: {} };
+      const nameField: Field = { name: DETECTED_FIELDS_NAME_FIELD, type: FieldType.string, values: [], config: {} };
+      const cardinalityField: Field = {
+        name: DETECTED_FIELDS_CARDINALITY_NAME,
+        type: FieldType.number,
+        values: [],
+        config: {},
+      };
+      const parserField: Field = { name: DETECTED_FIELDS_PARSER_NAME, type: FieldType.string, values: [], config: {} };
+      const typeField: Field = { name: DETECTED_FIELDS_TYPE_NAME, type: FieldType.string, values: [], config: {} };
 
+      // @todo how do we want to sort the detected fields?
       response.fields?.forEach((field) => {
         nameField.values.push(field.label);
         cardinalityField.values.push(field.cardinality);

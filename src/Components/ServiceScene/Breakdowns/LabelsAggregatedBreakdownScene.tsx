@@ -3,7 +3,6 @@ import {
   SceneComponentProps,
   SceneCSSGridItem,
   SceneCSSGridLayout,
-  SceneDataProvider,
   SceneFlexItemLike,
   sceneGraph,
   SceneObjectBase,
@@ -27,7 +26,6 @@ import { ValueSlugs } from '../../../services/routing';
 
 export interface LabelsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
-  $data?: SceneDataProvider;
 }
 
 export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggregatedBreakdownSceneState> {

@@ -1,16 +1,11 @@
 import { createDataFrame, FieldType, toDataFrame } from '@grafana/data';
 
-import {
-  extractParserAndFieldsFromDataFrame,
-  getLabelTypeFromFrame,
-  LabelType,
-  updateParserFromDataFrame,
-} from './fields';
+import { extractParserFromDetectedFields, getLabelTypeFromFrame, LabelType, updateParserFromDataFrame } from './fields';
 import { getLogsFormatVariable, VAR_LOGS_FORMAT } from './variables';
 import { CustomVariable, SceneObject } from '@grafana/scenes';
 jest.mock('./variables');
 
-describe('extractParserAndFieldsFromDataFrame', () => {
+describe('extractParserFromDetectedFields', () => {
   it('Extracts parser and fields from a logfmt data frame', () => {
     const dataFrame = createDataFrame({
       refId: 'A',
@@ -25,7 +20,7 @@ describe('extractParserAndFieldsFromDataFrame', () => {
       ],
     });
 
-    expect(extractParserAndFieldsFromDataFrame(dataFrame)).toEqual({
+    expect(extractParserFromDetectedFields(dataFrame)).toEqual({
       type: 'logfmt',
       fields: ['field2'],
     });
@@ -44,7 +39,7 @@ describe('extractParserAndFieldsFromDataFrame', () => {
       ],
     });
 
-    expect(extractParserAndFieldsFromDataFrame(dataFrame)).toEqual({
+    expect(extractParserFromDetectedFields(dataFrame)).toEqual({
       type: 'json',
       fields: ['field2'],
     });

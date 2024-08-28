@@ -148,8 +148,9 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   private variableChanged = (newState: CustomConstantVariableState, oldState: CustomConstantVariableState) => {
     if (
-      !newState.loading &&
-      (!areArraysEqual(newState.options, oldState.options) || newState.value !== oldState.value)
+      newState.value !== oldState.value ||
+      !areArraysEqual(newState.options, oldState.options) ||
+      this.state.body === undefined
     ) {
       this.updateBody(newState);
     }
@@ -196,6 +197,12 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   private updateBody(newState: CustomConstantVariableState) {
     const fieldsVariable = getFieldGroupByVariable(this);
+
+    // We get the labels from the service scene, if we don't have them yet, assume we're loading
+    if (!fieldsVariable.state.options || !fieldsVariable.state.options.length) {
+      return;
+    }
+
     const stateUpdate: Partial<FieldsBreakdownSceneState> = {};
 
     if (fieldsVariable.state.options && fieldsVariable.state.options.length <= 1) {
