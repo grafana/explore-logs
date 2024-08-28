@@ -38,7 +38,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
-  private onDetectedFieldsChange(newState: QueryRunnerState, prevState: QueryRunnerState) {
+  private onDetectedFieldsChange = (newState: QueryRunnerState, prevState: QueryRunnerState) => {
     const newFrame = getDetectedFieldsNamesFromQueryRunnerState(newState);
     const prevFrame = getDetectedFieldsNamesFromQueryRunnerState(prevState);
 
@@ -50,7 +50,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
         const newFieldsSet = new Set<string>(newFrame?.values);
         const updatedChildren = layout.state.children as SceneCSSGridItem[];
 
-        // Itereate through all of the existing panels
+        // Iterate through all of the existing panels
         for (let i = 0; i < updatedChildren.length; i++) {
           const gridItem = layout.state.children[i] as SceneCSSGridItem;
           const panel = gridItem.state.body as VizPanel;
@@ -81,7 +81,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
         });
       });
     }
-  }
+  };
 
   onActivate() {
     this.setState({

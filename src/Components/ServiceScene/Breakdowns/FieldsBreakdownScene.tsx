@@ -37,7 +37,6 @@ import { ValueSlugs } from '../../../services/routing';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { GrotError } from '../../GrotError';
 import { IndexScene } from '../../IndexScene/IndexScene';
-import { SERVICE_NAME } from '../../ServiceSelectionScene/ServiceSelectionScene';
 import { getDetectedFieldsFrame, ServiceScene } from '../ServiceScene';
 import { BreakdownSearchReset, BreakdownSearchScene } from './BreakdownSearchScene';
 import { ByFrameRepeater } from './ByFrameRepeater';
