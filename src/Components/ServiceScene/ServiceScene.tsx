@@ -2,6 +2,7 @@ import React from 'react';
 
 import { LoadingState, PanelData } from '@grafana/data';
 import {
+  QueryRunnerState,
   SceneComponentProps,
   SceneDataProvider,
   SceneFlexItem,
@@ -14,7 +15,6 @@ import {
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { LoadingPlaceholder } from '@grafana/ui';
-import { updateParserFromDataFrame } from 'services/fields';
 import { getQueryRunner, getResourceQueryRunner } from 'services/panel';
 import { buildDataQuery, buildResourceQuery } from 'services/query';
 import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, ValueSlugs } from 'services/routing';
@@ -37,12 +37,20 @@ import { navigateToIndex } from '../../services/navigate';
 import { areArraysEqual } from '../../services/comparison';
 import { ActionBarScene } from './ActionBarScene';
 import { breakdownViewsDefinitions, valueBreakdownViews } from './BreakdownViews';
+import { updateParserFromDataFrame } from 'services/fields';
 
 const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 const PATTERNS_QUERY_REFID = 'patterns';
 const DETECTED_LABELS_QUERY_REFID = 'detectedLabels';
+const DETECTED_FIELDS_QUERY_REFID = 'detectedFields';
 
 type MakeOptional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
+
+type ServiceSceneLoadingStates = {
+  patterns: boolean;
+  labels: boolean;
+  fields: boolean;
+};
 
 export interface ServiceSceneCustomState {
   fields?: string[];
@@ -58,6 +66,8 @@ export interface ServiceSceneState extends SceneObjectState, ServiceSceneCustomS
   $data: SceneDataProvider | undefined;
   $patternsData: SceneQueryRunner | undefined;
   $detectedLabelsData: SceneQueryRunner | undefined;
+  $detectedFieldsData: SceneQueryRunner | undefined;
+  loadingStates: ServiceSceneLoadingStates;
 }
 
 export function getLogsPanelFrame(data: PanelData | undefined) {
@@ -69,20 +79,30 @@ export function getDetectedLabelsFrame(sceneRef: SceneObject) {
   return serviceScene.state.$detectedLabelsData?.state.data?.series?.[0];
 }
 
+export function getDetectedFieldsFrame(sceneRef: SceneObject) {
+  const serviceScene = sceneGraph.getAncestor(sceneRef, ServiceScene);
+  return serviceScene.state.$detectedFieldsData?.state.data?.series?.[0];
+}
+
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
     variableNames: [VAR_DATASOURCE, VAR_LABELS, VAR_FIELDS, VAR_PATTERNS, VAR_LEVELS],
   });
 
   public constructor(
-    state: MakeOptional<ServiceSceneState, 'body' | '$data' | '$patternsData' | '$detectedLabelsData'>
+    state: MakeOptional<
+      ServiceSceneState,
+      'body' | '$data' | '$patternsData' | '$detectedLabelsData' | '$detectedFieldsData' | 'loadingStates'
+    >
   ) {
     super({
+      loadingStates: { patterns: false, labels: false, fields: false },
       loading: true,
       body: state.body ?? buildGraphScene(),
       $data: getServiceSceneQueryRunner(),
       $patternsData: getPatternsQueryRunner(),
       $detectedLabelsData: getDetectedLabelsQueryRunner(),
+      $detectedFieldsData: getDetectedFieldsQueryRunner(),
       ...state,
     });
 
@@ -115,8 +135,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       body: undefined,
       $patternsData: undefined,
       $detectedLabelsData: undefined,
+      $detectedFieldsData: undefined,
       patternsCount: undefined,
       labelsCount: undefined,
+      fieldsCount: undefined,
     });
     getMetadataService().setServiceSceneState(this.state);
     this._subs.unsubscribe();
@@ -167,9 +189,9 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.runQueries();
 
     // Query Subscriptions
-    this._subs.add(this.subscribeToData());
     this._subs.add(this.subscribeToPatternsQuery());
     this._subs.add(this.subscribeToDetectedLabelsQuery());
+    this._subs.add(this.subscribeToDetectedFieldsQuery());
 
     // Variable subscriptions
     this._subs.add(this.subscribeToLabelsVariable());
@@ -191,6 +213,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         // We want to update the counts
         this.state.$patternsData?.runQueries();
         this.state.$detectedLabelsData?.runQueries();
+        this.state.$detectedFieldsData?.runQueries();
       }
     });
   }
@@ -211,21 +234,19 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     ) {
       this.state.$detectedLabelsData?.runQueries();
     }
-  }
 
-  private subscribeToData() {
-    return this.state.$data?.subscribeToState((newState) => {
-      if (newState.data?.state === LoadingState.Done) {
-        const logsPanelResponse = getLogsPanelFrame(newState.data);
-        if (logsPanelResponse) {
-          this.updateFields();
-        }
-      }
-    });
+    // If we don't have a detected fields count, or we are activating the fields scene, run the detected fields query
+    if (
+      ((slug === PageSlugs.fields || parentSlug === ValueSlugs.field) && !this.state.$detectedFieldsData?.state.data) ||
+      this.state.labelsCount === undefined
+    ) {
+      this.state.$detectedFieldsData?.runQueries();
+    }
   }
 
   private subscribeToPatternsQuery() {
     return this.state.$patternsData?.subscribeToState((newState) => {
+      this.updateLoadingState(newState, 'patterns');
       if (newState.data?.state === LoadingState.Done) {
         const patternsResponse = newState.data.series;
         if (patternsResponse?.length !== undefined) {
@@ -241,6 +262,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
   private subscribeToDetectedLabelsQuery() {
     return this.state.$detectedLabelsData?.subscribeToState((newState) => {
+      this.updateLoadingState(newState, 'labels');
       if (newState.data?.state === LoadingState.Done) {
         const detectedLabelsResponse = newState.data;
         // Detected labels API call always returns a single frame, with a field for each label
@@ -255,10 +277,36 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     });
   }
 
+  private updateLoadingState(newState: QueryRunnerState, key: keyof ServiceSceneLoadingStates) {
+    const loadingStates = this.state.loadingStates;
+    loadingStates[key] = newState.data?.state === LoadingState.Loading;
+    this.setState({ loadingStates });
+    // set loading state to true if any of the queries are loading
+    this.setState({ loading: Object.values(loadingStates).some((v) => !!v) });
+  }
+
+  private subscribeToDetectedFieldsQuery() {
+    return this.state.$detectedFieldsData?.subscribeToState((newState) => {
+      this.updateLoadingState(newState, 'fields');
+      if (newState.data?.state === LoadingState.Done) {
+        const detectedFieldsResponse = newState.data;
+        const detectedFieldsFields = detectedFieldsResponse.series[0];
+        updateParserFromDataFrame(detectedFieldsFields, this);
+        if (detectedFieldsFields !== undefined && detectedFieldsFields.length !== this.state.fieldsCount) {
+          this.setState({
+            fieldsCount: detectedFieldsFields.length,
+          });
+          getMetadataService().setFieldsCount(detectedFieldsFields.length);
+        }
+      }
+    });
+  }
+
   private subscribeToTimeRange() {
     return sceneGraph.getTimeRange(this).subscribeToState(() => {
       this.state.$patternsData?.runQueries();
       this.state.$detectedLabelsData?.runQueries();
+      this.state.$detectedFieldsData?.runQueries();
     });
   }
 
@@ -277,49 +325,16 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       stateUpdate.$detectedLabelsData = getDetectedLabelsQueryRunner();
     }
 
+    if (!this.state.$detectedFieldsData) {
+      stateUpdate.$detectedFieldsData = getDetectedFieldsQueryRunner();
+    }
+
     if (!this.state.body) {
       stateUpdate.body = buildGraphScene();
     }
 
     if (Object.keys(stateUpdate).length) {
       this.setState(stateUpdate);
-    }
-  }
-
-  private updateFields() {
-    const disabledFields = [
-      '__time',
-      'timestamp',
-      'time',
-      'datetime',
-      'date',
-      'timestamp_ms',
-      'timestamp_us',
-      'ts',
-      'traceID',
-      'trace',
-      'spanID',
-      'span',
-      'referer',
-      'user_identifier',
-    ];
-    const newState = sceneGraph.getData(this).state;
-    const frame = getLogsPanelFrame(newState.data);
-    if (frame && newState.data?.state === LoadingState.Done) {
-      const res = updateParserFromDataFrame(frame, this);
-      const fields = res.fields.filter((f) => !disabledFields.includes(f)).sort((a, b) => a.localeCompare(b));
-      if (!areArraysEqual(fields, this.state.fields)) {
-        this.setState({
-          fields: fields,
-          fieldsCount: fields.length,
-          loading: false,
-        });
-      }
-    } else {
-      this.setState({
-        fields: [],
-        loading: false,
-      });
     }
   }
 
@@ -388,6 +403,12 @@ function getPatternsQueryRunner() {
 function getDetectedLabelsQueryRunner() {
   return getResourceQueryRunner([
     buildResourceQuery(`{${VAR_LABELS_EXPR}}`, 'detected_labels', { refId: DETECTED_LABELS_QUERY_REFID }),
+  ]);
+}
+
+function getDetectedFieldsQueryRunner() {
+  return getResourceQueryRunner([
+    buildResourceQuery(LOG_STREAM_SELECTOR_EXPR, 'detected_fields', { refId: DETECTED_FIELDS_QUERY_REFID }),
   ]);
 }
 

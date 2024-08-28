@@ -26,7 +26,7 @@ export type LokiQuery = {
  */
 export const buildResourceQuery = (
   expr: string,
-  resource: 'volume' | 'patterns' | 'detected_labels',
+  resource: 'volume' | 'patterns' | 'detected_labels' | 'detected_fields',
   queryParamsOverrides?: Record<string, unknown>
 ): LokiQuery & SceneDataQueryResourceRequest => {
   return {

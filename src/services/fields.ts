@@ -18,66 +18,57 @@ export type DetectedLabelsResponse = {
   detectedLabels: DetectedLabel[];
 };
 
-type ExtractedFieldsType = 'logfmt' | 'json' | 'mixed';
+export type DetectedField = {
+  label: string;
+  cardinality: number;
+  type: string;
+  parsers: string[];
+};
 
-interface ExtractedFields {
-  type: ExtractedFieldsType;
-  fields: string[];
-}
+export type DetectedFieldsResponse = {
+  fields: DetectedField[];
+};
+type ExtractedFieldsType = 'logfmt' | 'json' | 'mixed' | '';
 
-export function updateParserFromDataFrame(frame: DataFrame, sceneRef: SceneObject): ExtractedFields {
+export function updateParserFromDataFrame(frame: DataFrame, sceneRef: SceneObject) {
   const variable = getLogsFormatVariable(sceneRef);
-  const res = extractParserAndFieldsFromDataFrame(frame);
+  const type = extractPaserFromDetectedFields(frame);
 
   let newType;
-  if (!res.type) {
+  if (!type) {
     newType = '';
-  } else if (res.type === 'mixed') {
+  } else if (type === 'mixed') {
     newType = `| json  | logfmt | drop __error__, __error_details__`;
   } else {
-    newType = ` | ${res.type}`;
+    newType = ` | ${type}`;
   }
 
   if (variable.getValue() !== newType) {
     variable.changeValueTo(newType);
   }
-
-  return res;
 }
 
-export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
-  const result: ExtractedFields = { type: 'logfmt', fields: [] };
-  const labelTypesField = data.fields.find((f) => f.name === 'labelTypes');
-  result.fields = Object.keys(
-    labelTypesField?.values.reduce((acc: Record<string, boolean>, value: Record<string, string>) => {
-      Object.entries(value)
-        .filter(([_, v]) => v === 'P')
-        .forEach(([k]) => (acc[k] = true));
-      return acc;
-    }, {}) ?? {}
-  );
+function extractPaserFromDetectedFields(data: DataFrame): ExtractedFieldsType {
+  const parserField = data.fields.find((f) => f.name === 'parser');
 
-  const types: ExtractedFieldsType[] = [];
-  const linesField = data.fields.find((f) => f.name === 'Line' || f.name === 'body');
+  // get unique values
+  const parsers = Array.from(new Set(parserField?.values.map((v) => v.toString()) ?? []));
+  if (parsers.length === 1) {
+    switch (parsers[0]) {
+      case 'json':
+        return 'json';
+      case 'logfmt':
+        return 'logfmt';
 
-  if (!linesField) {
-    return result;
-  }
-
-  for (let i = 0; i < linesField.values.length && types.length < 2; i++) {
-    const line = linesField.values[i].trim();
-    if (line.startsWith('{') && line.endsWith('}')) {
-      if (!types.includes('json')) {
-        types.push('json');
-      }
-    } else if (!types.includes('logfmt')) {
-      types.push('logfmt');
+      default:
+        return 'logfmt';
     }
   }
+  if (parsers.length > 1) {
+    return 'mixed';
+  }
 
-  result.type = types.length === 1 ? types[0] : 'mixed';
-
-  return result;
+  return '';
 }
 
 const getReducerId = memoize((sortBy: SortBy) => {

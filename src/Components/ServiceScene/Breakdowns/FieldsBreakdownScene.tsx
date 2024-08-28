@@ -1,9 +1,10 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { GrafanaTheme2 } from '@grafana/data';
+import { DataFrame, GrafanaTheme2, LoadingState } from '@grafana/data';
 import {
   AdHocFiltersVariable,
+  QueryRunnerState,
   SceneComponentProps,
   SceneFlexItem,
   SceneFlexLayout,
@@ -15,9 +16,11 @@ import {
   SceneVariable,
   SceneVariableSet,
   VariableDependencyConfig,
+  VariableValueOption,
 } from '@grafana/scenes';
 import { Alert, Button, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
+import { getSortByPreference } from 'services/store';
 import {
   ALL_VARIABLE_VALUE,
   getFieldGroupByVariable,
@@ -26,25 +29,24 @@ import {
   VAR_FIELD_GROUP_BY,
   VAR_LABELS,
 } from 'services/variables';
-import { ServiceScene, ServiceSceneState } from '../ServiceScene';
-import { ByFrameRepeater } from './ByFrameRepeater';
-import { FieldSelector } from './FieldSelector';
-import { StatusWrapper } from './StatusWrapper';
-import { BreakdownSearchReset, BreakdownSearchScene } from './BreakdownSearchScene';
-import { SortByScene, SortCriteriaChanged } from './SortByScene';
-import { getSortByPreference } from 'services/store';
-import { GrotError } from '../../GrotError';
-import { IndexScene } from '../../IndexScene/IndexScene';
+import { areArraysEqual } from '../../../services/comparison';
 import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
-import { getFieldOptions } from '../../../services/filters';
 import { navigateToValueBreakdown } from '../../../services/navigate';
 import { ValueSlugs } from '../../../services/routing';
-import { areArraysEqual } from '../../../services/comparison';
-import { FieldsAggregatedBreakdownScene } from './FieldsAggregatedBreakdownScene';
-import { FieldValuesBreakdownScene } from './FieldValuesBreakdownScene';
-import { SERVICE_NAME } from '../../ServiceSelectionScene/ServiceSelectionScene';
-import { LayoutSwitcher } from './LayoutSwitcher';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
+import { GrotError } from '../../GrotError';
+import { IndexScene } from '../../IndexScene/IndexScene';
+import { SERVICE_NAME } from '../../ServiceSelectionScene/ServiceSelectionScene';
+import { getDetectedFieldsFrame, ServiceScene } from '../ServiceScene';
+import { BreakdownSearchReset, BreakdownSearchScene } from './BreakdownSearchScene';
+import { ByFrameRepeater } from './ByFrameRepeater';
+import { FieldsAggregatedBreakdownScene } from './FieldsAggregatedBreakdownScene';
+import { FieldSelector } from './FieldSelector';
+import { FieldValuesBreakdownScene } from './FieldValuesBreakdownScene';
+import { LayoutSwitcher } from './LayoutSwitcher';
+import { SortByScene, SortCriteriaChanged } from './SortByScene';
+import { StatusWrapper } from './StatusWrapper';
+import { getFieldOptions } from 'services/filters';
 
 export const averageFields = ['duration', 'count', 'total', 'bytes'];
 export const FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
@@ -69,12 +71,20 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     variableNames: [VAR_LABELS],
   });
 
-  constructor(state: Partial<FieldsBreakdownSceneState>) {
+  constructor(state: Partial<FieldsBreakdownSceneState> & { options?: VariableValueOption[]; value?: string }) {
     super({
       $variables:
         state.$variables ??
         new SceneVariableSet({
-          variables: [new CustomConstantVariable({ name: VAR_FIELD_GROUP_BY, defaultToAll: false, includeAll: true })],
+          variables: [
+            new CustomConstantVariable({
+              name: VAR_FIELD_GROUP_BY,
+              defaultToAll: false,
+              includeAll: true,
+              value: state.value ?? ALL_VARIABLE_VALUE,
+              options: state.options ?? [],
+            }),
+          ],
         }),
       loading: true,
       sort: new SortByScene({ target: 'fields' }),
@@ -90,6 +100,10 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     const groupByVariable = getFieldGroupByVariable(this);
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
 
+    this.setState({
+      loading: serviceScene.state.$detectedLabelsData?.state.data?.state !== LoadingState.Done,
+    });
+
     // Subscriptions
     this._subs.add(
       this.subscribeToEvent(BreakdownSearchReset, () => {
@@ -97,7 +111,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       })
     );
     this._subs.add(this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange));
-    this._subs.add(serviceScene.subscribeToState(this.serviceFieldsChanged));
     this._subs.add(groupByVariable.subscribeToState(this.variableChanged));
 
     this._subs.add(
@@ -116,7 +129,21 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       })
     );
 
-    this.updateFields(serviceScene.state);
+    this._subs.add(
+      serviceScene.state.$detectedFieldsData?.subscribeToState(
+        (newState: QueryRunnerState, oldState: QueryRunnerState) => {
+          if (newState.data?.state === LoadingState.Done && newState.data.series?.[0]) {
+            this.updateOptions(newState.data.series?.[0]);
+          }
+        }
+      )
+    );
+
+    const detectedFieldsFrame = getDetectedFieldsFrame(this);
+    // Need to update labels with current state
+    if (detectedFieldsFrame) {
+      this.updateOptions(detectedFieldsFrame);
+    }
   }
 
   private variableChanged = (newState: CustomConstantVariableState, oldState: CustomConstantVariableState) => {
@@ -128,30 +155,21 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     }
   };
 
-  private serviceFieldsChanged = (newState: ServiceSceneState, oldState: ServiceSceneState) => {
-    if (newState.loading === false && !areArraysEqual(newState.fields, oldState.fields)) {
-      this.updateFields(newState);
+  private updateOptions(dataFrame: DataFrame) {
+    if (!dataFrame || !dataFrame.length) {
+      return;
     }
-  };
 
-  private updateFields(state: ServiceSceneState) {
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     const variable = getFieldGroupByVariable(this);
-    const options = state.fields ? getFieldOptions(state.fields) : [];
-
     variable.setState({
-      options,
-      value: state.drillDownLabel ?? ALL_VARIABLE_VALUE,
+      options: getFieldOptions(dataFrame.fields[0].values.map((v) => String(v))),
+      loading: false,
+      value: serviceScene.state.drillDownLabel ?? ALL_VARIABLE_VALUE,
     });
-
-    // If we were in an error state or undefined, let's update the new body
-    if (
-      !(
-        this.state.body instanceof FieldsAggregatedBreakdownScene ||
-        this.state.body instanceof FieldValuesBreakdownScene
-      )
-    ) {
-      this.updateBody(getFieldGroupByVariable(this).state);
-    }
+    this.setState({
+      loading: false,
+    });
   }
 
   private handleSortByChange = (event: SortCriteriaChanged) => {
@@ -177,15 +195,10 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   };
 
   private updateBody(newState: CustomConstantVariableState) {
-    const logsScene = sceneGraph.getAncestor(this, ServiceScene);
+    const fieldsVariable = getFieldGroupByVariable(this);
+    const stateUpdate: Partial<FieldsBreakdownSceneState> = {};
 
-    const stateUpdate: Partial<FieldsBreakdownSceneState> = {
-      value: String(newState.value),
-      blockingMessage: undefined,
-      loading: logsScene.state.loading,
-    };
-
-    if (logsScene.state.fields && logsScene.state?.fields.length <= 1) {
+    if (fieldsVariable.state.options && fieldsVariable.state.options.length <= 1) {
       // If there's 1 or fewer fields build the empty or clear layout UI
       const indexScene = sceneGraph.getAncestor(this, IndexScene);
       const variables = sceneGraph.getVariables(indexScene);

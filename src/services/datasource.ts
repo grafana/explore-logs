@@ -15,7 +15,7 @@ import { Observable, Subscriber } from 'rxjs';
 import { getDataSource } from './scenes';
 import { LokiQuery } from './query';
 import { PLUGIN_ID } from './routing';
-import { DetectedLabelsResponse } from './fields';
+import { DetectedFieldsResponse, DetectedLabelsResponse } from './fields';
 import { sortLabelsByCardinality } from './filters';
 import { LEVEL_VARIABLE_VALUE } from './variables';
 
@@ -26,7 +26,7 @@ export type SceneDataQueryRequest = DataQueryRequest<LokiQuery & SceneDataQueryR
 };
 
 export type SceneDataQueryResourceRequest = {
-  resource: 'volume' | 'patterns' | 'detected_labels';
+  resource: 'volume' | 'patterns' | 'detected_labels' | 'detected_fields';
 };
 type TimeStampOfVolumeEval = number;
 type VolumeCount = string;
@@ -103,6 +103,10 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
             }
             case 'detected_labels': {
               await this.getDetectedLabels(request, ds, subscriber);
+              break;
+            }
+            case 'detected_fields': {
+              await this.getDetectedFields(request, ds, subscriber);
               break;
             }
             default: {
@@ -276,6 +280,62 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
       const dataFrame = createDataFrame({
         refId: interpolatedTarget.refId,
         fields: detectedLabelFields ?? [],
+      });
+
+      subscriber.next({ data: [dataFrame], state: LoadingState.Done });
+    } catch (e) {
+      subscriber.next({ data: [], state: LoadingState.Error });
+    }
+
+    return subscriber;
+  }
+
+  private async getDetectedFields(
+    request: DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest>,
+    ds: DataSourceWithBackend<LokiQuery>,
+    subscriber: Subscriber<DataQueryResponse>
+  ) {
+    const targets = request.targets.filter((target) => {
+      return target.resource === 'detected_fields';
+    });
+
+    if (targets.length !== 1) {
+      throw new Error('Detected fields query can only have a single target!');
+    }
+
+    const { interpolatedTarget, expression } = this.interpolate(ds, targets, request);
+
+    try {
+      const response = await ds.getResource<DetectedFieldsResponse>(
+        'detected_fields',
+        {
+          query: expression,
+          start: request.range.from.utc().toISOString(),
+          end: request.range.to.utc().toISOString(),
+        },
+        {
+          requestId: request.requestId ?? 'detected_fields',
+          headers: {
+            'X-Query-Tags': `Source=${PLUGIN_ID}`,
+          },
+        }
+      );
+
+      const nameField: Field = { name: 'name', type: FieldType.string, values: [], config: {} };
+      const cardinalityField: Field = { name: 'cardinality', type: FieldType.number, values: [], config: {} };
+      const parserField: Field = { name: 'parser', type: FieldType.string, values: [], config: {} };
+      const typeField: Field = { name: 'type', type: FieldType.string, values: [], config: {} };
+
+      response.fields?.forEach((field) => {
+        nameField.values.push(field.label);
+        cardinalityField.values.push(field.cardinality);
+        parserField.values.push(field.parsers.join(', '));
+        typeField.values.push(field.type);
+      });
+
+      const dataFrame = createDataFrame({
+        refId: interpolatedTarget.refId,
+        fields: [nameField, cardinalityField, parserField, typeField],
       });
 
       subscriber.next({ data: [dataFrame], state: LoadingState.Done });

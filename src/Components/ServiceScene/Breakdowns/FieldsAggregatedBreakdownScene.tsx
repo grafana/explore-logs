@@ -42,30 +42,14 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     });
 
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
-    const fieldsVariable = getFieldsVariable(this);
-    const fieldsBreakdownScene = sceneGraph.getAncestor(this, FieldsBreakdownScene);
-
-    fieldsVariable.subscribeToState((newState, prevState) => {
-      if (!areArraysEqual(newState.filters, prevState.filters)) {
-        // Variables changing could cause a different set of filters to be returned, to prevent the current panels from executing queries that will get cancelled we null out the body
-        this.setState({
-          body: undefined,
-        });
-
-        // But what if the filters change, but the list of fields doesn't? We won't re-build the body, so let's clear out the fields
-        serviceScene.setState({
-          fields: undefined,
-        });
-
-        // And set the loading state on parent
-        fieldsBreakdownScene.setState({
-          loading: true,
-        });
-      }
-    });
 
     serviceScene.subscribeToState((newState, prevState) => {
-      if (!areArraysEqual(newState.fields, prevState.fields)) {
+      if (
+        !areArraysEqual(
+          newState.$detectedFieldsData?.state.data?.series?.[0].fields,
+          prevState.$detectedFieldsData?.state.data?.series?.[0].fields
+        )
+      ) {
         this.setState({
           body: this.build(),
         });
