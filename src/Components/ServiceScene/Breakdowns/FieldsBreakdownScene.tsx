@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DataFrame, GrafanaTheme2, LoadingState } from '@grafana/data';
+import { DataFrame, Field, GrafanaTheme2, LoadingState } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   QueryRunnerState,
@@ -438,4 +438,34 @@ export function buildFieldsQuery(optionValue: string, options: LogsQueryOptions)
   } else {
     return `sum by (${optionValue}) (count_over_time(${getLogsStreamSelector(options)} [$__auto]))`;
   }
+}
+
+export function buildFieldsQueryString(
+  optionValue: string,
+  fieldsVariable: AdHocFiltersVariable,
+  detectedFieldsFrame?: DataFrame
+) {
+  const parserField: Field<string> | undefined = detectedFieldsFrame?.fields[2];
+  const namesField: Field<string> | undefined = detectedFieldsFrame?.fields[0];
+
+  let fieldExpressionToAdd = '';
+  let structuredMetadataToAdd = '';
+
+  const index = namesField?.values.indexOf(optionValue);
+  const parser = index && index !== -1 ? parserField?.values[index] : undefined;
+
+  if (parser === '') {
+    structuredMetadataToAdd = `| ${optionValue}!=""`;
+    // Structured metadata
+  } else {
+    fieldExpressionToAdd = `| ${optionValue}!=""`;
+  }
+
+  // is option structured metadata
+  const options: LogsQueryOptions = {
+    structuredMetadataToAdd,
+    fieldExpressionToAdd,
+    noParser: !fieldExpressionToAdd && fieldsVariable.state.filters.length === 0,
+  };
+  return buildFieldsQuery(optionValue, options);
 }

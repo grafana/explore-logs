@@ -13,16 +13,20 @@ import {
 } from '@grafana/scenes';
 import { buildDataQuery, LokiQuery } from '../../../services/query';
 import { getSortByPreference } from '../../../services/store';
-import { DataQueryError, Field, LoadingState } from '@grafana/data';
+import { DataQueryError, LoadingState } from '@grafana/data';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { getQueryRunner } from '../../../services/panel';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { Alert, DrawStyle, LoadingPlaceholder } from '@grafana/ui';
 import { getFilterBreakdownValueScene } from '../../../services/fields';
 import { getLabelValue } from './SortByScene';
-import { getFieldGroupByVariable, getFieldsVariable, LogsQueryOptions, VAR_FIELDS } from '../../../services/variables';
+import { getFieldGroupByVariable, getFieldsVariable, VAR_FIELDS } from '../../../services/variables';
 import React from 'react';
-import { buildFieldsQuery, FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS, FieldsBreakdownScene } from './FieldsBreakdownScene';
+import {
+  buildFieldsQueryString,
+  FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS,
+  FieldsBreakdownScene,
+} from './FieldsBreakdownScene';
 import { AddFilterEvent } from './AddToFiltersButton';
 import { navigateToDrilldownPage } from '../../../services/navigate';
 import { PageSlugs } from '../../../services/routing';
@@ -67,31 +71,8 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
     const tagKey = String(groupByVariable.state.value);
 
     const fieldsVariable = getFieldsVariable(this);
-
     const detectedFieldsFrame = getDetectedFieldsFrame(this);
-    const parserField: Field<string> | undefined = detectedFieldsFrame?.fields[2];
-    const namesField: Field<string> | undefined = detectedFieldsFrame?.fields[0];
-
-    const index = namesField?.values.indexOf(tagKey);
-    const parser = index && index !== -1 ? parserField?.values[index] : undefined;
-
-    let fieldExpressionToAdd = '';
-    let structuredMetadataToAdd = '';
-
-    // Structured metadata has no parser value
-    if (parser === '') {
-      structuredMetadataToAdd = `| ${tagKey}!=""`;
-    } else {
-      fieldExpressionToAdd = `| ${tagKey}!=""`;
-    }
-
-    const options: LogsQueryOptions = {
-      structuredMetadataToAdd,
-      fieldExpressionToAdd,
-      noParser: !fieldExpressionToAdd && fieldsVariable.state.filters.length === 0,
-    };
-
-    const queryString = buildFieldsQuery(tagKey, options);
+    const queryString = buildFieldsQueryString(tagKey, fieldsVariable, detectedFieldsFrame);
     const query = buildDataQuery(queryString, { legendFormat: `{{${tagKey}}}`, refId: tagKey });
 
     this.setState({
