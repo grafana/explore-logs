@@ -10,6 +10,7 @@ import {
 } from './variables';
 import { isDefined } from './scenes';
 import { SceneObject } from '@grafana/scenes';
+import { renderLogQLLabelFilters } from './query';
 
 /**
  * Crafts count over time query that excludes empty values for stream selector name
@@ -34,10 +35,8 @@ export function getTimeSeriesExpr(sceneRef: SceneObject, streamSelectorName: str
     }
   }
 
-  const streamSelectors = [...labelsVariable.state.filters, labelExpressionToAdd]
-    .filter(isDefined)
-    .map((f) => `${f.key}${f.operator}\`${f.value}\``)
-    .join(',');
+  const labelFilters = [...labelsVariable.state.filters, labelExpressionToAdd].filter(isDefined);
+  const streamSelectors = renderLogQLLabelFilters(labelFilters);
 
   const fields = fieldsVariable.state.filters;
   const levels = levelsVariables.state.filters;

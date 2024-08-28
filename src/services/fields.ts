@@ -1,4 +1,4 @@
-import { DataFrame } from '@grafana/data';
+import { DataFrame, ReducerID } from '@grafana/data';
 import { DrawStyle, StackingMode } from '@grafana/ui';
 import { PanelBuilders, SceneCSSGridItem, SceneDataTransformer, SceneObject } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
@@ -6,6 +6,8 @@ import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFilt
 import { getLogsFormatVariable, VAR_FIELDS, VAR_LABELS } from './variables';
 import { setLevelColorOverrides } from './panel';
 import { map, Observable } from 'rxjs';
+import { SortBy, SortByScene } from '../Components/ServiceScene/Breakdowns/SortByScene';
+import { memoize } from 'lodash';
 
 export type DetectedLabel = {
   label: string;
@@ -16,8 +18,10 @@ export type DetectedLabelsResponse = {
   detectedLabels: DetectedLabel[];
 };
 
+type ExtractedFieldsType = 'logfmt' | 'json' | 'mixed';
+
 interface ExtractedFields {
-  type: 'logfmt' | 'json';
+  type: ExtractedFieldsType;
   fields: string[];
 }
 
@@ -28,7 +32,7 @@ export function updateParserFromDataFrame(frame: DataFrame, sceneRef: SceneObjec
   let newType;
   if (!res.type) {
     newType = '';
-  } else if (res.type === 'json') {
+  } else if (res.type === 'mixed') {
     newType = `| json  | logfmt | drop __error__, __error_details__`;
   } else {
     newType = ` | ${res.type}`;
@@ -53,18 +57,49 @@ export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
     }, {}) ?? {}
   );
 
+  const types: ExtractedFieldsType[] = [];
   const linesField = data.fields.find((f) => f.name === 'Line' || f.name === 'body');
-  result.type = linesField?.values[0]?.[0] === '{' ? 'json' : 'logfmt';
+
+  if (!linesField) {
+    return result;
+  }
+
+  for (let i = 0; i < linesField.values.length && types.length < 2; i++) {
+    const line = linesField.values[i].trim();
+    if (line.startsWith('{') && line.endsWith('}')) {
+      if (!types.includes('json')) {
+        types.push('json');
+      }
+    } else if (!types.includes('logfmt')) {
+      types.push('logfmt');
+    }
+  }
+
+  result.type = types.length === 1 ? types[0] : 'mixed';
 
   return result;
 }
 
+const getReducerId = memoize((sortBy: SortBy) => {
+  let reducerID: ReducerID | undefined = undefined;
+  if (sortBy) {
+    // Is there a way to avoid the type assertion?
+    const values: string[] = Object.values(ReducerID);
+    if (values.includes(sortBy)) {
+      reducerID = sortBy as ReducerID;
+    }
+  }
+  return reducerID;
+});
+
 export function getFilterBreakdownValueScene(
   getTitle: (df: DataFrame) => string,
   style: DrawStyle,
-  variableName: typeof VAR_FIELDS | typeof VAR_LABELS
+  variableName: typeof VAR_FIELDS | typeof VAR_LABELS,
+  sortByScene: SortByScene
 ) {
   return (frame: DataFrame, frameIndex: number) => {
+    const reducerID = getReducerId(sortByScene.state.sortBy);
     const panel = PanelBuilders.timeseries() //
       .setOption('legend', { showLegend: false })
       .setCustomFieldConfig('fillOpacity', 9)
@@ -87,6 +122,16 @@ export function getFilterBreakdownValueScene(
         .setOverrides(setLevelColorOverrides)
         .setCustomFieldConfig('drawStyle', DrawStyle.Bars);
     }
+
+    if (reducerID) {
+      panel.setOption('legend', {
+        showLegend: true,
+        calcs: [reducerID],
+      });
+      // These will only have a single series, no need to show the title twice
+      panel.setDisplayName(' ');
+    }
+
     return new SceneCSSGridItem({
       body: panel.build(),
     });

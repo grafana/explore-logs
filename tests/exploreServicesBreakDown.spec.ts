@@ -2,6 +2,8 @@ import {expect, test} from '@grafana/plugin-e2e';
 import {ExplorePage} from './fixtures/explore';
 import {testIds} from '../src/services/testIds';
 import {mockEmptyQueryApiResponse} from "./mocks/mockEmptyQueryApiResponse";
+import {DataQueryRequest} from "@grafana/data";
+import {LokiQuery} from "../src/services/query";
 
 test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;
@@ -439,9 +441,98 @@ test.describe('explore services breakdown page', () => {
     // open logs panel
     await page.getByTitle('See log details').nth(1).click();
 
+    const adHocLocator = page.getByTestId('data-testid Panel header Logs').getByText('mimir-distributor', { exact: true })
+    await adHocLocator.scrollIntoViewIfNeeded()
+
     // find text corresponding text to match adhoc filter
-    await expect(
-      page.getByRole('cell', { name: 'Fields Ad-hoc statistics' }).getByText('mimir-distributor').nth(0)
-    ).toBeVisible();
+    await expect(adHocLocator).toBeVisible();
   });
+
+  test('should include all logs that contain field', async ({page}) => {
+    let numberOfQueries = 0;
+    // Let's not wait for all these queries
+    await page.route('**/ds/query*', async route => {
+      const post = route.request().postDataJSON()
+      const queries = post.queries as LokiQuery[]
+
+      if(queries[0].refId === 'logsPanelQuery'){
+        await route.continue()
+      }else{
+        await route.fulfill({json: []})
+      }
+    })
+    // Click on the fields tab
+    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
+    // Selector
+    const bytesIncludeButton = page.getByTestId('data-testid Panel header bytes').getByTestId('data-testid button-filter-include')
+    // Assert button isn't selected
+    expect(await bytesIncludeButton.getAttribute('aria-selected')).toEqual('false')
+    // Wait for all panels to finish loading, or we might intercept an ongoing query below
+    await expect(page.getByLabel('Panel loading bar')).toHaveCount(0)
+    // Now we'll intercept any further queries, note that the intercept above is still-preventing the actual request so the panels will return with no-data instantly
+    await page.route('**/ds/query*', async route => {
+      const post = route.request().postDataJSON()
+      const queries = post.queries as LokiQuery[]
+
+      expect(queries[0].expr).toContain('bytes!=""')
+      numberOfQueries++
+
+      await route.fulfill({json: []})
+      // await route.continue()
+    })
+    // Click the button
+    await bytesIncludeButton.click()
+
+    // Assert the panel is still there
+    expect(page.getByTestId('data-testid Panel header bytes')).toBeDefined()
+
+    // Assert that the button has been removed, as "bytes" is now on 100% of the logs
+    await expect(bytesIncludeButton).not.toBeVisible()
+
+    // Assert that we actually had some queries
+    expect(numberOfQueries).toBeGreaterThan(0)
+  })
+
+  test('should exclude all logs that contain field', async ({page}) => {
+    let numberOfQueries = 0;
+    // Let's not wait for all these queries
+    await page.route('**/ds/query*', async route => {
+      const post = route.request().postDataJSON()
+      const queries = post.queries as LokiQuery[]
+
+      if(queries[0].refId === 'logsPanelQuery'){
+        await route.continue()
+      }else{
+        await route.fulfill({json: []})
+      }
+    })
+    // Click on the fields tab
+    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
+    // Selector
+    const bytesIncludeButton = page.getByTestId('data-testid Panel header bytes').getByTestId('data-testid button-filter-exclude')
+    // Assert button isn't selected
+    expect(await bytesIncludeButton.getAttribute('aria-selected')).toEqual('false')
+    // Wait for all panels to finish loading, or we might intercept an ongoing query below
+    await expect(page.getByLabel('Panel loading bar')).toHaveCount(0)
+    // Now we'll intercept any further queries, note that the intercept above is still-preventing the actual request so the panels will return with no-data instantly
+    await page.route('**/ds/query*', async route => {
+      const post = route.request().postDataJSON()
+      const queries = post.queries as LokiQuery[]
+
+      expect(queries[0].expr).toContain('bytes=""')
+      numberOfQueries++
+
+      await route.fulfill({json: []})
+    })
+    // Click the button
+    await bytesIncludeButton.click()
+    // Assert that the panel is no longer rendered
+    await expect(bytesIncludeButton).not.toBeInViewport()
+
+    await page.pause()
+    // Assert that the viz was excluded
+    await expect(page.getByTestId('data-testid Panel header bytes')).toHaveCount(0)
+    // Assert that we actually had some queries
+    expect(numberOfQueries).toBeGreaterThan(0)
+  })
 });

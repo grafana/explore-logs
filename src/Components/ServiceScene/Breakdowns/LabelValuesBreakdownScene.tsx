@@ -11,14 +11,14 @@ import {
   SceneObjectState,
   SceneReactObject,
 } from '@grafana/scenes';
-import { LayoutSwitcher } from './LayoutSwitcher';
-import { getLabelValue } from './SortByScene';
-import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
-import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
-import { getSortByPreference } from '../../../services/store';
-import { LoadingState } from '@grafana/data';
-import { ByFrameRepeater } from './ByFrameRepeater';
-import { getFilterBreakdownValueScene } from '../../../services/fields';
+import {LayoutSwitcher} from './LayoutSwitcher';
+import {getLabelValue} from './SortByScene';
+import {DrawStyle, LoadingPlaceholder, StackingMode} from '@grafana/ui';
+import {getQueryRunner, setLevelColorOverrides} from '../../../services/panel';
+import {getSortByPreference} from '../../../services/store';
+import {LoadingState} from '@grafana/data';
+import {ByFrameRepeater} from './ByFrameRepeater';
+import {getFilterBreakdownValueScene} from '../../../services/fields';
 import {
   ALL_VARIABLE_VALUE,
   getLabelGroupByVariable,
@@ -28,13 +28,13 @@ import {
   VAR_LABELS,
 } from '../../../services/variables';
 import React from 'react';
-import { LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS, LabelBreakdownScene } from './LabelBreakdownScene';
-import { buildDataQuery } from '../../../services/query';
-import { navigateToDrilldownPage } from '../../../services/navigate';
-import { PageSlugs } from '../../../services/routing';
-import { ServiceScene } from '../ServiceScene';
-import { AddFilterEvent } from './AddToFiltersButton';
-import { DEFAULT_SORT_BY } from '../../../services/sorting';
+import {LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS, LabelBreakdownScene} from './LabelBreakdownScene';
+import {buildDataQuery} from '../../../services/query';
+import {navigateToDrilldownPage} from '../../../services/navigate';
+import {PageSlugs} from '../../../services/routing';
+import {ServiceScene} from '../ServiceScene';
+import {AddFilterEvent} from './AddToFiltersButton';
+import {DEFAULT_SORT_BY} from '../../../services/sorting';
 
 export interface LabelValueBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -177,7 +177,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
               }),
             ],
           }),
-          getLayoutChild: getFilterBreakdownValueScene(getLabelValue, DrawStyle.Bars, VAR_LABELS),
+          getLayoutChild: getFilterBreakdownValueScene(getLabelValue, DrawStyle.Bars, VAR_LABELS, sceneGraph.getAncestor(this, LabelBreakdownScene).state.sort),
           sortBy,
           direction,
           getFilter,
@@ -194,7 +194,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
               }),
             ],
           }),
-          getLayoutChild: getFilterBreakdownValueScene(getLabelValue, DrawStyle.Bars, VAR_LABELS),
+          getLayoutChild: getFilterBreakdownValueScene(getLabelValue, DrawStyle.Bars, VAR_LABELS, sceneGraph.getAncestor(this, LabelBreakdownScene).state.sort),
           sortBy,
           direction,
           getFilter,

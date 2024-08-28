@@ -38,11 +38,33 @@ export interface FieldValuesBreakdownSceneState extends SceneObjectState {
   $data?: SceneDataProvider;
   lastFilterEvent?: AddFilterEvent;
 }
+
 export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakdownSceneState> {
   constructor(state: Partial<FieldValuesBreakdownSceneState>) {
     super(state);
     this.addActivationHandler(this.onActivate.bind(this));
   }
+
+  public static Selector({ model }: SceneComponentProps<FieldValuesBreakdownScene>) {
+    const { body } = model.useState();
+    if (body instanceof LayoutSwitcher) {
+      return <>{body && <body.Selector model={body} />}</>;
+    }
+
+    return <></>;
+  }
+
+  public static Component = ({ model }: SceneComponentProps<FieldValuesBreakdownScene>) => {
+    const { body } = model.useState();
+    // @todo why are the types like this?
+    if (body instanceof LayoutSwitcher) {
+      return <>{body && <body.Component model={body} />}</>;
+    } else if (body instanceof SceneReactObject) {
+      return <>{body && <body.Component model={body} />}</>;
+    }
+
+    return <LoadingPlaceholder text={'Loading...'} />;
+  };
 
   onActivate() {
     const groupByVariable = getFieldGroupByVariable(this);
@@ -176,7 +198,8 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
           getLayoutChild: getFilterBreakdownValueScene(
             getLabelValue,
             query?.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-            VAR_FIELDS
+            VAR_FIELDS,
+            sceneGraph.getAncestor(this, FieldsBreakdownScene).state.sort
           ),
           sortBy,
           direction,
@@ -198,7 +221,8 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
           getLayoutChild: getFilterBreakdownValueScene(
             getLabelValue,
             query?.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-            VAR_FIELDS
+            VAR_FIELDS,
+            sceneGraph.getAncestor(this, FieldsBreakdownScene).state.sort
           ),
           sortBy,
           direction,
@@ -207,25 +231,4 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
       ],
     });
   }
-
-  public static Selector({ model }: SceneComponentProps<FieldValuesBreakdownScene>) {
-    const { body } = model.useState();
-    if (body instanceof LayoutSwitcher) {
-      return <>{body && <body.Selector model={body} />}</>;
-    }
-
-    return <></>;
-  }
-
-  public static Component = ({ model }: SceneComponentProps<FieldValuesBreakdownScene>) => {
-    const { body } = model.useState();
-    // @todo why are the types like this?
-    if (body instanceof LayoutSwitcher) {
-      return <>{body && <body.Component model={body} />}</>;
-    } else if (body instanceof SceneReactObject) {
-      return <>{body && <body.Component model={body} />}</>;
-    }
-
-    return <LoadingPlaceholder text={'Loading...'} />;
-  };
 }

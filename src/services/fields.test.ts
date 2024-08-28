@@ -57,7 +57,7 @@ describe('updateParserFromDataFrame', () => {
   });
   jest.mocked(getLogsFormatVariable).mockReturnValue(logsFmtVariable);
 
-  it('should exclude json errors', () => {
+  it('should exclude mixed parser errors', () => {
     const dataFrame = createDataFrame({
       refId: 'A',
       fields: [
@@ -65,7 +65,7 @@ describe('updateParserFromDataFrame', () => {
         {
           name: 'Line',
           type: FieldType.string,
-          values: ['{"jsonLabel": "jsonValue"}'],
+          values: ['{"jsonLabel": "jsonValue"}', 'level=error myown=summer'],
         },
         { name: 'labelTypes', type: FieldType.other, values: [{ field1: 'I', field2: 'P', field3: 'S' }] },
       ],
@@ -73,7 +73,7 @@ describe('updateParserFromDataFrame', () => {
     const scene = {} as SceneObject;
 
     expect(updateParserFromDataFrame(dataFrame, scene)).toEqual({
-      type: 'json',
+      type: 'mixed',
       fields: ['field2'],
     });
     expect(logsFmtVariable.state.value).toEqual('| json  | logfmt | drop __error__, __error_details__');

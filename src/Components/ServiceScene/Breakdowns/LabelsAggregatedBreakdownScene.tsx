@@ -23,6 +23,7 @@ import React from 'react';
 import { LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS, LabelBreakdownScene } from './LabelBreakdownScene';
 import { buildDataQuery } from '../../../services/query';
 import { SelectLabelActionScene } from './SelectLabelActionScene';
+import { ValueSlugs } from '../../../services/routing';
 
 export interface LabelsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -63,7 +64,7 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
           body: PanelBuilders.timeseries()
             .setTitle(optionValue)
             .setData(getQueryRunner([query]))
-            .setHeaderActions(new SelectLabelActionScene({ labelName: optionValue }))
+            .setHeaderActions(new SelectLabelActionScene({ labelName: optionValue, fieldType: ValueSlugs.label }))
             .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
             .setCustomFieldConfig('fillOpacity', 100)
             .setCustomFieldConfig('lineWidth', 0)
