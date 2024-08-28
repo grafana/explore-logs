@@ -119,7 +119,7 @@ export function mergeFrames(dest: DataFrame, source: DataFrame) {
         // Insert in the `destIdx` position
         dest.fields[f].values.splice(destIdx, 0, sourceField.values[i]);
         if (sourceField.nanos) {
-          dest.fields[f].nanos = dest.fields[f].nanos ?? [];
+          dest.fields[f].nanos = dest.fields[f].nanos ?? new Array(dest.fields[f].values.length - 1).fill(0);
           dest.fields[f].nanos?.splice(destIdx, 0, sourceField.nanos[i]);
         }
       }
