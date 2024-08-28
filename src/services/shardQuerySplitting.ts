@@ -151,7 +151,7 @@ export function splitQueriesByStreamShard(
           runNextRequest(subscriber);
         } else {
           const shardRequests = getShardRequests(shards, request.range);
-          console.log(`Querying up to ${startShard} shards`);
+          console.log(`Querying up ${shards.join(', ')} shards`);
           runNextRequest(subscriber, 0, shardRequests);
         }
       })
