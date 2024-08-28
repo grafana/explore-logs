@@ -423,5 +423,5 @@ export function getFieldBreakdownExpr(field: string) {
       `(${field}) [$__auto]) by ()`
     );
   }
-  return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${field}!=""   [$__auto]))`;
+  return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | ${field}!="" [$__auto]))`;
 }

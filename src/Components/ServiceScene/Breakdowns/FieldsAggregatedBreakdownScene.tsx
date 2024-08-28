@@ -20,7 +20,11 @@ import {
   getFieldBreakdownExpr,
   isAvgField,
 } from './FieldsBreakdownScene';
-import { getDetectedFieldsNamesFromQueryRunnerState, ServiceScene } from '../ServiceScene';
+import {
+  getDetectedFieldsFrameFromQueryRunnerState,
+  getDetectedFieldsNamesFromQueryRunnerState,
+  ServiceScene,
+} from '../ServiceScene';
 import React from 'react';
 import { SelectLabelActionScene } from './SelectLabelActionScene';
 import { ValueSlugs } from '../../../services/routing';
@@ -39,15 +43,18 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
   }
 
   private onDetectedFieldsChange = (newState: QueryRunnerState, prevState: QueryRunnerState) => {
-    const newFrame = getDetectedFieldsNamesFromQueryRunnerState(newState);
-    const prevFrame = getDetectedFieldsNamesFromQueryRunnerState(prevState);
+    const newNamesField = getDetectedFieldsNamesFromQueryRunnerState(newState);
+    const prevNamesField = getDetectedFieldsNamesFromQueryRunnerState(prevState);
 
-    if (newState.data?.state === LoadingState.Done && !areArraysEqual(newFrame?.values, prevFrame?.values)) {
+    if (newState.data?.state === LoadingState.Done && !areArraysEqual(newNamesField?.values, prevNamesField?.values)) {
+      //@todo cardinality looks wrong in API response
+      const cardinalityMap = this.calculateCardinalityMap(newState);
+
       // Iterate through all of the layouts
       this.state.body?.state.layouts.forEach((layoutObj) => {
         const layout = layoutObj as SceneCSSGridLayout;
         // populate set of new list of fields
-        const newFieldsSet = new Set<string>(newFrame?.values);
+        const newFieldsSet = new Set<string>(newNamesField?.values);
         const updatedChildren = layout.state.children as SceneCSSGridItem[];
 
         // Iterate through all of the existing panels
@@ -75,6 +82,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
         });
 
         updatedChildren.push(...this.buildChildren(options));
+        updatedChildren.sort(this.sortChildren(cardinalityMap));
 
         layout.setState({
           children: updatedChildren,
@@ -82,6 +90,29 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
       });
     }
   };
+
+  private sortChildren(cardinalityMap: Map<string, number>) {
+    return (a: SceneCSSGridItem, b: SceneCSSGridItem) => {
+      const aPanel = a.state.body as VizPanel;
+      const bPanel = b.state.body as VizPanel;
+      const aCardinality = cardinalityMap.get(aPanel.state.title) ?? 0;
+      const bCardinality = cardinalityMap.get(bPanel.state.title) ?? 0;
+      return bCardinality - aCardinality;
+    };
+  }
+
+  private calculateCardinalityMap(newState: QueryRunnerState) {
+    const detectedFieldsFrame = getDetectedFieldsFrameFromQueryRunnerState(newState);
+    const cardinalityMap = new Map<string, number>();
+    if (detectedFieldsFrame?.length) {
+      for (let i = 0; i < detectedFieldsFrame?.length; i++) {
+        const name: string = detectedFieldsFrame.fields[0].values[i];
+        const cardinality: number = detectedFieldsFrame.fields[1].values[i];
+        cardinalityMap.set(name, cardinality);
+      }
+    }
+    return cardinalityMap;
+  }
 
   onActivate() {
     this.setState({
@@ -99,6 +130,10 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     fieldsBreakdownScene.state.search.reset();
 
     const children = this.buildChildren(options);
+
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
+    const cardinalityMap = this.calculateCardinalityMap(serviceScene.state.$detectedFieldsData.state);
+    children.sort(this.sortChildren(cardinalityMap));
 
     return new LayoutSwitcher({
       options: [
