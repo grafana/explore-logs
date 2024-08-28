@@ -145,8 +145,7 @@ export function splitQueriesByStreamShard(
       })
       .then((values: string[]) => {
         const shards = values.map((value) => parseInt(value, 10));
-        const startShard = shards.length ? Math.max(...shards) : undefined;
-        if (startShard === undefined) {
+        if (!shards || !shards.length) {
           console.warn(`Shard splitting not supported. Issuing a regular query.`);
           runNextRequest(subscriber);
         } else {
