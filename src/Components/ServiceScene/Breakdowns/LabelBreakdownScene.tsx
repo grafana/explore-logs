@@ -23,6 +23,7 @@ import {
   ALL_VARIABLE_VALUE,
   getLabelGroupByVariable,
   getLabelsVariable,
+  SERVICE_NAME,
   VAR_LABEL_GROUP_BY,
   VAR_LABELS,
 } from 'services/variables';
@@ -39,7 +40,6 @@ import { navigateToValueBreakdown } from '../../../services/navigate';
 import { areArraysEqual } from '../../../services/comparison';
 import { LabelValuesBreakdownScene } from './LabelValuesBreakdownScene';
 import { LabelsAggregatedBreakdownScene } from './LabelsAggregatedBreakdownScene';
-import { SERVICE_NAME } from '../../ServiceSelectionScene/ServiceSelectionScene';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {

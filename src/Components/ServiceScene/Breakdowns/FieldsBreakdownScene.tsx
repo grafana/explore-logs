@@ -26,6 +26,7 @@ import {
   getFieldGroupByVariable,
   getFieldsVariable,
   LOG_STREAM_SELECTOR_EXPR,
+  SERVICE_NAME,
   VAR_FIELD_GROUP_BY,
   VAR_LABELS,
 } from 'services/variables';
@@ -261,7 +262,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     variablesToClear.forEach((variable) => {
       if (variable instanceof AdHocFiltersVariable && variable.state.key === 'adhoc_service_filter') {
         variable.setState({
-          filters: variable.state.filters.filter((filter) => filter.key === 'service_name'),
+          filters: variable.state.filters.filter((filter) => filter.key === SERVICE_NAME),
         });
       } else if (variable instanceof AdHocFiltersVariable) {
         variable.setState({
