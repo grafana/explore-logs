@@ -166,6 +166,7 @@ describe('addToFilters and addAdHocFilter', () => {
 
     it('allows to clear a filter', () => {
       const lookupVariable = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(adHocVariable);
+      jest.spyOn(sceneGraph, 'getAncestor').mockReturnValue(serviceScene);
       addToFilters('existing', 'existingValue', 'clear', scene);
 
       expect(lookupVariable).toHaveBeenCalledWith(VAR_FIELDS, expect.anything());
@@ -182,34 +183,41 @@ describe('addToFilters and addAdHocFilter', () => {
 
     it('identifies indexed labels and uses the appropriate variable', () => {
       const lookupVariable = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(adHocVariable);
-      addToFilters('indexed', 'value', 'include', scene);
+      jest.spyOn(sceneGraph, 'getAncestor').mockReturnValue(serviceScene);
+      addToFilters('indexed', 'value', 'include', scene, VAR_LABELS);
 
       expect(lookupVariable).toHaveBeenCalledWith(VAR_LABELS, expect.anything());
       expect(adHocVariable.state.filters).toEqual([
         {
           key: 'existing',
           operator: '=',
-          value: 'existingValue',
+          value: JSON.stringify({
+            value: 'existingValue',
+            parser: 'mixed',
+          }),
+          valueLabel: 'existingValue',
         },
         {
           key: 'indexed',
           operator: '=',
           value: 'value',
+          valueLabel: 'value',
         },
       ]);
     });
 
     it(`uses the correct name when filtering for ${LEVEL_VARIABLE_VALUE}`, () => {
       const lookupVariable = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(adHocVariable);
+      jest.spyOn(sceneGraph, 'getAncestor').mockReturnValue(serviceScene);
       addToFilters(LEVEL_VARIABLE_VALUE, 'info', 'include', scene, VAR_FIELDS);
-
-      expect(lookupVariable).toHaveBeenCalledWith(VAR_LABELS, expect.anything());
+      expect(lookupVariable).toHaveBeenCalledWith(VAR_LEVELS, expect.anything());
     });
   });
 
   describe('addAdHocFilter', () => {
     it.each(['=', '!='])('allows to add an %s filter', (operator: string) => {
       const lookupVariable = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(adHocVariable);
+      jest.spyOn(sceneGraph, 'getAncestor').mockReturnValue(serviceScene);
       addAdHocFilter({ key: 'key', value: 'value', operator }, scene);
 
       expect(lookupVariable).toHaveBeenCalledWith(VAR_FIELDS, expect.anything());
@@ -217,12 +225,20 @@ describe('addToFilters and addAdHocFilter', () => {
         {
           key: 'existing',
           operator: '=',
-          value: 'existingValue',
+          value: JSON.stringify({
+            value: 'existingValue',
+            parser: 'mixed',
+          }),
+          valueLabel: 'existingValue',
         },
         {
           key: 'key',
           operator,
-          value: 'value',
+          value: JSON.stringify({
+            value: 'value',
+            parser: 'mixed',
+          }),
+          valueLabel: 'value',
         },
       ]);
     });
@@ -230,6 +246,7 @@ describe('addToFilters and addAdHocFilter', () => {
     it('allows to specify the variable to write to', () => {
       const variableName = 'fields';
       const lookupVariable = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(adHocVariable);
+      jest.spyOn(sceneGraph, 'getAncestor').mockReturnValue(serviceScene);
       addAdHocFilter({ key: 'key', value: 'value', operator: '=' }, scene, variableName);
 
       expect(lookupVariable).toHaveBeenCalledWith(variableName, expect.anything());
@@ -244,18 +261,24 @@ describe('addToFilters and addAdHocFilter', () => {
         {
           key: 'existing',
           operator: '=',
-          value: 'existingValue',
+          value: JSON.stringify({
+            value: 'existingValue',
+            parser: 'mixed',
+          }),
+          valueLabel: 'existingValue',
         },
         {
           key: 'indexed',
           operator: '=',
           value: 'value',
+          valueLabel: 'value',
         },
       ]);
     });
 
     it(`uses the correct name when filtering for ${LEVEL_VARIABLE_VALUE}`, () => {
       const lookupVariable = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(adHocVariable);
+      jest.spyOn(sceneGraph, 'getAncestor').mockReturnValue(serviceScene);
       addAdHocFilter({ key: LEVEL_VARIABLE_VALUE, value: 'info', operator: '=' }, scene, VAR_FIELDS);
 
       expect(lookupVariable).toHaveBeenCalledWith(VAR_LEVELS, expect.anything());
