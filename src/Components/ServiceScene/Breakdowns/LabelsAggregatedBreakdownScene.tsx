@@ -1,13 +1,14 @@
 import {
   PanelBuilders,
-  QueryRunnerState,
   SceneComponentProps,
   SceneCSSGridItem,
   SceneCSSGridLayout,
+  SceneDataProvider,
   SceneFlexItemLike,
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
+  SceneQueryRunner,
   VizPanel,
 } from '@grafana/scenes';
 import { LayoutSwitcher } from './LayoutSwitcher';
@@ -18,9 +19,6 @@ import React from 'react';
 import { buildLabelsQuery, LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS, LabelBreakdownScene } from './LabelBreakdownScene';
 import { SelectLabelActionScene } from './SelectLabelActionScene';
 import { ValueSlugs } from '../../../services/routing';
-import { getDetectedFieldsNamesFromQueryRunnerState, ServiceScene } from '../ServiceScene';
-import { LoadingState } from '@grafana/data';
-import { areArraysEqual } from '../../../services/comparison';
 
 export interface LabelsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -37,52 +35,71 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
 
   onActivate() {
     const fields = getFieldsVariable(this);
-    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
-    const $detectedFieldsData = serviceScene.state.$detectedFieldsData;
-    if (fields.state.filters.length === 0 || $detectedFieldsData.state.data?.state === LoadingState.Done) {
-      this.setState({
-        body: this.build(),
-      });
-    }
+    this.setState({
+      body: this.build(),
+    });
 
     this._subs.add(
-      $detectedFieldsData.subscribeToState((newState, prevState) => {
-        if (newState.data?.state === LoadingState.Done) {
-          if (!this.state.body) {
-            this.setState({
-              body: this.build(),
-            });
-          } else {
-            this.updateQueriesOnDetectedFieldsChange(newState, prevState);
-          }
-        }
+      fields.subscribeToState((newState, prevState) => {
+        this.updateQueriesOnFieldsChange();
       })
     );
   }
 
-  private updateQueriesOnDetectedFieldsChange = (newState: QueryRunnerState, prevState: QueryRunnerState) => {
-    const newNamesField = getDetectedFieldsNamesFromQueryRunnerState(newState);
-    const prevNamesField = getDetectedFieldsNamesFromQueryRunnerState(prevState);
+  private updateQueriesOnFieldsChange = () => {
+    this.state.body?.state.layouts.forEach((layoutObj) => {
+      const layout = layoutObj as SceneCSSGridLayout;
+      // Iterate through the existing panels
+      for (let i = 0; i < layout.state.children.length; i++) {
+        const gridItem = layout.state.children[i] as SceneCSSGridItem;
+        const panel = gridItem.state.body as VizPanel;
 
-    if (newState.data?.state === LoadingState.Done && !areArraysEqual(newNamesField?.values, prevNamesField?.values)) {
-      console.log('updating queries');
-      // Iterate through all of the layouts
-      this.state.body?.state.layouts.forEach((layoutObj) => {
-        const layout = layoutObj as SceneCSSGridLayout;
-        // Iterate through all of the existing panels
-        for (let i = 0; i < layout.state.children.length; i++) {
-          const gridItem = layout.state.children[i] as SceneCSSGridItem;
-          const panel = gridItem.state.body as VizPanel;
-          const title = panel.state.title;
-          const query = buildLabelsQuery(this, title, title);
+        const title = panel.state.title;
+        const queryRunner: SceneDataProvider | SceneQueryRunner | undefined = panel.state.$data;
+        const query = buildLabelsQuery(this, title, title);
 
-          panel.setState({
-            $data: getQueryRunner([query]),
-          });
+        // Don't update if query didnt change
+        if (queryRunner instanceof SceneQueryRunner) {
+          if (query.expr === queryRunner?.state.queries?.[0]?.expr) {
+            break;
+          }
         }
-      });
-    }
+
+        console.log('updating query', title, query.expr);
+
+        panel.setState({
+          $data: getQueryRunner([query]),
+        });
+      }
+    });
   };
+
+  // private updateQueriesOnDetectedFieldsChange = (newState: QueryRunnerState, prevState: QueryRunnerState) => {
+  //   const newNamesField = getDetectedFieldsNamesFromQueryRunnerState(newState);
+  //   const prevNamesField = getDetectedFieldsNamesFromQueryRunnerState(prevState);
+  //
+  //   if (newState.data?.state === LoadingState.Done && !areArraysEqual(newNamesField?.values, prevNamesField?.values)) {
+  //     console.log('updating queries');
+  //     // Iterate through all of the layouts
+  //     this.state.body?.state.layouts.forEach((layoutObj) => {
+  //       const layout = layoutObj as SceneCSSGridLayout;
+  //       // Iterate through all of the existing panels
+  //       for (let i = 0; i < layout.state.children.length; i++) {
+  //         const gridItem = layout.state.children[i] as SceneCSSGridItem;
+  //         const panel = gridItem.state.body as VizPanel;
+  //         const title = panel.state.title;
+  //         const query = buildLabelsQuery(this, title, title);
+  //
+  //         console.log('panel data', panel.state.$data?.state.data?.request)
+  //         console.log('new query query', query)
+  //
+  //         panel.setState({
+  //           $data: getQueryRunner([query]),
+  //         });
+  //       }
+  //     });
+  //   }
+  // };
 
   private build(): LayoutSwitcher {
     const variable = getLabelGroupByVariable(this);
@@ -97,6 +114,7 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
         continue;
       }
       const query = buildLabelsQuery(this, String(option.value), String(option.value));
+      console.log('build query', query.expr);
 
       children.push(
         new SceneCSSGridItem({

@@ -63,6 +63,8 @@ export function addToFilters(
     variableType = resolveVariableTypeForField(key, scene);
   }
 
+  console.log('variableType', variableType);
+
   const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableType), scene);
 
   // If the filter exists, filter it

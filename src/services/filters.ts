@@ -46,13 +46,19 @@ export function getLabelOptions(labels: string[]) {
   return [{ label: 'All', value: ALL_VARIABLE_VALUE }, ...labelOptions];
 }
 
+function removeFieldsByName(options: string[], fieldsToRemove: string[]) {
+  fieldsToRemove.forEach((fieldName) => {
+    const labelsIndex = options.indexOf(fieldName);
+    if (labelsIndex !== -1) {
+      options.splice(labelsIndex, 1);
+    }
+  });
+}
+
 export function getFieldOptions(labels: string[]) {
   const options = [...labels];
-
-  const labelsIndex = options.indexOf('level_extracted');
-  if (labelsIndex !== -1) {
-    options.splice(labelsIndex, 1);
-  }
+  // @todo remove "level" as well?
+  removeFieldsByName(options, ['level_extracted', LEVEL_VARIABLE_VALUE, 'level']);
 
   const labelOptions: VariableValueOption[] = options.map((label) => ({
     label,

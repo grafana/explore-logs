@@ -90,9 +90,16 @@ export function getParserForField(fieldName: string, sceneRef: SceneObject): Ext
   const namesField: Field<string> | undefined = detectedFieldsFrame?.fields[0];
 
   const index = namesField?.values.indexOf(fieldName);
-  return index && index !== -1
-    ? extractParserFromDetectedFieldParserFieldValue(parserField?.values?.[index] ?? '')
-    : undefined;
+  const parser =
+    index && index !== -1
+      ? extractParserFromDetectedFieldParserFieldValue(parserField?.values?.[index] ?? '')
+      : undefined;
+
+  if (parser === undefined) {
+    console.warn('missing parser, using mixed format for', fieldName);
+    return 'mixed';
+  }
+  return parser;
 }
 
 export function getFilterBreakdownValueScene(
@@ -142,6 +149,9 @@ export function getFilterBreakdownValueScene(
 }
 
 export function selectFrameTransformation(frame: DataFrame) {
+  if (!frame) {
+    console.warn('missing frame?');
+  }
   return (source: Observable<DataFrame[]>) => {
     return source.pipe(
       map(() => {
