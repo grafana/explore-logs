@@ -66,8 +66,6 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
           }
         }
 
-        console.log('updating query', title, query.expr);
-
         panel.setState({
           $data: getQueryRunner([query]),
         });
@@ -88,7 +86,6 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
         continue;
       }
       const query = buildLabelsQuery(this, String(option.value), String(option.value));
-      console.log('build query', query.expr);
 
       children.push(
         new SceneCSSGridItem({
