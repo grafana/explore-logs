@@ -4,6 +4,7 @@ import { Identifier, Matcher, MetricExpr, parser, Selector, String } from '@graf
 import { Filter, FilterOp } from './filters';
 import { LabelType } from './fields';
 import { LokiQuery } from './query';
+import { SceneDataQueryRequest } from './datasource';
 
 export class NodePosition {
   from: number;
@@ -110,6 +111,10 @@ export function isQueryWithNode(query: string, nodeType: number): boolean {
 export function isLogsQuery(query: string): boolean {
   // As a safeguard we are checking for a length of 2, because at least the query should be `{}`
   return query.trim().length > 2 && !isQueryWithNode(query, MetricExpr);
+}
+
+export function isLogsRequest(request: SceneDataQueryRequest) {
+  return request.targets.find((query) => isLogsQuery(query.expr)) !== undefined;
 }
 
 const SHARDING_PLACEHOLDER = '__stream_shard_number__';
