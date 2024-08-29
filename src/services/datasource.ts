@@ -65,7 +65,7 @@ export const DETECTED_FIELDS_PARSER_NAME = 'parser';
 
 export const DETECTED_FIELDS_TYPE_NAME = 'type';
 
-class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
+export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
   constructor(pluginId: string, uid: string) {
     super(pluginId, uid);
   }
