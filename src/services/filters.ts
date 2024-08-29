@@ -50,8 +50,6 @@ export const FIELDS_TO_REMOVE = ['level_extracted', LEVEL_VARIABLE_VALUE, 'level
 
 export function getFieldOptions(labels: string[]) {
   const options = [...labels];
-  // removeFieldsByName(options, FIELDS_TO_REMOVE);
-
   const labelOptions: VariableValueOption[] = options.map((label) => ({
     label,
     value: String(label),

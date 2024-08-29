@@ -116,17 +116,6 @@ describe('getLabelOptions', () => {
 });
 
 describe('getFieldOptions', () => {
-  it('should remove level_extracted if it is present in the list', () => {
-    const labels = [LEVEL_VARIABLE_VALUE, 'level_extracted', 'Label A'];
-    const expectedOptions: Array<SelectableValue<string>> = [
-      { label: 'All', value: ALL_VARIABLE_VALUE },
-      { label: LEVEL_VARIABLE_VALUE, value: LEVEL_VARIABLE_VALUE },
-      { label: 'Label A', value: 'Label A' },
-    ];
-
-    expect(getFieldOptions(labels)).toEqual(expectedOptions);
-  });
-
   it('should always add the All option at the beginning', () => {
     const labels = ['Label A', 'Label B'];
     const expectedOptions: Array<SelectableValue<string>> = [

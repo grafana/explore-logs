@@ -1,11 +1,11 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import { addAdHocFilter, addToFilters, AddToFiltersButton, FilterType } from './AddToFiltersButton';
+import { addAdHocFilter, addToFilters, AddToFiltersButton, FieldValue, FilterType } from './AddToFiltersButton';
 import { BusEvent, createDataFrame, Field, FieldType, LoadingState, PanelData } from '@grafana/data';
 import userEvent from '@testing-library/user-event';
 import { AdHocFiltersVariable, sceneGraph, SceneObject, SceneQueryRunner } from '@grafana/scenes';
 import { LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from 'services/variables';
-import { ServiceSceneState } from '../ServiceScene';
+import { ServiceScene, ServiceSceneState } from '../ServiceScene';
 
 const scene = { publishEvent(event: BusEvent, bubble?: boolean) {} } as SceneObject;
 
@@ -69,6 +69,7 @@ describe('AddToFiltersButton', () => {
 
 describe('addToFilters and addAdHocFilter', () => {
   let adHocVariable: AdHocFiltersVariable;
+  let serviceScene: ServiceScene;
   beforeEach(() => {
     const labels = [
       {
@@ -107,35 +108,57 @@ describe('addToFilters and addAdHocFilter', () => {
         {
           key: 'existing',
           operator: '=',
-          value: 'existingValue',
+          value: JSON.stringify({
+            value: 'existingValue',
+            parser: 'mixed',
+          }),
+          valueLabel: 'existingValue',
         },
       ],
     });
+
+    serviceScene = {
+      state: {
+        $detectedFieldsData: {
+          state: {},
+        },
+      },
+    } as ServiceScene;
   });
 
   describe('addToFilters', () => {
     it.each(['include', 'exclude'])('allows to add an %s filter', (type: string) => {
       const lookupVariable = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(adHocVariable);
-      addToFilters('key', 'value', type as FilterType, scene);
+      jest.spyOn(sceneGraph, 'getAncestor').mockReturnValue(serviceScene);
+      addToFilters('key', 'value', type as FilterType, scene, VAR_FIELDS);
 
       expect(lookupVariable).toHaveBeenCalledWith(VAR_FIELDS, expect.anything());
       expect(adHocVariable.state.filters).toEqual([
         {
           key: 'existing',
           operator: '=',
-          value: 'existingValue',
+          value: JSON.stringify({
+            value: 'existingValue',
+            parser: 'mixed',
+          } as FieldValue),
+          valueLabel: 'existingValue',
         },
         {
           key: 'key',
           operator: type === 'include' ? '=' : '!=',
-          value: 'value',
+          value: JSON.stringify({
+            value: 'value',
+            parser: 'mixed',
+          } as FieldValue),
+          valueLabel: 'value',
         },
       ]);
     });
 
     it('allows to toggle a filter', () => {
       const lookupVariable = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(adHocVariable);
-      addToFilters('existing', 'existingValue', 'toggle', scene);
+      jest.spyOn(sceneGraph, 'getAncestor').mockReturnValue(serviceScene);
+      addToFilters('existing', 'existingValue', 'toggle', scene, VAR_FIELDS);
 
       expect(lookupVariable).toHaveBeenCalledWith(VAR_FIELDS, expect.anything());
       expect(adHocVariable.state.filters).toEqual([]);

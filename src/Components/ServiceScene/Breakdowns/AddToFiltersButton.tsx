@@ -65,20 +65,24 @@ export function addToFilters(
 
   const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableType), scene);
 
-  // If the filter exists, filter it
-  let filters = variable.state.filters.filter((filter) => {
-    return !(filter.key === key && filter.value === value);
-  });
-
-  const filterExists = filters.length !== variable.state.filters.length;
-
-  let valueObject;
+  let valueObject: string | undefined = undefined;
   if (variableType === VAR_FIELDS) {
     valueObject = JSON.stringify({
       value,
       parser: getParserForField(key, scene),
     });
   }
+
+  // If the filter exists, filter it
+  let filters = variable.state.filters.filter((filter) => {
+    if (variableType === VAR_FIELDS) {
+      const fieldValue: FieldValue = JSON.parse(filter.value);
+      return !(filter.key === key && fieldValue.value === value);
+    }
+    return !(filter.key === key && filter.value === value);
+  });
+
+  const filterExists = filters.length !== variable.state.filters.length;
 
   if (operator === 'include' || operator === 'exclude' || (!filterExists && operator === 'toggle')) {
     filters = [
@@ -168,6 +172,11 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
 
     // Check if the filter is already there
     const filterInSelectedFilters = variable.state.filters.find((f) => {
+      if (variable.state.name === VAR_FIELDS) {
+        const variableField: FieldValue = JSON.parse(f.value);
+        return f.key === filter.name && variableField.value === filter.value;
+      }
+      // const variableFilterValue = JSON.parse()
       return f.key === filter.name && f.value === filter.value;
     });
 
