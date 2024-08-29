@@ -30,12 +30,12 @@ describe('AddToFiltersButton', () => {
           },
         ],
       }),
-      variableName: 'testVariableName',
+      variableName: 'filters',
     });
     const lookup = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(new AdHocFiltersVariable({}));
     render(<button.Component model={button} />);
     userEvent.click(screen.getByRole('button', { name: 'Include' }));
-    await waitFor(async () => expect(lookup).toHaveBeenCalledWith('testVariableName', expect.anything()));
+    await waitFor(async () => expect(lookup).toHaveBeenCalledWith('filters', expect.anything()));
   });
 
   it('updates correct variable when LEVEL_VARIABLE_VALUE', async () => {
@@ -58,7 +58,7 @@ describe('AddToFiltersButton', () => {
           },
         ],
       }),
-      variableName: 'testVariableName',
+      variableName: 'fields',
     });
     const lookup = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(new AdHocFiltersVariable({}));
     render(<button.Component model={button} />);
@@ -150,7 +150,7 @@ describe('addToFilters and addAdHocFilter', () => {
     });
 
     it('allows to specify the variable to write to', () => {
-      const variableName = 'myVariable';
+      const variableName = 'filters';
       const lookupVariable = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(adHocVariable);
       addToFilters('key', 'value', 'include', scene, variableName);
 
@@ -205,7 +205,7 @@ describe('addToFilters and addAdHocFilter', () => {
     });
 
     it('allows to specify the variable to write to', () => {
-      const variableName = 'myVariable';
+      const variableName = 'fields';
       const lookupVariable = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(adHocVariable);
       addAdHocFilter({ key: 'key', value: 'value', operator: '=' }, scene, variableName);
 

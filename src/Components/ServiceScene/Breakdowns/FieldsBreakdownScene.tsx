@@ -49,6 +49,10 @@ import { LayoutSwitcher } from './LayoutSwitcher';
 import { SortByScene, SortCriteriaChanged } from './SortByScene';
 import { StatusWrapper } from './StatusWrapper';
 import { getFieldOptions } from 'services/filters';
+import {
+  extractParserFieldFromParserArray,
+  extractParserFromDetectedFieldParserFieldValue,
+} from '../../../services/fields';
 
 export const averageFields = ['duration', 'count', 'total', 'bytes'];
 export const FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
@@ -448,13 +452,27 @@ export function buildFieldsQueryString(
   const parserField: Field<string> | undefined = detectedFieldsFrame?.fields[2];
   const namesField: Field<string> | undefined = detectedFieldsFrame?.fields[0];
 
+  const index = namesField?.values.indexOf(optionValue);
+  const parserForThisField =
+    index && index !== -1
+      ? extractParserFromDetectedFieldParserFieldValue(parserField?.values?.[index] ?? '')
+      : undefined;
+
+  const parsers = fieldsVariable.state.filters.map((filter) => {
+    const index = namesField?.values.indexOf(filter.key);
+    const parser =
+      index && index !== -1
+        ? extractParserFromDetectedFieldParserFieldValue(parserField?.values?.[index] ?? '')
+        : undefined;
+    return parser ?? '';
+  });
+
+  const parser = extractParserFieldFromParserArray([...parsers, parserForThisField ?? '']);
+
   let fieldExpressionToAdd = '';
   let structuredMetadataToAdd = '';
 
-  const index = namesField?.values.indexOf(optionValue);
-  const parser = index && index !== -1 ? parserField?.values[index] : undefined;
-
-  if (parser === '') {
+  if (parserForThisField === '') {
     structuredMetadataToAdd = `| ${optionValue}!=""`;
     // Structured metadata
   } else {
@@ -466,6 +484,7 @@ export function buildFieldsQueryString(
     structuredMetadataToAdd,
     fieldExpressionToAdd,
     noParser: !fieldExpressionToAdd && fieldsVariable.state.filters.length === 0,
+    parser: parser,
   };
   return buildFieldsQuery(optionValue, options);
 }

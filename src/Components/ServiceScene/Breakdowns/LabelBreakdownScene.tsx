@@ -45,6 +45,8 @@ import { LabelValuesBreakdownScene } from './LabelValuesBreakdownScene';
 import { LabelsAggregatedBreakdownScene } from './LabelsAggregatedBreakdownScene';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { buildDataQuery } from '../../../services/query';
+import { extractParserFieldFromParserArray } from '../../../services/fields';
+import { FieldValue } from './AddToFiltersButton';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -338,19 +340,27 @@ export function buildLabelsQuery(sceneRef: SceneObject, optionValue: string, opt
   let labelExpressionToAdd = '';
   let structuredMetadataToAdd = '';
 
+  const fields = getFieldsVariable(sceneRef);
+
+  const parsers = fields.state.filters.map((filter) => {
+    const fieldObject: FieldValue = JSON.parse(filter.value);
+    return fieldObject.parser;
+  });
+
+  const parser = extractParserFieldFromParserArray(parsers);
+
   if (optionName && optionName !== LEVEL_VARIABLE_VALUE) {
     labelExpressionToAdd = ` ,${optionName} != ""`;
   } else if (optionName && optionName === LEVEL_VARIABLE_VALUE) {
     structuredMetadataToAdd = ` | ${optionName} != ""`;
   }
 
-  const fields = getFieldsVariable(sceneRef);
-
   return buildDataQuery(
     `sum(count_over_time(${getLogsStreamSelector({
       labelExpressionToAdd,
       structuredMetadataToAdd,
       noParser: fields.state.filters.length === 0,
+      parser,
     })} [$__auto])) by (${optionValue})`,
     { legendFormat: `{{${optionValue}}}`, refId: 'LABEL_BREAKDOWN_VALUES' }
   );

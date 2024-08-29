@@ -23,6 +23,7 @@ import {
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
+  getServiceNameFromVariableState,
   LOG_STREAM_SELECTOR_EXPR,
   SERVICE_NAME,
   VAR_DATASOURCE,
@@ -90,7 +91,7 @@ export const getDetectedFieldsFrameFromQueryRunnerState = (state: QueryRunnerSta
 
 export const getDetectedFieldsNamesFromQueryRunnerState = (state: QueryRunnerState) => {
   // The first field, DETECTED_FIELDS_NAME_FIELD, has the list of names of the detected fields
-  return state.data?.series?.[0].fields?.[0];
+  return state.data?.series?.[0]?.fields?.[0];
 };
 
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
@@ -118,20 +119,30 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
-  private setEmptyFiltersRedirection() {
+  private setSubscribeToLabelsVariable() {
     const variable = getLabelsVariable(this);
     if (variable.state.filters.length === 0) {
       this.redirectToStart();
       return;
     }
     this._subs.add(
-      variable.subscribeToState((newState) => {
+      variable.subscribeToState((newState, prevState) => {
+        const newServiceName = getServiceNameFromVariableState(newState);
+        const prevServiceName = getServiceNameFromVariableState(prevState);
         if (newState.filters.length === 0) {
           this.redirectToStart();
         }
         // If we remove the service name filter, we should redirect to the start
         if (!newState.filters.some((f) => f.key === SERVICE_NAME)) {
           this.redirectToStart();
+        }
+
+        // Clear filters if changing service, they might not exist, or might have a different parser
+        if (prevServiceName !== newServiceName) {
+          const fields = getFieldsVariable(this);
+          fields.setState({
+            filters: [],
+          });
         }
       })
     );
@@ -192,7 +203,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.resetBodyAndData();
 
     this.setBreakdownView();
-    this.setEmptyFiltersRedirection();
+    this.setSubscribeToLabelsVariable();
 
     // Run queries on activate
     this.runQueries();
@@ -249,13 +260,15 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       ((slug === PageSlugs.labels || parentSlug === ValueSlugs.label) && !this.state.$detectedLabelsData?.state.data) ||
       this.state.labelsCount === undefined
     ) {
-      this.state.$detectedLabelsData?.runQueries();
+      this.state.$detectedLabelsData.runQueries();
     }
 
     // If we don't have a detected fields count, or we are activating the fields scene, run the detected fields query
     if (
-      ((slug === PageSlugs.fields || parentSlug === ValueSlugs.field) && !this.state.$detectedFieldsData?.state.data) ||
-      this.state.labelsCount === undefined
+      slug === PageSlugs.fields ||
+      parentSlug === ValueSlugs.field ||
+      ((slug === PageSlugs.labels || parentSlug === ValueSlugs.label) && !this.state.$detectedFieldsData?.state.data) ||
+      this.state.fieldsCount === undefined
     ) {
       this.state.$detectedFieldsData?.runQueries();
     }
@@ -322,7 +335,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   private subscribeToTimeRange() {
     return sceneGraph.getTimeRange(this).subscribeToState(() => {
       this.state.$patternsData?.runQueries();
-      this.state.$detectedLabelsData?.runQueries();
+      this.state.$detectedLabelsData.runQueries();
       this.state.$detectedFieldsData?.runQueries();
     });
   }

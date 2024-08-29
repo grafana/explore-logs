@@ -20,6 +20,8 @@ import {
   getLevelsVariable,
   LEVEL_VARIABLE_VALUE,
   SERVICE_NAME,
+  VAR_FIELDS,
+  VAR_LABELS,
 } from '../../../services/variables';
 import { AdHocVariableFilter, Field, Labels, LoadingState } from '@grafana/data';
 import { FilterOp } from '../../../services/filters';
@@ -40,7 +42,7 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
   public static Component = ({ model }: SceneComponentProps<SelectLabelActionScene>) => {
     const { hideValueDrilldown, labelName, showFilterField } = model.useState();
     const variable = model.getVariable();
-    const variableName = variable.useState().name;
+    const variableName = variable.useState().name as typeof VAR_LABELS | typeof VAR_FIELDS;
     const existingFilter = model.getExistingFilter(variable);
 
     return (
@@ -112,17 +114,17 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
     navigateToValueBreakdown(this.state.fieldType, this.state.labelName, serviceScene);
   };
 
-  public onClickExcludeEmpty = (variableName: string) => {
-    addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'exclude', this, variableName);
+  public onClickExcludeEmpty = (variableType: typeof VAR_LABELS | typeof VAR_FIELDS) => {
+    addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'exclude', this, variableType);
   };
 
-  public onClickIncludeEmpty = (variableName: string) => {
+  public onClickIncludeEmpty = (variableType: typeof VAR_LABELS | typeof VAR_FIELDS) => {
     // If json do we want != '{}'?
-    addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'include', this, variableName);
+    addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'include', this, variableType);
   };
 
-  public clearFilter = (variableName: string) => {
-    addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'clear', this, variableName);
+  public clearFilter = (variableType: typeof VAR_LABELS | typeof VAR_FIELDS) => {
+    addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'clear', this, variableType);
   };
 
   private calculateSparsity() {

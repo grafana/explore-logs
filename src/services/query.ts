@@ -6,6 +6,7 @@ import { SceneDataQueryResourceRequest } from './datasource';
 import { EMPTY_VARIABLE_VALUE, VAR_DATASOURCE_EXPR } from './variables';
 import { FilterOp } from './filters';
 import { groupBy, trim } from 'lodash';
+import { FieldValue } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
 
 export type LokiQuery = {
   refId: string;
@@ -69,11 +70,11 @@ export function renderLogQLLabelFilters(filters: AdHocVariableFilter[]) {
   for (const key in positiveGroups) {
     const values = positiveGroups[key].map((filter) => filter.value);
     positiveFilters.push(
-      values.length === 1 ? renderFilter(positiveGroups[key][0]) : renderRegexLabelFilter(key, values)
+      values.length === 1 ? renderMetadata(positiveGroups[key][0]) : renderRegexLabelFilter(key, values)
     );
   }
 
-  const negativeFilters = negative.map((filter) => renderFilter(filter)).join(', ');
+  const negativeFilters = negative.map((filter) => renderMetadata(filter)).join(', ');
 
   return trim(`${positiveFilters.join(', ')}, ${negativeFilters}`, ' ,');
 }
@@ -94,12 +95,38 @@ export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
   return `${positiveFilters} ${negativeFilters}`.trim();
 }
 
-function renderFilter(filter: AdHocVariableFilter) {
+export function renderLogQLMetadataFilters(filters: AdHocVariableFilter[]) {
+  const positive = filters.filter((filter) => filter.operator === FilterOp.Equal);
+  const negative = filters.filter((filter) => filter.operator === FilterOp.NotEqual);
+
+  const positiveGroups = groupBy(positive, (filter) => filter.key);
+
+  let positiveFilters = '';
+  for (const key in positiveGroups) {
+    positiveFilters += ' | ' + positiveGroups[key].map((filter) => `${renderMetadata(filter)}`).join(' or ');
+  }
+
+  const negativeFilters = negative.map((filter) => `| ${renderMetadata(filter)}`).join(' ');
+
+  return `${positiveFilters} ${negativeFilters}`.trim();
+}
+
+function renderMetadata(filter: AdHocVariableFilter) {
   // If the filter value is an empty string, we don't want to wrap it in backticks!
   if (filter.value === EMPTY_VARIABLE_VALUE) {
     return `${filter.key}${filter.operator}${filter.value}`;
   }
   return `${filter.key}${filter.operator}\`${filter.value}\``;
+}
+
+function renderFilter(filter: AdHocVariableFilter) {
+  const fieldObject: FieldValue = JSON.parse(filter.value);
+  const value = fieldObject.value;
+  // If the filter value is an empty string, we don't want to wrap it in backticks!
+  if (value === EMPTY_VARIABLE_VALUE) {
+    return `${filter.key}${filter.operator}${value}`;
+  }
+  return `${filter.key}${filter.operator}\`${value}\``;
 }
 
 function renderRegexLabelFilter(key: string, values: string[]) {

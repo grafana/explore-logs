@@ -4,14 +4,22 @@ import { AdHocVariableFilter, BusEventBase, DataFrame } from '@grafana/data';
 import { SceneComponentProps, SceneObject, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { VariableHide } from '@grafana/schema';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { getAdHocFiltersVariable, LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from 'services/variables';
+import {
+  getAdHocFiltersVariable,
+  LEVEL_VARIABLE_VALUE,
+  ParserType,
+  VAR_FIELDS,
+  VAR_LABELS,
+  VAR_LEVELS,
+} from 'services/variables';
 import { FilterButton } from 'Components/FilterButton';
 import { FilterOp } from 'services/filters';
 import { getDetectedLabelsFrame } from '../ServiceScene';
+import { getParserForField } from '../../../services/fields';
 
 export interface AddToFiltersButtonState extends SceneObjectState {
   frame: DataFrame;
-  variableName: string;
+  variableName: typeof VAR_LABELS | typeof VAR_FIELDS;
 }
 
 export class AddFilterEvent extends BusEventBase {
@@ -29,9 +37,18 @@ export class AddFilterEvent extends BusEventBase {
  */
 export type FilterType = 'include' | 'clear' | 'exclude' | 'toggle';
 
-export function addAdHocFilter(filter: AdHocVariableFilter, scene: SceneObject, variableName?: string) {
+export function addAdHocFilter(
+  filter: AdHocVariableFilter,
+  scene: SceneObject,
+  variableType?: typeof VAR_LABELS | typeof VAR_FIELDS
+) {
   const type: FilterType = filter.operator === '=' ? 'include' : 'exclude';
-  addToFilters(filter.key, filter.value, type, scene, variableName);
+  addToFilters(filter.key, filter.value, type, scene, variableType);
+}
+
+export interface FieldValue {
+  value: string;
+  parser: ParserType;
 }
 
 export function addToFilters(
@@ -39,13 +56,14 @@ export function addToFilters(
   value: string,
   operator: FilterType,
   scene: SceneObject,
-  variableName?: string
+  //@todo create type
+  variableType?: typeof VAR_LABELS | typeof VAR_FIELDS
 ) {
-  if (!variableName) {
-    variableName = resolveVariableNameForField(key, scene);
+  if (!variableType) {
+    variableType = resolveVariableTypeForField(key, scene);
   }
 
-  const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableName), scene);
+  const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableType), scene);
 
   // If the filter exists, filter it
   let filters = variable.state.filters.filter((filter) => {
@@ -54,13 +72,22 @@ export function addToFilters(
 
   const filterExists = filters.length !== variable.state.filters.length;
 
+  let valueObject;
+  if (variableType === VAR_FIELDS) {
+    valueObject = JSON.stringify({
+      value,
+      parser: getParserForField(key, scene),
+    });
+  }
+
   if (operator === 'include' || operator === 'exclude' || (!filterExists && operator === 'toggle')) {
     filters = [
       ...filters,
       {
         key,
         operator: operator === 'exclude' ? FilterOp.NotEqual : FilterOp.Equal,
-        value,
+        value: valueObject ? valueObject : value,
+        valueLabel: value,
       },
     ];
   }
@@ -80,7 +107,7 @@ export function replaceFilter(
   scene: SceneObject
 ) {
   const variable = getAdHocFiltersVariable(
-    validateVariableNameForField(key, resolveVariableNameForField(key, scene)),
+    validateVariableNameForField(key, resolveVariableTypeForField(key, scene)),
     scene
   );
 
@@ -104,7 +131,7 @@ function validateVariableNameForField(field: string, variableName: string) {
   return variableName;
 }
 
-function resolveVariableNameForField(field: string, scene: SceneObject) {
+function resolveVariableTypeForField(field: string, scene: SceneObject): typeof VAR_LABELS | typeof VAR_FIELDS {
   const indexedLabel = getDetectedLabelsFrame(scene)?.fields?.find((label) => label.name === field);
   return indexedLabel ? VAR_LABELS : VAR_FIELDS;
 }

@@ -1,6 +1,6 @@
-import { DataFrame, ReducerID } from '@grafana/data';
+import { DataFrame, Field, ReducerID } from '@grafana/data';
 import { DrawStyle, StackingMode } from '@grafana/ui';
-import { PanelBuilders, SceneCSSGridItem, SceneDataTransformer } from '@grafana/scenes';
+import { PanelBuilders, SceneCSSGridItem, SceneDataTransformer, SceneObject } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
 import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { VAR_FIELDS, VAR_LABELS } from './variables';
@@ -8,6 +8,7 @@ import { setLevelColorOverrides } from './panel';
 import { map, Observable } from 'rxjs';
 import { SortBy, SortByScene } from '../Components/ServiceScene/Breakdowns/SortByScene';
 import { memoize } from 'lodash';
+import { getDetectedFieldsFrame } from '../Components/ServiceScene/ServiceScene';
 
 export type DetectedLabel = {
   label: string;
@@ -40,6 +41,59 @@ const getReducerId = memoize((sortBy: SortBy) => {
   }
   return reducerID;
 });
+
+type ExtractedFieldsType = 'logfmt' | 'json' | 'mixed' | '';
+
+export function extractParserFromDetectedFieldParserFieldValue(parserString: string): ExtractedFieldsType {
+  switch (parserString) {
+    case 'json':
+      return 'json';
+    case 'logfmt':
+      return 'logfmt';
+    case '': // Structured metadata is empty
+      return '';
+    default: // if we get a parser with multiple
+      return 'mixed';
+  }
+}
+
+export function extractParserFieldFromParserArray(parsers?: string[]) {
+  const parsersSet = new Set(parsers?.map((v) => v.toString()) ?? []);
+
+  // Structured metadata doesn't change the parser we use, so remove it
+  parsersSet.delete('');
+
+  // get unique values
+  const parsersArray = Array.from(parsersSet);
+
+  if (parsersArray.length === 1) {
+    return extractParserFromDetectedFieldParserFieldValue(parsersArray[0]);
+  }
+
+  if (parsersSet.size > 1) {
+    return 'mixed';
+  }
+
+  return '';
+}
+
+export function extractParserFromDetectedFields(data: DataFrame): ExtractedFieldsType {
+  const parserField = data.fields.find((f) => f.name === 'parser');
+  const values: string[] | undefined = parserField?.values;
+
+  return extractParserFieldFromParserArray(values);
+}
+
+export function getParserForField(fieldName: string, sceneRef: SceneObject): ExtractedFieldsType | undefined {
+  const detectedFieldsFrame = getDetectedFieldsFrame(sceneRef);
+  const parserField: Field<string> | undefined = detectedFieldsFrame?.fields[2];
+  const namesField: Field<string> | undefined = detectedFieldsFrame?.fields[0];
+
+  const index = namesField?.values.indexOf(fieldName);
+  return index && index !== -1
+    ? extractParserFromDetectedFieldParserFieldValue(parserField?.values?.[index] ?? '')
+    : undefined;
+}
 
 export function getFilterBreakdownValueScene(
   getTitle: (df: DataFrame) => string,

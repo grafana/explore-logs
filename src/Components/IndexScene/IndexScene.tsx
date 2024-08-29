@@ -42,7 +42,12 @@ import { getDrilldownSlug, PageSlugs } from '../../services/routing';
 import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { locationService } from '@grafana/runtime';
-import { renderLogQLFieldFilters, renderLogQLLabelFilters, renderPatternFilters } from 'services/query';
+import {
+  renderLogQLFieldFilters,
+  renderLogQLLabelFilters,
+  renderLogQLMetadataFilters,
+  renderPatternFilters,
+} from 'services/query';
 
 export interface AppliedPattern {
   pattern: string;
@@ -212,7 +217,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     layout: 'vertical',
     getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
     getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
-    expressionBuilder: renderLogQLFieldFilters,
+    expressionBuilder: renderLogQLMetadataFilters,
     hide: VariableHide.hideLabel,
   });
 
