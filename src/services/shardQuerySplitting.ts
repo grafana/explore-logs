@@ -150,7 +150,7 @@ export function splitQueriesByStreamShard(
           runNextRequest(subscriber);
         } else {
           const shardRequests = getShardRequests(shards, request.range);
-          console.log(`Querying up ${shards.join(', ')} shards`);
+          console.log(`Querying ${shards.join(', ')} shards`);
           runNextRequest(subscriber, 0, shardRequests);
         }
       })
@@ -187,12 +187,11 @@ function getShardRequests(shards: number[], range: TimeRange) {
 
   shards.sort((a, b) => a - b);
   const maxRequests = calculateMaxRequests(shards.length);
-  const maxShard = shards.length - 1;
-  const groupSize = Math.ceil(maxShard / maxRequests);
+  const groupSize = Math.ceil(shards.length / maxRequests);
   const requests: number[][] = [];
-  for (let i = maxShard; i > 0; i -= groupSize) {
+  for (let i = shards.length - 1; i >= 0; i -= groupSize) {
     const request: number[] = [];
-    for (let j = i; j >= i - groupSize && j >= 0 && shards.length > 0; j -= 1) {
+    for (let j = i; j > i - groupSize && j >= 0; j -= 1) {
       request.push(shards[j]);
     }
     requests.push(request);
@@ -203,7 +202,6 @@ function getShardRequests(shards: number[], range: TimeRange) {
     requests.push([-1]);
     requests.reverse();
   } else {
-    requests.reverse();
     requests.push([-1]);
   }
 
