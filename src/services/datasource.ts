@@ -16,7 +16,7 @@ import { getDataSource } from './scenes';
 import { LokiQuery } from './query';
 import { PLUGIN_ID } from './routing';
 import { DetectedFieldsResponse, DetectedLabelsResponse } from './fields';
-import { sortLabelsByCardinality } from './filters';
+import { FIELDS_TO_REMOVE, sortLabelsByCardinality } from './filters';
 import { LEVEL_VARIABLE_VALUE, SERVICE_NAME } from './variables';
 
 export const WRAPPED_LOKI_DS_UID = 'wrapped-loki-ds-uid';
@@ -339,12 +339,13 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
       const parserField: Field = { name: DETECTED_FIELDS_PARSER_NAME, type: FieldType.string, values: [], config: {} };
       const typeField: Field = { name: DETECTED_FIELDS_TYPE_NAME, type: FieldType.string, values: [], config: {} };
 
-      //@todo sort here?
       response.fields?.forEach((field) => {
-        nameField.values.push(field.label);
-        cardinalityField.values.push(field.cardinality);
-        parserField.values.push(field.parsers.join(', '));
-        typeField.values.push(field.type);
+        if (!FIELDS_TO_REMOVE.includes(field.label)) {
+          nameField.values.push(field.label);
+          cardinalityField.values.push(field.cardinality);
+          parserField.values.push(field.parsers.join(', '));
+          typeField.values.push(field.type);
+        }
       });
 
       const dataFrame = createDataFrame({
