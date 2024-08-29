@@ -476,3 +476,12 @@ yass
 noparser
 whoopsie
 myproject
+becasue
+decbytes
+frametype
+Nanos
+nanos
+subquery
+Subsciption
+uuidv
+wihtout
