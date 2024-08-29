@@ -50,10 +50,12 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
 
   onActivate() {
     this.setState({
-      body: this.build(),
       $data: getQueryRunner([
         buildLabelsQuery(this, VAR_LABEL_GROUP_BY_EXPR, String(getLabelGroupByVariable(this).state.value)),
       ]),
+    });
+    this.setState({
+      body: this.build(),
     });
 
     const groupByVariable = getLabelGroupByVariable(this);
@@ -74,12 +76,14 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       });
     });
 
-    this.state.$data?.subscribeToState((newState) => {
-      this.onValuesDataQueryChange(newState);
-    });
+    this._subs.add(
+      this.state.$data?.subscribeToState((newState, prevState) => {
+        this.onValuesDataQueryChange(newState, prevState);
+      })
+    );
   }
 
-  private onValuesDataQueryChange(newState: SceneDataState) {
+  private onValuesDataQueryChange(newState: SceneDataState, prevState: SceneDataState) {
     if (newState.data?.state === LoadingState.Done) {
       // No panels for the user to select, presumably because everything has been excluded
       const event = this.state.lastFilterEvent;

@@ -41,6 +41,7 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
 
     this._subs.add(
       fields.subscribeToState((newState, prevState) => {
+        //@todo only when changes? Loading? etc
         this.updateQueriesOnFieldsChange();
       })
     );
@@ -73,33 +74,6 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
       }
     });
   };
-
-  // private updateQueriesOnDetectedFieldsChange = (newState: QueryRunnerState, prevState: QueryRunnerState) => {
-  //   const newNamesField = getDetectedFieldsNamesFromQueryRunnerState(newState);
-  //   const prevNamesField = getDetectedFieldsNamesFromQueryRunnerState(prevState);
-  //
-  //   if (newState.data?.state === LoadingState.Done && !areArraysEqual(newNamesField?.values, prevNamesField?.values)) {
-  //     console.log('updating queries');
-  //     // Iterate through all of the layouts
-  //     this.state.body?.state.layouts.forEach((layoutObj) => {
-  //       const layout = layoutObj as SceneCSSGridLayout;
-  //       // Iterate through all of the existing panels
-  //       for (let i = 0; i < layout.state.children.length; i++) {
-  //         const gridItem = layout.state.children[i] as SceneCSSGridItem;
-  //         const panel = gridItem.state.body as VizPanel;
-  //         const title = panel.state.title;
-  //         const query = buildLabelsQuery(this, title, title);
-  //
-  //         console.log('panel data', panel.state.$data?.state.data?.request)
-  //         console.log('new query query', query)
-  //
-  //         panel.setState({
-  //           $data: getQueryRunner([query]),
-  //         });
-  //       }
-  //     });
-  //   }
-  // };
 
   private build(): LayoutSwitcher {
     const variable = getLabelGroupByVariable(this);

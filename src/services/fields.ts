@@ -109,6 +109,7 @@ export function getFilterBreakdownValueScene(
   sortByScene: SortByScene
 ) {
   return (frame: DataFrame, frameIndex: number) => {
+    console.log('frame', frame);
     const reducerID = getReducerId(sortByScene.state.sortBy);
     const panel = PanelBuilders.timeseries() //
       .setOption('legend', { showLegend: false })
