@@ -2,17 +2,29 @@ import {expect, test} from '@grafana/plugin-e2e';
 import {ExplorePage} from './fixtures/explore';
 import {testIds} from '../src/services/testIds';
 import {mockEmptyQueryApiResponse} from "./mocks/mockEmptyQueryApiResponse";
-import {DataQueryRequest} from "@grafana/data";
 import {LokiQuery} from "../src/services/query";
 
+
+const fieldName = 'caller'
+const levelName = 'detected_level'
+const labelName = ''
 test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;
 
   test.beforeEach(async ({ page }) => {
     explorePage = new ExplorePage(page);
+    await explorePage.setLimoViewportSize()
     await page.evaluate(() => window.localStorage.clear());
     await explorePage.gotoServicesBreakdown();
+    await explorePage.blockAllQueriesExcept({
+      refIds: ['logsPanelQuery', fieldName],
+      legendFormats: [`{{${levelName}}}`]
+    })
   });
+
+  test.afterEach(async ({page}) => {
+    await page.unrouteAll({ behavior: 'ignoreErrors' })
+  })
 
   test('should filter logs panel on search', async ({ page }) => {
     await explorePage.serviceBreakdownSearch.click();
@@ -51,7 +63,7 @@ test.describe('explore services breakdown page', () => {
     // Click the filter button
     await pillContextMenu.click()
     // New level filter should be added
-    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label detected_level')).toBeVisible()
+    await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${levelName}`)).toBeVisible()
   })
 
   test('should show inspect modal', async ({ page }) => {
@@ -64,11 +76,11 @@ test.describe('explore services breakdown page', () => {
   });
 
   test('should select a label, update filters, open in explore', async ({ page }) => {
-    await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
-    await page.getByLabel('Select detected_level').click();
+    await explorePage.toToLabelsTab()
+    await page.getByLabel(`Select ${levelName}`).click();
     await page.getByTestId('data-testid Panel header info').getByRole('button', { name: 'Include' }).click();
     await expect(
-      page.getByTestId('data-testid Dashboard template variables submenu Label detected_level')
+      page.getByTestId(`data-testid Dashboard template variables submenu Label ${levelName}`)
     ).toBeVisible();
     const page1Promise = page.waitForEvent('popup');
     await explorePage.serviceBreakdownOpenExplore.click();
@@ -77,20 +89,21 @@ test.describe('explore services breakdown page', () => {
   });
 
   test('should select a label, label added to url', async ({ page }) => {
-    await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
+    await explorePage.toToLabelsTab()
     const labelsUrlArray = page.url().split('/')
+    await page.pause()
     expect(labelsUrlArray[labelsUrlArray.length - 1].startsWith('labels')).toEqual(true)
 
-    await page.getByLabel('Select detected_level').click();
+    await page.getByLabel(`Select ${levelName}`).click();
     const urlArray = page.url().split('/')
-    expect(urlArray[urlArray.length - 1].startsWith('detected_level')).toEqual(true)
+    expect(urlArray[urlArray.length - 1].startsWith(`${levelName}`)).toEqual(true)
     // Can't import the enum as it's in the same file as the PLUGIN_ID which doesn't like being imported
     expect(urlArray[urlArray.length - 2]).toEqual('label')
   });
 
   test('should update labels sort order', async ({page}) => {
-    await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
-    await page.getByLabel('Select detected_level').click();
+    await explorePage.toToLabelsTab()
+    await page.getByLabel(`Select ${levelName}`).click();
 
     // Assert loading is done and panels are showing
     const panels = page.getByTestId(/data-testid Panel header/)
@@ -126,7 +139,12 @@ test.describe('explore services breakdown page', () => {
   })
 
   test('should update fields sort order', async ({page}) => {
-    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
+    await explorePage.blockAllQueriesExcept({
+      refIds: ['logsPanelQuery', fieldName, 'tenant'],
+      legendFormats: [`{{${levelName}}}`]
+    })
+    await explorePage.goToFieldsTab()
+    
     // Use the dropdown since the tenant field might not be visible
     await page.getByText('FieldAll').click();
     await page.keyboard.type('tenan');
@@ -166,47 +184,52 @@ test.describe('explore services breakdown page', () => {
   })
 
   test('should search labels', async({page}) => {
-    await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
-    await page.getByLabel('Select detected_level').click();
+    await explorePage.toToLabelsTab()
+    await page.getByLabel(`Select ${levelName}`).click();
     await page.getByPlaceholder('Search for value').click()
     const panels = page.getByTestId(/data-testid Panel header/)
     await expect(panels.first()).toBeVisible()
-    expect(await panels.count()).toEqual(4)
+    await expect(panels).toHaveCount(4)
     await page.keyboard.type('errr')
-    expect(await panels.count()).toEqual(1)
+    await expect(panels).toHaveCount(1)
   })
 
   test('should search fields', async({page}) => {
-    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
-    await page.getByLabel('Select caller').click();
-    await page.getByPlaceholder('Search for value').click()
+    await explorePage.goToFieldsTab()
+    await explorePage.assertNotLoading()
+    await explorePage.click(page.getByLabel(`Select ${fieldName}`))
+    await explorePage.click(page.getByPlaceholder('Search for value'))
     const panels = page.getByTestId(/data-testid Panel header/)
     await expect(panels.first()).toBeVisible()
     expect(await panels.count()).toBeGreaterThan(1)
     await page.keyboard.type('brod')
-    expect(await panels.count()).toEqual(1)
+    await expect(panels).toHaveCount(1)
   })
 
   test('should exclude a label, update filters', async ({ page }) => {
-    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
-    await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
+    await explorePage.goToFieldsTab()
+    await page.getByTestId(`data-testid Panel header ${fieldName}`).getByRole('button', { name: 'Select' }).click();
     await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
-    // Adhoc err filter should be added
-    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
+
+    await explorePage.scrollToTop()
+    // Adhoc content filter should be added
+    await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${fieldName}`)).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
   });
 
   test('should include a label, update filters, open filters breakdown', async ({ page }) => {
-    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
-    await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
+    await explorePage.goToFieldsTab()
+    await explorePage.scrollToBottom()
+    await page.getByTestId(`data-testid Panel header ${fieldName}`).getByRole('button', { name: 'Select' }).click();
     await page.getByRole('button', { name: 'Include' }).nth(0).click();
 
     await explorePage.assertFieldsIndex()
-    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
+    await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${fieldName}`)).toBeVisible();
     await expect(page.getByText('=').nth(1)).toBeVisible();
   });
 
   test('should only load fields that are in the viewport', async ({page}) => {
+    await explorePage.setDefaultViewportSize()
     let requestCount = 0;
 
     // We don't need to mock the response, but it speeds up the test
@@ -232,42 +255,43 @@ test.describe('explore services breakdown page', () => {
     })
 
     // Navigate to fields tab
-    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
+    await explorePage.goToFieldsTab()
 
+
+    await page.pause()
     // Make sure the panels have started to render
-    await expect(page.getByTestId('data-testid Panel header active_series')).toBeInViewport()
+    await expect(page.getByTestId(/data-testid Panel header/).first()).toBeInViewport()
 
     // Fields on top should be loaded
     expect(requestCount).toEqual(6)
 
     await explorePage.scrollToBottom()
     // Panel on the bottom should be visible
-    await expect(page.getByTestId('data-testid Panel header version')).toBeInViewport()
+    await expect(page.getByTestId(/data-testid Panel header/).last()).toBeInViewport()
 
     // Panel on the top should not
-    await expect(page.getByTestId('data-testid Panel header detected_level')).not.toBeInViewport()
+    await expect(page.getByTestId(/data-testid Panel header/).first()).not.toBeInViewport()
 
     // if this flakes we could just assert that it's greater then 3
-    expect(requestCount).toEqual(13)
-
-    await page.unrouteAll();
+    expect(requestCount).toEqual(14)
   })
 
   test('should select a field, update filters, open log panel', async ({ page }) => {
-    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
-    await page.getByTestId('data-testid Panel header err').getByRole('button', { name: 'Select' }).click();
+    await explorePage.goToFieldsTab()
+    await explorePage.scrollToBottom()
+    await page.getByTestId(`data-testid Panel header ${fieldName}`).getByRole('button', { name: 'Select' }).click();
     await page.getByRole('button', { name: 'Include' }).nth(0).click();
     await explorePage.assertFieldsIndex()
-    // Adhoc err filter should be added
-    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label err')).toBeVisible();
+    // Adhoc content filter should be added
+    await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${fieldName}`)).toBeVisible();
   });
 
   test('should filter patterns in table on legend click', async ({page}) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
     const row = page.getByTestId(testIds.patterns.tableWrapper).getByRole('table').getByRole('row')
-    await expect(page.getByTestId('data-testid panel content').getByRole('button').nth(1)).toBeVisible()
+    await expect(page.getByTestId(`data-testid panel content`).getByRole('button').nth(1)).toBeVisible()
     expect(await row.count()).toBeGreaterThan(2)
-    await page.getByTestId('data-testid panel content').getByRole('button').nth(1).click()
+    await page.getByTestId(`data-testid panel content`).getByRole('button').nth(1).click()
     expect(await row.count()).toEqual(2)
   })
 
@@ -441,6 +465,7 @@ test.describe('explore services breakdown page', () => {
     // open logs panel
     await page.getByTitle('See log details').nth(1).click();
 
+    await explorePage.scrollToBottom()
     const adHocLocator = page.getByTestId('data-testid Panel header Logs').getByText('mimir-distributor', { exact: true })
     await adHocLocator.scrollIntoViewIfNeeded()
 
@@ -450,19 +475,8 @@ test.describe('explore services breakdown page', () => {
 
   test('should include all logs that contain field', async ({page}) => {
     let numberOfQueries = 0;
-    // Let's not wait for all these queries
-    await page.route('**/ds/query*', async route => {
-      const post = route.request().postDataJSON()
-      const queries = post.queries as LokiQuery[]
-
-      if(queries[0].refId === 'logsPanelQuery'){
-        await route.continue()
-      }else{
-        await route.fulfill({json: []})
-      }
-    })
     // Click on the fields tab
-    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
+    await explorePage.goToFieldsTab()
     // Selector
     const bytesIncludeButton = page.getByTestId('data-testid Panel header bytes').getByTestId('data-testid button-filter-include')
     // Assert button isn't selected
@@ -507,7 +521,7 @@ test.describe('explore services breakdown page', () => {
       }
     })
     // Click on the fields tab
-    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
+    await explorePage.goToFieldsTab()
     // Selector
     const bytesIncludeButton = page.getByTestId('data-testid Panel header bytes').getByTestId('data-testid button-filter-exclude')
     // Assert button isn't selected
@@ -528,8 +542,6 @@ test.describe('explore services breakdown page', () => {
     await bytesIncludeButton.click()
     // Assert that the panel is no longer rendered
     await expect(bytesIncludeButton).not.toBeInViewport()
-
-    await page.pause()
     // Assert that the viz was excluded
     await expect(page.getByTestId('data-testid Panel header bytes')).toHaveCount(0)
     // Assert that we actually had some queries

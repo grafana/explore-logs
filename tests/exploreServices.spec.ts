@@ -2,6 +2,7 @@ import { test, expect } from '@grafana/plugin-e2e';
 import { ExplorePage } from './fixtures/explore';
 import { testIds } from "../src/services/testIds";
 import { mockVolumeApiResponse } from "./mocks/mockVolumeApiResponse";
+import {waitFor} from "@testing-library/react";
 
 test.describe('explore services page', () => {
   let explorePage: ExplorePage;
@@ -12,15 +13,21 @@ test.describe('explore services page', () => {
     await explorePage.gotoServices();
   });
 
+  test.afterEach(async({page}) => {
+    await page.unrouteAll({ behavior: 'ignoreErrors' })
+  })
+
   test('should filter service labels on search', async ({ page }) => {
     await explorePage.servicesSearch.click();
     await explorePage.servicesSearch.pressSequentially('mimir');
+    // Volume can differ, scroll down so all of the panels are loaded
+    await explorePage.scrollToBottom();
 
     await page.getByTestId('data-testid Panel header mimir-ingester').first().scrollIntoViewIfNeeded()
     // service name should be in time series panel
-    expect(await page.getByTestId('data-testid Panel header mimir-ingester').nth(0)).toBeVisible()
+    await expect(page.getByTestId('data-testid Panel header mimir-ingester').nth(0)).toBeVisible()
     // service name should also be in logs panel, just not visible to the user
-    expect(await page.getByTestId('data-testid Panel header mimir-ingester').nth(1)).toBeVisible();
+    await expect(page.getByTestId('data-testid Panel header mimir-ingester').nth(1)).toBeVisible();
 
     // Exit out of the dropdown
     await page.keyboard.press('Escape');
@@ -33,6 +40,8 @@ test.describe('explore services page', () => {
   test('should filter service labels on exact search', async ({ page }) => {
     await explorePage.servicesSearch.click();
     await explorePage.servicesSearch.pressSequentially('mimir-ingester');
+    // Volume can differ, scroll down so all of the panels are loaded
+    await explorePage.scrollToBottom();
     // service name should be in time series panel
     await expect(page.getByTestId('data-testid Panel header mimir-ingester').nth(0)).toBeVisible();
     // service name should also be in logs panel, just not visible to the user
@@ -50,6 +59,7 @@ test.describe('explore services page', () => {
   });
 
   test('should filter service labels on partial string', async ({ page }) => {
+    await explorePage.setLimoViewportSize()
     await explorePage.servicesSearch.click();
     await explorePage.servicesSearch.pressSequentially('imi');
     // service name should be in time series panel
@@ -74,6 +84,8 @@ test.describe('explore services page', () => {
     await explorePage.servicesSearch.click();
     await explorePage.servicesSearch.pressSequentially('tempo-distributor');
     await page.keyboard.press('Escape');
+    // Volume can differ, scroll down so all of the panels are loaded
+    await explorePage.scrollToBottom();
     await expect(page.getByText('Showing 1 of 1 service')).toBeVisible();
     await expect(page.getByText(/level=info/).first()).toBeVisible();
     await page.getByTitle('debug').first().click();
@@ -127,7 +139,7 @@ test.describe('explore services page', () => {
 
       await page.route('**/ds/query*', async route => {
         logsQueryCount++
-        await route.continue()
+        await route.fulfill({json: {}})
       })
 
       await Promise.all([
@@ -137,6 +149,7 @@ test.describe('explore services page', () => {
     })
 
     test('refreshing time range should request panel data once', async ({page}) => {
+      await page.pause()
       expect(logsVolumeCount).toEqual(1)
       expect(logsQueryCount).toEqual(4)
       await explorePage.refreshPicker.click()
@@ -158,10 +171,9 @@ test.describe('explore services page', () => {
 
       await explorePage.addServiceName()
       await page.getByTestId(testIds.variables.serviceName.label).click()
-
       expect(logsVolumeCount).toEqual(1)
+      // Why is this flaking suddenly?
       expect(logsQueryCount).toEqual(8)
-
     })
 
     test('changing datasource will trigger new queries', async ({page}) => {

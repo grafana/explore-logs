@@ -38,7 +38,9 @@ export default defineConfig<PluginOptions>({
     //   mode: 'on',
     // }
   },
+
   expect: { timeout: 15000 },
+
 
   /* Configure projects for major browsers */
   projects: [
@@ -51,7 +53,7 @@ export default defineConfig<PluginOptions>({
     // 2. Run tests in Google Chrome. Every test will start authenticated as admin user.
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'], storageState: 'playwright/.auth/admin.json' },
+      use: { ...devices['Desktop Chrome'], storageState: 'playwright/.auth/admin.json'},
       dependencies: ['auth'],
     },
   ],

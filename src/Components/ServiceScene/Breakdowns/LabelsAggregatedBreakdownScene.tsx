@@ -59,7 +59,7 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
         const queryRunner: SceneDataProvider | SceneQueryRunner | undefined = panel.state.$data;
         const query = buildLabelsQuery(this, title, title);
 
-        // Don't update if query didnt change
+        // Don't update if query didn't change
         if (queryRunner instanceof SceneQueryRunner) {
           if (query.expr === queryRunner?.state.queries?.[0]?.expr) {
             break;

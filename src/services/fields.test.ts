@@ -144,7 +144,7 @@ describe('extractParserFromDetectedFields', () => {
         {
           name: DETECTED_FIELDS_CARDINALITY_NAME,
           type: FieldType.string,
-          values: ['10', '20', '{"yo": "whatup"}'],
+          values: ['10', '20', '{"yo": "value"}'],
         },
         {
           name: DETECTED_FIELDS_PARSER_NAME,
@@ -169,7 +169,7 @@ describe('extractParserFromDetectedFields', () => {
         {
           name: DETECTED_FIELDS_CARDINALITY_NAME,
           type: FieldType.string,
-          values: ['10', '{"id": "23"}', '{"yo": "whatup"}'],
+          values: ['10', '{"id": "23"}', '{"yo": "value"}'],
         },
         {
           name: DETECTED_FIELDS_PARSER_NAME,
@@ -194,7 +194,7 @@ describe('extractParserFromDetectedFields', () => {
         {
           name: DETECTED_FIELDS_CARDINALITY_NAME,
           type: FieldType.string,
-          values: ['10', '{"id": "23"}', '{"yo": "whatup"}'],
+          values: ['10', '{"id": "23"}', '{"yo": "value"}'],
         },
         {
           name: DETECTED_FIELDS_PARSER_NAME,
@@ -219,7 +219,7 @@ describe('extractParserFromDetectedFields', () => {
         {
           name: DETECTED_FIELDS_CARDINALITY_NAME,
           type: FieldType.string,
-          values: ['10', '{"id": "23"}', '{"yo": "whatup"}'],
+          values: ['10', '{"id": "23"}', '{"yo": "value"}'],
         },
         {
           name: DETECTED_FIELDS_PARSER_NAME,
