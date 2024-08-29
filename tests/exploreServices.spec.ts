@@ -9,6 +9,7 @@ test.describe('explore services page', () => {
 
   test.beforeEach(async ({ page }) => {
     explorePage = new ExplorePage(page);
+    await explorePage.setDefaultViewportSize();
     await page.evaluate(() => window.localStorage.clear());
     await explorePage.gotoServices();
   });
@@ -18,6 +19,7 @@ test.describe('explore services page', () => {
   })
 
   test('should filter service labels on search', async ({ page }) => {
+    await explorePage.setLimoViewportSize();
     await explorePage.servicesSearch.click();
     await explorePage.servicesSearch.pressSequentially('mimir');
     // Volume can differ, scroll down so all of the panels are loaded
