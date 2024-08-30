@@ -166,9 +166,18 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   private updateOptions(dataFrame: DataFrame) {
     if (!dataFrame || !dataFrame.length) {
+      const indexScene = sceneGraph.getAncestor(this, IndexScene);
+      const variablesToClear = this.getVariablesThatCanBeCleared(indexScene);
+
+      let body;
+      if (variablesToClear.length > 1) {
+        body = this.buildClearFiltersLayout(() => this.clearVariables(variablesToClear));
+      } else {
+        body = new EmptyLayoutScene({ type: 'fields' });
+      }
       this.setState({
         loading: false,
-        body: new EmptyLayoutScene({ type: 'fields' }),
+        body,
       });
       return;
     }
@@ -220,21 +229,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     if (fieldsVariable.state.options && fieldsVariable.state.options.length <= 1) {
       // If there's 1 or fewer fields build the empty or clear layout UI
       const indexScene = sceneGraph.getAncestor(this, IndexScene);
-      const variables = sceneGraph.getVariables(indexScene);
-      let variablesToClear: SceneVariable[] = [];
-
-      for (const variable of variables.state.variables) {
-        if (variable instanceof AdHocFiltersVariable && variable.state.filters.length) {
-          variablesToClear.push(variable);
-        }
-        if (
-          variable instanceof CustomConstantVariable &&
-          variable.state.value &&
-          variable.state.name !== 'logsFormat'
-        ) {
-          variablesToClear.push(variable);
-        }
-      }
+      const variablesToClear = this.getVariablesThatCanBeCleared(indexScene);
 
       if (variablesToClear.length > 1) {
         stateUpdate.body = this.buildClearFiltersLayout(() => this.clearVariables(variablesToClear));
@@ -261,6 +256,21 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     }
 
     this.setState(stateUpdate);
+  }
+
+  private getVariablesThatCanBeCleared(indexScene: IndexScene) {
+    const variables = sceneGraph.getVariables(indexScene);
+    let variablesToClear: SceneVariable[] = [];
+
+    for (const variable of variables.state.variables) {
+      if (variable instanceof AdHocFiltersVariable && variable.state.filters.length) {
+        variablesToClear.push(variable);
+      }
+      if (variable instanceof CustomConstantVariable && variable.state.value && variable.state.name !== 'logsFormat') {
+        variablesToClear.push(variable);
+      }
+    }
+    return variablesToClear;
   }
 
   private clearVariables = (variablesToClear: SceneVariable[]) => {
