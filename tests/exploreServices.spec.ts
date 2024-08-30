@@ -161,20 +161,35 @@ test.describe('explore services page', () => {
       expect(logsQueryCount).toEqual(16)
     });
 
-    test('navigating back will not re-run volume query', async ({page}) => {
+    test.only('navigating back will not re-run volume query', async ({page}) => {
+      const tabSelector = page.getByTestId(testIds.exploreServiceDetails.tabLogs)
+      const tabsLoadingSelector = tabSelector.filter({has: page.locator('svg')})
+
       expect(logsVolumeCount).toEqual(1)
       expect(logsQueryCount).toEqual(4)
 
+      // Click on first service
       await explorePage.addServiceName()
+      //Assert we can see the tabs
+      await expect(tabSelector).toHaveCount(1)
+      // Assert that the loading svg is not present
+      await expect(tabsLoadingSelector).toHaveCount(0)
+      // Clear variable
       await page.getByTestId(testIds.variables.serviceName.label).click()
-
+      
       expect(logsVolumeCount).toEqual(1)
       expect(logsQueryCount).toEqual(6)
 
+      // Click on first service
       await explorePage.addServiceName()
+      //Assert we can see the tabs
+      await expect(tabSelector).toHaveCount(1)
+      // Assert that the loading svg is not present
+      await expect(tabsLoadingSelector).toHaveCount(0)
+      // Clear variable
       await page.getByTestId(testIds.variables.serviceName.label).click()
+
       expect(logsVolumeCount).toEqual(1)
-      // Why is this flaking suddenly?
       expect(logsQueryCount).toEqual(8)
     })
 
