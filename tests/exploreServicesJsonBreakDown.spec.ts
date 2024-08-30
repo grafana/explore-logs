@@ -40,7 +40,7 @@ test.describe('explore nginx-json breakdown pages ', () => {
 
         requests.forEach(req => {
             const post = req.post;
-            const queries: Array<LokiQuery> = post.queries
+            const queries: LokiQuery[] = post.queries
             queries.forEach(query => {
                 expect(query.expr).toContain(`| json | drop __error__, __error_details__ | ${fieldName}!=""`)
             })

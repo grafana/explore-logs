@@ -111,7 +111,7 @@ export class ExplorePage {
     refIds?: Array<string | RegExp>,
     legendFormats?: string[]
     responses?: Array<{[refIDOrLegendFormat: string]: any}>
-    requests?:PlaywrightRequest[]
+    requests?: PlaywrightRequest[]
   }) {
     // Let's not wait for all these queries
     await this.page.route('**/ds/query*', async route => {
