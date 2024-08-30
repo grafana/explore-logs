@@ -29,7 +29,8 @@ export class TimeSeriesLimitSeriesTitleItemScene extends SceneObjectBase<TimeSer
       !($data instanceof SceneDataTransformer) ||
       showAllSeries ||
       data?.state !== LoadingState.Done ||
-      !data.series.length
+      !data.series.length ||
+      data.series.length < MAX_NUMBER_OF_TIME_SERIES
     ) {
       return null;
     }
