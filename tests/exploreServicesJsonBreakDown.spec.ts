@@ -3,7 +3,7 @@ import {ExplorePage, PlaywrightRequest} from "./fixtures/explore";
 import {LokiQuery} from "../src/services/query";
 
 const fieldName = 'method'
-const levelName = 'cluster'
+// const levelName = 'cluster'
 test.describe('explore nginx-json breakdown pages ', () => {
     let explorePage: ExplorePage;
 
@@ -12,9 +12,8 @@ test.describe('explore nginx-json breakdown pages ', () => {
         await explorePage.setLimoViewportSize()
         await page.evaluate(() => window.localStorage.clear());
         await explorePage.gotoServicesBreakdown('nginx-json');
-        await explorePage.blockAllQueriesExcept({
+        explorePage.blockAllQueriesExcept({
             refIds: ['logsPanelQuery', fieldName],
-            legendFormats: [`{{${levelName}}}`]
         })
     });
 
@@ -22,18 +21,26 @@ test.describe('explore nginx-json breakdown pages ', () => {
         await page.unrouteAll({ behavior: 'ignoreErrors' })
     })
 
-    test(`should exclude ${fieldName}, request should contain json`, async ({ page }) => {
+    test.only(`should exclude ${fieldName}, request should contain json`, async ({ page }) => {
         let requests: PlaywrightRequest[] = [];
-        await explorePage.blockAllQueriesExcept({
+        explorePage.blockAllQueriesExcept({
             refIds: [fieldName],
             requests
         })
+        // First request should fire here
         await explorePage.goToFieldsTab()
-        await page.getByTestId(`data-testid Panel header ${fieldName}`).getByRole('button', { name: 'Select' }).click();
-        await explorePage.assertNotLoading()
-        await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
 
-        await explorePage.assertTabsNotLoading()
+        await page.getByTestId(`data-testid Panel header ${fieldName}`).getByRole('button', { name: 'Select' }).click();
+        const allPanels = explorePage.getAllPanelsLocator()
+        // We should have 6 panels
+        await expect(allPanels).toHaveCount(6)
+        // Should have 2 queries by now
+        expect(requests).toHaveLength(2)
+        // Exclude a panel
+        await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
+        // Should be removed from the UI, and also lets us know when the query is done loading
+        await expect(allPanels).toHaveCount(5)
+
         // Adhoc content filter should be added
         await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${fieldName}`)).toBeVisible();
         await expect(page.getByText('!=')).toBeVisible();
@@ -42,9 +49,9 @@ test.describe('explore nginx-json breakdown pages ', () => {
             const post = req.post;
             const queries: LokiQuery[] = post.queries
             queries.forEach(query => {
-                expect(query.expr).toContain(`| json | drop __error__, __error_details__ | ${fieldName}!=""`)
+                expect(query.expr).toContain(`sum by (${fieldName}) (count_over_time({service_name=\`nginx-json\`}     | json | drop __error__, __error_details__ | ${fieldName}!=""`)
             })
         })
-        expect(requests).toHaveLength(2)
+        expect(requests).toHaveLength(3)
     });
 })

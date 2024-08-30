@@ -15,7 +15,7 @@ test.describe('explore services breakdown page', () => {
     await explorePage.setLimoViewportSize()
     await page.evaluate(() => window.localStorage.clear());
     await explorePage.gotoServicesBreakdown();
-    await explorePage.blockAllQueriesExcept({
+    explorePage.blockAllQueriesExcept({
       refIds: ['logsPanelQuery', fieldName],
       legendFormats: [`{{${levelName}}}`]
     })
@@ -89,7 +89,7 @@ test.describe('explore services breakdown page', () => {
   });
 
   test(`should select label ${labelName}, update filters, open in explore`, async ({ page }) => {
-    await explorePage.blockAllQueriesExcept({
+    explorePage.blockAllQueriesExcept({
       refIds: [],
       legendFormats: [`{{${labelName}}}`]
     })
@@ -156,7 +156,7 @@ test.describe('explore services breakdown page', () => {
   })
 
   test('should search for tenant field, changing sort order updates value breakdown position', async ({page}) => {
-    await explorePage.blockAllQueriesExcept({
+    explorePage.blockAllQueriesExcept({
       refIds: ['logsPanelQuery', fieldName, 'tenant'],
       legendFormats: [`{{${levelName}}}`]
     })
@@ -223,18 +223,28 @@ test.describe('explore services breakdown page', () => {
     await expect(panels).toHaveCount(1)
   })
 
-  test(`should exclude ${fieldName}, request should contain logfmt`, async ({ page }) => {
+  test.only(`should exclude ${fieldName}, request should contain logfmt`, async ({ page }) => {
     let requests: PlaywrightRequest[] = [];
-    await explorePage.blockAllQueriesExcept({
+    explorePage.blockAllQueriesExcept({
       refIds: [fieldName],
       requests
     })
+
     await explorePage.goToFieldsTab()
+
+    const allPanels = explorePage.getAllPanelsLocator()
     await page.getByTestId(`data-testid Panel header ${fieldName}`).getByRole('button', { name: 'Select' }).click();
-    await explorePage.assertNotLoading()
+
+    // Should see 8 panels after it's done loading
+    await expect(allPanels).toHaveCount(8)
+    // And we'll have 2 requests, one on the aggregation, one for the label values
+    expect(requests).toHaveLength(2)
+
+    // This should trigger more queries
     await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
 
-    await explorePage.assertTabsNotLoading()
+    // Should have removed a panel
+    await expect(allPanels).toHaveCount(7)
     // Adhoc content filter should be added
     await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${fieldName}`)).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
@@ -246,7 +256,8 @@ test.describe('explore services breakdown page', () => {
         expect(query.expr).toContain('| logfmt | caller!=""')
       })
     })
-    expect(requests).toHaveLength(2)
+    // Now we should have 3 queries, one more after adding the field exclusion filter
+    expect(requests).toHaveLength(3)
   });
 
   test(`should include field ${fieldName}, update filters, open filters breakdown`, async ({ page }) => {
@@ -489,7 +500,7 @@ test.describe('explore services breakdown page', () => {
     await page.getByText('mimir-distributor').click();
 
     // Assert the panel is done loading before going on
-    await expect(page.getByTestId(testIds.logsPanelHeader.header).getByLabel('Panel loading bar')).not.toBeVisible()
+    await expect(page.getByTestId(testIds.logsPanelHeader.header).getByLabel('Panel loading bar')).toHaveCount(0)
 
     await explorePage.assertTabsNotLoading()
     await explorePage.assertNotLoading()

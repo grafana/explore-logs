@@ -1,9 +1,8 @@
-import type { Page, Locator } from '@playwright/test';
+import type {Locator, Page} from '@playwright/test';
 import pluginJson from '../../src/plugin.json';
-import { testIds } from '../../src/services/testIds';
+import {testIds} from '../../src/services/testIds';
 import {expect} from "@grafana/plugin-e2e";
 import {LokiQuery} from "../../src/services/query";
-import {DetectedFieldsResponse} from "../../src/services/fields";
 
 export interface PlaywrightRequest {
   post: any,
@@ -64,10 +63,22 @@ export class ExplorePage {
     await this.assertTabsNotLoading()
   }
 
+  getAllPanelsLocator() {
+    return this.page.getByTestId(/data-testid Panel header/).getByTestId('header-container')
+  }
 
   async assertNotLoading() {
     const locator = this.page.getByText('loading')
     await expect(locator).toHaveCount(0)
+  }
+
+  async assertPanelsNotLoading(){
+    await expect(this.page.getByLabel('Panel loading bar')).toHaveCount(0)
+  }
+
+  // This is flakey, panels won't show the state if the requests come back in < 75ms
+  async assertPanelsLoading(){
+    await expect(this.page.getByLabel('Panel loading bar').first()).toBeVisible()
   }
 
   async assertTabsNotLoading() {
@@ -107,20 +118,20 @@ export class ExplorePage {
     );
   }
 
-  async blockAllQueriesExcept(options: {
+  blockAllQueriesExcept(options: {
     refIds?: Array<string | RegExp>,
     legendFormats?: string[]
     responses?: Array<{[refIDOrLegendFormat: string]: any}>
     requests?: PlaywrightRequest[]
   }) {
     // Let's not wait for all these queries
-    await this.page.route('**/ds/query*', async route => {
+    this.page.route('**/ds/query**', async route => {
       const post = route.request().postDataJSON()
       const queries = post.queries as LokiQuery[]
       const refId = queries[0].refId
       const legendFormat = queries[0].legendFormat;
 
-      if(options?.refIds?.some(refIdToTarget => refId.match(refIdToTarget)) || options?.legendFormats?.includes(legendFormat)){
+      if(options?.refIds?.some(refIdToTarget => refId.match(refIdToTarget)) || (legendFormat && options?.legendFormats?.includes(legendFormat))){
         if(options.responses || options.requests){
           const response = await route.fetch();
           const json = await response.json();
