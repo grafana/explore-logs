@@ -223,7 +223,7 @@ test.describe('explore services breakdown page', () => {
     await expect(panels).toHaveCount(1)
   })
 
-  test.only(`should exclude ${fieldName}, request should contain logfmt`, async ({ page }) => {
+  test(`should exclude ${fieldName}, request should contain logfmt`, async ({ page }) => {
     let requests: PlaywrightRequest[] = [];
     explorePage.blockAllQueriesExcept({
       refIds: [fieldName],

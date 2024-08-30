@@ -21,7 +21,7 @@ test.describe('explore nginx-json breakdown pages ', () => {
         await page.unrouteAll({ behavior: 'ignoreErrors' })
     })
 
-    test.only(`should exclude ${fieldName}, request should contain json`, async ({ page }) => {
+    test(`should exclude ${fieldName}, request should contain json`, async ({ page }) => {
         let requests: PlaywrightRequest[] = [];
         explorePage.blockAllQueriesExcept({
             refIds: [fieldName],
