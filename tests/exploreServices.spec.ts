@@ -179,6 +179,9 @@ test.describe('explore services page', () => {
       // Clear variable
       await page.getByTestId(testIds.variables.serviceName.label).click()
 
+      // Assert we're rendering the right scene and the services have loaded
+      await expect(page.getByText(/Showing \d+ of \d+ services/)).toBeVisible();
+
       expect(logsVolumeCount).toEqual(1)
       expect(logsQueryCount).toEqual(8)
     })

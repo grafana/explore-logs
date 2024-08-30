@@ -491,6 +491,8 @@ test.describe('explore services breakdown page', () => {
     // Assert the panel is done loading before going on
     await expect(page.getByTestId(testIds.logsPanelHeader.header).getByLabel('Panel loading bar')).not.toBeVisible()
 
+    await explorePage.assertTabsNotLoading()
+    await explorePage.assertNotLoading()
     // @todo this test was flaking because the row is clicked before the logs panel renders the final rows. Potential grafana/grafana bug in the logs panel?
     // assert that the logs panel is done rendering
     await expect(page.getByText(/Rendering \d+ rows.../)).toHaveCount(0)
