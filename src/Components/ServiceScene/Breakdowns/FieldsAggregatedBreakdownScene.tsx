@@ -4,6 +4,8 @@ import {
   SceneComponentProps,
   SceneCSSGridItem,
   SceneCSSGridLayout,
+  SceneDataProvider,
+  SceneDataTransformer,
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
@@ -30,7 +32,9 @@ import React from 'react';
 import { SelectLabelActionScene } from './SelectLabelActionScene';
 import { ValueSlugs } from '../../../services/routing';
 import { areArraysEqual } from '../../../services/comparison';
-import { LoadingState } from '@grafana/data';
+import { DataFrame, LoadingState } from '@grafana/data';
+import { limitMaxNumberOfSeriesForPanel, MAX_NUMBER_OF_TIME_SERIES } from './TimeSeriesLimitSeriesTitleItem';
+import { map, Observable } from 'rxjs';
 
 export interface FieldsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -102,7 +106,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     };
   }
 
-  private calculateCardinalityMap(newState: QueryRunnerState) {
+  private calculateCardinalityMap(newState?: QueryRunnerState) {
     const detectedFieldsFrame = getDetectedFieldsFrameFromQueryRunnerState(newState);
     const cardinalityMap = new Map<string, number>();
     if (detectedFieldsFrame?.length) {
@@ -121,7 +125,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     });
 
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
-    this._subs.add(serviceScene.state.$detectedFieldsData.subscribeToState(this.onDetectedFieldsChange));
+    this._subs.add(serviceScene.state.$detectedFieldsData?.subscribeToState(this.onDetectedFieldsChange));
   }
   private build() {
     const groupByVariable = getFieldGroupByVariable(this);
@@ -133,8 +137,25 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     const children = this.buildChildren(options);
 
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
-    const cardinalityMap = this.calculateCardinalityMap(serviceScene.state.$detectedFieldsData.state);
+    const cardinalityMap = this.calculateCardinalityMap(serviceScene.state.$detectedFieldsData?.state);
     children.sort(this.sortChildren(cardinalityMap));
+    const childrenClones = children.map((child) => child.clone());
+
+    // We must subscribe to the data providers for all children after the clone or we'll see bugs in the row layout
+    [...children, ...childrenClones].map((child) => {
+      limitMaxNumberOfSeriesForPanel(child);
+
+      const panel = child.state.body as VizPanel | undefined;
+      this._subs.add(
+        panel?.state.$data?.getResultsStream().subscribe((result) => {
+          if (result.data.errors && result.data.errors.length > 0) {
+            const val = result.data.errors[0].refId!;
+            this.hideField(val);
+            child.setState({ isHidden: true });
+          }
+        })
+      );
+    });
 
     return new LayoutSwitcher({
       options: [
@@ -152,7 +173,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
         new SceneCSSGridLayout({
           templateColumns: '1fr',
           autoRows: '200px',
-          children: children.map((child) => child.clone()),
+          children: childrenClones,
           isLazy: true,
         }),
       ],
@@ -177,7 +198,12 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
       });
 
       const queryRunner = getQueryRunner([query]);
-      let body = PanelBuilders.timeseries().setTitle(optionValue).setData(queryRunner);
+
+      const dataTransformer = new SceneDataTransformer({
+        $data: queryRunner,
+        transformations: [() => limitFramesTransformation(MAX_NUMBER_OF_TIME_SERIES, queryRunner)],
+      });
+      let body = PanelBuilders.timeseries().setTitle(optionValue).setData(dataTransformer);
 
       if (!isAvgField(optionValue)) {
         body = body
@@ -197,19 +223,11 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
           })
         );
       }
-      const gridItem = new SceneCSSGridItem({
-        body: body.build(),
-      });
 
-      this._subs.add(
-        queryRunner.getResultsStream().subscribe((result) => {
-          if (result.data.errors && result.data.errors.length > 0) {
-            const val = result.data.errors[0].refId!;
-            this.hideField(val);
-            gridItem.setState({ isHidden: true });
-          }
-        })
-      );
+      const viz = body.build();
+      const gridItem = new SceneCSSGridItem({
+        body: viz,
+      });
 
       children.push(gridItem);
     }
@@ -238,5 +256,15 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     }
 
     return <LoadingPlaceholder text={'Loading...'} />;
+  };
+}
+
+export function limitFramesTransformation(limit: number, queryRunner: SceneDataProvider) {
+  return (source: Observable<DataFrame[]>) => {
+    return source.pipe(
+      map((frames) => {
+        return frames.slice(0, limit);
+      })
+    );
   };
 }

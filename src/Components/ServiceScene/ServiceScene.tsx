@@ -62,10 +62,10 @@ export interface ServiceSceneCustomState {
 export interface ServiceSceneState extends SceneObjectState, ServiceSceneCustomState {
   body: SceneFlexLayout | undefined;
   drillDownLabel?: string;
-  $data: SceneDataProvider;
-  $patternsData: SceneQueryRunner;
-  $detectedLabelsData: SceneQueryRunner;
-  $detectedFieldsData: SceneQueryRunner;
+  $data: SceneDataProvider | undefined;
+  $patternsData: SceneQueryRunner | undefined;
+  $detectedLabelsData: SceneQueryRunner | undefined;
+  $detectedFieldsData: SceneQueryRunner | undefined;
   loadingStates: ServiceSceneLoadingStates;
 }
 
@@ -80,12 +80,12 @@ export function getDetectedLabelsFrame(sceneRef: SceneObject) {
 
 export function getDetectedFieldsFrame(sceneRef: SceneObject) {
   const serviceScene = sceneGraph.getAncestor(sceneRef, ServiceScene);
-  return getDetectedFieldsFrameFromQueryRunnerState(serviceScene.state.$detectedFieldsData.state);
+  return getDetectedFieldsFrameFromQueryRunnerState(serviceScene.state.$detectedFieldsData?.state);
 }
 
-export const getDetectedFieldsFrameFromQueryRunnerState = (state: QueryRunnerState) => {
+export const getDetectedFieldsFrameFromQueryRunnerState = (state?: QueryRunnerState) => {
   // Only ever one frame in the response
-  return state.data?.series?.[0];
+  return state?.data?.series?.[0];
 };
 
 export const getDetectedFieldsNamesFromQueryRunnerState = (state: QueryRunnerState) => {
@@ -236,9 +236,9 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   private subscribeToLabelsVariable() {
     return getLabelsVariable(this).subscribeToState((newState, prevState) => {
       if (!areArraysEqual(newState.filters, prevState.filters)) {
-        this.state.$patternsData.runQueries();
-        this.state.$detectedLabelsData.runQueries();
-        this.state.$detectedFieldsData.runQueries();
+        this.state.$patternsData?.runQueries();
+        this.state.$detectedLabelsData?.runQueries();
+        this.state.$detectedFieldsData?.runQueries();
       }
     });
   }
@@ -246,7 +246,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   private subscribeToFieldsVariable() {
     return getFieldsVariable(this).subscribeToState((newState, prevState) => {
       if (!areArraysEqual(newState.filters, prevState.filters)) {
-        this.state.$detectedFieldsData.runQueries();
+        this.state.$detectedFieldsData?.runQueries();
       }
     });
   }
@@ -265,7 +265,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       ((slug === PageSlugs.labels || parentSlug === ValueSlugs.label) && !this.state.$detectedLabelsData?.state.data) ||
       this.state.labelsCount === undefined
     ) {
-      this.state.$detectedLabelsData.runQueries();
+      this.state.$detectedLabelsData?.runQueries();
     }
 
     // If we don't have a detected fields count, or we are activating the fields scene, run the detected fields query
@@ -317,7 +317,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private subscribeToLogsQuery() {
-    return this.state.$data.subscribeToState((newState) => {
+    return this.state.$data?.subscribeToState((newState) => {
       this.updateLoadingState(newState, TabNames.logs);
     });
   }
@@ -342,7 +342,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   private subscribeToTimeRange() {
     return sceneGraph.getTimeRange(this).subscribeToState(() => {
       this.state.$patternsData?.runQueries();
-      this.state.$detectedLabelsData.runQueries();
+      this.state.$detectedLabelsData?.runQueries();
       this.state.$detectedFieldsData?.runQueries();
     });
   }

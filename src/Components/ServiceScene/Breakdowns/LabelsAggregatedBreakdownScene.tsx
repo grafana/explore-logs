@@ -4,7 +4,7 @@ import {
   SceneCSSGridItem,
   SceneCSSGridLayout,
   SceneDataProvider,
-  SceneFlexItemLike,
+  SceneDataTransformer,
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
@@ -19,6 +19,9 @@ import React from 'react';
 import { buildLabelsQuery, LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS, LabelBreakdownScene } from './LabelBreakdownScene';
 import { SelectLabelActionScene } from './SelectLabelActionScene';
 import { ValueSlugs } from '../../../services/routing';
+import { limitMaxNumberOfSeriesForPanel, MAX_NUMBER_OF_TIME_SERIES } from './TimeSeriesLimitSeriesTitleItem';
+import { limitFramesTransformation } from './FieldsAggregatedBreakdownScene';
+import { LokiQuery } from '../../../services/query';
 
 export interface LabelsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -67,7 +70,7 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
         }
 
         panel.setState({
-          $data: getQueryRunner([query]),
+          $data: this.getDataTransformer(query),
         });
       }
     });
@@ -77,7 +80,7 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
     const variable = getLabelGroupByVariable(this);
     const labelBreakdownScene = sceneGraph.getAncestor(this, LabelBreakdownScene);
     labelBreakdownScene.state.search.reset();
-    const children: SceneFlexItemLike[] = [];
+    const children: SceneCSSGridItem[] = [];
 
     for (const option of variable.state.options) {
       const { value } = option;
@@ -86,12 +89,13 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
         continue;
       }
       const query = buildLabelsQuery(this, String(option.value), String(option.value));
+      const dataTransformer = this.getDataTransformer(query);
 
       children.push(
         new SceneCSSGridItem({
           body: PanelBuilders.timeseries()
             .setTitle(optionValue)
-            .setData(getQueryRunner([query]))
+            .setData(dataTransformer)
             .setHeaderActions(new SelectLabelActionScene({ labelName: optionValue, fieldType: ValueSlugs.label }))
             .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
             .setCustomFieldConfig('fillOpacity', 100)
@@ -103,6 +107,13 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
         })
       );
     }
+
+    const childrenClones = children.map((child) => child.clone());
+
+    // We must subscribe to the data providers for all children after the clone or we'll see bugs in the row layout
+    [...children, ...childrenClones].map((child) => {
+      limitMaxNumberOfSeriesForPanel(child);
+    });
 
     return new LayoutSwitcher({
       options: [
@@ -124,6 +135,14 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
           children: children.map((child) => child.clone()),
         }),
       ],
+    });
+  }
+
+  private getDataTransformer(query: LokiQuery) {
+    const queryRunner = getQueryRunner([query]);
+    return new SceneDataTransformer({
+      $data: queryRunner,
+      transformations: [() => limitFramesTransformation(MAX_NUMBER_OF_TIME_SERIES, queryRunner)],
     });
   }
 
