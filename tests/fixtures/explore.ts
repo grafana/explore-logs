@@ -80,6 +80,7 @@ export class ExplorePage {
     // Assert the fields tab is active
     expect(await this.page.getByTestId('data-testid tab-fields').getAttribute('aria-selected')).toEqual('true')
     // Assert the all option is selected
+    await expect(this.page.getByText('FieldAll')).toHaveCount(1)
     await expect(this.page.getByText('FieldAll')).toBeVisible()
   }
 

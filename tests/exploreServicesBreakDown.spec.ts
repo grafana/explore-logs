@@ -278,7 +278,6 @@ test.describe('explore services breakdown page', () => {
 
   test('should select a field, update filters, open log panel', async ({ page }) => {
     await explorePage.goToFieldsTab()
-    await explorePage.scrollToBottom()
     await page.getByTestId(`data-testid Panel header ${fieldName}`).getByRole('button', { name: 'Select' }).click();
     await page.getByRole('button', { name: 'Include' }).nth(0).click();
     await explorePage.assertFieldsIndex()
