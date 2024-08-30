@@ -52,7 +52,7 @@ export class TimeSeriesLimitSeriesTitleItemScene extends SceneObjectBase<TimeSer
         </span>
         <Tooltip
           content={
-            'Rendering too many series in a single panel may impact performance and make data harder to read. Consider refining your queries.'
+            'Rendering too many series in a single panel may impact performance and make data harder to read. Consider adding more filters.'
           }
         >
           <Button variant="secondary" size="sm" onClick={() => toggleShowAllSeries(model)}>

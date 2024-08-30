@@ -144,17 +144,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     // We must subscribe to the data providers for all children after the clone or we'll see bugs in the row layout
     [...children, ...childrenClones].map((child) => {
       limitMaxNumberOfSeriesForPanel(child);
-
-      const panel = child.state.body as VizPanel | undefined;
-      this._subs.add(
-        panel?.state.$data?.getResultsStream().subscribe((result) => {
-          if (result.data.errors && result.data.errors.length > 0) {
-            const val = result.data.errors[0].refId!;
-            this.hideField(val);
-            child.setState({ isHidden: true });
-          }
-        })
-      );
+      this.subscribeToPanel(child);
     });
 
     return new LayoutSwitcher({
@@ -178,6 +168,23 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
         }),
       ],
     });
+  }
+
+  private subscribeToPanel(child: SceneCSSGridItem) {
+    const panel = child.state.body as VizPanel | undefined;
+    if (panel) {
+      this._subs.add(
+        panel?.state.$data?.getResultsStream().subscribe((result) => {
+          if (result.data.errors && result.data.errors.length > 0) {
+            const val = result.data.errors[0].refId!;
+            this.hideField(val);
+            child.setState({ isHidden: true });
+          }
+        })
+      );
+    } else {
+      console.log('no panel??', child);
+    }
   }
 
   private buildChildren(options: Array<{ label: string; value: string }>): SceneCSSGridItem[] {
