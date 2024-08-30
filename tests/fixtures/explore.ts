@@ -3,7 +3,12 @@ import pluginJson from '../../src/plugin.json';
 import { testIds } from '../../src/services/testIds';
 import {expect} from "@grafana/plugin-e2e";
 import {LokiQuery} from "../../src/services/query";
+import {DetectedFieldsResponse} from "../../src/services/fields";
 
+export interface PlaywrightRequest {
+  post: any,
+  url: string
+}
 export class ExplorePage {
   private readonly firstServicePageSelect: Locator;
   logVolumeGraph: Locator;
@@ -96,15 +101,17 @@ export class ExplorePage {
   }
 
   //@todo pull service from url if not in params
-  async gotoServicesBreakdown() {
+  async gotoServicesBreakdown(serviceName = 'tempo-distributor') {
     await this.page.goto(
-      `/a/${pluginJson.id}/explore/service/tempo-distributor/logs?mode=service_details&patterns=[]&var-filters=service_name|=|tempo-distributor&var-logsFormat= | logfmt`
+      `/a/${pluginJson.id}/explore/service/tempo-distributor/logs?mode=service_details&patterns=[]&var-filters=service_name|=|${serviceName}&var-logsFormat= | logfmt`
     );
   }
 
   async blockAllQueriesExcept(options: {
-    refIds?: string[],
+    refIds?: Array<string | RegExp>,
     legendFormats?: string[]
+    responses?: Array<{[refIDOrLegendFormat: string]: any}>
+    requests?:PlaywrightRequest[]
   }) {
     // Let's not wait for all these queries
     await this.page.route('**/ds/query*', async route => {
@@ -113,8 +120,27 @@ export class ExplorePage {
       const refId = queries[0].refId
       const legendFormat = queries[0].legendFormat;
 
-      if(options?.refIds.includes(refId) || options?.legendFormats.includes(legendFormat)){
-        await route.continue()
+      if(options?.refIds?.some(refIdToTarget => refId.match(refIdToTarget)) || options?.legendFormats?.includes(legendFormat)){
+        if(options.responses || options.requests){
+          const response = await route.fetch();
+          const json = await response.json();
+          if(options.responses){
+            options?.responses?.push({[refId ?? legendFormat]: json})
+          }
+
+          if(options?.requests){
+            const request = route.request()
+            const requestObject: PlaywrightRequest = {
+              post: request.postDataJSON(),
+              url: request.url()
+            }
+            options?.requests?.push(requestObject)
+          }
+
+          await route.fulfill({ response, json });
+        }else{
+          await route.continue()
+        }
       }else{
         await route.fulfill({json: []})
       }

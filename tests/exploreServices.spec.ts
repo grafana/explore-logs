@@ -151,7 +151,6 @@ test.describe('explore services page', () => {
     })
 
     test('refreshing time range should request panel data once', async ({page}) => {
-      await page.pause()
       expect(logsVolumeCount).toEqual(1)
       expect(logsQueryCount).toEqual(4)
       await explorePage.refreshPicker.click()
