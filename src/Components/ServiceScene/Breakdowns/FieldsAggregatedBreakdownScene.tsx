@@ -182,8 +182,6 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
           }
         })
       );
-    } else {
-      console.log('no panel??', child);
     }
   }
 

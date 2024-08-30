@@ -6,8 +6,6 @@ import {
   AdHocFiltersVariable,
   QueryRunnerState,
   SceneComponentProps,
-  SceneFlexItem,
-  SceneFlexLayout,
   sceneGraph,
   SceneObject,
   SceneObjectBase,
@@ -24,7 +22,7 @@ import { getSortByPreference } from 'services/store';
 import {
   ALL_VARIABLE_VALUE,
   getFieldGroupByVariable,
-  getFieldsVariable,
+  getLabelsVariable,
   getLogsStreamSelector,
   LOG_STREAM_SELECTOR_EXPR,
   LogsQueryOptions,
@@ -53,6 +51,7 @@ import {
   extractParserFieldFromParserArray,
   extractParserFromDetectedFieldParserFieldValue,
 } from '../../../services/fields';
+import { EmptyLayoutScene } from './EmptyLayoutScene';
 
 export const averageFields = ['duration', 'count', 'total', 'bytes'];
 export const FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
@@ -62,7 +61,7 @@ export interface FieldsBreakdownSceneState extends SceneObjectState {
     | (SceneReactObject & SceneObject)
     | (FieldsAggregatedBreakdownScene & SceneObject)
     | (FieldValuesBreakdownScene & SceneObject)
-    | (SceneFlexLayout & SceneObject);
+    | (EmptyLayoutScene & SceneObject);
   search: BreakdownSearchScene;
   sort: SortByScene;
   value?: string;
@@ -120,7 +119,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this._subs.add(groupByVariable.subscribeToState(this.variableChanged));
 
     this._subs.add(
-      getFieldsVariable(this).subscribeToState((newState, prevState) => {
+      getLabelsVariable(this).subscribeToState((newState, prevState) => {
         const variable = getFieldGroupByVariable(this);
         const newService = newState.filters.find((filter) => filter.key === SERVICE_NAME);
         const prevService = prevState.filters.find((filter) => filter.key === SERVICE_NAME);
@@ -138,8 +137,10 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this._subs.add(
       serviceScene.state.$detectedFieldsData?.subscribeToState(
         (newState: QueryRunnerState, oldState: QueryRunnerState) => {
-          if (newState.data?.state === LoadingState.Done && newState.data.series?.[0]) {
-            this.updateOptions(newState.data.series?.[0]);
+          if (newState.data?.state === LoadingState.Done) {
+            if (newState.data.series?.[0]) {
+              this.updateOptions(newState.data.series?.[0]);
+            }
           }
         }
       )
@@ -156,7 +157,8 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     if (
       newState.value !== oldState.value ||
       !areArraysEqual(newState.options, oldState.options) ||
-      this.state.body === undefined
+      this.state.body === undefined ||
+      this.state.body instanceof EmptyLayoutScene
     ) {
       this.updateBody(newState);
     }
@@ -164,6 +166,10 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
   private updateOptions(dataFrame: DataFrame) {
     if (!dataFrame || !dataFrame.length) {
+      this.setState({
+        loading: false,
+        body: new EmptyLayoutScene({ type: 'fields' }),
+      });
       return;
     }
 
@@ -233,7 +239,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       if (variablesToClear.length > 1) {
         stateUpdate.body = this.buildClearFiltersLayout(() => this.clearVariables(variablesToClear));
       } else {
-        stateUpdate.body = this.buildEmptyLayout();
+        stateUpdate.body = new EmptyLayoutScene({ type: 'fields' });
       }
     } else {
       // Otherwise update the body, but don't re-instantiate if it's already the right class
@@ -244,7 +250,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       } else if (
         // If the body hasn't been created, or the no-data views are active, we want to replace and render the correct scene
         this.state.body === undefined ||
-        this.state.body instanceof SceneFlexLayout ||
+        this.state.body instanceof EmptyLayoutScene ||
         this.state.body instanceof SceneReactObject
       ) {
         stateUpdate.body =
@@ -281,34 +287,6 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       }
     });
   };
-
-  private buildEmptyLayout() {
-    return new SceneFlexLayout({
-      direction: 'column',
-      children: [
-        new SceneFlexItem({
-          body: new SceneReactObject({
-            reactNode: (
-              <GrotError>
-                <Alert title="" severity="warning">
-                  We did not find any fields for the given timerange. Please{' '}
-                  <a
-                    className={emptyStateStyles.link}
-                    href="https://forms.gle/1sYWCTPvD72T1dPH9"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    let us know
-                  </a>{' '}
-                  if you think this is a mistake.
-                </Alert>
-              </GrotError>
-            ),
-          }),
-        }),
-      ],
-    });
-  }
 
   private buildClearFiltersLayout(clearCallback: () => void) {
     return new SceneReactObject({
