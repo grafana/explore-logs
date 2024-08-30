@@ -158,7 +158,8 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       newState.value !== oldState.value ||
       !areArraysEqual(newState.options, oldState.options) ||
       this.state.body === undefined ||
-      this.state.body instanceof EmptyLayoutScene
+      this.state.body instanceof EmptyLayoutScene ||
+      this.state.body instanceof SceneReactObject
     ) {
       this.updateBody(newState);
     }
