@@ -157,13 +157,19 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
     }, 0);
 
     const panel = sceneGraph.getAncestor(this, VizPanel);
-    const percentage = ((logLinesWithLabelCount / logsPanelData.length) * 100).toLocaleString();
-    const description = `${this.state.labelName} exists on ${percentage}% of ${logsPanelData.length} sampled log lines`;
+    if (logLinesWithLabelCount !== undefined && logsPanelData.length > 0) {
+      const percentage = ((logLinesWithLabelCount / logsPanelData.length) * 100).toLocaleString();
+      const description = `${this.state.labelName} exists on ${percentage}% of ${logsPanelData.length} sampled log lines`;
 
-    // Update the desc
-    panel.setState({
-      description,
-    });
+      // Update the desc
+      panel.setState({
+        description,
+      });
+    } else {
+      panel.setState({
+        description: undefined,
+      });
+    }
 
     if (logLinesWithLabelCount < logsPanelData.length || this.getExistingFilter(variable)) {
       this.setState({

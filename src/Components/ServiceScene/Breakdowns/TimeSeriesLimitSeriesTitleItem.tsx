@@ -17,19 +17,40 @@ export const MAX_NUMBER_OF_TIME_SERIES = 20;
 export interface TimeSeriesLimitSeriesTitleItemSceneState extends SceneObjectState {
   toggleShowAllSeries: (model: TimeSeriesLimitSeriesTitleItemScene) => void;
   showAllSeries: boolean;
+  currentSeriesCount?: number;
 }
 
 export class TimeSeriesLimitSeriesTitleItemScene extends SceneObjectBase<TimeSeriesLimitSeriesTitleItemSceneState> {
+  constructor(state: TimeSeriesLimitSeriesTitleItemSceneState) {
+    super(state);
+
+    this.addActivationHandler(this.onActivate.bind(this));
+  }
+
+  private onActivate() {
+    const panel = sceneGraph.getAncestor(this, VizPanel);
+    this._subs.add(
+      panel.subscribeToState((newState, prevState) => {
+        const $data = sceneGraph.getData(this);
+        if ($data.state.data?.state === LoadingState.Done) {
+          this.setState({
+            currentSeriesCount: $data.state.data?.series.length,
+          });
+        }
+      })
+    );
+  }
   public static Component = ({ model }: SceneComponentProps<TimeSeriesLimitSeriesTitleItemScene>) => {
-    const { toggleShowAllSeries, showAllSeries } = model.useState();
+    const { toggleShowAllSeries, showAllSeries, currentSeriesCount } = model.useState();
     const $data = sceneGraph.getData(model);
     const { data } = $data.useState();
     const styles = useStyles2(getStyles);
+
     if (
       !($data instanceof SceneDataTransformer) ||
       showAllSeries ||
       data?.state !== LoadingState.Done ||
-      !data.series.length ||
+      !currentSeriesCount ||
       data.series.length < MAX_NUMBER_OF_TIME_SERIES
     ) {
       return null;
@@ -70,7 +91,6 @@ export function limitMaxNumberOfSeriesForPanel(child: SceneCSSGridItem) {
   if (dataTransformer instanceof SceneDataTransformer) {
     panel?.setState({
       titleItems: new TimeSeriesLimitSeriesTitleItemScene({
-        // $data: queryRunner,
         showAllSeries: false,
         toggleShowAllSeries: (timeSeriesLimiter) => {
           dataTransformer.setState({
