@@ -451,20 +451,21 @@ export function buildFieldsQueryString(
 ) {
   const parserField: Field<string> | undefined = detectedFieldsFrame?.fields[2];
   const namesField: Field<string> | undefined = detectedFieldsFrame?.fields[0];
-
   const index = namesField?.values.indexOf(optionValue);
+
   const parserForThisField =
-    index && index !== -1
-      ? extractParserFromDetectedFieldParserFieldValue(parserField?.values?.[index] ?? '')
+    index !== undefined && index !== -1
+      ? extractParserFromDetectedFieldParserFieldValue(parserField?.values?.[index] ?? 'mixed')
       : undefined;
 
   const parsers = fieldsVariable.state.filters.map((filter) => {
     const index = namesField?.values.indexOf(filter.key);
     const parser =
-      index && index !== -1
-        ? extractParserFromDetectedFieldParserFieldValue(parserField?.values?.[index] ?? '')
+      index !== undefined && index !== -1
+        ? extractParserFromDetectedFieldParserFieldValue(parserField?.values?.[index] ?? 'mixed')
         : undefined;
-    return parser ?? '';
+
+    return parser ?? 'mixed';
   });
 
   const parser = extractParserFieldFromParserArray([...parsers, parserForThisField ?? '']);

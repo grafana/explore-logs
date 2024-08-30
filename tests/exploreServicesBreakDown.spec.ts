@@ -209,9 +209,10 @@ test.describe('explore services breakdown page', () => {
   test('should exclude a label, update filters', async ({ page }) => {
     await explorePage.goToFieldsTab()
     await page.getByTestId(`data-testid Panel header ${fieldName}`).getByRole('button', { name: 'Select' }).click();
+    await explorePage.assertNotLoading()
     await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
 
-    await explorePage.scrollToTop()
+    await explorePage.assertTabsNotLoading()
     // Adhoc content filter should be added
     await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${fieldName}`)).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();

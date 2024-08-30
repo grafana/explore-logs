@@ -42,7 +42,7 @@ const getReducerId = memoize((sortBy: SortBy) => {
   return reducerID;
 });
 
-type ExtractedFieldsType = 'logfmt' | 'json' | 'mixed' | '';
+export type ExtractedFieldsType = 'logfmt' | 'json' | 'mixed' | '';
 
 export function extractParserFromDetectedFieldParserFieldValue(parserString: string): ExtractedFieldsType {
   switch (parserString) {
@@ -91,7 +91,7 @@ export function getParserForField(fieldName: string, sceneRef: SceneObject): Ext
 
   const index = namesField?.values.indexOf(fieldName);
   const parser =
-    index && index !== -1
+    index !== undefined && index !== -1
       ? extractParserFromDetectedFieldParserFieldValue(parserField?.values?.[index] ?? '')
       : undefined;
 

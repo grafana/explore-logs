@@ -50,11 +50,13 @@ export class ExplorePage {
   async goToFieldsTab() {
     await this.page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
     await this.assertNotLoading()
+    await this.assertTabsNotLoading()
   }
 
   async toToLabelsTab() {
     await this.page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
     await this.assertNotLoading()
+    await this.assertTabsNotLoading()
   }
 
 
@@ -100,7 +102,6 @@ export class ExplorePage {
     );
   }
 
-
   async blockAllQueriesExcept(options: {
     refIds?: string[],
     legendFormats?: string[]
@@ -112,7 +113,6 @@ export class ExplorePage {
       const refId = queries[0].refId
       const legendFormat = queries[0].legendFormat;
 
-      // if(refId === 'logsPanelQuery' || refId === fieldName || legendFormat === `{{${levelName}}}`){
       if(options?.refIds.includes(refId) || options?.legendFormats.includes(legendFormat)){
         await route.continue()
       }else{
