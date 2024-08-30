@@ -34,6 +34,7 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
 
     const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
     const { loading, $data, ...state } = serviceScene.useState();
+    const loadingStates = state.loadingStates;
 
     return (
       <Box paddingY={0}>
@@ -51,8 +52,8 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
                 key={index}
                 label={tab.displayName}
                 active={currentBreakdownViewSlug === tab.value}
-                counter={loading ? undefined : getCounter(tab, { ...state, $data })}
-                icon={loading ? 'spinner' : undefined}
+                counter={loadingStates[tab.displayName] ? undefined : getCounter(tab, { ...state, $data })}
+                icon={loadingStates[tab.displayName] ? 'spinner' : undefined}
                 onChangeTab={() => {
                   if ((tab.value && tab.value !== currentBreakdownViewSlug) || allowNavToParent) {
                     reportAppInteraction(

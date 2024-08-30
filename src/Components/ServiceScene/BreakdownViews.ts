@@ -14,8 +14,14 @@ interface ValueBreakdownViewDefinition {
   getScene: (value: string) => SceneObject;
 }
 
+export enum TabNames {
+  logs = 'Logs',
+  labels = 'Labels',
+  fields = 'Fields',
+  patterns = 'Patterns',
+}
 export interface BreakdownViewDefinition {
-  displayName: string;
+  displayName: TabNames;
   value: PageSlugs;
   testId: string;
   getScene: (changeFields: (f: string[]) => void) => SceneObject;
@@ -23,25 +29,25 @@ export interface BreakdownViewDefinition {
 
 export const breakdownViewsDefinitions: BreakdownViewDefinition[] = [
   {
-    displayName: 'Logs',
+    displayName: TabNames.logs,
     value: PageSlugs.logs,
     getScene: () => buildLogsListScene(),
     testId: testIds.exploreServiceDetails.tabLogs,
   },
   {
-    displayName: 'Labels',
+    displayName: TabNames.labels,
     value: PageSlugs.labels,
     getScene: () => buildLabelBreakdownActionScene(),
     testId: testIds.exploreServiceDetails.tabLabels,
   },
   {
-    displayName: 'Fields',
+    displayName: TabNames.fields,
     value: PageSlugs.fields,
     getScene: (f) => buildFieldsBreakdownActionScene(f),
     testId: testIds.exploreServiceDetails.tabFields,
   },
   {
-    displayName: 'Patterns',
+    displayName: TabNames.patterns,
     value: PageSlugs.patterns,
     getScene: () => buildPatternsScene(),
     testId: testIds.exploreServiceDetails.tabPatterns,

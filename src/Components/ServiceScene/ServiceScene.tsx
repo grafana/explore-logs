@@ -5,6 +5,7 @@ import {
   QueryRunnerState,
   SceneComponentProps,
   SceneDataProvider,
+  SceneDataState,
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
@@ -37,7 +38,7 @@ import { getMetadataService } from '../../services/metadata';
 import { navigateToIndex } from '../../services/navigate';
 import { areArraysEqual } from '../../services/comparison';
 import { ActionBarScene } from './ActionBarScene';
-import { breakdownViewsDefinitions, valueBreakdownViews } from './BreakdownViews';
+import { breakdownViewsDefinitions, TabNames, valueBreakdownViews } from './BreakdownViews';
 
 const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 const PATTERNS_QUERY_REFID = 'patterns';
@@ -47,9 +48,7 @@ const DETECTED_FIELDS_QUERY_REFID = 'detectedFields';
 type MakeOptional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
 type ServiceSceneLoadingStates = {
-  patterns: boolean;
-  labels: boolean;
-  fields: boolean;
+  [name in TabNames]: boolean;
 };
 
 export interface ServiceSceneCustomState {
@@ -106,7 +105,12 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     >
   ) {
     super({
-      loadingStates: { patterns: false, labels: false, fields: false },
+      loadingStates: {
+        [TabNames.patterns]: false,
+        [TabNames.labels]: false,
+        [TabNames.fields]: false,
+        [TabNames.logs]: false,
+      },
       loading: true,
       body: state.body ?? buildGraphScene(),
       $data: getServiceSceneQueryRunner(),
@@ -212,6 +216,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this._subs.add(this.subscribeToPatternsQuery());
     this._subs.add(this.subscribeToDetectedLabelsQuery());
     this._subs.add(this.subscribeToDetectedFieldsQuery());
+    this._subs.add(this.subscribeToLogsQuery());
 
     // Variable subscriptions
     this._subs.add(this.subscribeToLabelsVariable());
@@ -272,7 +277,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
   private subscribeToPatternsQuery() {
     return this.state.$patternsData?.subscribeToState((newState) => {
-      this.updateLoadingState(newState, 'patterns');
+      this.updateLoadingState(newState, TabNames.patterns);
       if (newState.data?.state === LoadingState.Done) {
         const patternsResponse = newState.data.series;
         if (patternsResponse?.length !== undefined) {
@@ -288,7 +293,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
   private subscribeToDetectedLabelsQuery() {
     return this.state.$detectedLabelsData?.subscribeToState((newState) => {
-      this.updateLoadingState(newState, 'labels');
+      this.updateLoadingState(newState, TabNames.labels);
       if (newState.data?.state === LoadingState.Done) {
         const detectedLabelsResponse = newState.data;
         // Detected labels API call always returns a single frame, with a field for each label
@@ -303,7 +308,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     });
   }
 
-  private updateLoadingState(newState: QueryRunnerState, key: keyof ServiceSceneLoadingStates) {
+  private updateLoadingState(newState: SceneDataState, key: keyof ServiceSceneLoadingStates) {
     const loadingStates = this.state.loadingStates;
     loadingStates[key] = newState.data?.state === LoadingState.Loading;
     // set loading state to true if any of the queries are loading
@@ -311,9 +316,15 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.setState({ loading, loadingStates });
   }
 
+  private subscribeToLogsQuery() {
+    return this.state.$data.subscribeToState((newState) => {
+      this.updateLoadingState(newState, TabNames.logs);
+    });
+  }
+
   private subscribeToDetectedFieldsQuery() {
     return this.state.$detectedFieldsData?.subscribeToState((newState) => {
-      this.updateLoadingState(newState, 'fields');
+      this.updateLoadingState(newState, TabNames.fields);
       if (newState.data?.state === LoadingState.Done) {
         const detectedFieldsResponse = newState.data;
         const detectedFieldsFields = detectedFieldsResponse.series[0];

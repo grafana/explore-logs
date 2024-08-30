@@ -151,6 +151,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
       throw new Error('Patterns query can only have a single target!');
     }
     const { interpolatedTarget, expression } = this.interpolate(ds, targets, request);
+    subscriber.next({ data: [], state: LoadingState.Loading });
 
     try {
       const dsResponse = ds.getResource(
@@ -259,6 +260,8 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
     const { interpolatedTarget, expression } = this.interpolate(ds, targets, request);
 
+    subscriber.next({ data: [], state: LoadingState.Loading });
+
     try {
       const response = await ds.getResource<DetectedLabelsResponse>(
         'detected_labels',
@@ -310,6 +313,8 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     if (targets.length !== 1) {
       throw new Error('Detected fields query can only have a single target!');
     }
+
+    subscriber.next({ data: [], state: LoadingState.Loading });
 
     const { interpolatedTarget, expression } = this.interpolate(ds, targets, request);
 
@@ -373,6 +378,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
     const targetsInterpolated = ds.interpolateVariablesInQueries(request.targets, request.scopedVars);
     const expression = targetsInterpolated[0].expr.replace('.*.*', '.+');
+    subscriber.next({ data: [], state: LoadingState.Loading });
 
     try {
       const volumeResponse: IndexVolumeResponse = await ds.getResource(
