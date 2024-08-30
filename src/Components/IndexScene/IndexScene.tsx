@@ -250,7 +250,6 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
           hide: VariableHide.hideVariable,
         }),
         new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable }),
-        // new CustomVariable({ name: VAR_LOGS_FORMAT, value: '', hide: VariableHide.hideVariable }),
       ],
     }),
     unsub,

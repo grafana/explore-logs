@@ -11,7 +11,7 @@ import { navigateToValueBreakdown } from '../../../services/navigate';
 import { ValueSlugs } from '../../../services/routing';
 import { Button } from '@grafana/ui';
 import React from 'react';
-import { addToFilters, FieldValue } from './AddToFiltersButton';
+import { addToFilters, FieldValue, FilterTypes } from './AddToFiltersButton';
 import { FilterButton } from '../../FilterButton';
 import {
   EMPTY_VARIABLE_VALUE,
@@ -21,7 +21,6 @@ import {
   LEVEL_VARIABLE_VALUE,
   SERVICE_NAME,
   VAR_FIELDS,
-  VAR_LABELS,
 } from '../../../services/variables';
 import { AdHocVariableFilter, Field, Labels, LoadingState } from '@grafana/data';
 import { FilterOp } from '../../../services/filters';
@@ -42,7 +41,7 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
   public static Component = ({ model }: SceneComponentProps<SelectLabelActionScene>) => {
     const { hideValueDrilldown, labelName, showFilterField } = model.useState();
     const variable = model.getVariable();
-    const variableName = variable.useState().name as typeof VAR_LABELS | typeof VAR_FIELDS;
+    const variableName = variable.useState().name as FilterTypes;
     const existingFilter = model.getExistingFilter(variable);
     let value = existingFilter?.value;
     if (variableName === VAR_FIELDS && existingFilter?.value) {
@@ -123,16 +122,16 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
     navigateToValueBreakdown(this.state.fieldType, this.state.labelName, serviceScene);
   };
 
-  public onClickExcludeEmpty = (variableType: typeof VAR_LABELS | typeof VAR_FIELDS) => {
+  public onClickExcludeEmpty = (variableType: FilterTypes) => {
     addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'exclude', this, variableType);
   };
 
-  public onClickIncludeEmpty = (variableType: typeof VAR_LABELS | typeof VAR_FIELDS) => {
+  public onClickIncludeEmpty = (variableType: FilterTypes) => {
     // If json do we want != '{}'?
     addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'include', this, variableType);
   };
 
-  public clearFilter = (variableType: typeof VAR_LABELS | typeof VAR_FIELDS) => {
+  public clearFilter = (variableType: FilterTypes) => {
     addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'clear', this, variableType);
   };
 
