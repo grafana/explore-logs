@@ -257,11 +257,11 @@ test.describe('explore services breakdown page', () => {
     // Navigate to fields tab
     await explorePage.goToFieldsTab()
 
-
     await page.pause()
     // Make sure the panels have started to render
     await expect(page.getByTestId(/data-testid Panel header/).first()).toBeInViewport()
 
+    await explorePage.assertTabsNotLoading()
     // Fields on top should be loaded
     expect(requestCount).toEqual(6)
 

@@ -63,6 +63,15 @@ export class ExplorePage {
     await expect(locator).toHaveCount(0)
   }
 
+  async assertTabsNotLoading() {
+    const tabSelector = this.page.getByTestId(testIds.exploreServiceDetails.tabLogs)
+    const tabsLoadingSelector = tabSelector.filter({has: this.page.locator('svg')})
+    //Assert we can see the tabs
+    await expect(tabSelector).toHaveCount(1)
+    // Assert that the loading svg is not present
+    await expect(tabsLoadingSelector).toHaveCount(0)
+  }
+
   async click(locator: Locator) {
     await expect(locator).toBeVisible()
     await locator.scrollIntoViewIfNeeded()
