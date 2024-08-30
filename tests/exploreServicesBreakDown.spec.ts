@@ -462,13 +462,16 @@ test.describe('explore services breakdown page', () => {
     // Assert the panel is done loading before going on
     await expect(page.getByTestId(testIds.logsPanelHeader.header).getByLabel('Panel loading bar')).not.toBeVisible()
 
+    // @todo this test was flaking because the row is clicked before the logs panel renders the final rows. Potential grafana/grafana bug in the logs panel?
+    // assert that the logs panel is done rendering
+    await expect(page.getByText(/Rendering \d+ rows.../)).toHaveCount(0)
+
     // open logs panel
     await page.getByTitle('See log details').nth(1).click();
 
     await explorePage.scrollToBottom()
     const adHocLocator = page.getByTestId('data-testid Panel header Logs').getByText('mimir-distributor', { exact: true })
-    await adHocLocator.scrollIntoViewIfNeeded()
-
+    await expect(adHocLocator).toHaveCount(1)
     // find text corresponding text to match adhoc filter
     await expect(adHocLocator).toBeVisible();
   });
