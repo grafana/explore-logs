@@ -73,7 +73,7 @@ export function mergeFrames(dest: DataFrame, source: DataFrame) {
     const destNanosValues = destTimeField.nanos?.slice(0);
     const destIdx = resolveIdx(destTimeField, sourceTimeField, i);
 
-    const entryExistsInDest = areEqual(
+    const entryExistsInDest = compareTimestamps(
       { ...destTimeField, values: destTimeValues, nanos: destNanosValues },
       destIdField,
       destIdx,
@@ -147,7 +147,7 @@ function resolveIdx(destField: Field, sourceField: Field, index: number) {
   return idx;
 }
 
-function areEqual(
+function compareTimestamps(
   destTimeField: Field,
   destIdField: Field | undefined,
   destIndex: number,
@@ -155,7 +155,7 @@ function areEqual(
   sourceIdField: Field | undefined,
   sourceIndex: number
 ) {
-  const sameTimestamp = equalNsTimestamps(destTimeField, destIndex, sourceTimeField, sourceIndex);
+  const sameTimestamp = compareNsTimestamps(destTimeField, destIndex, sourceTimeField, sourceIndex);
   if (!sameTimestamp) {
     return false;
   }
@@ -167,7 +167,7 @@ function areEqual(
   return destIdField.values[destIndex] === sourceIdField.values[sourceIndex];
 }
 
-function equalNsTimestamps(destField: Field, destIndex: number, sourceField: Field, sourceIndex: number) {
+function compareNsTimestamps(destField: Field, destIndex: number, sourceField: Field, sourceIndex: number) {
   if (!destField.nanos && !sourceField.nanos) {
     return destField.values[destIndex] === sourceField.values[sourceIndex];
   }
