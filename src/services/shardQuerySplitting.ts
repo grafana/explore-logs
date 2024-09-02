@@ -136,6 +136,21 @@ export function splitQueriesByStreamShard(
     });
   };
 
+  const runNonSplitRequest = (subscriber: Subscriber<DataQueryResponse>) => {
+    subquerySubsciption = datasource.query(request).subscribe({
+      next: (partialResponse: DataQueryResponse) => {
+        mergedResponse = partialResponse;
+      },
+      complete: () => {
+        subscriber.next(mergedResponse);
+      },
+      error: (error: unknown) => {
+        console.error(error);
+        subscriber.next(mergedResponse);
+      },
+    });
+  };
+
   const response = new Observable<DataQueryResponse>((subscriber) => {
     const serviceName = getServiceNameFromQuery(splittingTargets[0].expr);
     datasource.languageProvider
@@ -147,7 +162,7 @@ export function splitQueriesByStreamShard(
         const shards = values.map((value) => parseInt(value, 10));
         if (!shards || !shards.length) {
           console.warn(`Shard splitting not supported. Issuing a regular query.`);
-          runNextRequest(subscriber);
+          runNonSplitRequest(subscriber);
         } else {
           const shardRequests = getShardRequests(shards, request.range);
           console.log(`Querying ${shards.join(', ')} shards`);
