@@ -70,7 +70,6 @@ export const DefaultCellComponent = (props: CustomCellRendererProps & DefaultCel
         showColumns={() => setVisible(true)}
         label={label}
         value={value}
-        frame={props.frame}
       />
     );
   };
