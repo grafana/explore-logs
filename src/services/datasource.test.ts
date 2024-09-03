@@ -1,4 +1,3 @@
-// @todo
 import { SceneDataQueryResourceRequest, WrappedLokiDatasource } from './datasource';
 import { DataFrame, DataQueryRequest, DataQueryResponse, DataSourcePluginMeta, dateTime } from '@grafana/data';
 import { LokiQuery } from './query';
