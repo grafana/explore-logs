@@ -3,8 +3,14 @@ import { TextDecoder, TextEncoder } from 'util';
 
 import './.config/jest-setup';
 
+import { toEmitValuesWith } from './tests/matchers';
+
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
+
+expect.extend({
+  toEmitValuesWith,
+});
 
 // mock the intersection observer and just say everything is in view
 const mockIntersectionObserver = jest.fn().mockImplementation((callback) => ({
