@@ -57,7 +57,7 @@ export class ExplorePage {
     await this.assertTabsNotLoading()
   }
 
-  async toToLabelsTab() {
+  async goToLabelsTab() {
     await this.page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
     await this.assertNotLoading()
     await this.assertTabsNotLoading()

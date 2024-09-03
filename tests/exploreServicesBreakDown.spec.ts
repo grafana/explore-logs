@@ -76,7 +76,7 @@ test.describe('explore services breakdown page', () => {
 
   test(`should select label ${levelName}, update filters, open in explore`, async ({ page }) => {
     const valueName = 'info'
-    await explorePage.toToLabelsTab()
+    await explorePage.goToLabelsTab()
     await page.getByLabel(`Select ${levelName}`).click();
     await page.getByTestId(`data-testid Panel header ${valueName}`).getByRole('button', { name: 'Include' }).click();
     await expect(
@@ -94,7 +94,7 @@ test.describe('explore services breakdown page', () => {
       legendFormats: [`{{${labelName}}}`]
     })
     const valueName = 'eu-west-1'
-    await explorePage.toToLabelsTab()
+    await explorePage.goToLabelsTab()
     await page.getByLabel(`Select ${labelName}`).click();
     await page.getByTestId(`data-testid Panel header ${valueName}`).getByRole('button', { name: 'Include' }).click();
     await expect(
@@ -107,7 +107,7 @@ test.describe('explore services breakdown page', () => {
   });
 
   test('should select a label, label added to url', async ({ page }) => {
-    await explorePage.toToLabelsTab()
+    await explorePage.goToLabelsTab()
     const labelsUrlArray = page.url().split('/')
     expect(labelsUrlArray[labelsUrlArray.length - 1].startsWith('labels')).toEqual(true)
 
@@ -119,7 +119,7 @@ test.describe('explore services breakdown page', () => {
   });
 
   test(`should update label ${levelName} sort order`, async ({page}) => {
-    await explorePage.toToLabelsTab()
+    await explorePage.goToLabelsTab()
     await page.getByLabel(`Select ${levelName}`).click();
 
     // Assert loading is done and panels are showing
@@ -201,7 +201,7 @@ test.describe('explore services breakdown page', () => {
   })
 
   test(`should search labels for ${levelName}`, async({page}) => {
-    await explorePage.toToLabelsTab()
+    await explorePage.goToLabelsTab()
     await page.getByLabel(`Select ${levelName}`).click();
     await page.getByPlaceholder('Search for value').click()
     const panels = page.getByTestId(/data-testid Panel header/)
@@ -633,5 +633,22 @@ test.describe('explore services breakdown page', () => {
     // Get the last request and assert it returned a 200
     const key = Object.keys(responses[responses.length - 1])
     expect(responses[responses.length - 1][key[0]].results[key[0]].status).toBe(200)
+  })
+
+  test('should see empty fields UI', async({page}) => {
+    await page.goto('/a/grafana-lokiexplore-app/explore/service/nginx/fields?var-ds=gdev-loki&from=now-5m&to=now&patterns=%5B%5D&var-fields=&var-levels=&var-patterns=&var-lineFilter=&var-filters=service_name%7C%3D%7Cnginx&urlColumns=%5B%5D&visualizationType=%22logs%22&displayedFields=%5B%5D&var-fieldBy=$__all')
+    await expect(page.getByText('We did not find any fields for the given timerange.')).toHaveCount(1)
+    await expect(explorePage.getAllPanelsLocator()).toHaveCount(0)
+  })
+  test('should see clear fields UI', async({page}) => {
+    await page.goto('/a/grafana-lokiexplore-app/explore/service/nginx-json/fields?var-ds=gdev-loki&from=now-5m&to=now&patterns=%5B%5D&var-fields=bytes|=|""&var-levels=&var-patterns=&var-lineFilter=&var-filters=service_name%7C%3D%7Cnginx-json&urlColumns=%5B%5D&visualizationType=%22logs%22&displayedFields=%5B%5D&var-fieldBy=$__all')
+    await expect(page.getByText('No labels match these filters.')).toHaveCount(1)
+    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label bytes')).toHaveCount(1)
+    await expect(explorePage.getAllPanelsLocator()).toHaveCount(0)
+    await page.getByText('Clear filters').click()
+    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label bytes')).toHaveCount(0)
+    await expect(explorePage.getAllPanelsLocator().first()).toHaveCount(1)
+    await expect(explorePage.getAllPanelsLocator().first()).toBeVisible()
+    await expect(explorePage.getAllPanelsLocator().first()).toBeInViewport()
   })
 });
