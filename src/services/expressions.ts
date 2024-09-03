@@ -3,10 +3,10 @@ import {
   getLabelsVariable,
   LEVEL_VARIABLE_VALUE,
   VAR_FIELDS_EXPR,
-  VAR_JSON_FORMAT_EXPR,
+  JSON_FORMAT_EXPR,
   VAR_LINE_FILTER_EXPR,
-  VAR_LOGS_FORMAT_EXPR,
-  VAR_MIXED_FORMAT_EXPR,
+  LOGS_FORMAT_EXPR,
+  MIXED_FORMAT_EXPR,
   VAR_PATTERNS_EXPR,
 } from './variables';
 import { isDefined } from './scenes';
@@ -45,13 +45,13 @@ export function getTimeSeriesExpr(sceneRef: SceneObject, streamSelectorName: str
   // if we have fields, we also need to add parsers
   if (fieldFilters.length) {
     if (parser === 'mixed') {
-      return `sum(count_over_time({${streamSelectors}} ${metadataExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_MIXED_FORMAT_EXPR} ${VAR_FIELDS_EXPR} [$__auto])) by (${streamSelectorName})`;
+      return `sum(count_over_time({${streamSelectors}} ${metadataExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} ${MIXED_FORMAT_EXPR} ${VAR_FIELDS_EXPR} [$__auto])) by (${streamSelectorName})`;
     }
     if (parser === 'json') {
-      return `sum(count_over_time({${streamSelectors}} ${metadataExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_JSON_FORMAT_EXPR} ${VAR_FIELDS_EXPR} [$__auto])) by (${streamSelectorName})`;
+      return `sum(count_over_time({${streamSelectors}} ${metadataExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} ${JSON_FORMAT_EXPR} ${VAR_FIELDS_EXPR} [$__auto])) by (${streamSelectorName})`;
     }
     if (parser === 'logfmt') {
-      return `sum(count_over_time({${streamSelectors}} ${metadataExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_FIELDS_EXPR} [$__auto])) by (${streamSelectorName})`;
+      return `sum(count_over_time({${streamSelectors}} ${metadataExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} ${LOGS_FORMAT_EXPR} ${VAR_FIELDS_EXPR} [$__auto])) by (${streamSelectorName})`;
     }
   }
   return `sum(count_over_time({${streamSelectors}} ${metadataExpressionToAdd} ${VAR_LINE_FILTER_EXPR} ${VAR_PATTERNS_EXPR} [$__auto])) by (${streamSelectorName})`;

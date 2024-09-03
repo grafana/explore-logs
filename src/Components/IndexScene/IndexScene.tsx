@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { AdHocVariableFilter, SelectableValue, VariableHide } from '@grafana/data';
+import { AdHocVariableFilter, SelectableValue } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   CustomVariable,
@@ -26,11 +26,13 @@ import {
   getLevelsVariable,
   getPatternsVariable,
   getUrlParamNameForVariable,
+  MIXED_FORMAT_EXPR,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_LABELS,
   VAR_LEVELS,
   VAR_LINE_FILTER,
+  VAR_LOGS_FORMAT,
   VAR_PATTERNS,
 } from 'services/variables';
 
@@ -48,6 +50,8 @@ import {
   renderLogQLMetadataFilters,
   renderPatternFilters,
 } from 'services/query';
+import { VariableHide } from '@grafana/schema';
+import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 
 export interface AppliedPattern {
   pattern: string;
@@ -236,6 +240,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     const dsValue = `${newState.value}`;
     newState.value && addLastUsedDataSourceToStorage(dsValue);
   });
+
   return {
     variablesScene: new SceneVariableSet({
       variables: [
@@ -250,6 +255,15 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
           hide: VariableHide.hideVariable,
         }),
         new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable }),
+
+        // This variable is a hack to get logs context working, this variable should never be used or updated
+        new CustomConstantVariable({
+          name: VAR_LOGS_FORMAT,
+          value: MIXED_FORMAT_EXPR,
+          skipUrlSync: true,
+          hide: VariableHide.hideVariable,
+          options: [{ value: MIXED_FORMAT_EXPR, label: MIXED_FORMAT_EXPR }],
+        }),
       ],
     }),
     unsub,
