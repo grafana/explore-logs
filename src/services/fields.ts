@@ -146,9 +146,6 @@ export function getFilterBreakdownValueScene(
 }
 
 export function selectFrameTransformation(frame: DataFrame) {
-  if (!frame) {
-    console.warn('missing frame?');
-  }
   return (source: Observable<DataFrame[]>) => {
     return source.pipe(
       map(() => {
