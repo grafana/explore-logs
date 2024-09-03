@@ -25,6 +25,7 @@ import {
   getLabelGroupByVariable,
   getLabelsVariable,
   getLogsStreamSelector,
+  getValueFromFieldsFilter,
   LEVEL_VARIABLE_VALUE,
   SERVICE_NAME,
   VAR_LABEL_GROUP_BY,
@@ -46,7 +47,6 @@ import { LabelsAggregatedBreakdownScene } from './LabelsAggregatedBreakdownScene
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { buildDataQuery } from '../../../services/query';
 import { extractParserFieldFromParserArray } from '../../../services/fields';
-import { FieldValue } from './AddToFiltersButton';
 import { EmptyLayoutScene } from './EmptyLayoutScene';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
@@ -359,8 +359,7 @@ export function buildLabelsQuery(sceneRef: SceneObject, optionValue: string, opt
   const fields = getFieldsVariable(sceneRef);
 
   const parsers = fields.state.filters.map((filter) => {
-    const fieldObject: FieldValue = JSON.parse(filter.value);
-    return fieldObject.parser;
+    return getValueFromFieldsFilter(filter).parser;
   });
 
   const parser = extractParserFieldFromParserArray(parsers);

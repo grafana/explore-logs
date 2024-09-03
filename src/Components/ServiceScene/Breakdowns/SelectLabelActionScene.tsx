@@ -11,16 +11,16 @@ import { navigateToValueBreakdown } from '../../../services/navigate';
 import { ValueSlugs } from '../../../services/routing';
 import { Button } from '@grafana/ui';
 import React from 'react';
-import { addToFilters, FieldValue, VariableFilterType } from './AddToFiltersButton';
+import { addToFilters, VariableFilterType } from './AddToFiltersButton';
 import { FilterButton } from '../../FilterButton';
 import {
   EMPTY_VARIABLE_VALUE,
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
+  getValueFromAdHocVariableFilter,
   LEVEL_VARIABLE_VALUE,
   SERVICE_NAME,
-  VAR_FIELDS,
 } from '../../../services/variables';
 import { AdHocVariableFilter, Field, Labels, LoadingState } from '@grafana/data';
 import { FilterOp } from '../../../services/filters';
@@ -43,11 +43,8 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
     const variable = model.getVariable();
     const variableName = variable.useState().name as VariableFilterType;
     const existingFilter = model.getExistingFilter(variable);
-    let value = existingFilter?.value;
-    if (variableName === VAR_FIELDS && existingFilter?.value) {
-      const variableField: FieldValue = JSON.parse(existingFilter.value);
-      value = variableField.value;
-    }
+    const fieldValue = getValueFromAdHocVariableFilter(variable, existingFilter);
+    const value = fieldValue?.value;
 
     return (
       <>
@@ -85,11 +82,8 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
   private getExistingFilter(variable?: AdHocFiltersVariable): AdHocVariableFilter | undefined {
     if (this.state.labelName !== SERVICE_NAME) {
       return variable?.state.filters.find((filter) => {
-        if (variable.state.name === VAR_FIELDS) {
-          const variableField: FieldValue = JSON.parse(filter.value);
-          return filter.key === this.state.labelName && variableField.value === EMPTY_VARIABLE_VALUE;
-        }
-        return filter.key === this.state.labelName && filter.value === EMPTY_VARIABLE_VALUE;
+        const value = getValueFromAdHocVariableFilter(variable, filter);
+        return filter.key === this.state.labelName && value.value === EMPTY_VARIABLE_VALUE;
       });
     }
 

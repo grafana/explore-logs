@@ -8,7 +8,7 @@ import {
 } from '@grafana/scenes';
 import { CustomConstantVariable } from './CustomConstantVariable';
 import { AdHocVariableFilter } from '@grafana/data';
-import { AdHocFieldValue } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
+import { AdHocFieldValue, FieldValue } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
 
 export const VAR_LABELS = 'filters';
 export const VAR_LABELS_EXPR = '${filters}';
@@ -151,21 +151,25 @@ export function getUrlParamNameForVariable(variableName: string) {
   return `var-${variableName}`;
 }
 
+export function getValueFromFieldsFilter(filter: AdHocVariableFilter, variableName: string = VAR_FIELDS): FieldValue {
+  try {
+    return JSON.parse(filter.value);
+  } catch (e) {
+    console.error(`Failed to parse ${variableName}`, e);
+    throw e;
+  }
+}
+
 export function getValueFromAdHocVariableFilter(
   variable: AdHocFiltersVariable,
-  filter: AdHocVariableFilter
+  filter?: AdHocVariableFilter
 ): AdHocFieldValue {
-  if (variable.state.name === VAR_FIELDS) {
-    try {
-      return JSON.parse(filter.value);
-    } catch (e) {
-      console.error(`Failed to parse ${variable.state.name}`, e);
-      throw e;
-    }
+  if (variable.state.name === VAR_FIELDS && filter) {
+    return getValueFromFieldsFilter(filter);
   }
 
   return {
-    value: filter.value,
+    value: filter?.value,
   };
 }
 

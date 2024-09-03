@@ -49,7 +49,7 @@ export interface FieldValue {
 }
 
 export interface AdHocFieldValue {
-  value: string;
+  value?: string;
   parser?: ParserType;
 }
 

@@ -104,6 +104,7 @@ describe('addToFilters and addAdHocFilter', () => {
       state: state,
     });
     adHocVariable = new AdHocFiltersVariable({
+      name: VAR_FIELDS,
       filters: [
         {
           key: 'existing',

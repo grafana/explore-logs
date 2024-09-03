@@ -3,10 +3,9 @@ import { DataSourceRef } from '@grafana/schema';
 import { AppliedPattern } from 'Components/IndexScene/IndexScene';
 import { PLUGIN_ID } from './routing';
 import { SceneDataQueryResourceRequest } from './datasource';
-import { EMPTY_VARIABLE_VALUE, VAR_DATASOURCE_EXPR } from './variables';
+import { EMPTY_VARIABLE_VALUE, getValueFromFieldsFilter, VAR_DATASOURCE_EXPR } from './variables';
 import { FilterOp } from './filters';
 import { groupBy, trim } from 'lodash';
-import { FieldValue } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
 
 export type LokiQuery = {
   refId: string;
@@ -87,10 +86,10 @@ export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
 
   let positiveFilters = '';
   for (const key in positiveGroups) {
-    positiveFilters += ' | ' + positiveGroups[key].map((filter) => `${renderFilter(filter)}`).join(' or ');
+    positiveFilters += ' | ' + positiveGroups[key].map((filter) => `${fieldFilterToQueryString(filter)}`).join(' or ');
   }
 
-  const negativeFilters = negative.map((filter) => `| ${renderFilter(filter)}`).join(' ');
+  const negativeFilters = negative.map((filter) => `| ${fieldFilterToQueryString(filter)}`).join(' ');
 
   return `${positiveFilters} ${negativeFilters}`.trim();
 }
@@ -119,8 +118,8 @@ function renderMetadata(filter: AdHocVariableFilter) {
   return `${filter.key}${filter.operator}\`${filter.value}\``;
 }
 
-function renderFilter(filter: AdHocVariableFilter) {
-  const fieldObject: FieldValue = JSON.parse(filter.value);
+function fieldFilterToQueryString(filter: AdHocVariableFilter) {
+  const fieldObject = getValueFromFieldsFilter(filter);
   const value = fieldObject.value;
   // If the filter value is an empty string, we don't want to wrap it in backticks!
   if (value === EMPTY_VARIABLE_VALUE) {
