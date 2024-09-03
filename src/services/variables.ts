@@ -8,6 +8,7 @@ import {
 } from '@grafana/scenes';
 import { CustomConstantVariable } from './CustomConstantVariable';
 import { AdHocVariableFilter } from '@grafana/data';
+import { AdHocFieldValue } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
 
 export const VAR_LABELS = 'filters';
 export const VAR_LABELS_EXPR = '${filters}';
@@ -148,6 +149,24 @@ export function getServiceSelectionStringVariable(sceneRef: SceneObject) {
 
 export function getUrlParamNameForVariable(variableName: string) {
   return `var-${variableName}`;
+}
+
+export function getValueFromAdHocVariableFilter(
+  variable: AdHocFiltersVariable,
+  filter: AdHocVariableFilter
+): AdHocFieldValue {
+  if (variable.state.name === VAR_FIELDS) {
+    try {
+      return JSON.parse(filter.value);
+    } catch (e) {
+      console.error(`Failed to parse ${variable.state.name}`, e);
+      throw e;
+    }
+  }
+
+  return {
+    value: filter.value,
+  };
 }
 
 export function getServiceName(scene: SceneObject) {

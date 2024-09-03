@@ -2,8 +2,8 @@ import { DataFrame, Field, ReducerID } from '@grafana/data';
 import { DrawStyle, StackingMode } from '@grafana/ui';
 import { PanelBuilders, SceneCSSGridItem, SceneDataTransformer, SceneObject } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
-import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
-import { VAR_FIELDS, VAR_LABELS } from './variables';
+import { AddToFiltersButton, VariableFilterType } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
+import { VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from './variables';
 import { setLevelColorOverrides } from './panel';
 import { map, Observable } from 'rxjs';
 import { SortBy, SortByScene } from '../Components/ServiceScene/Breakdowns/SortByScene';
@@ -182,5 +182,23 @@ export function getLabelTypeFromFrame(labelKey: string, frame: DataFrame, index 
       return LabelType.Parsed;
     default:
       return null;
+  }
+}
+
+export function getFilterTypeFromLabelType(type: LabelType | null, key: string, value: string): VariableFilterType {
+  switch (type) {
+    case LabelType.Indexed: {
+      return VAR_LABELS;
+    }
+    case LabelType.Parsed: {
+      return VAR_FIELDS;
+    }
+    case LabelType.StructuredMetadata: {
+      return VAR_LEVELS;
+    }
+    default: {
+      console.error(`Invalid label for ${key}`, value);
+      throw new Error(`Invalid label type for ${key}`);
+    }
   }
 }

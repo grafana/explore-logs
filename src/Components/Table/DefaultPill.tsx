@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { css, cx } from '@emotion/css';
 
-import { Field, FieldType, GrafanaTheme2 } from '@grafana/data';
+import { DataFrame, Field, FieldType, GrafanaTheme2 } from '@grafana/data';
 import { useTheme2 } from '@grafana/ui';
 
 import { useTableCellContext } from 'Components/Table/Context/TableCellContext';
@@ -15,6 +15,7 @@ interface DefaultPillProps {
   value: string | unknown | ReactElement;
   rowIndex: number;
   field: Field;
+  frame: DataFrame;
 }
 
 const getStyles = (theme: GrafanaTheme2, levelColor?: string) => ({
