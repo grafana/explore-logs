@@ -90,18 +90,20 @@ export function limitMaxNumberOfSeriesForPanel(child: SceneCSSGridItem) {
   const dataTransformer = child.state.body?.state.$data;
   if (dataTransformer instanceof SceneDataTransformer) {
     panel?.setState({
-      titleItems: new TimeSeriesLimitSeriesTitleItemScene({
-        showAllSeries: false,
-        toggleShowAllSeries: (timeSeriesLimiter) => {
-          dataTransformer.setState({
-            transformations: [],
-          });
-          timeSeriesLimiter.setState({
-            showAllSeries: true,
-          });
-          dataTransformer.reprocessTransformations();
-        },
-      }),
+      titleItems: [
+        new TimeSeriesLimitSeriesTitleItemScene({
+          showAllSeries: false,
+          toggleShowAllSeries: (timeSeriesLimiter) => {
+            dataTransformer.setState({
+              transformations: [],
+            });
+            timeSeriesLimiter.setState({
+              showAllSeries: true,
+            });
+            dataTransformer.reprocessTransformations();
+          },
+        }),
+      ],
     });
   }
 }
