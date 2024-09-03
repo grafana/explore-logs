@@ -37,15 +37,13 @@ export type DetectedFieldsResponse = {
 };
 
 const getReducerId = memoize((sortBy: SortBy) => {
-  let reducerID: ReducerID | undefined = undefined;
   if (sortBy) {
-    // Is there a way to avoid the type assertion?
     const values: string[] = Object.values(ReducerID);
     if (values.includes(sortBy)) {
-      reducerID = sortBy as ReducerID;
+      return sortBy;
     }
   }
-  return reducerID;
+  return undefined;
 });
 
 export type ExtractedFieldsType = 'logfmt' | 'json' | 'mixed' | '';
