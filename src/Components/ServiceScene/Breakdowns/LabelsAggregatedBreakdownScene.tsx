@@ -142,7 +142,7 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
     const queryRunner = getQueryRunner([query]);
     return new SceneDataTransformer({
       $data: queryRunner,
-      transformations: [() => limitFramesTransformation(MAX_NUMBER_OF_TIME_SERIES, queryRunner)],
+      transformations: [() => limitFramesTransformation(MAX_NUMBER_OF_TIME_SERIES)],
     });
   }
 

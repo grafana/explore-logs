@@ -4,7 +4,6 @@ import {
   SceneComponentProps,
   SceneCSSGridItem,
   SceneCSSGridLayout,
-  SceneDataProvider,
   SceneDataTransformer,
   sceneGraph,
   SceneObjectBase,
@@ -55,14 +54,14 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
       //@todo cardinality looks wrong in API response
       const cardinalityMap = this.calculateCardinalityMap(newState);
 
-      // Iterate through all of the layouts
+      // Iterate through all the layouts
       this.state.body?.state.layouts.forEach((layoutObj) => {
         const layout = layoutObj as SceneCSSGridLayout;
         // populate set of new list of fields
         const newFieldsSet = new Set<string>(newNamesField?.values);
         const updatedChildren = layout.state.children as SceneCSSGridItem[];
 
-        // Iterate through all of the existing panels
+        // Iterate through all the existing panels
         for (let i = 0; i < updatedChildren.length; i++) {
           const gridItem = layout.state.children[i] as SceneCSSGridItem;
           const panel = gridItem.state.body as VizPanel;
@@ -73,7 +72,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
           } else {
             // Otherwise if the panel doesn't exist in the response, delete it from the layout
             updatedChildren.splice(i, 1);
-            // And make sure to update the index or we'll skip the next one
+            // And make sure to update the index, or we'll skip the next one
             i--;
           }
         }
@@ -141,7 +140,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     children.sort(this.sortChildren(cardinalityMap));
     const childrenClones = children.map((child) => child.clone());
 
-    // We must subscribe to the data providers for all children after the clone or we'll see bugs in the row layout
+    // We must subscribe to the data providers for all children after the clone, or we'll see bugs in the row layout
     [...children, ...childrenClones].map((child) => {
       limitMaxNumberOfSeriesForPanel(child);
       this.subscribeToPanel(child);
@@ -206,7 +205,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
 
       const dataTransformer = new SceneDataTransformer({
         $data: queryRunner,
-        transformations: [() => limitFramesTransformation(MAX_NUMBER_OF_TIME_SERIES, queryRunner)],
+        transformations: [() => limitFramesTransformation(MAX_NUMBER_OF_TIME_SERIES)],
       });
       let body = PanelBuilders.timeseries().setTitle(optionValue).setData(dataTransformer);
 
@@ -264,7 +263,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
   };
 }
 
-export function limitFramesTransformation(limit: number, queryRunner: SceneDataProvider) {
+export function limitFramesTransformation(limit: number) {
   return (source: Observable<DataFrame[]>) => {
     return source.pipe(
       map((frames) => {
