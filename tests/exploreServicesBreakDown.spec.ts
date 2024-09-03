@@ -608,7 +608,6 @@ test.describe('explore services breakdown page', () => {
       legendFormats: [`{{${levelName}}}`],
       responses: responses,
     })
-    await explorePage.setLimoViewportSize()
     const logRow = page.getByTitle('See log details').nth(1);
     await expect(logRow).toHaveCount(1)
     await expect(page.getByText(/Rendering \d+ rows.../)).toHaveCount(0)
