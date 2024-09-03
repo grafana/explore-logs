@@ -1,9 +1,15 @@
 import { DataFrame, Field, ReducerID } from '@grafana/data';
 import { DrawStyle, StackingMode } from '@grafana/ui';
-import { PanelBuilders, SceneCSSGridItem, SceneDataTransformer, SceneObject } from '@grafana/scenes';
+import {
+  AdHocFiltersVariable,
+  PanelBuilders,
+  SceneCSSGridItem,
+  SceneDataTransformer,
+  SceneObject,
+} from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
 import { AddToFiltersButton, VariableFilterType } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
-import { VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from './variables';
+import { getValueFromFieldsFilter, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from './variables';
 import { setLevelColorOverrides } from './panel';
 import { map, Observable } from 'rxjs';
 import { SortBy, SortByScene } from '../Components/ServiceScene/Breakdowns/SortByScene';
@@ -70,7 +76,12 @@ export function extractParserFieldFromParserArray(parsers?: string[]) {
     return extractParserFromDetectedFieldParserFieldValue(parsersArray[0]);
   }
 
-  // If there was more then one value, return mixed parser
+  // If the set size is zero, we only had structured metadata detected as a parser
+  if (parsersSet.size === 0) {
+    return '';
+  }
+
+  // Otherwise if there was more then one value, return mixed parser
   return 'mixed';
 }
 
@@ -195,4 +206,12 @@ export function getFilterTypeFromLabelType(type: LabelType | null, key: string, 
       throw new Error(`Invalid label type for ${key}`);
     }
   }
+}
+
+export function getParserFromFieldsFilters(fields: AdHocFiltersVariable): ExtractedFieldsType {
+  const parsers = fields.state.filters.map((filter) => {
+    return getValueFromFieldsFilter(filter).parser;
+  });
+
+  return extractParserFieldFromParserArray(parsers);
 }
