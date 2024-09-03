@@ -15,7 +15,7 @@ describe('buildLabelsQuery', () => {
       expr: `sum(count_over_time({\${filters} ,cluster != ""}  \${levels} \${patterns} \${lineFilter} [$__auto])) by (${VAR_LABEL_GROUP_BY_EXPR})`,
     });
   });
-  test('should build no-parser query with structured medata filters', () => {
+  test('should build no-parser query with structured metadata filters', () => {
     const filterVariable = new AdHocFiltersVariable({
       name: VAR_FIELDS,
       filters: [
@@ -38,7 +38,7 @@ describe('buildLabelsQuery', () => {
       expr: `sum(count_over_time({\${filters} ,cluster != ""}  \${levels} \${patterns} \${lineFilter} [$__auto])) by (${VAR_LABEL_GROUP_BY_EXPR})`,
     });
   });
-  test('should build logfmt-parser query with structured medata filters', () => {
+  test('should build logfmt-parser query with structured metadata filters', () => {
     const filterVariable = new AdHocFiltersVariable({
       name: VAR_FIELDS,
       filters: [
@@ -61,7 +61,7 @@ describe('buildLabelsQuery', () => {
       expr: `sum(count_over_time({\${filters} ,cluster != ""}  \${levels} \${patterns} \${lineFilter} | logfmt  \${fields} [$__auto])) by (${VAR_LABEL_GROUP_BY_EXPR})`,
     });
   });
-  test('should build json-parser query with structured medata filters', () => {
+  test('should build json-parser query with structured metadata filters', () => {
     const filterVariable = new AdHocFiltersVariable({
       name: VAR_FIELDS,
       filters: [
@@ -84,7 +84,7 @@ describe('buildLabelsQuery', () => {
       expr: `sum(count_over_time({\${filters} ,cluster != ""}  \${levels} \${patterns} \${lineFilter} | json | drop __error__, __error_details__  \${fields} [$__auto])) by (${VAR_LABEL_GROUP_BY_EXPR})`,
     });
   });
-  test('should build mixed-parser query with structured medata filters', () => {
+  test('should build mixed-parser query with structured metadata filters', () => {
     const filterVariable = new AdHocFiltersVariable({
       name: VAR_FIELDS,
       filters: [
