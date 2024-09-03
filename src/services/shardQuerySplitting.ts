@@ -146,7 +146,7 @@ export function splitQueriesByStreamShard(
       },
       error: (error: unknown) => {
         console.error(error);
-        subscriber.next(mergedResponse);
+        subscriber.error(mergedResponse);
       },
     });
   };
