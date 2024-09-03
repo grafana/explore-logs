@@ -287,6 +287,8 @@ test.describe('explore services breakdown page', () => {
         // Field subqueries have a refId of the field name
         if(refId !== 'logsPanelQuery' && refId !== 'A'){
           requestCount++
+          // simulate the query taking some time
+          await page.waitForTimeout(100);
           return await route.fulfill({json: mockResponse})
         }
       }
@@ -312,6 +314,9 @@ test.describe('explore services breakdown page', () => {
 
     // Panel on the top should not
     await expect(page.getByTestId(/data-testid Panel header/).first()).not.toBeInViewport()
+
+    // Wait for a bit for the requests to be made
+    await page.waitForTimeout(250);
 
     // if this flakes we could just assert that it's greater then 3
     expect(requestCount).toEqual(14)
@@ -412,6 +417,9 @@ test.describe('explore services breakdown page', () => {
       .getByRole('table')
       .getByRole('row').nth(2)
       .getByTestId(testIds.exploreServiceDetails.buttonFilterInclude);
+
+    await expect(firstIncludeButton).toHaveCount(1)
+    //Flake (M)
     await firstIncludeButton.click();
     // Should not open logs panel and should stay in patterns tab as we allow multiple  patterns
     await expect(page.getByTestId(testIds.exploreServiceDetails.searchLogs)).not.toBeVisible();
@@ -455,7 +463,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId(testIds.patterns.buttonIncludedPattern)).not.toBeVisible();
     await expect(page.getByTestId(testIds.patterns.buttonExcludedPattern)).toBeVisible();
 
-
+    await expect(firstIncludeButton).toHaveCount(1)
     await firstIncludeButton.click();
     // Include and exclude patterns should be visible
     await expect(page.getByTestId(testIds.patterns.buttonIncludedPattern)).toBeVisible();
