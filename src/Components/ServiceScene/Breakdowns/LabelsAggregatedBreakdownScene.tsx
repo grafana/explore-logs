@@ -44,13 +44,12 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
 
     this._subs.add(
       fields.subscribeToState((newState, prevState) => {
-        //@todo only when changes? Loading? etc
-        this.updateQueriesOnFieldsChange();
+        this.updateQueriesOnFieldsVariableChange();
       })
     );
   }
 
-  private updateQueriesOnFieldsChange = () => {
+  private updateQueriesOnFieldsVariableChange = () => {
     this.state.body?.state.layouts.forEach((layoutObj) => {
       const layout = layoutObj as SceneCSSGridLayout;
       // Iterate through the existing panels

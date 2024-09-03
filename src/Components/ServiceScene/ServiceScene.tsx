@@ -269,7 +269,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
 
     // If we don't have a detected fields count, or we are activating the fields scene, run the detected fields query
-    // note that we have to run the detected_fields after navigating to the value breakdown, this means we might lose the parser if the new call doesn't have our detected_field
     if (slug === PageSlugs.fields || parentSlug === ValueSlugs.field || this.state.fieldsCount === undefined) {
       this.state.$detectedFieldsData?.runQueries();
     }
@@ -328,7 +327,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       if (newState.data?.state === LoadingState.Done) {
         const detectedFieldsResponse = newState.data;
         const detectedFieldsFields = detectedFieldsResponse.series[0];
-        // updateParserFromDataFrame(detectedFieldsFields, this);
         if (detectedFieldsFields !== undefined && detectedFieldsFields.length !== this.state.fieldsCount) {
           this.setState({
             fieldsCount: detectedFieldsFields.length,
