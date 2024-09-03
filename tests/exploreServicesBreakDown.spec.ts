@@ -516,7 +516,7 @@ test.describe('explore services breakdown page', () => {
     // assert that the logs panel is done rendering
     await expect(page.getByText(/Rendering \d+ rows.../)).toHaveCount(0)
 
-    // open logs panel
+    // open log details
     await page.getByTitle('See log details').nth(1).click();
 
     await explorePage.scrollToBottom()
@@ -599,5 +599,40 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId('data-testid Panel header bytes')).toHaveCount(0)
     // Assert that we actually had some queries
     expect(numberOfQueries).toBeGreaterThan(0)
+  })
+
+  test('should open logs context', async ({page}) => {
+    let responses = []
+    explorePage.blockAllQueriesExcept({
+      refIds: ['logsPanelQuery', /log-row-context-query.+/],
+      legendFormats: [`{{${levelName}}}`],
+      responses: responses,
+    })
+    await explorePage.setLimoViewportSize()
+    const logRow = page.getByTitle('See log details').nth(1);
+    await expect(logRow).toHaveCount(1)
+    await expect(page.getByText(/Rendering \d+ rows.../)).toHaveCount(0)
+
+    await page.getByTitle('See log details').nth(1).hover();
+    const showContextMenu = page.getByLabel('Show context');
+    await showContextMenu.click()
+    const dialog = page.locator('[role="dialog"]')
+    await expect(dialog.getByText('Log context')).toHaveCount(1)
+    await expect(dialog.getByText('Log context')).toBeVisible()
+
+    await expect(dialog.getByTestId('entry-row')).toHaveCount(1)
+    await expect(dialog.getByTestId('entry-row')).toBeVisible()
+
+    // Select the second so we don't pick the only row
+    const secondClosestRow = dialog.getByTitle('See log details').nth(2)
+    await expect(secondClosestRow).toHaveCount(1)
+    await expect(secondClosestRow).toBeVisible()
+    await expect(dialog.getByLabel('Fields')).toHaveCount(0)
+    await secondClosestRow.click()
+    await expect(dialog.getByLabel('Fields')).toHaveCount(1)
+
+    // Get the last request and assert it returned a 200
+    const key = Object.keys(responses[responses.length - 1])
+    expect(responses[responses.length - 1][key[0]].results[key[0]].status).toBe(200)
   })
 });
