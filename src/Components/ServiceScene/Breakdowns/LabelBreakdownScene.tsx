@@ -368,7 +368,6 @@ export function buildLabelsQuery(sceneRef: SceneObject, optionValue: string, opt
     `sum(count_over_time(${getLogsStreamSelector({
       labelExpressionToAdd,
       structuredMetadataToAdd,
-      noParser: fields.state.filters.length === 0,
       parser,
     })} [$__auto])) by (${optionValue})`,
     { legendFormat: `{{${optionValue}}}`, refId: 'LABEL_BREAKDOWN_VALUES' }

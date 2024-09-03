@@ -473,7 +473,6 @@ export function buildFieldsQueryString(
   const options: LogsQueryOptions = {
     structuredMetadataToAdd,
     fieldExpressionToAdd,
-    noParser: !fieldExpressionToAdd && fieldsVariable.state.filters.length === 0,
     parser: parser,
   };
   return buildFieldsQuery(optionValue, options);
