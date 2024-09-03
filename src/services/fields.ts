@@ -70,11 +70,8 @@ export function extractParserFieldFromParserArray(parsers?: string[]) {
     return extractParserFromDetectedFieldParserFieldValue(parsersArray[0]);
   }
 
-  if (parsersSet.size > 1) {
-    return 'mixed';
-  }
-
-  return '';
+  // If there was more then one value, return mixed parser
+  return 'mixed';
 }
 
 export function extractParserFromDetectedFields(data: DataFrame): ExtractedFieldsType {
