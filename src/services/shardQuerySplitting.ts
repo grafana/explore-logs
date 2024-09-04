@@ -16,7 +16,7 @@ import { DataSourceWithBackend } from '@grafana/runtime';
  * Based in the state of the current response, if any, adjust target parameters such as `maxLines`.
  * For `maxLines`, we will update it as `maxLines - current amount of lines`.
  * At the end, we will filter the targets that don't need to be executed in the next request batch,
- * becasue, for example, the `maxLines` have been reached.
+ * because, for example, the `maxLines` have been reached.
  */
 function adjustTargetsFromResponseState(targets: LokiQuery[], response: DataQueryResponse | null): LokiQuery[] {
   if (!response) {
@@ -48,7 +48,7 @@ export function splitQueriesByStreamShard(
 ) {
   let shouldStop = false;
   let mergedResponse: DataQueryResponse = { data: [], state: LoadingState.Streaming, key: uuidv4() };
-  let subquerySubsciption: Subscription | null = null;
+  let subquerySubscription: Subscription | null = null;
   let retriesMap = new Map<number, number>();
 
   const runNextRequest = (subscriber: Subscriber<DataQueryResponse>, cycle?: number, shardRequests?: number[][]) => {
@@ -112,7 +112,7 @@ export function splitQueriesByStreamShard(
       // @ts-expect-error
       shardRequests === undefined ? datasource.query.bind(datasource) : datasource.runQuery.bind(datasource);
 
-    subquerySubsciption = dsQueryMethod(subRequest).subscribe({
+    subquerySubscription = dsQueryMethod(subRequest).subscribe({
       next: (partialResponse: DataQueryResponse) => {
         if ((partialResponse.errors ?? []).length > 0 || partialResponse.error != null) {
           if (retry(partialResponse)) {
@@ -137,7 +137,7 @@ export function splitQueriesByStreamShard(
   };
 
   const runNonSplitRequest = (subscriber: Subscriber<DataQueryResponse>) => {
-    subquerySubsciption = datasource.query(request).subscribe({
+    subquerySubscription = datasource.query(request).subscribe({
       next: (partialResponse: DataQueryResponse) => {
         mergedResponse = partialResponse;
       },
@@ -176,8 +176,8 @@ export function splitQueriesByStreamShard(
       });
     return () => {
       shouldStop = true;
-      if (subquerySubsciption != null) {
-        subquerySubsciption.unsubscribe();
+      if (subquerySubscription != null) {
+        subquerySubscription.unsubscribe();
       }
     };
   });

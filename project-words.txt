@@ -482,6 +482,6 @@ frametype
 Nanos
 nanos
 subquery
-Subsciption
+Subscription
 uuidv
-wihtout
+without
