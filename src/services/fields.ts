@@ -14,6 +14,7 @@ import {
   getValueFromFieldsFilter,
   LOG_STREAM_SELECTOR_EXPR,
   LogsQueryOptions,
+  ParserType,
   VAR_FIELDS,
   VAR_LABELS,
   VAR_LEVELS,
@@ -54,27 +55,24 @@ const getReducerId = (sortBy: SortBy) => {
   return undefined;
 };
 
-// Empty string is structured metdata
-export type ExtractedFieldsType = 'logfmt' | 'json' | 'mixed' | '';
-
 /**
  * Extracts the ExtractedFieldsType from the string returned on the detected_fields api parser field value
  * @param parserString
  */
-export function extractParserFromString(parserString: string): ExtractedFieldsType {
+export function extractParserFromString(parserString: string): ParserType {
   switch (parserString) {
     case 'json':
       return 'json';
     case 'logfmt':
       return 'logfmt';
     case '': // Structured metadata is empty
-      return '';
+      return 'structuredMetadata';
     default: // if we get a parser with multiple
       return 'mixed';
   }
 }
 
-export function extractParserFromArray(parsers?: string[]) {
+export function extractParserFromArray(parsers?: string[]): ParserType {
   const parsersSet = new Set(parsers?.map((v) => v.toString()) ?? []);
 
   // Structured metadata doesn't change the parser we use, so remove it
@@ -89,21 +87,21 @@ export function extractParserFromArray(parsers?: string[]) {
 
   // If the set size is zero, we only had structured metadata detected as a parser
   if (parsersSet.size === 0) {
-    return '';
+    return 'structuredMetadata';
   }
 
   // Otherwise if there was more then one value, return mixed parser
   return 'mixed';
 }
 
-export function extractParserFromDetectedFields(data: DataFrame): ExtractedFieldsType {
+export function extractParserFromDetectedFields(data: DataFrame): ParserType {
   const parserField = data.fields.find((f) => f.name === 'parser');
   const values: string[] | undefined = parserField?.values;
 
   return extractParserFromArray(values);
 }
 
-export function getParserForField(fieldName: string, sceneRef: SceneObject): ExtractedFieldsType | undefined {
+export function getParserForField(fieldName: string, sceneRef: SceneObject): ParserType | undefined {
   const detectedFieldsFrame = getDetectedFieldsFrame(sceneRef);
   const parserField: Field<string> | undefined = detectedFieldsFrame?.fields[2];
   const namesField: Field<string> | undefined = detectedFieldsFrame?.fields[0];
@@ -217,7 +215,7 @@ export function getFilterTypeFromLabelType(type: LabelType | null, key: string, 
   }
 }
 
-export function getParserFromFieldsFilters(fields: AdHocFiltersVariable): ExtractedFieldsType {
+export function getParserFromFieldsFilters(fields: AdHocFiltersVariable): ParserType {
   const parsers = fields.state.filters.map((filter) => {
     return getValueFromFieldsFilter(filter).parser;
   });
@@ -279,7 +277,7 @@ export function buildFieldsQueryString(
   let fieldExpressionToAdd = '';
   let structuredMetadataToAdd = '';
 
-  if (parserForThisField === '') {
+  if (parserForThisField === 'structuredMetadata') {
     structuredMetadataToAdd = `| ${optionValue}!=""`;
     // Structured metadata
   } else {

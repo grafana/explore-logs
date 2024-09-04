@@ -41,7 +41,7 @@ export const LEVEL_VARIABLE_VALUE = 'detected_level';
 export const SERVICE_NAME = 'service_name';
 export const EMPTY_VARIABLE_VALUE = '""';
 
-export type ParserType = 'logfmt' | 'json' | 'mixed' | '';
+export type ParserType = 'logfmt' | 'json' | 'mixed' | 'structuredMetadata';
 
 export type LogsQueryOptions = {
   labelExpressionToAdd?: string;
@@ -59,7 +59,7 @@ export function getLogsStreamSelector(options: LogsQueryOptions) {
   } = options;
 
   switch (parser) {
-    case '':
+    case 'structuredMetadata':
       return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTER_EXPR}`;
     case 'json':
       return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTER_EXPR} ${JSON_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
