@@ -12,6 +12,7 @@
     "lint:fix": "npm run lint -- --fix",
     "e2e": "playwright test -x --trace on",
     "e2e:10x": "playwright test -x --trace on --repeat-each=10 --workers 1",
+    "e2e:10x:fast": "playwright test --repeat-each=10 --workers 3 --retries=1",
     "e2e:flake": "yarn e2e:10x",
     "e2e:debug": "playwright test --debug -x --trace on /test",
     "e2e:codegen": "playwright install && playwright codegen",

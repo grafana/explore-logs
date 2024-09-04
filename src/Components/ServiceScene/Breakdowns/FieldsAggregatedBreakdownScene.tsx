@@ -88,6 +88,11 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
         updatedChildren.push(...this.buildChildren(options));
         updatedChildren.sort(this.sortChildren(cardinalityMap));
 
+        updatedChildren.map((child) => {
+          limitMaxNumberOfSeriesForPanel(child);
+          this.subscribeToPanel(child);
+        });
+
         layout.setState({
           children: updatedChildren,
         });

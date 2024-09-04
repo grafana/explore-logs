@@ -3,6 +3,7 @@ import {ExplorePage, PlaywrightRequest} from './fixtures/explore';
 import {testIds} from '../src/services/testIds';
 import {mockEmptyQueryApiResponse} from "./mocks/mockEmptyQueryApiResponse";
 import {LokiQuery} from "../src/services/query";
+import exp = require("node:constants");
 
 const fieldName = 'caller'
 const levelName = 'detected_level'
@@ -665,5 +666,53 @@ test.describe('explore services breakdown page', () => {
     await showAllButtonLocator.click()
 
     await expect(showAllButtonLocator).toHaveCount(0)
+  })
+
+  test('should not see maximum of series limit reached after changing filters', async ({page}) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: ['logsPanelQuery', 'content', 'version'],
+      legendFormats: [`{{${levelName}}}`],
+    })
+
+    const panelErrorLocator = page.getByTestId('data-testid Panel status error');
+    const contentPanelLocator = page.getByTestId('data-testid Panel header content');
+    const versionPanelLocator = page.getByTestId('data-testid Panel header version')
+    const versionVariableLocator = page.getByTestId('AdHocFilter-version')
+    const versionIncludeButton = versionPanelLocator.getByTestId('data-testid button-filter-exclude')
+
+    // Go to the fields tab and assert errors aren't showing
+    await explorePage.goToFieldsTab()
+    await expect(panelErrorLocator).toHaveCount(0)
+    // Now assert that content is hidden (will hit 1000 series limit and throw error)
+    await expect(contentPanelLocator).toHaveCount(0)
+    await expect(versionPanelLocator).toHaveCount(1);
+
+    await versionIncludeButton.click()
+    await expect(versionVariableLocator).toHaveCount(1)
+    await expect(versionPanelLocator.locator('[aria-selected="true"]')).toHaveCount(1)
+    await expect(versionVariableLocator.getByText( '=', {exact: true})).toHaveCount(1)
+    await expect(versionVariableLocator.getByText( /^!=$/)).toHaveCount(0)
+    await expect(versionVariableLocator.getByText( /^=$/)).toHaveCount(1)
+
+    // Open the menu
+    await versionVariableLocator.locator('svg').nth(1).click()
+
+    // assert the options are showing
+    await expect(page.getByRole('option', { name: '=', exact: true })).toHaveCount(1)
+    await expect(page.getByRole('option', { name: '!=', exact: true })).toHaveCount(1)
+
+    // Click the other option and exclude version
+    await page.getByRole('option', { name: '!=', exact: true }).click()
+
+    // Check the right options are visible
+    await expect(versionVariableLocator.getByText( /^!=$/)).toHaveCount(1)
+    await expect(versionVariableLocator.getByText( /^=$/)).toHaveCount(0)
+
+    // Assert no errors are visible
+    await expect(panelErrorLocator).toHaveCount(0)
+    // Now assert that content is hidden (will hit 1000 series limit and throw error)
+    await expect(contentPanelLocator).toHaveCount(0)
+    // But version should exist
+    await expect(versionPanelLocator).toHaveCount(1);
   })
 });
