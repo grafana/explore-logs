@@ -435,7 +435,7 @@ describe('combineResponses', () => {
     });
   });
 
-  it('combines frames wihtout nanoseconds with frames with nanoseconds', () => {
+  it('combines frames without nanoseconds with frames with nanoseconds', () => {
     const { logFrameA, logFrameB } = getMockFrames();
     logFrameA.fields[0].nanos = undefined;
     logFrameB.fields[0].nanos = [111111, 222222];
