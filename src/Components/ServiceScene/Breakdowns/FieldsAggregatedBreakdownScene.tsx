@@ -15,12 +15,7 @@ import { buildDataQuery } from '../../../services/query';
 import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
 import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
 import { LayoutSwitcher } from './LayoutSwitcher';
-import {
-  buildFieldsQueryString,
-  FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS,
-  FieldsBreakdownScene,
-  isAvgField,
-} from './FieldsBreakdownScene';
+import { FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS, FieldsBreakdownScene } from './FieldsBreakdownScene';
 import {
   getDetectedFieldsFrame,
   getDetectedFieldsFrameFromQueryRunnerState,
@@ -34,6 +29,7 @@ import { areArraysEqual } from '../../../services/comparison';
 import { DataFrame, LoadingState } from '@grafana/data';
 import { limitMaxNumberOfSeriesForPanel, MAX_NUMBER_OF_TIME_SERIES } from './TimeSeriesLimitSeriesTitleItem';
 import { map, Observable } from 'rxjs';
+import { buildFieldsQueryString, isAvgField } from '../../../services/fields';
 
 export interface FieldsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;

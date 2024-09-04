@@ -224,6 +224,7 @@ test.describe('explore services breakdown page', () => {
     await expect(panels).toHaveCount(1)
   })
 
+  // Broken after latest loki update, all fields return both parsers
   test(`should exclude ${fieldName}, request should contain logfmt`, async ({ page }) => {
     let requests: PlaywrightRequest[] = [];
     explorePage.blockAllQueriesExcept({
@@ -254,6 +255,7 @@ test.describe('explore services breakdown page', () => {
       const post = req.post;
       const queries: LokiQuery[] = post.queries
       queries.forEach(query => {
+        console.log('query.expr', query.expr)
         expect(query.expr).toContain('| logfmt | caller!=""')
       })
     })

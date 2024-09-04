@@ -19,7 +19,7 @@ services:
     extra_hosts:
       - 'host.docker.internal:host-gateway'
   loki:
-    image: grafana/loki:main-d43b2de
+    image: grafana/loki:main-aa1ac99
     environment:
       LOG_CLUSTER_DEPTH: '8'
       LOG_SIM_TH: '0.3'

@@ -9,12 +9,21 @@ import {
 } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
 import { AddToFiltersButton, VariableFilterType } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
-import { getValueFromFieldsFilter, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from './variables';
+import {
+  getLogsStreamSelector,
+  getValueFromFieldsFilter,
+  LOG_STREAM_SELECTOR_EXPR,
+  LogsQueryOptions,
+  VAR_FIELDS,
+  VAR_LABELS,
+  VAR_LEVELS,
+} from './variables';
 import { setLevelColorOverrides } from './panel';
 import { map, Observable } from 'rxjs';
 import { SortBy, SortByScene } from '../Components/ServiceScene/Breakdowns/SortByScene';
 import { memoize } from 'lodash';
 import { getDetectedFieldsFrame } from '../Components/ServiceScene/ServiceScene';
+import { averageFields } from '../Components/ServiceScene/Breakdowns/FieldsBreakdownScene';
 
 export type DetectedLabel = {
   label: string;
@@ -212,4 +221,76 @@ export function getParserFromFieldsFilters(fields: AdHocFiltersVariable): Extrac
   });
 
   return extractParserFieldFromParserArray(parsers);
+}
+
+export function isAvgField(field: string) {
+  return averageFields.includes(field);
+}
+
+export function getFieldBreakdownExpr(field: string) {
+  if (isAvgField(field)) {
+    return (
+      `avg_over_time(${LOG_STREAM_SELECTOR_EXPR} | unwrap ` +
+      (field === 'duration' ? `duration` : field === 'bytes' ? `bytes` : ``) +
+      `(${field}) [$__auto]) by ()`
+    );
+  }
+  return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | ${field}!="" [$__auto]))`;
+}
+
+export function buildFieldsQuery(optionValue: string, options: LogsQueryOptions) {
+  if (isAvgField(optionValue)) {
+    return (
+      `avg_over_time(${getLogsStreamSelector(options)} | unwrap ` +
+      (optionValue === 'duration' ? `duration` : optionValue === 'bytes' ? `bytes` : ``) +
+      `(${optionValue}) [$__auto]) by ()`
+    );
+  } else {
+    return `sum by (${optionValue}) (count_over_time(${getLogsStreamSelector(options)} [$__auto]))`;
+  }
+}
+
+export function buildFieldsQueryString(
+  optionValue: string,
+  fieldsVariable: AdHocFiltersVariable,
+  detectedFieldsFrame?: DataFrame
+) {
+  const parserField: Field<string> | undefined = detectedFieldsFrame?.fields[2];
+  const namesField: Field<string> | undefined = detectedFieldsFrame?.fields[0];
+  const index = namesField?.values.indexOf(optionValue);
+
+  const parserForThisField =
+    index !== undefined && index !== -1
+      ? extractParserFromDetectedFieldParserFieldValue(parserField?.values?.[index] ?? 'mixed')
+      : undefined;
+
+  const parsers = fieldsVariable.state.filters.map((filter) => {
+    const index = namesField?.values.indexOf(filter.key);
+    const parser =
+      index !== undefined && index !== -1
+        ? extractParserFromDetectedFieldParserFieldValue(parserField?.values?.[index] ?? 'mixed')
+        : undefined;
+
+    return parser ?? 'mixed';
+  });
+
+  const parser = extractParserFieldFromParserArray([...parsers, parserForThisField ?? '']);
+
+  let fieldExpressionToAdd = '';
+  let structuredMetadataToAdd = '';
+
+  if (parserForThisField === '') {
+    structuredMetadataToAdd = `| ${optionValue}!=""`;
+    // Structured metadata
+  } else {
+    fieldExpressionToAdd = `| ${optionValue}!=""`;
+  }
+
+  // is option structured metadata
+  const options: LogsQueryOptions = {
+    structuredMetadataToAdd,
+    fieldExpressionToAdd,
+    parser: parser,
+  };
+  return buildFieldsQuery(optionValue, options);
 }
