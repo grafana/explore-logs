@@ -14,11 +14,11 @@ import { DataSourceWithBackend } from '@grafana/runtime';
 
 /**
  * Query splitting by stream shards.
- * Query splitting, in any version, was introduced in Loki to optimize querying for long intervals
- * and high volume of data, dividing a big request into smaller sub-requests, combining and displaying
- * the results as they arrive.
- * This approach takes advantage of the __stream_shard__ internal label, representing how data is spread
- * into different sources that can be queried individually.
+ * Query splitting was introduced in Loki to optimize querying for long intervals and high volume of data,
+ * dividing a big request into smaller sub-requests, combining and displaying the results as they arrive.
+ *
+ * This approach, inspired by the time-based query splitting, takes advantage of the __stream_shard__
+ * internal label, representing how data is spread into different sources that can be queried individually.
  *
  * The main entry point of this module is runShardSplitQuery(), which prepares the query for execution and
  * passes it to splitQueriesByStreamShard() to begin the querying loop.
@@ -65,7 +65,7 @@ function splitQueriesByStreamShard(
   let subquerySubscription: Subscription | null = null;
   let retriesMap = new Map<number, number>();
 
-  const runNextRequest = (subscriber: Subscriber<DataQueryResponse>, cycle?: number, shardRequests?: number[][]) => {
+  const runNextRequest = (subscriber: Subscriber<DataQueryResponse>, cycle: number, shardRequests: number[][]) => {
     if (shouldStop) {
       subscriber.complete();
       return;
@@ -78,11 +78,6 @@ function splitQueriesByStreamShard(
     };
 
     const nextRequest = () => {
-      if (cycle === undefined || shardRequests === undefined) {
-        done();
-        return;
-      }
-
       const nextCycle = cycle + 1;
       if (nextCycle < shardRequests.length) {
         runNextRequest(subscriber, nextCycle, shardRequests);
@@ -97,13 +92,12 @@ function splitQueriesByStreamShard(
         return false;
       }
 
-      const key = cycle !== undefined ? cycle : 0;
-      const retries = retriesMap.get(key) ?? 0;
+      const retries = retriesMap.get(cycle) ?? 0;
       if (retries > 2) {
         return false;
       }
 
-      retriesMap.set(key, retries + 1);
+      retriesMap.set(cycle, retries + 1);
 
       console.log(`Retrying ${cycle} (${retries + 1})`);
       runNextRequest(subscriber, cycle, shardRequests);
@@ -119,14 +113,11 @@ function splitQueriesByStreamShard(
     const subRequest = { ...request, targets: interpolateShardingSelector(targets, shardRequests, cycle) };
     // Request may not have a request id
     if (request.requestId) {
-      subRequest.requestId = `${request.requestId}_shard_${cycle !== undefined ? cycle : 'no-shard'}`;
+      subRequest.requestId = `${request.requestId}_shard_${cycle}`;
     }
 
-    const dsQueryMethod =
-      // @ts-expect-error
-      shardRequests === undefined ? datasource.query.bind(datasource) : datasource.runQuery.bind(datasource);
-
-    subquerySubscription = dsQueryMethod(subRequest).subscribe({
+    // @ts-expect-error
+    subquerySubscription = datasource.runQuery(subRequest).subscribe({
       next: (partialResponse: DataQueryResponse) => {
         if ((partialResponse.errors ?? []).length > 0 || partialResponse.error != null) {
           if (retry(partialResponse)) {
@@ -186,7 +177,7 @@ function splitQueriesByStreamShard(
       .catch((e: unknown) => {
         console.error(e);
         shouldStop = true;
-        runNextRequest(subscriber);
+        runNonSplitRequest(subscriber);
       });
     return () => {
       shouldStop = true;
