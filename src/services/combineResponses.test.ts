@@ -333,7 +333,7 @@ describe('combineResponses', () => {
     expect(combined.errors?.[0]?.message).toBe('errorB');
   });
 
-  it('combine when both params have errors', () => {
+  it('combine when both frames have errors', () => {
     const { metricFrameA, metricFrameB } = getMockFrames();
     const errorA = {
       message: 'errorA',
