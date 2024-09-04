@@ -55,9 +55,14 @@ const getReducerId = memoize((sortBy: SortBy) => {
   return undefined;
 });
 
+// Empty string is structured metdata
 export type ExtractedFieldsType = 'logfmt' | 'json' | 'mixed' | '';
 
-export function extractParserFromDetectedFieldParserFieldValue(parserString: string): ExtractedFieldsType {
+/**
+ * Extracts the ExtractedFieldsType from the string returned on the detected_fields api parser field value
+ * @param parserString
+ */
+export function extractParserFromString(parserString: string): ExtractedFieldsType {
   switch (parserString) {
     case 'json':
       return 'json';
@@ -70,7 +75,7 @@ export function extractParserFromDetectedFieldParserFieldValue(parserString: str
   }
 }
 
-export function extractParserFieldFromParserArray(parsers?: string[]) {
+export function extractParserFromArray(parsers?: string[]) {
   const parsersSet = new Set(parsers?.map((v) => v.toString()) ?? []);
 
   // Structured metadata doesn't change the parser we use, so remove it
@@ -80,7 +85,7 @@ export function extractParserFieldFromParserArray(parsers?: string[]) {
   const parsersArray = Array.from(parsersSet);
 
   if (parsersArray.length === 1) {
-    return extractParserFromDetectedFieldParserFieldValue(parsersArray[0]);
+    return extractParserFromString(parsersArray[0]);
   }
 
   // If the set size is zero, we only had structured metadata detected as a parser
@@ -96,7 +101,7 @@ export function extractParserFromDetectedFields(data: DataFrame): ExtractedField
   const parserField = data.fields.find((f) => f.name === 'parser');
   const values: string[] | undefined = parserField?.values;
 
-  return extractParserFieldFromParserArray(values);
+  return extractParserFromArray(values);
 }
 
 export function getParserForField(fieldName: string, sceneRef: SceneObject): ExtractedFieldsType | undefined {
@@ -106,9 +111,7 @@ export function getParserForField(fieldName: string, sceneRef: SceneObject): Ext
 
   const index = namesField?.values.indexOf(fieldName);
   const parser =
-    index !== undefined && index !== -1
-      ? extractParserFromDetectedFieldParserFieldValue(parserField?.values?.[index] ?? '')
-      : undefined;
+    index !== undefined && index !== -1 ? extractParserFromString(parserField?.values?.[index] ?? '') : undefined;
 
   if (parser === undefined) {
     console.warn('missing parser, using mixed format for', fieldName);
@@ -220,7 +223,7 @@ export function getParserFromFieldsFilters(fields: AdHocFiltersVariable): Extrac
     return getValueFromFieldsFilter(filter).parser;
   });
 
-  return extractParserFieldFromParserArray(parsers);
+  return extractParserFromArray(parsers);
 }
 
 export function isAvgField(field: string) {
@@ -260,21 +263,19 @@ export function buildFieldsQueryString(
   const index = namesField?.values.indexOf(optionValue);
 
   const parserForThisField =
-    index !== undefined && index !== -1
-      ? extractParserFromDetectedFieldParserFieldValue(parserField?.values?.[index] ?? 'mixed')
-      : undefined;
+    index !== undefined && index !== -1 ? extractParserFromString(parserField?.values?.[index] ?? 'mixed') : undefined;
 
   const parsers = fieldsVariable.state.filters.map((filter) => {
     const index = namesField?.values.indexOf(filter.key);
     const parser =
       index !== undefined && index !== -1
-        ? extractParserFromDetectedFieldParserFieldValue(parserField?.values?.[index] ?? 'mixed')
+        ? extractParserFromString(parserField?.values?.[index] ?? 'mixed')
         : undefined;
 
     return parser ?? 'mixed';
   });
 
-  const parser = extractParserFieldFromParserArray([...parsers, parserForThisField ?? '']);
+  const parser = extractParserFromArray([...parsers, parserForThisField ?? '']);
 
   let fieldExpressionToAdd = '';
   let structuredMetadataToAdd = '';
