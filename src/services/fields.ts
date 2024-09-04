@@ -21,7 +21,6 @@ import {
 import { setLevelColorOverrides } from './panel';
 import { map, Observable } from 'rxjs';
 import { SortBy, SortByScene } from '../Components/ServiceScene/Breakdowns/SortByScene';
-import { memoize } from 'lodash';
 import { getDetectedFieldsFrame } from '../Components/ServiceScene/ServiceScene';
 import { averageFields } from '../Components/ServiceScene/Breakdowns/FieldsBreakdownScene';
 
@@ -45,7 +44,7 @@ export type DetectedFieldsResponse = {
   fields: DetectedField[];
 };
 
-const getReducerId = memoize((sortBy: SortBy) => {
+const getReducerId = (sortBy: SortBy) => {
   if (sortBy) {
     const values: string[] = Object.values(ReducerID);
     if (values.includes(sortBy)) {
@@ -53,7 +52,7 @@ const getReducerId = memoize((sortBy: SortBy) => {
     }
   }
   return undefined;
-});
+};
 
 // Empty string is structured metdata
 export type ExtractedFieldsType = 'logfmt' | 'json' | 'mixed' | '';
