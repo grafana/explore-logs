@@ -1,11 +1,12 @@
 import { PageSlugs, ValueSlugs } from '../../services/routing';
 import { LogsListScene } from './LogsListScene';
 import { testIds } from '../../services/testIds';
-import { buildLabelValuesBreakdownActionScene, LabelBreakdownScene } from './Breakdowns/LabelBreakdownScene';
+import { LabelBreakdownScene } from './Breakdowns/LabelBreakdownScene';
 import { FieldsBreakdownScene } from './Breakdowns/FieldsBreakdownScene';
 import { PatternsBreakdownScene } from './Breakdowns/Patterns/PatternsBreakdownScene';
 import { SceneFlexItem, SceneFlexLayout, SceneObject } from '@grafana/scenes';
 import { LogsVolumePanel } from './LogsVolumePanel';
+import { buildLabelValuesBreakdownActionScene } from '../../services/labels';
 
 interface ValueBreakdownViewDefinition {
   displayName: string;
