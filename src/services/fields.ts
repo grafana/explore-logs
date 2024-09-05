@@ -12,6 +12,7 @@ import { AddToFiltersButton, VariableFilterType } from 'Components/ServiceScene/
 import {
   getLogsStreamSelector,
   getValueFromFieldsFilter,
+  LEVEL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
   LogsQueryOptions,
   ParserType,
@@ -206,7 +207,11 @@ export function getFilterTypeFromLabelType(type: LabelType | null, key: string, 
       return VAR_FIELDS;
     }
     case LabelType.StructuredMetadata: {
-      return VAR_LEVELS;
+      // Structured metadata is either a special level variable, or a field variable
+      if (key === LEVEL_VARIABLE_VALUE) {
+        return VAR_LEVELS;
+      }
+      return VAR_FIELDS;
     }
     default: {
       console.error(`Invalid label for ${key}`, value);
