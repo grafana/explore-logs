@@ -29,7 +29,7 @@ export class ExplorePage {
     await this.page.setViewportSize({ width: 1280, height: 720 });
   }
 
-  async setLimoViewportSize(){
+  async setExtraTallViewportSize(){
     await this.page.setViewportSize({
       height: 3000,
       width: 1280

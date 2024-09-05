@@ -9,7 +9,7 @@ test.describe('explore nginx-json breakdown pages ', () => {
 
     test.beforeEach(async ({ page }) => {
         explorePage = new ExplorePage(page);
-        await explorePage.setLimoViewportSize()
+        await explorePage.setExtraTallViewportSize()
         await page.evaluate(() => window.localStorage.clear());
         await explorePage.gotoServicesBreakdown('nginx-json');
         explorePage.blockAllQueriesExcept({

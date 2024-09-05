@@ -13,7 +13,7 @@ test.describe('explore services breakdown page', () => {
 
   test.beforeEach(async ({ page }) => {
     explorePage = new ExplorePage(page);
-    await explorePage.setLimoViewportSize()
+    await explorePage.setExtraTallViewportSize()
     await page.evaluate(() => window.localStorage.clear());
     await explorePage.gotoServicesBreakdown();
     explorePage.blockAllQueriesExcept({

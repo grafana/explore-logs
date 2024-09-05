@@ -18,7 +18,7 @@ test.describe('explore services page', () => {
   })
 
   test('should filter service labels on search', async ({ page }) => {
-    await explorePage.setLimoViewportSize();
+    await explorePage.setExtraTallViewportSize();
     await explorePage.servicesSearch.click();
     await explorePage.servicesSearch.pressSequentially('mimir');
     // Volume can differ, scroll down so all of the panels are loaded
@@ -60,7 +60,7 @@ test.describe('explore services page', () => {
   });
 
   test('should filter service labels on partial string', async ({ page }) => {
-    await explorePage.setLimoViewportSize()
+    await explorePage.setExtraTallViewportSize()
     await explorePage.servicesSearch.click();
     await explorePage.servicesSearch.pressSequentially('imi');
     // service name should be in time series panel
