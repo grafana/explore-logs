@@ -255,7 +255,6 @@ test.describe('explore services breakdown page', () => {
       const post = req.post;
       const queries: LokiQuery[] = post.queries
       queries.forEach(query => {
-        console.log('query.expr', query.expr)
         expect(query.expr).toContain('| logfmt | caller!=""')
       })
     })

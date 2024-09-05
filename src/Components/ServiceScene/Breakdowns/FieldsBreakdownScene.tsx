@@ -61,7 +61,7 @@ export interface FieldsBreakdownSceneState extends SceneObjectState {
   loading?: boolean;
   error?: string;
   blockingMessage?: string;
-  changeFields?: (n: string[]) => void;
+  changeFieldCount?: (n: number) => void;
 }
 
 export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneState> {

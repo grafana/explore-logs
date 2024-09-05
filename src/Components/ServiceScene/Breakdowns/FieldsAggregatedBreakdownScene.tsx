@@ -176,8 +176,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
       this._subs.add(
         panel?.state.$data?.getResultsStream().subscribe((result) => {
           if (result.data.errors && result.data.errors.length > 0) {
-            const val = result.data.errors[0].refId!;
-            this.hideField(val);
+            this.updateFieldCount();
             child.setState({ isHidden: true });
           }
         })
@@ -239,14 +238,12 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     return children;
   }
 
-  private hideField(field: string) {
+  private updateFieldCount() {
     const fieldsBreakdownScene = sceneGraph.getAncestor(this, FieldsBreakdownScene);
-    const logsScene = sceneGraph.getAncestor(this, ServiceScene);
-    const fields = logsScene.state.fields?.filter((f) => f !== field);
-
-    if (fields) {
-      fieldsBreakdownScene.state.changeFields?.(fields.filter((f) => f !== ALL_VARIABLE_VALUE).map((f) => f));
-    }
+    const activeLayout = this.state.body?.state.layouts.find((l) => l.isActive) as SceneCSSGridLayout;
+    const activeLayoutChildren = activeLayout.state.children as SceneCSSGridItem[];
+    const activePanels = activeLayoutChildren.filter((child) => !child.state.isHidden);
+    fieldsBreakdownScene.state.changeFieldCount?.(activePanels.length);
   }
 
   public static Selector({ model }: SceneComponentProps<FieldsAggregatedBreakdownScene>) {

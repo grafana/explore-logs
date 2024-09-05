@@ -25,7 +25,7 @@ export interface BreakdownViewDefinition {
   displayName: TabNames;
   value: PageSlugs;
   testId: string;
-  getScene: (changeFields: (f: string[]) => void) => SceneObject;
+  getScene: (changeFields: (f: number) => void) => SceneObject;
 }
 
 export const breakdownViewsDefinitions: BreakdownViewDefinition[] = [
@@ -79,11 +79,11 @@ function buildPatternsScene() {
   });
 }
 
-function buildFieldsBreakdownActionScene(changeFieldNumber: (n: string[]) => void) {
+function buildFieldsBreakdownActionScene(changeFieldNumber: (n: number) => void) {
   return new SceneFlexLayout({
     children: [
       new SceneFlexItem({
-        body: new FieldsBreakdownScene({ changeFields: changeFieldNumber }),
+        body: new FieldsBreakdownScene({ changeFieldCount: changeFieldNumber }),
       }),
     ],
   });
