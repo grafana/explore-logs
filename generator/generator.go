@@ -97,7 +97,7 @@ var generators = map[model.LabelValue]map[model.LabelValue]LogGenerator{
 				for ctx.Err() == nil {
 					level := randLevel()
 					t := time.Now()
-					// 50% of the time, output a logfmt log with a stacktrace
+					// for 50% of the errors, output a logfmt log with a stacktrace
 					if rand.Intn(2)%2 == 0 && level == ERROR {
 						log := flog.NewCommonLogFormat(t, randURI(), statusFromLevel(level))
 						// Add a stacktrace to the logfmt log, and include a field that will conflict with stream selectors
