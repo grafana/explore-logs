@@ -8,7 +8,7 @@ import {
   LoadingState,
   TestDataSourceResponse,
 } from '@grafana/data';
-import { config, DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
+import { DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
 import { RuntimeDataSource, SceneObject, sceneUtils } from '@grafana/scenes';
 import { DataQuery } from '@grafana/schema';
 import { Observable, Subscriber } from 'rxjs';
@@ -121,8 +121,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     ds: DataSourceWithBackend<LokiQuery>,
     subscriber: Subscriber<DataQueryResponse>
   ) {
-    // @ts-expect-error
-    const shardingEnabled = config.featureToggles.exploreLogsShardSplitting;
+    const shardingEnabled = true;
 
     // Query the datasource and return either observable or promise
     const dsResponse = isLogsRequest(request) || !shardingEnabled ? ds.query(request) : runShardSplitQuery(ds, request);
