@@ -95,13 +95,6 @@ export function extractParserFromArray(parsers?: string[]): ParserType {
   return 'mixed';
 }
 
-export function extractParserFromDetectedFields(data: DataFrame): ParserType {
-  const parserField = data.fields.find((f) => f.name === 'parser');
-  const values: string[] | undefined = parserField?.values;
-
-  return extractParserFromArray(values);
-}
-
 export function getParserForField(fieldName: string, sceneRef: SceneObject): ParserType | undefined {
   const detectedFieldsFrame = getDetectedFieldsFrame(sceneRef);
   const parserField: Field<string> | undefined = detectedFieldsFrame?.fields[2];

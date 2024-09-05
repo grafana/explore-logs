@@ -1,6 +1,6 @@
 import { createDataFrame, FieldType, toDataFrame } from '@grafana/data';
 
-import { extractParserFromDetectedFields, getLabelTypeFromFrame, LabelType } from './fields';
+import { extractParserFromArray, getLabelTypeFromFrame, LabelType } from './fields';
 import {
   DETECTED_FIELDS_CARDINALITY_NAME,
   DETECTED_FIELDS_NAME_FIELD,
@@ -34,7 +34,7 @@ describe('extractParserFromDetectedFields', () => {
       ],
     });
 
-    expect(extractParserFromDetectedFields(dataFrame)).toEqual('');
+    expect(extractParserFromArray(dataFrame.fields[2].values)).toEqual('structuredMetadata');
   });
   it('Extracts parser and fields from a detected_field response with only json', () => {
     const dataFrame = createDataFrame({
@@ -59,7 +59,7 @@ describe('extractParserFromDetectedFields', () => {
       ],
     });
 
-    expect(extractParserFromDetectedFields(dataFrame)).toEqual('json');
+    expect(extractParserFromArray(dataFrame.fields[2].values)).toEqual('json');
   });
   it('Extracts parser and fields from a detected_field response with only logfmt ', () => {
     const dataFrame = createDataFrame({
@@ -84,7 +84,7 @@ describe('extractParserFromDetectedFields', () => {
       ],
     });
 
-    expect(extractParserFromDetectedFields(dataFrame)).toEqual('logfmt');
+    expect(extractParserFromArray(dataFrame.fields[2].values)).toEqual('logfmt');
   });
   it('Extracts parser and fields from a detected_field response with only mixed ', () => {
     const dataFrame = createDataFrame({
@@ -109,7 +109,7 @@ describe('extractParserFromDetectedFields', () => {
       ],
     });
 
-    expect(extractParserFromDetectedFields(dataFrame)).toEqual('mixed');
+    expect(extractParserFromArray(dataFrame.fields[2].values)).toEqual('mixed');
   });
   it('Extracts parser and fields from a detected_field response with structured metadata and logfmt', () => {
     const dataFrame = createDataFrame({
@@ -134,7 +134,7 @@ describe('extractParserFromDetectedFields', () => {
       ],
     });
 
-    expect(extractParserFromDetectedFields(dataFrame)).toEqual('logfmt');
+    expect(extractParserFromArray(dataFrame.fields[2].values)).toEqual('logfmt');
   });
   it('Extracts parser and fields from a detected_field response with structured metadata, logfmt, and json', () => {
     const dataFrame = createDataFrame({
@@ -159,7 +159,7 @@ describe('extractParserFromDetectedFields', () => {
       ],
     });
 
-    expect(extractParserFromDetectedFields(dataFrame)).toEqual('mixed');
+    expect(extractParserFromArray(dataFrame.fields[2].values)).toEqual('mixed');
   });
   it('Extracts parser and fields from a detected_field response with structured metadata, and json', () => {
     const dataFrame = createDataFrame({
@@ -184,7 +184,7 @@ describe('extractParserFromDetectedFields', () => {
       ],
     });
 
-    expect(extractParserFromDetectedFields(dataFrame)).toEqual('json');
+    expect(extractParserFromArray(dataFrame.fields[2].values)).toEqual('json');
   });
   it('Extracts parser and fields from a detected_field response with structured metadata, json, and mixed', () => {
     const dataFrame = createDataFrame({
@@ -209,7 +209,7 @@ describe('extractParserFromDetectedFields', () => {
       ],
     });
 
-    expect(extractParserFromDetectedFields(dataFrame)).toEqual('mixed');
+    expect(extractParserFromArray(dataFrame.fields[2].values)).toEqual('mixed');
   });
   it('Extracts parser and fields from a detected_field response with structured metadata, json, and json mixed with structured metadata', () => {
     const dataFrame = createDataFrame({
@@ -235,7 +235,7 @@ describe('extractParserFromDetectedFields', () => {
     });
 
     //@todo can a field with multiple parsers have structured metadata and json or logfmt? This returns mixed right now, but should probably be json if this can happen?
-    expect(extractParserFromDetectedFields(dataFrame)).toEqual('mixed');
+    expect(extractParserFromArray(dataFrame.fields[2].values)).toEqual('mixed');
   });
 });
 
