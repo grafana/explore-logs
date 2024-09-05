@@ -1,5 +1,5 @@
 import pluginJson from '../src/plugin.json';
-import { test, expect } from '@grafana/plugin-e2e';
+import { expect, test } from '@grafana/plugin-e2e';
 import { ExplorePage } from './fixtures/explore';
 
 test.describe('navigating app', () => {
