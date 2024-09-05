@@ -97,11 +97,10 @@ var generators = map[model.LabelValue]map[model.LabelValue]LogGenerator{
 				for ctx.Err() == nil {
 					level := randLevel()
 					t := time.Now()
-					// for 50% of the errors, output a logfmt log with a stacktrace
-					if rand.Intn(2)%2 == 0 && level == ERROR {
+					if rand.Intn(10)%2 == 0 && level == ERROR {
 						log := flog.NewCommonLogFormat(t, randURI(), statusFromLevel(level))
 						// Add a stacktrace to the logfmt log, and include a field that will conflict with stream selectors
-						logger.Log(level, t, fmt.Sprintf("%s %s", log, `namespace=whoopsie caller=flush.go:253 stacktrace="Exception in thread \"main\" java.lang.NullPointerException\n        at com.example.myproject.Book.getTitle(Book.java:16)\n        at com.example.myproject.Author.getBookTitles(Author.java:25)\n        at com.example.myproject.Bootstrap.main(Bootstrap.java:14)"`))
+						logger.Log(level, t, fmt.Sprintf("%s %s", log, `method=GET namespace=whoopsie caller=flush.go:253 stacktrace="Exception in thread \"main\" java.lang.NullPointerException\n        at com.example.myproject.Book.getTitle(Book.java:16)\n        at com.example.myproject.Author.getBookTitles(Author.java:25)\n        at com.example.myproject.Bootstrap.main(Bootstrap.java:14)"`))
 					}
 					logger.Log(level, t, flog.NewJSONLogFormat(t, randURI(), statusFromLevel(level)))
 					time.Sleep(time.Duration(rand.Intn(5000)) * time.Millisecond)
