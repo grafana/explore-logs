@@ -71,9 +71,9 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     }
   };
 
-  private performRepeat(data: PanelData) {
+  private async performRepeat(data: PanelData) {
     const newChildren: SceneFlexItem[] = [];
-    const sortedSeries = sortSeries(data.series, this.sortBy, this.direction);
+    const sortedSeries = await sortSeries(data.series, this.sortBy, this.direction);
 
     for (let seriesIndex = 0; seriesIndex < sortedSeries.length; seriesIndex++) {
       const layoutChild = this.state.getLayoutChild(sortedSeries[seriesIndex], seriesIndex);
