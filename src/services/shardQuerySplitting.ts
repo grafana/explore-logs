@@ -193,8 +193,10 @@ function splitQueriesByStreamShard(
 function groupShardRequests(shards: number[], range: TimeRange) {
   const hours = range.to.diff(range.from, 'hour');
 
-  shards.sort((a, b) => a - b);
-  const maxRequests = calculateMaxRequests(shards.length);
+  // Spread low and high volume around
+  shards.sort((a) => (a % 2 !== 0 ? -1 : 1));
+
+  const maxRequests = calculateMaxRequests(shards.length, hours);
   const groupSize = Math.ceil(shards.length / maxRequests);
   const requests: number[][] = [];
   for (let i = shards.length - 1; i >= 0; i -= groupSize) {
@@ -206,7 +208,7 @@ function groupShardRequests(shards: number[], range: TimeRange) {
   }
 
   // With shorter intervals, this gives a similar UX to non-sharded requests.
-  if (hours <= 6) {
+  if (hours <= 3) {
     requests.push([-1]);
     requests.reverse();
   } else {
@@ -218,20 +220,13 @@ function groupShardRequests(shards: number[], range: TimeRange) {
 
 /**
  * Simple approach to calculate a maximum amount of requests to send based on
- * the available shards, preventing an excessive number of sub-requests per query.
- * For example:
- * Shards => Requests
- *   1    =>   1
- *   2    =>   1
- *   4    =>   2
- *   8    =>   3
- *   16   =>   4
- *   32   =>   6
- *   64   =>   8
- *   128  =>   12
+ * the available shards and the requested interval.
  */
-function calculateMaxRequests(shards: number) {
-  return Math.max(Math.min(Math.ceil(Math.sqrt(shards)), shards - 1), 1);
+function calculateMaxRequests(shards: number, hours: number) {
+  if (hours < 24) {
+    return Math.max(Math.min(Math.ceil(Math.sqrt(shards)), shards - 1), 1);
+  }
+  return shards;
 }
 
 /**

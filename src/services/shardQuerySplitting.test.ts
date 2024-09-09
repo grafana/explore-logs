@@ -25,11 +25,11 @@ afterAll(() => {
 describe('runShardSplitQuery()', () => {
   let datasource: DataSourceWithBackend<LokiQuery>;
   const range = {
-    from: dateTime('2023-02-08T05:00:00.000Z'),
-    to: dateTime('2023-02-10T06:00:00.000Z'),
+    from: dateTime('2023-02-08T04:00:00.000Z'),
+    to: dateTime('2023-02-08T11:00:00.000Z'),
     raw: {
-      from: dateTime('2023-02-08T05:00:00.000Z'),
-      to: dateTime('2023-02-10T06:00:00.000Z'),
+      from: dateTime('2023-02-08T04:00:00.000Z'),
+      to: dateTime('2023-02-08T11:00:00.000Z'),
     },
   };
 
@@ -69,21 +69,21 @@ describe('runShardSplitQuery()', () => {
         intervalMs: expect.any(Number),
         range: expect.any(Object),
         requestId: 'TEST_shard_0',
-        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"20|10"}[1m])', refId: 'A' }],
+        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"20|2"}[1m])', refId: 'A' }],
       });
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
         intervalMs: expect.any(Number),
         range: expect.any(Object),
         requestId: 'TEST_shard_1',
-        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"3|2"}[1m])', refId: 'A' }],
+        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"10|1"}[1m])', refId: 'A' }],
       });
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
         intervalMs: expect.any(Number),
         range: expect.any(Object),
         requestId: 'TEST_shard_2',
-        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"1"}[1m])', refId: 'A' }],
+        targets: [{ expr: 'count_over_time({a="b", __stream_shard__="3"}[1m])', refId: 'A' }],
       });
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
@@ -145,6 +145,7 @@ describe('runShardSplitQuery()', () => {
 
     await expect(runShardSplitQuery(datasource, request)).toEmitValuesWith(() => {
       expect(datasource.interpolateVariablesInQueries).toHaveBeenCalledTimes(1);
+
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
         intervalMs: expect.any(Number),
@@ -157,21 +158,21 @@ describe('runShardSplitQuery()', () => {
         intervalMs: expect.any(Number),
         range: expect.any(Object),
         requestId: 'TEST_shard_1',
-        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"1"}[1m])', refId: 'A' }],
+        targets: [{ expr: 'count_over_time({a="b", __stream_shard__="3"}[1m])', refId: 'A' }],
       });
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
         intervalMs: expect.any(Number),
         range: expect.any(Object),
         requestId: 'TEST_shard_2',
-        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"3|2"}[1m])', refId: 'A' }],
+        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"10|1"}[1m])', refId: 'A' }],
       });
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
         intervalMs: expect.any(Number),
         range: expect.any(Object),
         requestId: 'TEST_shard_3',
-        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"20|10"}[1m])', refId: 'A' }],
+        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"20|2"}[1m])', refId: 'A' }],
       });
     });
   });
