@@ -132,7 +132,7 @@ describe('runShardSplitQuery()', () => {
     });
   });
 
-  test('For time ranges over a day queries shards indepentendly', async () => {
+  test('For time ranges over a day queries shards independently', async () => {
     const request = createRequest([{ expr: 'count_over_time($SELECTOR[1m])', refId: 'A' }], {
       range: {
         from: dateTime('2024-11-13T05:00:00.000Z'),
