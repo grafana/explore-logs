@@ -64,26 +64,27 @@ describe('runShardSplitQuery()', () => {
   test('Interpolates queries before running', async () => {
     await expect(runShardSplitQuery(datasource, request)).toEmitValuesWith(() => {
       expect(datasource.interpolateVariablesInQueries).toHaveBeenCalledTimes(1);
+
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
         intervalMs: expect.any(Number),
         range: expect.any(Object),
         requestId: 'TEST_shard_0',
-        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"20|2"}[1m])', refId: 'A' }],
+        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"1|3"}[1m])', refId: 'A' }],
       });
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
         intervalMs: expect.any(Number),
         range: expect.any(Object),
         requestId: 'TEST_shard_1',
-        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"10|1"}[1m])', refId: 'A' }],
+        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"2|10"}[1m])', refId: 'A' }],
       });
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
         intervalMs: expect.any(Number),
         range: expect.any(Object),
         requestId: 'TEST_shard_2',
-        targets: [{ expr: 'count_over_time({a="b", __stream_shard__="3"}[1m])', refId: 'A' }],
+        targets: [{ expr: 'count_over_time({a="b", __stream_shard__="20"}[1m])', refId: 'A' }],
       });
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
@@ -131,27 +132,25 @@ describe('runShardSplitQuery()', () => {
     });
   });
 
-  test('For small time ranges starts with the highest volume shards', async () => {
+  test('For time ranges over a day queries shards indepentendly', async () => {
     const request = createRequest([{ expr: 'count_over_time($SELECTOR[1m])', refId: 'A' }], {
       range: {
         from: dateTime('2024-11-13T05:00:00.000Z'),
-        to: dateTime('2024-11-13T06:00:00.000Z'),
+        to: dateTime('2024-11-14T06:00:00.000Z'),
         raw: {
           from: dateTime('2024-11-13T05:00:00.000Z'),
-          to: dateTime('2024-11-13T06:00:00.000Z'),
+          to: dateTime('2024-11-14T06:00:00.000Z'),
         },
       },
     });
 
     await expect(runShardSplitQuery(datasource, request)).toEmitValuesWith(() => {
-      expect(datasource.interpolateVariablesInQueries).toHaveBeenCalledTimes(1);
-
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
         intervalMs: expect.any(Number),
         range: expect.any(Object),
         requestId: 'TEST_shard_0',
-        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=""}[1m])', refId: 'A' }],
+        targets: [{ expr: 'count_over_time({a="b", __stream_shard__="1"}[1m])', refId: 'A' }],
       });
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
@@ -165,14 +164,28 @@ describe('runShardSplitQuery()', () => {
         intervalMs: expect.any(Number),
         range: expect.any(Object),
         requestId: 'TEST_shard_2',
-        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"10|1"}[1m])', refId: 'A' }],
+        targets: [{ expr: 'count_over_time({a="b", __stream_shard__="2"}[1m])', refId: 'A' }],
       });
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
         intervalMs: expect.any(Number),
         range: expect.any(Object),
         requestId: 'TEST_shard_3',
-        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"20|2"}[1m])', refId: 'A' }],
+        targets: [{ expr: 'count_over_time({a="b", __stream_shard__="10"}[1m])', refId: 'A' }],
+      });
+      // @ts-expect-error
+      expect(datasource.runQuery).toHaveBeenCalledWith({
+        intervalMs: expect.any(Number),
+        range: expect.any(Object),
+        requestId: 'TEST_shard_4',
+        targets: [{ expr: 'count_over_time({a="b", __stream_shard__="20"}[1m])', refId: 'A' }],
+      });
+      // @ts-expect-error
+      expect(datasource.runQuery).toHaveBeenCalledWith({
+        intervalMs: expect.any(Number),
+        range: expect.any(Object),
+        requestId: 'TEST_shard_5',
+        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=""}[1m])', refId: 'A' }],
       });
     });
   });

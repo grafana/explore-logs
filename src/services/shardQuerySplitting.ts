@@ -194,26 +194,21 @@ function groupShardRequests(shards: number[], range: TimeRange) {
   const hours = range.to.diff(range.from, 'hour');
 
   // Spread low and high volume around
-  shards.sort((a) => (a % 2 !== 0 ? -1 : 1));
+  shards = spreadSort(shards);
 
   const maxRequests = calculateMaxRequests(shards.length, hours);
   const groupSize = Math.ceil(shards.length / maxRequests);
   const requests: number[][] = [];
-  for (let i = shards.length - 1; i >= 0; i -= groupSize) {
+
+  for (let i = 0; i < shards.length; i += groupSize) {
     const request: number[] = [];
-    for (let j = i; j > i - groupSize && j >= 0; j -= 1) {
+    for (let j = i; j < i + groupSize && j < shards.length; j += 1) {
       request.push(shards[j]);
     }
     requests.push(request);
   }
 
-  // With shorter intervals, this gives a similar UX to non-sharded requests.
-  if (hours <= 3) {
-    requests.push([-1]);
-    requests.reverse();
-  } else {
-    requests.push([-1]);
-  }
+  requests.push([-1]);
 
   return requests;
 }
@@ -227,6 +222,19 @@ function calculateMaxRequests(shards: number, hours: number) {
     return Math.max(Math.min(Math.ceil(Math.sqrt(shards)), shards - 1), 1);
   }
   return shards;
+}
+
+function spreadSort(shards: number[]) {
+  shards.sort((a, b) => a - b);
+  let mid = Math.floor(shards.length / 2);
+  let result = [];
+  for (let i = 0; i < mid; i++) {
+    result.push(shards[i], shards[mid + i]);
+  }
+  if (shards.length % 2 !== 0) {
+    result.push(shards[shards.length - 1]);
+  }
+  return result;
 }
 
 /**
