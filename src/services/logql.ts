@@ -130,13 +130,14 @@ export const interpolateShardingSelector = (queries: LokiQuery[], shards?: numbe
     }));
   }
 
-  const shardValue = shards[i].join('|');
+  let shardValue = shards[i].join('|');
 
   // -1 means empty shard value
-  if (shardValue === '-1') {
+  if (shardValue === '-1' || shards[i].length === 1) {
+    shardValue = shardValue === '-1' ? '' : shardValue;
     return queries.map((query) => ({
       ...query,
-      expr: query.expr.replace(`, __stream_shard__=~"${SHARDING_PLACEHOLDER}"}`, `, __stream_shard__=""}`),
+      expr: query.expr.replace(`, __stream_shard__=~"${SHARDING_PLACEHOLDER}"}`, `, __stream_shard__="${shardValue}"}`),
     }));
   }
 
