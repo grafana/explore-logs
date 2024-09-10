@@ -168,16 +168,13 @@ function compareTimestamps(
 }
 
 function compareNsTimestamps(destField: Field, destIndex: number, sourceField: Field, sourceIndex: number) {
-  if (!destField.nanos && !sourceField.nanos) {
-    return destField.values[destIndex] === sourceField.values[sourceIndex];
-  }
   if (destField.nanos && sourceField.nanos) {
     return (
       destField.values[destIndex] === sourceField.values[sourceIndex] &&
       destField.nanos[destIndex] === sourceField.nanos[sourceIndex]
     );
   }
-  return false;
+  return destField.values[destIndex] === sourceField.values[sourceIndex];
 }
 
 function findSourceField(referenceField: Field, sourceFields: Field[], index: number) {
