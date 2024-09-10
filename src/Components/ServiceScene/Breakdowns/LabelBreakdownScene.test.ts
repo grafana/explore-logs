@@ -20,12 +20,12 @@ describe('buildLabelsQuery', () => {
       name: VAR_FIELDS,
       filters: [
         {
-          value: JSON.stringify({ value: 'cluster-value', parser: '' }),
+          value: JSON.stringify({ value: 'cluster-value', parser: 'structuredMetadata' }),
           operator: '=',
           key: 'cluster',
         },
         {
-          value: JSON.stringify({ value: 'pod-value', parser: '' }),
+          value: JSON.stringify({ value: 'pod-value', parser: 'structuredMetadata' }),
           operator: '=',
           key: 'pod',
         },
@@ -48,7 +48,7 @@ describe('buildLabelsQuery', () => {
           key: 'cluster',
         },
         {
-          value: JSON.stringify({ value: 'pod-value', parser: '' }),
+          value: JSON.stringify({ value: 'pod-value', parser: 'structuredMetadata' }),
           operator: '=',
           key: 'pod',
         },
@@ -71,7 +71,7 @@ describe('buildLabelsQuery', () => {
           key: 'cluster',
         },
         {
-          value: JSON.stringify({ value: 'pod-value', parser: '' }),
+          value: JSON.stringify({ value: 'pod-value', parser: 'structuredMetadata' }),
           operator: '=',
           key: 'pod',
         },
@@ -94,7 +94,7 @@ describe('buildLabelsQuery', () => {
           key: 'cluster',
         },
         {
-          value: JSON.stringify({ value: 'pod-value', parser: '' }),
+          value: JSON.stringify({ value: 'pod-value', parser: 'structuredMetadata' }),
           operator: '=',
           key: 'pod',
         },
