@@ -39,7 +39,7 @@ export type DetectedField = {
   label: string;
   cardinality: number;
   type: string;
-  parsers: string[];
+  parsers: string[] | null;
 };
 
 export type DetectedFieldsResponse = {
@@ -77,7 +77,7 @@ export function extractParserFromArray(parsers?: string[]): ParserType {
   const parsersSet = new Set(parsers?.map((v) => v.toString()) ?? []);
 
   // Structured metadata doesn't change the parser we use, so remove it
-  parsersSet.delete('');
+  parsersSet.delete('structuredMetadata');
 
   // get unique values
   const parsersArray = Array.from(parsersSet);
@@ -270,7 +270,7 @@ export function buildFieldsQueryString(
     return parser ?? 'mixed';
   });
 
-  const parser = extractParserFromArray([...parsers, parserForThisField ?? '']);
+  const parser = extractParserFromArray([...parsers, parserForThisField ?? 'mixed']);
 
   let fieldExpressionToAdd = '';
   let structuredMetadataToAdd = '';
@@ -288,5 +288,8 @@ export function buildFieldsQueryString(
     fieldExpressionToAdd,
     parser: parser,
   };
+
+  console.log('build fields query', options);
+
   return buildFieldsQuery(optionValue, options);
 }
