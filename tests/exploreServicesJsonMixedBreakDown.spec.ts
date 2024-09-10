@@ -64,7 +64,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     });
     expect(requests).toHaveLength(3);
   });
-  test.only(`should exclude ${logFmtFieldName}, request should contain logfmt`, async ({ page }) => {
+  test(`should exclude ${logFmtFieldName}, request should contain logfmt`, async ({ page }) => {
     let requests: PlaywrightRequest[] = [];
     explorePage.blockAllQueriesExcept({
       refIds: [logFmtFieldName],
