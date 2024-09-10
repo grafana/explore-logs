@@ -360,6 +360,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
       subscriber.next({ data: [dataFrame], state: LoadingState.Done });
     } catch (e) {
+      console.error('Detected fields error:', e);
       subscriber.next({ data: [], state: LoadingState.Error });
     }
 
