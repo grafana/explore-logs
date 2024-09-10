@@ -24,7 +24,7 @@ describe('extractParserFromDetectedFields', () => {
         {
           name: DETECTED_FIELDS_PARSER_NAME,
           type: FieldType.string,
-          values: [''],
+          values: ['structuredMetadata'],
         },
         {
           name: DETECTED_FIELDS_TYPE_NAME,
@@ -124,7 +124,7 @@ describe('extractParserFromDetectedFields', () => {
         {
           name: DETECTED_FIELDS_PARSER_NAME,
           type: FieldType.string,
-          values: ['', 'logfmt'],
+          values: ['structuredMetadata', 'logfmt'],
         },
         {
           name: DETECTED_FIELDS_TYPE_NAME,
@@ -149,7 +149,7 @@ describe('extractParserFromDetectedFields', () => {
         {
           name: DETECTED_FIELDS_PARSER_NAME,
           type: FieldType.string,
-          values: ['', 'logfmt', 'json'],
+          values: ['structuredMetadata', 'logfmt', 'json'],
         },
         {
           name: DETECTED_FIELDS_TYPE_NAME,
@@ -174,7 +174,7 @@ describe('extractParserFromDetectedFields', () => {
         {
           name: DETECTED_FIELDS_PARSER_NAME,
           type: FieldType.string,
-          values: ['', 'json', 'json'],
+          values: ['structuredMetadata', 'json', 'json'],
         },
         {
           name: DETECTED_FIELDS_TYPE_NAME,
@@ -199,7 +199,7 @@ describe('extractParserFromDetectedFields', () => {
         {
           name: DETECTED_FIELDS_PARSER_NAME,
           type: FieldType.string,
-          values: ['', 'json', ['json', 'logfmt']],
+          values: ['structuredMetadata', 'json', ['json', 'logfmt']],
         },
         {
           name: DETECTED_FIELDS_TYPE_NAME,
@@ -224,7 +224,7 @@ describe('extractParserFromDetectedFields', () => {
         {
           name: DETECTED_FIELDS_PARSER_NAME,
           type: FieldType.string,
-          values: ['', 'json', ['json', '']],
+          values: ['structuredMetadata', 'json', ['json', 'structuredMetadata']],
         },
         {
           name: DETECTED_FIELDS_TYPE_NAME,

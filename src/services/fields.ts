@@ -60,13 +60,15 @@ const getReducerId = (sortBy: SortBy) => {
  * Extracts the ExtractedFieldsType from the string returned on the detected_fields api parser field value
  * @param parserString
  */
-export function extractParserFromString(parserString: string): ParserType {
+export function extractParserFromString(parserString?: string): ParserType {
   switch (parserString) {
     case 'json':
       return 'json';
     case 'logfmt':
       return 'logfmt';
     case '': // Structured metadata is empty
+      return 'structuredMetadata';
+    case 'structuredMetadata': // Structured metadata is empty
       return 'structuredMetadata';
     default: // if we get a parser with multiple
       return 'mixed';
@@ -258,19 +260,25 @@ export function buildFieldsQueryString(
   const index = namesField?.values.indexOf(optionValue);
 
   const parserForThisField =
-    index !== undefined && index !== -1 ? extractParserFromString(parserField?.values?.[index] ?? 'mixed') : undefined;
+    index !== undefined && index !== -1 ? extractParserFromString(parserField?.values?.[index]) : 'mixed';
 
+  // Get the parser from the json payload of each filter
   const parsers = fieldsVariable.state.filters.map((filter) => {
     const index = namesField?.values.indexOf(filter.key);
+    const parserFromFilterValue = getValueFromFieldsFilter(filter);
+    if (parserFromFilterValue.parser) {
+      return parserFromFilterValue.parser;
+    }
+
+    // Then fallback to check the latest response
     const parser =
       index !== undefined && index !== -1
         ? extractParserFromString(parserField?.values?.[index] ?? 'mixed')
         : undefined;
-
     return parser ?? 'mixed';
   });
 
-  const parser = extractParserFromArray([...parsers, parserForThisField ?? 'mixed']);
+  const parser = extractParserFromArray([...parsers, parserForThisField]);
 
   let fieldExpressionToAdd = '';
   let structuredMetadataToAdd = '';
@@ -288,8 +296,6 @@ export function buildFieldsQueryString(
     fieldExpressionToAdd,
     parser: parser,
   };
-
-  console.log('build fields query', options);
 
   return buildFieldsQuery(optionValue, options);
 }
