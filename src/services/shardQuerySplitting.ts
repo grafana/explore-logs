@@ -170,7 +170,6 @@ function splitQueriesByStreamShard(
           runNonSplitRequest(subscriber);
         } else {
           const shardRequests = groupShardRequests(shards, request.range);
-          console.log(`Querying ${shards.join(', ')} shards`);
           runNextRequest(subscriber, 0, shardRequests);
         }
       })
@@ -195,6 +194,7 @@ function groupShardRequests(shards: number[], range: TimeRange) {
 
   // Spread low and high volume around
   shards = spreadSort(shards);
+  console.log(`Querying ${shards.join(', ')} shards`);
 
   const maxRequests = calculateMaxRequests(shards.length, hours);
   const groupSize = Math.ceil(shards.length / maxRequests);
@@ -225,7 +225,7 @@ function calculateMaxRequests(shards: number, hours: number) {
 }
 
 function spreadSort(shards: number[]) {
-  shards.sort((a, b) => a - b);
+  shards.sort((a, b) => b - a);
   let mid = Math.floor(shards.length / 2);
   let result = [];
   for (let i = 0; i < mid; i++) {
