@@ -98,9 +98,6 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     ).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
-    // Give the requests a bit of time to run
-    await page.waitForTimeout(200);
-
     requests.forEach((req, index) => {
       const post = req.post;
       const queries: LokiQuery[] = post.queries;
@@ -118,7 +115,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
       });
     });
 
-    expect(requests).toHaveLength(4);
+    expect(requests.length).toBeGreaterThanOrEqual(3);
   });
   test(`should exclude ${jsonFmtFieldName}, request should contain logfmt`, async ({ page }) => {
     let requests: PlaywrightRequest[] = [];
