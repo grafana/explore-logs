@@ -5,6 +5,7 @@ import { getLevelsVariable, VAR_LEVELS } from './variables';
 import { AdHocFiltersVariable, SceneObject } from '@grafana/scenes';
 import { FilterOp } from './filters';
 import { addToFilters, replaceFilter } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
+import { LEVEL_NAME } from 'Components/Table/constants';
 
 jest.mock('./variables');
 jest.mock('Components/ServiceScene/Breakdowns/AddToFiltersButton');
@@ -172,6 +173,28 @@ describe('getVisibleLevels', () => {
     ]);
     expect(getVisibleLevels(['error', 'warn', 'info', 'debug'], scene)).toEqual(['info']);
   });
+
+  it('Handles empty positive log level filter', () => {
+    setup([
+      {
+        key: 'detected_level',
+        operator: FilterOp.Equal,
+        value: '""',
+      },
+    ]);
+    expect(getVisibleLevels(['error', 'logs'], scene)).toEqual(['logs']);
+  });
+
+  it('Handles negative positive log level filter', () => {
+    setup([
+      {
+        key: 'detected_level',
+        operator: FilterOp.NotEqual,
+        value: '""',
+      },
+    ]);
+    expect(getVisibleLevels(['error', 'logs'], scene)).toEqual(['error']);
+  });
 });
 
 describe('toggleLevelFromFilter', () => {
@@ -208,5 +231,12 @@ describe('toggleLevelFromFilter', () => {
 
     expect(toggleLevelFromFilter('info', scene)).toBe('remove');
     expect(addToFilters).toHaveBeenCalledTimes(1);
+  });
+
+  it('Handles empty log levels', () => {
+    setup([]);
+
+    expect(toggleLevelFromFilter('logs', scene)).toBe('add');
+    expect(replaceFilter).toHaveBeenCalledWith(LEVEL_NAME, '""', 'include', scene);
   });
 });
