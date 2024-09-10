@@ -5,8 +5,6 @@ import { AdHocVariableFilter, DataFrame, GrafanaTheme2, LoadingState } from '@gr
 import {
   QueryRunnerState,
   SceneComponentProps,
-  SceneFlexItem,
-  SceneFlexLayout,
   sceneGraph,
   SceneObject,
   SceneObjectBase,
@@ -41,6 +39,7 @@ import { areArraysEqual } from '../../../services/comparison';
 import { LabelValuesBreakdownScene } from './LabelValuesBreakdownScene';
 import { LabelsAggregatedBreakdownScene } from './LabelsAggregatedBreakdownScene';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
+import { EmptyLayoutScene } from './EmptyLayoutScene';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -127,7 +126,8 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     if (
       newState.value !== prevState.value ||
       !areArraysEqual(newState.options, prevState.options) ||
-      this.state.body === undefined
+      this.state.body === undefined ||
+      this.state.body instanceof EmptyLayoutScene
     ) {
       this.updateBody();
     }
@@ -196,7 +196,10 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
 
   private updateOptions(detectedLabels: DataFrame | undefined) {
     if (!detectedLabels || !detectedLabels.length) {
-      console.warn('detectedLabels empty', detectedLabels);
+      this.setState({
+        loading: false,
+        body: new EmptyLayoutScene({ type: 'labels' }),
+      });
       return;
     }
     const variable = getLabelGroupByVariable(this);
@@ -227,9 +230,19 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     } else if (!variable.hasAllValue() && this.state.body instanceof LabelsAggregatedBreakdownScene) {
       stateUpdate.body = new LabelValuesBreakdownScene({});
     } else if (this.state.body === undefined) {
-      stateUpdate.body = variable.hasAllValue()
-        ? new LabelsAggregatedBreakdownScene({})
-        : new LabelValuesBreakdownScene({});
+      if (variable.state.options.length > 0) {
+        stateUpdate.body = variable.hasAllValue()
+          ? new LabelsAggregatedBreakdownScene({})
+          : new LabelValuesBreakdownScene({});
+      } else {
+        stateUpdate.body = new EmptyLayoutScene({ type: 'labels' });
+      }
+    } else if (this.state.body instanceof EmptyLayoutScene) {
+      if (variable.state.options.length > 0) {
+        stateUpdate.body = variable.hasAllValue()
+          ? new LabelsAggregatedBreakdownScene({})
+          : new LabelValuesBreakdownScene({});
+      }
     }
 
     this.setState({ ...stateUpdate });
@@ -287,6 +300,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
               The labels are not available at this moment. Try using a different time range or check again later.
             </Alert>
           )}
+
           <div className={styles.content}>{body && <body.Component model={body} />}</div>
         </StatusWrapper>
       </div>
@@ -316,16 +330,4 @@ function getStyles(theme: GrafanaTheme2) {
       gap: theme.spacing(2),
     }),
   };
-}
-
-export const LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
-
-export function buildLabelValuesBreakdownActionScene(value: string) {
-  return new SceneFlexLayout({
-    children: [
-      new SceneFlexItem({
-        body: new LabelBreakdownScene({ value }),
-      }),
-    ],
-  });
 }

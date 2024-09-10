@@ -47,7 +47,12 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
 
   updateVariable = debounce((search: string) => {
     const variable = getLineFilterVariable(this);
-    variable.changeValueTo(`|~ \`(?i)${escapeRegExp(search)}\``);
+    if (search === '') {
+      variable.changeValueTo('');
+    } else {
+      variable.changeValueTo(`|~ \`(?i)${escapeRegExp(search)}\``);
+    }
+
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.search_string_in_logs_changed,

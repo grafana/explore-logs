@@ -11,13 +11,14 @@ import { navigateToValueBreakdown } from '../../../services/navigate';
 import { ValueSlugs } from '../../../services/routing';
 import { Button } from '@grafana/ui';
 import React from 'react';
-import { addToFilters } from './AddToFiltersButton';
+import { addToFilters, VariableFilterType } from './AddToFiltersButton';
 import { FilterButton } from '../../FilterButton';
 import {
   EMPTY_VARIABLE_VALUE,
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
+  getValueFromAdHocVariableFilter,
   LEVEL_VARIABLE_VALUE,
   SERVICE_NAME,
 } from '../../../services/variables';
@@ -40,15 +41,17 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
   public static Component = ({ model }: SceneComponentProps<SelectLabelActionScene>) => {
     const { hideValueDrilldown, labelName, showFilterField } = model.useState();
     const variable = model.getVariable();
-    const variableName = variable.useState().name;
+    const variableName = variable.useState().name as VariableFilterType;
     const existingFilter = model.getExistingFilter(variable);
+    const fieldValue = getValueFromAdHocVariableFilter(variable, existingFilter);
+    const value = fieldValue?.value;
 
     return (
       <>
         {showFilterField === true && (
           <FilterButton
-            isExcluded={existingFilter?.operator === FilterOp.Equal && existingFilter.value === EMPTY_VARIABLE_VALUE}
-            isIncluded={existingFilter?.operator === FilterOp.NotEqual && existingFilter.value === EMPTY_VARIABLE_VALUE}
+            isExcluded={existingFilter?.operator === FilterOp.Equal && value === EMPTY_VARIABLE_VALUE}
+            isIncluded={existingFilter?.operator === FilterOp.NotEqual && value === EMPTY_VARIABLE_VALUE}
             onInclude={() => model.onClickExcludeEmpty(variableName)}
             onExclude={() => model.onClickIncludeEmpty(variableName)}
             onClear={() => model.clearFilter(variableName)}
@@ -79,7 +82,8 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
   private getExistingFilter(variable?: AdHocFiltersVariable): AdHocVariableFilter | undefined {
     if (this.state.labelName !== SERVICE_NAME) {
       return variable?.state.filters.find((filter) => {
-        return filter.key === this.state.labelName && filter.value === EMPTY_VARIABLE_VALUE;
+        const value = getValueFromAdHocVariableFilter(variable, filter);
+        return filter.key === this.state.labelName && value.value === EMPTY_VARIABLE_VALUE;
       });
     }
 
@@ -112,17 +116,17 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
     navigateToValueBreakdown(this.state.fieldType, this.state.labelName, serviceScene);
   };
 
-  public onClickExcludeEmpty = (variableName: string) => {
-    addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'exclude', this, variableName);
+  public onClickExcludeEmpty = (variableType: VariableFilterType) => {
+    addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'exclude', this, variableType);
   };
 
-  public onClickIncludeEmpty = (variableName: string) => {
+  public onClickIncludeEmpty = (variableType: VariableFilterType) => {
     // If json do we want != '{}'?
-    addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'include', this, variableName);
+    addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'include', this, variableType);
   };
 
-  public clearFilter = (variableName: string) => {
-    addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'clear', this, variableName);
+  public clearFilter = (variableType: VariableFilterType) => {
+    addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'clear', this, variableType);
   };
 
   private calculateSparsity() {
@@ -146,13 +150,19 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
     }, 0);
 
     const panel = sceneGraph.getAncestor(this, VizPanel);
-    const percentage = ((logLinesWithLabelCount / logsPanelData.length) * 100).toLocaleString();
-    const description = `${this.state.labelName} exists on ${percentage}% of ${logsPanelData.length} sampled log lines`;
+    if (logLinesWithLabelCount !== undefined && logsPanelData.length > 0) {
+      const percentage = ((logLinesWithLabelCount / logsPanelData.length) * 100).toLocaleString();
+      const description = `${this.state.labelName} exists on ${percentage}% of ${logsPanelData.length} sampled log lines`;
 
-    // Update the desc
-    panel.setState({
-      description,
-    });
+      // Update the desc
+      panel.setState({
+        description,
+      });
+    } else {
+      panel.setState({
+        description: undefined,
+      });
+    }
 
     if (logLinesWithLabelCount < logsPanelData.length || this.getExistingFilter(variable)) {
       this.setState({

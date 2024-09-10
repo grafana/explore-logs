@@ -9,6 +9,7 @@ import { css } from '@emotion/css';
 import { addAdHocFilter } from './Breakdowns/AddToFiltersButton';
 import { areArraysEqual } from '../../services/comparison';
 import { getLogsPanelFrame } from './ServiceScene';
+import { getFilterTypeFromLabelType, getLabelTypeFromFrame, LabelType } from '../../services/fields';
 
 export class LogsTableScene extends SceneObjectBase {
   public static Component = ({ model }: SceneComponentProps<LogsTableScene>) => {
@@ -22,9 +23,15 @@ export class LogsTableScene extends SceneObjectBase {
     const timeRange = sceneGraph.getTimeRange(model);
     const { value: timeRangeValue } = timeRange.useState();
 
+    const dataFrame = getLogsPanelFrame(data);
+
     // Define callback function to update filters in react
     const addFilter = (filter: AdHocVariableFilter) => {
-      addAdHocFilter(filter, parentModel);
+      const { key, value } = filter;
+
+      const labelType = dataFrame ? getLabelTypeFromFrame(key, dataFrame) : LabelType.Parsed;
+      const variableType = getFilterTypeFromLabelType(labelType, key, value);
+      addAdHocFilter(filter, parentModel, variableType);
     };
 
     // Get reference to panel wrapper so table knows how much space it can use to render
@@ -42,8 +49,6 @@ export class LogsTableScene extends SceneObjectBase {
         parentModel.clearSelectedLine();
       }
     };
-
-    const dataFrame = getLogsPanelFrame(data);
 
     return (
       <div className={styles.panelWrapper} ref={panelWrap}>

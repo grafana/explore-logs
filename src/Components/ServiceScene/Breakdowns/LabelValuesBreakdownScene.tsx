@@ -11,30 +11,28 @@ import {
   SceneObjectState,
   SceneReactObject,
 } from '@grafana/scenes';
-import {LayoutSwitcher} from './LayoutSwitcher';
-import {getLabelValue} from './SortByScene';
-import {DrawStyle, LoadingPlaceholder, StackingMode} from '@grafana/ui';
-import {getQueryRunner, setLevelColorOverrides} from '../../../services/panel';
-import {getSortByPreference} from '../../../services/store';
-import {LoadingState} from '@grafana/data';
-import {ByFrameRepeater} from './ByFrameRepeater';
-import {getFilterBreakdownValueScene} from '../../../services/fields';
+import { LayoutSwitcher } from './LayoutSwitcher';
+import { getLabelValue } from './SortByScene';
+import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
+import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
+import { getSortByPreference } from '../../../services/store';
+import { LoadingState } from '@grafana/data';
+import { ByFrameRepeater } from './ByFrameRepeater';
+import { getFilterBreakdownValueScene } from '../../../services/fields';
 import {
   ALL_VARIABLE_VALUE,
   getLabelGroupByVariable,
-  getLogsStreamSelector,
-  LEVEL_VARIABLE_VALUE,
   VAR_LABEL_GROUP_BY_EXPR,
   VAR_LABELS,
 } from '../../../services/variables';
 import React from 'react';
-import {LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS, LabelBreakdownScene} from './LabelBreakdownScene';
-import {buildDataQuery} from '../../../services/query';
-import {navigateToDrilldownPage} from '../../../services/navigate';
-import {PageSlugs} from '../../../services/routing';
-import {ServiceScene} from '../ServiceScene';
-import {AddFilterEvent} from './AddToFiltersButton';
-import {DEFAULT_SORT_BY} from '../../../services/sorting';
+import { LabelBreakdownScene } from './LabelBreakdownScene';
+import { navigateToDrilldownPage } from '../../../services/navigate';
+import { PageSlugs } from '../../../services/routing';
+import { ServiceScene } from '../ServiceScene';
+import { AddFilterEvent } from './AddToFiltersButton';
+import { DEFAULT_SORT_BY } from '../../../services/sorting';
+import { buildLabelsQuery, LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS } from '../../../services/labels';
 
 export interface LabelValueBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -53,13 +51,17 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
 
   onActivate() {
     this.setState({
+      $data: getQueryRunner([
+        buildLabelsQuery(this, VAR_LABEL_GROUP_BY_EXPR, String(getLabelGroupByVariable(this).state.value)),
+      ]),
+    });
+    this.setState({
       body: this.build(),
-      $data: getQueryRunner([this.buildQuery()]),
     });
 
     const groupByVariable = getLabelGroupByVariable(this);
     this._subs.add(
-      groupByVariable.subscribeToState((newState, prevState) => {
+      groupByVariable.subscribeToState((newState) => {
         if (newState.value === ALL_VARIABLE_VALUE) {
           this.setState({
             $data: undefined,
@@ -75,12 +77,14 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       });
     });
 
-    this.state.$data?.subscribeToState((newState) => {
-      this.onValuesDataQueryChange(newState);
-    });
+    this._subs.add(
+      this.state.$data?.subscribeToState((newState, prevState) => {
+        this.onValuesDataQueryChange(newState, prevState);
+      })
+    );
   }
 
-  private onValuesDataQueryChange(newState: SceneDataState) {
+  private onValuesDataQueryChange(newState: SceneDataState, prevState: SceneDataState) {
     if (newState.data?.state === LoadingState.Done) {
       // No panels for the user to select, presumably because everything has been excluded
       const event = this.state.lastFilterEvent;
@@ -104,26 +108,6 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       lastFilterEvent: undefined,
     });
     navigateToDrilldownPage(PageSlugs.labels, sceneGraph.getAncestor(this, ServiceScene));
-  }
-
-  private buildQuery() {
-    const variable = getLabelGroupByVariable(this);
-    let labelExpressionToAdd = '';
-    let structuredMetadataToAdd = '';
-
-    if (variable.state.value && variable.state.value !== LEVEL_VARIABLE_VALUE) {
-      labelExpressionToAdd = ` ,${variable.state.value} != ""`;
-    } else if (variable.state.value && variable.state.value === LEVEL_VARIABLE_VALUE) {
-      structuredMetadataToAdd = ` | ${variable.state.value} != ""`;
-    }
-
-    return buildDataQuery(
-      `sum(count_over_time(${getLogsStreamSelector({
-        labelExpressionToAdd,
-        structuredMetadataToAdd,
-      })} [$__auto])) by (${VAR_LABEL_GROUP_BY_EXPR})`,
-      { legendFormat: `{{${VAR_LABEL_GROUP_BY_EXPR}}}`, refId: 'LABEL_BREAKDOWN_VALUES' }
-    );
   }
 
   private build(): LayoutSwitcher {
@@ -177,7 +161,12 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
               }),
             ],
           }),
-          getLayoutChild: getFilterBreakdownValueScene(getLabelValue, DrawStyle.Bars, VAR_LABELS, sceneGraph.getAncestor(this, LabelBreakdownScene).state.sort),
+          getLayoutChild: getFilterBreakdownValueScene(
+            getLabelValue,
+            DrawStyle.Bars,
+            VAR_LABELS,
+            sceneGraph.getAncestor(this, LabelBreakdownScene).state.sort
+          ),
           sortBy,
           direction,
           getFilter,
@@ -194,7 +183,12 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
               }),
             ],
           }),
-          getLayoutChild: getFilterBreakdownValueScene(getLabelValue, DrawStyle.Bars, VAR_LABELS, sceneGraph.getAncestor(this, LabelBreakdownScene).state.sort),
+          getLayoutChild: getFilterBreakdownValueScene(
+            getLabelValue,
+            DrawStyle.Bars,
+            VAR_LABELS,
+            sceneGraph.getAncestor(this, LabelBreakdownScene).state.sort
+          ),
           sortBy,
           direction,
           getFilter,
