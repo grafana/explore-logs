@@ -16,6 +16,16 @@ var clusters = []string{
 	"eu-west-1",
 }
 
+var shards = []string{
+	"0",
+	"1",
+	"2",
+	"3",
+	"4",
+	"5",
+	"",
+}
+
 var namespaces = []string{
 	"prod",
 	"dev",
@@ -90,10 +100,11 @@ func ForAllClusters(namespace, svc model.LabelValue, cb func(model.LabelSet)) {
 	for _, cluster := range clusters {
 		for i := 0; i < podCount; i++ {
 			cb(model.LabelSet{
-				"cluster":      model.LabelValue(cluster),
-				"namespace":    model.LabelValue(namespace),
-				"service_name": svc,
-				"pod":          svc + "-" + model.LabelValue(randSeq(5)),
+				"cluster":          model.LabelValue(cluster),
+				"__stream_shard__": model.LabelValue(shards[rand.Intn(6)]),
+				"namespace":        model.LabelValue(namespace),
+				"service_name":     svc,
+				"pod":              svc + "-" + model.LabelValue(randSeq(5)),
 			})
 		}
 	}
