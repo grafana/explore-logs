@@ -1,22 +1,24 @@
-import { ChangepointDetector, OutlierDetector, OutlierOutput } from '@bsull/augurs';
+import { type OutlierOutput } from '@bsull/augurs';
 import { DataFrame, FieldType, ReducerID, doStandardCalcs, fieldReducers, outerJoinDataFrames } from '@grafana/data';
 import { getLabelValueFromDataFrame } from './levels';
 import { memoize } from 'lodash';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from './analytics';
 
+import { augurs } from './augurs';
+
 export const DEFAULT_SORT_BY = 'changepoint';
 
 export const sortSeries = memoize(
-  (series: DataFrame[], sortBy: string, direction: string) => {
+  async (series: DataFrame[], sortBy: string, direction: string) => {
     if (sortBy === 'alphabetical') {
       return sortSeriesByName(series, direction);
     }
 
     if (sortBy === 'outliers') {
-      initOutlierDetector(series);
+      await initOutlierDetector(series);
     }
 
-    const reducer = (dataFrame: DataFrame) => {
+    const reducer = async (dataFrame: DataFrame) => {
       // ML & Wasm sorting options
       try {
         if (sortBy === 'changepoint') {
@@ -35,10 +37,12 @@ export const sortSeries = memoize(
       return value[sortBy] ?? 0;
     };
 
-    const seriesCalcs = series.map((dataFrame) => ({
-      value: reducer(dataFrame),
-      dataFrame: dataFrame,
-    }));
+    const seriesCalcs = await Promise.all(
+      series.map(async (dataFrame) => ({
+        value: await reducer(dataFrame),
+        dataFrame: dataFrame,
+      }))
+    );
 
     seriesCalcs.sort((a, b) => {
       if (a.value !== undefined && b.value !== undefined) {
@@ -66,7 +70,7 @@ export const sortSeries = memoize(
   }
 );
 
-export const calculateDataFrameChangepoints = (data: DataFrame) => {
+export const calculateDataFrameChangepoints = async (data: DataFrame) => {
   if (!wasmSupported()) {
     throw new Error('WASM not supported, fall back to stdDev');
   }
@@ -84,7 +88,7 @@ export const calculateDataFrameChangepoints = (data: DataFrame) => {
   const sample = fields[0].values.filter((_, i) => i % samplingStep === 0);
 
   const values = new Float64Array(sample);
-  const points = ChangepointDetector.defaultArgpcp().detectChangepoints(values);
+  const points = await augurs.detectChangepoints(values);
 
   return points.indices.length;
 };
@@ -105,7 +109,7 @@ export const sortSeriesByName = (series: DataFrame[], direction: string) => {
   return sortedSeries;
 };
 
-const initOutlierDetector = (series: DataFrame[]) => {
+const initOutlierDetector = async (series: DataFrame[]) => {
   if (!wasmSupported()) {
     return;
   }
@@ -122,8 +126,11 @@ const initOutlierDetector = (series: DataFrame[]) => {
   const points = new Float64Array(joinedSeries.flatMap((series) => series.values as number[]));
 
   try {
-    const detector = OutlierDetector.dbscan({ sensitivity: 0.4 }).preprocess(points, nTimestamps);
-    outliers = detector.detect();
+    outliers = await augurs.detectOutliers({
+      sensitivity: 0.4,
+      points,
+      nTimestamps,
+    });
   } catch (e) {
     console.error(e);
   }

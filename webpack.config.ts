@@ -9,6 +9,9 @@ const config = async (env): Promise<Configuration> => {
       // Required to load WASM modules.
       asyncWebAssembly: true,
     },
+    output: {
+      publicPath: '/public/plugins/grafana-lokiexplore-app/',
+    },
   });
 };
 
