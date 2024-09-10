@@ -1,12 +1,11 @@
 package main
 
 import (
+	gofakeit "github.com/brianvoe/gofakeit/v7"
+	"github.com/prometheus/common/model"
 	"math/rand"
 	"strings"
 	"time"
-
-	gofakeit "github.com/brianvoe/gofakeit/v7"
-	"github.com/prometheus/common/model"
 )
 
 var clusters = []string{
@@ -99,10 +98,14 @@ func ForAllClusters(namespace, svc model.LabelValue, cb func(model.LabelSet)) {
 	podCount := rand.Intn(10) + 1
 	for _, cluster := range clusters {
 		for i := 0; i < podCount; i++ {
+			clusterInt := 0
+			for _, char := range cluster {
+				clusterInt += int(char)
+			}
 			cb(model.LabelSet{
 				"env":              model.LabelValue(namespaces[rand.Intn(len(namespaces))]),
 				"cluster":          model.LabelValue(cluster),
-				"__stream_shard__": model.LabelValue(shards[rand.Intn(len(shards))]),
+				"__stream_shard__": model.LabelValue(shards[clusterInt%len(shards)]),
 				"namespace":        model.LabelValue(namespace),
 				"service_name":     svc,
 				"pod":              svc + "-" + model.LabelValue(randSeq(5)),
