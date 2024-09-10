@@ -64,6 +64,7 @@ function splitQueriesByStreamShard(
   let mergedResponse: DataQueryResponse = { data: [], state: LoadingState.Streaming, key: uuidv4() };
   let subquerySubscription: Subscription | null = null;
   let retriesMap = new Map<number, number>();
+  let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
   const runNextRequest = (subscriber: Subscriber<DataQueryResponse>, cycle: number, shardRequests: number[][]) => {
     if (shouldStop) {
@@ -93,14 +94,17 @@ function splitQueriesByStreamShard(
       }
 
       const retries = retriesMap.get(cycle) ?? 0;
-      if (retries > 2) {
+      if (retries > 3) {
         return false;
       }
 
       retriesMap.set(cycle, retries + 1);
 
-      console.log(`Retrying ${cycle} (${retries + 1})`);
-      runNextRequest(subscriber, cycle, shardRequests);
+      retryTimer = setTimeout(() => {
+        console.log(`Retrying ${cycle} (${retries + 1})`);
+        runNextRequest(subscriber, cycle, shardRequests);
+      }, 1500 * Math.pow(2, retries)); // Exponential backoff
+
       return true;
     };
 
@@ -129,6 +133,9 @@ function splitQueriesByStreamShard(
       complete: () => {
         subscriber.next(mergedResponse);
         nextRequest();
+        if (retryTimer) {
+          clearTimeout(retryTimer);
+        }
       },
       error: (error: unknown) => {
         console.error(error);
