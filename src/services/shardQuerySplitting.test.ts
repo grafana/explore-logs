@@ -110,20 +110,10 @@ describe('runShardSplitQuery()', () => {
       // @ts-expect-error
       .spyOn(datasource, 'runQuery')
       .mockReturnValueOnce(of({ state: LoadingState.Error, error: { refId: 'A', message: 'Error' }, data: [] }));
-    await expect(runShardSplitQuery(datasource, request)).toEmitValuesWith((response: DataQueryResponse[]) => {
-      // 1 shard + empty shard + 1 retry = 3
-      expect(response).toHaveLength(3);
-      // @ts-expect-error
-      expect(datasource.runQuery).toHaveBeenCalledTimes(3);
+    // @ts-expect-error
+    jest.spyOn(global, 'setTimeout').mockImplementationOnce((callback) => {
+      callback();
     });
-  });
-
-  test('Retries failed requests', async () => {
-    jest.mocked(datasource.languageProvider.fetchLabelValues).mockResolvedValue([1]);
-    jest
-      // @ts-expect-error
-      .spyOn(datasource, 'runQuery')
-      .mockReturnValueOnce(of({ state: LoadingState.Error, error: { refId: 'A', message: 'Error' }, data: [] }));
     await expect(runShardSplitQuery(datasource, request)).toEmitValuesWith((response: DataQueryResponse[]) => {
       // 1 shard + empty shard + 1 retry = 3
       expect(response).toHaveLength(3);
