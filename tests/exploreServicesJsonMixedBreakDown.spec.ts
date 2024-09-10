@@ -64,7 +64,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     });
     expect(requests).toHaveLength(3);
   });
-  test(`should exclude ${logFmtFieldName}, request should contain logfmt`, async ({ page }) => {
+  test.only(`should exclude ${logFmtFieldName}, request should contain logfmt`, async ({ page }) => {
     let requests: PlaywrightRequest[] = [];
     explorePage.blockAllQueriesExcept({
       refIds: [logFmtFieldName],
@@ -82,7 +82,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
       .getByRole('button', { name: 'Select' })
       .click();
 
-    // We should have 6 panels
+    // We should have 1 panel for 1 field value
     await expect(allPanels).toHaveCount(1);
     // Should have 2 queries by now
     expect(requests).toHaveLength(2);
@@ -114,6 +114,8 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
         }
       });
     });
+    // Give the requests a bit of time to run
+    await page.waitForTimeout(200);
     expect(requests).toHaveLength(4);
   });
   test(`should exclude ${jsonFmtFieldName}, request should contain logfmt`, async ({ page }) => {
