@@ -1,11 +1,12 @@
 import { PageSlugs, ValueSlugs } from '../../services/routing';
 import { LogsListScene } from './LogsListScene';
 import { testIds } from '../../services/testIds';
-import { buildLabelValuesBreakdownActionScene, LabelBreakdownScene } from './Breakdowns/LabelBreakdownScene';
+import { LabelBreakdownScene } from './Breakdowns/LabelBreakdownScene';
 import { FieldsBreakdownScene } from './Breakdowns/FieldsBreakdownScene';
 import { PatternsBreakdownScene } from './Breakdowns/Patterns/PatternsBreakdownScene';
 import { SceneFlexItem, SceneFlexLayout, SceneObject } from '@grafana/scenes';
 import { LogsVolumePanel } from './LogsVolumePanel';
+import { buildLabelValuesBreakdownActionScene } from '../../services/labels';
 
 interface ValueBreakdownViewDefinition {
   displayName: string;
@@ -24,7 +25,7 @@ export interface BreakdownViewDefinition {
   displayName: TabNames;
   value: PageSlugs;
   testId: string;
-  getScene: (changeFields: (f: string[]) => void) => SceneObject;
+  getScene: (changeFields: (f: number) => void) => SceneObject;
 }
 
 export const breakdownViewsDefinitions: BreakdownViewDefinition[] = [
@@ -78,11 +79,11 @@ function buildPatternsScene() {
   });
 }
 
-function buildFieldsBreakdownActionScene(changeFieldNumber: (n: string[]) => void) {
+function buildFieldsBreakdownActionScene(changeFieldNumber: (n: number) => void) {
   return new SceneFlexLayout({
     children: [
       new SceneFlexItem({
-        body: new FieldsBreakdownScene({ changeFields: changeFieldNumber }),
+        body: new FieldsBreakdownScene({ changeFieldCount: changeFieldNumber }),
       }),
     ],
   });

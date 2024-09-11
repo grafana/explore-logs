@@ -57,7 +57,7 @@ describe('datasource', () => {
         ],
       };
 
-      // @ts-ignore
+      //@ts-expect-error
       datasource.getResource = (path, params, options) => {
         const detectedFieldResponse: DetectedFieldsResponse = detectedFieldsResponse;
         return Promise.resolve(detectedFieldResponse);

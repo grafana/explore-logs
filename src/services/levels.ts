@@ -61,16 +61,23 @@ export function getVisibleLevels(allLevels: string[], sceneRef: SceneObject) {
   const levelsFilter = getLevelsVariable(sceneRef);
   const wantedLevels = levelsFilter.state.filters
     .filter((filter) => filter.operator === FilterOp.Equal)
-    .map((filter) => filter.value);
+    .map((filter) => normalizeLevelName(filter.value));
   const unwantedLevels = levelsFilter.state.filters
     .filter((filter) => filter.operator === FilterOp.NotEqual)
-    .map((filter) => filter.value);
+    .map((filter) => normalizeLevelName(filter.value));
   return allLevels.filter((level) => {
     if (unwantedLevels.includes(level)) {
       return false;
     }
     return wantedLevels.length === 0 || wantedLevels.includes(level);
   });
+}
+
+function normalizeLevelName(level: string) {
+  if (level === '""') {
+    return 'logs';
+  }
+  return level;
 }
 
 /**
@@ -85,6 +92,11 @@ export function toggleLevelFromFilter(level: string, sceneRef: SceneObject) {
   const filterExists = levelFilter.state.filters.find(
     (filter) => filter.value === level && filter.operator === FilterOp.Equal
   );
+
+  if (level === 'logs') {
+    level = '""';
+  }
+
   let action;
   if (empty || !filterExists) {
     replaceFilter(LEVEL_VARIABLE_VALUE, level, 'include', sceneRef);

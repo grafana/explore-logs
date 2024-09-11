@@ -26,12 +26,13 @@ import {
   VAR_LABELS,
 } from '../../../services/variables';
 import React from 'react';
-import { buildLabelsQuery, LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS, LabelBreakdownScene } from './LabelBreakdownScene';
+import { LabelBreakdownScene } from './LabelBreakdownScene';
 import { navigateToDrilldownPage } from '../../../services/navigate';
 import { PageSlugs } from '../../../services/routing';
 import { ServiceScene } from '../ServiceScene';
 import { AddFilterEvent } from './AddToFiltersButton';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
+import { buildLabelsQuery, LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS } from '../../../services/labels';
 
 export interface LabelValueBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;

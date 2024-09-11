@@ -4,7 +4,7 @@ import { getExplorationFor } from '../../services/scenes';
 import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, ValueSlugs } from '../../services/routing';
 import { GoToExploreButton } from './GoToExploreButton';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
-import { ALL_VARIABLE_VALUE, getLabelsVariable, SERVICE_NAME } from '../../services/variables';
+import { getLabelsVariable, SERVICE_NAME } from '../../services/variables';
 import { navigateToDrilldownPage, navigateToIndex } from '../../services/navigate';
 import React from 'react';
 import { ServiceScene, ServiceSceneState } from './ServiceScene';
@@ -87,7 +87,7 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
 const getCounter = (tab: BreakdownViewDefinition, state: ServiceSceneState) => {
   switch (tab.value) {
     case 'fields':
-      return state.fieldsCount ?? (state.fields?.filter((l) => l !== ALL_VARIABLE_VALUE) ?? []).length;
+      return state.fieldsCount;
     case 'patterns':
       return state.patternsCount;
     case 'labels':

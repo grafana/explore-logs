@@ -1,6 +1,5 @@
 import { AdHocFiltersVariable } from '@grafana/scenes';
 import { VAR_FIELDS } from '../../../services/variables';
-import { buildFieldsQueryString } from './FieldsBreakdownScene';
 import { createDataFrame, DataFrame, Field, FieldType } from '@grafana/data';
 import {
   DETECTED_FIELDS_CARDINALITY_NAME,
@@ -8,6 +7,7 @@ import {
   DETECTED_FIELDS_PARSER_NAME,
   DETECTED_FIELDS_TYPE_NAME,
 } from '../../../services/datasource';
+import { buildFieldsQueryString } from '../../../services/fields';
 
 describe('buildFieldsQueryString', () => {
   test('should build logfmt-parser query', () => {

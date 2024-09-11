@@ -5,8 +5,6 @@ import { AdHocVariableFilter, DataFrame, GrafanaTheme2, LoadingState } from '@gr
 import {
   QueryRunnerState,
   SceneComponentProps,
-  SceneFlexItem,
-  SceneFlexLayout,
   sceneGraph,
   SceneObject,
   SceneObjectBase,
@@ -21,11 +19,8 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'se
 import { ValueSlugs } from 'services/routing';
 import {
   ALL_VARIABLE_VALUE,
-  getFieldsVariable,
   getLabelGroupByVariable,
   getLabelsVariable,
-  getLogsStreamSelector,
-  LEVEL_VARIABLE_VALUE,
   SERVICE_NAME,
   VAR_LABEL_GROUP_BY,
   VAR_LABELS,
@@ -44,8 +39,6 @@ import { areArraysEqual } from '../../../services/comparison';
 import { LabelValuesBreakdownScene } from './LabelValuesBreakdownScene';
 import { LabelsAggregatedBreakdownScene } from './LabelsAggregatedBreakdownScene';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
-import { buildDataQuery } from '../../../services/query';
-import { getParserFromFieldsFilters } from '../../../services/fields';
 import { EmptyLayoutScene } from './EmptyLayoutScene';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
@@ -337,39 +330,4 @@ function getStyles(theme: GrafanaTheme2) {
       gap: theme.spacing(2),
     }),
   };
-}
-
-export const LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
-
-export function buildLabelValuesBreakdownActionScene(value: string) {
-  return new SceneFlexLayout({
-    children: [
-      new SceneFlexItem({
-        body: new LabelBreakdownScene({ value }),
-      }),
-    ],
-  });
-}
-
-export function buildLabelsQuery(sceneRef: SceneObject, optionValue: string, optionName: string) {
-  let labelExpressionToAdd = '';
-  let structuredMetadataToAdd = '';
-
-  const fields = getFieldsVariable(sceneRef);
-  const parser = getParserFromFieldsFilters(fields);
-
-  if (optionName && optionName !== LEVEL_VARIABLE_VALUE) {
-    labelExpressionToAdd = ` ,${optionName} != ""`;
-  } else if (optionName && optionName === LEVEL_VARIABLE_VALUE) {
-    structuredMetadataToAdd = ` | ${optionName} != ""`;
-  }
-
-  return buildDataQuery(
-    `sum(count_over_time(${getLogsStreamSelector({
-      labelExpressionToAdd,
-      structuredMetadataToAdd,
-      parser,
-    })} [$__auto])) by (${optionValue})`,
-    { legendFormat: `{{${optionValue}}}`, refId: 'LABEL_BREAKDOWN_VALUES' }
-  );
 }

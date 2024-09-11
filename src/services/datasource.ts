@@ -348,7 +348,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
         if (!FIELDS_TO_REMOVE.includes(field.label)) {
           nameField.values.push(field.label);
           cardinalityField.values.push(field.cardinality);
-          parserField.values.push(field.parsers.join(', '));
+          parserField.values.push(field.parsers?.length ? field.parsers.join(', ') : 'structuredMetadata');
           typeField.values.push(field.type);
         }
       });
@@ -360,6 +360,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
       subscriber.next({ data: [dataFrame], state: LoadingState.Done });
     } catch (e) {
+      console.error('Detected fields error:', e);
       subscriber.next({ data: [], state: LoadingState.Error });
     }
 

@@ -18,15 +18,11 @@ import { LayoutSwitcher } from './LayoutSwitcher';
 import { getQueryRunner } from '../../../services/panel';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { Alert, DrawStyle, LoadingPlaceholder } from '@grafana/ui';
-import { getFilterBreakdownValueScene } from '../../../services/fields';
+import { buildFieldsQueryString, getFilterBreakdownValueScene } from '../../../services/fields';
 import { getLabelValue } from './SortByScene';
 import { getFieldGroupByVariable, getFieldsVariable, VAR_FIELDS } from '../../../services/variables';
 import React from 'react';
-import {
-  buildFieldsQueryString,
-  FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS,
-  FieldsBreakdownScene,
-} from './FieldsBreakdownScene';
+import { FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS, FieldsBreakdownScene } from './FieldsBreakdownScene';
 import { AddFilterEvent } from './AddToFiltersButton';
 import { navigateToDrilldownPage } from '../../../services/navigate';
 import { PageSlugs } from '../../../services/routing';

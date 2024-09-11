@@ -52,7 +52,6 @@ type ServiceSceneLoadingStates = {
 };
 
 export interface ServiceSceneCustomState {
-  fields?: string[];
   labelsCount?: number;
   patternsCount?: number;
   fieldsCount?: number;
@@ -386,9 +385,9 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       body.setState({
         children: [
           ...body.state.children.slice(0, 1),
-          breakdownViewDef.getScene((vals) => {
+          breakdownViewDef.getScene((length) => {
             if (breakdownViewDef.value === 'fields') {
-              this.setState({ fieldsCount: vals.length });
+              this.setState({ fieldsCount: length });
             }
           }),
         ],
