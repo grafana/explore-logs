@@ -117,6 +117,18 @@ export function isLogsRequest(request: SceneDataQueryRequest) {
   return request.targets.find((query) => isLogsQuery(query.expr)) !== undefined;
 }
 
+export function requestSupportsSharding(request: SceneDataQueryRequest) {
+  if (isLogsRequest(request)) {
+    return false;
+  }
+  for (let i = 0; i < request.targets.length; i++) {
+    if (request.targets[i].expr?.includes('avg_over_time')) {
+      return false;
+    }
+  }
+  return true;
+}
+
 const SHARDING_PLACEHOLDER = '__stream_shard_number__';
 export const addShardingPlaceholderSelector = (query: string) => {
   return query.replace('}', `, __stream_shard__=~"${SHARDING_PLACEHOLDER}"}`);

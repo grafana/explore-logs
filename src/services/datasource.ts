@@ -19,7 +19,7 @@ import { DetectedFieldsResponse, DetectedLabelsResponse } from './fields';
 import { FIELDS_TO_REMOVE, sortLabelsByCardinality } from './filters';
 import { LEVEL_VARIABLE_VALUE, SERVICE_NAME } from './variables';
 import { runShardSplitQuery } from './shardQuerySplitting';
-import { isLogsRequest } from './logql';
+import { requestSupportsSharding } from './logql';
 
 export const WRAPPED_LOKI_DS_UID = 'wrapped-loki-ds-uid';
 
@@ -137,7 +137,10 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     const shardingEnabled = config.featureToggles.exploreLogsShardSplitting;
 
     // Query the datasource and return either observable or promise
-    const dsResponse = isLogsRequest(request) || !shardingEnabled ? ds.query(request) : runShardSplitQuery(ds, request);
+    const dsResponse =
+      requestSupportsSharding(request) === false || !shardingEnabled
+        ? ds.query(request)
+        : runShardSplitQuery(ds, request);
     dsResponse.subscribe(subscriber);
 
     return subscriber;
