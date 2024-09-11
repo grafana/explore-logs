@@ -61,7 +61,7 @@ function splitQueriesByStreamShard(
   splittingTargets: LokiQuery[]
 ) {
   let shouldStop = false;
-  let mergedResponse: DataQueryResponse = { data: [], state: LoadingState.Streaming, key: uuidv4() };
+  let mergedResponse: DataQueryResponse = { data: [], state: LoadingState.Loading, key: uuidv4() };
   let subquerySubscription: Subscription | null = null;
   let retriesMap = new Map<number, number>();
   let retryTimer: ReturnType<typeof setTimeout> | null = null;
@@ -127,6 +127,9 @@ function splitQueriesByStreamShard(
           if (retry(partialResponse)) {
             return;
           }
+        }
+        if (mergedResponse.data.length) {
+          mergedResponse.state = LoadingState.Streaming;
         }
         mergedResponse = combineResponses(mergedResponse, partialResponse);
       },
