@@ -107,14 +107,14 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
     return { panel, title };
   }
 
-  private update(detectedFieldsFrame: DataFrame) {
+  private update(detectedLabelsFrame: DataFrame) {
     const variable = getLabelGroupByVariable(this);
-    const newFields = variable.state.options.filter((opt) => opt.value !== ALL_VARIABLE_VALUE).map((opt) => opt.label);
+    const newLabels = variable.state.options.filter((opt) => opt.value !== ALL_VARIABLE_VALUE).map((opt) => opt.label);
 
     this.state.body?.state.layouts.forEach((layoutObj) => {
-      let existingFields = [];
+      let existingLabels = [];
       const layout = layoutObj as SceneCSSGridLayout;
-      const newLabelsSet = new Set<string>(newFields);
+      const newLabelsSet = new Set<string>(newLabels);
       const updatedChildren = layout.state.children as SceneCSSGridItem[];
 
       for (let i = 0; i < updatedChildren.length; i++) {
@@ -129,12 +129,12 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
           // And make sure to update the index, or we'll skip the next one
           i--;
         }
-        existingFields.push(title);
+        existingLabels.push(title);
       }
 
-      const fieldsToAdd = Array.from(newLabelsSet);
+      const labelsToAdd = Array.from(newLabelsSet);
 
-      const options = fieldsToAdd.map((fieldName) => {
+      const options = labelsToAdd.map((fieldName) => {
         return {
           label: fieldName,
           value: fieldName,
@@ -143,7 +143,7 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
 
       updatedChildren.push(...this.buildChildren(options));
 
-      const cardinalityMap = this.calculateCardinalityMap(detectedFieldsFrame);
+      const cardinalityMap = this.calculateCardinalityMap(detectedLabelsFrame);
       updatedChildren.sort(this.sortChildren(cardinalityMap));
       updatedChildren.map((child) => {
         limitMaxNumberOfSeriesForPanel(child);
