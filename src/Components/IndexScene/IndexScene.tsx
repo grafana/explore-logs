@@ -249,16 +249,6 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     applyMode: 'manual',
     layout: 'vertical',
     getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
-    // getTagValuesProvider: () => Promise.resolve({ replace: false, values: [
-    //     {
-    //   value: 'hallo',
-    //     text: 'hallo'
-    //   },
-    //     {
-    //       value: 'person',
-    //       text: 'person',
-    //     }
-    //   ] }),
     expressionBuilder: renderLogQLMetadataFilters,
     hide: VariableHide.hideLabel,
   });
