@@ -1,5 +1,5 @@
 import { ChangepointDetector, OutlierDetector, OutlierOutput } from '@bsull/augurs';
-import { DataFrame, FieldType, ReducerID, doStandardCalcs, fieldReducers, outerJoinDataFrames } from '@grafana/data';
+import { DataFrame, doStandardCalcs, fieldReducers, FieldType, outerJoinDataFrames, ReducerID } from '@grafana/data';
 import { getLabelValueFromDataFrame } from './levels';
 import { memoize } from 'lodash';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from './analytics';
@@ -61,8 +61,14 @@ export const sortSeries = memoize(
         : 0;
     const firstValue = series.length > 0 ? getLabelValueFromDataFrame(series[0]) : '';
     const lastValue = series.length > 0 ? getLabelValueFromDataFrame(series[series.length - 1]) : '';
-    const key = `${firstValue}_${lastValue}_${firstTimestamp}_${lastTimestamp}_${series.length}_${sortBy}_${direction}`;
-    return key;
+    // This still isn't good enough, if the dataframe returns the same number of fields, with the same start and end values, we'll fail to update the UI
+    const allSeriesKey = series.map(
+      (frame) =>
+        frame.length +
+        '_' +
+        frame.fields.map((field) => field.name + '_' + field.values[0] + '_' + field.values[field.values.length - 1])
+    );
+    return `${firstValue}_${lastValue}_${firstTimestamp}_${lastTimestamp}_${series.length}_${allSeriesKey}_${sortBy}_${direction}`;
   }
 );
 

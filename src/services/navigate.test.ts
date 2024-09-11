@@ -24,9 +24,7 @@ describe('navigate', () => {
   });
 
   describe('navigateToValueBreakdown', () => {
-    let drillDownLabel: string,
-      serviceLabel: string,
-      mockServiceSceneState: ServiceSceneCustomState;
+    let drillDownLabel: string, serviceLabel: string, mockServiceSceneState: ServiceSceneCustomState;
     beforeAll(() => {
       drillDownLabel = 'label_name';
       serviceLabel = 'service_name';
@@ -46,7 +44,6 @@ describe('navigate', () => {
 
       mockServiceSceneState = {
         patternsCount: 2,
-        fields: ['field1', 'field2'],
         fieldsCount: 2,
         loading: true,
       };

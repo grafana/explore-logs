@@ -1,6 +1,7 @@
 import { AdHocVariableFilter } from '@grafana/data';
 import { buildDataQuery, renderLogQLFieldFilters, renderLogQLLabelFilters } from './query';
 import { FilterOp } from './filters';
+import { FieldValue } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
 
 describe('buildDataQuery', () => {
   test('Given an expression outputs a Loki query', () => {
@@ -30,12 +31,18 @@ describe('renderLogQLFieldFilters', () => {
       {
         key: 'level',
         operator: FilterOp.Equal,
-        value: 'info',
+        value: JSON.stringify({
+          value: 'info',
+          parser: 'logfmt',
+        } as FieldValue),
       },
       {
         key: 'cluster',
         operator: FilterOp.Equal,
-        value: 'lil-cluster',
+        value: JSON.stringify({
+          value: 'lil-cluster',
+          parser: 'logfmt',
+        } as FieldValue),
       },
     ];
 
@@ -47,12 +54,18 @@ describe('renderLogQLFieldFilters', () => {
       {
         key: 'level',
         operator: FilterOp.NotEqual,
-        value: 'info',
+        value: JSON.stringify({
+          value: 'info',
+          parser: 'logfmt',
+        } as FieldValue),
       },
       {
         key: 'cluster',
         operator: FilterOp.NotEqual,
-        value: 'lil-cluster',
+        value: JSON.stringify({
+          value: 'lil-cluster',
+          parser: 'logfmt',
+        } as FieldValue),
       },
     ];
 
@@ -64,12 +77,18 @@ describe('renderLogQLFieldFilters', () => {
       {
         key: 'level',
         operator: FilterOp.Equal,
-        value: 'info',
+        value: JSON.stringify({
+          value: 'info',
+          parser: 'logfmt',
+        } as FieldValue),
       },
       {
         key: 'level',
         operator: FilterOp.Equal,
-        value: 'error',
+        value: JSON.stringify({
+          value: 'error',
+          parser: 'logfmt',
+        } as FieldValue),
       },
     ];
 
@@ -81,27 +100,42 @@ describe('renderLogQLFieldFilters', () => {
       {
         key: 'level',
         operator: FilterOp.Equal,
-        value: 'info',
+        value: JSON.stringify({
+          value: 'info',
+          parser: 'logfmt',
+        } as FieldValue),
       },
       {
         key: 'component',
         operator: FilterOp.NotEqual,
-        value: 'comp1',
+        value: JSON.stringify({
+          value: 'comp1',
+          parser: 'logfmt',
+        } as FieldValue),
       },
       {
         key: 'level',
         operator: FilterOp.Equal,
-        value: 'error',
+        value: JSON.stringify({
+          value: 'error',
+          parser: 'logfmt',
+        } as FieldValue),
       },
       {
         key: 'cluster',
         operator: FilterOp.Equal,
-        value: 'lil-cluster',
+        value: JSON.stringify({
+          value: 'lil-cluster',
+          parser: 'logfmt',
+        } as FieldValue),
       },
       {
         key: 'pod',
         operator: FilterOp.NotEqual,
-        value: 'pod1',
+        value: JSON.stringify({
+          value: 'pod1',
+          parser: 'logfmt',
+        } as FieldValue),
       },
     ];
 

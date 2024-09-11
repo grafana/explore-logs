@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { AdHocVariableFilter, SelectableValue, VariableHide } from '@grafana/data';
+import { AdHocVariableFilter, SelectableValue } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   CustomVariable,
@@ -27,6 +27,7 @@ import {
   getLevelsVariable,
   getPatternsVariable,
   getUrlParamNameForVariable,
+  MIXED_FORMAT_EXPR,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_LABELS,
@@ -44,7 +45,14 @@ import { getDrilldownSlug, PageSlugs } from '../../services/routing';
 import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { locationService } from '@grafana/runtime';
-import { renderLogQLFieldFilters, renderLogQLLabelFilters, renderPatternFilters } from 'services/query';
+import { VariableHide } from '@grafana/schema';
+import { CustomConstantVariable } from '../../services/CustomConstantVariable';
+import {
+  renderLogQLFieldFilters,
+  renderLogQLLabelFilters,
+  renderLogQLMetadataFilters,
+  renderPatternFilters,
+} from 'services/query';
 import { getLokiDatasource } from '../../services/scenes';
 
 export interface AppliedPattern {
@@ -251,7 +259,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     //       text: 'person',
     //     }
     //   ] }),
-    expressionBuilder: renderLogQLFieldFilters,
+    expressionBuilder: renderLogQLMetadataFilters,
     hide: VariableHide.hideLabel,
   });
 
@@ -270,6 +278,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     const dsValue = `${newState.value}`;
     newState.value && addLastUsedDataSourceToStorage(dsValue);
   });
+
   return {
     variablesScene: new SceneVariableSet({
       variables: [
@@ -284,7 +293,15 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
           hide: VariableHide.hideVariable,
         }),
         new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable }),
-        new CustomVariable({ name: VAR_LOGS_FORMAT, value: '', hide: VariableHide.hideVariable }),
+
+        // This variable is a hack to get logs context working, this variable should never be used or updated
+        new CustomConstantVariable({
+          name: VAR_LOGS_FORMAT,
+          value: MIXED_FORMAT_EXPR,
+          skipUrlSync: true,
+          hide: VariableHide.hideVariable,
+          options: [{ value: MIXED_FORMAT_EXPR, label: MIXED_FORMAT_EXPR }],
+        }),
       ],
     }),
     unsub,
