@@ -1,5 +1,5 @@
 import { AdHocFiltersVariable } from '@grafana/scenes';
-import { VAR_FIELDS } from '../../../services/variables';
+import { VAR_FIELDS, VAR_LEVELS } from '../../../services/variables';
 import { createDataFrame, DataFrame, Field, FieldType } from '@grafana/data';
 import {
   DETECTED_FIELDS_CARDINALITY_NAME,
@@ -47,7 +47,7 @@ describe('buildFieldsQueryString', () => {
 
     const result = buildFieldsQueryString('caller', filterVariable, detectedFieldsFrame);
     expect(result).toEqual(
-      `sum by (caller) (count_over_time({\${filters}}  \${levels} \${patterns} \${lineFilter} | logfmt | caller!="" \${fields} [$__auto]))`
+      `sum by (caller) (count_over_time({\${filters}}  \${${VAR_LEVELS}} \${patterns} \${lineFilter} | logfmt | caller!="" \${fields} [$__auto]))`
     );
   });
   test('should build json-parser query', () => {
@@ -87,7 +87,7 @@ describe('buildFieldsQueryString', () => {
 
     const result = buildFieldsQueryString('caller', filterVariable, detectedFieldsFrame);
     expect(result).toEqual(
-      `sum by (caller) (count_over_time({\${filters}}  \${levels} \${patterns} \${lineFilter} | json | drop __error__, __error_details__ | caller!="" \${fields} [$__auto]))`
+      `sum by (caller) (count_over_time({\${filters}}  \${${VAR_LEVELS}} \${patterns} \${lineFilter} | json | drop __error__, __error_details__ | caller!="" \${fields} [$__auto]))`
     );
   });
   test('should build mixed-parser query', () => {
@@ -127,7 +127,7 @@ describe('buildFieldsQueryString', () => {
 
     const result = buildFieldsQueryString('caller', filterVariable, detectedFieldsFrame);
     expect(result).toEqual(
-      `sum by (caller) (count_over_time({\${filters}}  \${levels} \${patterns} \${lineFilter} | json | logfmt | drop __error__, __error_details__ | caller!="" \${fields} [$__auto]))`
+      `sum by (caller) (count_over_time({\${filters}}  \${${VAR_LEVELS}} \${patterns} \${lineFilter} | json | logfmt | drop __error__, __error_details__ | caller!="" \${fields} [$__auto]))`
     );
   });
 });
