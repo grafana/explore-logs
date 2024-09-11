@@ -260,7 +260,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
 
     // If we don't have a detected labels count, or we are activating the labels scene, run the detected labels query
-    if (slug === PageSlugs.labels || this.state.labelsCount === undefined) {
+    if (slug === PageSlugs.labels || parentSlug === ValueSlugs.label || this.state.labelsCount === undefined) {
       this.state.$detectedLabelsData?.runQueries();
     }
 
