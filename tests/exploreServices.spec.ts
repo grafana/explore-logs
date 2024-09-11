@@ -144,14 +144,8 @@ test.describe('explore services page', () => {
         await route.fulfill({ json: {} });
       });
 
-      await page.route('**/values*', async (route) => {
-        await page.waitForTimeout(50);
-        await route.fulfill({ json: { status: 'success' } });
-      });
-
       await Promise.all([
         page.waitForResponse((resp) => resp.url().includes('index/volume')),
-        page.waitForResponse((resp) => resp.url().includes('/values')),
         page.waitForResponse((resp) => resp.url().includes('ds/query')),
       ]);
     });
