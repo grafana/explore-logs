@@ -260,10 +260,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
 
     // If we don't have a detected labels count, or we are activating the labels scene, run the detected labels query
-    if (
-      ((slug === PageSlugs.labels || parentSlug === ValueSlugs.label) && !this.state.$detectedLabelsData?.state.data) ||
-      this.state.labelsCount === undefined
-    ) {
+    if (slug === PageSlugs.labels || this.state.labelsCount === undefined) {
       this.state.$detectedLabelsData?.runQueries();
     }
 
@@ -298,7 +295,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         const detectedLabelsFields = detectedLabelsResponse.series[0].fields;
         if (detectedLabelsResponse.series.length !== undefined && detectedLabelsFields.length !== undefined) {
           this.setState({
-            labelsCount: detectedLabelsFields.length,
+            // Make sure to add one extra for the detected_level
+            labelsCount: detectedLabelsFields.length + 1,
           });
           getMetadataService().setLabelsCount(detectedLabelsFields.length);
         }
