@@ -671,7 +671,7 @@ test.describe('explore services breakdown page', () => {
 
   test('should see too many series button', async ({ page }) => {
     explorePage.blockAllQueriesExcept({
-      refIds: ['logsPanelQuery', 'datetime'],
+      refIds: ['logsPanelQuery', '_25values'],
       legendFormats: [`{{${levelName}}}`],
     });
     await page.goto(

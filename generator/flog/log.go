@@ -23,7 +23,7 @@ const (
 	// CommonLogFormat : {host} {user-identifier} {auth-user-id} [{datetime}] "{method} {request} {protocol}" {response-code} {bytes}
 	CommonLogFormat = "%s - %s [%s] \"%s %s %s\" %d %d"
 	// JSONLogFormat : {"host": "{host}", "user-identifier": "{user-identifier}", "datetime": "{datetime}", "method": "{method}", "request": "{request}", "protocol": "{protocol}", "status", {status}, "bytes": {bytes}, "referer": "{referer}"}
-	JSONLogFormat = `{"host":"%s", "user-identifier":"%s", "datetime":"%s", "method": "%s", "request": "%s", "protocol":"%s", "status":%d, "bytes":%d, "referer": "%s"}`
+	JSONLogFormat = `{"host":"%s", "user-identifier":"%s", "datetime":"%s", "method": "%s", "request": "%s", "protocol":"%s", "status":%d, "bytes":%d, "referer": "%s", "_25values": "%d"}`
 )
 
 // NewApacheCommonLog creates a log string with apache common log format
@@ -142,5 +142,6 @@ func NewJSONLogFormat(t time.Time, URI string, statusCode int) string {
 		statusCode,
 		gofakeit.Number(0, 30000),
 		gofakeit.URL(),
+		gofakeit.Number(0, 25),
 	)
 }
