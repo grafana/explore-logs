@@ -144,18 +144,26 @@ test.describe('explore services page', () => {
         await route.fulfill({ json: {} });
       });
 
+      await page.route('**/values*', async (route) => {
+        await page.waitForTimeout(50);
+        await route.fulfill({ json: { status: 'success' } });
+      });
+
       await Promise.all([
         page.waitForResponse((resp) => resp.url().includes('index/volume')),
+        page.waitForResponse((resp) => resp.url().includes('/values')),
         page.waitForResponse((resp) => resp.url().includes('ds/query')),
       ]);
     });
 
     test('refreshing time range should request panel data once', async ({ page }) => {
+      await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
       expect(logsVolumeCount).toEqual(1);
       expect(logsQueryCount).toEqual(4);
       await explorePage.refreshPicker.click();
       await explorePage.refreshPicker.click();
       await explorePage.refreshPicker.click();
+      await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
       expect(logsVolumeCount).toEqual(4);
       expect(logsQueryCount).toEqual(16);
     });
