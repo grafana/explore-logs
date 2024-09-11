@@ -39,6 +39,7 @@ import { navigateToIndex } from '../../services/navigate';
 import { areArraysEqual } from '../../services/comparison';
 import { ActionBarScene } from './ActionBarScene';
 import { breakdownViewsDefinitions, TabNames, valueBreakdownViews } from './BreakdownViews';
+import { LABELS_TO_REMOVE } from '../../services/filters';
 
 const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 const PATTERNS_QUERY_REFID = 'patterns';
@@ -294,9 +295,11 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         // Detected labels API call always returns a single frame, with a field for each label
         const detectedLabelsFields = detectedLabelsResponse.series[0].fields;
         if (detectedLabelsResponse.series.length !== undefined && detectedLabelsFields.length !== undefined) {
+          const removeSpecialFields = detectedLabelsResponse.series[0].fields.filter(
+            (f) => !LABELS_TO_REMOVE.includes(f.name)
+          );
           this.setState({
-            // Make sure to add one extra for the detected_level
-            labelsCount: detectedLabelsFields.length + 1,
+            labelsCount: removeSpecialFields.length + 1, // Add one for detected_level
           });
           getMetadataService().setLabelsCount(detectedLabelsFields.length);
         }

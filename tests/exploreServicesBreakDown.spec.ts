@@ -3,7 +3,6 @@ import { ExplorePage, PlaywrightRequest } from './fixtures/explore';
 import { testIds } from '../src/services/testIds';
 import { mockEmptyQueryApiResponse } from './mocks/mockEmptyQueryApiResponse';
 import { LokiQuery } from '../src/services/query';
-import exp = require('node:constants');
 
 const fieldName = 'caller';
 const levelName = 'detected_level';
@@ -733,5 +732,28 @@ test.describe('explore services breakdown page', () => {
     await expect(contentPanelLocator).toHaveCount(0);
     // But version should exist
     await expect(versionPanelLocator).toHaveCount(1);
+  });
+
+  test('should update label set if detected_labels is loaded in another tab', async ({ page }) => {
+    explorePage.blockAllQueriesExcept({});
+    await explorePage.assertNotLoading();
+    await explorePage.assertTabsNotLoading();
+    await explorePage.goToLabelsTab();
+
+    const tabCountLocator = page.getByTestId(testIds.exploreServiceDetails.tabLabels).locator('> span');
+    await expect(tabCountLocator).not.toBeEmpty();
+    const panels = explorePage.getAllPanelsLocator();
+    // Count panels, compare to tab count
+    await expect(panels).toHaveCount(parseInt((await tabCountLocator.textContent()) as string, 10));
+
+    await explorePage.assertTabsNotLoading();
+    await explorePage.goToLogsTab();
+    await page.getByTestId('AdHocFilter-service_name').click();
+    await page.getByText('mimir-ingester').click();
+    await explorePage.assertTabsNotLoading();
+    await explorePage.goToLabelsTab();
+
+    // Count panels, compare to tab count
+    await expect(panels).toHaveCount(parseInt((await tabCountLocator.textContent()) as string, 10));
   });
 });

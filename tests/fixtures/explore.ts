@@ -51,6 +51,12 @@ export class ExplorePage {
     await main.evaluate((main) => main.scrollTo(0, main.scrollHeight));
   }
 
+  async goToLogsTab() {
+    await this.page.getByTestId(testIds.exploreServiceDetails.tabLogs).click();
+    await this.assertNotLoading();
+    await this.assertTabsNotLoading();
+  }
+
   async goToFieldsTab() {
     await this.page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
     await this.assertNotLoading();
