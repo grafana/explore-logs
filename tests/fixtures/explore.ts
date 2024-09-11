@@ -74,6 +74,7 @@ export class ExplorePage {
 
   async assertPanelsNotLoading() {
     await expect(this.page.getByLabel('Panel loading bar')).toHaveCount(0);
+    await this.page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
   }
 
   // This is flakey, panels won't show the state if the requests come back in < 75ms

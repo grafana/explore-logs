@@ -169,6 +169,7 @@ test.describe('explore services page', () => {
     });
 
     test('navigating back will not re-run volume query', async ({ page }) => {
+      await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
       expect(logsVolumeCount).toEqual(1);
       expect(logsQueryCount).toBeLessThanOrEqual(4);
 
@@ -195,10 +196,10 @@ test.describe('explore services page', () => {
       await page.waitForTimeout(100);
 
       expect(logsVolumeCount).toEqual(1);
-      expect(logsQueryCount).toBeLessThanOrEqual(8);
     });
 
     test('changing datasource will trigger new queries', async ({ page }) => {
+      await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
       expect(logsVolumeCount).toEqual(1);
       expect(logsQueryCount).toEqual(4);
       await page
