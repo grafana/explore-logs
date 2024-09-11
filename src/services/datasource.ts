@@ -17,7 +17,7 @@ import { LokiQuery } from './query';
 import { PLUGIN_ID } from './routing';
 import { DetectedFieldsResponse, DetectedLabelsResponse } from './fields';
 import { FIELDS_TO_REMOVE, sortLabelsByCardinality } from './filters';
-import { LEVEL_VARIABLE_VALUE, SERVICE_NAME } from './variables';
+import { LEVEL_VARIABLE_VALUE } from './variables';
 import { runShardSplitQuery } from './shardQuerySplitting';
 import { requestSupportsSharding } from './logql';
 
@@ -423,7 +423,10 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
       // Scenes will only emit dataframes from the SceneQueryRunner, so for now we need to convert the API response to a dataframe
       const df = createDataFrame({
         fields: [
-          { name: SERVICE_NAME, values: volumeResponse?.data.result?.map((r) => r.metric.service_name) },
+          {
+            name: 'service_name',
+            values: volumeResponse?.data.result?.map((r) => r.metric.service_name ?? r.metric.__aggregated_metric__),
+          },
           { name: 'volume', values: volumeResponse?.data.result?.map((r) => Number(r.value[1])) },
         ],
       });
