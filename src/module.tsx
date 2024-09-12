@@ -1,9 +1,12 @@
+import { lazy } from 'react';
 import { AppPlugin } from '@grafana/data';
-import { App } from 'Components/App';
+// import App from 'Components/App';
 import init from '@bsull/augurs';
 import { linkConfigs } from 'services/extensions/links';
-import { init as initRuntimeDs } from 'services/datasource';
+import initRuntimeDs from 'services/datasource';
 import { wasmSupported } from 'services/sorting';
+
+const App = lazy(() => import('Components/App'));
 
 if (wasmSupported()) {
   init();

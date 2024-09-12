@@ -11,7 +11,7 @@ const getSceneApp = () =>
     pages: [makeIndexPage(), makeRedirectPage()],
   });
 
-export function LogExplorationView() {
+function LogExplorationView() {
   const [isInitialized, setIsInitialized] = React.useState(false);
 
   initializeMetadataService();
@@ -37,3 +37,5 @@ export function LogExplorationView() {
 
   return <scene.Component model={scene} />;
 }
+
+export default LogExplorationView;
