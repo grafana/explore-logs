@@ -5,7 +5,6 @@ import { DashboardCursorSync, DataFrame, GrafanaTheme2, LoadingState, TimeRange,
 import {
   behaviors,
   PanelBuilders,
-  QueryRunnerState,
   SceneComponentProps,
   SceneCSSGridItem,
   SceneCSSGridLayout,
@@ -46,7 +45,10 @@ import { getLabelsFromSeries, toggleLevelVisibility } from 'services/levels';
 import { ServiceFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
 import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 import { areArraysEqual } from '../../services/comparison';
+import { config } from '@grafana/runtime';
 
+// @ts-expect-error
+const aggregatedMetricsEnabled = config.featureToggles.exploreLogsAggregatedMetrics;
 export const SERVICES_LIMIT = 20;
 // Don't export AGGREGATED_SERVICE_NAME, we want to rename things so the rest of the application is agnostic to how we got the services
 const AGGREGATED_SERVICE_NAME = '__aggregated_metric__';
@@ -58,7 +60,7 @@ interface ServiceSelectionSceneState extends SceneObjectState {
   serviceLevel: Map<string, string[]>;
   // Logs volume API response as dataframe with SceneQueryRunner
   $data: SceneQueryRunner;
-  $labels: SceneQueryRunner;
+  $labels?: SceneQueryRunner;
   serviceName: typeof SERVICE_NAME | typeof AGGREGATED_SERVICE_NAME;
 }
 
@@ -81,13 +83,18 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         queries: [buildResourceQuery(`{${SERVICE_NAME}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')],
         runQueriesMode: 'manual',
       }),
-      $labels: getSceneQueryRunner({ queries: [buildResourceQuery('', 'labels')], runQueriesMode: 'manual' }),
+      $labels: aggregatedMetricsEnabled
+        ? getSceneQueryRunner({ queries: [buildResourceQuery('', 'labels')], runQueriesMode: 'manual' })
+        : undefined,
       serviceLevel: new Map<string, string[]>(),
       serviceName: SERVICE_NAME,
       ...state,
     });
 
-    this.state.$labels.activate();
+    if (aggregatedMetricsEnabled) {
+      this.state.$labels?.activate();
+    }
+
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
@@ -116,50 +123,56 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       })
     );
 
-    // Get labels
-    this.state.$labels.runQueries();
+    if (aggregatedMetricsEnabled) {
+      // Get labels
+      this.state.$labels?.runQueries();
 
-    // Update labels on time range change
-    this._subs.add(
-      sceneGraph.getTimeRange(this).subscribeToState((newState, prevState) => {
-        this.state.$labels.runQueries();
-      })
-    );
+      // Update labels on time range change
+      this._subs.add(
+        sceneGraph.getTimeRange(this).subscribeToState((newState, prevState) => {
+          this.state.$labels?.runQueries();
+        })
+      );
 
-    this._subs.add(
-      getDataSourceVariable(this).subscribeToState((newState, prevState) => {
-        this.state.$labels.runQueries();
-      })
-    );
+      // Update labels on datasource change
+      this._subs.add(
+        getDataSourceVariable(this).subscribeToState((newState, prevState) => {
+          this.state.$labels?.runQueries();
+        })
+      );
 
-    // Run queries on update of labels
-    this._subs.add(
-      this.state.$labels.subscribeToState((newState, prevState) => {
-        this.onLabelsChange(newState);
-      })
-    );
+      // Run queries on update of labels
+      this._subs.add(
+        this.state.$labels?.subscribeToState((newState, prevState) => {
+          if (newState?.data?.state === LoadingState.Done) {
+            const labels = newState?.data.series[0].fields[0].values;
+            this.runServiceQueries(labels);
+          }
+        })
+      );
+    } else {
+      this.runServiceQueries();
+    }
   }
 
-  private onLabelsChange(newState: QueryRunnerState) {
-    if (newState.data?.state === LoadingState.Done) {
-      const labels = newState.data.series[0].fields[0].values;
-      if (labels.includes(AGGREGATED_SERVICE_NAME)) {
-        this.setState({
-          serviceName: AGGREGATED_SERVICE_NAME,
-        });
-        this.state.$data.setState({
-          queries: [buildResourceQuery(`{${AGGREGATED_SERVICE_NAME}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')],
-        });
-      } else {
-        this.setState({
-          serviceName: SERVICE_NAME,
-        });
-        this.state.$data.setState({
-          queries: [buildResourceQuery(`{${SERVICE_NAME}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')],
-        });
-      }
-      this.state.$data.runQueries();
+  private runServiceQueries(labels?: string[]) {
+    if (labels?.includes(AGGREGATED_SERVICE_NAME)) {
+      this.setState({
+        serviceName: AGGREGATED_SERVICE_NAME,
+      });
+      this.state.$data.setState({
+        queries: [buildResourceQuery(`{${AGGREGATED_SERVICE_NAME}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')],
+      });
+    } else {
+      console.log('onLabelsChange');
+      this.setState({
+        serviceName: SERVICE_NAME,
+      });
+      this.state.$data.setState({
+        queries: [buildResourceQuery(`{${SERVICE_NAME}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')],
+      });
     }
+    this.state.$data.runQueries();
   }
 
   private updateBody() {
