@@ -97,7 +97,7 @@ var generators = map[model.LabelValue]map[model.LabelValue]LogGenerator{
 				for ctx.Err() == nil {
 					level := randLevel()
 					t := time.Now()
-					if rand.Intn(10)%2 == 0 && level == ERROR {
+					if level == ERROR {
 						log := flog.NewCommonLogFormat(t, randURI(), statusFromLevel(level))
 						// Add a stacktrace to the logfmt log, and include a field that will conflict with stream selectors
 						logger.Log(level, t, fmt.Sprintf("%s %s", log, `method=GET namespace=whoopsie caller=flush.go:253 stacktrace="Exception in thread \"main\" java.lang.NullPointerException\n        at com.example.myproject.Book.getTitle(Book.java:16)\n        at com.example.myproject.Author.getBookTitles(Author.java:25)\n        at com.example.myproject.Bootstrap.main(Bootstrap.java:14)"`))
