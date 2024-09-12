@@ -16,6 +16,7 @@ type Props<T> = {
 type AsyncFieldSelectorProps = {
   selectOption: (value: string) => void;
   isLoading: boolean;
+  initialFilter: SelectableValue<string>;
 } & Props<string>;
 
 export function FieldSelector<T>({ options, value, onChange, label }: Props<T>) {
@@ -49,10 +50,11 @@ export function ServiceFieldSelector({
   label,
   selectOption,
   isLoading,
+  initialFilter,
 }: AsyncFieldSelectorProps) {
   const styles = useStyles2(getStyles);
   const [selected, setSelected] = useState(false);
-  const [customOption, setCustomOption] = useState<SelectableValue<string>>();
+  const [customOption, setCustomOption] = useState<SelectableValue<string>>(initialFilter);
 
   const selectableOptions: SelectableValue[] = options.map((option) => {
     return {
