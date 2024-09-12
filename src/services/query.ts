@@ -151,3 +151,6 @@ export function renderPatternFilters(patterns: AppliedPattern[]) {
   }
   return `${excludePatternsLine} ${includePatternsLine}`.trim();
 }
+
+// Don't use AGGREGATED_SERVICE_NAME outside the service selection!
+export const AGGREGATED_SERVICE_NAME = '__aggregated_metric__';

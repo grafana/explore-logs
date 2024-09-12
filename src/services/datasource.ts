@@ -13,11 +13,11 @@ import { RuntimeDataSource, SceneObject, sceneUtils } from '@grafana/scenes';
 import { DataQuery } from '@grafana/schema';
 import { Observable, Subscriber } from 'rxjs';
 import { getDataSource } from './scenes';
-import { LokiQuery } from './query';
+import { AGGREGATED_SERVICE_NAME, LokiQuery } from './query';
 import { PLUGIN_ID } from './routing';
 import { DetectedFieldsResponse, DetectedLabelsResponse } from './fields';
 import { FIELDS_TO_REMOVE, sortLabelsByCardinality } from './filters';
-import { LEVEL_VARIABLE_VALUE, SERVICE_NAME } from './variables';
+import { LEVEL_VARIABLE_VALUE, SERVICE_NAME, SERVICE_NAME_EXPR, VAR_SERVICE_EXPR } from './variables';
 import { runShardSplitQuery } from './shardQuerySplitting';
 import { requestSupportsSharding } from './logql';
 
@@ -400,42 +400,108 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     subscriber.next({ data: [], state: LoadingState.Loading });
 
     try {
-      const volumeResponse: IndexVolumeResponse = await ds.getResource(
-        'index/volume',
-        {
-          query: expression,
-          start: request.range.from.utc().toISOString(),
-          end: request.range.to.utc().toISOString(),
-          limit: 5000,
-        },
-        {
-          requestId: request.requestId ?? 'volume',
-          headers: {
-            'X-Query-Tags': `Source=${PLUGIN_ID}`,
-          },
-        }
-      );
-      volumeResponse?.data.result.sort((lhs: VolumeResult, rhs: VolumeResult) => {
-        const lVolumeCount: VolumeCount = lhs.value[1];
-        const rVolumeCount: VolumeCount = rhs.value[1];
-        return Number(rVolumeCount) - Number(lVolumeCount);
-      });
-      // Scenes will only emit dataframes from the SceneQueryRunner, so for now we need to convert the API response to a dataframe
-      const df = createDataFrame({
-        fields: [
+      if (!expression.includes(AGGREGATED_SERVICE_NAME)) {
+        const volumeResponse: IndexVolumeResponse = await ds.getResource(
+          'index/volume',
           {
-            name: SERVICE_NAME,
-            values: volumeResponse?.data.result?.map((r) => r.metric.service_name ?? r.metric.__aggregated_metric__),
+            query: expression,
+            start: request.range.from.utc().toISOString(),
+            end: request.range.to.utc().toISOString(),
+            limit: 5000,
           },
-          { name: 'volume', values: volumeResponse?.data.result?.map((r) => Number(r.value[1])) },
-        ],
-      });
-      subscriber.next({ data: [df] });
-    } catch (e) {
-      subscriber.next({ data: [], state: LoadingState.Error });
-    }
+          {
+            requestId: request.requestId ?? 'volume',
+            headers: {
+              'X-Query-Tags': `Source=${PLUGIN_ID}`,
+            },
+          }
+        );
+        volumeResponse?.data.result.sort((lhs: VolumeResult, rhs: VolumeResult) => {
+          const lVolumeCount: VolumeCount = lhs.value[1];
+          const rVolumeCount: VolumeCount = rhs.value[1];
+          return Number(rVolumeCount) - Number(lVolumeCount);
+        });
+        // Scenes will only emit dataframes from the SceneQueryRunner, so for now we need to convert the API response to a dataframe
+        const df = createDataFrame({
+          fields: [
+            {
+              name: SERVICE_NAME,
+              values: volumeResponse?.data.result?.map((r) => r.metric.service_name ?? r.metric.__aggregated_metric__),
+            },
+            { name: 'volume', values: volumeResponse?.data.result?.map((r) => Number(r.value[1])) },
+          ],
+        });
+        subscriber.next({ data: [df] });
+        subscriber.complete();
+      } else {
+        const newExpr = `sort_desc(sum by (__aggregated_metric__)(sum_over_time({${SERVICE_NAME_EXPR}=~\`.*${VAR_SERVICE_EXPR}.*\`} | logfmt | unwrap bytes(bytes) [$__range])))`;
 
-    subscriber.complete();
+        request.targets = request.targets.map((target) => {
+          target.expr = newExpr;
+          target.queryType = 'instant';
+          return target;
+        });
+
+        const targetsInterpolated = ds.interpolateVariablesInQueries(request.targets, request.scopedVars);
+        const expression = targetsInterpolated[0].expr.replace('.*.*', '.+');
+
+        request.targets = request.targets.map((target) => {
+          target.expr = expression;
+          target.queryType = 'instant';
+          return target;
+        });
+
+        ds.query(request).subscribe((result) => {
+          if (result.state === LoadingState.Done) {
+            const serviceMetrics: { [key: string]: number } = {};
+            let serviceNameIndex = 0;
+            let volumeIndex = 0;
+            for (let i = 0; i < result.data[0].fields.length; i++) {
+              if (result.data[0].fields[i].name === '__aggregated_metric__') {
+                serviceNameIndex = i;
+              }
+
+              if (result.data[0].fields[i].name === 'Value #A') {
+                volumeIndex = i;
+              }
+            }
+
+            result.data?.forEach((result: any) => {
+              let num = result.fields[serviceNameIndex].values.length;
+              // limit to 1000 services
+              if (num > 1000) {
+                num = 1000;
+              }
+
+              for (let i = 0; i < num; i++) {
+                const value = result.fields[volumeIndex].values[i];
+                const serviceName = result.fields[serviceNameIndex].values[i];
+                serviceMetrics[serviceName] = value;
+              }
+            });
+
+            const df = createDataFrame({
+              fields: [
+                {
+                  name: 'service_name',
+                  values: Object.keys(serviceMetrics),
+                },
+                { name: 'volume', values: Object.values(serviceMetrics) },
+              ],
+            });
+
+            subscriber.next({ data: [df], state: LoadingState.Done });
+            subscriber.complete();
+          }
+
+          subscriber.next({ ...result, data: [] });
+        });
+      }
+    } catch (e) {
+      console.error('failed getting volume', e);
+      subscriber.next({ data: [], state: LoadingState.Error });
+      subscriber.complete();
+    }
 
     return subscriber;
   }
