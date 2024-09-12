@@ -10,16 +10,16 @@ services:
       context: ./.config
       args:
         grafana_image: ${GRAFANA_IMAGE:-grafana}
-        grafana_version: ${GRAFANA_VERSION:-11.0.0}
+        grafana_version: ${GRAFANA_VERSION:-latest}
     ports:
-      - 3000:3000/tcp
+      - 3001:3000/tcp
     volumes:
       - ./dist:/var/lib/grafana/plugins/grafana-logsapp
       - ./provisioning:/etc/grafana/provisioning
     extra_hosts:
       - 'host.docker.internal:host-gateway'
   loki:
-    image: grafana/loki:main
+    image: grafana/loki:k218-85759c7
     environment:
       LOG_CLUSTER_DEPTH: '8'
       LOG_SIM_TH: '0.3'

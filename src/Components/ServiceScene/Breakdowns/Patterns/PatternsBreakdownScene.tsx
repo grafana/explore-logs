@@ -1,10 +1,11 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DataFrame, FieldType, GrafanaTheme2 } from '@grafana/data';
+import { DataFrame, dateTime, GrafanaTheme2 } from '@grafana/data';
 import {
   CustomVariable,
   SceneComponentProps,
+  SceneDataState,
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
@@ -12,14 +13,15 @@ import {
   SceneObjectState,
   SceneVariableSet,
 } from '@grafana/scenes';
-import { Text, TextLink, useStyles2 } from '@grafana/ui';
+import { Text, useStyles2 } from '@grafana/ui';
 import { StatusWrapper } from 'Components/ServiceScene/Breakdowns/StatusWrapper';
-import { GrotError } from 'Components/GrotError';
 import { VAR_LABEL_GROUP_BY } from 'services/variables';
-import { LokiPattern, ServiceScene } from '../../ServiceScene';
+import { ServiceScene } from '../../ServiceScene';
 import { IndexScene } from '../../../IndexScene/IndexScene';
 import { PatternsFrameScene } from './PatternsFrameScene';
 import { PatternsViewTextSearch } from './PatternsViewTextSearch';
+import { PatternsNotDetected, PatternsTooOld } from './PatternsNotDetected';
+import { areArraysEqual } from '../../../../services/comparison';
 
 export interface PatternsBreakdownSceneState extends SceneObjectState {
   body?: SceneFlexLayout;
@@ -42,6 +44,8 @@ export type PatternFrame = {
   status?: 'include' | 'exclude';
 };
 
+export const PATTERNS_MAX_AGE_HOURS = 3;
+
 export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSceneState> {
   constructor(state: Partial<PatternsBreakdownSceneState>) {
     super({
@@ -50,8 +54,8 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
         new SceneVariableSet({
           variables: [new CustomVariable({ name: VAR_LABEL_GROUP_BY, defaultToAll: true, includeAll: true })],
         }),
-      patternFilter: '',
       loading: true,
+      patternFilter: '',
       ...state,
     });
 
@@ -60,14 +64,15 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
 
   // parent render
   public static Component = ({ model }: SceneComponentProps<PatternsBreakdownScene>) => {
-    const { body, loading, blockingMessage } = model.useState();
-    const logsByServiceScene = sceneGraph.getAncestor(model, ServiceScene);
-    const { patterns } = logsByServiceScene.useState();
+    const { body, loading, blockingMessage, patternFrames } = model.useState();
+    const { value: timeRange } = sceneGraph.getTimeRange(model).useState();
     const styles = useStyles2(getStyles);
+    const timeRangeTooOld = dateTime().diff(timeRange.to, 'hours') >= PATTERNS_MAX_AGE_HOURS;
+
     return (
       <div className={styles.container}>
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
-          {!loading && !patterns && (
+          {!loading && !patternFrames && (
             <div className={styles.patternMissingText}>
               <Text textAlignment="center" color="primary">
                 <p>There are no pattern matches.</p>
@@ -80,23 +85,10 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
               </Text>
             </div>
           )}
-          {!loading && patterns?.length === 0 && (
-            <GrotError>
-              <div>
-                <p>
-                  <strong>Sorry, we could not detect any patterns.</strong>
-                </p>
-                <p>
-                  Check back later or reach out to the team in the{' '}
-                  <TextLink href="https://slack.grafana.com/" external>
-                    Grafana Labs community Slack channel
-                  </TextLink>
-                </p>
-                <p>Patterns let you detect similar log lines to include or exclude from your search.</p>
-              </div>
-            </GrotError>
-          )}
-          {!loading && patterns && patterns.length > 0 && (
+
+          {!loading && patternFrames?.length === 0 && timeRangeTooOld && <PatternsTooOld />}
+          {!loading && patternFrames?.length === 0 && !timeRangeTooOld && <PatternsNotDetected />}
+          {!loading && patternFrames && patternFrames.length > 0 && (
             <div className={styles.content}>{body && <body.Component model={body} />}</div>
           )}
         </StatusWrapper>
@@ -108,20 +100,24 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     this.setBody();
 
+    const dataFrames = serviceScene.state.$patternsData?.state.data?.series;
+
     // If the patterns exist already, update the dataframe
-    if (serviceScene.state.patterns) {
-      this.updatePatternFrames(serviceScene.state.patterns);
+    if (dataFrames) {
+      this.updatePatternFrames(dataFrames);
     }
 
     // Subscribe to changes from pattern API call
-    this._subs.add(
-      serviceScene.subscribeToState((newState, prevState) => {
-        if (JSON.stringify(newState.patterns) !== JSON.stringify(prevState.patterns)) {
-          this.updatePatternFrames(newState.patterns);
-        }
-      })
-    );
+    this._subs.add(serviceScene.state.$patternsData?.subscribeToState(this.onDataChange));
   }
+
+  private onDataChange = (newState: SceneDataState, prevState: SceneDataState) => {
+    const newFrames = newState.data?.series;
+    const prevFrames = prevState.data?.series;
+    if (!areArraysEqual(newFrames, prevFrames) || this.state.loading) {
+      this.updatePatternFrames(newFrames);
+    }
+  };
 
   private setBody() {
     this.setState({
@@ -140,74 +136,36 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     });
   }
 
-  private updatePatternFrames(lokiPatterns?: LokiPattern[]) {
-    if (!lokiPatterns) {
-      console.warn('failed to update pattern frames');
+  private updatePatternFrames(dataFrames?: DataFrame[]) {
+    if (!dataFrames) {
       return;
     }
 
-    const patternFrames = this.buildPatterns(lokiPatterns);
+    const patternFrames = this.dataFrameToPatternFrame(dataFrames);
+
     this.setState({
       patternFrames,
       loading: false,
     });
   }
 
-  private buildPatterns(patterns: LokiPattern[]): PatternFrame[] {
+  private dataFrameToPatternFrame(dataFrame: DataFrame[]): PatternFrame[] {
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     const appliedPatterns = sceneGraph.getAncestor(serviceScene, IndexScene).state.patterns;
 
-    let maxValue = -Infinity;
-    let minValue = 0;
+    return dataFrame.map((dataFrame) => {
+      const existingPattern = appliedPatterns?.find((appliedPattern) => appliedPattern.pattern === dataFrame.name);
 
-    return patterns
-      .map((pat) => {
-        const timeValues: number[] = [];
-        const sampleValues: number[] = [];
-        let sum = 0;
-        pat.samples.forEach(([time, value]) => {
-          timeValues.push(time * 1000);
-          const sample = parseFloat(value);
-          sampleValues.push(sample);
-          if (sample > maxValue) {
-            maxValue = sample;
-          }
-          if (sample < minValue) {
-            minValue = sample;
-          }
-          sum += sample;
-        });
-        const dataFrame: DataFrame = {
-          refId: pat.pattern,
-          fields: [
-            {
-              name: 'time',
-              type: FieldType.time,
-              values: timeValues,
-              config: {},
-            },
-            {
-              name: pat.pattern,
-              type: FieldType.number,
-              values: sampleValues,
-              config: {},
-            },
-          ],
-          length: pat.samples.length,
-          meta: {
-            preferredVisualisationType: 'graph',
-          },
-        };
-        const existingPattern = appliedPatterns?.find((appliedPattern) => appliedPattern.pattern === pat.pattern);
+      const sum: number = dataFrame.meta?.custom?.sum;
+      const patternFrame: PatternFrame = {
+        dataFrame,
+        pattern: dataFrame.name ?? '',
+        sum,
+        status: existingPattern?.type,
+      };
 
-        return {
-          dataFrame,
-          pattern: pat.pattern,
-          sum,
-          status: existingPattern?.type,
-        };
-      })
-      .sort((a, b) => b.sum - a.sum);
+      return patternFrame;
+    });
   }
 }
 
@@ -246,14 +204,4 @@ function getStyles(theme: GrafanaTheme2) {
       padding: theme.spacing(2),
     }),
   };
-}
-
-export function buildPatternsScene() {
-  return new SceneFlexLayout({
-    children: [
-      new SceneFlexItem({
-        body: new PatternsBreakdownScene({}),
-      }),
-    ],
-  });
 }

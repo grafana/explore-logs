@@ -1,13 +1,14 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { AdHocFiltersVariable, sceneGraph } from '@grafana/scenes';
-import { Spinner, Toggletip } from '@grafana/ui';
+import { Spinner, Toggletip, useStyles2 } from '@grafana/ui';
 import { getLokiDatasource } from 'services/scenes';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
-import { VAR_LABELS } from 'services/variables';
-import { buildLokiQuery } from 'services/query';
+import { getLabelsVariable } from 'services/variables';
+import { buildDataQuery } from 'services/query';
 import { PatternFieldLabelStats } from './PatternFieldLabelStats';
-import { LoadingState, LogLabelStatsModel, TimeRange } from '@grafana/data';
+import { GrafanaTheme2, LoadingState, LogLabelStatsModel, TimeRange } from '@grafana/data';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
+import { css } from '@emotion/css';
 
 interface PatternNameLabelProps {
   exploration: IndexScene;
@@ -20,6 +21,7 @@ export const PatternNameLabel = ({ exploration, pattern }: PatternNameLabelProps
   const patternIndices = extractPatternIndices(pattern);
   const [stats, setStats] = useState<LogLabelStatsModel[][] | undefined>(undefined);
   const [statsError, setStatsError] = useState(false);
+  const styles = useStyles2(getStyles);
 
   // Refs to store the previous values of query and timeRange
   const previousQueryRef = useRef<string | null>(null);
@@ -27,11 +29,7 @@ export const PatternNameLabel = ({ exploration, pattern }: PatternNameLabelProps
 
   const handlePatternClick = async () => {
     reportAppInteraction(USER_EVENTS_PAGES.service_details, USER_EVENTS_ACTIONS.service_details.pattern_field_clicked);
-    const query = constructQuery(
-      pattern,
-      patternIndices,
-      sceneGraph.lookupVariable(VAR_LABELS, exploration) as AdHocFiltersVariable
-    );
+    const query = constructQuery(pattern, patternIndices, getLabelsVariable(exploration));
     const datasource = await getLokiDatasource(exploration);
     const currentTimeRange = sceneGraph.getTimeRange(exploration).state.value;
 
@@ -51,7 +49,7 @@ export const PatternNameLabel = ({ exploration, pattern }: PatternNameLabelProps
         intervalMs: 0,
         scopedVars: {},
         range: currentTimeRange,
-        targets: [buildLokiQuery(query, { maxLines: LINE_LIMIT })],
+        targets: [buildDataQuery(query, { maxLines: LINE_LIMIT })],
         timezone: '',
         app: '',
         startTime: 0,
@@ -92,7 +90,7 @@ export const PatternNameLabel = ({ exploration, pattern }: PatternNameLabelProps
                 </>
               }
             >
-              <span style={{ cursor: 'pointer', textDecoration: 'underline dotted' }}>&lt;_&gt;</span>
+              <span className={styles.pattern}>&lt;_&gt;</span>
             </Toggletip>
           )}
         </span>
@@ -100,6 +98,20 @@ export const PatternNameLabel = ({ exploration, pattern }: PatternNameLabelProps
     </div>
   );
 };
+
+function getStyles(theme: GrafanaTheme2) {
+  return {
+    pattern: css({
+      cursor: 'pointer',
+      backgroundColor: theme.colors.emphasize(theme.colors.background.primary, 0.1),
+      margin: '0 2px',
+
+      '&:hover': {
+        backgroundColor: theme.colors.emphasize(theme.colors.background.primary, 0.2),
+      },
+    }),
+  };
+}
 
 // Convert the result to statistics data structure
 function convertResultToStats(result: any, fieldCount: number): LogLabelStatsModel[][] {

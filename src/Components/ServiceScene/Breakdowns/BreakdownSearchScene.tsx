@@ -1,22 +1,30 @@
 import { SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import React, { ChangeEvent } from 'react';
 import { ByFrameRepeater } from './ByFrameRepeater';
-import { DataFrame } from '@grafana/data';
 import { SearchInput } from './SearchInput';
 import { LabelBreakdownScene } from './LabelBreakdownScene';
 import { FieldsBreakdownScene } from './FieldsBreakdownScene';
-import { fuzzySearch } from '../../../services/search';
-import { getLabelValueFromDataFrame } from 'services/levels';
+import { BusEventBase } from '@grafana/data';
+import { LabelValuesBreakdownScene } from './LabelValuesBreakdownScene';
+import { FieldValuesBreakdownScene } from './FieldValuesBreakdownScene';
+
+export class BreakdownSearchReset extends BusEventBase {
+  public static type = 'breakdown-search-reset';
+}
 
 export interface BreakdownSearchSceneState extends SceneObjectState {
   filter?: string;
 }
 
+const recentFilters: Record<string, string> = {};
+
 export class BreakdownSearchScene extends SceneObjectBase<BreakdownSearchSceneState> {
-  constructor() {
+  private cacheKey: string;
+  constructor(cacheKey: string) {
     super({
-      filter: '',
+      filter: recentFilters[cacheKey] ?? '',
     });
+    this.cacheKey = cacheKey;
   }
 
   public static Component = ({ model }: SceneComponentProps<BreakdownSearchScene>) => {
@@ -41,35 +49,24 @@ export class BreakdownSearchScene extends SceneObjectBase<BreakdownSearchSceneSt
     this.filterValues('');
   };
 
+  public reset = () => {
+    this.setState({ filter: '' });
+    recentFilters[this.cacheKey] = '';
+  };
+
   private filterValues(filter: string) {
     if (this.parent instanceof LabelBreakdownScene || this.parent instanceof FieldsBreakdownScene) {
+      recentFilters[this.cacheKey] = filter;
       const body = this.parent.state.body;
-      body?.forEachChild((child) => {
-        if (child instanceof ByFrameRepeater && child.state.body.isActive) {
-          let haystack: string[] = [];
-
-          child.iterateFrames((frames, seriesIndex) => {
-            const labelValue = getLabelValue(frames[seriesIndex]);
-            haystack.push(labelValue);
-          });
-          fuzzySearch(haystack, filter, (data) => {
-            if (data && data[0]) {
-              // We got search results
-              child.filterFrames((frame: DataFrame) => {
-                const label = getLabelValue(frame);
-                return data[0].includes(label);
-              });
-            } else {
-              // reset search
-              child.filterFrames(() => true);
-            }
-          });
-        }
-      });
+      if (body instanceof LabelValuesBreakdownScene || body instanceof FieldValuesBreakdownScene) {
+        body.state.body?.forEachChild((child) => {
+          if (child instanceof ByFrameRepeater && child.state.body.isActive) {
+            child.filterByString(filter);
+          }
+        });
+      } else {
+        console.warn('invalid parent for search', body);
+      }
     }
   }
-}
-
-export function getLabelValue(frame: DataFrame) {
-  return getLabelValueFromDataFrame(frame) ?? 'No labels';
 }

@@ -3,6 +3,7 @@ import {
   SceneComponentProps,
   SceneDataNode,
   sceneGraph,
+  SceneObject,
   SceneObjectBase,
   SceneObjectState,
 } from '@grafana/scenes';
@@ -20,6 +21,7 @@ import { testIds } from '../../../../services/testIds';
 import { PatternsFrameScene } from './PatternsFrameScene';
 import { PatternNameLabel } from './PatternNameLabel';
 import { getExplorationFor } from 'services/scenes';
+import { PatternsTableExpandedRow } from '../PatternsTableExpandedRow';
 
 // copied from from grafana repository packages/grafana-data/src/valueFormats/categories.ts
 // that is used in Grafana codebase for "short" units
@@ -27,13 +29,16 @@ const SCALED_UNITS = ['', ' K', ' Mil', ' Bil', ' Tri', ' Quadr', ' Quint', ' Se
 export interface SingleViewTableSceneState extends SceneObjectState {
   // The local copy of the pattern frames, the parent breakdown scene decides if we get the filtered subset or not, in this scene we just present the data
   patternFrames: PatternFrame[] | undefined;
+  expandedRows?: SceneObject[];
+
+  // An array of patterns to exclude links
+  patternsNotMatchingFilters?: string[];
 }
 
-interface WithCustomCellData {
+export interface PatternsTableCellData {
   pattern: string;
   dataFrame: DataFrame;
   sum: number;
-  // samples: Array<[number, string]>,
   includeLink: () => void;
   excludeLink: () => void;
   undoLink: () => void;
@@ -41,9 +46,7 @@ interface WithCustomCellData {
 
 export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableSceneState> {
   constructor(state: SingleViewTableSceneState) {
-    super({
-      ...state,
-    });
+    super(state);
   }
 
   public static Component = PatternTableViewSceneComponent;
@@ -53,16 +56,22 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
    * @param total
    * @param appliedPatterns
    * @param theme
+   * @param patternsNotMatchingFilters
    * @protected
    */
-  public buildColumns(total: number, appliedPatterns: AppliedPattern[] | undefined, theme: GrafanaTheme2) {
+  public buildColumns(
+    total: number,
+    appliedPatterns: AppliedPattern[] | undefined,
+    theme: GrafanaTheme2,
+    patternsNotMatchingFilters?: string[]
+  ) {
     const styles = getColumnStyles(theme);
     const timeRange = sceneGraph.getTimeRange(this).state.value;
-    const columns: Array<Column<WithCustomCellData>> = [
+    const columns: Array<Column<PatternsTableCellData>> = [
       {
         id: 'volume-samples',
         header: '',
-        cell: (props: CellProps<WithCustomCellData>) => {
+        cell: (props: CellProps<PatternsTableCellData>) => {
           const panelData: PanelData = {
             timeRange: timeRange,
             series: [props.cell.row.original.dataFrame],
@@ -125,7 +134,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
       {
         id: 'pattern',
         header: 'Pattern',
-        cell: (props: CellProps<WithCustomCellData>) => {
+        cell: (props: CellProps<PatternsTableCellData>) => {
           return (
             <div className={cx(getTablePatternTextStyles(), styles.tablePatternTextDefault)}>
               <PatternNameLabel exploration={getExplorationFor(this)} pattern={props.cell.row.original.pattern} />
@@ -137,7 +146,11 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
         id: 'include',
         header: undefined,
         disableGrow: true,
-        cell: (props: CellProps<WithCustomCellData>) => {
+        cell: (props: CellProps<PatternsTableCellData>) => {
+          if (patternsNotMatchingFilters?.includes(props.cell.row.original.pattern)) {
+            return undefined;
+          }
+
           const existingPattern = appliedPatterns?.find(
             (appliedPattern) => appliedPattern.pattern === props.cell.row.original.pattern
           );
@@ -150,6 +163,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
               onInclude={() => props.cell.row.original.includeLink()}
               onExclude={() => props.cell.row.original.excludeLink()}
               onClear={() => props.cell.row.original.undoLink()}
+              buttonFill={'outline'}
             />
           );
         },
@@ -164,7 +178,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
    * @param legendSyncPatterns
    * @private
    */
-  public buildTableData(patternFrames: PatternFrame[], legendSyncPatterns: Set<string>): WithCustomCellData[] {
+  public buildTableData(patternFrames: PatternFrame[], legendSyncPatterns: Set<string>): PatternsTableCellData[] {
     const logExploration = sceneGraph.getAncestor(this, IndexScene);
     return patternFrames
       .filter((patternFrame) => {
@@ -211,6 +225,9 @@ const getTablePatternTextStyles = () => {
 
 const getTableStyles = (theme: GrafanaTheme2) => {
   return {
+    link: css({
+      textDecoration: 'underline',
+    }),
     tableWrap: css({
       // Override interactive table style
       '> div': {
@@ -265,7 +282,7 @@ export function PatternTableViewSceneComponent({ model }: SceneComponentProps<Pa
   const { legendSyncPatterns } = patternsFrameScene.useState();
 
   // Must use local patternFrames as the parent decides if we get the filtered or not
-  const { patternFrames: patternFramesRaw } = model.useState();
+  const { patternFrames: patternFramesRaw, patternsNotMatchingFilters } = model.useState();
   const patternFrames = patternFramesRaw ?? [];
 
   // Calculate total for percentages
@@ -274,11 +291,16 @@ export function PatternTableViewSceneComponent({ model }: SceneComponentProps<Pa
   }, 0);
 
   const tableData = model.buildTableData(patternFrames, legendSyncPatterns);
-  const columns = model.buildColumns(total, appliedPatterns, theme);
+  const columns = model.buildColumns(total, appliedPatterns, theme, patternsNotMatchingFilters);
 
   return (
     <div data-testid={testIds.patterns.tableWrapper} className={styles.tableWrap}>
-      <InteractiveTable columns={columns} data={tableData} getRowId={(r: WithCustomCellData) => r.pattern} />
+      <InteractiveTable
+        columns={columns}
+        data={tableData}
+        getRowId={(r: PatternsTableCellData) => r.pattern}
+        renderExpandedRow={(row) => <PatternsTableExpandedRow tableViz={model} row={row} />}
+      />
     </div>
   );
 }

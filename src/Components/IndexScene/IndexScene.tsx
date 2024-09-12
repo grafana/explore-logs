@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { AdHocVariableFilter, SelectableValue, VariableHide } from '@grafana/data';
+import { AdHocVariableFilter, SelectableValue } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   CustomVariable,
@@ -8,13 +8,13 @@ import {
   getUrlSyncManager,
   SceneComponentProps,
   SceneControlsSpacer,
-  sceneGraph,
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
   SceneObjectUrlSyncConfig,
   SceneObjectUrlValues,
   SceneRefreshPicker,
+  SceneRouteMatch,
   SceneTimePicker,
   SceneTimeRange,
   SceneVariableSet,
@@ -22,9 +22,15 @@ import {
 } from '@grafana/scenes';
 import {
   EXPLORATION_DS,
+  getFieldsVariable,
+  getLevelsVariable,
+  getPatternsVariable,
+  getUrlParamNameForVariable,
+  MIXED_FORMAT_EXPR,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_LABELS,
+  VAR_LEVELS,
   VAR_LINE_FILTER,
   VAR_LOGS_FORMAT,
   VAR_PATTERNS,
@@ -34,11 +40,18 @@ import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from
 import { ServiceScene } from '../ServiceScene/ServiceScene';
 import { LayoutScene } from './LayoutScene';
 import { FilterOp } from 'services/filters';
-import { getSlug, PageSlugs } from '../../services/routing';
+import { getDrilldownSlug, PageSlugs } from '../../services/routing';
 import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { locationService } from '@grafana/runtime';
-import { renderPatternFilters, renderLogQLStreamSelector, renderLogQLFieldFilters } from 'services/query';
+import {
+  renderLogQLFieldFilters,
+  renderLogQLLabelFilters,
+  renderLogQLMetadataFilters,
+  renderPatternFilters,
+} from 'services/query';
+import { VariableHide } from '@grafana/schema';
+import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 
 export interface AppliedPattern {
   pattern: string;
@@ -52,17 +65,20 @@ export interface IndexSceneState extends SceneObjectState {
   body?: LayoutScene;
   initialFilters?: AdHocVariableFilter[];
   patterns?: AppliedPattern[];
+  routeMatch?: SceneRouteMatch<{ service?: string; label?: string }>;
 }
 
 export class IndexScene extends SceneObjectBase<IndexSceneState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['patterns'] });
 
   public constructor(state: Partial<IndexSceneState>) {
+    const { variablesScene, unsub } = getVariableSet(
+      getLastUsedDataSourceFromStorage() ?? 'grafanacloud-logs',
+      state.initialFilters
+    );
     super({
       $timeRange: state.$timeRange ?? new SceneTimeRange({}),
-      $variables:
-        state.$variables ??
-        getVariableSet(getLastUsedDataSourceFromStorage() ?? 'grafanacloud-logs', state.initialFilters),
+      $variables: state.$variables ?? variablesScene,
       controls: state.controls ?? [
         new VariableValueSelectors({ layout: 'vertical' }),
         new SceneControlsSpacer(),
@@ -75,6 +91,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       body: new LayoutScene({}),
     });
 
+    this._subs.add(unsub);
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
@@ -91,26 +108,18 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     const stateUpdate: Partial<IndexSceneState> = {};
 
     if (!this.state.contentScene) {
-      stateUpdate.contentScene = getContentScene();
+      stateUpdate.contentScene = getContentScene(this.state.routeMatch?.params.label);
     }
 
     this.setState(stateUpdate);
-    const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
-    if (patternsVariable instanceof CustomVariable) {
-      this.updatePatterns(this.state, patternsVariable);
-    }
 
-    const fieldsVariable = sceneGraph.lookupVariable(VAR_FIELDS, this);
-    if (fieldsVariable instanceof AdHocFiltersVariable) {
-      this.syncFieldsWithUrl(fieldsVariable);
-    }
+    this.updatePatterns(this.state, getPatternsVariable(this));
+    this.resetVariablesIfNotInUrl(getFieldsVariable(this), getUrlParamNameForVariable(VAR_FIELDS));
+    this.resetVariablesIfNotInUrl(getLevelsVariable(this), getUrlParamNameForVariable(VAR_LEVELS));
 
     this._subs.add(
       this.subscribeToState((newState) => {
-        const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
-        if (patternsVariable instanceof CustomVariable) {
-          this.updatePatterns(newState, patternsVariable);
-        }
+        this.updatePatterns(newState, getPatternsVariable(this));
       })
     );
 
@@ -120,18 +129,19 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   }
 
   /**
-   * @todo why do we need to manually sync fields, but nothing else?
-   * @param fieldsVariable
+   * @todo why do we need to manually sync fields and levels, but not other ad hoc variables?
+   * @param variable
+   * @param urlParamName
    * @private
    */
-  private syncFieldsWithUrl(fieldsVariable: AdHocFiltersVariable) {
+  private resetVariablesIfNotInUrl(variable: AdHocFiltersVariable, urlParamName: string) {
     const location = locationService.getLocation();
     const search = new URLSearchParams(location.search);
-    const filtersFromUrl = search.get('var-fields');
+    const filtersFromUrl = search.get(urlParamName);
 
     // If the filters aren't in the URL, then they're coming from the cache, set the state to sync with url
     if (filtersFromUrl === null) {
-      fieldsVariable.setState({ filters: [] });
+      variable.setState({ filters: [] });
     }
   }
 
@@ -157,13 +167,15 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   }
 }
 
-function getContentScene() {
-  const slug = getSlug();
+function getContentScene(drillDownLabel?: string) {
+  const slug = getDrilldownSlug();
   if (slug === PageSlugs.explore) {
     return new ServiceSelectionScene({});
   }
 
-  return new ServiceScene({});
+  return new ServiceScene({
+    drillDownLabel,
+  });
 }
 
 function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVariableFilter[]) {
@@ -178,7 +190,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     layout: 'vertical',
     label: 'Service',
     filters: initialFilters ?? [],
-    expressionBuilder: renderLogQLStreamSelector,
+    expressionBuilder: renderLogQLLabelFilters,
     hide: VariableHide.hideLabel,
     key: 'adhoc_service_filter',
   });
@@ -202,29 +214,58 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     return operators;
   };
 
+  const levelsVariable = new AdHocFiltersVariable({
+    name: VAR_LEVELS,
+    label: 'Filters',
+    applyMode: 'manual',
+    layout: 'vertical',
+    getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
+    getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
+    expressionBuilder: renderLogQLMetadataFilters,
+    hide: VariableHide.hideLabel,
+  });
+
+  levelsVariable._getOperators = () => {
+    return operators;
+  };
+
   const dsVariable = new DataSourceVariable({
     name: VAR_DATASOURCE,
     label: 'Data source',
     value: initialDatasourceUid,
     pluginId: 'loki',
   });
-  dsVariable.subscribeToState((newState) => {
+
+  const unsub = dsVariable.subscribeToState((newState) => {
     const dsValue = `${newState.value}`;
     newState.value && addLastUsedDataSourceToStorage(dsValue);
   });
-  return new SceneVariableSet({
-    variables: [
-      dsVariable,
-      labelVariable,
-      fieldsVariable,
-      // @todo where is patterns being added to the url? Why do we have var-patterns and patterns?
-      new CustomVariable({
-        name: VAR_PATTERNS,
-        value: '',
-        hide: VariableHide.hideVariable,
-      }),
-      new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable }),
-      new CustomVariable({ name: VAR_LOGS_FORMAT, value: '', hide: VariableHide.hideVariable }),
-    ],
-  });
+
+  return {
+    variablesScene: new SceneVariableSet({
+      variables: [
+        dsVariable,
+        labelVariable,
+        fieldsVariable,
+        levelsVariable,
+        // @todo where is patterns being added to the url? Why do we have var-patterns and patterns?
+        new CustomVariable({
+          name: VAR_PATTERNS,
+          value: '',
+          hide: VariableHide.hideVariable,
+        }),
+        new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable }),
+
+        // This variable is a hack to get logs context working, this variable should never be used or updated
+        new CustomConstantVariable({
+          name: VAR_LOGS_FORMAT,
+          value: MIXED_FORMAT_EXPR,
+          skipUrlSync: true,
+          hide: VariableHide.hideVariable,
+          options: [{ value: MIXED_FORMAT_EXPR, label: MIXED_FORMAT_EXPR }],
+        }),
+      ],
+    }),
+    unsub,
+  };
 }

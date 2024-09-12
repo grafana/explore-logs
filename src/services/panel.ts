@@ -1,13 +1,25 @@
-import { DataFrame } from '@grafana/data';
-import { SceneDataTransformer, SceneQueryRunner } from '@grafana/scenes';
+import { DataFrame, FieldConfig, FieldMatcherID } from '@grafana/data';
+import {
+  FieldConfigBuilder,
+  FieldConfigBuilders,
+  FieldConfigOverridesBuilder,
+  PanelBuilders,
+  SceneDataProvider,
+  SceneDataTransformer,
+  SceneObject,
+  SceneQueryRunner,
+  VizPanel,
+} from '@grafana/scenes';
 import { map, Observable } from 'rxjs';
 import { LokiQuery } from './query';
-import { EXPLORATION_DS } from './variables';
+import { HideSeriesConfig } from '@grafana/schema';
+import { WRAPPED_LOKI_DS_UID } from './datasource';
+import { LogsSceneQueryRunner } from './LogsSceneQueryRunner';
+import { DrawStyle, StackingMode } from '@grafana/ui';
+import { getLabelsFromSeries, getVisibleLevels } from './levels';
 
 const UNKNOWN_LEVEL_LOGS = 'logs';
-// TODO: `FieldConfigOverridesBuilder` is not exported, so it can not be used
-// here.
-export function setLeverColorOverrides(overrides: any) {
+export function setLevelColorOverrides(overrides: FieldConfigOverridesBuilder<FieldConfig>) {
   overrides.matchFieldsWithName('info').overrideColor({
     mode: 'fixed',
     fixedColor: 'semi-dark-green',
@@ -28,6 +40,57 @@ export function setLeverColorOverrides(overrides: any) {
     mode: 'fixed',
     fixedColor: 'darkgray',
   });
+}
+
+export function setLogsVolumeFieldConfigs(
+  builder: ReturnType<typeof PanelBuilders.timeseries> | ReturnType<typeof FieldConfigBuilders.timeseries>
+) {
+  return builder
+    .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
+    .setCustomFieldConfig('fillOpacity', 100)
+    .setCustomFieldConfig('lineWidth', 0)
+    .setCustomFieldConfig('pointSize', 0)
+    .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+    .setOverrides(setLevelColorOverrides);
+}
+
+interface TimeSeriesFieldConfig extends FieldConfig {
+  hideFrom: HideSeriesConfig;
+}
+
+export function setLevelSeriesOverrides(levels: string[], overrideConfig: FieldConfigOverridesBuilder<FieldConfig>) {
+  overrideConfig
+    .match({
+      id: FieldMatcherID.byNames,
+      options: {
+        mode: 'exclude',
+        names: levels,
+        prefix: 'All except:',
+        readOnly: true,
+      },
+    })
+    .overrideCustomFieldConfig<TimeSeriesFieldConfig, 'hideFrom'>('hideFrom', {
+      legend: false,
+      tooltip: false,
+      viz: true,
+    });
+
+  // Setting __systemRef to hideSeriesFrom, allows the override to be changed by interacting with the viz
+  const overrides = overrideConfig.build();
+  // @ts-expect-error
+  overrides[overrides.length - 1].__systemRef = 'hideSeriesFrom';
+}
+
+export function syncLogsPanelVisibleSeries(panel: VizPanel, series: DataFrame[], sceneRef: SceneObject) {
+  const focusedLevels = getVisibleLevels(getLabelsFromSeries(series), sceneRef);
+  if (focusedLevels?.length) {
+    const config = setLogsVolumeFieldConfigs(FieldConfigBuilders.timeseries()).setOverrides(
+      setLevelSeriesOverrides.bind(null, focusedLevels)
+    );
+    if (config instanceof FieldConfigBuilder) {
+      panel.onFieldConfigChange(config.build(), true);
+    }
+  }
 }
 
 export function sortLevelTransformation() {
@@ -53,23 +116,45 @@ export function sortLevelTransformation() {
   };
 }
 
-export function getQueryRunner(query: LokiQuery) {
+export function getResourceQueryRunner(queries: LokiQuery[]) {
+  return new LogsSceneQueryRunner({
+    datasource: { uid: WRAPPED_LOKI_DS_UID },
+    queries: queries,
+  });
+}
+
+export function getQueryRunner(queries: LokiQuery[]) {
   // if there's a legendFormat related to any `level` like label, we want to
   // sort the output equally. That's purposefully not `LEVEL_VARIABLE_VALUE`,
   // such that the `detected_level` graph looks the same as a graph for the
   // `level` label.
-  if (query.legendFormat?.toLowerCase().includes('level')) {
+
+  const hasLevel = queries.find((query) => query.legendFormat?.toLowerCase().includes('level'));
+
+  if (hasLevel) {
     return new SceneDataTransformer({
       $data: new SceneQueryRunner({
-        datasource: EXPLORATION_DS,
-        queries: [query],
+        datasource: { uid: WRAPPED_LOKI_DS_UID },
+        queries: queries,
       }),
       transformations: [sortLevelTransformation],
     });
   }
 
   return new SceneQueryRunner({
-    datasource: EXPLORATION_DS,
-    queries: [query],
+    datasource: { uid: WRAPPED_LOKI_DS_UID },
+    queries: queries,
   });
+}
+
+export function getQueryRunnerFromProvider(provider: SceneDataProvider): SceneQueryRunner {
+  if (provider instanceof SceneQueryRunner) {
+    return provider;
+  }
+
+  if (provider.state.$data instanceof SceneQueryRunner) {
+    return provider.state.$data;
+  }
+
+  throw new Error('SceneDataProvider is missing SceneQueryRunner');
 }

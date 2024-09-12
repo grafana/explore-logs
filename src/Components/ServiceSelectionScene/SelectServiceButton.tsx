@@ -1,35 +1,32 @@
 import React from 'react';
 
-import {
-  AdHocFiltersVariable,
-  SceneComponentProps,
-  sceneGraph,
-  SceneObject,
-  SceneObjectBase,
-  SceneObjectState,
-} from '@grafana/scenes';
+import { SceneComponentProps, SceneObject, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { Button } from '@grafana/ui';
 import { VariableHide } from '@grafana/schema';
 import { addToFavoriteServicesInStorage } from 'services/store';
-import { VAR_DATASOURCE, VAR_LABELS } from 'services/variables';
-import { SERVICE_NAME } from './ServiceSelectionScene';
+import {
+  getDataSourceVariable,
+  getLabelsVariable,
+  getServiceSelectionStringVariable,
+  SERVICE_NAME,
+} from 'services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { FilterOp } from 'services/filters';
-import { navigateToBreakdown, ROUTES } from '../../services/routing';
+import { navigateToInitialPageAfterServiceSelection } from '../../services/navigate';
 
 export interface SelectServiceButtonState extends SceneObjectState {
   service: string;
 }
-
 export function selectService(service: string, sceneRef: SceneObject) {
-  const variable = sceneGraph.lookupVariable(VAR_LABELS, sceneRef);
-  if (!(variable instanceof AdHocFiltersVariable)) {
-    return;
-  }
+  const variable = getLabelsVariable(sceneRef);
 
   reportAppInteraction(USER_EVENTS_PAGES.service_selection, USER_EVENTS_ACTIONS.service_selection.service_selected, {
     service: service,
   });
+
+  const serviceSelectionVariable = getServiceSelectionStringVariable(sceneRef);
+  // Reset the service selection search to show all services
+  serviceSelectionVariable.changeValueTo('');
 
   variable.setState({
     filters: [
@@ -42,20 +39,15 @@ export function selectService(service: string, sceneRef: SceneObject) {
     ],
     hide: VariableHide.hideLabel,
   });
-  const ds = sceneGraph.lookupVariable(VAR_DATASOURCE, sceneRef)?.getValue();
+  const ds = getDataSourceVariable(sceneRef).getValue();
   addToFavoriteServicesInStorage(ds, service);
 
-  // In this case, we don't have a ServiceScene inited
-  navigateToBreakdown(ROUTES.logs(service));
+  // In this case, we don't have a ServiceScene created yet, so we call a special function to navigate there for the first time
+  navigateToInitialPageAfterServiceSelection(service);
 }
 
 export class SelectServiceButton extends SceneObjectBase<SelectServiceButtonState> {
   public onClick = () => {
-    const variable = sceneGraph.lookupVariable(VAR_LABELS, this);
-    if (!(variable instanceof AdHocFiltersVariable)) {
-      return;
-    }
-
     if (!this.state.service) {
       return;
     }

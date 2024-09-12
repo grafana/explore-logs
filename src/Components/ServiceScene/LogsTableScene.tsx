@@ -7,23 +7,31 @@ import { PanelChrome } from '@grafana/ui';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 import { css } from '@emotion/css';
 import { addAdHocFilter } from './Breakdowns/AddToFiltersButton';
+import { areArraysEqual } from '../../services/comparison';
+import { getLogsPanelFrame } from './ServiceScene';
+import { getFilterTypeFromLabelType, getLabelTypeFromFrame, LabelType } from '../../services/fields';
 
 export class LogsTableScene extends SceneObjectBase {
   public static Component = ({ model }: SceneComponentProps<LogsTableScene>) => {
+    const styles = getStyles();
     // Get state from parent model
     const parentModel = sceneGraph.getAncestor(model, LogsListScene);
-    const { selectedLine, urlColumns, visualizationType } = parentModel.useState();
-
-    // Get dataFrame
     const { data } = sceneGraph.getData(model).useState();
+    const { selectedLine, urlColumns, visualizationType } = parentModel.useState();
 
     // Get time range
     const timeRange = sceneGraph.getTimeRange(model);
     const { value: timeRangeValue } = timeRange.useState();
 
+    const dataFrame = getLogsPanelFrame(data);
+
     // Define callback function to update filters in react
     const addFilter = (filter: AdHocVariableFilter) => {
-      addAdHocFilter(filter, parentModel);
+      const { key, value } = filter;
+
+      const labelType = dataFrame ? getLabelTypeFromFrame(key, dataFrame) : LabelType.Parsed;
+      const variableType = getFilterTypeFromLabelType(labelType, key, value);
+      addAdHocFilter(filter, parentModel, variableType);
     };
 
     // Get reference to panel wrapper so table knows how much space it can use to render
@@ -31,12 +39,16 @@ export class LogsTableScene extends SceneObjectBase {
 
     // Define callback function to update url columns in react
     const setUrlColumns = (urlColumns: string[]) => {
-      if (JSON.stringify(urlColumns) !== JSON.stringify(parentModel.state.urlColumns)) {
+      if (!areArraysEqual(urlColumns, parentModel.state.urlColumns)) {
         parentModel.setState({ urlColumns });
       }
     };
 
-    const styles = getStyles();
+    const clearSelectedLine = () => {
+      if (parentModel.state.selectedLine) {
+        parentModel.clearSelectedLine();
+      }
+    };
 
     return (
       <div className={styles.panelWrapper} ref={panelWrap}>
@@ -45,7 +57,7 @@ export class LogsTableScene extends SceneObjectBase {
           title={'Logs'}
           actions={<LogsPanelHeaderActions vizType={visualizationType} onChange={parentModel.setVisualizationType} />}
         >
-          {data?.series[0] && (
+          {dataFrame && (
             <TableProvider
               panelWrap={panelWrap}
               addFilter={addFilter}
@@ -53,7 +65,8 @@ export class LogsTableScene extends SceneObjectBase {
               selectedLine={selectedLine}
               urlColumns={urlColumns ?? []}
               setUrlColumns={setUrlColumns}
-              dataFrame={data?.series[0]}
+              dataFrame={dataFrame}
+              clearSelectedLine={clearSelectedLine}
             />
           )}
         </PanelChrome>

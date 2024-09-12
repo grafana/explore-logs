@@ -16,12 +16,16 @@
     },
     "screenshots": [
       {
-        "name": "service-index",
-        "path": "img/service_index.png"
+        "name": "patterns",
+        "path": "img/patterns.png"
       },
       {
-        "name": "service-logs",
-        "path": "img/service_logs.png"
+        "name": "fields",
+        "path": "img/fields.png"
+      },
+      {
+        "name": "table",
+        "path": "img/table.png"
       }
     ],
     "version": "%VERSION%",
@@ -49,7 +53,8 @@
   ],
   "roles": [],
   "dependencies": {
-    "grafanaDependency": ">=11.0.0",
+    "grafanaDependency": ">=11.2.0",
     "plugins": []
-  }
+  },
+  "preload": true
 }

@@ -1,4 +1,4 @@
-import { ServiceSceneCustomState, ServiceSceneState } from '../Components/ServiceScene/ServiceScene';
+import { ServiceSceneCustomState } from '../Components/ServiceScene/ServiceScene';
 
 let metadataService: MetadataService;
 
@@ -13,16 +13,38 @@ export function initializeMetadataService(): void {
  */
 export class MetadataService {
   private serviceSceneState: ServiceSceneCustomState | undefined = undefined;
-
   public getServiceSceneState() {
     return this.serviceSceneState;
   }
 
-  public setServiceSceneState(state: ServiceSceneState) {
+  public setPatternsCount(count: number) {
+    if (!this.serviceSceneState) {
+      this.serviceSceneState = {};
+    }
+
+    this.serviceSceneState.patternsCount = count;
+  }
+
+  public setLabelsCount(count: number) {
+    if (!this.serviceSceneState) {
+      this.serviceSceneState = {};
+    }
+
+    this.serviceSceneState.labelsCount = count;
+  }
+
+  public setFieldsCount(count: number) {
+    if (!this.serviceSceneState) {
+      this.serviceSceneState = {};
+    }
+
+    this.serviceSceneState.fieldsCount = count;
+  }
+
+  public setServiceSceneState(state: ServiceSceneCustomState) {
     this.serviceSceneState = {
-      fields: state.fields,
-      labels: state.labels,
-      patterns: state.patterns,
+      patternsCount: state.patternsCount,
+      labelsCount: state.labelsCount,
       fieldsCount: state.fieldsCount,
       loading: state.loading,
     };

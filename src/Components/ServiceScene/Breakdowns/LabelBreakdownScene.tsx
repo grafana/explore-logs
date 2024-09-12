@@ -1,112 +1,183 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { GrafanaTheme2, ReducerID, SelectableValue } from '@grafana/data';
+import { AdHocVariableFilter, DataFrame, GrafanaTheme2, LoadingState } from '@grafana/data';
 import {
-  AdHocFiltersVariable,
-  CustomVariable,
-  PanelBuilders,
+  QueryRunnerState,
   SceneComponentProps,
-  SceneCSSGridItem,
-  SceneCSSGridLayout,
-  SceneFlexItem,
-  SceneFlexItemLike,
-  SceneFlexLayout,
   sceneGraph,
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
-  SceneReactObject,
   SceneVariableSet,
+  SceneVariableState,
   VariableDependencyConfig,
+  VariableValueOption,
 } from '@grafana/scenes';
-import { Alert, Button, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
+import { Alert, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { DetectedLabel, DetectedLabelsResponse, getFilterBreakdownValueScene } from 'services/fields';
-import { getQueryRunner, setLeverColorOverrides } from 'services/panel';
-import { buildLokiQuery } from 'services/query';
-import { PLUGIN_ID } from 'services/routing';
-import { getLokiDatasource } from 'services/scenes';
-import { ALL_VARIABLE_VALUE, LOG_STREAM_SELECTOR_EXPR, VAR_LABELS, VAR_LABEL_GROUP_BY } from 'services/variables';
+import { ValueSlugs } from 'services/routing';
+import {
+  ALL_VARIABLE_VALUE,
+  getLabelGroupByVariable,
+  getLabelsVariable,
+  SERVICE_NAME,
+  VAR_LABEL_GROUP_BY,
+  VAR_LABELS,
+} from 'services/variables';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
-import { LayoutSwitcher } from './LayoutSwitcher';
 import { StatusWrapper } from './StatusWrapper';
-import { getLabelOptions, sortLabelsByCardinality } from 'services/filters';
-import { BreakdownSearchScene, getLabelValue } from './BreakdownSearchScene';
+import { getLabelOptions } from 'services/filters';
+import { BreakdownSearchReset, BreakdownSearchScene } from './BreakdownSearchScene';
 import { getSortByPreference } from 'services/store';
 import { SortByScene, SortCriteriaChanged } from './SortByScene';
+import { getDetectedLabelsFrame, ServiceScene } from '../ServiceScene';
+import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
+import { navigateToValueBreakdown } from '../../../services/navigate';
+import { areArraysEqual } from '../../../services/comparison';
+import { LabelValuesBreakdownScene } from './LabelValuesBreakdownScene';
+import { LabelsAggregatedBreakdownScene } from './LabelsAggregatedBreakdownScene';
+import { DEFAULT_SORT_BY } from '../../../services/sorting';
+import { EmptyLayoutScene } from './EmptyLayoutScene';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
-  body?: LayoutSwitcher;
+  body?: SceneObject;
   search: BreakdownSearchScene;
   sort: SortByScene;
-  labels: Array<SelectableValue<string>>;
-  value?: string;
   loading?: boolean;
   error?: boolean;
   blockingMessage?: string;
+  // We have to store the value in state because scenes doesn't allow variables that don't have options. We need to hold on to this until the API call getting values is done, and then reset the state
+  value?: string;
 }
 
 export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
     variableNames: [VAR_LABELS],
-    onReferencedVariableValueChanged: this.onReferencedVariableValueChanged.bind(this),
   });
 
-  constructor(state: Partial<LabelBreakdownSceneState>) {
+  // Labels/options can be passed in when instantiated, but should ONLY exist on the state of the variable
+  constructor(state: Partial<LabelBreakdownSceneState> & { options?: VariableValueOption[]; value?: string }) {
     super({
       ...state,
       $variables:
         state.$variables ??
         new SceneVariableSet({
-          variables: [new CustomVariable({ name: VAR_LABEL_GROUP_BY, defaultToAll: true, includeAll: true })],
+          variables: [
+            new CustomConstantVariable({
+              name: VAR_LABEL_GROUP_BY,
+              defaultToAll: false,
+              includeAll: true,
+
+              value: state.value ?? ALL_VARIABLE_VALUE,
+              options: state.options ?? [],
+            }),
+          ],
         }),
-      labels: state.labels ?? [],
       loading: true,
       sort: new SortByScene({ target: 'labels' }),
-      search: new BreakdownSearchScene(),
+      search: new BreakdownSearchScene('labels'),
+      value: state.value,
     });
 
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
   private onActivate() {
-    this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange);
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
+    const groupByVariable = getLabelGroupByVariable(this);
 
-    const variable = this.getVariable();
-
-    variable.subscribeToState((newState, oldState) => {
-      if (
-        newState.options !== oldState.options ||
-        newState.value !== oldState.value ||
-        newState.loading !== oldState.loading
-      ) {
-        this.updateBody(variable);
-      }
+    this.setState({
+      loading: serviceScene.state.$detectedLabelsData?.state.data?.state !== LoadingState.Done,
+      error: serviceScene.state.$detectedLabelsData?.state.data?.state === LoadingState.Error,
     });
 
-    this.updateBody(variable);
-  }
+    this._subs.add(
+      this.subscribeToEvent(BreakdownSearchReset, () => {
+        this.state.search.clearValueFilter();
+      })
+    );
+    this._subs.add(this.subscribeToEvent(SortCriteriaChanged, this.handleSortByChange));
 
-  private getVariable(): CustomVariable {
-    const variable = sceneGraph.lookupVariable(VAR_LABEL_GROUP_BY, this)!;
-    if (!(variable instanceof CustomVariable)) {
-      throw new Error('Group by variable not found');
+    this._subs.add(serviceScene.state.$detectedLabelsData?.subscribeToState(this.onDetectedLabelsDataChange));
+
+    this._subs.add(
+      getLabelsVariable(this).subscribeToState((newState, prevState) => {
+        this.onLabelsVariableChange(newState, prevState);
+      })
+    );
+
+    this._subs.add(
+      groupByVariable.subscribeToState((newState, prevState) => {
+        this.onGroupByVariableChange(newState, prevState);
+      })
+    );
+
+    const detectedLabelsFrame = getDetectedLabelsFrame(this);
+    // Need to update labels with current state
+    if (detectedLabelsFrame) {
+      this.updateOptions(detectedLabelsFrame);
     }
-
-    return variable;
   }
 
-  private onReferencedVariableValueChanged() {
-    const variable = this.getVariable();
-    variable.changeValueTo(ALL_VARIABLE_VALUE);
-    this.updateBody(variable);
+  private onGroupByVariableChange(newState: CustomConstantVariableState, prevState: CustomConstantVariableState) {
+    // If the aggregation value changed, or the body is not yet defined
+    if (
+      newState.value !== prevState.value ||
+      !areArraysEqual(newState.options, prevState.options) ||
+      this.state.body === undefined ||
+      this.state.body instanceof EmptyLayoutScene
+    ) {
+      this.updateBody();
+    }
   }
+
+  private onLabelsVariableChange(
+    newState: SceneVariableState & { filters: AdHocVariableFilter[] },
+    prevState: SceneVariableState & { filters: AdHocVariableFilter[] }
+  ) {
+    const variable = getLabelGroupByVariable(this);
+    const newService = newState.filters.find((filter) => filter.key === SERVICE_NAME);
+    const prevService = prevState.filters.find((filter) => filter.key === SERVICE_NAME);
+
+    // If the user changes the service
+    if (variable.state.value === ALL_VARIABLE_VALUE && newService !== prevService) {
+      this.setState({
+        loading: true,
+        body: undefined,
+        error: undefined,
+      });
+    }
+  }
+
+  /**
+   * Pull the detected_labels from our service scene, update the variable when they change
+   * @param newState
+   * @param prevState
+   */
+  private onDetectedLabelsDataChange = (newState: QueryRunnerState, prevState: QueryRunnerState) => {
+    if (
+      newState.data?.state === LoadingState.Done &&
+      newState.data.series?.[0] &&
+      !areArraysEqual(newState.data.series?.[0]?.fields, prevState.data?.series?.[0]?.fields)
+    ) {
+      this.updateOptions(newState.data.series?.[0]);
+    } else if (newState.data?.state === LoadingState.Done) {
+      // we got a new response, but nothing changed, just need to clear loading
+      const variable = getLabelGroupByVariable(this);
+      variable.setState({
+        loading: false,
+      });
+    }
+  };
 
   private handleSortByChange = (event: SortCriteriaChanged) => {
-    if (this.state.body instanceof LayoutSwitcher) {
-      this.state.body.state.layouts.forEach((layout) => {
+    if (event.target !== 'labels') {
+      return;
+    }
+    if (this.state.body instanceof LabelValuesBreakdownScene) {
+      this.state.body?.state.body?.state.layouts.forEach((layout) => {
         if (layout instanceof ByFrameRepeater) {
           layout.sort(event.sortBy, event.direction);
         }
@@ -123,58 +194,58 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     );
   };
 
-  private async updateBody(variable: CustomVariable) {
-    const ds = await getLokiDatasource(this);
-
-    if (!ds) {
+  private updateOptions(detectedLabels: DataFrame | undefined) {
+    if (!detectedLabels || !detectedLabels.length) {
+      this.setState({
+        loading: false,
+        body: new EmptyLayoutScene({ type: 'labels' }),
+      });
       return;
     }
+    const variable = getLabelGroupByVariable(this);
+    const options = getLabelOptions(detectedLabels.fields.map((label) => label.name));
 
-    const timeRange = sceneGraph.getTimeRange(this).state.value;
-    const filters = sceneGraph.lookupVariable(VAR_LABELS, this)! as AdHocFiltersVariable;
-    let detectedLabels: DetectedLabel[] | undefined = undefined;
+    variable.setState({
+      loading: false,
+      options,
+      value: this.state.value ?? ALL_VARIABLE_VALUE,
+    });
+  }
 
-    try {
-      const response = await ds.getResource<DetectedLabelsResponse>(
-        'detected_labels',
-        {
-          query: filters.state.filterExpression,
-          start: timeRange.from.utc().toISOString(),
-          end: timeRange.to.utc().toISOString(),
-        },
-        {
-          headers: {
-            'X-Query-Tags': `Source=${PLUGIN_ID}`,
-          },
-        }
-      );
-      detectedLabels = response?.detectedLabels;
-    } catch (error) {
-      console.error(error);
-      this.setState({ loading: false, error: true });
-    }
-
-    if (!detectedLabels || !Array.isArray(detectedLabels)) {
-      this.setState({ loading: false, error: true });
+  private updateBody() {
+    const variable = getLabelGroupByVariable(this);
+    // We get the labels from the service scene, if we don't have them yet, assume we're loading
+    if (!variable.state.options || !variable.state.options.length) {
       return;
     }
-
-    const labels = detectedLabels.sort((a, b) => sortLabelsByCardinality(a, b)).map((l) => l.label);
-    const options = getLabelOptions(labels);
 
     const stateUpdate: Partial<LabelBreakdownSceneState> = {
       loading: false,
-      value: String(variable.state.value),
-      labels: options, // this now includes "all" and possibly LEVEL_VARIABLE_VALUE structured metadata
       blockingMessage: undefined,
       error: false,
     };
 
-    stateUpdate.body = variable.hasAllValue() ? buildLabelsLayout(options) : buildLabelValuesLayout(variable);
+    if (variable.hasAllValue() && this.state.body instanceof LabelValuesBreakdownScene) {
+      stateUpdate.body = new LabelsAggregatedBreakdownScene({});
+    } else if (!variable.hasAllValue() && this.state.body instanceof LabelsAggregatedBreakdownScene) {
+      stateUpdate.body = new LabelValuesBreakdownScene({});
+    } else if (this.state.body === undefined) {
+      if (variable.state.options.length > 0) {
+        stateUpdate.body = variable.hasAllValue()
+          ? new LabelsAggregatedBreakdownScene({})
+          : new LabelValuesBreakdownScene({});
+      } else {
+        stateUpdate.body = new EmptyLayoutScene({ type: 'labels' });
+      }
+    } else if (this.state.body instanceof EmptyLayoutScene) {
+      if (variable.state.options.length > 0) {
+        stateUpdate.body = variable.hasAllValue()
+          ? new LabelsAggregatedBreakdownScene({})
+          : new LabelValuesBreakdownScene({});
+      }
+    }
 
-    stateUpdate.search = new BreakdownSearchScene();
-
-    this.setState(stateUpdate);
+    this.setState({ ...stateUpdate });
   }
 
   public onChange = (value?: string) => {
@@ -182,7 +253,10 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
       return;
     }
 
-    const variable = this.getVariable();
+    const variable = getLabelGroupByVariable(this);
+    variable.changeValueTo(value);
+
+    const { sortBy, direction } = getSortByPreference('labels', DEFAULT_SORT_BY, 'desc');
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.select_field_in_breakdown_clicked,
@@ -190,29 +264,35 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
         label: value,
         previousLabel: variable.getValueText(),
         view: 'labels',
+        sortBy,
+        sortByDirection: direction,
       }
     );
 
-    variable.changeValueTo(value);
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
+    navigateToValueBreakdown(ValueSlugs.label, value, serviceScene);
   };
 
   public static Component = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
-    const { labels, body, loading, value, blockingMessage, error, search, sort } = model.useState();
+    const { body, loading, blockingMessage, error, search, sort } = model.useState();
+    const variable = getLabelGroupByVariable(model);
+    const { options, value } = variable.useState();
     const styles = useStyles2(getStyles);
 
     return (
       <div className={styles.container}>
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
           <div className={styles.controls}>
-            {body instanceof LayoutSwitcher && <body.Selector model={body} />}
+            {body instanceof LabelValuesBreakdownScene && <LabelValuesBreakdownScene.Selector model={body} />}
+            {body instanceof LabelsAggregatedBreakdownScene && <LabelsAggregatedBreakdownScene.Selector model={body} />}
             {!loading && value !== ALL_VARIABLE_VALUE && (
               <>
                 <sort.Component model={sort} />
                 <search.Component model={search} />
               </>
             )}
-            {!loading && labels.length > 0 && (
-              <FieldSelector label="Label" options={labels} value={value} onChange={model.onChange} />
+            {!loading && options.length > 0 && (
+              <FieldSelector label="Label" options={options} value={String(value)} onChange={model.onChange} />
             )}
           </div>
           {error && (
@@ -220,6 +300,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
               The labels are not available at this moment. Try using a different time range or check again later.
             </Alert>
           )}
+
           <div className={styles.content}>{body && <body.Component model={body} />}</div>
         </StatusWrapper>
       </div>
@@ -249,177 +330,4 @@ function getStyles(theme: GrafanaTheme2) {
       gap: theme.spacing(2),
     }),
   };
-}
-
-function buildLabelsLayout(options: Array<SelectableValue<string>>) {
-  const children: SceneFlexItemLike[] = [];
-
-  for (const option of options) {
-    const { value: optionValue } = option;
-    if (optionValue === ALL_VARIABLE_VALUE || !optionValue) {
-      continue;
-    }
-
-    children.push(
-      new SceneCSSGridItem({
-        body: PanelBuilders.timeseries()
-          .setTitle(optionValue)
-          .setData(getQueryRunner(buildLokiQuery(getExpr(optionValue), { legendFormat: `{{${optionValue}}}` })))
-          .setHeaderActions(new SelectLabelAction({ labelName: String(optionValue) }))
-          .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
-          .setCustomFieldConfig('fillOpacity', 100)
-          .setCustomFieldConfig('lineWidth', 0)
-          .setCustomFieldConfig('pointSize', 0)
-          .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-          .setOverrides(setLeverColorOverrides)
-          .build(),
-      })
-    );
-  }
-
-  return new LayoutSwitcher({
-    options: [
-      { value: 'grid', label: 'Grid' },
-      { value: 'rows', label: 'Rows' },
-    ],
-    active: 'grid',
-    layouts: [
-      new SceneCSSGridLayout({
-        isLazy: true,
-        templateColumns: GRID_TEMPLATE_COLUMNS,
-        autoRows: '200px',
-        children: children,
-      }),
-      new SceneCSSGridLayout({
-        isLazy: true,
-        templateColumns: '1fr',
-        autoRows: '200px',
-        children: children.map((child) => child.clone()),
-      }),
-    ],
-  });
-}
-
-function getExpr(tagKey: string) {
-  return `sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR} | drop __error__ | ${tagKey}!="" [$__auto])) by (${tagKey})`;
-}
-
-const GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
-
-function buildLabelValuesLayout(variable: CustomVariable) {
-  const tagKey = variable.getValueText();
-  const query = buildLokiQuery(getExpr(tagKey), { legendFormat: `{{${tagKey}}}` });
-
-  let bodyOpts = PanelBuilders.timeseries();
-  bodyOpts = bodyOpts
-    .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
-    .setCustomFieldConfig('fillOpacity', 100)
-    .setCustomFieldConfig('lineWidth', 0)
-    .setCustomFieldConfig('pointSize', 0)
-    .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-    .setOverrides(setLeverColorOverrides)
-    .setTitle(variable.getValueText());
-
-  const body = bodyOpts.build();
-  const { sortBy, direction } = getSortByPreference('labels', ReducerID.stdDev, 'desc');
-
-  return new LayoutSwitcher({
-    $data: getQueryRunner(query),
-    options: [
-      { value: 'single', label: 'Single' },
-      { value: 'grid', label: 'Grid' },
-      { value: 'rows', label: 'Rows' },
-    ],
-    active: 'grid',
-    layouts: [
-      new SceneFlexLayout({
-        direction: 'column',
-        children: [
-          new SceneFlexItem({
-            minHeight: 300,
-            body,
-          }),
-        ],
-      }),
-      new ByFrameRepeater({
-        body: new SceneCSSGridLayout({
-          templateColumns: GRID_TEMPLATE_COLUMNS,
-          autoRows: '200px',
-          children: [
-            new SceneFlexItem({
-              body: new SceneReactObject({
-                reactNode: <LoadingPlaceholder text="Loading..." />,
-              }),
-            }),
-          ],
-        }),
-        getLayoutChild: getFilterBreakdownValueScene(
-          getLabelValue,
-          query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-          VAR_LABELS
-        ),
-        sortBy,
-        direction,
-      }),
-      new ByFrameRepeater({
-        body: new SceneCSSGridLayout({
-          templateColumns: '1fr',
-          autoRows: '200px',
-          children: [
-            new SceneFlexItem({
-              body: new SceneReactObject({
-                reactNode: <LoadingPlaceholder text="Loading..." />,
-              }),
-            }),
-          ],
-        }),
-        getLayoutChild: getFilterBreakdownValueScene(
-          getLabelValue,
-          query.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-          VAR_LABELS
-        ),
-        sortBy,
-        direction,
-      }),
-    ],
-  });
-}
-
-export function buildLabelBreakdownActionScene() {
-  return new SceneFlexLayout({
-    children: [
-      new SceneFlexItem({
-        body: new LabelBreakdownScene({}),
-      }),
-    ],
-  });
-}
-
-interface SelectLabelActionState extends SceneObjectState {
-  labelName: string;
-}
-export class SelectLabelAction extends SceneObjectBase<SelectLabelActionState> {
-  public onClick = () => {
-    getBreakdownSceneFor(this).onChange(this.state.labelName);
-  };
-
-  public static Component = ({ model }: SceneComponentProps<SelectLabelAction>) => {
-    return (
-      <Button variant="secondary" size="sm" onClick={model.onClick} aria-label={`Select ${model.useState().labelName}`}>
-        Select
-      </Button>
-    );
-  };
-}
-
-function getBreakdownSceneFor(model: SceneObject): LabelBreakdownScene {
-  if (model instanceof LabelBreakdownScene) {
-    return model;
-  }
-
-  if (model.parent) {
-    return getBreakdownSceneFor(model.parent);
-  }
-
-  throw new Error('Unable to find breakdown scene');
 }

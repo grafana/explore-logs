@@ -19,6 +19,7 @@ import { PatternsViewTableScene } from './PatternsViewTableScene';
 import { config } from '@grafana/runtime';
 import { css } from '@emotion/css';
 import { PatternFrame, PatternsBreakdownScene } from './PatternsBreakdownScene';
+import { areArraysEqual } from '../../../../services/comparison';
 
 const palette = config.theme2.visualization.palette;
 
@@ -43,7 +44,9 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
   public static Component = ({ model }: SceneComponentProps<PatternsFrameScene>) => {
     const { body, loading } = model.useState();
     const logsByServiceScene = sceneGraph.getAncestor(model, ServiceScene);
-    const { patterns } = logsByServiceScene.useState();
+    const { $patternsData } = logsByServiceScene.useState();
+    const patterns = $patternsData?.state.data?.series;
+
     return (
       <div className={styles.container}>
         {!loading && patterns && patterns.length > 0 && <>{body && <body.Component model={body} />}</>}
@@ -57,7 +60,10 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
     // If the patterns have changed, recalculate the dataframes
     this._subs.add(
       sceneGraph.getAncestor(this, ServiceScene).subscribeToState((newState, prevState) => {
-        if (JSON.stringify(newState.patterns) !== JSON.stringify(prevState.patterns)) {
+        const newFrame = newState?.$patternsData?.state?.data?.series;
+        const prevFrame = prevState?.$patternsData?.state?.data?.series;
+
+        if (!areArraysEqual(newFrame, prevFrame)) {
           const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
           this.updatePatterns(patternsBreakdownScene.state.patternFrames);
 
@@ -73,10 +79,7 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
     this._subs.add(
       sceneGraph.getAncestor(this, PatternsBreakdownScene).subscribeToState((newState, prevState) => {
         const patternsBreakdownScene = sceneGraph.getAncestor(this, PatternsBreakdownScene);
-        if (
-          newState.filteredPatterns &&
-          JSON.stringify(newState.filteredPatterns) !== JSON.stringify(prevState.filteredPatterns)
-        ) {
+        if (newState.filteredPatterns && !areArraysEqual(newState.filteredPatterns, prevState.filteredPatterns)) {
           this.updatePatterns(patternsBreakdownScene.state.filteredPatterns);
         } else {
           // If there is no search string, clear the state
@@ -109,7 +112,8 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
     const patternFrames = patternsBreakdownScene.state.patternFrames;
 
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
-    const lokiPatterns = serviceScene.state.patterns;
+
+    const lokiPatterns = serviceScene.state.$patternsData?.state.data?.series;
     if (!lokiPatterns || !patternFrames) {
       console.warn('Failed to update PatternsFrameScene body');
       return;
@@ -156,6 +160,7 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
     return new SceneCSSGridLayout({
       templateColumns: '100%',
       autoRows: '200px',
+      isLazy: true,
 
       children: [
         timeSeries,
@@ -224,6 +229,7 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
           // Mutating the dataframe config here means that we don't need to update the colors in the table view
           const dataFrame = patternFrame.dataFrame;
           dataFrame.fields[1].config.color = overrideToFixedColor(seriesIndex);
+          dataFrame.fields[1].name = '';
           return dataFrame;
         }),
         state: LoadingState.Done,

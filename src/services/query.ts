@@ -1,6 +1,11 @@
 import { AdHocVariableFilter } from '@grafana/data';
+import { DataSourceRef } from '@grafana/schema';
 import { AppliedPattern } from 'Components/IndexScene/IndexScene';
 import { PLUGIN_ID } from './routing';
+import { SceneDataQueryResourceRequest } from './datasource';
+import { EMPTY_VARIABLE_VALUE, getValueFromFieldsFilter, VAR_DATASOURCE_EXPR } from './variables';
+import { FilterOp } from './filters';
+import { groupBy, trim } from 'lodash';
 
 export type LokiQuery = {
   refId: string;
@@ -10,8 +15,37 @@ export type LokiQuery = {
   expr: string;
   legendFormat?: string;
   splitDuration?: string;
+  datasource?: DataSourceRef;
+  maxLines?: number;
 };
-export const buildLokiQuery = (expr: string, queryParamsOverrides?: Record<string, unknown>): LokiQuery => {
+
+/**
+ * Builds the resource query
+ * @param expr string to be interpolated and executed in the resource request
+ * @param resource
+ * @param queryParamsOverrides
+ */
+export const buildResourceQuery = (
+  expr: string,
+  resource: 'volume' | 'patterns' | 'detected_labels' | 'detected_fields',
+  queryParamsOverrides?: Record<string, unknown>
+): LokiQuery & SceneDataQueryResourceRequest => {
+  return {
+    ...defaultQueryParams,
+    resource,
+    refId: resource,
+    ...queryParamsOverrides,
+    datasource: { uid: VAR_DATASOURCE_EXPR },
+    expr,
+  };
+};
+/**
+ * Builds a loki data query
+ * @param expr
+ * @param queryParamsOverrides
+ * @returns LokiQuery
+ */
+export const buildDataQuery = (expr: string, queryParamsOverrides?: Record<string, unknown>): LokiQuery => {
   return {
     ...defaultQueryParams,
     ...queryParamsOverrides,
@@ -26,16 +60,77 @@ const defaultQueryParams = {
   supportingQueryType: PLUGIN_ID,
 };
 
-export function renderLogQLStreamSelector(filters: AdHocVariableFilter[]) {
-  return '{' + filters.map((filter) => renderFilter(filter)).join(', ') + '}';
+export function renderLogQLLabelFilters(filters: AdHocVariableFilter[]) {
+  const positive = filters.filter((filter) => filter.operator === FilterOp.Equal);
+  const negative = filters.filter((filter) => filter.operator === FilterOp.NotEqual);
+
+  const positiveGroups = groupBy(positive, (filter) => filter.key);
+
+  let positiveFilters: string[] = [];
+  for (const key in positiveGroups) {
+    const values = positiveGroups[key].map((filter) => filter.value);
+    positiveFilters.push(
+      values.length === 1 ? renderMetadata(positiveGroups[key][0]) : renderRegexLabelFilter(key, values)
+    );
+  }
+
+  const negativeFilters = negative.map((filter) => renderMetadata(filter)).join(', ');
+
+  return trim(`${positiveFilters.join(', ')}, ${negativeFilters}`, ' ,');
 }
 
 export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
-  return filters.map((filter) => `| ${renderFilter(filter)}`).join(' ');
+  const positive = filters.filter((filter) => filter.operator === FilterOp.Equal);
+  const negative = filters.filter((filter) => filter.operator === FilterOp.NotEqual);
+
+  const positiveGroups = groupBy(positive, (filter) => filter.key);
+
+  let positiveFilters = '';
+  for (const key in positiveGroups) {
+    positiveFilters += ' | ' + positiveGroups[key].map((filter) => `${fieldFilterToQueryString(filter)}`).join(' or ');
+  }
+
+  const negativeFilters = negative.map((filter) => `| ${fieldFilterToQueryString(filter)}`).join(' ');
+
+  return `${positiveFilters} ${negativeFilters}`.trim();
 }
 
-function renderFilter(filter: AdHocVariableFilter) {
+export function renderLogQLMetadataFilters(filters: AdHocVariableFilter[]) {
+  const positive = filters.filter((filter) => filter.operator === FilterOp.Equal);
+  const negative = filters.filter((filter) => filter.operator === FilterOp.NotEqual);
+
+  const positiveGroups = groupBy(positive, (filter) => filter.key);
+
+  let positiveFilters = '';
+  for (const key in positiveGroups) {
+    positiveFilters += ' | ' + positiveGroups[key].map((filter) => `${renderMetadata(filter)}`).join(' or ');
+  }
+
+  const negativeFilters = negative.map((filter) => `| ${renderMetadata(filter)}`).join(' ');
+
+  return `${positiveFilters} ${negativeFilters}`.trim();
+}
+
+function renderMetadata(filter: AdHocVariableFilter) {
+  // If the filter value is an empty string, we don't want to wrap it in backticks!
+  if (filter.value === EMPTY_VARIABLE_VALUE) {
+    return `${filter.key}${filter.operator}${filter.value}`;
+  }
   return `${filter.key}${filter.operator}\`${filter.value}\``;
+}
+
+function fieldFilterToQueryString(filter: AdHocVariableFilter) {
+  const fieldObject = getValueFromFieldsFilter(filter);
+  const value = fieldObject.value;
+  // If the filter value is an empty string, we don't want to wrap it in backticks!
+  if (value === EMPTY_VARIABLE_VALUE) {
+    return `${filter.key}${filter.operator}${value}`;
+  }
+  return `${filter.key}${filter.operator}\`${value}\``;
+}
+
+function renderRegexLabelFilter(key: string, values: string[]) {
+  return `${key}=~"${values.join('|')}"`;
 }
 
 export function renderPatternFilters(patterns: AppliedPattern[]) {

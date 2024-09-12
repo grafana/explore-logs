@@ -40,6 +40,8 @@ export const USER_EVENTS_ACTIONS = {
     add_to_filters_in_breakdown_clicked: 'add_to_filters_in_breakdown_clicked',
     // Clicking on "Select" button button in time series panels. Used in multiple views.The view type is passed as a parameter. Props: field, previousField, view
     select_field_in_breakdown_clicked: 'select_field_in_breakdown_clicked',
+    // Clicking on one of the levels in the Logs Volume panel
+    level_in_logs_volume_clicked: 'level_in_logs_volume_clicked',
     // Changing layout type (e.g. single/grid/rows). Used in multiple views. The view type is passed as a parameter. Props: layout, view
     layout_type_changed: 'layout_type_changed',
     // Changing search string in logs. Props: searchQuery
@@ -56,7 +58,13 @@ export const USER_EVENTS_ACTIONS = {
     logs_detail_filter_applied: 'logs_detail_filter_applied',
     // Popover menu filter
     logs_popover_line_filter: 'logs_popover_line_filter',
+    // Toggle displayed fields
+    logs_toggle_displayed_field: 'logs_toggle_displayed_field',
+    // Clear all displayed fields
+    logs_clear_displayed_fields: 'logs_clear_displayed_fields',
     // Value breakdown sort change
     value_breakdown_sort_change: 'value_breakdown_sort_change',
+    // Wasm not supported
+    wasm_not_supported: 'wasm_not_supported',
   },
 } as const;
