@@ -5,7 +5,6 @@ import { DashboardCursorSync, DataFrame, GrafanaTheme2, LoadingState, TimeRange,
 import {
   behaviors,
   PanelBuilders,
-  QueryRunnerState,
   SceneComponentProps,
   SceneCSSGridItem,
   SceneCSSGridLayout,
@@ -58,7 +57,6 @@ interface ServiceSelectionSceneState extends SceneObjectState {
   serviceLevel: Map<string, string[]>;
   // Logs volume API response as dataframe with SceneQueryRunner
   $data: SceneQueryRunner;
-  $labels: SceneQueryRunner;
   serviceName: typeof SERVICE_NAME | typeof AGGREGATED_SERVICE_NAME;
 }
 
@@ -79,15 +77,12 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       }),
       $data: getSceneQueryRunner({
         queries: [buildResourceQuery(`{${SERVICE_NAME}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')],
-        runQueriesMode: 'manual',
       }),
-      $labels: getSceneQueryRunner({ queries: [buildResourceQuery('', 'labels')], runQueriesMode: 'manual' }),
       serviceLevel: new Map<string, string[]>(),
       serviceName: SERVICE_NAME,
       ...state,
     });
 
-    this.state.$labels.activate();
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
@@ -115,51 +110,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         }
       })
     );
-
-    // Get labels
-    this.state.$labels.runQueries();
-
-    // Update labels on time range change
-    this._subs.add(
-      sceneGraph.getTimeRange(this).subscribeToState((newState, prevState) => {
-        this.state.$labels.runQueries();
-      })
-    );
-
-    this._subs.add(
-      getDataSourceVariable(this).subscribeToState((newState, prevState) => {
-        this.state.$labels.runQueries();
-      })
-    );
-
-    // Run queries on update of labels
-    this._subs.add(
-      this.state.$labels.subscribeToState((newState, prevState) => {
-        this.onLabelsChange(newState);
-      })
-    );
-  }
-
-  private onLabelsChange(newState: QueryRunnerState) {
-    if (newState.data?.state === LoadingState.Done) {
-      const labels = newState.data.series[0].fields[0].values;
-      if (labels.includes(AGGREGATED_SERVICE_NAME)) {
-        this.setState({
-          serviceName: AGGREGATED_SERVICE_NAME,
-        });
-        this.state.$data.setState({
-          queries: [buildResourceQuery(`{${AGGREGATED_SERVICE_NAME}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')],
-        });
-      } else {
-        this.setState({
-          serviceName: SERVICE_NAME,
-        });
-        this.state.$data.setState({
-          queries: [buildResourceQuery(`{${SERVICE_NAME}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')],
-        });
-      }
-      this.state.$data.runQueries();
-    }
   }
 
   private updateBody() {

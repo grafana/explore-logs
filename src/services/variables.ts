@@ -39,6 +39,7 @@ export const EXPLORATION_DS = { uid: VAR_DATASOURCE_EXPR };
 export const ALL_VARIABLE_VALUE = '$__all';
 export const LEVEL_VARIABLE_VALUE = 'detected_level';
 export const SERVICE_NAME = 'service_name';
+export const AGGREGATED_METRIC = '__aggregated_metric__';
 export const EMPTY_VARIABLE_VALUE = '""';
 
 export type ParserType = 'logfmt' | 'json' | 'mixed' | 'structuredMetadata';
