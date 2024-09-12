@@ -74,8 +74,8 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     await explorePage.goToFieldsTab();
     const allPanels = explorePage.getAllPanelsLocator();
 
-    // Should be 13 fields coming back from the detected_fields, but one is detected_level
-    await expect(allPanels).toHaveCount(12);
+    // Should be 14 fields coming back from the detected_fields, but one is detected_level
+    await expect(allPanels).toHaveCount(13);
 
     await page
       .getByTestId(`data-testid Panel header ${logFmtFieldName}`)
@@ -89,8 +89,8 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     // Exclude a panel
     await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
     // There is only one panel/value, so we should be redirected back to the aggregation after excluding it
-    // We'll have all 9 responses from detected_fields
-    await expect(allPanels).toHaveCount(9);
+    // We'll have all 10 responses from detected_fields
+    await expect(allPanels).toHaveCount(10);
 
     // Adhoc content filter should be added
     await expect(

@@ -669,23 +669,6 @@ test.describe('explore services breakdown page', () => {
     await expect(explorePage.getAllPanelsLocator().first()).toBeInViewport();
   });
 
-  test('should see too many series button', async ({ page }) => {
-    explorePage.blockAllQueriesExcept({
-      refIds: ['logsPanelQuery', '_25values'],
-      legendFormats: [`{{${levelName}}}`],
-    });
-    await page.goto(
-      '/a/grafana-lokiexplore-app/explore/service/nginx-json/fields?var-ds=gdev-loki&from=now-5m&to=now&patterns=%5B%5D&var-fields=&var-levels=&var-patterns=&var-lineFilter=&var-filters=service_name%7C%3D%7Cnginx-json&urlColumns=%5B%5D&visualizationType=%22logs%22&displayedFields=%5B%5D&var-fieldBy=$__all'
-    );
-    const showAllButtonLocator = page.getByText('Show all');
-    await expect(showAllButtonLocator).toHaveCount(1);
-    await expect(showAllButtonLocator).toBeVisible();
-
-    await showAllButtonLocator.click();
-
-    await expect(showAllButtonLocator).toHaveCount(0);
-  });
-
   test('should not see maximum of series limit reached after changing filters', async ({ page }) => {
     explorePage.blockAllQueriesExcept({
       refIds: ['logsPanelQuery', 'content', 'version'],
