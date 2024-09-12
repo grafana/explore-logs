@@ -214,7 +214,12 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     // Query Subscriptions
     this._subs.add(this.subscribeToPatternsQuery());
     this._subs.add(this.subscribeToDetectedLabelsQuery());
-    this._subs.add(this.subscribeToDetectedFieldsQuery());
+
+    // Fields tab will update its own count, and update count when a query fails
+    if (getDrilldownSlug() !== PageSlugs.fields) {
+      this._subs.add(this.subscribeToDetectedFieldsQuery());
+    }
+
     this._subs.add(this.subscribeToLogsQuery());
 
     // Variable subscriptions
@@ -387,6 +392,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
           ...body.state.children.slice(0, 1),
           breakdownViewDef.getScene((length) => {
             if (breakdownViewDef.value === 'fields') {
+              console.log('setting fields count', length);
               this.setState({ fieldsCount: length });
             }
           }),
