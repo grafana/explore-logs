@@ -46,6 +46,7 @@ export function getLabelOptions(labels: string[]) {
   return [{ label: 'All', value: ALL_VARIABLE_VALUE }, ...labelOptions];
 }
 export const FIELDS_TO_REMOVE = ['level_extracted', LEVEL_VARIABLE_VALUE, 'level'];
+export const LABELS_TO_REMOVE = [LEVEL_VARIABLE_VALUE, 'level'];
 
 export function getFieldOptions(labels: string[]) {
   const options = [...labels];
