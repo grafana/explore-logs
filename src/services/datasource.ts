@@ -127,6 +127,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
             }
             case 'labels': {
               await this.getLabels(request, ds, subscriber);
+              break;
             }
             default: {
               this.getData(request, ds, subscriber);

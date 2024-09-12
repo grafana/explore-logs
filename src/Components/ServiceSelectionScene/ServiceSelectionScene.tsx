@@ -1,7 +1,15 @@
 import { css } from '@emotion/css';
 import { debounce } from 'lodash';
 import React from 'react';
-import { DashboardCursorSync, DataFrame, GrafanaTheme2, LoadingState, TimeRange, VariableHide } from '@grafana/data';
+import {
+  AppEvents,
+  DashboardCursorSync,
+  DataFrame,
+  dateTime,
+  GrafanaTheme2,
+  LoadingState,
+  TimeRange,
+} from '@grafana/data';
 import {
   behaviors,
   PanelBuilders,
@@ -29,9 +37,12 @@ import { getFavoriteServicesFromStorage } from 'services/store';
 import {
   getDataSourceVariable,
   getLabelsVariable,
+  getServiceNameVariable,
   getServiceSelectionStringVariable,
   LEVEL_VARIABLE_VALUE,
   SERVICE_NAME,
+  SERVICE_NAME_EXPR,
+  SERVICE_NAME_VAR,
   VAR_SERVICE,
   VAR_SERVICE_EXPR,
 } from 'services/variables';
@@ -45,13 +56,17 @@ import { getLabelsFromSeries, toggleLevelVisibility } from 'services/levels';
 import { ServiceFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
 import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 import { areArraysEqual } from '../../services/comparison';
-import { config } from '@grafana/runtime';
+import { config, getAppEvents } from '@grafana/runtime';
+import { VariableHide } from '@grafana/schema';
+import { PLUGIN_ID } from '../../services/routing';
 
 // @ts-expect-error
-const aggregatedMetricsEnabled = config.featureToggles.exploreLogsAggregatedMetrics;
-export const SERVICES_LIMIT = 20;
+const aggregatedMetricsEnabled: boolean | undefined = config.featureToggles.exploreLogsAggregatedMetrics;
 // Don't export AGGREGATED_SERVICE_NAME, we want to rename things so the rest of the application is agnostic to how we got the services
 const AGGREGATED_SERVICE_NAME = '__aggregated_metric__';
+const AGGREGATED_METRIC_START_DATE = dateTime('2024-08-30', 'YYYY-MM-DD');
+const aggregatedBannerStorageKey = `${PLUGIN_ID}.aggregatedBannerStorageKey`;
+export const SERVICES_LIMIT = 20;
 
 interface ServiceSelectionSceneState extends SceneObjectState {
   // The body of the component
@@ -61,7 +76,6 @@ interface ServiceSelectionSceneState extends SceneObjectState {
   // Logs volume API response as dataframe with SceneQueryRunner
   $data: SceneQueryRunner;
   $labels?: SceneQueryRunner;
-  serviceName: typeof SERVICE_NAME | typeof AGGREGATED_SERVICE_NAME;
 }
 
 export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionSceneState> {
@@ -70,6 +84,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       body: new SceneCSSGridLayout({ children: [] }),
       $variables: new SceneVariableSet({
         variables: [
+          // Service search variable
           new CustomConstantVariable({
             name: VAR_SERVICE,
             label: 'Service',
@@ -77,17 +92,34 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
             value: '',
             skipUrlSync: true,
           }),
+          // Service name variable
+          new CustomConstantVariable({
+            name: SERVICE_NAME_VAR,
+            label: '',
+            hide: VariableHide.hideLabel,
+            value: SERVICE_NAME,
+            skipUrlSync: true,
+            options: [
+              {
+                value: SERVICE_NAME,
+                label: SERVICE_NAME,
+              },
+              {
+                value: AGGREGATED_SERVICE_NAME,
+                label: AGGREGATED_SERVICE_NAME,
+              },
+            ],
+          }),
         ],
       }),
       $data: getSceneQueryRunner({
-        queries: [buildResourceQuery(`{${SERVICE_NAME}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')],
+        queries: [buildResourceQuery(`{${SERVICE_NAME_EXPR}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')],
         runQueriesMode: 'manual',
       }),
       $labels: aggregatedMetricsEnabled
         ? getSceneQueryRunner({ queries: [buildResourceQuery('', 'labels')], runQueriesMode: 'manual' })
         : undefined,
       serviceLevel: new Map<string, string[]>(),
-      serviceName: SERVICE_NAME,
       ...state,
     });
 
@@ -124,26 +156,35 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     );
 
     if (aggregatedMetricsEnabled) {
-      // Get labels
-      this.state.$labels?.runQueries();
+      if (this.isTimeRangeTooEarlyForAggMetrics()) {
+        this.showUnsupportedTimeRangeAlert();
+        this.runServiceQueries();
+      } else {
+        this.state.$labels?.runQueries();
+      }
 
       // Update labels on time range change
       this._subs.add(
-        sceneGraph.getTimeRange(this).subscribeToState((newState, prevState) => {
-          this.state.$labels?.runQueries();
+        sceneGraph.getTimeRange(this).subscribeToState(() => {
+          if (this.isTimeRangeTooEarlyForAggMetrics()) {
+            this.showUnsupportedTimeRangeAlert();
+            this.runServiceQueries();
+          } else {
+            this.state.$labels?.runQueries();
+          }
         })
       );
 
       // Update labels on datasource change
       this._subs.add(
-        getDataSourceVariable(this).subscribeToState((newState, prevState) => {
+        getDataSourceVariable(this).subscribeToState(() => {
           this.state.$labels?.runQueries();
         })
       );
 
       // Run queries on update of labels
       this._subs.add(
-        this.state.$labels?.subscribeToState((newState, prevState) => {
+        this.state.$labels?.subscribeToState((newState) => {
           if (newState?.data?.state === LoadingState.Done) {
             const labels = newState?.data.series[0].fields[0].values;
             this.runServiceQueries(labels);
@@ -155,22 +196,33 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     }
   }
 
+  private isTimeRangeTooEarlyForAggMetrics(): boolean {
+    const timeRange = sceneGraph.getTimeRange(this);
+    return timeRange.state.value.from.isBefore(dateTime(AGGREGATED_METRIC_START_DATE));
+  }
+
+  private showUnsupportedTimeRangeAlert() {
+    if (!localStorage.getItem(aggregatedBannerStorageKey)) {
+      const appEvents = getAppEvents();
+      appEvents.publish({
+        type: AppEvents.alertWarning.name,
+        payload: [
+          `Aggregated metrics are only supported for time ranges after ${AGGREGATED_METRIC_START_DATE.format(
+            'YYYY-MM-DD'
+          )}`,
+        ],
+      });
+      localStorage.setItem(aggregatedBannerStorageKey, 'true');
+    }
+  }
+
   private runServiceQueries(labels?: string[]) {
-    if (labels?.includes(AGGREGATED_SERVICE_NAME)) {
-      this.setState({
-        serviceName: AGGREGATED_SERVICE_NAME,
-      });
-      this.state.$data.setState({
-        queries: [buildResourceQuery(`{${AGGREGATED_SERVICE_NAME}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')],
-      });
+    if (labels?.includes(AGGREGATED_SERVICE_NAME) && !this.isTimeRangeTooEarlyForAggMetrics()) {
+      const serviceName = getServiceNameVariable(this);
+      serviceName.changeValueTo(AGGREGATED_SERVICE_NAME);
     } else {
-      console.log('onLabelsChange');
-      this.setState({
-        serviceName: SERVICE_NAME,
-      });
-      this.state.$data.setState({
-        queries: [buildResourceQuery(`{${SERVICE_NAME}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')],
-      });
+      const serviceName = getServiceNameVariable(this);
+      serviceName.changeValueTo(SERVICE_NAME);
     }
     this.state.$data.runQueries();
   }
@@ -236,11 +288,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   }
 
   private getLogExpression(service: string, levelFilter: string) {
-    return `{${this.state.serviceName}=\`${service}\`}${levelFilter}`;
+    return `{${SERVICE_NAME_EXPR}=\`${service}\`}${levelFilter}`;
   }
 
   private getMetricExpression(service: string) {
-    return `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${this.state.serviceName}=\`${service}\`} | drop __error__ [$__auto]))`;
+    return `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME_EXPR}=\`${service}\`} | drop __error__ [$__auto]))`;
   }
 
   private extendTimeSeriesLegendBus = (service: string, context: PanelContext, panel: VizPanel) => {
