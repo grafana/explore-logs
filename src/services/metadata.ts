@@ -33,9 +33,16 @@ export class MetadataService {
     this.serviceSceneState.labelsCount = count;
   }
 
+  public setFieldsCount(count: number) {
+    if (!this.serviceSceneState) {
+      this.serviceSceneState = {};
+    }
+
+    this.serviceSceneState.fieldsCount = count;
+  }
+
   public setServiceSceneState(state: ServiceSceneCustomState) {
     this.serviceSceneState = {
-      fields: state.fields,
       patternsCount: state.patternsCount,
       labelsCount: state.labelsCount,
       fieldsCount: state.fieldsCount,

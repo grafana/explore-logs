@@ -2,12 +2,12 @@ version: '3.0'
 
 services:
   grafana:
-    image: grafana/grafana:11.1.1
+    image: grafana/grafana:11.2.0
     environment:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_BASIC_ENABLED=false
-      - GF_FEATURE_TOGGLES_ENABLE=accessControlOnCall lokiLogsDataplane
+      - GF_FEATURE_TOGGLES_ENABLE=accessControlOnCall lokiLogsDataplane exploreLogsShardSplitting
       - GF_INSTALL_PLUGINS=https://storage.googleapis.com/integration-artifacts/grafana-lokiexplore-app/grafana-lokiexplore-app-latest.zip;grafana-lokiexplore-app
     ports:
       - 3000:3000/tcp
@@ -16,7 +16,7 @@ services:
     extra_hosts:
       - 'host.docker.internal:host-gateway'
   loki:
-    image: grafana/loki:main-d43b2de
+    image: grafana/loki:k218-85759c7
     environment:
       LOG_CLUSTER_DEPTH: '8'
       LOG_SIM_TH: '0.3'

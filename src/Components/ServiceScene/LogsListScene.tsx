@@ -18,6 +18,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '..
 import { locationService } from '@grafana/runtime';
 import { LogOptionsScene } from './LogOptionsScene';
 import { LogsPanelScene } from './LogsPanelScene';
+import { getDisplayedFields } from 'services/store';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -26,6 +27,7 @@ export interface LogsListSceneState extends SceneObjectState {
   urlColumns?: string[];
   selectedLine?: SelectedTableRow;
   $timeRange?: SceneTimeRangeLike;
+  displayedFields: string[];
 }
 
 export type LogsVisualizationType = 'logs' | 'table';
@@ -34,13 +36,15 @@ const VISUALIZATION_TYPE_LOCALSTORAGE_KEY = 'grafana.explore.logs.visualisationT
 
 export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, {
-    keys: ['urlColumns', 'selectedLine', 'visualizationType'],
+    keys: ['urlColumns', 'selectedLine', 'visualizationType', 'displayedFields'],
   });
   private lineFilterScene?: LineFilterScene = undefined;
+  private logsPanelScene?: LogsPanelScene = undefined;
   constructor(state: Partial<LogsListSceneState>) {
     super({
       ...state,
       visualizationType: (localStorage.getItem(VISUALIZATION_TYPE_LOCALSTORAGE_KEY) as LogsVisualizationType) ?? 'logs',
+      displayedFields: [],
     });
 
     this.addActivationHandler(this.onActivate.bind(this));
@@ -50,36 +54,50 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     const urlColumns = this.state.urlColumns ?? [];
     const selectedLine = this.state.selectedLine;
     const visualizationType = this.state.visualizationType;
+    const displayedFields = this.state.displayedFields ?? getDisplayedFields(this) ?? [];
     return {
       urlColumns: JSON.stringify(urlColumns),
       selectedLine: JSON.stringify(selectedLine),
       visualizationType: JSON.stringify(visualizationType),
+      displayedFields: JSON.stringify(displayedFields),
     };
   }
 
   updateFromUrl(values: SceneObjectUrlValues) {
     const stateUpdate: Partial<LogsListSceneState> = {};
-    if (typeof values.urlColumns === 'string') {
-      const decodedUrlColumns: string[] = JSON.parse(values.urlColumns);
-      if (decodedUrlColumns !== this.state.urlColumns) {
-        stateUpdate.urlColumns = decodedUrlColumns;
+    try {
+      if (typeof values.urlColumns === 'string') {
+        const decodedUrlColumns: string[] = JSON.parse(values.urlColumns);
+        if (decodedUrlColumns !== this.state.urlColumns) {
+          stateUpdate.urlColumns = decodedUrlColumns;
+        }
       }
-    }
-    if (typeof values.selectedLine === 'string') {
-      const decodedSelectedTableRow: SelectedTableRow = JSON.parse(values.selectedLine);
-      if (decodedSelectedTableRow !== this.state.selectedLine) {
-        stateUpdate.selectedLine = decodedSelectedTableRow;
+      if (typeof values.selectedLine === 'string') {
+        const decodedSelectedTableRow: SelectedTableRow = JSON.parse(values.selectedLine);
+        if (decodedSelectedTableRow !== this.state.selectedLine) {
+          stateUpdate.selectedLine = decodedSelectedTableRow;
+        }
       }
+
+      if (typeof values.visualizationType === 'string') {
+        const decodedVisualizationType: LogsVisualizationType = JSON.parse(values.visualizationType);
+        if (decodedVisualizationType !== this.state.visualizationType) {
+          stateUpdate.visualizationType = decodedVisualizationType;
+        }
+      }
+
+      if (typeof values.displayedFields === 'string') {
+        const displayedFields = JSON.parse(values.displayedFields);
+        if (displayedFields && displayedFields.length) {
+          stateUpdate.displayedFields = displayedFields;
+        }
+      }
+    } catch (e) {
+      // URL Params can be manually changed and it will make JSON.parse() fail.
+      console.error(e);
     }
 
-    if (typeof values.visualizationType === 'string') {
-      const decodedVisualizationType: LogsVisualizationType = JSON.parse(values.visualizationType);
-      if (decodedVisualizationType !== this.state.visualizationType) {
-        stateUpdate.visualizationType = decodedVisualizationType;
-      }
-    }
-
-    if (stateUpdate.urlColumns || stateUpdate.selectedLine || stateUpdate.visualizationType) {
+    if (Object.keys(stateUpdate).length) {
       this.setState(stateUpdate);
     }
   }
@@ -89,6 +107,13 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       selectedLine: undefined,
     });
   }
+
+  clearDisplayedFields = () => {
+    this.setState({ displayedFields: [] });
+    if (this.logsPanelScene) {
+      this.logsPanelScene.clearDisplayedFields();
+    }
+  };
 
   public onActivate() {
     const searchParams = new URLSearchParams(locationService.getLocation().search);
@@ -112,26 +137,24 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   }
 
   private setStateFromUrl(searchParams: URLSearchParams) {
-    const state: Partial<LogsListSceneState> = {};
     const selectedLineUrl = searchParams.get('selectedLine');
     const urlColumnsUrl = searchParams.get('urlColumns');
     const vizTypeUrl = searchParams.get('visualizationType');
+    const displayedFieldsUrl = searchParams.get('displayedFields') ?? JSON.stringify(getDisplayedFields(this));
 
-    if (selectedLineUrl) {
-      state.selectedLine = JSON.parse(selectedLineUrl);
-    }
-    if (urlColumnsUrl) {
-      state.urlColumns = JSON.parse(urlColumnsUrl);
-    }
-    if (vizTypeUrl) {
-      state.visualizationType = JSON.parse(vizTypeUrl);
-    }
-
-    // If state is saved in url on activation, save to scene state
-    if (Object.keys(state).length) {
-      this.setState(state);
-    }
+    this.updateFromUrl({
+      selectedLine: selectedLineUrl,
+      urlColumns: urlColumnsUrl,
+      vizType: vizTypeUrl,
+      displayedFields: displayedFieldsUrl,
+    });
   }
+
+  public setLogsVizOption = (options = {}) => {
+    if (this.logsPanelScene) {
+      this.logsPanelScene.setLogsVizOption(options);
+    }
+  };
 
   public updateLogsPanel = () => {
     this.setState({
@@ -156,6 +179,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
 
   private getVizPanel() {
     this.lineFilterScene = new LineFilterScene();
+    this.logsPanelScene = new LogsPanelScene({});
 
     return new SceneFlexLayout({
       direction: 'column',
@@ -173,7 +197,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
               }),
               new SceneFlexItem({
                 height: 'calc(100vh - 220px)',
-                body: new LogsPanelScene({}),
+                body: this.logsPanelScene,
               }),
             ]
           : [

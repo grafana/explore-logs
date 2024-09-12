@@ -1,11 +1,30 @@
-import { DataFrame } from '@grafana/data';
+import { DataFrame, Field, ReducerID } from '@grafana/data';
 import { DrawStyle, StackingMode } from '@grafana/ui';
-import { PanelBuilders, SceneCSSGridItem, SceneDataTransformer, SceneObject } from '@grafana/scenes';
+import {
+  AdHocFiltersVariable,
+  PanelBuilders,
+  SceneCSSGridItem,
+  SceneDataTransformer,
+  SceneObject,
+} from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
-import { AddToFiltersButton } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
-import { getLogsFormatVariable, VAR_FIELDS, VAR_LABELS } from './variables';
+import { AddToFiltersButton, VariableFilterType } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
+import {
+  getLogsStreamSelector,
+  getValueFromFieldsFilter,
+  LEVEL_VARIABLE_VALUE,
+  LOG_STREAM_SELECTOR_EXPR,
+  LogsQueryOptions,
+  ParserType,
+  VAR_FIELDS,
+  VAR_LABELS,
+  VAR_LEVELS,
+} from './variables';
 import { setLevelColorOverrides } from './panel';
 import { map, Observable } from 'rxjs';
+import { SortBy, SortByScene } from '../Components/ServiceScene/Breakdowns/SortByScene';
+import { getDetectedFieldsFrame } from '../Components/ServiceScene/ServiceScene';
+import { averageFields } from '../Components/ServiceScene/Breakdowns/FieldsBreakdownScene';
 
 export type DetectedLabel = {
   label: string;
@@ -16,55 +35,92 @@ export type DetectedLabelsResponse = {
   detectedLabels: DetectedLabel[];
 };
 
-interface ExtractedFields {
-  type: 'logfmt' | 'json';
-  fields: string[];
+export type DetectedField = {
+  label: string;
+  cardinality: number;
+  type: string;
+  parsers: string[] | null;
+};
+
+export type DetectedFieldsResponse = {
+  fields: DetectedField[];
+};
+
+const getReducerId = (sortBy: SortBy) => {
+  if (sortBy) {
+    const values: string[] = Object.values(ReducerID);
+    if (values.includes(sortBy)) {
+      return sortBy;
+    }
+  }
+  return undefined;
+};
+
+/**
+ * Extracts the ExtractedFieldsType from the string returned on the detected_fields api parser field value
+ * @param parserString
+ */
+export function extractParserFromString(parserString?: string): ParserType {
+  switch (parserString) {
+    case 'json':
+      return 'json';
+    case 'logfmt':
+      return 'logfmt';
+    case '': // Structured metadata is empty
+      return 'structuredMetadata';
+    case 'structuredMetadata': // Structured metadata is empty
+      return 'structuredMetadata';
+    default: // if we get a parser with multiple
+      return 'mixed';
+  }
 }
 
-export function updateParserFromDataFrame(frame: DataFrame, sceneRef: SceneObject): ExtractedFields {
-  const variable = getLogsFormatVariable(sceneRef);
-  const res = extractParserAndFieldsFromDataFrame(frame);
+export function extractParserFromArray(parsers?: string[]): ParserType {
+  const parsersSet = new Set(parsers?.map((v) => v.toString()) ?? []);
 
-  let newType;
-  if (!res.type) {
-    newType = '';
-  } else if (res.type === 'json') {
-    newType = `| json  | logfmt | drop __error__, __error_details__`;
-  } else {
-    newType = ` | ${res.type}`;
+  // Structured metadata doesn't change the parser we use, so remove it
+  parsersSet.delete('structuredMetadata');
+
+  // get unique values
+  const parsersArray = Array.from(parsersSet);
+
+  if (parsersArray.length === 1) {
+    return extractParserFromString(parsersArray[0]);
   }
 
-  if (variable.getValue() !== newType) {
-    variable.changeValueTo(newType);
+  // If the set size is zero, we only had structured metadata detected as a parser
+  if (parsersSet.size === 0) {
+    return 'structuredMetadata';
   }
 
-  return res;
+  // Otherwise if there was more then one value, return mixed parser
+  return 'mixed';
 }
 
-export function extractParserAndFieldsFromDataFrame(data: DataFrame) {
-  const result: ExtractedFields = { type: 'logfmt', fields: [] };
-  const labelTypesField = data.fields.find((f) => f.name === 'labelTypes');
-  result.fields = Object.keys(
-    labelTypesField?.values.reduce((acc: Record<string, boolean>, value: Record<string, string>) => {
-      Object.entries(value)
-        .filter(([_, v]) => v === 'P')
-        .forEach(([k]) => (acc[k] = true));
-      return acc;
-    }, {}) ?? {}
-  );
+export function getParserForField(fieldName: string, sceneRef: SceneObject): ParserType | undefined {
+  const detectedFieldsFrame = getDetectedFieldsFrame(sceneRef);
+  const parserField: Field<string> | undefined = detectedFieldsFrame?.fields[2];
+  const namesField: Field<string> | undefined = detectedFieldsFrame?.fields[0];
 
-  const linesField = data.fields.find((f) => f.name === 'Line' || f.name === 'body');
-  result.type = linesField?.values[0]?.[0] === '{' ? 'json' : 'logfmt';
+  const index = namesField?.values.indexOf(fieldName);
+  const parser =
+    index !== undefined && index !== -1 ? extractParserFromString(parserField?.values?.[index] ?? '') : undefined;
 
-  return result;
+  if (parser === undefined) {
+    console.warn('missing parser, using mixed format for', fieldName);
+    return 'mixed';
+  }
+  return parser;
 }
 
 export function getFilterBreakdownValueScene(
   getTitle: (df: DataFrame) => string,
   style: DrawStyle,
-  variableName: typeof VAR_FIELDS | typeof VAR_LABELS
+  variableName: typeof VAR_FIELDS | typeof VAR_LABELS,
+  sortByScene: SortByScene
 ) {
   return (frame: DataFrame, frameIndex: number) => {
+    const reducerID = getReducerId(sortByScene.state.sortBy);
     const panel = PanelBuilders.timeseries() //
       .setOption('legend', { showLegend: false })
       .setCustomFieldConfig('fillOpacity', 9)
@@ -87,6 +143,16 @@ export function getFilterBreakdownValueScene(
         .setOverrides(setLevelColorOverrides)
         .setCustomFieldConfig('drawStyle', DrawStyle.Bars);
     }
+
+    if (reducerID) {
+      panel.setOption('legend', {
+        showLegend: true,
+        calcs: [reducerID],
+      });
+      // These will only have a single series, no need to show the title twice
+      panel.setDisplayName(' ');
+    }
+
     return new SceneCSSGridItem({
       body: panel.build(),
     });
@@ -125,4 +191,111 @@ export function getLabelTypeFromFrame(labelKey: string, frame: DataFrame, index 
     default:
       return null;
   }
+}
+
+export function getFilterTypeFromLabelType(type: LabelType | null, key: string, value: string): VariableFilterType {
+  switch (type) {
+    case LabelType.Indexed: {
+      return VAR_LABELS;
+    }
+    case LabelType.Parsed: {
+      return VAR_FIELDS;
+    }
+    case LabelType.StructuredMetadata: {
+      // Structured metadata is either a special level variable, or a field variable
+      if (key === LEVEL_VARIABLE_VALUE) {
+        return VAR_LEVELS;
+      }
+      return VAR_FIELDS;
+    }
+    default: {
+      console.error(`Invalid label for ${key}`, value);
+      throw new Error(`Invalid label type for ${key}`);
+    }
+  }
+}
+
+export function getParserFromFieldsFilters(fields: AdHocFiltersVariable): ParserType {
+  const parsers = fields.state.filters.map((filter) => {
+    return getValueFromFieldsFilter(filter).parser;
+  });
+
+  return extractParserFromArray(parsers);
+}
+
+export function isAvgField(field: string) {
+  return averageFields.includes(field);
+}
+
+export function getFieldBreakdownExpr(field: string) {
+  if (isAvgField(field)) {
+    return (
+      `avg_over_time(${LOG_STREAM_SELECTOR_EXPR} | unwrap ` +
+      (field === 'duration' ? `duration` : field === 'bytes' ? `bytes` : ``) +
+      `(${field}) [$__auto]) by ()`
+    );
+  }
+  return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | ${field}!="" [$__auto]))`;
+}
+
+export function buildFieldsQuery(optionValue: string, options: LogsQueryOptions) {
+  if (isAvgField(optionValue)) {
+    return (
+      `avg_over_time(${getLogsStreamSelector(options)} | unwrap ` +
+      (optionValue === 'duration' ? `duration` : optionValue === 'bytes' ? `bytes` : ``) +
+      `(${optionValue}) [$__auto]) by ()`
+    );
+  } else {
+    return `sum by (${optionValue}) (count_over_time(${getLogsStreamSelector(options)} [$__auto]))`;
+  }
+}
+
+export function buildFieldsQueryString(
+  optionValue: string,
+  fieldsVariable: AdHocFiltersVariable,
+  detectedFieldsFrame?: DataFrame
+) {
+  const parserField: Field<string> | undefined = detectedFieldsFrame?.fields[2];
+  const namesField: Field<string> | undefined = detectedFieldsFrame?.fields[0];
+  const index = namesField?.values.indexOf(optionValue);
+
+  const parserForThisField =
+    index !== undefined && index !== -1 ? extractParserFromString(parserField?.values?.[index]) : 'mixed';
+
+  // Get the parser from the json payload of each filter
+  const parsers = fieldsVariable.state.filters.map((filter) => {
+    const index = namesField?.values.indexOf(filter.key);
+    const parserFromFilterValue = getValueFromFieldsFilter(filter);
+    if (parserFromFilterValue.parser) {
+      return parserFromFilterValue.parser;
+    }
+
+    // Then fallback to check the latest response
+    const parser =
+      index !== undefined && index !== -1
+        ? extractParserFromString(parserField?.values?.[index] ?? 'mixed')
+        : undefined;
+    return parser ?? 'mixed';
+  });
+
+  const parser = extractParserFromArray([...parsers, parserForThisField]);
+
+  let fieldExpressionToAdd = '';
+  let structuredMetadataToAdd = '';
+
+  if (parserForThisField === 'structuredMetadata') {
+    structuredMetadataToAdd = `| ${optionValue}!=""`;
+    // Structured metadata
+  } else {
+    fieldExpressionToAdd = `| ${optionValue}!=""`;
+  }
+
+  // is option structured metadata
+  const options: LogsQueryOptions = {
+    structuredMetadataToAdd,
+    fieldExpressionToAdd,
+    parser: parser,
+  };
+
+  return buildFieldsQuery(optionValue, options);
 }

@@ -32,6 +32,7 @@ import {
   getLabelsVariable,
   getServiceSelectionStringVariable,
   LEVEL_VARIABLE_VALUE,
+  SERVICE_NAME,
   VAR_SERVICE,
   VAR_SERVICE_EXPR,
 } from 'services/variables';
@@ -46,7 +47,7 @@ import { ServiceFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
 import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 import { areArraysEqual } from '../../services/comparison';
 
-export const SERVICE_NAME = 'service_name';
+export const SERVICES_LIMIT = 20;
 // Don't export AGGREGATED_SERVICE_NAME, we want to rename things so the rest of the application is agnostic to how we got the services
 const AGGREGATED_SERVICE_NAME = '__aggregated_metric__';
 
@@ -172,7 +173,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       const existingChildren: SceneCSSGridItem[] = this.state.body.state.children as SceneCSSGridItem[];
       const timeRange = sceneGraph.getTimeRange(this).state.value;
 
-      for (const service of servicesToQuery) {
+      for (const service of servicesToQuery.slice(0, SERVICES_LIMIT)) {
         const existing = existingChildren.filter((child) => {
           const vizPanel = child.state.body as VizPanel | undefined;
           return vizPanel?.state.title === service;
@@ -356,7 +357,9 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     const onSearchChange = (serviceName: string) => {
       model.onSearchServicesChange(serviceName);
     };
-    const serviceCount = servicesToQuery?.length ?? 0;
+    const totalServices = servicesToQuery?.length ?? 0;
+    // To get the count of services that are currently displayed, divide the number of panels by 2, as there are 2 panels per service (logs and time series)
+    const renderedServices = body.state.children.length / 2;
     return (
       <div className={styles.container}>
         <div className={styles.bodyWrapper}>
@@ -365,7 +368,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
             {isLogVolumeLoading && <LoadingPlaceholder text={'Loading services'} className={styles.loadingText} />}
             {!isLogVolumeLoading && (
               <>
-                Showing {serviceCount} service{serviceCount > 1 ? 's' : ''}
+                Showing {renderedServices} of {totalServices} service{totalServices !== 1 ? 's' : ''}
               </>
             )}
           </div>

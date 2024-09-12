@@ -18,19 +18,15 @@ import { LayoutSwitcher } from './LayoutSwitcher';
 import { getQueryRunner } from '../../../services/panel';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { Alert, DrawStyle, LoadingPlaceholder } from '@grafana/ui';
-import { getFilterBreakdownValueScene } from '../../../services/fields';
+import { buildFieldsQueryString, getFilterBreakdownValueScene } from '../../../services/fields';
 import { getLabelValue } from './SortByScene';
-import { getFieldGroupByVariable, VAR_FIELDS } from '../../../services/variables';
+import { getFieldGroupByVariable, getFieldsVariable, VAR_FIELDS } from '../../../services/variables';
 import React from 'react';
-import {
-  FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS,
-  FieldsBreakdownScene,
-  getFieldBreakdownExpr,
-} from './FieldsBreakdownScene';
+import { FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS, FieldsBreakdownScene } from './FieldsBreakdownScene';
 import { AddFilterEvent } from './AddToFiltersButton';
 import { navigateToDrilldownPage } from '../../../services/navigate';
 import { PageSlugs } from '../../../services/routing';
-import { ServiceScene } from '../ServiceScene';
+import { getDetectedFieldsFrame, ServiceScene } from '../ServiceScene';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
 
 export interface FieldValuesBreakdownSceneState extends SceneObjectState {
@@ -38,16 +34,42 @@ export interface FieldValuesBreakdownSceneState extends SceneObjectState {
   $data?: SceneDataProvider;
   lastFilterEvent?: AddFilterEvent;
 }
+
 export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakdownSceneState> {
   constructor(state: Partial<FieldValuesBreakdownSceneState>) {
     super(state);
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
+  public static Selector({ model }: SceneComponentProps<FieldValuesBreakdownScene>) {
+    const { body } = model.useState();
+    if (body instanceof LayoutSwitcher) {
+      return <>{body && <body.Selector model={body} />}</>;
+    }
+
+    return <></>;
+  }
+
+  public static Component = ({ model }: SceneComponentProps<FieldValuesBreakdownScene>) => {
+    const { body } = model.useState();
+    // @todo why are the types like this?
+    if (body instanceof LayoutSwitcher) {
+      return <>{body && <body.Component model={body} />}</>;
+    } else if (body instanceof SceneReactObject) {
+      return <>{body && <body.Component model={body} />}</>;
+    }
+
+    return <LoadingPlaceholder text={'Loading...'} />;
+  };
+
   onActivate() {
     const groupByVariable = getFieldGroupByVariable(this);
     const tagKey = String(groupByVariable.state.value);
-    const query = buildDataQuery(getFieldBreakdownExpr(tagKey), { legendFormat: `{{${tagKey}}}`, refId: tagKey });
+
+    const fieldsVariable = getFieldsVariable(this);
+    const detectedFieldsFrame = getDetectedFieldsFrame(this);
+    const queryString = buildFieldsQueryString(tagKey, fieldsVariable, detectedFieldsFrame);
+    const query = buildDataQuery(queryString, { legendFormat: `{{${tagKey}}}`, refId: tagKey });
 
     this.setState({
       body: this.build(query),
@@ -176,7 +198,8 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
           getLayoutChild: getFilterBreakdownValueScene(
             getLabelValue,
             query?.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-            VAR_FIELDS
+            VAR_FIELDS,
+            sceneGraph.getAncestor(this, FieldsBreakdownScene).state.sort
           ),
           sortBy,
           direction,
@@ -198,7 +221,8 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
           getLayoutChild: getFilterBreakdownValueScene(
             getLabelValue,
             query?.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-            VAR_FIELDS
+            VAR_FIELDS,
+            sceneGraph.getAncestor(this, FieldsBreakdownScene).state.sort
           ),
           sortBy,
           direction,
@@ -207,25 +231,4 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
       ],
     });
   }
-
-  public static Selector({ model }: SceneComponentProps<FieldValuesBreakdownScene>) {
-    const { body } = model.useState();
-    if (body instanceof LayoutSwitcher) {
-      return <>{body && <body.Selector model={body} />}</>;
-    }
-
-    return <></>;
-  }
-
-  public static Component = ({ model }: SceneComponentProps<FieldValuesBreakdownScene>) => {
-    const { body } = model.useState();
-    // @todo why are the types like this?
-    if (body instanceof LayoutSwitcher) {
-      return <>{body && <body.Component model={body} />}</>;
-    } else if (body instanceof SceneReactObject) {
-      return <>{body && <body.Component model={body} />}</>;
-    }
-
-    return <LoadingPlaceholder text={'Loading...'} />;
-  };
 }

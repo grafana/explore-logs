@@ -8,16 +8,18 @@ import {
   LoadingState,
   TestDataSourceResponse,
 } from '@grafana/data';
-import { DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
+import { config, DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
 import { RuntimeDataSource, SceneObject, sceneUtils } from '@grafana/scenes';
 import { DataQuery } from '@grafana/schema';
 import { Observable, Subscriber } from 'rxjs';
 import { getDataSource } from './scenes';
 import { LokiQuery } from './query';
 import { PLUGIN_ID } from './routing';
-import { DetectedLabelsResponse } from './fields';
-import { sortLabelsByCardinality } from './filters';
-import { LEVEL_VARIABLE_VALUE } from './variables';
+import { DetectedFieldsResponse, DetectedLabelsResponse } from './fields';
+import { FIELDS_TO_REMOVE, sortLabelsByCardinality } from './filters';
+import { LEVEL_VARIABLE_VALUE, SERVICE_NAME } from './variables';
+import { runShardSplitQuery } from './shardQuerySplitting';
+import { requestSupportsSharding } from './logql';
 
 export const WRAPPED_LOKI_DS_UID = 'wrapped-loki-ds-uid';
 
@@ -26,7 +28,7 @@ export type SceneDataQueryRequest = DataQueryRequest<LokiQuery & SceneDataQueryR
 };
 
 export type SceneDataQueryResourceRequest = {
-  resource: 'volume' | 'patterns' | 'detected_labels' | 'labels';
+  resource: 'volume' | 'patterns' | 'detected_labels' | 'detected_fields' | 'labels';
 };
 type TimeStampOfVolumeEval = number;
 type VolumeCount = string;
@@ -63,7 +65,15 @@ type PatternsResponse = {
   data: LokiPattern[];
 };
 
-class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
+export const DETECTED_FIELDS_NAME_FIELD = 'name';
+
+export const DETECTED_FIELDS_CARDINALITY_NAME = 'cardinality';
+
+export const DETECTED_FIELDS_PARSER_NAME = 'parser';
+
+export const DETECTED_FIELDS_TYPE_NAME = 'type';
+
+export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
   constructor(pluginId: string, uid: string) {
     super(pluginId, uid);
   }
@@ -111,6 +121,10 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
               await this.getDetectedLabels(request, ds, subscriber);
               break;
             }
+            case 'detected_fields': {
+              await this.getDetectedFields(request, ds, subscriber);
+              break;
+            }
             case 'labels': {
               await this.getLabels(request, ds, subscriber);
             }
@@ -125,11 +139,17 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
   private getData(
     request: SceneDataQueryRequest,
-    ds: DataSourceWithBackend<DataQuery>,
+    ds: DataSourceWithBackend<LokiQuery>,
     subscriber: Subscriber<DataQueryResponse>
   ) {
-    // query the datasource and return either observable or promise
-    const dsResponse = ds.query(request);
+    // @ts-expect-error
+    const shardingEnabled = config.featureToggles.exploreLogsShardSplitting;
+
+    // Query the datasource and return either observable or promise
+    const dsResponse =
+      requestSupportsSharding(request) === false || !shardingEnabled
+        ? ds.query(request)
+        : runShardSplitQuery(ds, request);
     dsResponse.subscribe(subscriber);
 
     return subscriber;
@@ -148,6 +168,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
       throw new Error('Patterns query can only have a single target!');
     }
     const { interpolatedTarget, expression } = this.interpolate(ds, targets, request);
+    subscriber.next({ data: [], state: LoadingState.Loading });
 
     try {
       const dsResponse = ds.getResource(
@@ -256,6 +277,8 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
     const { interpolatedTarget, expression } = this.interpolate(ds, targets, request);
 
+    subscriber.next({ data: [], state: LoadingState.Loading });
+
     try {
       const response = await ds.getResource<DetectedLabelsResponse>(
         'detected_labels',
@@ -295,6 +318,72 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     return subscriber;
   }
 
+  private async getDetectedFields(
+    request: DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest>,
+    ds: DataSourceWithBackend<LokiQuery>,
+    subscriber: Subscriber<DataQueryResponse>
+  ) {
+    const targets = request.targets.filter((target) => {
+      return target.resource === 'detected_fields';
+    });
+
+    if (targets.length !== 1) {
+      throw new Error('Detected fields query can only have a single target!');
+    }
+
+    subscriber.next({ data: [], state: LoadingState.Loading });
+
+    const { interpolatedTarget, expression } = this.interpolate(ds, targets, request);
+
+    try {
+      const response = await ds.getResource<DetectedFieldsResponse>(
+        'detected_fields',
+        {
+          query: expression,
+          start: request.range.from.utc().toISOString(),
+          end: request.range.to.utc().toISOString(),
+        },
+        {
+          requestId: request.requestId ?? 'detected_fields',
+          headers: {
+            'X-Query-Tags': `Source=${PLUGIN_ID}`,
+          },
+        }
+      );
+
+      const nameField: Field = { name: DETECTED_FIELDS_NAME_FIELD, type: FieldType.string, values: [], config: {} };
+      const cardinalityField: Field = {
+        name: DETECTED_FIELDS_CARDINALITY_NAME,
+        type: FieldType.number,
+        values: [],
+        config: {},
+      };
+      const parserField: Field = { name: DETECTED_FIELDS_PARSER_NAME, type: FieldType.string, values: [], config: {} };
+      const typeField: Field = { name: DETECTED_FIELDS_TYPE_NAME, type: FieldType.string, values: [], config: {} };
+
+      response.fields?.forEach((field) => {
+        if (!FIELDS_TO_REMOVE.includes(field.label)) {
+          nameField.values.push(field.label);
+          cardinalityField.values.push(field.cardinality);
+          parserField.values.push(field.parsers?.length ? field.parsers.join(', ') : 'structuredMetadata');
+          typeField.values.push(field.type);
+        }
+      });
+
+      const dataFrame = createDataFrame({
+        refId: interpolatedTarget.refId,
+        fields: [nameField, cardinalityField, parserField, typeField],
+      });
+
+      subscriber.next({ data: [dataFrame], state: LoadingState.Done });
+    } catch (e) {
+      console.error('Detected fields error:', e);
+      subscriber.next({ data: [], state: LoadingState.Error });
+    }
+
+    return subscriber;
+  }
+
   //@todo doesn't work with multiple queries
   private async getVolume(
     request: DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest>,
@@ -307,6 +396,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
     const targetsInterpolated = ds.interpolateVariablesInQueries(request.targets, request.scopedVars);
     const expression = targetsInterpolated[0].expr.replace('.*.*', '.+');
+    subscriber.next({ data: [], state: LoadingState.Loading });
 
     try {
       const volumeResponse: IndexVolumeResponse = await ds.getResource(
@@ -315,7 +405,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
           query: expression,
           start: request.range.from.utc().toISOString(),
           end: request.range.to.utc().toISOString(),
-          limit: 1000,
+          limit: 5000,
         },
         {
           requestId: request.requestId ?? 'volume',
@@ -333,7 +423,7 @@ class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
       const df = createDataFrame({
         fields: [
           {
-            name: 'service_name',
+            name: SERVICE_NAME,
             values: volumeResponse?.data.result?.map((r) => r.metric.service_name ?? r.metric.__aggregated_metric__),
           },
           { name: 'volume', values: volumeResponse?.data.result?.map((r) => Number(r.value[1])) },
