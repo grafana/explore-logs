@@ -13,7 +13,7 @@ type Props<T> = {
   label: string;
 };
 
-type AsyncFieldSelectorProps = {
+export type AsyncFieldSelectorProps = {
   selectOption: (value: string) => void;
   isLoading: boolean;
   initialFilter: SelectableValue<string>;
