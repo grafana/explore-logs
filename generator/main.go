@@ -44,8 +44,8 @@ func main() {
 	// Creates and starts all apps.
 	for namespace, apps := range generators {
 		for serviceName, generator := range apps {
-			ForAllClusters(namespace, serviceName, func(labels model.LabelSet) {
-				generator(ctx, NewAppLogger(labels, logger))
+			ForAllClusters(namespace, serviceName, func(labels model.LabelSet, metadata push.LabelsAdapter) {
+				generator(ctx, NewAppLogger(labels, logger), metadata)
 			})
 		}
 	}
