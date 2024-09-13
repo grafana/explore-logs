@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
-import { ServiceFieldSelector } from './FieldSelector';
+import { AsyncFieldSelectorProps, ServiceFieldSelector } from './FieldSelector';
 import { userEvent } from '@testing-library/user-event';
 import { testIds } from '../../../services/testIds';
 
@@ -9,7 +9,11 @@ describe('FieldSelector', () => {
     const onChange = jest.fn();
     const onSelect = jest.fn();
 
-    const props = {
+    const props: AsyncFieldSelectorProps = {
+      initialFilter: {
+        value: undefined,
+        label: undefined,
+      },
       isLoading: false,
       label: 'value',
       onChange: onChange,

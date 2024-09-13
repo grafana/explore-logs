@@ -25,6 +25,7 @@ import {
   getLabelsVariable,
   getLevelsVariable,
   getServiceNameFromVariableState,
+  LEVEL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
   SERVICE_NAME,
   VAR_DATASOURCE,
@@ -39,7 +40,6 @@ import { navigateToIndex } from '../../services/navigate';
 import { areArraysEqual } from '../../services/comparison';
 import { ActionBarScene } from './ActionBarScene';
 import { breakdownViewsDefinitions, TabNames, valueBreakdownViews } from './BreakdownViews';
-import { LABELS_TO_REMOVE } from '../../services/filters';
 
 const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 const PATTERNS_QUERY_REFID = 'patterns';
@@ -301,8 +301,9 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         const detectedLabelsFields = detectedLabelsResponse.series[0].fields;
         if (detectedLabelsResponse.series.length !== undefined && detectedLabelsFields.length !== undefined) {
           const removeSpecialFields = detectedLabelsResponse.series[0].fields.filter(
-            (f) => !LABELS_TO_REMOVE.includes(f.name)
+            (f) => LEVEL_VARIABLE_VALUE !== f.name
           );
+
           this.setState({
             labelsCount: removeSpecialFields.length + 1, // Add one for detected_level
           });

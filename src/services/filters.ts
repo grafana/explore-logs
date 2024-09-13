@@ -1,5 +1,5 @@
 import { DetectedLabel, LabelType } from './fields';
-import { ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE } from './variables';
+import { ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE, SERVICE_NAME } from './variables';
 import { VariableValueOption } from '@grafana/scenes';
 
 export enum FilterOp {
@@ -33,10 +33,6 @@ export function getLabelOptions(labels: string[]) {
   if (!labels.includes(LEVEL_VARIABLE_VALUE)) {
     options.unshift(LEVEL_VARIABLE_VALUE);
   }
-  const labelsIndex = options.indexOf('level');
-  if (labelsIndex !== -1) {
-    options.splice(labelsIndex, 1);
-  }
 
   const labelOptions: VariableValueOption[] = options.map((label) => ({
     label,
@@ -45,8 +41,9 @@ export function getLabelOptions(labels: string[]) {
 
   return [{ label: 'All', value: ALL_VARIABLE_VALUE }, ...labelOptions];
 }
-export const FIELDS_TO_REMOVE = ['level_extracted', LEVEL_VARIABLE_VALUE, 'level'];
-export const LABELS_TO_REMOVE = [LEVEL_VARIABLE_VALUE, 'level'];
+export const LEVEL_INDEX_NAME = 'level';
+export const FIELDS_TO_REMOVE = ['level_extracted', LEVEL_VARIABLE_VALUE, LEVEL_INDEX_NAME];
+export const LABELS_TO_REMOVE = [SERVICE_NAME];
 
 export function getFieldOptions(labels: string[]) {
   const options = [...labels];
