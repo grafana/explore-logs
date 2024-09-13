@@ -45,6 +45,10 @@ func main() {
 	for namespace, apps := range generators {
 		for serviceName, generator := range apps {
 			ForAllClusters(namespace, serviceName, func(labels model.LabelSet, metadata push.LabelsAdapter) {
+				// Remove `metadata` from nginx logs
+				if serviceName == "nginx" {
+					metadata = push.LabelsAdapter{}
+				}
 				generator(ctx, NewAppLogger(labels, logger), metadata)
 			})
 		}
