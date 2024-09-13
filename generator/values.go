@@ -163,7 +163,10 @@ func randTraceID(prevTrace string) string {
 	if prevTrace != "" && rand.Intn(2) == 0 {
 		return prevTrace
 	}
-	return gofakeit.UUID()
+	
+	newTrace := gofakeit.UUID()
+	defaultTraceId = newTrace
+	return newTrace
 }
 
 func randStructuredMetadata() push.LabelsAdapter {
