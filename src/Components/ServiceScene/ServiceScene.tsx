@@ -215,7 +215,12 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     // Query Subscriptions
     this._subs.add(this.subscribeToPatternsQuery());
     this._subs.add(this.subscribeToDetectedLabelsQuery());
-    this._subs.add(this.subscribeToDetectedFieldsQuery());
+
+    // Fields tab will update its own count, and update count when a query fails
+    if (getDrilldownSlug() !== PageSlugs.fields) {
+      this._subs.add(this.subscribeToDetectedFieldsQuery());
+    }
+
     this._subs.add(this.subscribeToLogsQuery());
 
     // Variable subscriptions

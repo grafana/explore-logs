@@ -13,7 +13,6 @@ import {
   getLogsStreamSelector,
   getValueFromFieldsFilter,
   LEVEL_VARIABLE_VALUE,
-  LOG_STREAM_SELECTOR_EXPR,
   LogsQueryOptions,
   ParserType,
   VAR_FIELDS,
@@ -225,17 +224,6 @@ export function getParserFromFieldsFilters(fields: AdHocFiltersVariable): Parser
 
 export function isAvgField(field: string) {
   return averageFields.includes(field);
-}
-
-export function getFieldBreakdownExpr(field: string) {
-  if (isAvgField(field)) {
-    return (
-      `avg_over_time(${LOG_STREAM_SELECTOR_EXPR} | unwrap ` +
-      (field === 'duration' ? `duration` : field === 'bytes' ? `bytes` : ``) +
-      `(${field}) [$__auto]) by ()`
-    );
-  }
-  return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | ${field}!="" [$__auto]))`;
 }
 
 export function buildFieldsQuery(optionValue: string, options: LogsQueryOptions) {
