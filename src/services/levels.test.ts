@@ -1,11 +1,12 @@
 import { SeriesVisibilityChangeMode } from '@grafana/ui';
 import { getLabelsFromSeries, getVisibleLevels, toggleLevelFromFilter, toggleLevelVisibility } from './levels';
 import { AdHocVariableFilter, FieldType, toDataFrame } from '@grafana/data';
-import { getLevelsVariable, VAR_LEVELS } from './variables';
+import { VAR_LEVELS } from './variables';
 import { AdHocFiltersVariable, SceneObject } from '@grafana/scenes';
 import { FilterOp } from './filters';
 import { addToFilters, replaceFilter } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { LEVEL_NAME } from 'Components/Table/constants';
+import { getLevelsVariable } from './variableGetters';
 
 jest.mock('./variables');
 jest.mock('Components/ServiceScene/Breakdowns/AddToFiltersButton');

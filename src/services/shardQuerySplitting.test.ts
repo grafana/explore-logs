@@ -5,7 +5,7 @@ import { DataQueryRequest, DataQueryResponse, dateTime, LoadingState } from '@gr
 import { runShardSplitQuery } from './shardQuerySplitting';
 import { DataSourceWithBackend } from '@grafana/runtime';
 
-import { LokiQuery } from './query';
+import { LokiQuery } from './lokiQuery';
 
 jest.mock('uuid', () => ({
   v4: jest.fn().mockReturnValue('uuid'),

@@ -1,4 +1,4 @@
-import { SceneDataQueryResourceRequest, WrappedLokiDatasource } from './datasource';
+import { WrappedLokiDatasource } from './datasource';
 import {
   DataFrame,
   DataQueryRequest,
@@ -7,10 +7,11 @@ import {
   dateTime,
   LoadingState,
 } from '@grafana/data';
-import { LokiQuery } from './query';
 import { Observable } from 'rxjs';
 import { DataSourceWithBackend } from '@grafana/runtime';
 import { DetectedFieldsResponse } from './fields';
+import { LokiQuery } from './lokiQuery';
+import { SceneDataQueryResourceRequest } from './datasourceTypes';
 
 jest.mock('@grafana/runtime', () => ({
   ...jest.requireActual('@grafana/runtime'),

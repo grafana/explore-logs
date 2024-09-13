@@ -4,19 +4,12 @@ import { AdHocVariableFilter, BusEventBase, DataFrame } from '@grafana/data';
 import { SceneComponentProps, SceneObject, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { VariableHide } from '@grafana/schema';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import {
-  getAdHocFiltersVariable,
-  getValueFromAdHocVariableFilter,
-  LEVEL_VARIABLE_VALUE,
-  ParserType,
-  VAR_FIELDS,
-  VAR_LABELS,
-  VAR_LEVELS,
-} from 'services/variables';
+import { LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from 'services/variables';
 import { FilterButton } from 'Components/FilterButton';
 import { FilterOp } from 'services/filters';
 import { getDetectedLabelsFrame } from '../ServiceScene';
 import { getParserForField } from '../../../services/fields';
+import { getAdHocFiltersVariable, getValueFromAdHocVariableFilter } from '../../../services/variableGetters';
 
 export interface AddToFiltersButtonState extends SceneObjectState {
   frame: DataFrame;
@@ -41,16 +34,6 @@ export type FilterType = 'include' | 'clear' | 'exclude' | 'toggle';
 export function addAdHocFilter(filter: AdHocVariableFilter, scene: SceneObject, variableType?: VariableFilterType) {
   const type: FilterType = filter.operator === '=' ? 'include' : 'exclude';
   addToFilters(filter.key, filter.value, type, scene, variableType);
-}
-
-export interface FieldValue {
-  value: string;
-  parser: ParserType;
-}
-
-export interface AdHocFieldValue {
-  value?: string;
-  parser?: ParserType;
 }
 
 export type VariableFilterType = typeof VAR_LABELS | typeof VAR_FIELDS | typeof VAR_LEVELS;

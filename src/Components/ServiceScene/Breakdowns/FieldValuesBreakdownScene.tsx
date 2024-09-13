@@ -11,7 +11,7 @@ import {
   SceneObjectState,
   SceneReactObject,
 } from '@grafana/scenes';
-import { buildDataQuery, LokiQuery } from '../../../services/query';
+import { buildDataQuery } from '../../../services/query';
 import { getSortByPreference } from '../../../services/store';
 import { DataQueryError, LoadingState } from '@grafana/data';
 import { LayoutSwitcher } from './LayoutSwitcher';
@@ -20,7 +20,7 @@ import { ByFrameRepeater } from './ByFrameRepeater';
 import { Alert, DrawStyle, LoadingPlaceholder } from '@grafana/ui';
 import { buildFieldsQueryString, getFilterBreakdownValueScene } from '../../../services/fields';
 import { getLabelValue } from './SortByScene';
-import { getFieldGroupByVariable, getFieldsVariable, VAR_FIELDS } from '../../../services/variables';
+import { VAR_FIELDS } from '../../../services/variables';
 import React from 'react';
 import { FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS, FieldsBreakdownScene } from './FieldsBreakdownScene';
 import { AddFilterEvent } from './AddToFiltersButton';
@@ -28,6 +28,8 @@ import { navigateToDrilldownPage } from '../../../services/navigate';
 import { PageSlugs } from '../../../services/routing';
 import { getDetectedFieldsFrame, ServiceScene } from '../ServiceScene';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
+import { getFieldGroupByVariable, getFieldsVariable } from '../../../services/variableGetters';
+import { LokiQuery } from '../../../services/lokiQuery';
 
 export interface FieldValuesBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher | SceneReactObject;

@@ -1,23 +1,12 @@
 import { AdHocVariableFilter } from '@grafana/data';
-import { DataSourceRef } from '@grafana/schema';
 import { AppliedPattern } from 'Components/IndexScene/IndexScene';
 import { PLUGIN_ID } from './routing';
-import { SceneDataQueryResourceRequest } from './datasource';
-import { EMPTY_VARIABLE_VALUE, getValueFromFieldsFilter, VAR_DATASOURCE_EXPR } from './variables';
+import { EMPTY_VARIABLE_VALUE, VAR_DATASOURCE_EXPR } from './variables';
 import { FilterOp } from './filters';
 import { groupBy, trim } from 'lodash';
-
-export type LokiQuery = {
-  refId: string;
-  queryType: string;
-  editorMode: string;
-  supportingQueryType: string;
-  expr: string;
-  legendFormat?: string;
-  splitDuration?: string;
-  datasource?: DataSourceRef;
-  maxLines?: number;
-};
+import { getValueFromFieldsFilter } from './variableGetters';
+import { LokiQuery } from './lokiQuery';
+import { SceneDataQueryResourceRequest } from './datasourceTypes';
 
 /**
  * Builds the resource query

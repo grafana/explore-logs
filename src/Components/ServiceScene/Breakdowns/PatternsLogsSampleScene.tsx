@@ -12,11 +12,8 @@ import {
 } from '@grafana/scenes';
 import React from 'react';
 import { getQueryRunner } from '../../../services/panel';
-import { buildDataQuery, LokiQuery, renderPatternFilters } from '../../../services/query';
+import { buildDataQuery, renderPatternFilters } from '../../../services/query';
 import {
-  getFieldsVariable,
-  getLevelsVariable,
-  getLineFilterVariable,
   LOG_STREAM_SELECTOR_EXPR,
   PATTERNS_SAMPLE_SELECTOR_EXPR,
   VAR_PATTERNS_EXPR,
@@ -26,6 +23,8 @@ import { LoadingState } from '@grafana/data';
 import { Alert, Button } from '@grafana/ui';
 import { PatternsViewTableScene } from './Patterns/PatternsViewTableScene';
 import { emptyStateStyles } from './FieldsBreakdownScene';
+import { getFieldsVariable, getLevelsVariable, getLineFilterVariable } from '../../../services/variableGetters';
+import { LokiQuery } from '../../../services/lokiQuery';
 
 interface PatternsLogsSampleSceneState extends SceneObjectState {
   pattern: string;

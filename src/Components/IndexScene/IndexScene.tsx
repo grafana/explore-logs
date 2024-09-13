@@ -22,10 +22,6 @@ import {
 } from '@grafana/scenes';
 import {
   EXPLORATION_DS,
-  getFieldsVariable,
-  getLevelsVariable,
-  getPatternsVariable,
-  getUrlParamNameForVariable,
   MIXED_FORMAT_EXPR,
   VAR_DATASOURCE,
   VAR_FIELDS,
@@ -52,6 +48,12 @@ import {
 } from 'services/query';
 import { VariableHide } from '@grafana/schema';
 import { CustomConstantVariable } from '../../services/CustomConstantVariable';
+import {
+  getFieldsVariable,
+  getLevelsVariable,
+  getPatternsVariable,
+  getUrlParamNameForVariable,
+} from '../../services/variableGetters';
 
 export interface AppliedPattern {
   pattern: string;

@@ -1,8 +1,9 @@
 import { SceneFlexItem, SceneFlexLayout, SceneObject } from '@grafana/scenes';
-import { getFieldsVariable, getLogsStreamSelector, LEVEL_VARIABLE_VALUE } from './variables';
+import { LEVEL_VARIABLE_VALUE } from './variables';
 import { getParserFromFieldsFilters } from './fields';
 import { buildDataQuery } from './query';
 import { LabelBreakdownScene } from '../Components/ServiceScene/Breakdowns/LabelBreakdownScene';
+import { getFieldsVariable, getLogsStreamSelector } from './variableGetters';
 
 export const LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
 

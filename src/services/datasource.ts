@@ -9,27 +9,21 @@ import {
   TestDataSourceResponse,
 } from '@grafana/data';
 import { config, DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
-import { RuntimeDataSource, SceneObject, sceneUtils } from '@grafana/scenes';
+import { RuntimeDataSource, sceneUtils } from '@grafana/scenes';
 import { DataQuery } from '@grafana/schema';
 import { Observable, Subscriber } from 'rxjs';
 import { getDataSource } from './scenes';
-import { LokiQuery } from './query';
 import { PLUGIN_ID } from './routing';
 import { DetectedFieldsResponse, DetectedLabelsResponse } from './fields';
 import { FIELDS_TO_REMOVE, sortLabelsByCardinality } from './filters';
 import { LEVEL_VARIABLE_VALUE, SERVICE_NAME } from './variables';
 import { runShardSplitQuery } from './shardQuerySplitting';
 import { requestSupportsSharding } from './logql';
+import { LokiQuery } from './lokiQuery';
+import { SceneDataQueryRequest, SceneDataQueryResourceRequest } from './datasourceTypes';
 
 export const WRAPPED_LOKI_DS_UID = 'wrapped-loki-ds-uid';
 
-export type SceneDataQueryRequest = DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest> & {
-  scopedVars?: { __sceneObject?: { valueOf: () => SceneObject } };
-};
-
-export type SceneDataQueryResourceRequest = {
-  resource: 'volume' | 'patterns' | 'detected_labels' | 'detected_fields';
-};
 type TimeStampOfVolumeEval = number;
 type VolumeCount = string;
 type VolumeValue = [TimeStampOfVolumeEval, VolumeCount];

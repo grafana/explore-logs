@@ -9,7 +9,8 @@ import { css } from '@emotion/css';
 import { addAdHocFilter } from './Breakdowns/AddToFiltersButton';
 import { areArraysEqual } from '../../services/comparison';
 import { getLogsPanelFrame } from './ServiceScene';
-import { getFilterTypeFromLabelType, getLabelTypeFromFrame, LabelType } from '../../services/fields';
+import { getFilterTypeFromLabelType, getLabelTypeFromFrame } from '../../services/fields';
+import { LabelType } from '../../services/fieldsTypes';
 
 export class LogsTableScene extends SceneObjectBase {
   public static Component = ({ model }: SceneComponentProps<LogsTableScene>) => {

@@ -26,15 +26,7 @@ import {
   useStyles2,
 } from '@grafana/ui';
 import { getFavoriteServicesFromStorage } from 'services/store';
-import {
-  getDataSourceVariable,
-  getLabelsVariable,
-  getServiceSelectionStringVariable,
-  LEVEL_VARIABLE_VALUE,
-  SERVICE_NAME,
-  VAR_SERVICE,
-  VAR_SERVICE_EXPR,
-} from 'services/variables';
+import { LEVEL_VARIABLE_VALUE, SERVICE_NAME, VAR_SERVICE, VAR_SERVICE_EXPR } from 'services/variables';
 import { selectService, SelectServiceButton } from './SelectServiceButton';
 import { buildDataQuery, buildResourceQuery } from 'services/query';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
@@ -45,6 +37,11 @@ import { getLabelsFromSeries, toggleLevelVisibility } from 'services/levels';
 import { ServiceFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
 import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 import { areArraysEqual } from '../../services/comparison';
+import {
+  getDataSourceVariable,
+  getLabelsVariable,
+  getServiceSelectionStringVariable,
+} from '../../services/variableGetters';
 
 export const SERVICES_LIMIT = 20;
 

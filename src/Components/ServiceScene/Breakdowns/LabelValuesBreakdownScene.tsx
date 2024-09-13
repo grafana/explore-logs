@@ -19,12 +19,7 @@ import { getSortByPreference } from '../../../services/store';
 import { LoadingState } from '@grafana/data';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { getFilterBreakdownValueScene } from '../../../services/fields';
-import {
-  ALL_VARIABLE_VALUE,
-  getLabelGroupByVariable,
-  VAR_LABEL_GROUP_BY_EXPR,
-  VAR_LABELS,
-} from '../../../services/variables';
+import { ALL_VARIABLE_VALUE, VAR_LABEL_GROUP_BY_EXPR, VAR_LABELS } from '../../../services/variables';
 import React from 'react';
 import { LabelBreakdownScene } from './LabelBreakdownScene';
 import { navigateToDrilldownPage } from '../../../services/navigate';
@@ -33,6 +28,7 @@ import { ServiceScene } from '../ServiceScene';
 import { AddFilterEvent } from './AddToFiltersButton';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { buildLabelsQuery, LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS } from '../../../services/labels';
+import { getLabelGroupByVariable } from '../../../services/variableGetters';
 
 export interface LabelValueBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
