@@ -25,6 +25,7 @@ import {
   getLabelsVariable,
   getLevelsVariable,
   getServiceNameFromVariableState,
+  LEVEL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
   SERVICE_NAME,
   VAR_DATASOURCE,
@@ -260,10 +261,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
 
     // If we don't have a detected labels count, or we are activating the labels scene, run the detected labels query
-    if (
-      ((slug === PageSlugs.labels || parentSlug === ValueSlugs.label) && !this.state.$detectedLabelsData?.state.data) ||
-      this.state.labelsCount === undefined
-    ) {
+    if (slug === PageSlugs.labels || parentSlug === ValueSlugs.label || this.state.labelsCount === undefined) {
       this.state.$detectedLabelsData?.runQueries();
     }
 
@@ -297,8 +295,12 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         // Detected labels API call always returns a single frame, with a field for each label
         const detectedLabelsFields = detectedLabelsResponse.series[0].fields;
         if (detectedLabelsResponse.series.length !== undefined && detectedLabelsFields.length !== undefined) {
+          const removeSpecialFields = detectedLabelsResponse.series[0].fields.filter(
+            (f) => LEVEL_VARIABLE_VALUE !== f.name
+          );
+
           this.setState({
-            labelsCount: detectedLabelsFields.length,
+            labelsCount: removeSpecialFields.length + 1, // Add one for detected_level
           });
           getMetadataService().setLabelsCount(detectedLabelsFields.length);
         }

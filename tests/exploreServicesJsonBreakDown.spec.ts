@@ -56,4 +56,18 @@ test.describe('explore nginx-json breakdown pages ', () => {
     });
     expect(requests).toHaveLength(3);
   });
+
+  test('should see too many series button', async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: ['logsPanelQuery', '_25values'],
+    });
+    await explorePage.goToFieldsTab();
+    const showAllButtonLocator = page.getByText('Show all');
+    await expect(showAllButtonLocator).toHaveCount(1);
+    await expect(showAllButtonLocator).toBeVisible();
+
+    await showAllButtonLocator.click();
+
+    await expect(showAllButtonLocator).toHaveCount(0);
+  });
 });

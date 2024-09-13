@@ -51,6 +51,12 @@ export class ExplorePage {
     await main.evaluate((main) => main.scrollTo(0, main.scrollHeight));
   }
 
+  async goToLogsTab() {
+    await this.page.getByTestId(testIds.exploreServiceDetails.tabLogs).click();
+    await this.assertNotLoading();
+    await this.assertTabsNotLoading();
+  }
+
   async goToFieldsTab() {
     await this.page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
     await this.assertNotLoading();
@@ -83,12 +89,20 @@ export class ExplorePage {
   }
 
   async assertTabsNotLoading() {
-    const tabSelector = this.page.getByTestId(testIds.exploreServiceDetails.tabLogs);
-    const tabsLoadingSelector = tabSelector.filter({ has: this.page.locator('svg') });
-    //Assert we can see the tabs
-    await expect(tabSelector).toHaveCount(1);
-    // Assert that the loading svg is not present
-    await expect(tabsLoadingSelector).toHaveCount(0);
+    const tabSelectors = [
+      this.page.getByTestId(testIds.exploreServiceDetails.tabLogs),
+      this.page.getByTestId(testIds.exploreServiceDetails.tabPatterns),
+      this.page.getByTestId(testIds.exploreServiceDetails.tabLabels),
+      this.page.getByTestId(testIds.exploreServiceDetails.tabFields),
+    ];
+    for (let loc of tabSelectors) {
+      const tabsLoadingSelector = loc.filter({ has: this.page.locator('svg') });
+
+      //Assert we can see the tabs
+      await expect(loc).toHaveCount(1);
+      // Assert that the loading svg is not present
+      await expect(tabsLoadingSelector).toHaveCount(0);
+    }
   }
 
   async click(locator: Locator) {
