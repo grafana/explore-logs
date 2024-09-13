@@ -1,11 +1,13 @@
 package main
 
 import (
-	gofakeit "github.com/brianvoe/gofakeit/v7"
-	"github.com/prometheus/common/model"
 	"math/rand"
 	"strings"
 	"time"
+
+	gofakeit "github.com/brianvoe/gofakeit/v7"
+	"github.com/grafana/loki/pkg/push"
+	"github.com/prometheus/common/model"
 )
 
 var clusters = []string{
@@ -78,6 +80,8 @@ var level = []model.LabelValue{
 }
 
 var orgIDs = []string{"1218", "29", "1010", "2419", "2919"}
+
+var defaultTraceId = gofakeit.UUID()
 
 func randLevel() model.LabelValue {
 	r := rand.Intn(100)
@@ -152,4 +156,16 @@ func randFileName() string {
 
 func randDuration() string {
 	return (time.Duration(gofakeit.Number(1, 30000)) * time.Millisecond).String()
+}
+
+func randTraceID(prevTrace string) string {
+	// 50% chance to use `prevTrace` if it is set
+	if prevTrace != "" && rand.Intn(2) == 0 {
+		return prevTrace
+	}
+	return gofakeit.UUID()
+}
+
+func randStructuredMetadata() push.LabelsAdapter {
+	return push.LabelsAdapter{push.LabelAdapter{Name: "traceID", Value: randTraceID(defaultTraceId)}}
 }

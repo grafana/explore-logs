@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/grafana/loki-client-go/loki"
+	"github.com/grafana/loki/pkg/push"
 	"github.com/prometheus/common/model"
 )
 
@@ -32,8 +33,8 @@ func main() {
 
 	var logger Logger = client
 	if *dry {
-		logger = LoggerFunc(func(labels model.LabelSet, timestamp time.Time, message string) error {
-			fmt.Println(labels, timestamp, message)
+		logger = LoggerFunc(func(labels model.LabelSet, timestamp time.Time, message string, metadata push.LabelsAdapter) error {
+			fmt.Println(labels, timestamp, message, metadata)
 			return nil
 		})
 	}
