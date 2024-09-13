@@ -1,5 +1,13 @@
 {
-  "ignorePaths": ["node_modules", "/project-words.txt", "dist", "playwright-report", "tests", "CHANGELOG.md"],
+  "ignorePaths": [
+    "node_modules",
+    "/project-words.txt",
+    "dist",
+    "playwright-report",
+    "tests",
+    "CHANGELOG.md",
+    "package.json"
+  ],
   "ignoreRegExpList": [],
   "words": [],
   "dictionaryDefinitions": [
