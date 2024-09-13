@@ -89,8 +89,8 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     // Exclude a panel
     await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
     // There is only one panel/value, so we should be redirected back to the aggregation after excluding it
-    // We'll have all 9 responses from detected_fields
-    await expect(allPanels).toHaveCount(10);
+    // We'll have all 12 responses from detected_fields
+    await expect(allPanels).toHaveCount(12);
 
     // Adhoc content filter should be added
     await expect(
