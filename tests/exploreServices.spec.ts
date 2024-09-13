@@ -2,6 +2,7 @@ import { test, expect } from '@grafana/plugin-e2e';
 import { ExplorePage } from './fixtures/explore';
 import { testIds } from '../src/services/testIds';
 import { mockVolumeApiResponse } from './mocks/mockVolumeApiResponse';
+import { mockLabelsResponse } from './mocks/mockLabelsResponse';
 
 test.describe('explore services page', () => {
   let explorePage: ExplorePage;
@@ -125,11 +126,12 @@ test.describe('explore services page', () => {
   });
 
   test.describe('mock volume API calls', () => {
-    let logsVolumeCount: number, logsQueryCount: number;
+    let logsVolumeCount: number, logsQueryCount: number, labelsQueryCount: number;
 
     test.beforeEach(async ({ page }) => {
       logsVolumeCount = 0;
       logsQueryCount = 0;
+      labelsQueryCount = 0;
 
       await page.route('**/index/volume*', async (route) => {
         const volumeResponse = mockVolumeApiResponse;
@@ -144,9 +146,15 @@ test.describe('explore services page', () => {
         await route.fulfill({ json: {} });
       });
 
+      await page.route('**/resources/labels*', async (route) => {
+        labelsQueryCount++;
+        await route.fulfill({ json: mockLabelsResponse });
+      });
+
       await Promise.all([
         page.waitForResponse((resp) => resp.url().includes('index/volume')),
         page.waitForResponse((resp) => resp.url().includes('ds/query')),
+        // page.waitForResponse((resp) => resp.url().includes('resources/labels')),
       ]);
     });
 
@@ -194,6 +202,7 @@ test.describe('explore services page', () => {
 
     test('changing datasource will trigger new queries', async ({ page }) => {
       await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
+      await explorePage.assertPanelsNotLoading();
       expect(logsVolumeCount).toEqual(1);
       expect(logsQueryCount).toEqual(4);
       await page
@@ -202,6 +211,7 @@ test.describe('explore services page', () => {
         .nth(1)
         .click();
       await page.getByText('gdev-loki-copy').click();
+      await explorePage.assertPanelsNotLoading();
       expect(logsVolumeCount).toEqual(2);
     });
   });

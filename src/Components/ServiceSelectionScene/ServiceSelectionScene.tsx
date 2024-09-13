@@ -75,6 +75,7 @@ interface ServiceSelectionSceneState extends SceneObjectState {
   serviceLevel: Map<string, string[]>;
   // Logs volume API response as dataframe with SceneQueryRunner
   $data: SceneQueryRunner;
+  // Labels call to get aggregated metrics labels
   $labels?: SceneQueryRunner;
 }
 
@@ -154,9 +155,13 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     if (aggregatedMetricsEnabled) {
       if (this.isTimeRangeTooEarlyForAggMetrics()) {
         this.showUnsupportedTimeRangeAlert();
-        this.runServiceQueries();
+        if (this.state.$data.state.data?.state !== LoadingState.Done) {
+          this.runServiceQueries();
+        }
       } else {
-        this.state.$labels?.runQueries();
+        if (this.state.$data.state.data?.state !== LoadingState.Done) {
+          this.state.$labels?.runQueries();
+        }
       }
 
       // Update labels on time range change
@@ -188,7 +193,23 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         })
       );
     } else {
-      this.runServiceQueries();
+      if (this.state.$data.state.data?.state !== LoadingState.Done) {
+        this.runServiceQueries();
+      }
+
+      // Run volume query on time range change
+      this._subs.add(
+        sceneGraph.getTimeRange(this).subscribeToState(() => {
+          this.state.$data?.runQueries();
+        })
+      );
+
+      // Update volume on datasource change
+      this._subs.add(
+        getDataSourceVariable(this).subscribeToState(() => {
+          this.state.$data?.runQueries();
+        })
+      );
     }
   }
 
