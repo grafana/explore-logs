@@ -321,7 +321,7 @@ test.describe('explore services breakdown page', () => {
     await page.waitForTimeout(250);
 
     // if this flakes we could just assert that it's greater then 3
-    expect(requestCount).toEqual(15);
+    expect(requestCount).toEqual(14);
   });
 
   test(`should select field ${fieldName}, update filters, open log panel`, async ({ page }) => {

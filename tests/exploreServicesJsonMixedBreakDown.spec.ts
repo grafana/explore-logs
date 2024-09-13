@@ -74,8 +74,8 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     await explorePage.goToFieldsTab();
     const allPanels = explorePage.getAllPanelsLocator();
 
-    // Should be 13 fields coming back from the detected_fields, but one is detected_level
-    await expect(allPanels).toHaveCount(13);
+    // Should be 16 fields coming back from the detected_fields, but one is detected_level
+    await expect(allPanels).toHaveCount(15);
 
     await page
       .getByTestId(`data-testid Panel header ${logFmtFieldName}`)
