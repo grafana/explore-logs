@@ -8,11 +8,7 @@ import { SERVICE_NAME } from 'services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { FilterOp } from 'services/filters';
 import { navigateToInitialPageAfterServiceSelection } from '../../services/navigate';
-import {
-  getDataSourceVariable,
-  getLabelsVariable,
-  getServiceSelectionStringVariable,
-} from '../../services/variableGetters';
+import { getDataSourceVariable, getLabelsVariable } from '../../services/variableGetters';
 
 export interface SelectServiceButtonState extends SceneObjectState {
   service: string;
@@ -23,10 +19,6 @@ export function selectService(service: string, sceneRef: SceneObject) {
   reportAppInteraction(USER_EVENTS_PAGES.service_selection, USER_EVENTS_ACTIONS.service_selection.service_selected, {
     service: service,
   });
-
-  const serviceSelectionVariable = getServiceSelectionStringVariable(sceneRef);
-  // Reset the service selection search to show all services
-  serviceSelectionVariable.changeValueTo('');
 
   variable.setState({
     filters: [

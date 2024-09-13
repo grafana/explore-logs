@@ -94,10 +94,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       });
     }
 
-    const serviceVariable = getServiceSelectionStringVariable(this);
-    // Reset search after routing back
-    serviceVariable.changeValueTo('');
-
     this._subs.add(
       this.state.$data.subscribeToState((newState, prevState) => {
         // update body if the data is done loading, and the dataframes have changed
@@ -315,6 +311,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           </div>
           <Field className={styles.searchField}>
             <ServiceFieldSelector
+              initialFilter={{
+                label: serviceStringVariable.getValue().toString(),
+                value: serviceStringVariable.getValue().toString(),
+                icon: 'filter',
+              }}
               isLoading={isLogVolumeLoading}
               value={String(value)}
               onChange={(serviceName) => onSearchChange(serviceName ?? '')}
