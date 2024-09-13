@@ -393,7 +393,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
           ...body.state.children.slice(0, 1),
           breakdownViewDef.getScene((length) => {
             if (breakdownViewDef.value === 'fields') {
-              console.log('setting fields count', length);
               this.setState({ fieldsCount: length });
             }
           }),
