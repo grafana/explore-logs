@@ -125,6 +125,10 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     });
 
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
+    if (serviceScene.state.fieldsCount === undefined) {
+      this.updateFieldCount();
+    }
+
     this._subs.add(serviceScene.state.$detectedFieldsData?.subscribeToState(this.onDetectedFieldsChange));
   }
   private build() {
@@ -176,8 +180,8 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
       this._subs.add(
         panel?.state.$data?.getResultsStream().subscribe((result) => {
           if (result.data.errors && result.data.errors.length > 0) {
-            this.updateFieldCount();
             child.setState({ isHidden: true });
+            this.updateFieldCount();
           }
         })
       );
@@ -197,7 +201,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
 
       const queryString = buildFieldsQueryString(optionValue, fieldsVariable, detectedFieldsFrame);
       const query = buildDataQuery(queryString, {
-        legendFormat: `{{${optionValue}}}`,
+        legendFormat: isAvgField(optionValue) ? optionValue : `{{${optionValue}}}`,
         refId: optionValue,
       });
 
@@ -239,11 +243,15 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
   }
 
   private updateFieldCount() {
-    const fieldsBreakdownScene = sceneGraph.getAncestor(this, FieldsBreakdownScene);
-    const activeLayout = this.state.body?.state.layouts.find((l) => l.isActive) as SceneCSSGridLayout;
-    const activeLayoutChildren = activeLayout.state.children as SceneCSSGridItem[];
-    const activePanels = activeLayoutChildren.filter((child) => !child.state.isHidden);
-    fieldsBreakdownScene.state.changeFieldCount?.(activePanels.length);
+    const activeLayout = (this.state.body?.state.layouts.find((l) => l.isActive) ??
+      this.state.body?.state.layouts[0]) as SceneCSSGridLayout | undefined;
+    const activeLayoutChildren = activeLayout?.state.children as SceneCSSGridItem[] | undefined;
+    const activePanels = activeLayoutChildren?.filter((child) => !child.state.isHidden);
+
+    if (activePanels) {
+      const fieldsBreakdownScene = sceneGraph.getAncestor(this, FieldsBreakdownScene);
+      fieldsBreakdownScene.state.changeFieldCount?.(activePanels.length);
+    }
   }
 
   public static Selector({ model }: SceneComponentProps<FieldsAggregatedBreakdownScene>) {

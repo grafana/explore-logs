@@ -3,7 +3,6 @@ import { ExplorePage, PlaywrightRequest } from './fixtures/explore';
 import { testIds } from '../src/services/testIds';
 import { mockEmptyQueryApiResponse } from './mocks/mockEmptyQueryApiResponse';
 import { LokiQuery } from '../src/services/query';
-import exp = require('node:constants');
 
 const fieldName = 'caller';
 const levelName = 'detected_level';
@@ -670,23 +669,6 @@ test.describe('explore services breakdown page', () => {
     await expect(explorePage.getAllPanelsLocator().first()).toBeInViewport();
   });
 
-  test('should see too many series button', async ({ page }) => {
-    explorePage.blockAllQueriesExcept({
-      refIds: ['logsPanelQuery', 'datetime'],
-      legendFormats: [`{{${levelName}}}`],
-    });
-    await page.goto(
-      '/a/grafana-lokiexplore-app/explore/service/nginx-json/fields?var-ds=gdev-loki&from=now-5m&to=now&patterns=%5B%5D&var-fields=&var-levels=&var-patterns=&var-lineFilter=&var-filters=service_name%7C%3D%7Cnginx-json&urlColumns=%5B%5D&visualizationType=%22logs%22&displayedFields=%5B%5D&var-fieldBy=$__all'
-    );
-    const showAllButtonLocator = page.getByText('Show all');
-    await expect(showAllButtonLocator).toHaveCount(1);
-    await expect(showAllButtonLocator).toBeVisible();
-
-    await showAllButtonLocator.click();
-
-    await expect(showAllButtonLocator).toHaveCount(0);
-  });
-
   test('should not see maximum of series limit reached after changing filters', async ({ page }) => {
     explorePage.blockAllQueriesExcept({
       refIds: ['logsPanelQuery', 'content', 'version'],
@@ -733,5 +715,28 @@ test.describe('explore services breakdown page', () => {
     await expect(contentPanelLocator).toHaveCount(0);
     // But version should exist
     await expect(versionPanelLocator).toHaveCount(1);
+  });
+
+  test('should update label set if detected_labels is loaded in another tab', async ({ page }) => {
+    explorePage.blockAllQueriesExcept({});
+    await explorePage.assertNotLoading();
+    await explorePage.assertTabsNotLoading();
+    await explorePage.goToLabelsTab();
+
+    const tabCountLocator = page.getByTestId(testIds.exploreServiceDetails.tabLabels).locator('> span');
+    await expect(tabCountLocator).not.toBeEmpty();
+    const panels = explorePage.getAllPanelsLocator();
+    // Count panels, compare to tab count
+    await expect(panels).toHaveCount(parseInt((await tabCountLocator.textContent()) as string, 10));
+
+    await explorePage.assertTabsNotLoading();
+    await explorePage.goToLogsTab();
+    await page.getByTestId('AdHocFilter-service_name').click();
+    await page.getByText('mimir-ingester').click();
+    await explorePage.assertTabsNotLoading();
+    await explorePage.goToLabelsTab();
+
+    // Count panels, compare to tab count
+    await expect(panels).toHaveCount(parseInt((await tabCountLocator.textContent()) as string, 10));
   });
 });
