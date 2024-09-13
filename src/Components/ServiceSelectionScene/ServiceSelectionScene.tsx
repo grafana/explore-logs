@@ -47,7 +47,7 @@ import {
   VAR_SERVICE_EXPR,
 } from 'services/variables';
 import { selectService, SelectServiceButton } from './SelectServiceButton';
-import { AGGREGATED_SERVICE_NAME, buildDataQuery, buildResourceQuery } from 'services/query';
+import { buildDataQuery, buildResourceQuery } from 'services/query';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getQueryRunner, getSceneQueryRunner, setLevelColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
@@ -62,7 +62,8 @@ import { PLUGIN_ID } from '../../services/routing';
 
 // @ts-expect-error
 const aggregatedMetricsEnabled: boolean | undefined = config.featureToggles.exploreLogsAggregatedMetrics;
-
+// Don't export AGGREGATED_SERVICE_NAME, we want to rename things so the rest of the application is agnostic to how we got the services
+const AGGREGATED_SERVICE_NAME = '__aggregated_metric__';
 const AGGREGATED_METRIC_START_DATE = dateTime('2024-08-30', 'YYYY-MM-DD');
 const aggregatedBannerStorageKey = `${PLUGIN_ID}.aggregatedBannerStorageKey`;
 export const SERVICES_LIMIT = 20;
@@ -115,7 +116,9 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         queries: [buildResourceQuery(`{${SERVICE_NAME_EXPR}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')],
         runQueriesMode: 'manual',
       }),
-      $labels: getSceneQueryRunner({ queries: [buildResourceQuery('', 'labels')], runQueriesMode: 'manual' }),
+      $labels: aggregatedMetricsEnabled
+        ? getSceneQueryRunner({ queries: [buildResourceQuery('', 'labels')], runQueriesMode: 'manual' })
+        : undefined,
       serviceLevel: new Map<string, string[]>(),
       ...state,
     });
