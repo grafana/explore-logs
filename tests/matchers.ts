@@ -27,7 +27,7 @@ function forceObservableCompletion(
     resolve: (args: jest.CustomMatcherResult | PromiseLike<jest.CustomMatcherResult>) => void
   ) {
     const timeoutObservable = timer(OBSERVABLE_TEST_TIMEOUT_IN_MS, asapScheduler);
-  
+
     subscription.add(
       timeoutObservable.subscribe(() => {
         subscription.unsubscribe();
@@ -43,12 +43,12 @@ function forceObservableCompletion(
       })
     );
   }
-  
+
   function expectObservableToBeDefined(received: unknown): jest.CustomMatcherResult | null {
     if (received) {
       return null;
     }
-  
+
     return {
       pass: false,
       message: () => `${matcherHint('.toEmitValues')}
@@ -56,12 +56,12 @@ function forceObservableCompletion(
   Expected ${printReceived(received)} to be ${printExpected('defined')}.`,
     };
   }
-  
+
   function expectObservableToBeObservable(received: unknown): jest.CustomMatcherResult | null {
     if (isObservable(received)) {
       return null;
     }
-  
+
     return {
       pass: false,
       message: () => `${matcherHint('.toEmitValues')}
@@ -69,21 +69,21 @@ function forceObservableCompletion(
   Expected ${printReceived(received)} to be ${printExpected('an Observable')}.`,
     };
   }
-  
+
   function expectObservable(received: unknown): jest.CustomMatcherResult | null {
     const toBeDefined = expectObservableToBeDefined(received);
     if (toBeDefined) {
       return toBeDefined;
     }
-  
+
     const toBeObservable = expectObservableToBeObservable(received);
     if (toBeObservable) {
       return toBeObservable;
     }
-  
+
     return null;
   }
-  
+
 
 /**
  * Collect all the values emitted by the observables (also errors) and pass them to the expectations functions after
