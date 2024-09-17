@@ -1,15 +1,7 @@
 import { css } from '@emotion/css';
 import { debounce } from 'lodash';
 import React from 'react';
-import {
-  AppEvents,
-  DashboardCursorSync,
-  DataFrame,
-  dateTime,
-  GrafanaTheme2,
-  LoadingState,
-  TimeRange,
-} from '@grafana/data';
+import { DashboardCursorSync, DataFrame, dateTime, GrafanaTheme2, LoadingState, TimeRange } from '@grafana/data';
 import {
   behaviors,
   PanelBuilders,
@@ -56,16 +48,18 @@ import { getLabelsFromSeries, toggleLevelVisibility } from 'services/levels';
 import { ServiceFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
 import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 import { areArraysEqual } from '../../services/comparison';
-import { config, getAppEvents } from '@grafana/runtime';
+import { config } from '@grafana/runtime';
 import { VariableHide } from '@grafana/schema';
-import { PLUGIN_ID } from '../../services/routing';
+import { ToolbarScene } from '../IndexScene/ToolbarScene';
+import { IndexScene } from '../IndexScene/IndexScene';
 
 // @ts-expect-error
 const aggregatedMetricsEnabled: boolean | undefined = config.featureToggles.exploreLogsAggregatedMetrics;
 // Don't export AGGREGATED_SERVICE_NAME, we want to rename things so the rest of the application is agnostic to how we got the services
 const AGGREGATED_SERVICE_NAME = '__aggregated_metric__';
-const AGGREGATED_METRIC_START_DATE = dateTime('2024-08-30', 'YYYY-MM-DD');
-const aggregatedBannerStorageKey = `${PLUGIN_ID}.aggregatedBannerStorageKey`;
+
+//@todo make start date user configurable, currently hardcoded for experimental cloud release
+export const AGGREGATED_METRIC_START_DATE = dateTime('2024-08-30', 'YYYY-MM-DD');
 export const SERVICES_LIMIT = 20;
 
 interface ServiceSelectionSceneState extends SceneObjectState {
@@ -75,8 +69,6 @@ interface ServiceSelectionSceneState extends SceneObjectState {
   serviceLevel: Map<string, string[]>;
   // Logs volume API response as dataframe with SceneQueryRunner
   $data: SceneQueryRunner;
-  // Labels call to get aggregated metrics labels
-  $labels?: SceneQueryRunner;
 }
 
 export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionSceneState> {
@@ -117,16 +109,9 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         queries: [buildResourceQuery(`{${SERVICE_NAME_EXPR}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')],
         runQueriesMode: 'manual',
       }),
-      $labels: aggregatedMetricsEnabled
-        ? getSceneQueryRunner({ queries: [buildResourceQuery('', 'labels')], runQueriesMode: 'manual' })
-        : undefined,
       serviceLevel: new Map<string, string[]>(),
       ...state,
     });
-
-    if (aggregatedMetricsEnabled) {
-      this.state.$labels?.activate();
-    }
 
     this.addActivationHandler(this.onActivate.bind(this));
   }
@@ -152,62 +137,42 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       })
     );
 
-    if (aggregatedMetricsEnabled) {
-      if (this.isTimeRangeTooEarlyForAggMetrics()) {
-        this.showUnsupportedTimeRangeAlert();
-        if (this.state.$data.state.data?.state !== LoadingState.Done) {
-          this.runServiceQueries();
-        }
-      } else {
-        if (this.state.$data.state.data?.state !== LoadingState.Done) {
-          this.state.$labels?.runQueries();
-        }
-      }
-
-      // Update labels on time range change
-      this._subs.add(
-        sceneGraph.getTimeRange(this).subscribeToState(() => {
-          if (this.isTimeRangeTooEarlyForAggMetrics()) {
-            this.showUnsupportedTimeRangeAlert();
-            this.runServiceQueries();
-          } else {
-            this.state.$labels?.runQueries();
-          }
-        })
-      );
-
-      // Update labels on datasource change
-      this._subs.add(
-        getDataSourceVariable(this).subscribeToState(() => {
-          this.state.$labels?.runQueries();
-        })
-      );
-
-      // Run queries on update of labels
-      this._subs.add(
-        this.state.$labels?.subscribeToState((newState) => {
-          if (newState?.data?.state === LoadingState.Done) {
-            const labels = newState?.data.series[0].fields[0].values;
-            this.runServiceQueries(labels);
-          }
-        })
-      );
-    } else {
+    if (this.isTimeRangeTooEarlyForAggMetrics()) {
+      this.onUnsupportedAggregatedMetricTimeRange();
       if (this.state.$data.state.data?.state !== LoadingState.Done) {
         this.runServiceQueries();
       }
+    } else {
+      this.onSupportedAggregatedMetricTimeRange();
+      if (this.state.$data.state.data?.state !== LoadingState.Done) {
+        this.runServiceQueries();
+      }
+    }
 
-      // Run volume query on time range change
-      this._subs.add(
-        sceneGraph.getTimeRange(this).subscribeToState(() => {
-          this.state.$data?.runQueries();
-        })
-      );
+    // Update labels on time range change
+    this._subs.add(
+      sceneGraph.getTimeRange(this).subscribeToState(() => {
+        if (this.isTimeRangeTooEarlyForAggMetrics()) {
+          this.onUnsupportedAggregatedMetricTimeRange();
+          this.runServiceQueries();
+        } else {
+          this.onSupportedAggregatedMetricTimeRange();
+          this.runServiceQueries();
+        }
+      })
+    );
 
-      // Update volume on datasource change
+    // Update labels on datasource change
+    this._subs.add(
+      getDataSourceVariable(this).subscribeToState(() => {
+        this.runServiceQueries();
+      })
+    );
+
+    if (aggregatedMetricsEnabled) {
       this._subs.add(
-        getDataSourceVariable(this).subscribeToState(() => {
-          this.state.$data?.runQueries();
+        this.getToolbar()?.subscribeToState(() => {
+          this.runServiceQueries();
         })
       );
     }
@@ -218,23 +183,41 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     return timeRange.state.value.from.isBefore(dateTime(AGGREGATED_METRIC_START_DATE));
   }
 
-  private showUnsupportedTimeRangeAlert() {
-    if (!localStorage.getItem(aggregatedBannerStorageKey)) {
-      const appEvents = getAppEvents();
-      appEvents.publish({
-        type: AppEvents.alertWarning.name,
-        payload: [
-          `Aggregated metrics are only supported for time ranges after ${AGGREGATED_METRIC_START_DATE.format(
-            'YYYY-MM-DD'
-          )}`,
-        ],
-      });
-      localStorage.setItem(aggregatedBannerStorageKey, 'true');
-    }
+  private onUnsupportedAggregatedMetricTimeRange() {
+    const toolbar = this.getToolbar();
+    toolbar?.setState({
+      options: {
+        aggregatedMetrics: {
+          ...toolbar?.state.options.aggregatedMetrics,
+          disabled: true,
+        },
+      },
+    });
   }
 
-  private runServiceQueries(labels?: string[]) {
-    if (labels?.includes(AGGREGATED_SERVICE_NAME) && !this.isTimeRangeTooEarlyForAggMetrics()) {
+  private getToolbar() {
+    const indexScene = sceneGraph.getAncestor(this, IndexScene);
+    return indexScene.state.controls.find((control) => control instanceof ToolbarScene) as ToolbarScene | undefined;
+  }
+
+  private onSupportedAggregatedMetricTimeRange() {
+    const toolbar = this.getToolbar();
+    toolbar?.setState({
+      options: {
+        aggregatedMetrics: {
+          ...toolbar?.state.options.aggregatedMetrics,
+          disabled: false,
+        },
+      },
+    });
+  }
+
+  private runServiceQueries() {
+    const toolbar = this.getToolbar();
+    const toolbarEnabled =
+      !toolbar?.state.options.aggregatedMetrics.disabled && toolbar?.state.options.aggregatedMetrics.active;
+
+    if ((!this.isTimeRangeTooEarlyForAggMetrics() || !aggregatedMetricsEnabled) && toolbarEnabled) {
       const serviceName = getServiceNameVariable(this);
       serviceName.changeValueTo(AGGREGATED_SERVICE_NAME);
     } else {

@@ -43,7 +43,7 @@ import { FilterOp } from 'services/filters';
 import { getDrilldownSlug, PageSlugs } from '../../services/routing';
 import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LoadingPlaceholder } from '@grafana/ui';
-import { locationService } from '@grafana/runtime';
+import { config, locationService } from '@grafana/runtime';
 import {
   renderLogQLFieldFilters,
   renderLogQLLabelFilters,
@@ -52,6 +52,7 @@ import {
 } from 'services/query';
 import { VariableHide } from '@grafana/schema';
 import { CustomConstantVariable } from '../../services/CustomConstantVariable';
+import { ToolbarScene } from './ToolbarScene';
 
 export interface AppliedPattern {
   pattern: string;
@@ -76,15 +77,27 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       getLastUsedDataSourceFromStorage() ?? 'grafanacloud-logs',
       state.initialFilters
     );
+
+    const controls: SceneObject[] = [
+      new VariableValueSelectors({ layout: 'vertical' }),
+      new SceneControlsSpacer(),
+      new SceneTimePicker({}),
+      new SceneRefreshPicker({}),
+    ];
+
+    //@ts-expect-error
+    if (getDrilldownSlug() === 'explore' && config.featureToggles.exploreLogsAggregatedMetrics) {
+      controls.push(
+        new ToolbarScene({
+          isOpen: false,
+        })
+      );
+    }
+
     super({
       $timeRange: state.$timeRange ?? new SceneTimeRange({}),
       $variables: state.$variables ?? variablesScene,
-      controls: state.controls ?? [
-        new VariableValueSelectors({ layout: 'vertical' }),
-        new SceneControlsSpacer(),
-        new SceneTimePicker({}),
-        new SceneRefreshPicker({}),
-      ],
+      controls: state.controls ?? controls,
       // Need to clear patterns state when the class in constructed
       patterns: [],
       ...state,

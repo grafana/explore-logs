@@ -31,6 +31,8 @@ export const USER_EVENTS_ACTIONS = {
     search_services_changed: 'search_services_changed',
     // Selecting service. Props: service
     service_selected: 'service_selected',
+    // Toggling aggregated metrics on/off
+    aggregated_metrics_toggled: 'aggregated_metrics_toggled',
   },
   [USER_EVENTS_PAGES.service_details]: {
     open_in_explore_clicked: 'open_in_explore_clicked',
