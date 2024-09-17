@@ -3,7 +3,7 @@ import { LabelType } from 'services/fields';
 import { getMatcherFromQuery } from 'services/logql';
 
 import { LokiQuery } from 'services/query';
-import { appendUrlParameter, createAppUrl, setUrlParameter, UrlParameters } from 'services/routing';
+import { appendUrlParameter, createAppUrl, replaceSlash, setUrlParameter, UrlParameters } from 'services/routing';
 import { SERVICE_NAME } from 'services/variables';
 
 const title = 'Open in Explore Logs';
@@ -44,7 +44,7 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
   if (!serviceSelector) {
     return undefined;
   }
-  const serviceName = serviceSelector.value;
+  const serviceName = replaceSlash(serviceSelector.value);
   // sort `service_name` first
   labelFilters.sort((a, b) => (a.key === SERVICE_NAME ? -1 : 1));
 
