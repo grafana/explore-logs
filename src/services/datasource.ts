@@ -15,8 +15,8 @@ import { Observable, Subscriber } from 'rxjs';
 import { getDataSource } from './scenes';
 import { PLUGIN_ID } from './routing';
 import { DetectedFieldsResponse, DetectedLabelsResponse } from './fields';
-import { FIELDS_TO_REMOVE, sortLabelsByCardinality } from './filters';
-import { LEVEL_VARIABLE_VALUE, SERVICE_NAME } from './variables';
+import { FIELDS_TO_REMOVE, LABELS_TO_REMOVE, sortLabelsByCardinality } from './filters';
+import { SERVICE_NAME } from './variables';
 import { runShardSplitQuery } from './shardQuerySplitting';
 import { requestSupportsSharding } from './logql';
 import { LokiQuery } from './lokiQuery';
@@ -280,8 +280,8 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
         }
       );
       const labels = response.detectedLabels
-        ?.sort((a, b) => sortLabelsByCardinality(a, b))
-        ?.filter((label) => label.label !== LEVEL_VARIABLE_VALUE);
+        ?.filter((label) => !LABELS_TO_REMOVE.includes(label.label))
+        ?.sort((a, b) => sortLabelsByCardinality(a, b));
 
       const detectedLabelFields: Array<Partial<Field>> = labels?.map((label) => {
         return {

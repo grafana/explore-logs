@@ -9,15 +9,7 @@ import {
 } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
 import { AddToFiltersButton, VariableFilterType } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
-import {
-  LEVEL_VARIABLE_VALUE,
-  LOG_STREAM_SELECTOR_EXPR,
-  LogsQueryOptions,
-  ParserType,
-  VAR_FIELDS,
-  VAR_LABELS,
-  VAR_LEVELS,
-} from './variables';
+import { LEVEL_VARIABLE_VALUE, LogsQueryOptions, ParserType, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from './variables';
 import { setLevelColorOverrides } from './panel';
 import { map, Observable } from 'rxjs';
 import { SortBy, SortByScene } from '../Components/ServiceScene/Breakdowns/SortByScene';
@@ -218,17 +210,6 @@ export function getParserFromFieldsFilters(fields: AdHocFiltersVariable): Parser
 
 export function isAvgField(field: string) {
   return averageFields.includes(field);
-}
-
-export function getFieldBreakdownExpr(field: string) {
-  if (isAvgField(field)) {
-    return (
-      `avg_over_time(${LOG_STREAM_SELECTOR_EXPR} | unwrap ` +
-      (field === 'duration' ? `duration` : field === 'bytes' ? `bytes` : ``) +
-      `(${field}) [$__auto]) by ()`
-    );
-  }
-  return `sum by (${field}) (count_over_time(${LOG_STREAM_SELECTOR_EXPR} | ${field}!="" [$__auto]))`;
 }
 
 export function buildFieldsQuery(optionValue: string, options: LogsQueryOptions) {

@@ -3,17 +3,10 @@ import { IndexScene } from '../Components/IndexScene/IndexScene';
 import { ALL_VARIABLE_VALUE } from './variables';
 import { getMetadataService } from './metadata';
 import { locationService } from '@grafana/runtime';
-import {
-  buildServicesUrl,
-  DRILLDOWN_URL_KEYS,
-  PageSlugs,
-  prefixRoute,
-  replaceSlash,
-  ROUTES,
-  ValueSlugs,
-} from './routing';
+import { buildServicesUrl, DRILLDOWN_URL_KEYS, PageSlugs, prefixRoute, ROUTES, ValueSlugs } from './routing';
 import { sceneGraph } from '@grafana/scenes';
 import { UrlQueryMap, urlUtil } from '@grafana/data';
+import { replaceSlash } from './extensions/links';
 
 function buildValueBreakdownUrl(label: string, newPath: ValueSlugs, serviceString: string) {
   if (label === ALL_VARIABLE_VALUE && newPath === ValueSlugs.label) {

@@ -12,6 +12,7 @@ import {
 } from './variables';
 import { locationService } from '@grafana/runtime';
 import { SceneRouteMatch } from '@grafana/scenes';
+import { replaceSlash } from './extensions/links';
 
 export const PLUGIN_ID = pluginJson.id;
 export const PLUGIN_BASE_URL = `/a/${PLUGIN_ID}`;
@@ -35,10 +36,6 @@ export type ParentDrilldownSlugs =
   | PageSlugs.labels
   | PageSlugs.patterns;
 export type ChildDrilldownSlugs = ValueSlugs.field | ValueSlugs.label;
-
-export function replaceSlash(parameter: string): string {
-  return parameter.replace(/\//g, '-');
-}
 
 export const ROUTES = {
   explore: () => prefixRoute(PageSlugs.explore),

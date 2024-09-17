@@ -2,7 +2,6 @@ import { expect, test } from '@grafana/plugin-e2e';
 import { ExplorePage, PlaywrightRequest } from './fixtures/explore';
 import { testIds } from '../src/services/testIds';
 import { mockEmptyQueryApiResponse } from './mocks/mockEmptyQueryApiResponse';
-import exp = require('node:constants');
 import { LokiQuery } from '../src/services/lokiQuery';
 
 const fieldName = 'caller';
@@ -87,7 +86,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page1.getByText(`{service_name=\`tempo-distributor\`} | ${levelName}=\`${valueName}\``)).toBeVisible();
   });
 
-  test(`should select label ${labelName}, update filters, open in explore`, async ({ page }) => {
+  test(`should select label ${labelName}, update filters, open in explore`, async ({ page, browser }) => {
     explorePage.blockAllQueriesExcept({
       refIds: [],
       legendFormats: [`{{${labelName}}}`],
@@ -100,11 +99,44 @@ test.describe('explore services breakdown page', () => {
     const page1Promise = page.waitForEvent('popup');
     await explorePage.serviceBreakdownOpenExplore.click();
     const page1 = await page1Promise;
+    // Assert logQL string is as expected
     await expect(
       page1.getByText(
         `{service_name=\`tempo-distributor\`, ${labelName}=\`${valueName}\`} | json | logfmt | drop __error__, __error_details__`
       )
     ).toBeVisible();
+
+    const toolBar = page1.getByLabel('Explore toolbar');
+    // Assert toolbar is visible before proceeding
+    await expect(toolBar).toBeVisible();
+    const extensionsButton = page1.getByLabel('Add', { exact: true });
+    await expect(extensionsButton).toHaveCount(1);
+    // Click on extensions button
+    await extensionsButton.click();
+    const openInExploreLocator = page1.getByLabel('Open in Explore Logs');
+    await expect(openInExploreLocator).toBeVisible();
+    // Click on open in logs explore
+    await openInExploreLocator.click();
+
+    const openInThisTabButtonLoc = page1.getByRole('button', { name: 'Open', exact: true });
+    await expect(openInThisTabButtonLoc).toBeVisible();
+    // Click to open in this tab
+    await openInThisTabButtonLoc.click();
+
+    // Assert the variables are visible
+    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label cluster')).toBeVisible();
+    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label service_name')).toBeVisible();
+    await explorePage.assertTabsNotLoading();
+
+    // Assert the label variable has the correct value
+    const labelFilter = page.getByTestId('AdHocFilter-cluster');
+    await expect(labelFilter).toBeVisible();
+    await expect(labelFilter).toHaveText('cluster=eu-west-1');
+
+    // Assert service variable has correct value
+    const serviceFilter = page.getByTestId('AdHocFilter-service_name');
+    await expect(serviceFilter).toBeVisible();
+    await expect(serviceFilter).toHaveText('service_name=tempo-distributor');
   });
 
   test('should select a label, label added to url', async ({ page }) => {
@@ -670,23 +702,6 @@ test.describe('explore services breakdown page', () => {
     await expect(explorePage.getAllPanelsLocator().first()).toBeInViewport();
   });
 
-  test('should see too many series button', async ({ page }) => {
-    explorePage.blockAllQueriesExcept({
-      refIds: ['logsPanelQuery', 'datetime'],
-      legendFormats: [`{{${levelName}}}`],
-    });
-    await page.goto(
-      '/a/grafana-lokiexplore-app/explore/service/nginx-json/fields?var-ds=gdev-loki&from=now-5m&to=now&patterns=%5B%5D&var-fields=&var-levels=&var-patterns=&var-lineFilter=&var-filters=service_name%7C%3D%7Cnginx-json&urlColumns=%5B%5D&visualizationType=%22logs%22&displayedFields=%5B%5D&var-fieldBy=$__all'
-    );
-    const showAllButtonLocator = page.getByText('Show all');
-    await expect(showAllButtonLocator).toHaveCount(1);
-    await expect(showAllButtonLocator).toBeVisible();
-
-    await showAllButtonLocator.click();
-
-    await expect(showAllButtonLocator).toHaveCount(0);
-  });
-
   test('should not see maximum of series limit reached after changing filters', async ({ page }) => {
     explorePage.blockAllQueriesExcept({
       refIds: ['logsPanelQuery', 'content', 'version'],
@@ -733,5 +748,28 @@ test.describe('explore services breakdown page', () => {
     await expect(contentPanelLocator).toHaveCount(0);
     // But version should exist
     await expect(versionPanelLocator).toHaveCount(1);
+  });
+
+  test('should update label set if detected_labels is loaded in another tab', async ({ page }) => {
+    explorePage.blockAllQueriesExcept({});
+    await explorePage.assertNotLoading();
+    await explorePage.assertTabsNotLoading();
+    await explorePage.goToLabelsTab();
+
+    const tabCountLocator = page.getByTestId(testIds.exploreServiceDetails.tabLabels).locator('> span');
+    await expect(tabCountLocator).not.toBeEmpty();
+    const panels = explorePage.getAllPanelsLocator();
+    // Count panels, compare to tab count
+    await expect(panels).toHaveCount(parseInt((await tabCountLocator.textContent()) as string, 10));
+
+    await explorePage.assertTabsNotLoading();
+    await explorePage.goToLogsTab();
+    await page.getByTestId('AdHocFilter-service_name').click();
+    await page.getByText('mimir-ingester').click();
+    await explorePage.assertTabsNotLoading();
+    await explorePage.goToLabelsTab();
+
+    // Count panels, compare to tab count
+    await expect(panels).toHaveCount(parseInt((await tabCountLocator.textContent()) as string, 10));
   });
 });

@@ -44,7 +44,7 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
   if (!serviceSelector) {
     return undefined;
   }
-  const serviceName = serviceSelector.value;
+  const serviceName = replaceSlash(serviceSelector.value);
   // sort `service_name` first
   labelFilters.sort((a, b) => (a.key === SERVICE_NAME ? -1 : 1));
 
@@ -99,4 +99,8 @@ export function appendUrlParameter(
   searchParams.append(key, value);
 
   return searchParams;
+}
+
+export function replaceSlash(parameter: string): string {
+  return parameter.replace(/\//g, '-');
 }

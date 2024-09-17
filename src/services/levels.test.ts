@@ -9,6 +9,7 @@ import { LEVEL_NAME } from 'Components/Table/constants';
 import { getLevelsVariable } from './variableGetters';
 
 jest.mock('./variables');
+jest.mock('./variableGetters');
 jest.mock('Components/ServiceScene/Breakdowns/AddToFiltersButton');
 
 const ALL_LEVELS = ['logs', 'debug', 'info', 'warn', 'error', 'crit'];
