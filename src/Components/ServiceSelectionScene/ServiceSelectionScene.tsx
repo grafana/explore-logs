@@ -154,11 +154,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       sceneGraph.getTimeRange(this).subscribeToState(() => {
         if (this.isTimeRangeTooEarlyForAggMetrics()) {
           this.onUnsupportedAggregatedMetricTimeRange();
-          this.runServiceQueries();
         } else {
           this.onSupportedAggregatedMetricTimeRange();
-          this.runServiceQueries();
         }
+        this.runServiceQueries();
       })
     );
 
@@ -171,8 +170,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
     if (aggregatedMetricsEnabled) {
       this._subs.add(
-        this.getToolbar()?.subscribeToState(() => {
-          this.runServiceQueries();
+        this.getQueryOptionsToolbar()?.subscribeToState((newState, prevState) => {
+          if (newState.options.aggregatedMetrics.userOverride !== prevState.options.aggregatedMetrics.userOverride) {
+            this.runServiceQueries();
+          }
         })
       );
     }
@@ -184,7 +185,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   }
 
   private onUnsupportedAggregatedMetricTimeRange() {
-    const toolbar = this.getToolbar();
+    const toolbar = this.getQueryOptionsToolbar();
     toolbar?.setState({
       options: {
         aggregatedMetrics: {
@@ -195,13 +196,13 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     });
   }
 
-  private getToolbar() {
+  private getQueryOptionsToolbar() {
     const indexScene = sceneGraph.getAncestor(this, IndexScene);
     return indexScene.state.controls.find((control) => control instanceof ToolbarScene) as ToolbarScene | undefined;
   }
 
   private onSupportedAggregatedMetricTimeRange() {
-    const toolbar = this.getToolbar();
+    const toolbar = this.getQueryOptionsToolbar();
     toolbar?.setState({
       options: {
         aggregatedMetrics: {
@@ -213,7 +214,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   }
 
   private runServiceQueries() {
-    const toolbar = this.getToolbar();
+    const toolbar = this.getQueryOptionsToolbar();
     const toolbarEnabled =
       !toolbar?.state.options.aggregatedMetrics.disabled && toolbar?.state.options.aggregatedMetrics.active;
 
@@ -370,7 +371,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   // Creates a layout with logs panel
   buildServiceLogsLayout = (service: string) => {
     const levelFilter = this.getLevelFilterForService(service);
-    // const timeRange = sceneGraph.getTimeRange(this).state.value;
     return new SceneCSSGridItem({
       $behaviors: [new behaviors.CursorSync({ sync: DashboardCursorSync.Off })],
       body: PanelBuilders.logs()
