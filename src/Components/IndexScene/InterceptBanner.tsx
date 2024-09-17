@@ -4,13 +4,7 @@ import React from 'react';
 export function InterceptBanner(props: { onRemove: () => void }) {
   return (
     <>
-      <Alert
-        severity={'info'}
-        title={
-          "Welcome to Explore Logs (public preview) - we're in active development so please expect things to change."
-        }
-        onRemove={props.onRemove}
-      >
+      <Alert severity={'info'} title={'Welcome to Explore Logs!'} onRemove={props.onRemove}>
         <div>
           Check out our{' '}
           <a
