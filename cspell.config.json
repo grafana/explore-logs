@@ -6,7 +6,8 @@
     "playwright-report",
     "tests",
     "CHANGELOG.md",
-    "package.json"
+    "package.json",
+    "*.test.*"
   ],
   "ignoreRegExpList": [],
   "words": [],
