@@ -1,7 +1,7 @@
 import type { Configuration } from 'webpack';
 import { merge } from 'webpack-merge';
 import grafanaConfig from './.config/webpack/webpack.config';
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+// const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 const config = async (env: any): Promise<Configuration> => {
   const baseConfig = await grafanaConfig(env);
@@ -11,7 +11,7 @@ const config = async (env: any): Promise<Configuration> => {
       asyncWebAssembly: true,
     },
     plugins: [
-      new BundleAnalyzerPlugin()
+      // new BundleAnalyzerPlugin()
     ]
   });
 };
