@@ -1,5 +1,5 @@
 import React from 'react';
-import { Badge, Icon, useStyles2 } from '@grafana/ui';
+import { Icon, useStyles2 } from '@grafana/ui';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 
@@ -15,15 +15,6 @@ export const GiveFeedbackButton = () => {
         rel="noreferrer noopener"
       >
         <Icon name="comment-alt-message" /> Give feedback
-      </a>
-      <a
-        href="https://forms.gle/1sYWCTPvD72T1dPH9"
-        className={styles.feedback}
-        title="Share your thoughts about Logs in Grafana."
-        target="_blank"
-        rel="noreferrer noopener"
-      >
-        <Badge text={'Preview'} color={'blue'} icon={'rocket'} />
       </a>
     </div>
   );
