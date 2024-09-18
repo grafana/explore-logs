@@ -120,7 +120,7 @@ function getStyles(theme: GrafanaTheme2) {
       flexDirection: 'column',
       background: theme.colors.background.primary,
       boxShadow: theme.shadows.z3,
-      borderRadius: theme.shape.borderRadius(),
+      borderRadius: theme.shape.radius.default,
       border: `1px solid ${theme.colors.border.weak}`,
       zIndex: 1,
       marginRight: theme.spacing(2),
