@@ -365,6 +365,16 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${fieldName}`)).toBeVisible();
   });
 
+  test('should show sample table on `<_>` click in patterns', async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: ['A'],
+    });
+    await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
+    const key = page.getByText('<_>').last().click();
+    // `From a sample of` is the indicator that the underlying query perfomed successfully
+    await expect(page.getByText(`From a sample of`)).toBeVisible();
+  });
+
   test('should filter patterns in table on legend click', async ({ page }) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
     const row = page.getByTestId(testIds.patterns.tableWrapper).getByRole('table').getByRole('row');
