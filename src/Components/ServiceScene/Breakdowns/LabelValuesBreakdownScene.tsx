@@ -16,7 +16,7 @@ import { getLabelValue } from './SortByScene';
 import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
 import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
 import { getSortByPreference } from '../../../services/store';
-import { LoadingState } from '@grafana/data';
+import { AppEvents, DataQueryError, LoadingState } from '@grafana/data';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { getFilterBreakdownValueScene } from '../../../services/fields';
 import {
@@ -33,17 +33,23 @@ import { ServiceScene } from '../ServiceScene';
 import { AddFilterEvent } from './AddToFiltersButton';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { buildLabelsQuery, LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS } from '../../../services/labels';
+import { getAppEvents } from '@grafana/runtime';
+
+type DisplayError = DataQueryError & { displayed: boolean };
+type DisplayErrors = Record<string, DisplayError>;
 
 export interface LabelValueBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
   $data?: SceneDataProvider;
   lastFilterEvent?: AddFilterEvent;
+  errors: DisplayErrors;
 }
 
 export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdownSceneState> {
   constructor(state: Partial<LabelValueBreakdownSceneState>) {
     super({
       ...state,
+      errors: {},
     });
 
     this.addActivationHandler(this.onActivate.bind(this));
@@ -54,10 +60,14 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       $data: getQueryRunner([
         buildLabelsQuery(this, VAR_LABEL_GROUP_BY_EXPR, String(getLabelGroupByVariable(this).state.value)),
       ]),
-    });
-    this.setState({
       body: this.build(),
     });
+
+    this._subs.add(
+      this.state.$data?.subscribeToState((newState, prevState) => {
+        this.state.body?.activate();
+      })
+    );
 
     const groupByVariable = getLabelGroupByVariable(this);
     this._subs.add(
@@ -85,12 +95,26 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
   }
 
   private onValuesDataQueryChange(newState: SceneDataState, prevState: SceneDataState) {
-    if (newState.data?.state === LoadingState.Done) {
+    if (newState?.data?.errors && newState.data?.state !== LoadingState.Done) {
+      const errors: DisplayErrors = this.state.errors;
+      newState?.data?.errors.forEach((err) => {
+        const errorIndex = `${err.status}_${err.traceId}_${err.message}`;
+        if (errors[errorIndex] === undefined) {
+          errors[errorIndex] = { ...err, displayed: false };
+        }
+      });
+      this.setState({
+        errors,
+      });
+      this.showErrors(this.state.errors);
+    }
+
+    if (newState.data?.state === LoadingState.Done || newState.data?.state === LoadingState.Error) {
       // No panels for the user to select, presumably because everything has been excluded
       const event = this.state.lastFilterEvent;
 
       // @todo discuss: Do we want to let users exclude all labels? Or should we redirect when excluding the penultimate panel?
-      if (newState.data?.state === LoadingState.Done && event) {
+      if (event) {
         if (event.operator === 'exclude' && newState.data.series.length < 1) {
           this.navigateToLabels();
         }
@@ -195,6 +219,48 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
         }),
       ],
     });
+  }
+
+  private showErrors(errors: DisplayErrors) {
+    const appEvents = getAppEvents();
+
+    // Make sure we only display each error once
+    let errorArray: DisplayError[] = [];
+    for (const err in errors) {
+      const displayError = errors[err];
+      if (!displayError.displayed) {
+        errorArray.push(displayError);
+        displayError.displayed = true;
+      }
+    }
+
+    if (errorArray.length) {
+      appEvents.publish({
+        type: AppEvents.alertError.name,
+        payload: errorArray?.map((err, key) => (
+          <div key={key}>
+            {err.status && (
+              <>
+                <strong>Status</strong>: {err.status} <br />
+              </>
+            )}
+            {err.message && (
+              <>
+                <strong>Message</strong>: {err.message} <br />
+              </>
+            )}
+            {err.traceId && (
+              <>
+                <strong>TraceId</strong>: {err.traceId}
+              </>
+            )}
+          </div>
+        )),
+      });
+      this.setState({
+        errors,
+      });
+    }
   }
 
   public static Selector({ model }: SceneComponentProps<LabelValuesBreakdownScene>) {
