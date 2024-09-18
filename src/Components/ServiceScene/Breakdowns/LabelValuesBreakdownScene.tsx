@@ -124,7 +124,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
     // If we're in an error state
     if (newState.data?.state === LoadingState.Error && this.activeLayoutContainsNoPanels()) {
       const activeLayout = this.getActiveLayout();
-      // And the active layout is not showing panels
+      // And the active layout is grid or rows, and doesn't have any panels
       if (activeLayout instanceof ByFrameRepeater) {
         const errorState = this.getErrorStateAlert(newState.data.errors);
         // Replace the loading or error state with new error
