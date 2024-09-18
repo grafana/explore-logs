@@ -131,7 +131,6 @@ test.describe('explore services page', () => {
     test.beforeEach(async ({ page }) => {
       logsVolumeCount = 0;
       logsQueryCount = 0;
-      labelsQueryCount = 0;
 
       await page.route('**/index/volume*', async (route) => {
         const volumeResponse = mockVolumeApiResponse;
@@ -146,15 +145,9 @@ test.describe('explore services page', () => {
         await route.fulfill({ json: {} });
       });
 
-      await page.route('**/resources/labels*', async (route) => {
-        labelsQueryCount++;
-        await route.fulfill({ json: mockLabelsResponse });
-      });
-
       await Promise.all([
         page.waitForResponse((resp) => resp.url().includes('index/volume')),
         page.waitForResponse((resp) => resp.url().includes('ds/query')),
-        // page.waitForResponse((resp) => resp.url().includes('resources/labels')),
       ]);
     });
 
