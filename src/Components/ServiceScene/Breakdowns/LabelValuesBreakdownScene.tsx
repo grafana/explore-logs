@@ -161,7 +161,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
     return new SceneReactObject({
       reactNode: (
         <Alert title={'Something went wrong with your request'} severity={'error'}>
-          {errors?.map((err, key) => this.getErrorJSX(key, err))}
+          {errors?.map((err, key) => this.renderError(key, err))}
         </Alert>
       ),
     });
@@ -279,7 +279,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       if (!this.activeLayoutContainsNoPanels()) {
         appEvents.publish({
           type: AppEvents.alertError.name,
-          payload: errorArray?.map((err, key) => this.getErrorJSX(key, err)),
+          payload: errorArray?.map((err, key) => this.renderError(key, err)),
         });
       }
       this.setState({
@@ -288,7 +288,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
     }
   }
 
-  private getErrorJSX(key: number, err: DataQueryError) {
+  private renderError(key: number, err: DataQueryError) {
     return (
       <div key={key}>
         {err.status && (
