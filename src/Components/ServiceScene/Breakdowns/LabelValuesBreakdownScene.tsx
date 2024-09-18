@@ -7,13 +7,14 @@ import {
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
+  SceneObject,
   SceneObjectBase,
   SceneObjectState,
   SceneReactObject,
 } from '@grafana/scenes';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { getLabelValue } from './SortByScene';
-import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
+import { Alert, DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
 import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
 import { getSortByPreference } from '../../../services/store';
 import { AppEvents, DataQueryError, LoadingState } from '@grafana/data';
@@ -39,7 +40,7 @@ type DisplayError = DataQueryError & { displayed: boolean };
 type DisplayErrors = Record<string, DisplayError>;
 
 export interface LabelValueBreakdownSceneState extends SceneObjectState {
-  body?: LayoutSwitcher;
+  body?: LayoutSwitcher & SceneObject;
   $data?: SceneDataProvider;
   lastFilterEvent?: AddFilterEvent;
   errors: DisplayErrors;
@@ -62,13 +63,6 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       ]),
       body: this.build(),
     });
-
-    this._subs.add(
-      this.state.$data?.subscribeToState((newState, prevState) => {
-        this.state.body?.activate();
-      })
-    );
-
     const groupByVariable = getLabelGroupByVariable(this);
     this._subs.add(
       groupByVariable.subscribeToState((newState) => {
@@ -106,10 +100,11 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       this.setState({
         errors,
       });
-      this.showErrors(this.state.errors);
+
+      this.showErrorToast(this.state.errors);
     }
 
-    if (newState.data?.state === LoadingState.Done || newState.data?.state === LoadingState.Error) {
+    if (newState.data?.state === LoadingState.Done || newState.data?.state === LoadingState.Streaming) {
       // No panels for the user to select, presumably because everything has been excluded
       const event = this.state.lastFilterEvent;
 
@@ -125,6 +120,51 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
         }
       }
     }
+
+    // If we're in an error state
+    if (newState.data?.state === LoadingState.Error && this.activeLayoutContainsNoPanels()) {
+      const activeLayout = this.getActiveLayout();
+      // And the active layout is not showing panels
+      if (activeLayout instanceof ByFrameRepeater) {
+        const errorState = this.getErrorStateAlert(newState.data.errors);
+        // Replace the loading or error state with new error
+        activeLayout.state.body.setState({
+          children: [errorState],
+        });
+      }
+    }
+  }
+
+  private getActiveLayout(): ByFrameRepeater | SceneFlexLayout | undefined {
+    const layoutSwitcher = this.state.body;
+    const activeLayout = layoutSwitcher?.state.layouts.find((layout) => layout.isActive);
+    if (activeLayout instanceof ByFrameRepeater || activeLayout instanceof SceneFlexLayout) {
+      return activeLayout;
+    }
+    return undefined;
+  }
+
+  private activeLayoutContainsNoPanels(): boolean {
+    const activeLayout = this.getActiveLayout();
+
+    if (activeLayout instanceof ByFrameRepeater) {
+      const child = activeLayout.state.body.state.children[0];
+      if (child instanceof SceneFlexItem || child instanceof SceneReactObject) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private getErrorStateAlert(errors: DataQueryError[] | undefined) {
+    return new SceneReactObject({
+      reactNode: (
+        <Alert title={'Something went wrong with your request'} severity={'error'}>
+          {errors?.map((err, key) => this.getErrorJSX(key, err))}
+        </Alert>
+      ),
+    });
   }
 
   private navigateToLabels() {
@@ -221,7 +261,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
     });
   }
 
-  private showErrors(errors: DisplayErrors) {
+  private showErrorToast(errors: DisplayErrors) {
     const appEvents = getAppEvents();
 
     // Make sure we only display each error once
@@ -235,37 +275,44 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
     }
 
     if (errorArray.length) {
-      appEvents.publish({
-        type: AppEvents.alertError.name,
-        payload: errorArray?.map((err, key) => (
-          <div key={key}>
-            {err.status && (
-              <>
-                <strong>Status</strong>: {err.status} <br />
-              </>
-            )}
-            {err.message && (
-              <>
-                <strong>Message</strong>: {err.message} <br />
-              </>
-            )}
-            {err.traceId && (
-              <>
-                <strong>TraceId</strong>: {err.traceId}
-              </>
-            )}
-          </div>
-        )),
-      });
+      // If we don't have any panels the error message will replace the loading state, we want to set it as displayed but not render the toast
+      if (!this.activeLayoutContainsNoPanels()) {
+        appEvents.publish({
+          type: AppEvents.alertError.name,
+          payload: errorArray?.map((err, key) => this.getErrorJSX(key, err)),
+        });
+      }
       this.setState({
         errors,
       });
     }
   }
 
+  private getErrorJSX(key: number, err: DataQueryError) {
+    return (
+      <div key={key}>
+        {err.status && (
+          <>
+            <strong>Status</strong>: {err.status} <br />
+          </>
+        )}
+        {err.message && (
+          <>
+            <strong>Message</strong>: {err.message} <br />
+          </>
+        )}
+        {err.traceId && (
+          <>
+            <strong>TraceId</strong>: {err.traceId}
+          </>
+        )}
+      </div>
+    );
+  }
+
   public static Selector({ model }: SceneComponentProps<LabelValuesBreakdownScene>) {
     const { body } = model.useState();
-    return <>{body && <body.Selector model={body} />}</>;
+    return <>{body && body instanceof LayoutSwitcher && <body.Selector model={body} />}</>;
   }
 
   public static Component = ({ model }: SceneComponentProps<LabelValuesBreakdownScene>) => {
