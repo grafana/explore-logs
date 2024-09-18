@@ -289,7 +289,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   }
 
   private getLogExpression(service: string, levelFilter: string) {
-    return `{${SERVICE_NAME_EXPR}=\`${service}\`}${levelFilter}`;
+    return `{${SERVICE_NAME}=\`${service}\`}${levelFilter}`;
   }
 
   private getMetricExpression(service: string) {
