@@ -370,7 +370,7 @@ test.describe('explore services breakdown page', () => {
       refIds: ['A'],
     });
     await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
-    const key = page.getByText('<_>').first().click();
+    const key = page.getByText('<_>').last().click();
     // `From a sample of` is the indicator that the underlying query perfomed successfully
     await expect(page.getByText(`From a sample of`)).toBeVisible();
   });
