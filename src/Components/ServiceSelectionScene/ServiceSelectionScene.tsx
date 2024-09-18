@@ -215,10 +215,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
   private runServiceQueries() {
     const toolbar = this.getQueryOptionsToolbar();
-    const toolbarEnabled =
+    const aggregatedMetricsActive =
       !toolbar?.state.options.aggregatedMetrics.disabled && toolbar?.state.options.aggregatedMetrics.active;
 
-    if ((!this.isTimeRangeTooEarlyForAggMetrics() || !aggregatedMetricsEnabled) && toolbarEnabled) {
+    if ((!this.isTimeRangeTooEarlyForAggMetrics() || !aggregatedMetricsEnabled) && aggregatedMetricsActive) {
       const serviceName = getServiceNameVariable(this);
       serviceName.changeValueTo(AGGREGATED_SERVICE_NAME);
     } else {
