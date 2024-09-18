@@ -400,7 +400,6 @@ function getStyles(theme: GrafanaTheme2) {
       flexDirection: 'column',
     }),
     body: css({
-      overflowY: 'scroll',
       flexGrow: 1,
       display: 'flex',
       flexDirection: 'column',
