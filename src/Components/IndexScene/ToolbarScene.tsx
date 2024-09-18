@@ -111,7 +111,6 @@ export class ToolbarScene extends SceneObjectBase<ToolbarSceneState> {
       );
     }
 
-    // Empty
     return <></>;
   };
 }
