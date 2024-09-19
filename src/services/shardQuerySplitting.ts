@@ -11,6 +11,7 @@ import {
 } from './logql';
 import { combineResponses } from './combineResponses';
 import { DataSourceWithBackend } from '@grafana/runtime';
+import { logger } from './logger';
 
 /**
  * Query splitting by stream shards.
@@ -141,7 +142,7 @@ function splitQueriesByStreamShard(
         }
       },
       error: (error: unknown) => {
-        console.error(error);
+        logger.error(error, { msg: 'failed to shard' });
         subscriber.next(mergedResponse);
         if (retry()) {
           return;
@@ -160,7 +161,7 @@ function splitQueriesByStreamShard(
         subscriber.next(mergedResponse);
       },
       error: (error: unknown) => {
-        console.error(error);
+        logger.error(error, { msg: 'runNonSplitRequest subscription error' });
         subscriber.error(mergedResponse);
       },
     });
@@ -184,7 +185,7 @@ function splitQueriesByStreamShard(
         }
       })
       .catch((e: unknown) => {
-        console.error(e);
+        logger.error(e, { msg: 'failed to fetch label values for __stream_shard__' });
         shouldStop = true;
         runNonSplitRequest(subscriber);
       });

@@ -20,6 +20,7 @@ import { FIELDS_TO_REMOVE, LABELS_TO_REMOVE, sortLabelsByCardinality } from './f
 import { SERVICE_NAME } from './variables';
 import { runShardSplitQuery } from './shardQuerySplitting';
 import { requestSupportsSharding } from './logql';
+import { logger } from './logger';
 
 export const WRAPPED_LOKI_DS_UID = 'wrapped-loki-ds-uid';
 
@@ -378,7 +379,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
       subscriber.next({ data: [dataFrame], state: LoadingState.Done });
     } catch (e) {
-      console.error('Detected fields error:', e);
+      logger.error(e, { msg: 'Detected fields error' });
       subscriber.next({ data: [], state: LoadingState.Error });
     }
 

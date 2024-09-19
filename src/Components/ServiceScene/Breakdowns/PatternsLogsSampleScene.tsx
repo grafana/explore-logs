@@ -26,6 +26,7 @@ import { LoadingState } from '@grafana/data';
 import { Alert, Button } from '@grafana/ui';
 import { PatternsViewTableScene } from './Patterns/PatternsViewTableScene';
 import { emptyStateStyles } from './FieldsBreakdownScene';
+import { logger } from '../../../services/logger';
 
 interface PatternsLogsSampleSceneState extends SceneObjectState {
   pattern: string;
@@ -136,10 +137,10 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
       value.data.state === LoadingState.Error
     ) {
       // Logging an error so loki folks can debug why some patterns returned from the API seem to fail.
-      console.error('Pattern sample query returns no results', {
+      logger.error('Pattern sample query returns no results', {
         pattern: this.state.pattern,
-        traceIds: value.data.traceIds,
-        request: value.data.request,
+        traceIds: JSON.stringify(value.data.traceIds),
+        request: JSON.stringify(value.data.request),
       });
 
       this.setWarningMessage(

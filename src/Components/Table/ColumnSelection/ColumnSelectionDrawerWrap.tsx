@@ -8,6 +8,7 @@ import { LogsTableMultiSelect } from 'Components/Table/ColumnSelection/LogsTable
 
 import { FieldNameMetaStore } from '../TableTypes';
 import { reportInteraction } from '@grafana/runtime';
+import { logger } from '../../../services/logger';
 
 export function getReorderColumn(setColumns: (cols: FieldNameMetaStore) => void) {
   return (columns: FieldNameMetaStore, sourceIndex: number, destinationIndex: number) => {
@@ -43,7 +44,9 @@ export function ColumnSelectionDrawerWrap() {
   const [searchValue, setSearchValue] = useState<string>('');
   const toggleColumn = (columnName: string) => {
     if (!columns || !(columnName in columns)) {
-      console.warn('failed to get column', columns);
+      logger.warn('failed to get column', {
+        columns: JSON.stringify(columns),
+      });
       return;
     }
 

@@ -7,6 +7,7 @@ import { FieldsBreakdownScene } from './FieldsBreakdownScene';
 import { BusEventBase } from '@grafana/data';
 import { LabelValuesBreakdownScene } from './LabelValuesBreakdownScene';
 import { FieldValuesBreakdownScene } from './FieldValuesBreakdownScene';
+import { logger } from '../../../services/logger';
 
 export class BreakdownSearchReset extends BusEventBase {
   public static type = 'breakdown-search-reset';
@@ -58,6 +59,7 @@ export class BreakdownSearchScene extends SceneObjectBase<BreakdownSearchSceneSt
     if (this.parent instanceof LabelBreakdownScene || this.parent instanceof FieldsBreakdownScene) {
       recentFilters[this.cacheKey] = filter;
       const body = this.parent.state.body;
+      // if (body instanceof LabelValuesBreakdownScene || body instanceof FieldValuesBreakdownScene) {
       if (body instanceof LabelValuesBreakdownScene || body instanceof FieldValuesBreakdownScene) {
         body.state.body?.forEachChild((child) => {
           if (child instanceof ByFrameRepeater && child.state.body.isActive) {
@@ -65,7 +67,10 @@ export class BreakdownSearchScene extends SceneObjectBase<BreakdownSearchSceneSt
           }
         });
       } else {
-        console.warn('invalid parent for search', body);
+        logger.warn('invalid parent for search', {
+          typeofBody: typeof body,
+          filter,
+        });
       }
     }
   }

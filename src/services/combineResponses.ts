@@ -9,6 +9,7 @@ import {
   QueryResultMetaStat,
   shallowCompare,
 } from '@grafana/data';
+import { logger } from './logger';
 
 export function combineResponses(currentResult: DataQueryResponse | null, newResult: DataQueryResponse) {
   if (!currentResult) {
@@ -61,7 +62,7 @@ export function mergeFrames(dest: DataFrame, source: DataFrame) {
   const sourceIdField = dest.fields.find((field) => field.type === FieldType.string && field.name === 'id');
 
   if (!destTimeField || !sourceTimeField) {
-    console.error(`Time fields not found in the data frames`);
+    logger.error(new Error(`Time fields not found in the data frames`));
     return;
   }
 
