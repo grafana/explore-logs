@@ -176,6 +176,20 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           }
         })
       );
+
+      // agg metrics need parser and unwrap, have to tear down and rebuild panels when the variable changes
+      this._subs.add(
+        getServiceNameVariable(this).subscribeToState((newState, prevState) => {
+          if (newState.value !== prevState.value) {
+            // Clear the body panels
+            this.setState({
+              body: new SceneCSSGridLayout({ children: [] }),
+            });
+            // And re-init with the new query
+            this.updateBody();
+          }
+        })
+      );
     }
   }
 
@@ -238,6 +252,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       const newChildren: SceneCSSGridItem[] = [];
       const existingChildren: SceneCSSGridItem[] = this.state.body.state.children as SceneCSSGridItem[];
       const timeRange = sceneGraph.getTimeRange(this).state.value;
+      const serviceNameVar = getServiceNameVariable(this);
 
       for (const service of servicesToQuery.slice(0, SERVICES_LIMIT)) {
         const existing = existingChildren.filter((child) => {
@@ -250,7 +265,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           newChildren.push(existing[0], existing[1]);
         } else {
           // for each service, we create a layout with timeseries and logs panel
-          newChildren.push(this.buildServiceLayout(service, timeRange), this.buildServiceLogsLayout(service));
+          newChildren.push(
+            this.buildServiceLayout(service, timeRange, serviceNameVar),
+            this.buildServiceLogsLayout(service)
+          );
         }
       }
 
@@ -292,7 +310,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     return `{${SERVICE_NAME}=\`${service}\`}${levelFilter}`;
   }
 
-  private getMetricExpression(service: string) {
+  private getMetricExpression(service: string, serviceName: CustomConstantVariable) {
+    if (serviceName.state.value === AGGREGATED_SERVICE_NAME) {
+      return `sum by (${LEVEL_VARIABLE_VALUE}) (sum_over_time({${AGGREGATED_SERVICE_NAME}=\`${service}\`} | logfmt | drop __error__ | unwrap count [$__auto]))`;
+    }
     return `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME_EXPR}=\`${service}\`} | drop __error__ [$__auto]))`;
   }
 
@@ -311,7 +332,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   };
 
   // Creates a layout with timeseries panel
-  buildServiceLayout(service: string, timeRange: TimeRange) {
+  buildServiceLayout(service: string, timeRange: TimeRange, serviceName: CustomConstantVariable) {
     let splitDuration;
     if (timeRange.to.diff(timeRange.from, 'hours') >= 4 && timeRange.to.diff(timeRange.from, 'hours') <= 26) {
       splitDuration = '2h';
@@ -321,7 +342,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       .setTitle(service)
       .setData(
         getQueryRunner([
-          buildDataQuery(this.getMetricExpression(service), {
+          buildDataQuery(this.getMetricExpression(service, serviceName), {
             legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`,
             splitDuration,
             refId: `ts-${service}`,
