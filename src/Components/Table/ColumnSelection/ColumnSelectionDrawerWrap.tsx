@@ -39,15 +39,17 @@ export function getReorderColumn(setColumns: (cols: FieldNameMetaStore) => void)
   };
 }
 
-function logError(columns: FieldNameMetaStore) {
+function logError(columnName: string, columns: FieldNameMetaStore) {
   let logContext;
   try {
     logContext = {
       columns: JSON.stringify(columns),
+      columnName: columnName,
     };
   } catch (e) {
     logContext = {
       msg: 'Table: ColumnSelectionDrawerWrap failed to encode context',
+      columnName: columnName,
     };
   }
   logger.warn('failed to get column', logContext);
@@ -58,7 +60,7 @@ export function ColumnSelectionDrawerWrap() {
   const [searchValue, setSearchValue] = useState<string>('');
   const toggleColumn = (columnName: string) => {
     if (!columns || !(columnName in columns)) {
-      logError(columns);
+      logError(columnName, columns);
       return;
     }
 
