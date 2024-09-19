@@ -36,8 +36,10 @@ const attemptFaroErr = (err: Error | unknown, context?: LogContext) => {
   try {
     if (err instanceof Error) {
       logError(err, context);
+    } else if (typeof err === 'string') {
+      logError(new Error(err), context);
     } else {
-      logError(new Error('unknown error'), { ...context, rawError: JSON.stringify(err) });
+      logError(new Error('unknown error'), context);
     }
   } catch (e) {
     console.error('Failed to log faro error!', { err, context });

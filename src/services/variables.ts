@@ -158,7 +158,7 @@ export function getValueFromFieldsFilter(filter: AdHocVariableFilter, variableNa
   try {
     return JSON.parse(filter.value);
   } catch (e) {
-    logger.error(e, { msg: `Failed to parse ${variableName}` });
+    logger.warn(`Failed to parse ${variableName}`, { value: filter.value });
 
     // If the user has a URL from before 0.1.4 where detected_fields changed the format of the fields value to include the parser, fall back to mixed parser if we have a value
     if (filter.value) {
