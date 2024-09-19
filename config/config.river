@@ -1,9 +1,6 @@
 loki.write "default" {
 	endpoint {
-		url = "http://localhost:3100/loki/api/v1/push"
-	}
-	external_labels {
-	    service_name = "faro"
+		url = "http://host.docker.internal:3100/loki/api/v1/push"
 	}
 }
 
