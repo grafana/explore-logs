@@ -2,6 +2,7 @@ import { test, expect } from '@grafana/plugin-e2e';
 import { ExplorePage } from './fixtures/explore';
 import { testIds } from '../src/services/testIds';
 import { mockVolumeApiResponse } from './mocks/mockVolumeApiResponse';
+import { mockLabelsResponse } from './mocks/mockLabelsResponse';
 
 test.describe('explore services page', () => {
   let explorePage: ExplorePage;
@@ -125,7 +126,7 @@ test.describe('explore services page', () => {
   });
 
   test.describe('mock volume API calls', () => {
-    let logsVolumeCount: number, logsQueryCount: number;
+    let logsVolumeCount: number, logsQueryCount: number, labelsQueryCount: number;
 
     test.beforeEach(async ({ page }) => {
       logsVolumeCount = 0;
@@ -194,6 +195,7 @@ test.describe('explore services page', () => {
 
     test('changing datasource will trigger new queries', async ({ page }) => {
       await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
+      await explorePage.assertPanelsNotLoading();
       expect(logsVolumeCount).toEqual(1);
       expect(logsQueryCount).toEqual(4);
       await page
@@ -202,6 +204,7 @@ test.describe('explore services page', () => {
         .nth(1)
         .click();
       await page.getByText('gdev-loki-copy').click();
+      await explorePage.assertPanelsNotLoading();
       expect(logsVolumeCount).toEqual(2);
     });
   });

@@ -5,7 +5,7 @@ import { DataQueryRequest, LoadingState, DataQueryResponse, TimeRange } from '@g
 import { LokiQuery } from './query';
 import {
   addShardingPlaceholderSelector,
-  getServiceNameFromQuery,
+  getSelectorForShardValues,
   interpolateShardingSelector,
   isLogsQuery,
 } from './logql';
@@ -167,11 +167,11 @@ function splitQueriesByStreamShard(
   };
 
   const response = new Observable<DataQueryResponse>((subscriber) => {
-    const serviceName = getServiceNameFromQuery(splittingTargets[0].expr);
+    const selector = getSelectorForShardValues(splittingTargets[0].expr);
     datasource.languageProvider
       .fetchLabelValues('__stream_shard__', {
         timeRange: request.range,
-        streamSelector: serviceName ? `{service_name=${serviceName}}` : undefined,
+        streamSelector: selector ? selector : undefined,
       })
       .then((values: string[]) => {
         const shards = values.map((value) => parseInt(value, 10));

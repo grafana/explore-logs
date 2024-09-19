@@ -4,6 +4,7 @@ import {
   FieldConfigBuilders,
   FieldConfigOverridesBuilder,
   PanelBuilders,
+  QueryRunnerState,
   SceneDataProvider,
   SceneDataTransformer,
   SceneObject,
@@ -123,7 +124,7 @@ export function getResourceQueryRunner(queries: LokiQuery[]) {
   });
 }
 
-export function getQueryRunner(queries: LokiQuery[]) {
+export function getQueryRunner(queries: LokiQuery[], queryRunnerOptions?: Partial<QueryRunnerState>) {
   // if there's a legendFormat related to any `level` like label, we want to
   // sort the output equally. That's purposefully not `LEVEL_VARIABLE_VALUE`,
   // such that the `detected_level` graph looks the same as a graph for the
@@ -133,7 +134,7 @@ export function getQueryRunner(queries: LokiQuery[]) {
 
   if (hasLevel) {
     return new SceneDataTransformer({
-      $data: new SceneQueryRunner({
+      $data: getSceneQueryRunner({
         datasource: { uid: WRAPPED_LOKI_DS_UID },
         queries: queries,
       }),
@@ -141,9 +142,17 @@ export function getQueryRunner(queries: LokiQuery[]) {
     });
   }
 
+  return getSceneQueryRunner({
+    queries: queries,
+    ...queryRunnerOptions,
+  });
+}
+
+export function getSceneQueryRunner(queryRunnerOptions?: Partial<QueryRunnerState>) {
   return new SceneQueryRunner({
     datasource: { uid: WRAPPED_LOKI_DS_UID },
-    queries: queries,
+    queries: [],
+    ...queryRunnerOptions,
   });
 }
 
