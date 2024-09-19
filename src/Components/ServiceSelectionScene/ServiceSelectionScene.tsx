@@ -52,6 +52,7 @@ import { config } from '@grafana/runtime';
 import { VariableHide } from '@grafana/schema';
 import { ToolbarScene } from '../IndexScene/ToolbarScene';
 import { IndexScene } from '../IndexScene/IndexScene';
+import { logger } from '../../services/logger';
 
 // @ts-expect-error
 const aggregatedMetricsEnabled: boolean | undefined = config.featureToggles.exploreLogsAggregatedMetrics;
@@ -117,6 +118,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   }
 
   private onActivate() {
+    logger.info('Hello faro!');
     // Clear all adhoc filters when the scene is activated, if there are any
     const variable = getLabelsVariable(this);
     if (variable.state.filters.length > 0) {

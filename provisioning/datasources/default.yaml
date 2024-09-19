@@ -9,3 +9,33 @@ datasources:
     uid: gdev-loki
     access: proxy
     url: http://host.docker.internal:3100
+  - name: gdev-tempo
+    type: tempo
+    uid: gdev-tempo
+    access: proxy
+    url: http://host.docker.internal:3200
+    editable: false
+    jsonData:
+      tracesToLogsV2:
+        datasourceUid: gdev-loki
+        spanStartTimeShift: '5m'
+        spanEndTimeShift: '-5m'
+        customQuery: true
+        query: '{filename="/var/log/grafana/grafana.log"} |="$${__span.traceId}"'
+  - name: gdev-prometheus
+    uid: gdev-prometheus
+    type: prometheus
+    access: proxy
+    url: http://host.docker.internal:9090
+    basicAuth: true #username: admin, password: admin
+    basicAuthUser: admin
+    jsonData:
+      manageAlerts: true
+      alertmanagerUid: gdev-alertmanager
+      prometheusType: Prometheus #Cortex | Mimir | Prometheus | Thanos
+      prometheusVersion: 2.40.0
+      exemplarTraceIdDestinations:
+        - name: traceID
+          datasourceUid: gdev-tempo
+    secureJsonData:
+      basicAuthPassword: admin #https://grafana.com/docs/grafana/latest/administration/provisioning/#using-environment-variables
