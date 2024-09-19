@@ -1,17 +1,17 @@
 import { css } from '@emotion/css';
 import { debounce } from 'lodash';
 import React from 'react';
-import { DashboardCursorSync, DataFrame, GrafanaTheme2, LoadingState, TimeRange, VariableHide } from '@grafana/data';
+import { DashboardCursorSync, DataFrame, dateTime, GrafanaTheme2, LoadingState, TimeRange } from '@grafana/data';
 import {
   behaviors,
   PanelBuilders,
   SceneComponentProps,
   SceneCSSGridItem,
   SceneCSSGridLayout,
-  SceneDataProvider,
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
+  SceneQueryRunner,
   SceneVariableSet,
   VizPanel,
 } from '@grafana/scenes';
@@ -29,23 +29,37 @@ import { getFavoriteServicesFromStorage } from 'services/store';
 import {
   getDataSourceVariable,
   getLabelsVariable,
+  getServiceNameVariable,
   getServiceSelectionStringVariable,
   LEVEL_VARIABLE_VALUE,
   SERVICE_NAME,
+  SERVICE_NAME_EXPR,
+  SERVICE_NAME_VAR,
   VAR_SERVICE,
   VAR_SERVICE_EXPR,
 } from 'services/variables';
 import { selectService, SelectServiceButton } from './SelectServiceButton';
 import { buildDataQuery, buildResourceQuery } from 'services/query';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { getQueryRunner, setLevelColorOverrides } from 'services/panel';
+import { getQueryRunner, getSceneQueryRunner, setLevelColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
 import { NoVolumeError } from './NoVolumeError';
 import { getLabelsFromSeries, toggleLevelVisibility } from 'services/levels';
 import { ServiceFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
 import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 import { areArraysEqual } from '../../services/comparison';
+import { config } from '@grafana/runtime';
+import { VariableHide } from '@grafana/schema';
+import { ToolbarScene } from '../IndexScene/ToolbarScene';
+import { IndexScene } from '../IndexScene/IndexScene';
 
+// @ts-expect-error
+const aggregatedMetricsEnabled: boolean | undefined = config.featureToggles.exploreLogsAggregatedMetrics;
+// Don't export AGGREGATED_SERVICE_NAME, we want to rename things so the rest of the application is agnostic to how we got the services
+const AGGREGATED_SERVICE_NAME = '__aggregated_metric__';
+
+//@todo make start date user configurable, currently hardcoded for experimental cloud release
+export const AGGREGATED_METRIC_START_DATE = dateTime('2024-08-30', 'YYYY-MM-DD');
 export const SERVICES_LIMIT = 20;
 
 interface ServiceSelectionSceneState extends SceneObjectState {
@@ -54,15 +68,7 @@ interface ServiceSelectionSceneState extends SceneObjectState {
   // Show logs of a certain level for a given service
   serviceLevel: Map<string, string[]>;
   // Logs volume API response as dataframe with SceneQueryRunner
-  $data: SceneDataProvider;
-}
-
-function getMetricExpression(service: string) {
-  return `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`;
-}
-
-function getLogExpression(service: string, levelFilter: string) {
-  return `{${SERVICE_NAME}=\`${service}\`}${levelFilter}`;
+  $data: SceneQueryRunner;
 }
 
 export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionSceneState> {
@@ -71,6 +77,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       body: new SceneCSSGridLayout({ children: [] }),
       $variables: new SceneVariableSet({
         variables: [
+          // Service search variable
           new CustomConstantVariable({
             name: VAR_SERVICE,
             label: 'Service',
@@ -78,9 +85,30 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
             value: '',
             skipUrlSync: true,
           }),
+          // Service name variable
+          new CustomConstantVariable({
+            name: SERVICE_NAME_VAR,
+            label: '',
+            hide: VariableHide.hideLabel,
+            value: SERVICE_NAME,
+            skipUrlSync: true,
+            options: [
+              {
+                value: SERVICE_NAME,
+                label: SERVICE_NAME,
+              },
+              {
+                value: AGGREGATED_SERVICE_NAME,
+                label: AGGREGATED_SERVICE_NAME,
+              },
+            ],
+          }),
         ],
       }),
-      $data: getQueryRunner([buildResourceQuery(`{${SERVICE_NAME}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')]),
+      $data: getSceneQueryRunner({
+        queries: [buildResourceQuery(`{${SERVICE_NAME_EXPR}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')],
+        runQueriesMode: 'manual',
+      }),
       serviceLevel: new Map<string, string[]>(),
       ...state,
     });
@@ -108,6 +136,96 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         }
       })
     );
+
+    if (this.isTimeRangeTooEarlyForAggMetrics()) {
+      this.onUnsupportedAggregatedMetricTimeRange();
+      if (this.state.$data.state.data?.state !== LoadingState.Done) {
+        this.runServiceQueries();
+      }
+    } else {
+      this.onSupportedAggregatedMetricTimeRange();
+      if (this.state.$data.state.data?.state !== LoadingState.Done) {
+        this.runServiceQueries();
+      }
+    }
+
+    // Update labels on time range change
+    this._subs.add(
+      sceneGraph.getTimeRange(this).subscribeToState(() => {
+        if (this.isTimeRangeTooEarlyForAggMetrics()) {
+          this.onUnsupportedAggregatedMetricTimeRange();
+        } else {
+          this.onSupportedAggregatedMetricTimeRange();
+        }
+        this.runServiceQueries();
+      })
+    );
+
+    // Update labels on datasource change
+    this._subs.add(
+      getDataSourceVariable(this).subscribeToState(() => {
+        this.runServiceQueries();
+      })
+    );
+
+    if (aggregatedMetricsEnabled) {
+      this._subs.add(
+        this.getQueryOptionsToolbar()?.subscribeToState((newState, prevState) => {
+          if (newState.options.aggregatedMetrics.userOverride !== prevState.options.aggregatedMetrics.userOverride) {
+            this.runServiceQueries();
+          }
+        })
+      );
+    }
+  }
+
+  private isTimeRangeTooEarlyForAggMetrics(): boolean {
+    const timeRange = sceneGraph.getTimeRange(this);
+    return timeRange.state.value.from.isBefore(dateTime(AGGREGATED_METRIC_START_DATE));
+  }
+
+  private onUnsupportedAggregatedMetricTimeRange() {
+    const toolbar = this.getQueryOptionsToolbar();
+    toolbar?.setState({
+      options: {
+        aggregatedMetrics: {
+          ...toolbar?.state.options.aggregatedMetrics,
+          disabled: true,
+        },
+      },
+    });
+  }
+
+  private getQueryOptionsToolbar() {
+    const indexScene = sceneGraph.getAncestor(this, IndexScene);
+    return indexScene.state.controls.find((control) => control instanceof ToolbarScene) as ToolbarScene | undefined;
+  }
+
+  private onSupportedAggregatedMetricTimeRange() {
+    const toolbar = this.getQueryOptionsToolbar();
+    toolbar?.setState({
+      options: {
+        aggregatedMetrics: {
+          ...toolbar?.state.options.aggregatedMetrics,
+          disabled: false,
+        },
+      },
+    });
+  }
+
+  private runServiceQueries() {
+    const toolbar = this.getQueryOptionsToolbar();
+    const aggregatedMetricsActive =
+      !toolbar?.state.options.aggregatedMetrics.disabled && toolbar?.state.options.aggregatedMetrics.active;
+
+    if ((!this.isTimeRangeTooEarlyForAggMetrics() || !aggregatedMetricsEnabled) && aggregatedMetricsActive) {
+      const serviceName = getServiceNameVariable(this);
+      serviceName.changeValueTo(AGGREGATED_SERVICE_NAME);
+    } else {
+      const serviceName = getServiceNameVariable(this);
+      serviceName.changeValueTo(SERVICE_NAME);
+    }
+    this.state.$data.runQueries();
   }
 
   private updateBody() {
@@ -170,6 +288,14 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     }
   }
 
+  private getLogExpression(service: string, levelFilter: string) {
+    return `{${SERVICE_NAME}=\`${service}\`}${levelFilter}`;
+  }
+
+  private getMetricExpression(service: string) {
+    return `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME_EXPR}=\`${service}\`} | drop __error__ [$__auto]))`;
+  }
+
   private extendTimeSeriesLegendBus = (service: string, context: PanelContext, panel: VizPanel) => {
     const originalOnToggleSeriesVisibility = context.onToggleSeriesVisibility;
 
@@ -195,7 +321,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       .setTitle(service)
       .setData(
         getQueryRunner([
-          buildDataQuery(getMetricExpression(service), {
+          buildDataQuery(this.getMetricExpression(service), {
             legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`,
             splitDuration,
             refId: `ts-${service}`,
@@ -245,7 +371,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   // Creates a layout with logs panel
   buildServiceLogsLayout = (service: string) => {
     const levelFilter = this.getLevelFilterForService(service);
-    // const timeRange = sceneGraph.getTimeRange(this).state.value;
     return new SceneCSSGridItem({
       $behaviors: [new behaviors.CursorSync({ sync: DashboardCursorSync.Off })],
       body: PanelBuilders.logs()
@@ -253,10 +378,9 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         .setHoverHeader(true)
         .setData(
           getQueryRunner([
-            buildDataQuery(getLogExpression(service, levelFilter), {
+            buildDataQuery(this.getLogExpression(service, levelFilter), {
               maxLines: 100,
               refId: `logs-${service}`,
-              // range: timeRange
             }),
           ])
         )
@@ -271,6 +395,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   public onSearchServicesChange = debounce((serviceString?: string) => {
     const variable = getServiceSelectionStringVariable(this);
     variable.changeValueTo(serviceString ?? '');
+    this.state.$data.runQueries();
 
     reportAppInteraction(
       USER_EVENTS_PAGES.service_selection,

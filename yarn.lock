@@ -1118,10 +1118,10 @@
     rxjs "7.8.1"
     tslib "2.6.3"
 
-"@grafana/scenes@5.7.2":
-  version "5.7.2"
-  resolved "https://registry.yarnpkg.com/@grafana/scenes/-/scenes-5.7.2.tgz#35b927cf71c118436bd8169c2ac095b16b44bc78"
-  integrity sha512-kKvUX6F23Btq072FfnFjlcDBST2/ejGMVjPe+1kR2JoMFRfepzYTbzV9N5EwXmwMvBSek4nE/DiWdV/L7sygBg==
+"@grafana/scenes@5.9.0":
+  version "5.9.0"
+  resolved "https://registry.yarnpkg.com/@grafana/scenes/-/scenes-5.9.0.tgz#98dfc187a39ea4fa7d13ad91704514cddfddda5f"
+  integrity sha512-LP28gBAORNvCkeHPrxWT8Iz4W8Q5zBVDtbWwJ5YqzLucgSTJZWlYErfSS9+CSoeHx1imtfnF+mDBPj1anZzfTw==
   dependencies:
     "@grafana/e2e-selectors" "^11.0.0"
     "@leeoniya/ufuzzy" "^1.0.14"
