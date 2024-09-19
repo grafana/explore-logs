@@ -314,7 +314,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     if (serviceName.state.value === AGGREGATED_SERVICE_NAME) {
       return `sum by (${LEVEL_VARIABLE_VALUE}) (sum_over_time({${AGGREGATED_SERVICE_NAME}=\`${service}\`} | logfmt | drop __error__ | unwrap count [$__auto]))`;
     }
-    return `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME_EXPR}=\`${service}\`} | drop __error__ [$__auto]))`;
+    return `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_NAME}=\`${service}\`} | drop __error__ [$__auto]))`;
   }
 
   private extendTimeSeriesLegendBus = (service: string, context: PanelContext, panel: VizPanel) => {
