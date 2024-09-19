@@ -158,6 +158,14 @@ export function getValueFromFieldsFilter(filter: AdHocVariableFilter, variableNa
     return JSON.parse(filter.value);
   } catch (e) {
     console.error(`Failed to parse ${variableName}`, e);
+
+    // If the user has a URL from before 0.1.4 where detected_fields changed the format of the fields value to include the parser, fall back to mixed parser if we have a value
+    if (filter.value) {
+      return {
+        value: filter.value,
+        parser: 'mixed',
+      };
+    }
     throw e;
   }
 }
