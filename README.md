@@ -19,7 +19,7 @@ You can install Explore Logs in your own Grafana instance using `grafana-cli`:
 > [!IMPORTANT]  
 > The following Loki and Grafana version and configuration are required:
 >
-> - Loki v 3.0+
+> - Loki v3.2+
 >   - `--pattern-ingester.enabled=true` for pattern ingestion
 >   - Volume endpoint enabled in Loki config:
 >
@@ -28,7 +28,7 @@ You can install Explore Logs in your own Grafana instance using `grafana-cli`:
 >   volume_enabled: true
 > ```
 >
-> - Grafana v11.0+
+> - Grafana v11.2+
 
 ```sh
 grafana-cli --pluginUrl=https://storage.googleapis.com/integration-artifacts/grafana-lokiexplore-app/grafana-lokiexplore-app-latest.zip plugins install grafana-lokiexplore-app
