@@ -1,5 +1,5 @@
 ---
-canonical: https://grafana.com/docs/grafana/latest/explore/simplified-exploration/logs/ordering/ 
+canonical: https://grafana.com/docs/grafana/latest/explore/simplified-exploration/logs/ordering/
 description: Learn about sorting and ordering data in Explore Logs.
 keywords:
   - Logs
@@ -15,8 +15,6 @@ weight: 400
 ---
 
 # Sorting and ordering
-
-{{< docs/public-preview product="Explore Logs" >}}
 
 If you find yourself on a page with lots of graphs, you might want to sort them differently depending on what you're looking for. You can do this in Explore Logs using the **Sort by** menu in the top right toolbar.
 

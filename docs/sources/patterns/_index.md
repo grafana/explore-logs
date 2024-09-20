@@ -16,8 +16,6 @@ weight: 600
 
 # Log patterns
 
-{{< docs/public-preview product="Explore Logs" >}}
-
 Log patterns let you work with groups of similar log lines. You can hide log patterns that are noisy, or focus only on the patterns that are most useful.
 
 Loki automatically extracts patterns when your logs are ingested. Patterns are ephemeral and are only mined from the past 3 hours of your logs.

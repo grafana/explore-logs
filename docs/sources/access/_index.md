@@ -13,15 +13,11 @@ weight: 200
 
 # Access or install Explore Logs
 
-{{< docs/public-preview product="Explore Logs" >}}
-
 To use Explore Logs on your own data, you can either access it in Grafana Cloud or install it in your own Grafana instance.
 
 {{< docs/play title="the Grafana Play site" url="https://play.grafana.org/a/grafana-lokiexplore-app/explore?var-ds=ddhr3fttaw8aod&var-patterns=&var-lineFilter=&var-logsFormat=" >}}
 
 ## Access in Grafana Cloud
-
-Explore Logs is enabled for Private Preview in Grafana Cloud.
 
 To access Explore Logs:
 
@@ -46,13 +42,14 @@ The following Loki and Grafana version and configuration are required:
 
 - Grafana v11.0.0+
 - Loki v3.0.0+
+
   - Enable pattern ingestion by setting `--pattern-ingester.enabled=true` in your Loki configuration.
   - Enable the volume endpoint in your Loki configuration:
 
-      ```yaml
-      limits_config:
-        volume_enabled: true
-      ```
+    ```yaml
+    limits_config:
+      volume_enabled: true
+    ```
 
 ### Install via environment variable
 
