@@ -129,13 +129,13 @@ function splitQueriesByStreamShard(
             return;
           }
         }
-        if (mergedResponse.data.length) {
-          mergedResponse.state = LoadingState.Streaming;
-        }
         mergedResponse = combineResponses(mergedResponse, partialResponse);
       },
       complete: () => {
-        subscriber.next(mergedResponse);
+        // Prevent flashing "no data"
+        if (mergedResponse.data.length) {
+          subscriber.next(mergedResponse);
+        }
         nextRequest();
         if (retryTimer) {
           clearTimeout(retryTimer);
