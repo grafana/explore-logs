@@ -47,10 +47,10 @@ Patterns are ephemeral and will only be available for the last 3 hours.
 If you aren't getting any patterns, you can try the following fixes:
 
 1. Ensure pattern extraction is enabled by setting `--pattern-ingester.enabled=true` in your Loki config. [Learn about other necessary config](../get-started/#install-using-grafana-cli).
-1. It is possible that no patterns were detected, although this is rare - please [get in touch](https://forms.gle/1sYWCTPvD72T1dPH9) so we can see what's going on.
+1. It is possible that no patterns were detected, although this is rare - please [open an issue on GitHub](https://github.com/grafana/explore-logs/issues/new) or [get in touch privately](https://forms.gle/1sYWCTPvD72T1dPH9) so we can see what's going on.
 
 ## I cannot find something
 
-Please [get in touch with the team building the app](https://forms.gle/1sYWCTPvD72T1dPH9) and let us know what's not working for you.
+Please [open an issue on GitHub](https://github.com/grafana/explore-logs/issues/new) or [get in touch privately](https://forms.gle/1sYWCTPvD72T1dPH9) and let us know what's not working for you.
 
 If you have something urgent, please [get in touch via support](https://grafana.com/help/). Grafana Cloud users can [open a support ticket here](https://grafana.com/profile/org#support).
