@@ -39,8 +39,8 @@ export const EXPLORATION_DS = { uid: VAR_DATASOURCE_EXPR };
 export const ALL_VARIABLE_VALUE = '$__all';
 export const LEVEL_VARIABLE_VALUE = 'detected_level';
 export const SERVICE_NAME = 'service_name';
-export const SERVICE_NAME_VAR = 'service_name_var';
-export const SERVICE_NAME_EXPR = '${service_name_var}';
+export const SERVICE_LABEL_VAR = 'service_label_var';
+export const SERVICE_LABEL_EXPR = '${service_label_var}';
 export const EMPTY_VARIABLE_VALUE = '""';
 
 export type ParserType = 'logfmt' | 'json' | 'mixed' | 'structuredMetadata';
@@ -108,10 +108,10 @@ export function getLabelGroupByVariable(scene: SceneObject) {
   return variable;
 }
 
-export function getServiceNameVariable(scene: SceneObject) {
-  const variable = sceneGraph.lookupVariable(SERVICE_NAME_VAR, scene);
+export function getServiceLabelVariable(scene: SceneObject) {
+  const variable = sceneGraph.lookupVariable(SERVICE_LABEL_VAR, scene);
   if (!(variable instanceof CustomConstantVariable)) {
-    throw new Error('SERVICE_NAME_VAR not found');
+    throw new Error('SERVICE_LABEL_VAR not found');
   }
   return variable;
 }
