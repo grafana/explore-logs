@@ -19,6 +19,7 @@ import { locationService } from '@grafana/runtime';
 import { LogOptionsScene } from './LogOptionsScene';
 import { LogsPanelScene } from './LogsPanelScene';
 import { getDisplayedFields } from 'services/store';
+import { logger } from '../../services/logger';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -94,7 +95,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       }
     } catch (e) {
       // URL Params can be manually changed and it will make JSON.parse() fail.
-      console.error(e);
+      logger.error(e, { msg: 'LogsListScene: updateFromUrl unexpected error' });
     }
 
     if (Object.keys(stateUpdate).length) {

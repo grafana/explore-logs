@@ -3,6 +3,7 @@ import { DataFrame, doStandardCalcs, fieldReducers, FieldType, outerJoinDataFram
 import { getLabelValueFromDataFrame } from './levels';
 import { memoize } from 'lodash';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from './analytics';
+import { logger } from './logger';
 
 export const DEFAULT_SORT_BY = 'changepoint';
 
@@ -25,7 +26,8 @@ export const sortSeries = memoize(
           return calculateOutlierValue(series, dataFrame);
         }
       } catch (e) {
-        console.error(e);
+        logger.error(e, { msg: 'failed to sort' });
+
         // ML sorting panicked, fallback to stdDev
         sortBy = ReducerID.stdDev;
       }
@@ -131,7 +133,7 @@ const initOutlierDetector = (series: DataFrame[]) => {
     const detector = OutlierDetector.dbscan({ sensitivity: 0.4 }).preprocess(points, nTimestamps);
     outliers = detector.detect();
   } catch (e) {
-    console.error(e);
+    logger.error(e, { msg: 'initOutlierDetector: OutlierDetector error' });
   }
 };
 

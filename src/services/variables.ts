@@ -9,6 +9,7 @@ import {
 import { CustomConstantVariable } from './CustomConstantVariable';
 import { AdHocVariableFilter } from '@grafana/data';
 import { AdHocFieldValue, FieldValue } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
+import { logger } from './logger';
 
 export const VAR_LABELS = 'filters';
 export const VAR_LABELS_EXPR = '${filters}';
@@ -157,7 +158,7 @@ export function getValueFromFieldsFilter(filter: AdHocVariableFilter, variableNa
   try {
     return JSON.parse(filter.value);
   } catch (e) {
-    console.error(`Failed to parse ${variableName}`, e);
+    logger.warn(`Failed to parse ${variableName}`, { value: filter.value });
 
     // If the user has a URL from before 0.1.4 where detected_fields changed the format of the fields value to include the parser, fall back to mixed parser if we have a value
     if (filter.value) {

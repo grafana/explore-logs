@@ -20,6 +20,7 @@ import { config } from '@grafana/runtime';
 import { css } from '@emotion/css';
 import { PatternFrame, PatternsBreakdownScene } from './PatternsBreakdownScene';
 import { areArraysEqual } from '../../../../services/comparison';
+import { logger } from '../../../../services/logger';
 
 const palette = config.theme2.visualization.palette;
 
@@ -115,7 +116,7 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
 
     const lokiPatterns = serviceScene.state.$patternsData?.state.data?.series;
     if (!lokiPatterns || !patternFrames) {
-      console.warn('Failed to update PatternsFrameScene body');
+      logger.warn('Failed to update PatternsFrameScene body');
       return;
     }
 
@@ -151,7 +152,7 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
     const patternFrames = patternsBreakdownScene.state.patternFrames;
 
     if (!patternFrames) {
-      console.warn('Failed to set getSingleViewLayout');
+      logger.warn('Failed to set getSingleViewLayout');
       return;
     }
 

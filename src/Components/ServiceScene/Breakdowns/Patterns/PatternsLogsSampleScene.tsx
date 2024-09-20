@@ -27,6 +27,7 @@ import { getQueryRunner } from '../../../../services/panel';
 import { AppliedPattern } from '../../../IndexScene/IndexScene';
 import { PatternsViewTableScene } from './PatternsViewTableScene';
 import { emptyStateStyles } from '../FieldsBreakdownScene';
+import { logger } from '../../../../services/logger';
 
 interface PatternsLogsSampleSceneState extends SceneObjectState {
   pattern: string;
@@ -137,11 +138,22 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
       value.data.state === LoadingState.Error
     ) {
       // Logging an error so loki folks can debug why some patterns returned from the API seem to fail.
-      console.error('Pattern sample query returns no results', {
-        pattern: this.state.pattern,
-        traceIds: value.data.traceIds,
-        request: value.data.request,
-      });
+      let logContext;
+      try {
+        logContext = {
+          pattern: this.state.pattern,
+          traceIds: JSON.stringify(value.data.traceIds),
+          request: JSON.stringify(value.data.request),
+        };
+      } catch (e) {
+        logContext = {
+          pattern: this.state.pattern,
+          msg: 'Failed to encode context',
+        };
+      }
+
+      // Logging an error so loki folks can debug why some patterns returned from the API seem to fail.
+      logger.error(new Error('Pattern sample query returns no results'), logContext);
 
       this.setWarningMessage(
         <Alert severity={'error'} title={''}>

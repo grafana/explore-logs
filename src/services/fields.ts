@@ -24,6 +24,7 @@ import { map, Observable } from 'rxjs';
 import { SortBy, SortByScene } from '../Components/ServiceScene/Breakdowns/SortByScene';
 import { getDetectedFieldsFrame } from '../Components/ServiceScene/ServiceScene';
 import { averageFields } from '../Components/ServiceScene/Breakdowns/FieldsBreakdownScene';
+import { logger } from './logger';
 
 export type DetectedLabel = {
   label: string;
@@ -106,7 +107,7 @@ export function getParserForField(fieldName: string, sceneRef: SceneObject): Par
     index !== undefined && index !== -1 ? extractParserFromString(parserField?.values?.[index] ?? '') : undefined;
 
   if (parser === undefined) {
-    console.warn('missing parser, using mixed format for', fieldName);
+    logger.warn('missing parser, using mixed format for', { fieldName });
     return 'mixed';
   }
   return parser;
@@ -208,8 +209,9 @@ export function getFilterTypeFromLabelType(type: LabelType | null, key: string, 
       return VAR_FIELDS;
     }
     default: {
-      console.error(`Invalid label for ${key}`, value);
-      throw new Error(`Invalid label type for ${key}`);
+      const err = new Error(`Invalid label type for ${key}`);
+      logger.error(err, { value, msg: `Invalid label type for ${key}` });
+      throw err;
     }
   }
 }

@@ -1,6 +1,7 @@
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import { ActiveFieldMeta, FieldNameMetaStore } from 'Components/Table/TableTypes';
 import { getBodyName, getTimeName, LogsFrame } from '../../../services/logsFrame';
+import { logger } from '../../../services/logger';
 
 type TableColumnsContextType = {
   // the current list of labels from the dataframe combined with UI metadata
@@ -175,7 +176,7 @@ const removeExtraColumns = (columns: FieldNameMetaStore): FieldNameMetaStore => 
 
 function getDefaultColumns(pendingLabelState: FieldNameMetaStore, logsFrame: LogsFrame) {
   if (!logsFrame) {
-    console.warn('missing dataframe, cannot set url state');
+    logger.warn('missing dataframe, cannot set url state');
     return;
   }
   // Get all active columns and sort by index
