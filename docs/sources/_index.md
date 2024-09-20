@@ -4,7 +4,7 @@ canonical: https://grafana.com/docs/grafana/latest/explore/simplified-exploratio
 description: Learn about the new experience for browsing your Loki logs without writing queries.
 weight: 100
 hero:
-  title: Explore Logs 
+  title: Explore Logs
   level: 1
   width: 100
   height: 100
@@ -40,8 +40,6 @@ cards:
 
 # Explore Logs
 
-{{< docs/public-preview product="Explore Logs" >}}
-
 Welcome to our new experience for Loki. Explore Logs lets you automatically visualize and explore your logs without having to write queries.
 Using Explore Logs you can:
 
@@ -53,7 +51,6 @@ Using Explore Logs you can:
 - Do all of this without writing LogQL queries.
 
 {{< docs/play title="Explore Logs" url="https://play.grafana.org/a/grafana-lokiexplore-app/explore" >}}
-
 
 ## Who is Explore Logs for?
 
