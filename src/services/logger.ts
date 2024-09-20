@@ -1,18 +1,26 @@
 import { LogContext } from '@grafana/faro-web-sdk';
 import { logError, logInfo, logWarning } from '@grafana/runtime';
+import pluginJson from '../plugin.json';
+
+const defaultContext = {
+  app: pluginJson.id,
+};
 
 export const logger = {
   info: (msg: string, context?: LogContext) => {
-    console.log(msg, context);
-    attemptFaroInfo(msg, context);
+    const ctx = { ...defaultContext, ...context };
+    console.log(msg, ctx);
+    attemptFaroInfo(msg, ctx);
   },
   warn: (msg: string, context?: LogContext) => {
-    console.warn(msg, context);
-    attemptFaroWarn(msg, context);
+    const ctx = { ...defaultContext, ...context };
+    console.warn(msg, ctx);
+    attemptFaroWarn(msg, ctx);
   },
   error: (err: Error | unknown, context?: LogContext) => {
-    console.error(err, context);
-    attemptFaroErr(err, context);
+    const ctx = { ...defaultContext, ...context };
+    console.error(err, ctx);
+    attemptFaroErr(err, ctx);
   },
 };
 
