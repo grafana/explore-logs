@@ -29,6 +29,7 @@ By default the graphs are sorted by **Most relevant** where we prioritize graphs
 | Sort by option | Description                                               |
 | -------------- | --------------------------------------------------------- |
 | Most relevant  | Sorts graphs by the most volatile data.                   |
+| Detected outliers  | Puts outliers first (those that look different to the rest) |
 | Widest spread  | Sorts graphs that contain the largest standard deviation. |
 | Name           | Sorts graphs alphabetically by name.                      |
 | Highest spike  | Sorts graphs by the highest peaks.                        |
