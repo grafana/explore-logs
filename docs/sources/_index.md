@@ -8,7 +8,7 @@ hero:
   level: 1
   width: 100
   height: 100
-  description: Explore Logs automatically visualises insights from your Loki logs.
+  description: Explore Logs automatically visualizes insights from your Loki logs.
 cards:
   title_class: pt-0 lh-1
   items:
