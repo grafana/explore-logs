@@ -1,13 +1,7 @@
 import { urlUtil } from '@grafana/data';
-import { DataSourceWithBackend, config, getDataSourceSrv } from '@grafana/runtime';
-import {
-  AdHocFiltersVariable,
-  getUrlSyncManager,
-  sceneGraph,
-  SceneObject,
-  SceneObjectUrlValues,
-} from '@grafana/scenes';
-import { VAR_DATASOURCE_EXPR, LOG_STREAM_SELECTOR_EXPR } from './variables';
+import { config, DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
+import { getUrlSyncManager, sceneGraph, SceneObject, SceneObjectUrlValues } from '@grafana/scenes';
+import { LOG_STREAM_SELECTOR_EXPR, VAR_DATASOURCE_EXPR, VAR_LABELS_EXPR } from './variables';
 import { EXPLORATIONS_ROUTE } from './routing';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
 
@@ -23,12 +17,16 @@ export function getUrlForValues(values: SceneObjectUrlValues) {
   return urlUtil.renderUrl(EXPLORATIONS_ROUTE, values);
 }
 
-export function getDataSource(exploration: IndexScene) {
-  return sceneGraph.interpolate(exploration, VAR_DATASOURCE_EXPR);
+export function getDataSource(sceneObject: SceneObject) {
+  return sceneGraph.interpolate(sceneObject, VAR_DATASOURCE_EXPR);
 }
 
 export function getQueryExpr(exploration: IndexScene) {
   return sceneGraph.interpolate(exploration, LOG_STREAM_SELECTOR_EXPR).replace(/\s+/g, ' ');
+}
+
+export function getPatternExpr(exploration: IndexScene) {
+  return sceneGraph.interpolate(exploration, VAR_LABELS_EXPR).replace(/\s+/g, ' ');
 }
 
 export function getColorByIndex(index: number) {
@@ -43,18 +41,6 @@ export async function getLokiDatasource(sceneObject: SceneObject) {
   return ds;
 }
 
-export function getAdHocFiltersVariable(variableName: string, sceneObject: SceneObject) {
-  const variable = sceneGraph.lookupVariable(variableName, sceneObject);
-
-  if (!variable) {
-    console.warn(`Could not get AdHocFiltersVariable ${variableName}. Variable not found.`);
-    return null;
-  }
-  if (!(variable instanceof AdHocFiltersVariable)) {
-    console.warn(
-      `Could not get AdHocFiltersVariable ${variableName}. Variable is not an instance of AdHocFiltersVariable`
-    );
-    return null;
-  }
-  return variable;
+export function isDefined<T>(value: T | null | undefined): value is T {
+  return value !== null && value !== undefined;
 }

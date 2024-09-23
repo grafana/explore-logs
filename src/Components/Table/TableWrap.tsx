@@ -22,6 +22,7 @@ interface TableWrapProps {
   urlColumns: string[];
   setUrlColumns: (columns: string[]) => void;
   panelWrap: React.RefObject<HTMLDivElement>;
+  clearSelectedLine: () => void;
 }
 
 const getStyles = () => ({
@@ -112,11 +113,12 @@ export const TableWrap = (props: TableWrapProps) => {
         logsFrame={logsFrame}
         initialColumns={pendingLabelState}
         setUrlColumns={props.setUrlColumns}
+        clearSelectedLine={props.clearSelectedLine}
       >
         <Table
           logsFrame={logsFrame}
           timeZone={timeZone}
-          height={panelWrapSize.height}
+          height={panelWrapSize.height - 50}
           width={panelWrapSize.width - 25}
           labels={labels}
         />

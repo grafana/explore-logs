@@ -31,6 +31,8 @@ export const USER_EVENTS_ACTIONS = {
     search_services_changed: 'search_services_changed',
     // Selecting service. Props: service
     service_selected: 'service_selected',
+    // Toggling aggregated metrics on/off
+    aggregated_metrics_toggled: 'aggregated_metrics_toggled',
   },
   [USER_EVENTS_PAGES.service_details]: {
     open_in_explore_clicked: 'open_in_explore_clicked',
@@ -40,6 +42,8 @@ export const USER_EVENTS_ACTIONS = {
     add_to_filters_in_breakdown_clicked: 'add_to_filters_in_breakdown_clicked',
     // Clicking on "Select" button button in time series panels. Used in multiple views.The view type is passed as a parameter. Props: field, previousField, view
     select_field_in_breakdown_clicked: 'select_field_in_breakdown_clicked',
+    // Clicking on one of the levels in the Logs Volume panel
+    level_in_logs_volume_clicked: 'level_in_logs_volume_clicked',
     // Changing layout type (e.g. single/grid/rows). Used in multiple views. The view type is passed as a parameter. Props: layout, view
     layout_type_changed: 'layout_type_changed',
     // Changing search string in logs. Props: searchQuery
@@ -48,13 +52,21 @@ export const USER_EVENTS_ACTIONS = {
     pattern_removed: 'pattern_removed',
     // Selecting a pattern (e.g. include/exclude) from the list. Props: includePatternsLength, excludePatternsLength, type
     pattern_selected: 'pattern_selected',
+    // Clicking on a pattern field in the pattern name.
+    pattern_field_clicked: 'pattern_field_clicked',
     // Toggling between logs/table view
     logs_visualization_toggle: 'logs_visualization_toggle',
     // Filter (include, exclude) from log details
     logs_detail_filter_applied: 'logs_detail_filter_applied',
     // Popover menu filter
     logs_popover_line_filter: 'logs_popover_line_filter',
+    // Toggle displayed fields
+    logs_toggle_displayed_field: 'logs_toggle_displayed_field',
+    // Clear all displayed fields
+    logs_clear_displayed_fields: 'logs_clear_displayed_fields',
     // Value breakdown sort change
     value_breakdown_sort_change: 'value_breakdown_sort_change',
+    // Wasm not supported
+    wasm_not_supported: 'wasm_not_supported',
   },
 } as const;

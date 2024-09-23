@@ -1,6 +1,6 @@
 import React from 'react';
 import { PatternControls } from './PatternControls';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AppliedPattern } from './IndexScene';
 
@@ -36,7 +36,7 @@ describe('PatternControls', () => {
     const onRemove = jest.fn();
     render(<PatternControls patterns={[{ pattern: patterns[0], type: 'include' }]} onRemove={onRemove} />);
 
-    await userEvent.click(screen.getByLabelText('Remove pattern'));
+    await act(() => userEvent.click(screen.getByLabelText('Remove pattern')));
     expect(onRemove).toHaveBeenCalledTimes(1);
   });
 

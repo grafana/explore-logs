@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { AdHocVariableFilter, SelectableValue, VariableHide } from '@grafana/data';
+import { AdHocVariableFilter, SelectableValue } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   CustomVariable,
@@ -8,23 +8,29 @@ import {
   getUrlSyncManager,
   SceneComponentProps,
   SceneControlsSpacer,
-  sceneGraph,
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
   SceneObjectUrlSyncConfig,
   SceneObjectUrlValues,
   SceneRefreshPicker,
+  SceneRouteMatch,
   SceneTimePicker,
   SceneTimeRange,
   SceneVariableSet,
   VariableValueSelectors,
 } from '@grafana/scenes';
 import {
-  explorationDS,
+  EXPLORATION_DS,
+  getFieldsVariable,
+  getLevelsVariable,
+  getPatternsVariable,
+  getUrlParamNameForVariable,
+  MIXED_FORMAT_EXPR,
   VAR_DATASOURCE,
   VAR_FIELDS,
-  VAR_FILTERS,
+  VAR_LABELS,
+  VAR_LEVELS,
   VAR_LINE_FILTER,
   VAR_LOGS_FORMAT,
   VAR_PATTERNS,
@@ -32,11 +38,21 @@ import {
 
 import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
 import { ServiceScene } from '../ServiceScene/ServiceScene';
-import { ServiceSelectionScene, StartingPointSelectedEvent } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LayoutScene } from './LayoutScene';
 import { FilterOp } from 'services/filters';
-
-type LogExplorationMode = 'service_selection' | 'service_details';
+import { getDrilldownSlug, PageSlugs } from '../../services/routing';
+import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
+import { LoadingPlaceholder } from '@grafana/ui';
+import { config, locationService } from '@grafana/runtime';
+import {
+  renderLogQLFieldFilters,
+  renderLogQLLabelFilters,
+  renderLogQLMetadataFilters,
+  renderPatternFilters,
+} from 'services/query';
+import { VariableHide } from '@grafana/schema';
+import { CustomConstantVariable } from '../../services/CustomConstantVariable';
+import { ToolbarScene } from './ToolbarScene';
 
 export interface AppliedPattern {
   pattern: string;
@@ -47,112 +63,143 @@ export interface IndexSceneState extends SceneObjectState {
   // contentScene is the scene that is displayed in the main body of the index scene - it can be either the service selection or service scene
   contentScene?: SceneObject;
   controls: SceneObject[];
-  body: LayoutScene;
-  // mode is the current mode of the index scene - it can be either 'service_selection' or 'service_details'
-  mode?: LogExplorationMode;
+  body?: LayoutScene;
   initialFilters?: AdHocVariableFilter[];
-  initialDS?: string;
   patterns?: AppliedPattern[];
+  routeMatch?: SceneRouteMatch<{ service?: string; label?: string }>;
 }
 
 export class IndexScene extends SceneObjectBase<IndexSceneState> {
-  protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['mode', 'patterns'] });
+  protected _urlSync = new SceneObjectUrlSyncConfig(this, { keys: ['patterns'] });
 
   public constructor(state: Partial<IndexSceneState>) {
+    const { variablesScene, unsub } = getVariableSet(
+      getLastUsedDataSourceFromStorage() ?? 'grafanacloud-logs',
+      state.initialFilters
+    );
+
+    const controls: SceneObject[] = [
+      new VariableValueSelectors({ layout: 'vertical' }),
+      new SceneControlsSpacer(),
+      new SceneTimePicker({}),
+      new SceneRefreshPicker({}),
+    ];
+
+    //@ts-expect-error
+    if (getDrilldownSlug() === 'explore' && config.featureToggles.exploreLogsAggregatedMetrics) {
+      controls.push(
+        new ToolbarScene({
+          isOpen: false,
+        })
+      );
+    }
+
     super({
       $timeRange: state.$timeRange ?? new SceneTimeRange({}),
-      $variables:
-        state.$variables ?? getVariableSet(state.initialDS ?? getLastUsedDataSourceFromStorage(), state.initialFilters),
-      controls: state.controls ?? [
-        new VariableValueSelectors({ layout: 'vertical' }),
-        new SceneControlsSpacer(),
-        new SceneTimePicker({}),
-        new SceneRefreshPicker({}),
-      ],
-      body: new LayoutScene({}),
+      $variables: state.$variables ?? variablesScene,
+      controls: state.controls ?? controls,
+      // Need to clear patterns state when the class in constructed
+      patterns: [],
       ...state,
+      body: new LayoutScene({}),
     });
 
+    this._subs.add(unsub);
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
   static Component = ({ model }: SceneComponentProps<IndexScene>) => {
     const { body } = model.useState();
+    if (body) {
+      return <body.Component model={body} />;
+    }
 
-    return <body.Component model={body} />;
+    return <LoadingPlaceholder text={'Loading...'} />;
   };
 
   public onActivate() {
+    const stateUpdate: Partial<IndexSceneState> = {};
+
     if (!this.state.contentScene) {
-      this.setState({ contentScene: getContentScene(this.state.mode) });
+      stateUpdate.contentScene = getContentScene(this.state.routeMatch?.params.label);
     }
 
-    // Some scene elements publish this
-    this.subscribeToEvent(StartingPointSelectedEvent, this._handleStartingPointSelected.bind(this));
+    this.setState(stateUpdate);
 
-    this.subscribeToState((newState, oldState) => {
-      if (newState.mode !== oldState.mode) {
-        this.setState({ contentScene: getContentScene(newState.mode) });
-      }
+    this.updatePatterns(this.state, getPatternsVariable(this));
+    this.resetVariablesIfNotInUrl(getFieldsVariable(this), getUrlParamNameForVariable(VAR_FIELDS));
+    this.resetVariablesIfNotInUrl(getLevelsVariable(this), getUrlParamNameForVariable(VAR_LEVELS));
 
-      const patternsVariable = sceneGraph.lookupVariable(VAR_PATTERNS, this);
-      if (patternsVariable instanceof CustomVariable) {
-        const patternsLine = renderPatternFilters(newState.patterns ?? []);
-        patternsVariable.changeValueTo(patternsLine);
-      }
-    });
+    this._subs.add(
+      this.subscribeToState((newState) => {
+        this.updatePatterns(newState, getPatternsVariable(this));
+      })
+    );
 
     return () => {
       getUrlSyncManager().cleanUp(this);
     };
   }
 
+  /**
+   * @todo why do we need to manually sync fields and levels, but not other ad hoc variables?
+   * @param variable
+   * @param urlParamName
+   * @private
+   */
+  private resetVariablesIfNotInUrl(variable: AdHocFiltersVariable, urlParamName: string) {
+    const location = locationService.getLocation();
+    const search = new URLSearchParams(location.search);
+    const filtersFromUrl = search.get(urlParamName);
+
+    // If the filters aren't in the URL, then they're coming from the cache, set the state to sync with url
+    if (filtersFromUrl === null) {
+      variable.setState({ filters: [] });
+    }
+  }
+
+  private updatePatterns(newState: IndexSceneState, patternsVariable: CustomVariable) {
+    const patternsLine = renderPatternFilters(newState.patterns ?? []);
+    patternsVariable.changeValueTo(patternsLine);
+  }
+
   getUrlState() {
     return {
-      mode: this.state.mode,
-      patterns: this.state.mode === 'service_selection' ? '' : JSON.stringify(this.state.patterns),
+      patterns: JSON.stringify(this.state.patterns),
     };
   }
 
   updateFromUrl(values: SceneObjectUrlValues) {
     const stateUpdate: Partial<IndexSceneState> = {};
-    if (values.mode !== this.state.mode) {
-      const mode: LogExplorationMode = (values.mode as LogExplorationMode) ?? 'service_selection';
-      stateUpdate.mode = mode;
-      stateUpdate.contentScene = getContentScene(mode);
-    }
-    if (this.state.mode === 'service_selection') {
-      // Clear patterns on start
-      stateUpdate.patterns = undefined;
-    } else if (values.patterns && typeof values.patterns === 'string') {
+
+    if (values.patterns && typeof values.patterns === 'string') {
       stateUpdate.patterns = JSON.parse(values.patterns) as AppliedPattern[];
     }
+
     this.setState(stateUpdate);
   }
-
-  private _handleStartingPointSelected(evt: StartingPointSelectedEvent) {
-    this.setState({
-      mode: 'service_details',
-    });
-  }
 }
 
-function getContentScene(mode?: LogExplorationMode) {
-  if (mode === 'service_details') {
-    return new ServiceScene({});
+function getContentScene(drillDownLabel?: string) {
+  const slug = getDrilldownSlug();
+  if (slug === PageSlugs.explore) {
+    return new ServiceSelectionScene({});
   }
-  return new ServiceSelectionScene({});
+
+  return new ServiceScene({
+    drillDownLabel,
+  });
 }
 
-function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter[]) {
+function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVariableFilter[]) {
   const operators = [FilterOp.Equal, FilterOp.NotEqual].map<SelectableValue<string>>((value) => ({
     label: value,
     value,
   }));
 
-  const filterVariable = new AdHocFiltersVariable({
-    name: VAR_FILTERS,
-    datasource: explorationDS,
+  const labelVariable = new AdHocFiltersVariable({
+    name: VAR_LABELS,
+    datasource: EXPLORATION_DS,
     layout: 'vertical',
     label: 'Service',
     filters: initialFilters ?? [],
@@ -161,7 +208,7 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
     key: 'adhoc_service_filter',
   });
 
-  filterVariable._getOperators = function () {
+  labelVariable._getOperators = function () {
     return operators;
   };
 
@@ -180,59 +227,58 @@ function getVariableSet(initialDS?: string, initialFilters?: AdHocVariableFilter
     return operators;
   };
 
+  const levelsVariable = new AdHocFiltersVariable({
+    name: VAR_LEVELS,
+    label: 'Filters',
+    applyMode: 'manual',
+    layout: 'vertical',
+    getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
+    getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
+    expressionBuilder: renderLogQLMetadataFilters,
+    hide: VariableHide.hideLabel,
+  });
+
+  levelsVariable._getOperators = () => {
+    return operators;
+  };
+
   const dsVariable = new DataSourceVariable({
     name: VAR_DATASOURCE,
     label: 'Data source',
-    value: initialDS,
+    value: initialDatasourceUid,
     pluginId: 'loki',
   });
-  dsVariable.subscribeToState((newState) => {
+
+  const unsub = dsVariable.subscribeToState((newState) => {
     const dsValue = `${newState.value}`;
     newState.value && addLastUsedDataSourceToStorage(dsValue);
   });
-  return new SceneVariableSet({
-    variables: [
-      dsVariable,
-      filterVariable,
-      fieldsVariable,
-      new CustomVariable({
-        name: VAR_PATTERNS,
-        value: '',
-        hide: VariableHide.hideVariable,
-      }),
-      new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable }),
-      new CustomVariable({ name: VAR_LOGS_FORMAT, value: '', hide: VariableHide.hideVariable }),
-    ],
-  });
-}
 
-export function renderLogQLLabelFilters(filters: AdHocVariableFilter[]) {
-  return '{' + filters.map((filter) => renderFilter(filter)).join(', ') + '}';
-}
+  return {
+    variablesScene: new SceneVariableSet({
+      variables: [
+        dsVariable,
+        labelVariable,
+        fieldsVariable,
+        levelsVariable,
+        // @todo where is patterns being added to the url? Why do we have var-patterns and patterns?
+        new CustomVariable({
+          name: VAR_PATTERNS,
+          value: '',
+          hide: VariableHide.hideVariable,
+        }),
+        new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable }),
 
-export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
-  return filters.map((filter) => `| ${renderFilter(filter)}`).join(' ');
-}
-
-function renderFilter(filter: AdHocVariableFilter) {
-  return `${filter.key}${filter.operator}\`${filter.value}\``;
-}
-
-export function renderPatternFilters(patterns: AppliedPattern[]) {
-  const excludePatterns = patterns.filter((pattern) => pattern.type === 'exclude');
-  const excludePatternsLine = excludePatterns
-    .map((p) => `!> \`${p.pattern}\``)
-    .join(' ')
-    .trim();
-
-  const includePatterns = patterns.filter((pattern) => pattern.type === 'include');
-  let includePatternsLine = '';
-  if (includePatterns.length > 0) {
-    if (includePatterns.length === 1) {
-      includePatternsLine = `|> \`${includePatterns[0].pattern}\``;
-    } else {
-      includePatternsLine = `|>  ${includePatterns.map((p) => `\`${p.pattern}\``).join(' or ')}`;
-    }
-  }
-  return `${excludePatternsLine} ${includePatternsLine}`.trim();
+        // This variable is a hack to get logs context working, this variable should never be used or updated
+        new CustomConstantVariable({
+          name: VAR_LOGS_FORMAT,
+          value: MIXED_FORMAT_EXPR,
+          skipUrlSync: true,
+          hide: VariableHide.hideVariable,
+          options: [{ value: MIXED_FORMAT_EXPR, label: MIXED_FORMAT_EXPR }],
+        }),
+      ],
+    }),
+    unsub,
+  };
 }

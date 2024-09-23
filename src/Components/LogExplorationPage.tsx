@@ -1,19 +1,22 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 
-import { SceneTimeRange, getUrlSyncManager } from '@grafana/scenes';
-import { IndexScene } from './IndexScene/IndexScene';
-const DEFAULT_TIME_RANGE = { from: 'now-15m', to: 'now' };
+import { getUrlSyncManager, SceneApp, useSceneApp } from '@grafana/scenes';
+import { config } from '@grafana/runtime';
+import { Redirect } from 'react-router-dom';
+import { makeIndexPage, makeRedirectPage } from './Pages';
+import { initializeMetadataService } from '../services/metadata';
+
+const getSceneApp = () =>
+  new SceneApp({
+    pages: [makeIndexPage(), makeRedirectPage()],
+  });
 
 export function LogExplorationView() {
   const [isInitialized, setIsInitialized] = React.useState(false);
-  // Must memoize the top-level scene or any route change will re-instantiate all the scene classes
-  const scene = useMemo(
-    () =>
-      new IndexScene({
-        $timeRange: new SceneTimeRange(DEFAULT_TIME_RANGE),
-      }),
-    []
-  );
+
+  initializeMetadataService();
+
+  const scene = useSceneApp(getSceneApp);
 
   useEffect(() => {
     if (!isInitialized) {
@@ -21,6 +24,12 @@ export function LogExplorationView() {
       setIsInitialized(true);
     }
   }, [scene, isInitialized]);
+
+  const userPermissions = config.bootData.user.permissions;
+  const canUseApp = userPermissions?.['grafana-lokiexplore-app:read'] || userPermissions?.['datasources:explore'];
+  if (!canUseApp) {
+    return <Redirect to="/" />;
+  }
 
   if (!isInitialized) {
     return null;

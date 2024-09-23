@@ -87,10 +87,21 @@ export const Table = (props: Props) => {
   const styles = getStyles();
 
   const [tableFrame, setTableFrame] = useState<DataFrame | undefined>(undefined);
-  const { columns, visible, setVisible, setFilteredColumns, setColumns, columnWidthMap, setColumnWidthMap } =
-    useTableColumnContext();
+  const {
+    columns,
+    visible,
+    setVisible,
+    setFilteredColumns,
+    setColumns,
+    clearSelectedLine,
+    columnWidthMap,
+    setColumnWidthMap,
+  } = useTableColumnContext();
 
   const { selectedLine } = useQueryContext();
+
+  // Create a local state for selected line so we can clear the state tied to the URL
+  const [localSelectedLine] = useState(selectedLine);
 
   const reorderColumn = getReorderColumn(setColumns);
 
@@ -208,12 +219,21 @@ export const Table = (props: Props) => {
     prepare();
   }, [logsFrame.raw, logsFrame.bodyField, logsFrame.timeField, logsFrame.extraFields, prepareTableFrame, columns]);
 
+  // Clear selected line from URL so it doesn't pollute future queries
+  useEffect(() => {
+    if (localSelectedLine && selectedLine) {
+      clearSelectedLine();
+      return;
+    }
+  }, [localSelectedLine, clearSelectedLine, selectedLine]);
+
+  const idField = logsFrame.raw.fields.find((field) => field.name === getIdName(logsFrame));
+  const lineIndex = idField?.values.findIndex((v) => v === localSelectedLine?.id);
+  const cleanLineIndex = lineIndex && lineIndex !== -1 ? lineIndex : undefined;
+
   if (!tableFrame) {
     return <></>;
   }
-
-  const idField = logsFrame.raw.fields.find((field) => field.name === getIdName(logsFrame));
-  const lineIndex = idField?.values.findIndex((v) => v === selectedLine?.id);
 
   const onResize = (fieldDisplayName: string, width: number) => {
     const key = Object.keys(columns)
@@ -247,7 +267,7 @@ export const Table = (props: Props) => {
           <ScrollSync horizontal={true} vertical={false} proportional={false}>
             <TableAndContext
               logsFrame={logsFrame}
-              selectedLine={lineIndex ?? selectedLine?.row}
+              selectedLine={cleanLineIndex}
               data={tableFrame}
               height={height}
               width={width}

@@ -1,6 +1,6 @@
 import { SelectableValue } from '@grafana/data';
 import { DetectedLabel } from './fields';
-import { getLabelOptions, sortLabelsByCardinality } from './filters';
+import { getFieldOptions, getLabelOptions, sortLabelsByCardinality } from './filters';
 import { ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE } from './variables';
 
 describe('sortLabelsByCardinality', () => {
@@ -101,5 +101,25 @@ describe('getLabelOptions', () => {
     ];
 
     expect(getLabelOptions(labels)).toEqual(expectedOptions);
+  });
+});
+
+describe('getFieldOptions', () => {
+  it('should always add the All option at the beginning', () => {
+    const labels = ['Label A', 'Label B'];
+    const expectedOptions: Array<SelectableValue<string>> = [
+      { label: 'All', value: ALL_VARIABLE_VALUE },
+      { label: 'Label A', value: 'Label A' },
+      { label: 'Label B', value: 'Label B' },
+    ];
+
+    expect(getFieldOptions(labels)).toEqual(expectedOptions);
+  });
+
+  it('should work correctly with an empty label list', () => {
+    const labels: string[] = [];
+    const expectedOptions: Array<SelectableValue<string>> = [{ label: 'All', value: ALL_VARIABLE_VALUE }];
+
+    expect(getFieldOptions(labels)).toEqual(expectedOptions);
   });
 });

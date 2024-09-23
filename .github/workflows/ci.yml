@@ -74,7 +74,7 @@ jobs:
           path: playwright-report/
           retention-days: 5
       - name: Stop grafana docker
-        run: docker-compose down
+        run: docker compose down
 
       - name: Check for backend
         id: check-for-backend

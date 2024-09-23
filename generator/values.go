@@ -6,6 +6,7 @@ import (
 	"time"
 
 	gofakeit "github.com/brianvoe/gofakeit/v7"
+	"github.com/grafana/loki/pkg/push"
 	"github.com/prometheus/common/model"
 )
 
@@ -14,6 +15,16 @@ var clusters = []string{
 	"us-east-1",
 	"us-east-2",
 	"eu-west-1",
+}
+
+var shards = []string{
+	"0",
+	"1",
+	"2",
+	"3",
+	"4",
+	"5",
+	"",
 }
 
 var namespaces = []string{
@@ -69,6 +80,9 @@ var level = []model.LabelValue{
 }
 
 var orgIDs = []string{"1218", "29", "1010", "2419", "2919"}
+var userIDs = []string{"14234", "03428", "10572", "94223", "08203", "93820", "12345", "54321", "67890"}
+
+var defaultTraceId = gofakeit.UUID()
 
 func randLevel() model.LabelValue {
 	r := rand.Intn(100)
@@ -85,16 +99,22 @@ func randURI() string {
 	return URI[rand.Intn(len(URI))]
 }
 
-func ForAllClusters(namespace, svc model.LabelValue, cb func(model.LabelSet)) {
+func ForAllClusters(namespace, svc model.LabelValue, cb func(model.LabelSet, push.LabelsAdapter)) {
 	podCount := rand.Intn(10) + 1
 	for _, cluster := range clusters {
 		for i := 0; i < podCount; i++ {
+			clusterInt := 0
+			for _, char := range cluster {
+				clusterInt += int(char)
+			}
+
 			cb(model.LabelSet{
-				"cluster":      model.LabelValue(cluster),
-				"namespace":    model.LabelValue(namespace),
-				"service_name": svc,
-				"pod":          svc + "-" + model.LabelValue(randSeq(5)),
-			})
+				"env":              model.LabelValue(namespaces[rand.Intn(len(namespaces))]),
+				"cluster":          model.LabelValue(cluster),
+				"__stream_shard__": model.LabelValue(shards[clusterInt%len(shards)]),
+				"namespace":        model.LabelValue(namespace),
+				"service_name":     svc,
+			}, randStructuredMetadata(string(svc)))
 		}
 	}
 }
@@ -110,6 +130,10 @@ func randSeq(n int) string {
 
 func randOrgID() string {
 	return orgIDs[rand.Intn(len(orgIDs))]
+}
+
+func randUserID() string {
+	return userIDs[rand.Intn(len(userIDs))]
 }
 
 func randError() string {
@@ -137,4 +161,23 @@ func randFileName() string {
 
 func randDuration() string {
 	return (time.Duration(gofakeit.Number(1, 30000)) * time.Millisecond).String()
+}
+
+func randTraceID(prevTrace string) string {
+	// 50% chance to use `prevTrace` if it is set
+	if prevTrace != "" && rand.Intn(2) == 0 {
+		return prevTrace
+	}
+
+	newTrace := gofakeit.UUID()
+	defaultTraceId = newTrace
+	return newTrace
+}
+
+func randStructuredMetadata(svc string) push.LabelsAdapter {
+	return push.LabelsAdapter{
+		push.LabelAdapter{Name: "traceID", Value: randTraceID(defaultTraceId)},
+		push.LabelAdapter{Name: "pod", Value: svc + "-" + randSeq(5)},
+		push.LabelAdapter{Name: "user", Value: randUserID()},
+	}
 }

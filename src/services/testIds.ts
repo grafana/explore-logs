@@ -8,12 +8,32 @@ export const testIds = {
   exploreServiceSearch: {
     search: 'data-testid search-services',
   },
+  header: {
+    refreshPicker: 'data-testid RefreshPicker run button',
+  },
+  variables: {
+    datasource: {
+      label: 'data-testid Dashboard template variables submenu Label Data source',
+    },
+    serviceName: {
+      label: 'data-testid Dashboard template variables submenu Label service_name',
+    },
+  },
+  breakdowns: {
+    labels: {},
+    fields: {},
+    common: {
+      sortByFunction: 'data-testid SortBy function',
+      sortByDirection: 'data-testid SortBy direction',
+    },
+  },
+
   exploreServiceDetails: {
     searchLogs: 'data-testid search-logs',
     openExplore: 'data-testid open-explore',
     tabPatterns: 'data-testid tab-patterns',
     tabLogs: 'data-testid tab-logs',
-    tabDetectedFields: 'data-testid tab-detected-fields',
+    tabFields: 'data-testid tab-fields',
     tabLabels: 'data-testid tab-labels',
     buttonRemovePattern: 'data-testid button-remove-pattern',
     buttonFilterInclude: 'data-testid button-filter-include',
@@ -25,6 +45,7 @@ export const testIds = {
     buttonExcludedPattern: 'data-testid button-excluded-pattern',
   },
   logsPanelHeader: {
+    header: 'data-testid Panel header Logs',
     radio: 'data-testid radio-button',
   },
   table: {
