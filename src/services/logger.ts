@@ -77,12 +77,8 @@ function populateFetchErrorContext(err: unknown | FetchError, context: LogContex
   }
 }
 
-const attemptFaroErr = (err: Error | FetchError | unknown, context?: LogContext) => {
+const attemptFaroErr = (err: Error | FetchError | unknown, context: LogContext) => {
   try {
-    if (context === undefined) {
-      context = {};
-    }
-
     populateFetchErrorContext(err, context);
 
     if (err instanceof Error) {
