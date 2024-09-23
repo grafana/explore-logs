@@ -243,7 +243,6 @@ export const Table = (props: Props) => {
     if (key && width > 0) {
       const map = { ...columnWidthMap };
       map[key] = width;
-      console.log('update map', map);
       setColumnWidthMap(map);
     }
   };
