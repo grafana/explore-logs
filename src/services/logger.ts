@@ -42,34 +42,35 @@ const attemptFaroWarn = (msg: string, context?: LogContext) => {
 
 /**
  * Checks unknown error for properties from FetchError and adds them to the context
- * Note this renames the "message" to "errorMessage" in hopes of reducing conflicts of future use of that property name
+ * Property names from the error are prepended with an underscore when added to the error context sent to Faro
+ * Note this renames the "message" to "_errorMessage" in hopes of reducing conflicts of future use of that property name
  * @param err
  * @param context
  */
 function populateFetchErrorContext(err: unknown | FetchError, context: LogContext) {
   if (hasTraceId(err) && typeof err.traceId === 'string') {
-    context.traceId = err.traceId;
+    context._traceId = err.traceId;
   }
   if (hasMessage(err) && typeof err.message === 'string') {
-    // If we have already set an errorMessage, move it to another prop
-    if (context.errorMessage !== undefined) {
-      context.contextMessage = context.errorMessage;
+    // If we have a conflicting `_errorMessage`, move the original value to `_contextMessage`
+    if (context._errorMessage !== undefined) {
+      context._contextMessage = context._errorMessage;
     }
-    context.errorMessage = err.message;
+    context._errorMessage = err.message;
   }
   // @todo, if the request was cancelled, do we want to log the error?
   if (hasCancelled(err) && typeof err.cancelled === 'boolean' && context.cancelled) {
-    context.cancelled = err.cancelled.toString();
+    context._cancelled = err.cancelled.toString();
   }
   if (hasStatusText(err) && typeof err.statusText === 'string') {
-    context.statusText = err.statusText;
+    context._statusText = err.statusText;
   }
   if (hasHandled(err) && typeof err.isHandled === 'boolean') {
-    context.isHandled = err.isHandled.toString();
+    context._isHandled = err.isHandled.toString();
   }
   if (hasData(err) && typeof err === 'object') {
     try {
-      context.data = JSON.stringify(err.data);
+      context._data = JSON.stringify(err.data);
     } catch (e) {
       // do nothing
     }
@@ -89,8 +90,8 @@ const attemptFaroErr = (err: Error | FetchError | unknown, context?: LogContext)
     } else if (typeof err === 'string') {
       logError(new Error(err), context);
     } else if (err && typeof err === 'object') {
-      if (context.errorMessage) {
-        logError(new Error(context.errorMessage), context);
+      if (context._errorMessage) {
+        logError(new Error(context._errorMessage), context);
       } else {
         logError(new Error('unknown error'), context);
       }
