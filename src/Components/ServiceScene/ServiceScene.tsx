@@ -53,6 +53,8 @@ type ServiceSceneLoadingStates = {
   [name in TabNames]: boolean;
 };
 
+const placeholderServiceNameOptionalFlag = true
+
 export interface ServiceSceneCustomState {
   labelsCount?: number;
   patternsCount?: number;
@@ -126,7 +128,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
   private setSubscribeToLabelsVariable() {
     const variable = getLabelsVariable(this);
-    if (variable.state.filters.length === 0) {
+    if (variable.state.filters.length === 0 && !placeholderServiceNameOptionalFlag) {
       this.redirectToStart();
       return;
     }
@@ -138,12 +140,12 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
           this.redirectToStart();
         }
         // If we remove the service name filter, we should redirect to the start
-        if (!newState.filters.some((f) => f.key === SERVICE_NAME)) {
+        if (!placeholderServiceNameOptionalFlag && !newState.filters.some((f) => f.key === SERVICE_NAME)) {
           this.redirectToStart();
         }
 
         // Clear filters if changing service, they might not exist, or might have a different parser
-        if (prevServiceName !== newServiceName) {
+        if (!placeholderServiceNameOptionalFlag && prevServiceName !== newServiceName) {
           const fields = getFieldsVariable(this);
           fields.setState({
             filters: [],

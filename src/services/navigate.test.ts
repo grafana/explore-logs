@@ -35,8 +35,9 @@ describe('navigate', () => {
             isExact: true,
             url: '',
             params: {
-              service: serviceLabel,
-              label: drillDownLabel,
+              labelValue: serviceLabel,
+              labelName: 'service',
+              breakdownLabel: drillDownLabel,
             },
           },
         },
@@ -69,7 +70,8 @@ describe('navigate', () => {
             isExact: true,
             url: '',
             params: {
-              service: serviceLabel,
+              labelName: 'service',
+              labelValue: serviceLabel,
             },
           },
         },

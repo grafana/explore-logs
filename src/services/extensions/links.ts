@@ -1,10 +1,11 @@
-import { PluginExtensionLinkConfig, PluginExtensionPanelContext, PluginExtensionPoints } from '@grafana/data';
-import { LabelType } from 'services/fields';
-import { getMatcherFromQuery } from 'services/logql';
+import {PluginExtensionLinkConfig, PluginExtensionPanelContext, PluginExtensionPoints} from '@grafana/data';
+import {LabelType} from 'services/fields';
+import {getMatcherFromQuery} from 'services/logql';
 
-import { LokiQuery } from 'services/query';
-import { appendUrlParameter, createAppUrl, replaceSlash, setUrlParameter, UrlParameters } from 'services/routing';
-import { SERVICE_NAME } from 'services/variables';
+import {LokiQuery} from 'services/query';
+import {appendUrlParameter, createAppUrl, replaceSlash, setUrlParameter, UrlParameters} from 'services/routing';
+import {SERVICE_NAME} from 'services/variables';
+import {FilterOp} from "../filters";
 
 const title = 'Open in Explore Logs';
 const description = 'Open current query in the Explore Logs view';
@@ -40,11 +41,11 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
 
   const expr = lokiQuery.expr;
   const labelFilters = getMatcherFromQuery(expr);
-  const serviceSelector = labelFilters.find((selector) => selector.key === SERVICE_NAME);
-  if (!serviceSelector) {
+  const labelSelector = labelFilters.find((selector) => selector.key === SERVICE_NAME) ?? labelFilters.find((selector) => selector.operator === FilterOp.Equal) ;
+  if (!labelSelector) {
     return undefined;
   }
-  const serviceName = replaceSlash(serviceSelector.value);
+  const labelName = replaceSlash(labelSelector.value);
   // sort `service_name` first
   labelFilters.sort((a, b) => (a.key === SERVICE_NAME ? -1 : 1));
 
@@ -65,7 +66,9 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
     );
   }
 
+  console.log('path', createAppUrl(`/explore/${labelSelector.key}/${labelName}/logs`, params))
+
   return {
-    path: createAppUrl(`/explore/service/${serviceName}/logs`, params),
+    path: createAppUrl(`/explore/${labelSelector.key}/${labelName}/logs`, params),
   };
 }

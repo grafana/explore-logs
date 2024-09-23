@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { AdHocVariableFilter, SelectableValue } from '@grafana/data';
+import {AdHocVariableFilter, SelectableValue} from '@grafana/data';
 import {
   AdHocFiltersVariable,
   CustomVariable,
@@ -14,7 +14,6 @@ import {
   SceneObjectUrlSyncConfig,
   SceneObjectUrlValues,
   SceneRefreshPicker,
-  SceneRouteMatch,
   SceneTimePicker,
   SceneTimeRange,
   SceneVariableSet,
@@ -36,23 +35,24 @@ import {
   VAR_PATTERNS,
 } from 'services/variables';
 
-import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
-import { ServiceScene } from '../ServiceScene/ServiceScene';
-import { LayoutScene } from './LayoutScene';
-import { FilterOp } from 'services/filters';
-import { getDrilldownSlug, PageSlugs } from '../../services/routing';
-import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
-import { LoadingPlaceholder } from '@grafana/ui';
-import { config, locationService } from '@grafana/runtime';
+import {addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage} from 'services/store';
+import {ServiceScene} from '../ServiceScene/ServiceScene';
+import {LayoutScene} from './LayoutScene';
+import {FilterOp} from 'services/filters';
+import {getDrilldownSlug, PageSlugs} from '../../services/routing';
+import {ServiceSelectionScene} from '../ServiceSelectionScene/ServiceSelectionScene';
+import {LoadingPlaceholder} from '@grafana/ui';
+import {config, locationService} from '@grafana/runtime';
 import {
   renderLogQLFieldFilters,
   renderLogQLLabelFilters,
   renderLogQLMetadataFilters,
   renderPatternFilters,
 } from 'services/query';
-import { VariableHide } from '@grafana/schema';
-import { CustomConstantVariable } from '../../services/CustomConstantVariable';
-import { ToolbarScene } from './ToolbarScene';
+import {VariableHide} from '@grafana/schema';
+import {CustomConstantVariable} from '../../services/CustomConstantVariable';
+import {ToolbarScene} from './ToolbarScene';
+import {RouteMatch} from "../Pages";
 
 export interface AppliedPattern {
   pattern: string;
@@ -66,7 +66,7 @@ export interface IndexSceneState extends SceneObjectState {
   body?: LayoutScene;
   initialFilters?: AdHocVariableFilter[];
   patterns?: AppliedPattern[];
-  routeMatch?: SceneRouteMatch<{ service?: string; label?: string }>;
+  routeMatch?: RouteMatch
 }
 
 export class IndexScene extends SceneObjectBase<IndexSceneState> {
@@ -121,7 +121,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     const stateUpdate: Partial<IndexSceneState> = {};
 
     if (!this.state.contentScene) {
-      stateUpdate.contentScene = getContentScene(this.state.routeMatch?.params.label);
+      stateUpdate.contentScene = getContentScene(this.state.routeMatch?.params.breakdownLabel);
     }
 
     this.setState(stateUpdate);
