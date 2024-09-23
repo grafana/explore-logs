@@ -86,7 +86,7 @@
     "@grafana/lezer-logql": "^0.2.6",
     "@grafana/runtime": "^11.1.1",
     "@grafana/scenes": "5.9.0",
-    "@grafana/ui": "^11.1.1",
+    "@grafana/ui": "^11.3.0-197732",
     "@lezer/common": "^1.2.1",
     "@lezer/lr": "^1.4.1",
     "@hello-pangea/dnd": "^16.6.0",
