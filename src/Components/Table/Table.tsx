@@ -152,6 +152,13 @@ export const Table = (props: Props) => {
                       ? (cols: FieldNameMetaStore) => reorderColumn(cols, index, index + 1)
                       : undefined
                   }
+                  autoColumnWidths={
+                    Object.keys(columnWidthMap).length > 0
+                      ? () => {
+                          setColumnWidthMap({});
+                        }
+                      : undefined
+                  }
                 />
               </TableHeaderContextProvider>
             ),
@@ -270,7 +277,7 @@ export const Table = (props: Props) => {
               data={tableFrame}
               height={height}
               width={width}
-              onResize={debounce(onResize, 750)}
+              onResize={debounce(onResize, 100)}
             />
           </ScrollSync>
         </TableCellContextProvider>
