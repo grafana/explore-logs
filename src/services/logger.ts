@@ -48,31 +48,33 @@ const attemptFaroWarn = (msg: string, context?: LogContext) => {
  * @param context
  */
 function populateFetchErrorContext(err: unknown | FetchError, context: LogContext) {
-  if (hasTraceId(err) && typeof err.traceId === 'string') {
-    context._traceId = err.traceId;
-  }
-  if (hasMessage(err) && typeof err.message === 'string') {
-    // If we have a conflicting `_errorMessage`, move the original value to `_contextMessage`
-    if (context._errorMessage !== undefined) {
-      context._contextMessage = context._errorMessage;
+  if (typeof err === 'object' && err !== null) {
+    if (hasTraceId(err) && typeof err.traceId === 'string') {
+      context._traceId = err.traceId;
     }
-    context._errorMessage = err.message;
-  }
-  // @todo, if the request was cancelled, do we want to log the error?
-  if (hasCancelled(err) && typeof err.cancelled === 'boolean' && context.cancelled) {
-    context._cancelled = err.cancelled.toString();
-  }
-  if (hasStatusText(err) && typeof err.statusText === 'string') {
-    context._statusText = err.statusText;
-  }
-  if (hasHandled(err) && typeof err.isHandled === 'boolean') {
-    context._isHandled = err.isHandled.toString();
-  }
-  if (hasData(err) && typeof err === 'object') {
-    try {
-      context._data = JSON.stringify(err.data);
-    } catch (e) {
-      // do nothing
+    if (hasMessage(err) && typeof err.message === 'string') {
+      // If we have a conflicting `_errorMessage`, move the original value to `_contextMessage`
+      if (context._errorMessage !== undefined) {
+        context._contextMessage = context._errorMessage;
+      }
+      context._errorMessage = err.message;
+    }
+    // @todo, if the request was cancelled, do we want to log the error?
+    if (hasCancelled(err) && typeof err.cancelled === 'boolean' && context.cancelled) {
+      context._cancelled = err.cancelled.toString();
+    }
+    if (hasStatusText(err) && typeof err.statusText === 'string') {
+      context._statusText = err.statusText;
+    }
+    if (hasHandled(err) && typeof err.isHandled === 'boolean') {
+      context._isHandled = err.isHandled.toString();
+    }
+    if (hasData(err)) {
+      try {
+        context._data = JSON.stringify(err.data);
+      } catch (e) {
+        // do nothing
+      }
     }
   }
 }
@@ -99,21 +101,21 @@ const attemptFaroErr = (err: Error | FetchError | unknown, context: LogContext) 
   }
 };
 
-const hasMessage = (value: unknown): value is { message: unknown } => {
-  return typeof value === 'object' && value !== null && 'message' in value;
+const hasMessage = (value: object): value is { message: unknown } => {
+  return 'message' in value;
 };
-const hasTraceId = (value: unknown): value is { traceId: unknown } => {
-  return typeof value === 'object' && value !== null && 'traceId' in value;
+const hasTraceId = (value: object): value is { traceId: unknown } => {
+  return 'traceId' in value;
 };
-const hasStatusText = (value: unknown): value is { statusText: unknown } => {
-  return typeof value === 'object' && value !== null && 'statusText' in value;
+const hasStatusText = (value: object): value is { statusText: unknown } => {
+  return 'statusText' in value;
 };
-const hasCancelled = (value: unknown): value is { cancelled: unknown } => {
-  return typeof value === 'object' && value !== null && 'cancelled' in value;
+const hasCancelled = (value: object): value is { cancelled: unknown } => {
+  return 'cancelled' in value;
 };
-const hasData = (value: unknown): value is { data: unknown } => {
-  return typeof value === 'object' && value !== null && 'data' in value;
+const hasData = (value: object): value is { data: unknown } => {
+  return 'data' in value;
 };
-const hasHandled = (value: unknown): value is { isHandled: unknown } => {
-  return typeof value === 'object' && value !== null && 'isHandled' in value;
+const hasHandled = (value: object): value is { isHandled: unknown } => {
+  return 'isHandled' in value;
 };
