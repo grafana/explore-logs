@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {AdHocVariableFilter, SelectableValue} from '@grafana/data';
+import { AdHocVariableFilter, SelectableValue } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   CustomVariable,
@@ -35,24 +35,24 @@ import {
   VAR_PATTERNS,
 } from 'services/variables';
 
-import {addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage} from 'services/store';
-import {ServiceScene} from '../ServiceScene/ServiceScene';
-import {LayoutScene} from './LayoutScene';
-import {FilterOp} from 'services/filters';
-import {getDrilldownSlug, PageSlugs} from '../../services/routing';
-import {ServiceSelectionScene} from '../ServiceSelectionScene/ServiceSelectionScene';
-import {LoadingPlaceholder} from '@grafana/ui';
-import {config, locationService} from '@grafana/runtime';
+import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
+import { ServiceScene } from '../ServiceScene/ServiceScene';
+import { LayoutScene } from './LayoutScene';
+import { FilterOp } from 'services/filters';
+import { getDrilldownSlug, PageSlugs } from '../../services/routing';
+import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
+import { LoadingPlaceholder } from '@grafana/ui';
+import { config, locationService } from '@grafana/runtime';
 import {
   renderLogQLFieldFilters,
   renderLogQLLabelFilters,
   renderLogQLMetadataFilters,
   renderPatternFilters,
 } from 'services/query';
-import {VariableHide} from '@grafana/schema';
-import {CustomConstantVariable} from '../../services/CustomConstantVariable';
-import {ToolbarScene} from './ToolbarScene';
-import {RouteMatch} from "../Pages";
+import { VariableHide } from '@grafana/schema';
+import { CustomConstantVariable } from '../../services/CustomConstantVariable';
+import { ToolbarScene } from './ToolbarScene';
+import { OptionalRouteMatch } from '../Pages';
 
 export interface AppliedPattern {
   pattern: string;
@@ -66,7 +66,7 @@ export interface IndexSceneState extends SceneObjectState {
   body?: LayoutScene;
   initialFilters?: AdHocVariableFilter[];
   patterns?: AppliedPattern[];
-  routeMatch?: RouteMatch
+  routeMatch?: OptionalRouteMatch;
 }
 
 export class IndexScene extends SceneObjectBase<IndexSceneState> {
