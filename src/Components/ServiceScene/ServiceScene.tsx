@@ -53,7 +53,7 @@ type ServiceSceneLoadingStates = {
   [name in TabNames]: boolean;
 };
 
-const placeholderServiceNameOptionalFlag = true
+const placeholderServiceNameOptionalFlag = true;
 
 export interface ServiceSceneCustomState {
   labelsCount?: number;
@@ -141,6 +141,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         }
         // If we remove the service name filter, we should redirect to the start
         if (!placeholderServiceNameOptionalFlag && !newState.filters.some((f) => f.key === SERVICE_NAME)) {
+          this.redirectToStart();
+        } else if (placeholderServiceNameOptionalFlag && newState.filters.some((f) => f.operator !== '=')) {
           this.redirectToStart();
         }
 
