@@ -35,7 +35,6 @@ function getStyles(theme: GrafanaTheme2) {
       fontSize: theme.typography.bodySmall.fontSize,
       cursor: 'pointer',
     }),
-    customWidthIcon: css({}),
     // Hide text that overflows, had to select elements within the Checkbox component, so this is a bit fragile
     checkboxLabel: css({
       '> span': {
@@ -90,7 +89,7 @@ export function LogsTableNavField(props: {
               className={styles.customWidthWrap}
             >
               Width: {props.columnWidthMap?.[props.label]}
-              <Icon className={styles.customWidthIcon} name={'x'} />
+              <Icon name={'x'} />
             </div>
           )}
         </div>
