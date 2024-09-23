@@ -1,11 +1,11 @@
-import {PluginExtensionLinkConfig, PluginExtensionPanelContext, PluginExtensionPoints} from '@grafana/data';
-import {LabelType} from 'services/fields';
-import {getMatcherFromQuery} from 'services/logql';
+import { PluginExtensionLinkConfig, PluginExtensionPanelContext, PluginExtensionPoints } from '@grafana/data';
+import { LabelType } from 'services/fields';
+import { getMatcherFromQuery } from 'services/logql';
 
-import {LokiQuery} from 'services/query';
-import {appendUrlParameter, createAppUrl, replaceSlash, setUrlParameter, UrlParameters} from 'services/routing';
-import {SERVICE_NAME} from 'services/variables';
-import {FilterOp} from "../filters";
+import { LokiQuery } from 'services/query';
+import { appendUrlParameter, createAppUrl, replaceSlash, setUrlParameter, UrlParameters } from 'services/routing';
+import { SERVICE_NAME } from 'services/variables';
+import { FilterOp } from '../filters';
 
 const title = 'Open in Explore Logs';
 const description = 'Open current query in the Explore Logs view';
@@ -41,7 +41,9 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
 
   const expr = lokiQuery.expr;
   const labelFilters = getMatcherFromQuery(expr);
-  const labelSelector = labelFilters.find((selector) => selector.key === SERVICE_NAME) ?? labelFilters.find((selector) => selector.operator === FilterOp.Equal) ;
+  const labelSelector =
+    labelFilters.find((selector) => selector.key === SERVICE_NAME) ??
+    labelFilters.find((selector) => selector.operator === FilterOp.Equal);
   if (!labelSelector) {
     return undefined;
   }
@@ -65,9 +67,6 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
       params
     );
   }
-
-  console.log('path', createAppUrl(`/explore/${labelSelector.key}/${labelName}/logs`, params))
-
   return {
     path: createAppUrl(`/explore/${labelSelector.key}/${labelName}/logs`, params),
   };

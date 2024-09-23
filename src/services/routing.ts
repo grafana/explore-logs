@@ -1,5 +1,5 @@
 import pluginJson from '../plugin.json';
-import {UrlQueryMap, urlUtil} from '@grafana/data';
+import { UrlQueryMap, urlUtil } from '@grafana/data';
 import {
   VAR_DATASOURCE,
   VAR_FIELD_GROUP_BY,
@@ -10,8 +10,8 @@ import {
   VAR_LINE_FILTER,
   VAR_PATTERNS,
 } from './variables';
-import {locationService} from '@grafana/runtime';
-import {RouteMatch, RouteProps} from "../Components/Pages";
+import { locationService } from '@grafana/runtime';
+import { RouteMatch, RouteProps } from '../Components/Pages';
 
 export const PLUGIN_ID = pluginJson.id;
 export const PLUGIN_BASE_URL = `/a/${PLUGIN_ID}`;
@@ -42,18 +42,25 @@ export function replaceSlash(parameter: string): string {
 
 export const ROUTES = {
   explore: () => prefixRoute(PageSlugs.explore),
-  logs: (labelValue: string, labelName = 'service') => prefixRoute(`${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${PageSlugs.logs}`),
-  fields: (labelValue: string, labelName = 'service') => prefixRoute(`${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${PageSlugs.fields}`),
+  logs: (labelValue: string, labelName = 'service') =>
+    prefixRoute(`${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${PageSlugs.logs}`),
+  fields: (labelValue: string, labelName = 'service') =>
+    prefixRoute(`${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${PageSlugs.fields}`),
   patterns: (labelValue: string, labelName = 'service') =>
     prefixRoute(`${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${PageSlugs.patterns}`),
-  labels: (labelValue: string, labelName = 'service') => prefixRoute(`${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${PageSlugs.labels}`),
+  labels: (labelValue: string, labelName = 'service') =>
+    prefixRoute(`${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${PageSlugs.labels}`),
 };
 
 export const SUB_ROUTES = {
   label: (labelValue: string, labelName = 'service', breakdownLabelName: string) =>
-    prefixRoute(`${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${ValueSlugs.label}/${breakdownLabelName}`),
+    prefixRoute(
+      `${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${ValueSlugs.label}/${breakdownLabelName}`
+    ),
   field: (labelValue: string, labelName = 'service', breakdownLabelName: string) =>
-    prefixRoute(`${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${ValueSlugs.field}/${breakdownLabelName}`),
+    prefixRoute(
+      `${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${ValueSlugs.field}/${breakdownLabelName}`
+    ),
 };
 
 export const ROUTE_DEFINITIONS: Record<keyof typeof PageSlugs, string> = {
@@ -103,6 +110,17 @@ export function getDrilldownSlug() {
   const location = locationService.getLocation();
   const slug = location.pathname.slice(location.pathname.lastIndexOf('/') + 1, location.pathname.length);
   return slug as PageSlugs;
+}
+
+export function getPrimaryLabelFromUrl(): RouteProps {
+  const location = locationService.getLocation();
+  const startOfUrl = '/a/grafana-lokiexplore-app/explore';
+  const endOfUrl = location.pathname.slice(location.pathname.indexOf(startOfUrl) + startOfUrl.length + 1);
+  const routeParams = endOfUrl.split('/');
+  const labelName = routeParams[0];
+  const labelValue = routeParams[1];
+  const breakdownLabel = routeParams?.[3];
+  return { labelName, labelValue, breakdownLabel };
 }
 
 export function getDrilldownValueSlug() {

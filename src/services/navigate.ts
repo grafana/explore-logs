@@ -14,7 +14,7 @@ import {
 } from './routing';
 import { sceneGraph } from '@grafana/scenes';
 import { UrlQueryMap, urlUtil } from '@grafana/data';
-import {logger} from "./logger";
+import { logger } from './logger';
 
 function buildValueBreakdownUrl(label: string, newPath: ValueSlugs, labelValue: string, labelName = 'service') {
   if (label === ALL_VARIABLE_VALUE && newPath === ValueSlugs.label) {
@@ -22,7 +22,9 @@ function buildValueBreakdownUrl(label: string, newPath: ValueSlugs, labelValue: 
   } else if (label === ALL_VARIABLE_VALUE && newPath === ValueSlugs.field) {
     return prefixRoute(`${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${PageSlugs.fields}`);
   } else {
-    return prefixRoute(`${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${newPath}/${replaceSlash(label)}`);
+    return prefixRoute(
+      `${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${newPath}/${replaceSlash(label)}`
+    );
   }
 }
 
@@ -54,7 +56,7 @@ export function navigateToValueBreakdown(newPath: ValueSlugs, label: string, ser
 
   if (indexScene) {
     const urlLabelName = indexScene.state.routeMatch?.params.labelName;
-    const urlLabelValue = indexScene.state.routeMatch?.params.labelValue
+    const urlLabelValue = indexScene.state.routeMatch?.params.labelValue;
     if (urlLabelName && urlLabelValue) {
       let urlPath = buildValueBreakdownUrl(label, newPath, urlLabelValue, urlLabelName);
       const fullUrl = buildDrilldownPageUrl(urlPath);
@@ -67,11 +69,11 @@ export function navigateToValueBreakdown(newPath: ValueSlugs, label: string, ser
 
       locationService.push(fullUrl);
       return;
-    }else{
+    } else {
       logger.warn('missing url params', {
         urlLabelName: urlLabelName ?? '',
         urlLabelValue: urlLabelValue ?? '',
-      })
+      });
     }
   }
 }
@@ -110,11 +112,6 @@ export function navigateToDrilldownPage(path: PageSlugs, serviceScene: ServiceSc
 
     locationService.push(breakdownUrl);
     return;
-  }else{
-
-    console.log('urlLabelValue', urlLabelValue)
-    console.log('indexScene.state.routeMatch', indexScene.state.routeMatch)
-    logger.warn('navigateToDrilldownPage missing urlLabelValue')
   }
 }
 

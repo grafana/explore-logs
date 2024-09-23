@@ -33,7 +33,6 @@ export type OptionalRouteProps = Optional<RouteProps, 'labelName' | 'labelValue'
 export type OptionalRouteMatch = SceneRouteMatch<OptionalRouteProps>;
 
 function getServicesScene(routeMatch: OptionalRouteMatch) {
-  console.log('getServicesScene', routeMatch);
   const DEFAULT_TIME_RANGE = { from: 'now-15m', to: 'now' };
   return new EmbeddedScene({
     body: new IndexScene({
@@ -119,12 +118,6 @@ export function makeBreakdownPage(
   slug: ParentDrilldownSlugs
 ): SceneAppPage {
   const { labelName, labelValue } = extractValuesFromRoute(routeMatch);
-  console.log('makeBreakdownPage', {
-    routeMatch,
-    parent,
-    slug,
-    labelName,
-  });
   return new SceneAppPage({
     title: slugToBreadcrumbTitle(slug),
     layout: PageLayoutType.Custom,
@@ -140,11 +133,6 @@ export function makeBreakdownValuePage(
   parent: SceneAppPageLike,
   slug: ChildDrilldownSlugs
 ): SceneAppPage {
-  console.log('makeBreakdownValuePage', {
-    routeMatch,
-    parent,
-    slug,
-  });
   const { labelName, labelValue, breakdownLabel } = extractValuesFromRoute(routeMatch);
 
   if (!breakdownLabel) {

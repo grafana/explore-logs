@@ -18,7 +18,14 @@ import {
 import { LoadingPlaceholder } from '@grafana/ui';
 import { getQueryRunner, getResourceQueryRunner } from 'services/panel';
 import { buildDataQuery, buildResourceQuery } from 'services/query';
-import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, ValueSlugs } from 'services/routing';
+import {
+  getDrilldownSlug,
+  getDrilldownValueSlug,
+  getPrimaryLabelFromUrl,
+  PageSlugs,
+  replaceSlash,
+  ValueSlugs,
+} from 'services/routing';
 import {
   getDataSourceVariable,
   getFieldsVariable,
@@ -36,11 +43,12 @@ import {
   VAR_PATTERNS,
 } from 'services/variables';
 import { getMetadataService } from '../../services/metadata';
-import { navigateToIndex } from '../../services/navigate';
+import { navigateToDrilldownPage, navigateToIndex } from '../../services/navigate';
 import { areArraysEqual } from '../../services/comparison';
 import { ActionBarScene } from './ActionBarScene';
 import { breakdownViewsDefinitions, TabNames, valueBreakdownViews } from './BreakdownViews';
 import { logger } from '../../services/logger';
+import { IndexScene } from '../IndexScene/IndexScene';
 
 const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 const PATTERNS_QUERY_REFID = 'patterns';
@@ -142,8 +150,33 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         // If we remove the service name filter, we should redirect to the start
         if (!placeholderServiceNameOptionalFlag && !newState.filters.some((f) => f.key === SERVICE_NAME)) {
           this.redirectToStart();
-        } else if (placeholderServiceNameOptionalFlag && newState.filters.some((f) => f.operator !== '=')) {
-          this.redirectToStart();
+        } else if (placeholderServiceNameOptionalFlag) {
+          const { labelName } = getPrimaryLabelFromUrl();
+          const indexScene = sceneGraph.getAncestor(this, IndexScene);
+          const prevRouteMatch = indexScene.state.routeMatch;
+
+          // The label used in the URL is no longer active, pick a new one
+          if (!newState.filters.some((f) => f.key === labelName)) {
+            const newPrimaryLabel = newState.filters.find((f) => f.operator === '=');
+            if (newPrimaryLabel) {
+              indexScene.setState({
+                routeMatch: {
+                  ...prevRouteMatch,
+                  params: {
+                    ...prevRouteMatch?.params,
+                    labelName: newPrimaryLabel.key,
+                    labelValue: replaceSlash(newPrimaryLabel.value),
+                  },
+                  url: prevRouteMatch?.url ?? '',
+                  path: prevRouteMatch?.path ?? '',
+                  isExact: prevRouteMatch?.isExact ?? true,
+                },
+              });
+              navigateToDrilldownPage(getDrilldownSlug(), this);
+            } else {
+              this.redirectToStart();
+            }
+          }
         }
 
         // Clear filters if changing service, they might not exist, or might have a different parser
