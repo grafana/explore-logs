@@ -17,7 +17,7 @@ This page address common issues when getting started and using Explore Logs.
 
 ## Ensure Loki is properly configured
 
-To use Explore Logs, you need to have Loki properly configured. You can find full instructions on how to do this when [installing Explore Logs]({{< relref "../access" >}}).
+To use Explore Logs, you need to have Loki properly configured. You can find full instructions on how to do this when [installing Explore Logs](https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/access/).
 
 ## There are no services
 
@@ -42,11 +42,11 @@ To learn more about Labels, refer to the [Loki labels documentation](https://gra
 
 ## There are no patterns
 
-Patterns are ephemeral and will only be available for the last 3 hours.
+Patterns are ephemeral and will only be available for the previous three hours.
 
 If you aren't getting any patterns, you can try the following fixes:
 
-1. Ensure pattern extraction is enabled by setting `--pattern-ingester.enabled=true` in your Loki config. [Learn about other necessary config](../get-started/#install-using-grafana-cli).
+1. Ensure pattern extraction is enabled by setting `--pattern-ingester.enabled=true` in your Loki config. [Learn about other necessary config](https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/access/).
 1. It is possible that no patterns were detected, although this is rare - please [open an issue on GitHub](https://github.com/grafana/explore-logs/issues/new) or [get in touch privately](https://forms.gle/1sYWCTPvD72T1dPH9) so we can see what's going on.
 
 ## I cannot find something

@@ -1,6 +1,6 @@
 ---
 canonical: https://grafana.com/docs/grafana/latest/explore/simplified-exploration/logs/labels-and-fields/
-description: Learn how breaking logs down by Labels and Fields can help you find the signal in the noise.
+description: Learn how breaking logs down by labels and fields can help you find the signal in the noise.
 keywords:
   - Logs
   - Explore
@@ -31,21 +31,21 @@ The type of data being expressed in a label or field may require different treat
 To explore labels with your own data, follow these steps:
 
 1. From the Grafana main menu, select **Explore** > **Logs**.
-1. Click the **Select** button for the **Service** you want to explore. ([No services?]({{< relref "../troubleshooting#there-are-no-services" >}}))
+1. Click the **Select** button for the **Service** you want to explore. ([No services?](https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/troubleshooting/#there-are-no-services))
 1. Click the **Labels** tab.
-1. Browse the labels detected for this service. ([No labels?]({{< relref "../troubleshooting#there-are-no-labels" >}}))
+1. Browse the labels detected for this service. ([No labels?](https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/troubleshooting/#there-are-no-labels))
 1. Look for an interesting label and click the **Select** button.
 
-You will see a selection of visualizations showing the volume of each one.
+You will see a selection of visualizations showing the volume of each label.
 
-These visualizations are great for;
+These visualizations are great for:
 
 - Spotting unexpected spikes in log volume.
 - Noticing dips or outages in your services.
 - Understanding the distribution of log lines across your labels.
 - Identifying labels that might be useful for filtering or grouping your logs.
 
-You also have a range of [sorting and ordering options]({{< relref "../ordering" >}}) to help you focus on the most important areas.
+You also have a range of [sorting and ordering options](https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/ordering/) to help you focus on the most important areas.
 
 You can repeat the same steps in the **Fields** tab to see fields that were extracted from your log lines.
 
@@ -53,4 +53,4 @@ You can repeat the same steps in the **Fields** tab to see fields that were extr
 
 ## What next?
 
-Learn about how [Log patterns]({{< relref "../patterns" >}}) can help you deal with different types of log lines in bulk.
+Learn about how [Log patterns](https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/patterns/) can help you deal with different types of log lines in bulk.
