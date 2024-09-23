@@ -1,5 +1,5 @@
 import { LogContext } from '@grafana/faro-web-sdk';
-import { logError, logInfo, logWarning } from '@grafana/runtime';
+import { FetchError, logError, logInfo, logWarning } from '@grafana/runtime';
 import pluginJson from '../plugin.json';
 
 const defaultContext = {
@@ -40,16 +40,86 @@ const attemptFaroWarn = (msg: string, context?: LogContext) => {
   }
 };
 
-const attemptFaroErr = (err: Error | unknown, context?: LogContext) => {
+/**
+ * Checks unknown error for properties from FetchError and adds them to the context
+ * Note this renames the "message" to "errorMessage" in hopes of reducing conflicts of future use of that property name
+ * @param err
+ * @param context
+ */
+function populateFetchErrorContext(err: unknown | FetchError, context: LogContext) {
+  if (hasTraceId(err) && typeof err.traceId === 'string') {
+    context.traceId = err.traceId;
+  }
+  if (hasMessage(err) && typeof err.message === 'string') {
+    // If we have already set an errorMessage, move it to another prop
+    if (context.errorMessage !== undefined) {
+      context.contextMessage = context.errorMessage;
+    }
+    context.errorMessage = err.message;
+  }
+  // @todo, if the request was cancelled, do we want to log the error?
+  if (hasCancelled(err) && typeof err.cancelled === 'boolean' && context.cancelled) {
+    context.cancelled = err.cancelled.toString();
+  }
+  if (hasStatusText(err) && typeof err.statusText === 'string') {
+    context.statusText = err.statusText;
+  }
+  if (hasHandled(err) && typeof err.isHandled === 'boolean') {
+    context.isHandled = err.isHandled.toString();
+  }
+  if (hasData(err) && typeof err === 'object') {
+    try {
+      context.data = JSON.stringify(err.data);
+    } catch (e) {
+      // do nothing
+    }
+  }
+}
+
+const attemptFaroErr = (err: Error | FetchError | unknown, context?: LogContext) => {
   try {
+    if (context === undefined) {
+      context = {};
+    }
+
+    populateFetchErrorContext(err, context);
+
     if (err instanceof Error) {
       logError(err, context);
     } else if (typeof err === 'string') {
       logError(new Error(err), context);
+    } else if (err && typeof err === 'object') {
+      if (context.errorMessage) {
+        logError(new Error(context.errorMessage), context);
+      } else {
+        logError(new Error('unknown error'), context);
+      }
     } else {
       logError(new Error('unknown error'), context);
     }
   } catch (e) {
     console.error('Failed to log faro error!', { err, context });
   }
+};
+
+const hasMessage = (value: unknown): value is { message: unknown } => {
+  return typeof value === 'object' && value !== null && 'message' in value;
+};
+
+const hasTraceId = (value: unknown): value is { traceId: unknown } => {
+  return typeof value === 'object' && value !== null && 'traceId' in value;
+};
+
+const hasStatusText = (value: unknown): value is { statusText: unknown } => {
+  return typeof value === 'object' && value !== null && 'statusText' in value;
+};
+const hasCancelled = (value: unknown): value is { cancelled: unknown } => {
+  return typeof value === 'object' && value !== null && 'cancelled' in value;
+};
+
+const hasData = (value: unknown): value is { data: unknown } => {
+  return typeof value === 'object' && value !== null && 'data' in value;
+};
+const hasHandled = (value: unknown): value is { isHandled: unknown } => {
+  return typeof value === 'object' && value !== null && 'isHandled' in value;
 };
