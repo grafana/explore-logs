@@ -106,18 +106,15 @@ const attemptFaroErr = (err: Error | FetchError | unknown, context?: LogContext)
 const hasMessage = (value: unknown): value is { message: unknown } => {
   return typeof value === 'object' && value !== null && 'message' in value;
 };
-
 const hasTraceId = (value: unknown): value is { traceId: unknown } => {
   return typeof value === 'object' && value !== null && 'traceId' in value;
 };
-
 const hasStatusText = (value: unknown): value is { statusText: unknown } => {
   return typeof value === 'object' && value !== null && 'statusText' in value;
 };
 const hasCancelled = (value: unknown): value is { cancelled: unknown } => {
   return typeof value === 'object' && value !== null && 'cancelled' in value;
 };
-
 const hasData = (value: unknown): value is { data: unknown } => {
   return typeof value === 'object' && value !== null && 'data' in value;
 };
