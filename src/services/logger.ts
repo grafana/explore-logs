@@ -1,9 +1,11 @@
 import { LogContext } from '@grafana/faro-web-sdk';
 import { logError, logInfo, logWarning } from '@grafana/runtime';
 import pluginJson from '../plugin.json';
+import packageJson from '../../package.json';
 
 const defaultContext = {
   app: pluginJson.id,
+  version: packageJson.version,
 };
 
 export const logger = {
