@@ -40,7 +40,7 @@ import {
   VAR_LABELS,
   VAR_LABELS_EXPR,
   VAR_LEVELS,
-  VAR_PATTERNS,
+  VAR_PATTERNS, VAR_SERVICE,
 } from 'services/variables';
 import { getMetadataService } from '../../services/metadata';
 import { navigateToDrilldownPage, navigateToIndex } from '../../services/navigate';
@@ -151,7 +151,12 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         if (!placeholderServiceNameOptionalFlag && !newState.filters.some((f) => f.key === SERVICE_NAME)) {
           this.redirectToStart();
         } else if (placeholderServiceNameOptionalFlag) {
-          const { labelName } = getPrimaryLabelFromUrl();
+          let { labelName } = getPrimaryLabelFromUrl();
+          // Keep old URLs
+          if(labelName === VAR_SERVICE){
+            labelName = SERVICE_NAME
+          }
+          console.log('labelName', labelName)
           const indexScene = sceneGraph.getAncestor(this, IndexScene);
           const prevRouteMatch = indexScene.state.routeMatch;
 
@@ -172,10 +177,13 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
                   isExact: prevRouteMatch?.isExact ?? true,
                 },
               });
+              // @todo what if we're on a value breakdown?
               navigateToDrilldownPage(getDrilldownSlug(), this);
             } else {
               this.redirectToStart();
             }
+          }else{
+            this.redirectToStart();
           }
         }
 
@@ -191,6 +199,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private redirectToStart() {
+    console.log('reidrect to start')
     // Clear ongoing queries
     this.setState({
       $data: undefined,

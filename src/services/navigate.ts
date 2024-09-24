@@ -110,6 +110,8 @@ export function navigateToDrilldownPage(path: PageSlugs, serviceScene: ServiceSc
       metadataService.setServiceSceneState(serviceScene.state);
     }
 
+    console.log('breakdownUrl', breakdownUrl)
+
     locationService.push(breakdownUrl);
     return;
   }

@@ -1,6 +1,7 @@
 import pluginJson from '../plugin.json';
 import { UrlQueryMap, urlUtil } from '@grafana/data';
 import {
+  SERVICE_NAME,
   VAR_DATASOURCE,
   VAR_FIELD_GROUP_BY,
   VAR_FIELDS,
@@ -117,9 +118,13 @@ export function getPrimaryLabelFromUrl(): RouteProps {
   const startOfUrl = '/a/grafana-lokiexplore-app/explore';
   const endOfUrl = location.pathname.slice(location.pathname.indexOf(startOfUrl) + startOfUrl.length + 1);
   const routeParams = endOfUrl.split('/');
-  const labelName = routeParams[0];
+  let labelName = routeParams[0];
   const labelValue = routeParams[1];
   const breakdownLabel = routeParams?.[3];
+  // Keep urls the same
+  if(labelName === SERVICE_NAME){
+    labelName = 'service'
+  }
   return { labelName, labelValue, breakdownLabel };
 }
 
