@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 
-import { getUrlSyncManager, SceneApp, useSceneApp } from '@grafana/scenes';
+import { SceneApp, useSceneApp } from '@grafana/scenes';
 import { config } from '@grafana/runtime';
 import { Redirect } from 'react-router-dom';
 import { makeIndexPage, makeRedirectPage } from './Pages';
@@ -20,7 +20,6 @@ export function LogExplorationView() {
 
   useEffect(() => {
     if (!isInitialized) {
-      getUrlSyncManager().initSync(scene);
       setIsInitialized(true);
     }
   }, [scene, isInitialized]);
