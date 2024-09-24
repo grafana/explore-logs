@@ -16,7 +16,7 @@ weight: 400
 
 # Sorting and ordering
 
-Some pages in Explore Logs can display a large number of graphs.  You may want to sort the graphs differently, depending on what you're looking for. These pages let you modify the default sort oder using the **Sort by** menu in the top right toolbar.
+Some pages in Explore Logs can display a large number of graphs. You may want to sort the graphs differently, depending on what you're looking for. These pages let you modify the default sort oder using the **Sort by** menu in the top right toolbar.
 
 You can use the **Asc/Desc** menu to change the direction of the sort.
 

@@ -61,7 +61,7 @@ GF_INSTALL_PLUGINS=https://storage.googleapis.com/integration-artifacts/grafana-
 
 ### Install using grafana-cli
 
-You can install Explore Logs in your own Grafana instance using `grafana-cli`.  For more information about `grafana-cli` refer to the [documentation](https://grafana.com/docs/grafana/latest/cli/.)
+You can install Explore Logs in your own Grafana instance using `grafana-cli`. For more information about `grafana-cli` refer to the [documentation](https://grafana.com/docs/grafana/latest/cli/.)
 
 Using `grafana-cli` run the following command:
 
