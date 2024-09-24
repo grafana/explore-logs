@@ -1,16 +1,12 @@
 import { urlUtil } from '@grafana/data';
 import { config, DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
-import { getUrlSyncManager, sceneGraph, SceneObject, SceneObjectUrlValues } from '@grafana/scenes';
+import { sceneGraph, SceneObject, SceneObjectUrlValues } from '@grafana/scenes';
 import { LOG_STREAM_SELECTOR_EXPR, VAR_DATASOURCE_EXPR, VAR_LABELS_EXPR } from './variables';
 import { EXPLORATIONS_ROUTE } from './routing';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
 
 export function getExplorationFor(model: SceneObject): IndexScene {
   return sceneGraph.getAncestor(model, IndexScene);
-}
-export function getUrlForExploration(exploration: IndexScene) {
-  const params = getUrlSyncManager().getUrlState(exploration);
-  return getUrlForValues(params);
 }
 
 export function getUrlForValues(values: SceneObjectUrlValues) {

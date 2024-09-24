@@ -6,6 +6,7 @@ import { runShardSplitQuery } from './shardQuerySplitting';
 import { DataSourceWithBackend } from '@grafana/runtime';
 
 import { LokiQuery } from './query';
+import { getMockFrames } from './combineResponses.test';
 
 jest.mock('uuid', () => ({
   v4: jest.fn().mockReturnValue('uuid'),
@@ -49,9 +50,10 @@ describe('runShardSplitQuery()', () => {
     request = createRequest([{ expr: 'count_over_time($SELECTOR[1m])', refId: 'A' }]);
     datasource = createLokiDatasource();
     datasource.languageProvider.fetchLabelValues.mockResolvedValue(['1', '10', '2', '20', '3']);
+    const { metricFrameA } = getMockFrames();
     // @ts-expect-error
-    jest.spyOn(datasource, 'runQuery').mockReturnValue(of({ data: [] }));
-    jest.spyOn(datasource, 'query').mockReturnValue(of({ data: [] }));
+    jest.spyOn(datasource, 'runQuery').mockReturnValue(of({ data: [metricFrameA] }));
+    jest.spyOn(datasource, 'query').mockReturnValue(of({ data: [metricFrameA] }));
   });
 
   test('Splits datasource queries', async () => {
@@ -59,6 +61,17 @@ describe('runShardSplitQuery()', () => {
       // 5 shards, 3 groups + empty shard group, 4 requests
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledTimes(4);
+    });
+  });
+
+  test('Does not report missing data while streaming', async () => {
+    // @ts-expect-error
+    jest.spyOn(datasource, 'runQuery').mockReturnValue(of({ status: 200 }));
+    await expect(runShardSplitQuery(datasource, request)).toEmitValuesWith((response: DataQueryResponse[]) => {
+      // 4 shard requests
+      // @ts-expect-error
+      expect(datasource.runQuery).toHaveBeenCalledTimes(4);
+      expect(response).toHaveLength(1);
     });
   });
 
