@@ -57,8 +57,8 @@ export class TimeSeriesLimitSeriesTitleItemScene extends SceneObjectBase<TimeSer
     }
 
     //@todo is there a better way to get the total number of series before transforming then accessing a private prop?
-    const prevData: PanelData = $data['_prevDataFromSource'];
-    const totalLength = prevData.series.length;
+    const prevData: PanelData | undefined = $data['_prevDataFromSource'];
+    const totalLength = prevData?.series.length;
 
     return (
       <div key="disclaimer" className={styles.timeSeriesDisclaimer}>
