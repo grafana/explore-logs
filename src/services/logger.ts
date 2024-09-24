@@ -91,7 +91,7 @@ const attemptFaroErr = (err: Error | FetchError | unknown, context: LogContext) 
       if (context._errorMessage) {
         logError(new Error(context._errorMessage), context);
       } else {
-        logError(new Error('unknown error'), context);
+        logError(new Error('unknown error object'), context);
       }
     } else {
       logError(new Error('unknown error'), context);
