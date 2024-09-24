@@ -6,7 +6,18 @@ loki.write "default" {
 	endpoint {
 		url = "http://host.docker.internal:3100/loki/api/v1/push"
 	}
+}
 
+loki.process "logs_process_client" {
+    forward_to = [loki.write.default.receiver]
+
+    stage.logfmt {
+        mapping = { "kind" = "", "service_name" = "", "app" = "" }
+    }
+
+    stage.labels {
+        values = { "kind" = "kind", "service_name" = "service_name", "app" = "app"}
+    }
 }
 
 logging {
