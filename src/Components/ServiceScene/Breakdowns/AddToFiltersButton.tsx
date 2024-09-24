@@ -91,7 +91,7 @@ export function addToFilters(
         key,
         operator: operator === 'exclude' ? FilterOp.NotEqual : FilterOp.Equal,
         value: valueObject ? valueObject : value,
-        valueLabel: value,
+        valueLabels: [value],
       },
     ];
   }
