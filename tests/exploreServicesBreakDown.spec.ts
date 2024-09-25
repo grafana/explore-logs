@@ -10,12 +10,11 @@ const labelName = 'cluster';
 test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;
 
-  test.beforeEach(async ({ page }) => {
-    explorePage = new ExplorePage(page);
+  test.beforeEach(async ({ page }, testInfo) => {
+    explorePage = new ExplorePage(page, testInfo);
 
     await explorePage.setExtraTallViewportSize();
     await explorePage.clearLocalStorage();
-    await explorePage.measurePerformanceStart();
     await explorePage.gotoServicesBreakdown();
     explorePage.blockAllQueriesExcept({
       refIds: ['logsPanelQuery', fieldName],
@@ -26,8 +25,7 @@ test.describe('explore services breakdown page', () => {
 
   test.afterEach(async ({ page }) => {
     await explorePage.unroute();
-    await explorePage.measurePerformanceStop();
-    explorePage.echoConsoleLogs();
+    explorePage.echoConsoleLogsOnRetry();
   });
 
   test('should filter logs panel on search for broadcast field', async ({ page }) => {

@@ -1,4 +1,4 @@
-import { ConsoleMessage, Locator, Page } from '@playwright/test';
+import { ConsoleMessage, Locator, Page, TestInfo } from '@playwright/test';
 import pluginJson from '../../src/plugin.json';
 import { testIds } from '../../src/services/testIds';
 import { expect } from '@grafana/plugin-e2e';
@@ -17,7 +17,7 @@ export class ExplorePage {
   refreshPicker: Locator;
   logs: Array<{ msg: ConsoleMessage; type: string }> = [];
 
-  constructor(public readonly page: Page) {
+  constructor(public readonly page: Page, public readonly testInfo: TestInfo) {
     this.firstServicePageSelect = this.page.getByText('Select').first();
     this.logVolumeGraph = this.page.getByText('Log volume');
     this.servicesSearch = this.page.getByTestId(testIds.exploreServiceSearch.search);
@@ -32,8 +32,10 @@ export class ExplorePage {
     });
   }
 
-  echoConsoleLogs() {
-    console.log('logs', this.logs);
+  echoConsoleLogsOnRetry() {
+    if (this.testInfo.retry > 0) {
+      console.log('logs', this.logs);
+    }
   }
 
   /**

@@ -8,19 +8,17 @@ import { ConsoleMessage } from '@playwright/test';
 test.describe('explore services page', () => {
   let explorePage: ExplorePage;
 
-  test.beforeEach(async ({ page }) => {
-    explorePage = new ExplorePage(page);
+  test.beforeEach(async ({ page }, testInfo) => {
+    explorePage = new ExplorePage(page, testInfo);
     await explorePage.setDefaultViewportSize();
     await explorePage.clearLocalStorage();
-    await explorePage.measurePerformanceStart();
     await explorePage.gotoServices();
     explorePage.captureConsoleLogs();
   });
 
   test.afterEach(async ({ page }) => {
     await explorePage.unroute();
-    await explorePage.measurePerformanceStop();
-    explorePage.echoConsoleLogs();
+    explorePage.echoConsoleLogsOnRetry();
   });
 
   test('should filter service labels on search', async ({ page }) => {

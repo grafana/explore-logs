@@ -7,11 +7,10 @@ const fieldName = 'method';
 test.describe('explore nginx-json breakdown pages ', () => {
   let explorePage: ExplorePage;
 
-  test.beforeEach(async ({ page }) => {
-    explorePage = new ExplorePage(page);
+  test.beforeEach(async ({ page }, testInfo) => {
+    explorePage = new ExplorePage(page, testInfo);
     await explorePage.setExtraTallViewportSize();
     await explorePage.clearLocalStorage();
-    await explorePage.measurePerformanceStart();
     await explorePage.gotoServicesBreakdown('nginx-json');
     explorePage.blockAllQueriesExcept({
       refIds: ['logsPanelQuery', fieldName],
@@ -21,8 +20,7 @@ test.describe('explore nginx-json breakdown pages ', () => {
 
   test.afterEach(async ({ page }) => {
     await explorePage.unroute();
-    await explorePage.measurePerformanceStop();
-    explorePage.echoConsoleLogs();
+    explorePage.echoConsoleLogsOnRetry();
   });
 
   test(`should exclude ${fieldName}, request should contain json`, async ({ page }) => {
