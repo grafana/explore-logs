@@ -69,7 +69,7 @@ With Explore Logs, you get the same powerful insights, by just viewing and click
 Our new experiences are in their early stages, and we'd love to hear your feedback.
 
 - You'll find a **Give feedback** link on each Explore Logs page.
-- You can also fill out [this Google form](https://forms.gle/1sYWCTPvD72T1dPH9) to send your thoughts directly to the team building the apps.
+- You can also fill out [this Google form](https://forms.gle/1sYWCTPvD72T1dPH9) to send your thoughts directly to the team building Explore Logs.
 
 ## What's next?
 

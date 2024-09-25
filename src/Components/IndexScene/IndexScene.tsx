@@ -5,7 +5,6 @@ import {
   AdHocFiltersVariable,
   CustomVariable,
   DataSourceVariable,
-  getUrlSyncManager,
   SceneComponentProps,
   SceneControlsSpacer,
   SceneObject,
@@ -135,10 +134,6 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
         this.updatePatterns(newState, getPatternsVariable(this));
       })
     );
-
-    return () => {
-      getUrlSyncManager().cleanUp(this);
-    };
   }
 
   /**
