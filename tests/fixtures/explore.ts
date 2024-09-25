@@ -38,29 +38,6 @@ export class ExplorePage {
     }
   }
 
-  /**
-   * Don't know how accurate or helpful these are yet, but figured it won't hurt to log the results for now as we continue to iterate on performance measurement
-   */
-  async measurePerformanceStart() {
-    await this.page.evaluate(() => {
-      window.performance.mark('start');
-    });
-  }
-
-  async measurePerformanceStop() {
-    const resourceUsage = await this.page.evaluate(() => {
-      return {
-        cpuUsage: window.performance.now(), // Example CPU usage metric
-        //@ts-expect-error
-        usedJSHeapSize: window.performance?.memory?.usedJSHeapSize,
-        //@ts-expect-error
-        totalJSHeapSize: window.performance?.memory?.totalJSHeapSize,
-      };
-    });
-
-    console.log('Resource usage:', resourceUsage);
-  }
-
   async clearLocalStorage() {
     await this.page.evaluate(() => window.localStorage.clear());
   }
