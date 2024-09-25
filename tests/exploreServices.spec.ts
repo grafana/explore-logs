@@ -3,19 +3,22 @@ import { ExplorePage } from './fixtures/explore';
 import { testIds } from '../src/services/testIds';
 import { mockVolumeApiResponse } from './mocks/mockVolumeApiResponse';
 import { mockLabelsResponse } from './mocks/mockLabelsResponse';
+import { ConsoleMessage } from '@playwright/test';
 
 test.describe('explore services page', () => {
   let explorePage: ExplorePage;
 
-  test.beforeEach(async ({ page }) => {
-    explorePage = new ExplorePage(page);
+  test.beforeEach(async ({ page }, testInfo) => {
+    explorePage = new ExplorePage(page, testInfo);
     await explorePage.setDefaultViewportSize();
-    await page.evaluate(() => window.localStorage.clear());
+    await explorePage.clearLocalStorage();
     await explorePage.gotoServices();
+    explorePage.captureConsoleLogs();
   });
 
   test.afterEach(async ({ page }) => {
-    await page.unrouteAll({ behavior: 'ignoreErrors' });
+    await explorePage.unroute();
+    explorePage.echoConsoleLogsOnRetry();
   });
 
   test('should filter service labels on search', async ({ page }) => {
