@@ -27,6 +27,7 @@ import {
   ValueSlugs,
 } from 'services/routing';
 import {
+  EMPTY_VARIABLE_VALUE,
   getDataSourceVariable,
   getFieldsVariable,
   getLabelsVariable,
@@ -40,10 +41,11 @@ import {
   VAR_LABELS,
   VAR_LABELS_EXPR,
   VAR_LEVELS,
-  VAR_PATTERNS, VAR_SERVICE,
+  VAR_PATTERNS,
+  VAR_SERVICE,
 } from 'services/variables';
 import { getMetadataService } from '../../services/metadata';
-import { navigateToDrilldownPage, navigateToIndex } from '../../services/navigate';
+import { navigateToDrilldownPage, navigateToIndex, navigateToValueBreakdown } from '../../services/navigate';
 import { areArraysEqual } from '../../services/comparison';
 import { ActionBarScene } from './ActionBarScene';
 import { breakdownViewsDefinitions, TabNames, valueBreakdownViews } from './BreakdownViews';
@@ -136,12 +138,13 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
   private setSubscribeToLabelsVariable() {
     const variable = getLabelsVariable(this);
-    if (variable.state.filters.length === 0 && !placeholderServiceNameOptionalFlag) {
+    if (variable.state.filters.length === 0) {
       this.redirectToStart();
       return;
     }
     this._subs.add(
       variable.subscribeToState((newState, prevState) => {
+        // @todo remove existing positive filter if another positive filter is added
         const newServiceName = getServiceNameFromVariableState(newState);
         const prevServiceName = getServiceNameFromVariableState(prevState);
         if (newState.filters.length === 0) {
@@ -151,18 +154,20 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         if (!placeholderServiceNameOptionalFlag && !newState.filters.some((f) => f.key === SERVICE_NAME)) {
           this.redirectToStart();
         } else if (placeholderServiceNameOptionalFlag) {
-          let { labelName } = getPrimaryLabelFromUrl();
+          let { labelName, labelValue, breakdownLabel } = getPrimaryLabelFromUrl();
+
           // Keep old URLs
-          if(labelName === VAR_SERVICE){
-            labelName = SERVICE_NAME
+          if (labelName === VAR_SERVICE) {
+            labelName = SERVICE_NAME;
           }
-          console.log('labelName', labelName)
           const indexScene = sceneGraph.getAncestor(this, IndexScene);
           const prevRouteMatch = indexScene.state.routeMatch;
 
           // The label used in the URL is no longer active, pick a new one
-          if (!newState.filters.some((f) => f.key === labelName)) {
-            const newPrimaryLabel = newState.filters.find((f) => f.operator === '=');
+          if (!newState.filters.some((f) => f.key === labelName && f.operator === '=' && f.value === labelValue)) {
+            const newPrimaryLabel = newState.filters.find(
+              (f) => f.operator === '=' && f.value !== EMPTY_VARIABLE_VALUE
+            );
             if (newPrimaryLabel) {
               indexScene.setState({
                 routeMatch: {
@@ -177,13 +182,16 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
                   isExact: prevRouteMatch?.isExact ?? true,
                 },
               });
+
               // @todo what if we're on a value breakdown?
-              navigateToDrilldownPage(getDrilldownSlug(), this);
+              if (!breakdownLabel) {
+                navigateToDrilldownPage(getDrilldownSlug(), this);
+              } else {
+                navigateToValueBreakdown(getDrilldownValueSlug(), breakdownLabel, this);
+              }
             } else {
               this.redirectToStart();
             }
-          }else{
-            this.redirectToStart();
           }
         }
 
@@ -199,7 +207,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private redirectToStart() {
-    console.log('reidrect to start')
+    logger.error(new Error('redirect to start?'));
+    console.log('reidrect to start');
     // Clear ongoing queries
     this.setState({
       $data: undefined,

@@ -10,6 +10,7 @@ import {
   VAR_LEVELS,
   VAR_LINE_FILTER,
   VAR_PATTERNS,
+  VAR_SERVICE,
 } from './variables';
 import { locationService } from '@grafana/runtime';
 import { RouteMatch, RouteProps } from '../Components/Pages';
@@ -113,6 +114,10 @@ export function getDrilldownSlug() {
   return slug as PageSlugs;
 }
 
+/**
+ * The "primary" label, is the replacement for the service_name paradigm
+ * It must be an indexed label with an include filter
+ */
 export function getPrimaryLabelFromUrl(): RouteProps {
   const location = locationService.getLocation();
   const startOfUrl = '/a/grafana-lokiexplore-app/explore';
@@ -122,8 +127,8 @@ export function getPrimaryLabelFromUrl(): RouteProps {
   const labelValue = routeParams[1];
   const breakdownLabel = routeParams?.[3];
   // Keep urls the same
-  if(labelName === SERVICE_NAME){
-    labelName = 'service'
+  if (labelName === SERVICE_NAME) {
+    labelName = VAR_SERVICE;
   }
   return { labelName, labelValue, breakdownLabel };
 }

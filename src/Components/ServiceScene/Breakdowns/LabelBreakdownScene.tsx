@@ -16,12 +16,11 @@ import {
 } from '@grafana/scenes';
 import { Alert, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { ValueSlugs } from 'services/routing';
+import { getPrimaryLabelFromUrl, ValueSlugs } from 'services/routing';
 import {
   ALL_VARIABLE_VALUE,
   getLabelGroupByVariable,
   getLabelsVariable,
-  SERVICE_NAME,
   VAR_LABEL_GROUP_BY,
   VAR_LABELS,
 } from 'services/variables';
@@ -137,9 +136,10 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     newState: SceneVariableState & { filters: AdHocVariableFilter[] },
     prevState: SceneVariableState & { filters: AdHocVariableFilter[] }
   ) {
+    let { labelName } = getPrimaryLabelFromUrl();
     const variable = getLabelGroupByVariable(this);
-    const newService = newState.filters.find((filter) => filter.key === SERVICE_NAME);
-    const prevService = prevState.filters.find((filter) => filter.key === SERVICE_NAME);
+    const newService = newState.filters.find((filter) => filter.key === labelName);
+    const prevService = prevState.filters.find((filter) => filter.key === labelName);
 
     // If the user changes the service
     if (variable.state.value === ALL_VARIABLE_VALUE && newService !== prevService) {

@@ -23,14 +23,13 @@ import {
   ALL_VARIABLE_VALUE,
   getFieldGroupByVariable,
   getLabelsVariable,
-  SERVICE_NAME,
   VAR_FIELD_GROUP_BY,
   VAR_LABELS,
 } from 'services/variables';
 import { areArraysEqual } from '../../../services/comparison';
 import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
 import { navigateToValueBreakdown } from '../../../services/navigate';
-import { ValueSlugs } from '../../../services/routing';
+import { getPrimaryLabelFromUrl, ValueSlugs } from '../../../services/routing';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { GrotError } from '../../GrotError';
 import { IndexScene } from '../../IndexScene/IndexScene';
@@ -114,10 +113,12 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this._subs.add(
       getLabelsVariable(this).subscribeToState((newState, prevState) => {
         const variable = getFieldGroupByVariable(this);
-        const newService = newState.filters.find((filter) => filter.key === SERVICE_NAME);
-        const prevService = prevState.filters.find((filter) => filter.key === SERVICE_NAME);
+        let { labelName } = getPrimaryLabelFromUrl();
 
-        // If the user changes the service
+        const newService = newState.filters.find((filter) => filter.key === labelName);
+        const prevService = prevState.filters.find((filter) => filter.key === labelName);
+
+        // If the user changes the primary label
         if (variable.state.value === ALL_VARIABLE_VALUE && newService !== prevService) {
           this.setState({
             loading: true,
@@ -276,8 +277,9 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
     variablesToClear.forEach((variable) => {
       if (variable instanceof AdHocFiltersVariable && variable.state.key === 'adhoc_service_filter') {
+        let { labelName } = getPrimaryLabelFromUrl();
         variable.setState({
-          filters: variable.state.filters.filter((filter) => filter.key === SERVICE_NAME),
+          filters: variable.state.filters.filter((filter) => filter.key === labelName),
         });
       } else if (variable instanceof AdHocFiltersVariable) {
         variable.setState({

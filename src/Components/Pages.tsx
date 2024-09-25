@@ -78,10 +78,10 @@ export function makeIndexPage() {
         routePath: CHILD_ROUTE_DEFINITIONS.field,
         getPage: (routeMatch: RouteMatch, parent) => makeBreakdownValuePage(routeMatch, parent, ValueSlugs.field),
       },
-      {
-        routePath: '*',
-        getPage: () => makeRedirectPage(),
-      },
+      // {
+      //   routePath: '*',
+      //   getPage: () => makeRedirectPage(),
+      // },
     ],
   });
 }
@@ -118,6 +118,7 @@ export function makeBreakdownPage(
   slug: ParentDrilldownSlugs
 ): SceneAppPage {
   const { labelName, labelValue } = extractValuesFromRoute(routeMatch);
+  console.log('makeBreakdownPage', labelName, labelValue);
   return new SceneAppPage({
     title: slugToBreadcrumbTitle(slug),
     layout: PageLayoutType.Custom,
