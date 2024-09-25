@@ -10,10 +10,10 @@ const serviceName = 'nginx-json-mixed';
 test.describe('explore nginx-json-mixed breakdown pages ', () => {
   let explorePage: ExplorePage;
 
-  test.beforeEach(async ({ page }) => {
-    explorePage = new ExplorePage(page);
+  test.beforeEach(async ({ page }, testInfo) => {
+    explorePage = new ExplorePage(page, testInfo);
     await explorePage.setExtraTallViewportSize();
-    await page.evaluate(() => window.localStorage.clear());
+    await explorePage.clearLocalStorage();
     await explorePage.gotoServicesBreakdown(serviceName);
     explorePage.blockAllQueriesExcept({
       refIds: ['logsPanelQuery', mixedFieldName],
@@ -21,7 +21,8 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
   });
 
   test.afterEach(async ({ page }) => {
-    await page.unrouteAll({ behavior: 'ignoreErrors' });
+    await explorePage.unroute();
+    explorePage.echoConsoleLogsOnRetry();
   });
 
   test(`should exclude ${mixedFieldName}, request should contain both parsers`, async ({ page }) => {
