@@ -45,8 +45,6 @@ const attemptFaroWarn = (msg: string, context?: LogContext) => {
 const isRecord = (obj: unknown): obj is Record<string, unknown> => typeof obj === 'object';
 /**
  * Checks unknown error for properties from Records like FetchError and adds them to the context
- * Property names from the error are prepended with an underscore when added to the error context sent to Faro
- * Note this renames the "message" to "_errorMessage" in hopes of reducing conflicts of future use of that property name
  * @param err
  * @param context
  */
@@ -62,10 +60,14 @@ function populateFetchErrorContext(err: unknown | FetchError, context: LogContex
     }
 
     if (hasData(err)) {
-      try {
-        context.data = JSON.stringify(err.data);
-      } catch (e) {
-        // do nothing
+      if (typeof err.data === 'object' && err.data !== null) {
+        try {
+          context.data = JSON.stringify(err.data);
+        } catch (e) {
+          // do nothing
+        }
+      } else if (typeof err.data === 'string' || typeof err.data === 'boolean' || typeof err.data === 'number') {
+        context.data = err.data.toString();
       }
     }
   }
@@ -81,10 +83,10 @@ const attemptFaroErr = (err: Error | FetchError | unknown, context2: LogContext)
     } else if (typeof err === 'string') {
       logError(new Error(err), context);
     } else if (err && typeof err === 'object') {
-      if (context.errorMessage) {
-        logError(new Error(context.errorMessage), context);
+      if (context.msg) {
+        logError(new Error(context.msg), context);
       } else {
-        logError(new Error('unknown error'), context);
+        logError(new Error('error object'), context);
       }
     } else {
       logError(new Error('unknown error'), context);
