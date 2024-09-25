@@ -88,7 +88,9 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
     this._subs.add(
       fieldsVariable.subscribeToState((newState, prevState) => {
         console.log('fields variable changed', newState);
-        // @todo need to update parser when a fields variable updated
+        // @todo need to update parser when the first field is added
+        // @todo also getting 2 detected_fields calls
+        // @todo clear filters removing primary label
         this.onValuesDataQueryChange(newState, query);
       })
     );

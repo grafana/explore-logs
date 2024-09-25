@@ -208,7 +208,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
   private redirectToStart() {
     logger.error(new Error('redirect to start?'));
-    console.log('reidrect to start');
+    console.log('redirect to start');
     // Clear ongoing queries
     this.setState({
       $data: undefined,
