@@ -1,4 +1,4 @@
-import type { Locator, Page } from '@playwright/test';
+import { ConsoleMessage, Locator, Page } from '@playwright/test';
 import pluginJson from '../../src/plugin.json';
 import { testIds } from '../../src/services/testIds';
 import { expect } from '@grafana/plugin-e2e';
@@ -15,6 +15,7 @@ export class ExplorePage {
   serviceBreakdownSearch: Locator;
   serviceBreakdownOpenExplore: Locator;
   refreshPicker: Locator;
+  logs: Array<{ msg: ConsoleMessage; type: string }> = [];
 
   constructor(public readonly page: Page) {
     this.firstServicePageSelect = this.page.getByText('Select').first();
@@ -23,6 +24,43 @@ export class ExplorePage {
     this.serviceBreakdownSearch = this.page.getByTestId(testIds.exploreServiceDetails.searchLogs);
     this.serviceBreakdownOpenExplore = this.page.getByTestId(testIds.exploreServiceDetails.openExplore);
     this.refreshPicker = this.page.getByTestId(testIds.header.refreshPicker);
+  }
+
+  captureConsoleLogs() {
+    this.page.on('console', (msg) => {
+      this.logs.push({ msg, type: msg.type() });
+    });
+  }
+
+  echoConsoleLogs() {
+    console.log('logs', this.logs);
+  }
+
+  /**
+   * Don't know how accurate or helpful these are yet, but figured it won't hurt to log the results for now as we continue to iterate on performance measurement
+   */
+  async measurePerformanceStart() {
+    await this.page.evaluate(() => {
+      window.performance.mark('start');
+    });
+  }
+
+  async measurePerformanceStop() {
+    const resourceUsage = await this.page.evaluate(() => {
+      return {
+        cpuUsage: window.performance.now(), // Example CPU usage metric
+        //@ts-expect-error
+        usedJSHeapSize: window.performance?.memory?.usedJSHeapSize,
+        //@ts-expect-error
+        totalJSHeapSize: window.performance?.memory?.totalJSHeapSize,
+      };
+    });
+
+    console.log('Resource usage:', resourceUsage);
+  }
+
+  async clearLocalStorage() {
+    await this.page.evaluate(() => window.localStorage.clear());
   }
 
   async setDefaultViewportSize() {
@@ -34,6 +72,13 @@ export class ExplorePage {
       height: 3000,
       width: 1280,
     });
+  }
+
+  /**
+   * Clears any custom routes created with page.route
+   */
+  async unroute() {
+    await this.page.unrouteAll({ behavior: 'ignoreErrors' });
   }
 
   async gotoServices() {

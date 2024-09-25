@@ -12,17 +12,22 @@ test.describe('explore services breakdown page', () => {
 
   test.beforeEach(async ({ page }) => {
     explorePage = new ExplorePage(page);
+
     await explorePage.setExtraTallViewportSize();
-    await page.evaluate(() => window.localStorage.clear());
+    await explorePage.clearLocalStorage();
+    await explorePage.measurePerformanceStart();
     await explorePage.gotoServicesBreakdown();
     explorePage.blockAllQueriesExcept({
       refIds: ['logsPanelQuery', fieldName],
       legendFormats: [`{{${levelName}}}`],
     });
+    explorePage.captureConsoleLogs();
   });
 
   test.afterEach(async ({ page }) => {
-    await page.unrouteAll({ behavior: 'ignoreErrors' });
+    await explorePage.unroute();
+    await explorePage.measurePerformanceStop();
+    explorePage.echoConsoleLogs();
   });
 
   test('should filter logs panel on search for broadcast field', async ({ page }) => {

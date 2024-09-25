@@ -13,7 +13,8 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
   test.beforeEach(async ({ page }) => {
     explorePage = new ExplorePage(page);
     await explorePage.setExtraTallViewportSize();
-    await page.evaluate(() => window.localStorage.clear());
+    await explorePage.clearLocalStorage();
+    await explorePage.measurePerformanceStart();
     await explorePage.gotoServicesBreakdown(serviceName);
     explorePage.blockAllQueriesExcept({
       refIds: ['logsPanelQuery', mixedFieldName],
@@ -21,7 +22,9 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
   });
 
   test.afterEach(async ({ page }) => {
-    await page.unrouteAll({ behavior: 'ignoreErrors' });
+    await explorePage.unroute();
+    await explorePage.measurePerformanceStop();
+    explorePage.echoConsoleLogs();
   });
 
   test(`should exclude ${mixedFieldName}, request should contain both parsers`, async ({ page }) => {
