@@ -1,4 +1,4 @@
-import type { Locator, Page } from '@playwright/test';
+import { ConsoleMessage, Locator, Page, TestInfo } from '@playwright/test';
 import pluginJson from '../../src/plugin.json';
 import { testIds } from '../../src/services/testIds';
 import { expect } from '@grafana/plugin-e2e';
@@ -15,14 +15,31 @@ export class ExplorePage {
   serviceBreakdownSearch: Locator;
   serviceBreakdownOpenExplore: Locator;
   refreshPicker: Locator;
+  logs: Array<{ msg: ConsoleMessage; type: string }> = [];
 
-  constructor(public readonly page: Page) {
+  constructor(public readonly page: Page, public readonly testInfo: TestInfo) {
     this.firstServicePageSelect = this.page.getByText('Select').first();
     this.logVolumeGraph = this.page.getByText('Log volume');
     this.servicesSearch = this.page.getByTestId(testIds.exploreServiceSearch.search);
     this.serviceBreakdownSearch = this.page.getByTestId(testIds.exploreServiceDetails.searchLogs);
     this.serviceBreakdownOpenExplore = this.page.getByTestId(testIds.exploreServiceDetails.openExplore);
     this.refreshPicker = this.page.getByTestId(testIds.header.refreshPicker);
+  }
+
+  captureConsoleLogs() {
+    this.page.on('console', (msg) => {
+      this.logs.push({ msg, type: msg.type() });
+    });
+  }
+
+  echoConsoleLogsOnRetry() {
+    if (this.testInfo.retry > 0) {
+      console.log('logs', this.logs);
+    }
+  }
+
+  async clearLocalStorage() {
+    await this.page.evaluate(() => window.localStorage.clear());
   }
 
   async setDefaultViewportSize() {
@@ -34,6 +51,13 @@ export class ExplorePage {
       height: 3000,
       width: 1280,
     });
+  }
+
+  /**
+   * Clears any custom routes created with page.route
+   */
+  async unroute() {
+    await this.page.unrouteAll({ behavior: 'ignoreErrors' });
   }
 
   async gotoServices() {

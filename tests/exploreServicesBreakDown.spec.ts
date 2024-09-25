@@ -10,19 +10,22 @@ const labelName = 'cluster';
 test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;
 
-  test.beforeEach(async ({ page }) => {
-    explorePage = new ExplorePage(page);
+  test.beforeEach(async ({ page }, testInfo) => {
+    explorePage = new ExplorePage(page, testInfo);
+
     await explorePage.setExtraTallViewportSize();
-    await page.evaluate(() => window.localStorage.clear());
+    await explorePage.clearLocalStorage();
     await explorePage.gotoServicesBreakdown();
     explorePage.blockAllQueriesExcept({
       refIds: ['logsPanelQuery', fieldName],
       legendFormats: [`{{${levelName}}}`],
     });
+    explorePage.captureConsoleLogs();
   });
 
   test.afterEach(async ({ page }) => {
-    await page.unrouteAll({ behavior: 'ignoreErrors' });
+    await explorePage.unroute();
+    explorePage.echoConsoleLogsOnRetry();
   });
 
   test('should filter logs panel on search for broadcast field', async ({ page }) => {
