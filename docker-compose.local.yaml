@@ -38,17 +38,18 @@ services:
     build:
       context: ./generator
     command: -url http://loki:3100/loki/api/v1/push
-  agent:
-    image: grafana/agent:v0.43.0
+  alloy:
+    image: grafana/alloy:latest
     environment:
       - AGENT_MODE=flow
-    entrypoint:
-      - /bin/grafana-agent
-      - run
-      - --server.http.listen-addr=0.0.0.0:12345
-      - /etc/agent/config.river
+    command: [
+      "run",
+      "--server.http.listen-addr=0.0.0.0:12345",
+      "--stability.level=public-preview",
+      "/etc/alloy/config.alloy",
+    ]
     volumes:
-      - ./config/config.river:/etc/agent/config.river
+      - ./config/config.river:/etc/alloy/config.alloy
     ports:
       - "12345:12345"
       - "12347:12347"
