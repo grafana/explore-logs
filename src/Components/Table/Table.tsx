@@ -37,6 +37,7 @@ import { LogsTableHeaderWrap } from 'Components/Table/LogsTableHeaderWrap';
 import { getBodyName, getIdName, getTimeName, LogsFrame } from '../../services/logsFrame';
 import { useQueryContext } from './Context/QueryContext';
 import { testIds } from '../../services/testIds';
+import { debounce } from 'lodash';
 
 interface Props {
   height: number;
@@ -64,9 +65,11 @@ function TableAndContext(props: {
   width: number;
   selectedLine?: number;
   logsFrame: LogsFrame;
+  onResize: (fieldDisplayName: string, width: number) => void;
 }) {
   return (
     <GrafanaTable
+      onColumnResize={props.onResize}
       initialSortBy={[{ displayName: getTimeName(props.logsFrame), desc: true }]}
       initialRowIndex={props.selectedLine}
       cellHeight={TableCellHeight.Sm}
@@ -84,7 +87,16 @@ export const Table = (props: Props) => {
   const styles = getStyles();
 
   const [tableFrame, setTableFrame] = useState<DataFrame | undefined>(undefined);
-  const { columns, visible, setVisible, setFilteredColumns, setColumns, clearSelectedLine } = useTableColumnContext();
+  const {
+    columns,
+    visible,
+    setVisible,
+    setFilteredColumns,
+    setColumns,
+    clearSelectedLine,
+    columnWidthMap,
+    setColumnWidthMap,
+  } = useTableColumnContext();
 
   const { selectedLine } = useQueryContext();
 
@@ -140,10 +152,19 @@ export const Table = (props: Props) => {
                       ? (cols: FieldNameMetaStore) => reorderColumn(cols, index, index + 1)
                       : undefined
                   }
+                  autoColumnWidths={
+                    Object.keys(columnWidthMap).length > 0
+                      ? () => {
+                          setColumnWidthMap({});
+                        }
+                      : undefined
+                  }
                 />
               </TableHeaderContextProvider>
             ),
-            width: getInitialFieldWidth(field, index, columns, width, frameWithOverrides.fields.length, logsFrame),
+            width:
+              columnWidthMap[field.name] ??
+              getInitialFieldWidth(field, index, columns, width, frameWithOverrides.fields.length, logsFrame),
             cellOptions: getTableCellOptions(field, index, labels, logsFrame),
             ...field.config.custom,
           },
@@ -158,7 +179,7 @@ export const Table = (props: Props) => {
     // This function is building the table dataframe that will be transformed, even though the components within the dataframe (cells, headers) can mutate the dataframe!
     // If we try to update the dataframe whenever the columns are changed (which are rebuilt using this dataframe after being transformed), react will infinitely update frame -> columns -> frame -> ...
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [timeZone, theme, labels, width, replace, setVisible]
+    [timeZone, theme, labels, width, replace, setVisible, columnWidthMap]
   );
 
   // prepare dataFrame
@@ -221,6 +242,18 @@ export const Table = (props: Props) => {
     return <></>;
   }
 
+  const onResize = (fieldDisplayName: string, width: number) => {
+    const key = Object.keys(columns)
+      .filter((key) => columns[key].active)
+      .find((key) => key === fieldDisplayName);
+
+    if (key && width > 0) {
+      const map = { ...columnWidthMap };
+      map[key] = width;
+      setColumnWidthMap(map);
+    }
+  };
+
   return (
     <div data-testid={testIds.table.wrapper} className={styles.section}>
       {visible && (
@@ -244,6 +277,7 @@ export const Table = (props: Props) => {
               data={tableFrame}
               height={height}
               width={width}
+              onResize={debounce(onResize, 100)}
             />
           </ScrollSync>
         </TableCellContextProvider>
