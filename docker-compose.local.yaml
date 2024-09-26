@@ -1,0 +1,81 @@
+version: '3.0'
+
+services:
+  grafana:
+    container_name: 'grafana-logsapp'
+    environment:
+      - GF_FEATURE_TOGGLES_ENABLE=accessControlOnCall lokiLogsDataplane
+      - GF_LOG_FRONTEND_ENABLED=true
+      - GF_LOG_FRONTEND_CUSTOM_ENDPOINT=http://localhost:12347/collect
+      - GF_TRACING_OPENTELEMETRY_JAEGER_ADDRESS=http://host.docker.internal:14268/api/traces
+      - GF_TRACING_OPENTELEMETRY_JAEGER_PROPAGATION=jaeger,w3c
+    build:
+      context: ./.config
+      args:
+        grafana_image: ${GRAFANA_IMAGE:-grafana}
+        grafana_version: ${GRAFANA_VERSION:-latest}
+    ports:
+      - 3001:3000/tcp
+    volumes:
+      - ./dist:/var/lib/grafana/plugins/grafana-logsapp
+      - ./provisioning:/etc/grafana/provisioning
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+  loki:
+    image: grafana/loki:3.2.0
+    environment:
+      LOG_CLUSTER_DEPTH: '8'
+      LOG_SIM_TH: '0.3'
+    ports:
+      - '3100:3100'
+    volumes:
+      - ./config/loki-config.yaml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: on-failure
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+  generator:
+    build:
+      context: ./generator
+    command: -url http://loki:3100/loki/api/v1/push
+  alloy:
+    image: grafana/alloy:latest
+    environment:
+      - AGENT_MODE=flow
+    command: [
+      "run",
+      "--server.http.listen-addr=0.0.0.0:12345",
+      "--stability.level=public-preview",
+      "/etc/alloy/config.alloy",
+    ]
+    volumes:
+      - ./config/config.river:/etc/alloy/config.alloy
+    ports:
+      - "12345:12345"
+      - "12347:12347"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  tempo:
+    image: grafana/tempo:2.6.0
+    command: -config.file=/etc/tempo.yaml
+    volumes:
+      - ./config/tempo.yaml:/etc/tempo.yaml
+    ports:
+      - "14268:14268" # jaeger ingest
+      - "3200:3200"   # tempo
+      - "4317:4317"   # otlp grpc
+      - "4318:4318"   # otlp http
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    ports:
+      - "9090:9090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: >
+      --enable-feature=remote-write-receiver
+      --enable-feature=exemplar-storage
+      --enable-feature=native-histograms
+      --config.file=/etc/prometheus/prometheus.yml
+      --storage.tsdb.path=/prometheus
+    volumes:
+      - ./config/prometheus.yaml:/etc/prometheus/prometheus.yml
