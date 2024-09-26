@@ -30,8 +30,6 @@ export const linkConfigs: PluginExtensionLinkConfig[] = [
   } as PluginExtensionLinkConfig,
 ];
 
-const placeholderServiceNameOptionalFlag = true;
-
 function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
   if (!context) {
     return undefined;
@@ -44,18 +42,16 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
   const expr = lokiQuery.expr;
   const labelFilters = getMatcherFromQuery(expr);
 
-  const labelSelector =
-    labelFilters.find((selector) => selector.key === SERVICE_NAME) ??
-      placeholderServiceNameOptionalFlag ? labelFilters.find((selector) => selector.operator === FilterOp.Equal) : undefined;
+  const labelSelector = labelFilters.find((selector) => selector.operator === FilterOp.Equal);
 
   if (!labelSelector) {
     return undefined;
   }
 
   const labelValue = replaceSlash(labelSelector.value);
-  let labelName = labelSelector.key === SERVICE_NAME ? 'service' : labelSelector.key
-  // sort `service_name` first
-  labelFilters.sort((a, b) => (a.key === SERVICE_NAME ? -1 : 1));
+  let labelName = labelSelector.key === SERVICE_NAME ? 'service' : labelSelector.key;
+  // sort `primary label` first
+  labelFilters.sort((a, b) => (a.key === labelName ? -1 : 1));
 
   let params = setUrlParameter(UrlParameters.DatasourceId, lokiQuery.datasource?.uid);
   params = setUrlParameter(UrlParameters.TimeRangeFrom, context.timeRange.from.valueOf().toString(), params);

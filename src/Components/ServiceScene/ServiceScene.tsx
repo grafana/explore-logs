@@ -32,7 +32,6 @@ import {
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
-  getServiceNameFromVariableState,
   LEVEL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
   SERVICE_NAME,
@@ -62,8 +61,6 @@ type MakeOptional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 type ServiceSceneLoadingStates = {
   [name in TabNames]: boolean;
 };
-
-const placeholderServiceNameOptionalFlag = true;
 
 export interface ServiceSceneCustomState {
   labelsCount?: number;
@@ -145,62 +142,46 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this._subs.add(
       variable.subscribeToState((newState, prevState) => {
         // @todo remove existing positive filter if another positive filter is added
-        const newServiceName = getServiceNameFromVariableState(newState);
-        const prevServiceName = getServiceNameFromVariableState(prevState);
         if (newState.filters.length === 0) {
           this.redirectToStart();
         }
         // If we remove the service name filter, we should redirect to the start
-        if (!placeholderServiceNameOptionalFlag && !newState.filters.some((f) => f.key === SERVICE_NAME)) {
-          this.redirectToStart();
-        } else if (placeholderServiceNameOptionalFlag) {
-          let { labelName, labelValue, breakdownLabel } = getPrimaryLabelFromUrl();
+        let { labelName, labelValue, breakdownLabel } = getPrimaryLabelFromUrl();
 
-          // Keep old URLs
-          if (labelName === VAR_SERVICE) {
-            labelName = SERVICE_NAME;
-          }
-          const indexScene = sceneGraph.getAncestor(this, IndexScene);
-          const prevRouteMatch = indexScene.state.routeMatch;
-
-          // The label used in the URL is no longer active, pick a new one
-          if (!newState.filters.some((f) => f.key === labelName && f.operator === '=' && f.value === labelValue)) {
-            const newPrimaryLabel = newState.filters.find(
-              (f) => f.operator === '=' && f.value !== EMPTY_VARIABLE_VALUE
-            );
-            if (newPrimaryLabel) {
-              indexScene.setState({
-                routeMatch: {
-                  ...prevRouteMatch,
-                  params: {
-                    ...prevRouteMatch?.params,
-                    labelName: newPrimaryLabel.key,
-                    labelValue: replaceSlash(newPrimaryLabel.value),
-                  },
-                  url: prevRouteMatch?.url ?? '',
-                  path: prevRouteMatch?.path ?? '',
-                  isExact: prevRouteMatch?.isExact ?? true,
-                },
-              });
-
-              // @todo what if we're on a value breakdown?
-              if (!breakdownLabel) {
-                navigateToDrilldownPage(getDrilldownSlug(), this);
-              } else {
-                navigateToValueBreakdown(getDrilldownValueSlug(), breakdownLabel, this);
-              }
-            } else {
-              this.redirectToStart();
-            }
-          }
+        // Keep old URLs
+        if (labelName === VAR_SERVICE) {
+          labelName = SERVICE_NAME;
         }
+        const indexScene = sceneGraph.getAncestor(this, IndexScene);
+        const prevRouteMatch = indexScene.state.routeMatch;
 
-        // Clear filters if changing service, they might not exist, or might have a different parser
-        if (!placeholderServiceNameOptionalFlag && prevServiceName !== newServiceName) {
-          const fields = getFieldsVariable(this);
-          fields.setState({
-            filters: [],
-          });
+        // The "primary" label used in the URL is no longer active, pick a new one
+        if (!newState.filters.some((f) => f.key === labelName && f.operator === '=' && f.value === labelValue)) {
+          const newPrimaryLabel = newState.filters.find((f) => f.operator === '=' && f.value !== EMPTY_VARIABLE_VALUE);
+          if (newPrimaryLabel) {
+            indexScene.setState({
+              routeMatch: {
+                ...prevRouteMatch,
+                params: {
+                  ...prevRouteMatch?.params,
+                  labelName: newPrimaryLabel.key,
+                  labelValue: replaceSlash(newPrimaryLabel.value),
+                },
+                url: prevRouteMatch?.url ?? '',
+                path: prevRouteMatch?.path ?? '',
+                isExact: prevRouteMatch?.isExact ?? true,
+              },
+            });
+
+            // @todo what if we're on a value breakdown?
+            if (!breakdownLabel) {
+              navigateToDrilldownPage(getDrilldownSlug(), this);
+            } else {
+              navigateToValueBreakdown(getDrilldownValueSlug(), breakdownLabel, this);
+            }
+          } else {
+            this.redirectToStart();
+          }
         }
       })
     );
