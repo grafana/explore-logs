@@ -23,8 +23,10 @@ import {
   ALL_VARIABLE_VALUE,
   getFieldGroupByVariable,
   getLabelsVariable,
+  SERVICE_NAME,
   VAR_FIELD_GROUP_BY,
   VAR_LABELS,
+  VAR_SERVICE,
 } from 'services/variables';
 import { areArraysEqual } from '../../../services/comparison';
 import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
@@ -166,6 +168,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
       let body;
       if (variablesToClear.length > 1) {
+        this.state.changeFieldCount?.(0);
         body = this.buildClearFiltersLayout(() => this.clearVariables(variablesToClear));
       } else {
         body = new EmptyLayoutScene({ type: 'fields' });
@@ -227,6 +230,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       const variablesToClear = this.getVariablesThatCanBeCleared(indexScene);
 
       if (variablesToClear.length > 1) {
+        this.state.changeFieldCount?.(0);
         stateUpdate.body = this.buildClearFiltersLayout(() => this.clearVariables(variablesToClear));
       } else {
         stateUpdate.body = new EmptyLayoutScene({ type: 'fields' });
@@ -278,6 +282,10 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     variablesToClear.forEach((variable) => {
       if (variable instanceof AdHocFiltersVariable && variable.state.key === 'adhoc_service_filter') {
         let { labelName } = getPrimaryLabelFromUrl();
+        // getPrimaryLabelFromUrl returns the label name that exists in the URL, which is "service" not "service_name"
+        if (labelName === VAR_SERVICE) {
+          labelName = SERVICE_NAME;
+        }
         variable.setState({
           filters: variable.state.filters.filter((filter) => filter.key === labelName),
         });

@@ -69,9 +69,6 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
     const queryString = buildFieldsQueryString(tagKey, fieldsVariable, detectedFieldsFrame);
     const query = buildDataQuery(queryString, { legendFormat: `{{${tagKey}}}`, refId: tagKey });
 
-    console.log('queryString', queryString);
-    console.log('query', query);
-
     this.setState({
       body: this.build(query),
       $data: getQueryRunner([query]),
@@ -86,25 +83,13 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
     );
 
     this._subs.add(
-      fieldsVariable.subscribeToState((newState, prevState) => {
-        console.log('fields variable changed', newState);
-        // @todo need to update parser when the first field is added
-        // @todo also getting 2 detected_fields calls
-        // @todo clear filters removing primary label
-        this.onValuesDataQueryChange(newState, query);
-      })
-    );
-
-    this._subs.add(
       this.state.$data?.subscribeToState((newState) => {
-        console.log('data changed');
         this.onValuesDataQueryChange(newState, query);
       })
     );
   }
 
   private onValuesDataQueryChange(newState: SceneDataState, query: LokiQuery) {
-    console.log('onValuesDataQueryChange', newState);
     if (newState.data?.state === LoadingState.Done) {
       // No panels for the user to select, presumably because everything has been excluded
       const event = this.state.lastFilterEvent;

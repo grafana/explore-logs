@@ -207,8 +207,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private redirectToStart() {
-    logger.error(new Error('redirect to start?'));
-    console.log('redirect to start');
     // Clear ongoing queries
     this.setState({
       $data: undefined,
@@ -389,6 +387,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       if (newState.data?.state === LoadingState.Done) {
         const detectedFieldsResponse = newState.data;
         const detectedFieldsFields = detectedFieldsResponse.series[0];
+
         if (detectedFieldsFields !== undefined && detectedFieldsFields.length !== this.state.fieldsCount) {
           this.setState({
             fieldsCount: detectedFieldsFields.length,

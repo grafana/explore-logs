@@ -96,7 +96,6 @@ export function navigateToInitialPageAfterServiceSelection(serviceName: string) 
  * @param extraQueryParams
  */
 export function navigateToDrilldownPage(path: PageSlugs, serviceScene: ServiceScene, extraQueryParams?: UrlQueryMap) {
-  console.log('navigateToDrilldownPage', path);
   const indexScene = sceneGraph.getAncestor(serviceScene, IndexScene);
   const urlLabelValue = indexScene.state.routeMatch?.params.labelValue;
   const urlLabelName = indexScene.state.routeMatch?.params.labelName;
@@ -110,9 +109,6 @@ export function navigateToDrilldownPage(path: PageSlugs, serviceScene: ServiceSc
       const metadataService = getMetadataService();
       metadataService.setServiceSceneState(serviceScene.state);
     }
-
-    console.log('fullUrl', fullUrl);
-    console.log('breakdownUrl', breakdownUrl);
 
     locationService.push(breakdownUrl);
     return;
@@ -130,8 +126,6 @@ export function navigateToIndex() {
   if (serviceUrl === currentUrl) {
     return;
   }
-
-  console.log('navigateToIndex', serviceUrl, currentUrl);
 
   locationService.push(serviceUrl);
 }
