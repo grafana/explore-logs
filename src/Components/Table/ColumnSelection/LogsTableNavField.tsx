@@ -83,7 +83,7 @@ export function LogsTableNavField(props: {
             <div
               onClick={() => {
                 const { [props.label]: omit, ...map } = { ...props.columnWidthMap };
-                props?.setColumnWidthMap?.(map);
+                props.setColumnWidthMap?.(map);
               }}
               title={'Clear column width override'}
               className={styles.customWidthWrap}
