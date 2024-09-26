@@ -12,7 +12,7 @@ describe('buildLabelsQuery', () => {
 
     const result = buildLabelsQuery({} as SceneObject, VAR_LABEL_GROUP_BY_EXPR, 'cluster');
     expect(result).toMatchObject({
-      expr: `sum(count_over_time({\${filters} ,cluster != ""}  \${levels} \${patterns} \${lineFilter} [$__auto])) by (${VAR_LABEL_GROUP_BY_EXPR})`,
+      expr: `sum(count_over_time({\${filters} ,cluster != ""}  \${levels} \${patterns} \${lineFilter}  \${fields} [$__auto])) by (${VAR_LABEL_GROUP_BY_EXPR})`,
     });
   });
   test('should build no-parser query with structured metadata filters', () => {
@@ -35,7 +35,7 @@ describe('buildLabelsQuery', () => {
 
     const result = buildLabelsQuery({} as SceneObject, VAR_LABEL_GROUP_BY_EXPR, 'cluster');
     expect(result).toMatchObject({
-      expr: `sum(count_over_time({\${filters} ,cluster != ""}  \${levels} \${patterns} \${lineFilter} [$__auto])) by (${VAR_LABEL_GROUP_BY_EXPR})`,
+      expr: `sum(count_over_time({\${filters} ,cluster != ""}  \${levels} \${patterns} \${lineFilter}  \${fields} [$__auto])) by (${VAR_LABEL_GROUP_BY_EXPR})`,
     });
   });
   test('should build logfmt-parser query with structured metadata filters', () => {
