@@ -22,7 +22,6 @@ import { getParserFromFieldsFilters } from './fields';
 export function getTimeSeriesExpr(sceneRef: SceneObject, streamSelectorName: string, excludeEmpty = true): string {
   const fieldsVariable = getFieldsVariable(sceneRef);
 
-  // let labelExpressionToAdd;
   let metadataExpressionToAdd = '';
   if (excludeEmpty) {
     // `LEVEL_VARIABLE_VALUE` is a special case where we don't want to add this to the stream selector

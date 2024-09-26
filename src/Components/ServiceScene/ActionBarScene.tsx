@@ -1,16 +1,15 @@
-import {SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState} from '@grafana/scenes';
-import {Box, Stack, Tab, TabsBar, useStyles2} from '@grafana/ui';
-import {getExplorationFor} from '../../services/scenes';
-import {getDrilldownSlug, getDrilldownValueSlug, PageSlugs, ValueSlugs} from '../../services/routing';
-import {GoToExploreButton} from './GoToExploreButton';
-import {reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES} from '../../services/analytics';
-import {navigateToDrilldownPage} from '../../services/navigate';
+import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
+import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
+import { getExplorationFor } from '../../services/scenes';
+import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, ValueSlugs } from '../../services/routing';
+import { GoToExploreButton } from './GoToExploreButton';
+import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
+import { navigateToDrilldownPage } from '../../services/navigate';
 import React from 'react';
-import {ServiceScene, ServiceSceneState} from './ServiceScene';
-import {GrafanaTheme2} from '@grafana/data';
-import {css} from '@emotion/css';
-import {BreakdownViewDefinition, breakdownViewsDefinitions} from './BreakdownViews';
-import {logger} from "../../services/logger";
+import { ServiceScene, ServiceSceneState } from './ServiceScene';
+import { GrafanaTheme2 } from '@grafana/data';
+import { css } from '@emotion/css';
+import { BreakdownViewDefinition, breakdownViewsDefinitions } from './BreakdownViews';
 
 export interface ActionBarSceneState extends SceneObjectState {}
 
@@ -67,11 +66,6 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
 
                     const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
                     navigateToDrilldownPage(tab.value, serviceScene);
-                  }else {
-                    logger.warn('invalid tab!', {
-                      'tab.value': tab.value,
-                      'currentBreakdownViewSlug': currentBreakdownViewSlug,
-                    })
                   }
                 }}
               />

@@ -55,24 +55,24 @@ export function makeIndexPage() {
     drilldowns: [
       {
         routePath: ROUTE_DEFINITIONS.logs,
-        getPage: (routeMatch: RouteMatch, parent) => makeBreakdownPage(routeMatch, parent, PageSlugs.logs),
+        getPage: (routeMatch, parent) => makeBreakdownPage(routeMatch, parent, PageSlugs.logs),
         defaultRoute: true,
       },
       {
         routePath: ROUTE_DEFINITIONS.labels,
-        getPage: (routeMatch: RouteMatch, parent) => makeBreakdownPage(routeMatch, parent, PageSlugs.labels),
+        getPage: (routeMatch, parent) => makeBreakdownPage(routeMatch, parent, PageSlugs.labels),
       },
       {
         routePath: ROUTE_DEFINITIONS.patterns,
-        getPage: (routeMatch: RouteMatch, parent) => makeBreakdownPage(routeMatch, parent, PageSlugs.patterns),
+        getPage: (routeMatch, parent) => makeBreakdownPage(routeMatch, parent, PageSlugs.patterns),
       },
       {
         routePath: ROUTE_DEFINITIONS.fields,
-        getPage: (routeMatch: RouteMatch, parent) => makeBreakdownPage(routeMatch, parent, PageSlugs.fields),
+        getPage: (routeMatch, parent) => makeBreakdownPage(routeMatch, parent, PageSlugs.fields),
       },
       {
         routePath: CHILD_ROUTE_DEFINITIONS.label,
-        getPage: (routeMatch: RouteMatch, parent) => makeBreakdownValuePage(routeMatch, parent, ValueSlugs.label),
+        getPage: (routeMatch, parent) => makeBreakdownValuePage(routeMatch, parent, ValueSlugs.label),
       },
       {
         routePath: CHILD_ROUTE_DEFINITIONS.field,

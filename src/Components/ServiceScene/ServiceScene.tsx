@@ -141,14 +141,13 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
     this._subs.add(
       variable.subscribeToState((newState, prevState) => {
-        // @todo remove existing positive filter if another positive filter is added
         if (newState.filters.length === 0) {
           this.redirectToStart();
         }
         // If we remove the service name filter, we should redirect to the start
         let { labelName, labelValue, breakdownLabel } = getPrimaryLabelFromUrl();
 
-        // Keep old URLs
+        // Before we dynamically pulled label filter keys into the URL, we had hardcoded "service" as the primary label slug, we want to keep URLs the same, so overwrite "service_name" with "service" if that's the primary label
         if (labelName === VAR_SERVICE) {
           labelName = SERVICE_NAME;
         }
@@ -173,7 +172,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
               },
             });
 
-            // @todo what if we're on a value breakdown?
             if (!breakdownLabel) {
               navigateToDrilldownPage(getDrilldownSlug(), this);
             } else {

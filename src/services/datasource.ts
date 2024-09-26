@@ -387,7 +387,6 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
   }
 
   //@todo doesn't work with multiple queries
-  //@todo doesn't work with non service_name label
   private async getVolume(
     request: DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest>,
     ds: DataSourceWithBackend<LokiQuery>,

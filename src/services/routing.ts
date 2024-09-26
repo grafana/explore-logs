@@ -117,7 +117,7 @@ export function getDrilldownSlug() {
 /**
  * The "primary" label, is the replacement for the service_name paradigm
  * It must be an indexed label with an include filter
- * Note: Will return the label as it exists in the url
+ * Note: Will return the label as it exists in the url, so "service_name" will be returned as "service", we'll need to adjust for this case if we want to support URLs from before this change
  */
 export function getPrimaryLabelFromUrl(): RouteProps {
   const location = locationService.getLocation();
