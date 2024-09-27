@@ -104,6 +104,7 @@ function splitQueriesByStreamShard(
       retryTimer = setTimeout(() => {
         console.log(`Retrying ${cycle} (${retries + 1})`);
         runNextRequest(subscriber, cycle, shardRequests);
+        retryTimer = null;
       }, 1500 * Math.pow(2, retries)); // Exponential backoff
 
       return true;
@@ -137,9 +138,6 @@ function splitQueriesByStreamShard(
           subscriber.next(mergedResponse);
         }
         nextRequest();
-        if (retryTimer) {
-          clearTimeout(retryTimer);
-        }
       },
       error: (error: unknown) => {
         logger.error(error, { msg: 'failed to shard' });
@@ -191,6 +189,10 @@ function splitQueriesByStreamShard(
       });
     return () => {
       shouldStop = true;
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+        retryTimer = null;
+      }
       if (subquerySubscription != null) {
         subquerySubscription.unsubscribe();
       }
