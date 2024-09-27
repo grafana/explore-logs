@@ -191,6 +191,7 @@ function splitQueriesByStreamShard(
       shouldStop = true;
       if (retryTimer) {
         clearTimeout(retryTimer);
+        retryTimer = null;
       }
       if (subquerySubscription != null) {
         subquerySubscription.unsubscribe();
