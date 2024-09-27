@@ -70,19 +70,9 @@ export function mergeFrames(dest: DataFrame, source: DataFrame) {
   const totalFields = Math.max(dest.fields.length, source.fields.length);
 
   for (let i = 0; i < sourceTimeValues.length; i++) {
-    const destTimeValues = destTimeField.values.slice(0) ?? [];
-    const destNanosValues = destTimeField.nanos?.slice(0);
-    const destIdValues = destIdField?.values.slice(0) ?? [];
     const destIdx = resolveIdx(destTimeField, sourceTimeField, i);
 
-    const entryExistsInDest = compareEntries(
-      { ...destTimeField, values: destTimeValues, nanos: destNanosValues },
-      destIdField ? { ...destIdField, values: destIdValues } : destIdField,
-      destIdx,
-      sourceTimeField,
-      sourceIdField,
-      i
-    );
+    const entryExistsInDest = compareEntries(destTimeField, destIdField, destIdx, sourceTimeField, sourceIdField, i);
 
     for (let f = 0; f < totalFields; f++) {
       // For now, skip undefined fields that exist in the new frame
