@@ -164,6 +164,8 @@ test.describe('explore services page', () => {
       expect(logsQueryCount).toEqual(16);
     });
 
+    // Since the addition of the runtime datasource, the query doesn't contain the datasource, and won't re-run when the datasource is changed, as such we need to manually re-run volume queries when the service selection scene is activated or users could be presented with an invalid set of services
+    // This isn't ideal as we won't take advantage of being able to use the cached volume result for users that did not change the datasource any longer
     test('navigating back will re-run volume query', async ({ page }) => {
       await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
       expect(logsVolumeCount).toEqual(1);
@@ -175,7 +177,7 @@ test.describe('explore services page', () => {
       // Clear variable
       await page.getByTestId(testIds.variables.serviceName.label).click();
 
-      expect(logsVolumeCount).toEqual(1);
+      expect(logsVolumeCount).toEqual(2);
       expect(logsQueryCount).toBeLessThanOrEqual(6);
 
       // Click on first service
@@ -191,7 +193,7 @@ test.describe('explore services page', () => {
       // We just need to wait a few ms for the query to get fired?
       await page.waitForTimeout(100);
 
-      expect(logsVolumeCount).toEqual(2);
+      expect(logsVolumeCount).toEqual(3);
     });
 
     test('changing datasource will trigger new queries', async ({ page }) => {
