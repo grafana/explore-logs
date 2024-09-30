@@ -155,7 +155,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     const parentModel = sceneGraph.getAncestor(this, LogsListScene);
     const lineFilterScene = parentModel.getLineFilterScene();
     if (lineFilterScene) {
-      lineFilterScene.updateFilter(value);
+      lineFilterScene.updateFilter(value, false);
       reportAppInteraction(
         USER_EVENTS_PAGES.service_details,
         USER_EVENTS_ACTIONS.service_details.logs_popover_line_filter,
