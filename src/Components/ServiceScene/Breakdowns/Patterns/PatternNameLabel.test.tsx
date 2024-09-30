@@ -51,8 +51,8 @@ jest.mock('services/scenes', () => ({
   getLokiDatasource: jest.fn().mockImplementation(() => mockDatasource),
 }));
 
-jest.mock('services/variables', () => ({
-  ...jest.requireActual('services/variables'),
+jest.mock('services/variableGetters', () => ({
+  ...jest.requireActual('services/variableGetters'),
   getLabelsVariable: jest.fn().mockReturnValue({ state: { filterExpression: 'foo="bar"' } }),
 }));
 
