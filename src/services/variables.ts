@@ -1,3 +1,5 @@
+// Warning, this file is included in the main module.tsx bundle, and doesn't contain any imports to keep that bundle size small. Don't add imports to this file!
+
 export interface FieldValue {
   value: string;
   parser: ParserType;
