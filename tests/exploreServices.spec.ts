@@ -164,7 +164,7 @@ test.describe('explore services page', () => {
       expect(logsQueryCount).toEqual(16);
     });
 
-    test('navigating back will not re-run volume query', async ({ page }) => {
+    test('navigating back will re-run volume query', async ({ page }) => {
       await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
       expect(logsVolumeCount).toEqual(1);
       expect(logsQueryCount).toBeLessThanOrEqual(4);
@@ -191,10 +191,10 @@ test.describe('explore services page', () => {
       // We just need to wait a few ms for the query to get fired?
       await page.waitForTimeout(100);
 
-      expect(logsVolumeCount).toEqual(1);
+      expect(logsVolumeCount).toEqual(2);
     });
 
-    test.only('changing datasource will trigger new queries', async ({ page }) => {
+    test('changing datasource will trigger new queries', async ({ page }) => {
       await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
       await explorePage.assertPanelsNotLoading();
       expect(logsVolumeCount).toEqual(1);
@@ -204,7 +204,7 @@ test.describe('explore services page', () => {
       expect(logsVolumeCount).toEqual(2);
     });
 
-    test.only('should re-execute volume query after being redirected back to service selection', async ({ page }) => {
+    test('should re-execute volume query after being redirected back to service selection', async ({ page }) => {
       await explorePage.assertPanelsNotLoading();
       await explorePage.addServiceName();
       await expect(explorePage.logVolumeGraph).toBeVisible();
