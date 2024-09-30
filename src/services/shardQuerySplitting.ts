@@ -68,6 +68,11 @@ function splitQueriesByStreamShard(
   let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
   const runNextRequest = (subscriber: Subscriber<DataQueryResponse>, cycle: number, shardRequests: number[][]) => {
+    if (subquerySubscription) {
+      subquerySubscription.unsubscribe();
+      subquerySubscription = null;
+    }
+
     if (shouldStop) {
       subscriber.complete();
       return;
@@ -195,6 +200,7 @@ function splitQueriesByStreamShard(
       }
       if (subquerySubscription != null) {
         subquerySubscription.unsubscribe();
+        subquerySubscription = null;
       }
     };
   });
