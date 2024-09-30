@@ -4,11 +4,12 @@ import { PanelBuilders, SceneComponentProps, SceneObjectBase, SceneObjectState, 
 import { LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode } from '@grafana/ui';
 import { getQueryRunner, setLogsVolumeFieldConfigs, syncLogsPanelVisibleSeries } from 'services/panel';
 import { buildDataQuery } from 'services/query';
-import { getFieldsVariable, getLabelsVariable, getLevelsVariable, LEVEL_VARIABLE_VALUE } from 'services/variables';
+import { LEVEL_VARIABLE_VALUE } from 'services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getTimeSeriesExpr } from '../../services/expressions';
 import { toggleLevelFromFilter } from 'services/levels';
 import { LoadingState } from '@grafana/data';
+import { getFieldsVariable, getLabelsVariable, getLevelsVariable } from '../../services/variableGetters';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;

@@ -73,6 +73,7 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "4.8.4",
     "webpack": "^5.86.0",
+    "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^5.1.4",
     "webpack-livereload-plugin": "^3.0.2"
   },

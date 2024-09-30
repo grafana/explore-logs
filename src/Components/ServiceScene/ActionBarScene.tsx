@@ -4,13 +4,14 @@ import { getExplorationFor } from '../../services/scenes';
 import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, ValueSlugs } from '../../services/routing';
 import { GoToExploreButton } from './GoToExploreButton';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
-import { getLabelsVariable, SERVICE_NAME } from '../../services/variables';
+import { SERVICE_NAME } from '../../services/variables';
 import { navigateToDrilldownPage, navigateToIndex } from '../../services/navigate';
 import React from 'react';
 import { ServiceScene, ServiceSceneState } from './ServiceScene';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 import { BreakdownViewDefinition, breakdownViewsDefinitions } from './BreakdownViews';
+import { getLabelsVariable } from '../../services/variableGetters';
 
 export interface ActionBarSceneState extends SceneObjectState {}
 

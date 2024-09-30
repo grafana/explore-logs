@@ -2,7 +2,8 @@ import { ConsoleMessage, Locator, Page, TestInfo } from '@playwright/test';
 import pluginJson from '../../src/plugin.json';
 import { testIds } from '../../src/services/testIds';
 import { expect } from '@grafana/plugin-e2e';
-import { LokiQuery } from '../../src/services/query';
+
+import { LokiQuery } from '../../src/services/lokiQuery';
 
 export interface PlaywrightRequest {
   post: any;

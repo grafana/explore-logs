@@ -1,7 +1,8 @@
 import { AdHocVariableFilter } from '@grafana/data';
 import { buildDataQuery, renderLogQLFieldFilters, renderLogQLLabelFilters } from './query';
 import { FilterOp } from './filters';
-import { FieldValue } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
+
+import { FieldValue } from './variables';
 
 describe('buildDataQuery', () => {
   test('Given an expression outputs a Loki query', () => {

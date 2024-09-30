@@ -20,11 +20,6 @@ import { getQueryRunner, getResourceQueryRunner } from 'services/panel';
 import { buildDataQuery, buildResourceQuery } from 'services/query';
 import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, ValueSlugs } from 'services/routing';
 import {
-  getDataSourceVariable,
-  getFieldsVariable,
-  getLabelsVariable,
-  getLevelsVariable,
-  getServiceNameFromVariableState,
   LEVEL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
   SERVICE_NAME,
@@ -40,6 +35,13 @@ import { navigateToIndex } from '../../services/navigate';
 import { areArraysEqual } from '../../services/comparison';
 import { ActionBarScene } from './ActionBarScene';
 import { breakdownViewsDefinitions, TabNames, valueBreakdownViews } from './BreakdownViews';
+import {
+  getDataSourceVariable,
+  getFieldsVariable,
+  getLabelsVariable,
+  getLevelsVariable,
+  getServiceNameFromVariableState,
+} from '../../services/variableGetters';
 import { logger } from '../../services/logger';
 
 const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';

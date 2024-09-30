@@ -1,7 +1,7 @@
 import pluginJson from '../plugin.json';
 import { SortBy, SortDirection } from '../Components/ServiceScene/Breakdowns/SortByScene';
-import { getDataSourceName, getServiceName } from './variables';
 import { SceneObject } from '@grafana/scenes';
+import { getDataSourceName, getServiceName } from './variableGetters';
 import { logger } from './logger';
 
 const SERVICES_LOCALSTORAGE_KEY = `${pluginJson.id}.services.favorite`;

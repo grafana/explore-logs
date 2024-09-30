@@ -12,12 +12,12 @@ import {
   VizPanel,
 } from '@grafana/scenes';
 import { map, Observable } from 'rxjs';
-import { LokiQuery } from './query';
 import { HideSeriesConfig } from '@grafana/schema';
 import { WRAPPED_LOKI_DS_UID } from './datasource';
 import { LogsSceneQueryRunner } from './LogsSceneQueryRunner';
 import { DrawStyle, StackingMode } from '@grafana/ui';
 import { getLabelsFromSeries, getVisibleLevels } from './levels';
+import { LokiQuery } from './lokiQuery';
 
 const UNKNOWN_LEVEL_LOGS = 'logs';
 export function setLevelColorOverrides(overrides: FieldConfigOverridesBuilder<FieldConfig>) {

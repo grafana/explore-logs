@@ -4,10 +4,11 @@ import { SceneComponentProps, SceneObject, SceneObjectBase, SceneObjectState } f
 import { Button } from '@grafana/ui';
 import { VariableHide } from '@grafana/schema';
 import { addToFavoriteServicesInStorage } from 'services/store';
-import { getDataSourceVariable, getLabelsVariable, SERVICE_NAME } from 'services/variables';
+import { SERVICE_NAME } from 'services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { FilterOp } from 'services/filters';
 import { navigateToInitialPageAfterServiceSelection } from '../../services/navigate';
+import { getDataSourceVariable, getLabelsVariable } from '../../services/variableGetters';
 
 export interface SelectServiceButtonState extends SceneObjectState {
   service: string;

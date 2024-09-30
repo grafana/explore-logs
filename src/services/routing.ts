@@ -12,6 +12,7 @@ import {
 } from './variables';
 import { locationService } from '@grafana/runtime';
 import { SceneRouteMatch } from '@grafana/scenes';
+import { replaceSlash } from './extensions/links';
 
 export const PLUGIN_ID = pluginJson.id;
 export const PLUGIN_BASE_URL = `/a/${PLUGIN_ID}`;
@@ -35,10 +36,6 @@ export type ParentDrilldownSlugs =
   | PageSlugs.labels
   | PageSlugs.patterns;
 export type ChildDrilldownSlugs = ValueSlugs.field | ValueSlugs.label;
-
-export function replaceSlash(parameter: string): string {
-  return parameter.replace(/\//g, '-');
-}
 
 export const ROUTES = {
   explore: () => prefixRoute(PageSlugs.explore),
@@ -136,35 +133,4 @@ export function buildServicesRoute(extraQueryParams?: UrlQueryMap): UrlQueryMap 
     }, {}),
     ...extraQueryParams,
   };
-}
-
-export function createAppUrl(path = '/explore', urlParams?: URLSearchParams): string {
-  return `/a/${pluginJson.id}${path}${urlParams ? `?${urlParams.toString()}` : ''}`;
-}
-
-export const UrlParameters = {
-  DatasourceId: `var-${VAR_DATASOURCE}`,
-  TimeRangeFrom: 'from',
-  TimeRangeTo: 'to',
-  Labels: `var-${VAR_LABELS}`,
-  Fields: `var-${VAR_FIELDS}`,
-} as const;
-export type UrlParameterType = (typeof UrlParameters)[keyof typeof UrlParameters];
-
-export function setUrlParameter(key: UrlParameterType, value: string, initalParams?: URLSearchParams): URLSearchParams {
-  const searchParams = new URLSearchParams(initalParams?.toString() ?? location.search);
-  searchParams.set(key, value);
-
-  return searchParams;
-}
-
-export function appendUrlParameter(
-  key: UrlParameterType,
-  value: string,
-  initalParams?: URLSearchParams
-): URLSearchParams {
-  const searchParams = new URLSearchParams(initalParams?.toString() ?? location.search);
-  searchParams.append(key, value);
-
-  return searchParams;
 }

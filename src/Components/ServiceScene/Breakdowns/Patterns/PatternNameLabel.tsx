@@ -3,12 +3,12 @@ import { AdHocFiltersVariable, sceneGraph } from '@grafana/scenes';
 import { Spinner, Toggletip, useStyles2 } from '@grafana/ui';
 import { getLokiDatasource } from 'services/scenes';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
-import { getLabelsVariable } from 'services/variables';
 import { buildDataQuery } from 'services/query';
 import { PatternFieldLabelStats } from './PatternFieldLabelStats';
 import { GrafanaTheme2, LoadingState, LogLabelStatsModel, TimeRange } from '@grafana/data';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { css } from '@emotion/css';
+import { getLabelsVariable } from '../../../../services/variableGetters';
 
 interface PatternNameLabelProps {
   exploration: IndexScene;

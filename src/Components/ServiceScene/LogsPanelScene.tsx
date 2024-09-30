@@ -14,9 +14,11 @@ import React from 'react';
 import { LogsListScene } from './LogsListScene';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { addToFilters, FilterType } from './Breakdowns/AddToFiltersButton';
-import { getFilterTypeFromLabelType, getLabelTypeFromFrame, LabelType } from '../../services/fields';
-import { getAdHocFiltersVariable, SERVICE_NAME, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from '../../services/variables';
+import { getFilterTypeFromLabelType, getLabelTypeFromFrame } from '../../services/fields';
+import { SERVICE_NAME, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from '../../services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
+import { getAdHocFiltersVariable } from '../../services/variableGetters';
+import { LabelType } from '../../services/fieldsTypes';
 
 interface LogsPanelSceneState extends SceneObjectState {
   body?: VizPanel;
