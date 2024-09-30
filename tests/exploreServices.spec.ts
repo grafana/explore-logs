@@ -194,19 +194,22 @@ test.describe('explore services page', () => {
       expect(logsVolumeCount).toEqual(1);
     });
 
-    test('changing datasource will trigger new queries', async ({ page }) => {
+    test.only('changing datasource will trigger new queries', async ({ page }) => {
       await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
       await explorePage.assertPanelsNotLoading();
       expect(logsVolumeCount).toEqual(1);
       expect(logsQueryCount).toEqual(4);
-      await page
-        .locator('div')
-        .filter({ hasText: /^gdev-loki$/ })
-        .nth(1)
-        .click();
-      await page.getByText('gdev-loki-copy').click();
+      await explorePage.changeDatasource();
       await explorePage.assertPanelsNotLoading();
       expect(logsVolumeCount).toEqual(2);
+    });
+
+    test.only('should re-execute volume query after being redirected back to service selection', async ({ page }) => {
+      await explorePage.assertPanelsNotLoading();
+      await explorePage.addServiceName();
+      await expect(explorePage.logVolumeGraph).toBeVisible();
+      await explorePage.changeDatasource();
+      expect(logsVolumeCount).toBe(2);
     });
   });
 });
