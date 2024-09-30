@@ -1,10 +1,10 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import { addAdHocFilter, addToFilters, AddToFiltersButton, FieldValue, FilterType } from './AddToFiltersButton';
+import { addAdHocFilter, addToFilters, AddToFiltersButton, FilterType } from './AddToFiltersButton';
 import { BusEvent, createDataFrame, Field, FieldType, LoadingState, PanelData } from '@grafana/data';
 import userEvent from '@testing-library/user-event';
 import { AdHocFiltersVariable, sceneGraph, SceneObject, SceneQueryRunner } from '@grafana/scenes';
-import { LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from 'services/variables';
+import { FieldValue, LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from 'services/variables';
 import { ServiceScene, ServiceSceneState } from '../ServiceScene';
 
 const scene = { publishEvent(event: BusEvent, bubble?: boolean) {} } as SceneObject;

@@ -1,5 +1,4 @@
 import {
-  getFieldsVariable,
   JSON_FORMAT_EXPR,
   LEVEL_VARIABLE_VALUE,
   LOGS_FORMAT_EXPR,
@@ -11,6 +10,7 @@ import {
 } from './variables';
 import { SceneObject } from '@grafana/scenes';
 import { getParserFromFieldsFilters } from './fields';
+import { getFieldsVariable } from './variableGetters';
 
 /**
  * Crafts count over time query that excludes empty values for stream selector name

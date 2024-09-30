@@ -19,19 +19,7 @@ import { LoadingPlaceholder } from '@grafana/ui';
 import { getQueryRunner, getResourceQueryRunner } from 'services/panel';
 import { buildDataQuery, buildResourceQuery } from 'services/query';
 import {
-  getDrilldownSlug,
-  getDrilldownValueSlug,
-  getPrimaryLabelFromUrl,
-  PageSlugs,
-  replaceSlash,
-  ValueSlugs,
-} from 'services/routing';
-import {
   EMPTY_VARIABLE_VALUE,
-  getDataSourceVariable,
-  getFieldsVariable,
-  getLabelsVariable,
-  getLevelsVariable,
   LEVEL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
   SERVICE_NAME,
@@ -48,8 +36,22 @@ import { navigateToDrilldownPage, navigateToIndex, navigateToValueBreakdown } fr
 import { areArraysEqual } from '../../services/comparison';
 import { ActionBarScene } from './ActionBarScene';
 import { breakdownViewsDefinitions, TabNames, valueBreakdownViews } from './BreakdownViews';
+import {
+  getDataSourceVariable,
+  getFieldsVariable,
+  getLabelsVariable,
+  getLevelsVariable,
+} from '../../services/variableGetters';
 import { logger } from '../../services/logger';
 import { IndexScene } from '../IndexScene/IndexScene';
+import {
+  getDrilldownSlug,
+  getDrilldownValueSlug,
+  getPrimaryLabelFromUrl,
+  PageSlugs,
+  ValueSlugs,
+} from '../../services/routing';
+import { replaceSlash } from '../../services/extensions/links';
 
 const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 const PATTERNS_QUERY_REFID = 'patterns';

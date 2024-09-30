@@ -19,15 +19,7 @@ import {
 import { Alert, Button, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getSortByPreference } from 'services/store';
-import {
-  ALL_VARIABLE_VALUE,
-  getFieldGroupByVariable,
-  getLabelsVariable,
-  SERVICE_NAME,
-  VAR_FIELD_GROUP_BY,
-  VAR_LABELS,
-  VAR_SERVICE,
-} from 'services/variables';
+import { ALL_VARIABLE_VALUE, SERVICE_NAME, VAR_FIELD_GROUP_BY, VAR_LABELS, VAR_SERVICE } from 'services/variables';
 import { areArraysEqual } from '../../../services/comparison';
 import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
 import { navigateToValueBreakdown } from '../../../services/navigate';
@@ -46,6 +38,7 @@ import { SortByScene, SortCriteriaChanged } from './SortByScene';
 import { StatusWrapper } from './StatusWrapper';
 import { getFieldOptions } from 'services/filters';
 import { EmptyLayoutScene } from './EmptyLayoutScene';
+import { getFieldGroupByVariable, getLabelsVariable } from '../../../services/variableGetters';
 
 export const averageFields = ['duration', 'count', 'total', 'bytes'];
 export const FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';

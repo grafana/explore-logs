@@ -1,6 +1,6 @@
 import { linkConfigs } from './links';
-import { LokiQuery } from '../query';
 import { dateTime } from '@grafana/data';
+import { LokiQuery } from '../lokiQuery';
 
 describe('contextToLink', () => {
   it('should strip slashes', () => {

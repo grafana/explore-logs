@@ -9,21 +9,14 @@ import {
 } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
 import { AddToFiltersButton, VariableFilterType } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
-import {
-  getLogsStreamSelector,
-  getValueFromFieldsFilter,
-  LEVEL_VARIABLE_VALUE,
-  LogsQueryOptions,
-  ParserType,
-  VAR_FIELDS,
-  VAR_LABELS,
-  VAR_LEVELS,
-} from './variables';
+import { LEVEL_VARIABLE_VALUE, LogsQueryOptions, ParserType, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from './variables';
 import { setLevelColorOverrides } from './panel';
 import { map, Observable } from 'rxjs';
 import { SortBy, SortByScene } from '../Components/ServiceScene/Breakdowns/SortByScene';
 import { getDetectedFieldsFrame } from '../Components/ServiceScene/ServiceScene';
 import { averageFields } from '../Components/ServiceScene/Breakdowns/FieldsBreakdownScene';
+import { getLogsStreamSelector, getValueFromFieldsFilter } from './variableGetters';
+import { LabelType } from './fieldsTypes';
 import { logger } from './logger';
 
 export type DetectedLabel = {
@@ -167,13 +160,6 @@ export function selectFrameTransformation(frame: DataFrame) {
       })
     );
   };
-}
-
-// copied from public/app/plugins/datasource/loki/types.ts
-export enum LabelType {
-  Indexed = 'I',
-  StructuredMetadata = 'S',
-  Parsed = 'P',
 }
 
 export function getLabelTypeFromFrame(labelKey: string, frame: DataFrame, index = 0): null | LabelType {

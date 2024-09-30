@@ -3,11 +3,11 @@ import { SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana
 import { Field } from '@grafana/ui';
 import { debounce, escapeRegExp } from 'lodash';
 import React, { ChangeEvent, KeyboardEvent } from 'react';
-import { getLineFilterVariable } from 'services/variables';
 import { testIds } from 'services/testIds';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { SearchInput } from './Breakdowns/SearchInput';
 import { LineFilterIcon } from './LineFilterIcon';
+import { getLineFilterVariable } from '../../services/variableGetters';
 
 interface LineFilterState extends SceneObjectState {
   lineFilter: string;

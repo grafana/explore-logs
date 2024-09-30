@@ -2,7 +2,6 @@ import { Observable, Subscriber, Subscription } from 'rxjs';
 import { v4 as uuidv4 } from 'uuid';
 
 import { DataQueryRequest, LoadingState, DataQueryResponse, TimeRange } from '@grafana/data';
-import { LokiQuery } from './query';
 import {
   addShardingPlaceholderSelector,
   getSelectorForShardValues,
@@ -11,6 +10,7 @@ import {
 } from './logql';
 import { combineResponses } from './combineResponses';
 import { DataSourceWithBackend } from '@grafana/runtime';
+import { LokiQuery } from './lokiQuery';
 import { logger } from './logger';
 
 /**

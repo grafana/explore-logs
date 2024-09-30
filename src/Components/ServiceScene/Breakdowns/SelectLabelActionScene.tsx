@@ -13,16 +13,15 @@ import { Button } from '@grafana/ui';
 import React from 'react';
 import { addToFilters, VariableFilterType } from './AddToFiltersButton';
 import { FilterButton } from '../../FilterButton';
+import { EMPTY_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE } from '../../../services/variables';
+import { AdHocVariableFilter, Field, Labels, LoadingState } from '@grafana/data';
+import { FilterOp } from '../../../services/filters';
 import {
-  EMPTY_VARIABLE_VALUE,
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
   getValueFromAdHocVariableFilter,
-  LEVEL_VARIABLE_VALUE,
-} from '../../../services/variables';
-import { AdHocVariableFilter, Field, Labels, LoadingState } from '@grafana/data';
-import { FilterOp } from '../../../services/filters';
+} from '../../../services/variableGetters';
 
 interface SelectLabelActionSceneState extends SceneObjectState {
   labelName: string;

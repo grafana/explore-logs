@@ -27,10 +27,6 @@ import {
 } from '@grafana/ui';
 import { getFavoriteServicesFromStorage } from 'services/store';
 import {
-  getDataSourceVariable,
-  getLabelsVariable,
-  getServiceLabelVariable,
-  getServiceSelectionStringVariable,
   LEVEL_VARIABLE_VALUE,
   SERVICE_NAME,
   SERVICE_LABEL_EXPR,
@@ -48,6 +44,12 @@ import { getLabelsFromSeries, toggleLevelVisibility } from 'services/levels';
 import { ServiceFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
 import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 import { areArraysEqual } from '../../services/comparison';
+import {
+  getDataSourceVariable,
+  getLabelsVariable,
+  getServiceLabelVariable,
+  getServiceSelectionStringVariable,
+} from '../../services/variableGetters';
 import { config } from '@grafana/runtime';
 import { VariableHide } from '@grafana/schema';
 import { ToolbarScene } from '../IndexScene/ToolbarScene';

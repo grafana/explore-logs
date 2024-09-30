@@ -1,6 +1,7 @@
-import { DetectedLabel, LabelType } from './fields';
+import { DetectedLabel } from './fields';
 import { ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE } from './variables';
 import { VariableValueOption } from '@grafana/scenes';
+import { LabelType } from './fieldsTypes';
 
 export enum FilterOp {
   Equal = '=',

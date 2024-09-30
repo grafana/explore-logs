@@ -20,12 +20,7 @@ import { getSortByPreference } from '../../../services/store';
 import { AppEvents, DataQueryError, LoadingState } from '@grafana/data';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { getFilterBreakdownValueScene } from '../../../services/fields';
-import {
-  ALL_VARIABLE_VALUE,
-  getLabelGroupByVariable,
-  VAR_LABEL_GROUP_BY_EXPR,
-  VAR_LABELS,
-} from '../../../services/variables';
+import { ALL_VARIABLE_VALUE, VAR_LABEL_GROUP_BY_EXPR, VAR_LABELS } from '../../../services/variables';
 import React from 'react';
 import { LabelBreakdownScene } from './LabelBreakdownScene';
 import { navigateToDrilldownPage } from '../../../services/navigate';
@@ -35,6 +30,7 @@ import { AddFilterEvent } from './AddToFiltersButton';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { buildLabelsQuery, LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS } from '../../../services/labels';
 import { getAppEvents } from '@grafana/runtime';
+import { getLabelGroupByVariable } from '../../../services/variableGetters';
 
 type DisplayError = DataQueryError & { displayed: boolean };
 type DisplayErrors = Record<string, DisplayError>;

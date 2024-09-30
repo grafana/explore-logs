@@ -1,6 +1,7 @@
 import { expect, test } from '@grafana/plugin-e2e';
 import { ExplorePage, PlaywrightRequest } from './fixtures/explore';
-import { LokiQuery } from '../src/services/query';
+
+import { LokiQuery } from '../src/services/lokiQuery';
 
 const fieldName = 'method';
 // const levelName = 'cluster'

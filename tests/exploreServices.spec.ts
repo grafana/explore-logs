@@ -2,8 +2,6 @@ import { test, expect } from '@grafana/plugin-e2e';
 import { ExplorePage } from './fixtures/explore';
 import { testIds } from '../src/services/testIds';
 import { mockVolumeApiResponse } from './mocks/mockVolumeApiResponse';
-import { mockLabelsResponse } from './mocks/mockLabelsResponse';
-import { ConsoleMessage } from '@playwright/test';
 
 test.describe('explore services page', () => {
   let explorePage: ExplorePage;
