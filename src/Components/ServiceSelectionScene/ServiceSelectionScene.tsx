@@ -119,6 +119,14 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   }
 
   private onActivate() {
+    // Clear existing volume data on activate or we'll show stale cached data, potentially from a different datasource
+    this.setState({
+      $data: getSceneQueryRunner({
+        queries: [buildResourceQuery(`{${SERVICE_LABEL_EXPR}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')],
+        runQueriesMode: 'manual',
+      }),
+    });
+
     // Clear all adhoc filters when the scene is activated, if there are any
     const variable = getLabelsVariable(this);
     if (variable.state.filters.length > 0) {
@@ -142,11 +150,13 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     if (this.isTimeRangeTooEarlyForAggMetrics()) {
       this.onUnsupportedAggregatedMetricTimeRange();
       if (this.state.$data.state.data?.state !== LoadingState.Done) {
+        console.log('isTimeRangeTooEarlyForAggMetrics', this.state.$data);
         this.runServiceQueries();
       }
     } else {
       this.onSupportedAggregatedMetricTimeRange();
       if (this.state.$data.state.data?.state !== LoadingState.Done) {
+        console.log('onSupportedAggregatedMetricTimeRange', this.state.$data);
         this.runServiceQueries();
       }
     }
@@ -159,6 +169,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         } else {
           this.onSupportedAggregatedMetricTimeRange();
         }
+        console.log('getTimeRange change', this.state.$data);
         this.runServiceQueries();
       })
     );
@@ -166,6 +177,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     // Update labels on datasource change
     this._subs.add(
       getDataSourceVariable(this).subscribeToState(() => {
+        console.log('datasource change', this.state.$data);
         this.runServiceQueries();
       })
     );
@@ -174,6 +186,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       this._subs.add(
         this.getQueryOptionsToolbar()?.subscribeToState((newState, prevState) => {
           if (newState.options.aggregatedMetrics.userOverride !== prevState.options.aggregatedMetrics.userOverride) {
+            console.log('getQueryOptionsToolbar change', this.state.$data);
             this.runServiceQueries();
           }
         })
