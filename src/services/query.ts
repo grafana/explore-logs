@@ -16,7 +16,7 @@ import { SceneDataQueryResourceRequest } from './datasourceTypes';
  */
 export const buildResourceQuery = (
   expr: string,
-  resource: 'volume' | 'patterns' | 'detected_labels' | 'detected_fields',
+  resource: 'volume' | 'patterns' | 'detected_labels' | 'detected_fields' | 'labels',
   queryParamsOverrides?: Record<string, unknown>
 ): LokiQuery & SceneDataQueryResourceRequest => {
   return {

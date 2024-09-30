@@ -5,7 +5,6 @@ import {
   AdHocFiltersVariable,
   CustomVariable,
   DataSourceVariable,
-  getUrlSyncManager,
   SceneComponentProps,
   SceneControlsSpacer,
   SceneObject,
@@ -39,7 +38,7 @@ import { FilterOp } from 'services/filters';
 import { getDrilldownSlug, PageSlugs } from '../../services/routing';
 import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LoadingPlaceholder } from '@grafana/ui';
-import { locationService } from '@grafana/runtime';
+import { config, locationService } from '@grafana/runtime';
 import {
   renderLogQLFieldFilters,
   renderLogQLLabelFilters,
@@ -54,6 +53,7 @@ import {
   getPatternsVariable,
   getUrlParamNameForVariable,
 } from '../../services/variableGetters';
+import { ToolbarScene } from './ToolbarScene';
 
 export interface AppliedPattern {
   pattern: string;
@@ -78,15 +78,27 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       getLastUsedDataSourceFromStorage() ?? 'grafanacloud-logs',
       state.initialFilters
     );
+
+    const controls: SceneObject[] = [
+      new VariableValueSelectors({ layout: 'vertical' }),
+      new SceneControlsSpacer(),
+      new SceneTimePicker({}),
+      new SceneRefreshPicker({}),
+    ];
+
+    //@ts-expect-error
+    if (getDrilldownSlug() === 'explore' && config.featureToggles.exploreLogsAggregatedMetrics) {
+      controls.push(
+        new ToolbarScene({
+          isOpen: false,
+        })
+      );
+    }
+
     super({
       $timeRange: state.$timeRange ?? new SceneTimeRange({}),
       $variables: state.$variables ?? variablesScene,
-      controls: state.controls ?? [
-        new VariableValueSelectors({ layout: 'vertical' }),
-        new SceneControlsSpacer(),
-        new SceneTimePicker({}),
-        new SceneRefreshPicker({}),
-      ],
+      controls: state.controls ?? controls,
       // Need to clear patterns state when the class in constructed
       patterns: [],
       ...state,
@@ -124,10 +136,6 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
         this.updatePatterns(newState, getPatternsVariable(this));
       })
     );
-
-    return () => {
-      getUrlSyncManager().cleanUp(this);
-    };
   }
 
   /**

@@ -1,6 +1,10 @@
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import { ActiveFieldMeta, FieldNameMetaStore } from 'Components/Table/TableTypes';
 import { getBodyName, getTimeName, LogsFrame } from '../../../services/logsFrame';
+import { logger } from '../../../services/logger';
+import { PLUGIN_ID } from '../../../services/routing';
+
+const tableColumnCustomWidths = `${PLUGIN_ID}.tableColumnWidths`;
 
 type TableColumnsContextType = {
   // the current list of labels from the dataframe combined with UI metadata
@@ -17,6 +21,8 @@ type TableColumnsContextType = {
   bodyState: LogLineState;
   setBodyState: (s: LogLineState) => void;
   clearSelectedLine: () => void;
+  setColumnWidthMap(map: Record<string, number>): void;
+  columnWidthMap: Record<string, number>;
 };
 
 export enum LogLineState {
@@ -26,6 +32,8 @@ export enum LogLineState {
 }
 
 const TableColumnsContext = createContext<TableColumnsContextType>({
+  columnWidthMap: {},
+  setColumnWidthMap: () => {},
   columns: {},
   filteredColumns: {},
   setColumns: () => {},
@@ -61,6 +69,19 @@ function setDefaultColumns(
   handleSetColumns(pendingColumns);
 }
 
+function getColumnWidthsFromLocalStorage() {
+  let initialColumnWidths = {};
+  const existingWidths = localStorage.getItem(tableColumnCustomWidths);
+  if (existingWidths) {
+    try {
+      initialColumnWidths = JSON.parse(existingWidths);
+    } catch (e) {
+      logger.error(e, { msg: 'error parsing table column widths from local storage' });
+    }
+  }
+  return initialColumnWidths;
+}
+
 export const TableColumnContextProvider = ({
   children,
   initialColumns,
@@ -78,6 +99,13 @@ export const TableColumnContextProvider = ({
   const [bodyState, setBodyState] = useState<LogLineState>(LogLineState.auto);
   const [filteredColumns, setFilteredColumns] = useState<FieldNameMetaStore | undefined>(undefined);
   const [visible, setVisible] = useState(false);
+  const initialColumnWidths = getColumnWidthsFromLocalStorage();
+
+  const [columnWidthMap, setColumnWidthMapState] = useState<Record<string, number>>(initialColumnWidths);
+  const setColumnWidthMap = (map: Record<string, number>) => {
+    localStorage.setItem(tableColumnCustomWidths, JSON.stringify(map));
+    setColumnWidthMapState(map);
+  };
 
   const getActiveColumns = (columns: FieldNameMetaStore): string[] => {
     let activeColumns: string[] = [];
@@ -143,6 +171,8 @@ export const TableColumnContextProvider = ({
   return (
     <TableColumnsContext.Provider
       value={{
+        setColumnWidthMap,
+        columnWidthMap,
         bodyState,
         setBodyState,
         setFilteredColumns,
@@ -175,7 +205,7 @@ const removeExtraColumns = (columns: FieldNameMetaStore): FieldNameMetaStore => 
 
 function getDefaultColumns(pendingLabelState: FieldNameMetaStore, logsFrame: LogsFrame) {
   if (!logsFrame) {
-    console.warn('missing dataframe, cannot set url state');
+    logger.warn('missing dataframe, cannot set url state');
     return;
   }
   // Get all active columns and sort by index

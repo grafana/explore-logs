@@ -10,19 +10,22 @@ const labelName = 'cluster';
 test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;
 
-  test.beforeEach(async ({ page }) => {
-    explorePage = new ExplorePage(page);
+  test.beforeEach(async ({ page }, testInfo) => {
+    explorePage = new ExplorePage(page, testInfo);
+
     await explorePage.setExtraTallViewportSize();
-    await page.evaluate(() => window.localStorage.clear());
+    await explorePage.clearLocalStorage();
     await explorePage.gotoServicesBreakdown();
     explorePage.blockAllQueriesExcept({
       refIds: ['logsPanelQuery', fieldName],
       legendFormats: [`{{${levelName}}}`],
     });
+    explorePage.captureConsoleLogs();
   });
 
   test.afterEach(async ({ page }) => {
-    await page.unrouteAll({ behavior: 'ignoreErrors' });
+    await explorePage.unroute();
+    explorePage.echoConsoleLogsOnRetry();
   });
 
   test('should filter logs panel on search for broadcast field', async ({ page }) => {
@@ -363,6 +366,16 @@ test.describe('explore services breakdown page', () => {
     await explorePage.assertFieldsIndex();
     // Adhoc content filter should be added
     await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${fieldName}`)).toBeVisible();
+  });
+
+  test('should show sample table on `<_>` click in patterns', async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: ['A'],
+    });
+    await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
+    const key = page.getByText('<_>').last().click();
+    // `From a sample of` is the indicator that the underlying query perfomed successfully
+    await expect(page.getByText(`From a sample of`)).toBeVisible();
   });
 
   test('should filter patterns in table on legend click', async ({ page }) => {

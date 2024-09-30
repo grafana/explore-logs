@@ -1,6 +1,7 @@
 import { DataFrame, DataFrameType, DataQueryResponse, Field, FieldType, QueryResultMetaStat } from '@grafana/data';
 
 import { cloneQueryResponse, combineResponses } from './combineResponses';
+import { cloneDeep } from 'lodash';
 
 describe('cloneQueryResponse', () => {
   const { logFrameA } = getMockFrames();
@@ -879,6 +880,8 @@ describe('mergeFrames', () => {
 
     // 3 overlaps with logFrameA
     logFrameB.fields[0].values = [2, 3];
+    logFrameB.fields[1].values = ['line4', 'line1'];
+    logFrameB.fields[4].values = ['id4', 'id1'];
 
     const responseA: DataQueryResponse = {
       data: [logFrameA],
@@ -900,7 +903,7 @@ describe('mergeFrames', () => {
               config: {},
               name: 'Line',
               type: 'string',
-              values: ['line3', 'line4', 'line2'],
+              values: ['line4', 'line1', 'line2'],
             },
             {
               config: {},
@@ -928,7 +931,7 @@ describe('mergeFrames', () => {
               config: {},
               name: 'id',
               type: 'string',
-              values: ['id3', 'id4', 'id2'],
+              values: ['id4', 'id1', 'id2'],
             },
           ],
           length: 3,
@@ -959,6 +962,7 @@ describe('mergeFrames', () => {
     // 3 overlaps with logFrameA
     logFrameB.fields[0].values = [2, 3];
     logFrameB.fields[0].nanos = [222222, 333333];
+    logFrameB.fields[4].values = ['id4', 'id1'];
 
     const responseA: DataQueryResponse = {
       data: [logFrameA],
@@ -1009,7 +1013,7 @@ describe('mergeFrames', () => {
               config: {},
               name: 'id',
               type: 'string',
-              values: ['id3', 'id4', 'id2'],
+              values: ['id4', 'id1', 'id2'],
             },
           ],
           length: 3,
@@ -1026,6 +1030,36 @@ describe('mergeFrames', () => {
             ],
           },
           refId: 'A',
+        },
+      ],
+    });
+  });
+
+  it('receiving existing values do not introduce inconsistencies', () => {
+    const { logFrameA, logFrameAB } = getMockFrames();
+
+    const responseA: DataQueryResponse = {
+      data: [cloneDeep(logFrameAB)],
+    };
+    const responseB: DataQueryResponse = {
+      data: [cloneDeep(logFrameA)],
+    };
+    expect(combineResponses(responseA, responseB)).toEqual({
+      data: [
+        {
+          ...logFrameAB,
+          meta: {
+            custom: {
+              frameType: 'LabeledTimeValues',
+            },
+            stats: [
+              {
+                displayName: 'Summary: total bytes processed',
+                unit: 'decbytes',
+                value: 33,
+              },
+            ],
+          },
         },
       ],
     });
@@ -1143,13 +1177,29 @@ describe('mergeFrames', () => {
     const { logFrameA } = getMockFrames();
 
     const responseA: DataQueryResponse = {
-      data: [logFrameA],
+      data: [cloneDeep(logFrameA)],
     };
     const responseB: DataQueryResponse = {
-      data: [logFrameA],
+      data: [cloneDeep(logFrameA)],
     };
     expect(combineResponses(responseA, responseB)).toEqual({
-      data: [logFrameA],
+      data: [
+        {
+          ...logFrameA,
+          meta: {
+            custom: {
+              frameType: 'LabeledTimeValues',
+            },
+            stats: [
+              {
+                displayName: 'Summary: total bytes processed',
+                unit: 'decbytes',
+                value: 22,
+              },
+            ],
+          },
+        },
+      ],
     });
   });
 });
@@ -1256,6 +1306,66 @@ export function getMockFrames() {
       ],
     },
     length: 2,
+  };
+
+  const logFrameAB: DataFrame = {
+    refId: 'A',
+    fields: [
+      {
+        name: 'Time',
+        type: FieldType.time,
+        config: {},
+        values: [1, 2, 3, 4],
+      },
+      {
+        name: 'Line',
+        type: FieldType.string,
+        config: {},
+        values: ['line3', 'line4', 'line1', 'line2'],
+      },
+      {
+        name: 'labels',
+        type: FieldType.other,
+        config: {},
+        values: [
+          {
+            otherLabel: 'other value',
+          },
+          undefined,
+          {
+            label: 'value',
+          },
+          {
+            otherLabel: 'other value',
+          },
+        ],
+      },
+      {
+        name: 'tsNs',
+        type: FieldType.string,
+        config: {},
+        values: ['1000000', '2000000', '3000000', '4000000'],
+      },
+      {
+        name: 'id',
+        type: FieldType.string,
+        config: {},
+        values: ['id3', 'id4', 'id1', 'id2'],
+      },
+    ],
+    meta: {
+      custom: {
+        frameType: 'LabeledTimeValues',
+      },
+      stats: [
+        {
+          displayName: 'Summary: total bytes processed',
+          unit: 'decbytes',
+          value: 22,
+        },
+      ],
+    },
+    length: 4,
   };
 
   const metricFrameA: DataFrame = {
@@ -1395,6 +1505,7 @@ export function getMockFrames() {
   return {
     logFrameA,
     logFrameB,
+    logFrameAB,
     metricFrameA,
     metricFrameB,
     metricFrameC,

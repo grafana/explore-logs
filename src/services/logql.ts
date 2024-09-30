@@ -1,4 +1,4 @@
-import { Identifier, Matcher, MetricExpr, parser, String } from '@grafana/lezer-logql';
+import { MetricExpr, parser, Selector } from '@grafana/lezer-logql';
 import { LokiQuery } from './lokiQuery';
 import { getNodesFromQuery } from './logqlMatchers';
 import { SceneDataQueryRequest } from './datasourceTypes';
@@ -68,19 +68,12 @@ export const interpolateShardingSelector = (queries: LokiQuery[], shards?: numbe
   }));
 };
 
-export const getServiceNameFromQuery = (query: string) => {
-  const matchers = getNodesFromQuery(query, [Matcher]);
-  for (let i = 0; i < matchers.length; i++) {
-    const idNode = matchers[i].getChild(Identifier);
-    const stringNode = matchers[i].getChild(String);
-    if (!idNode || !stringNode) {
-      continue;
-    }
-    const identifier = query.substring(idNode.from, idNode.to);
-    const value = query.substring(stringNode.from, stringNode.to);
-    if (identifier === 'service_name') {
-      return value;
-    }
+export const getSelectorForShardValues = (query: string) => {
+  const selector = getNodesFromQuery(query, [Selector]);
+  if (selector.length > 0) {
+    return query
+      .substring(selector[0].from, selector[0].to)
+      .replace(`, __stream_shard__=~"${SHARDING_PLACEHOLDER}"}`, '}');
   }
   return '';
 };

@@ -4,13 +4,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { DataQueryRequest, LoadingState, DataQueryResponse, TimeRange } from '@grafana/data';
 import {
   addShardingPlaceholderSelector,
-  getServiceNameFromQuery,
+  getSelectorForShardValues,
   interpolateShardingSelector,
   isLogsQuery,
 } from './logql';
 import { combineResponses } from './combineResponses';
 import { DataSourceWithBackend } from '@grafana/runtime';
 import { LokiQuery } from './lokiQuery';
+import { logger } from './logger';
 
 /**
  * Query splitting by stream shards.
@@ -61,7 +62,7 @@ function splitQueriesByStreamShard(
   splittingTargets: LokiQuery[]
 ) {
   let shouldStop = false;
-  let mergedResponse: DataQueryResponse = { data: [], state: LoadingState.Loading, key: uuidv4() };
+  let mergedResponse: DataQueryResponse = { data: [], state: LoadingState.Streaming, key: uuidv4() };
   let subquerySubscription: Subscription | null = null;
   let retriesMap = new Map<number, number>();
   let retryTimer: ReturnType<typeof setTimeout> | null = null;
@@ -103,6 +104,7 @@ function splitQueriesByStreamShard(
       retryTimer = setTimeout(() => {
         console.log(`Retrying ${cycle} (${retries + 1})`);
         runNextRequest(subscriber, cycle, shardRequests);
+        retryTimer = null;
       }, 1500 * Math.pow(2, retries)); // Exponential backoff
 
       return true;
@@ -128,20 +130,17 @@ function splitQueriesByStreamShard(
             return;
           }
         }
-        if (mergedResponse.data.length) {
-          mergedResponse.state = LoadingState.Streaming;
-        }
         mergedResponse = combineResponses(mergedResponse, partialResponse);
       },
       complete: () => {
-        subscriber.next(mergedResponse);
-        nextRequest();
-        if (retryTimer) {
-          clearTimeout(retryTimer);
+        // Prevent flashing "no data"
+        if (mergedResponse.data.length) {
+          subscriber.next(mergedResponse);
         }
+        nextRequest();
       },
       error: (error: unknown) => {
-        console.error(error);
+        logger.error(error, { msg: 'failed to shard' });
         subscriber.next(mergedResponse);
         if (retry()) {
           return;
@@ -160,18 +159,18 @@ function splitQueriesByStreamShard(
         subscriber.next(mergedResponse);
       },
       error: (error: unknown) => {
-        console.error(error);
+        logger.error(error, { msg: 'runNonSplitRequest subscription error' });
         subscriber.error(mergedResponse);
       },
     });
   };
 
   const response = new Observable<DataQueryResponse>((subscriber) => {
-    const serviceName = getServiceNameFromQuery(splittingTargets[0].expr);
+    const selector = getSelectorForShardValues(splittingTargets[0].expr);
     datasource.languageProvider
       .fetchLabelValues('__stream_shard__', {
         timeRange: request.range,
-        streamSelector: serviceName ? `{service_name=${serviceName}}` : undefined,
+        streamSelector: selector ? selector : undefined,
       })
       .then((values: string[]) => {
         const shards = values.map((value) => parseInt(value, 10));
@@ -184,12 +183,16 @@ function splitQueriesByStreamShard(
         }
       })
       .catch((e: unknown) => {
-        console.error(e);
+        logger.error(e, { msg: 'failed to fetch label values for __stream_shard__' });
         shouldStop = true;
         runNonSplitRequest(subscriber);
       });
     return () => {
       shouldStop = true;
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+        retryTimer = null;
+      }
       if (subquerySubscription != null) {
         subquerySubscription.unsubscribe();
       }

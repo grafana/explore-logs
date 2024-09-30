@@ -1,6 +1,7 @@
 import { sceneGraph, SceneObjectState } from '@grafana/scenes';
 import { IndexScene } from '../../../IndexScene/IndexScene';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
+import { logger } from '../../../../services/logger';
 
 export interface FilterByPatternsButtonState extends SceneObjectState {
   pattern: string;
@@ -17,7 +18,7 @@ export function onPatternClick(props: FilterByPatternsState) {
   const indexScene = sceneGraph.getAncestor(staleIndex, IndexScene);
 
   if (!indexScene) {
-    console.warn('logs exploration scene not found');
+    logger.warn('logs exploration scene not found');
     return;
   }
 

@@ -7,6 +7,7 @@ import {
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
+  SceneObject,
   SceneObjectBase,
   SceneObjectState,
   SceneReactObject,
@@ -32,7 +33,7 @@ import { getFieldGroupByVariable, getFieldsVariable } from '../../../services/va
 import { LokiQuery } from '../../../services/lokiQuery';
 
 export interface FieldValuesBreakdownSceneState extends SceneObjectState {
-  body?: LayoutSwitcher | SceneReactObject;
+  body?: (LayoutSwitcher & SceneObject) | (SceneReactObject & SceneObject);
   $data?: SceneDataProvider;
   lastFilterEvent?: AddFilterEvent;
 }
@@ -54,10 +55,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
 
   public static Component = ({ model }: SceneComponentProps<FieldValuesBreakdownScene>) => {
     const { body } = model.useState();
-    // @todo why are the types like this?
-    if (body instanceof LayoutSwitcher) {
-      return <>{body && <body.Component model={body} />}</>;
-    } else if (body instanceof SceneReactObject) {
+    if (body) {
       return <>{body && <body.Component model={body} />}</>;
     }
 

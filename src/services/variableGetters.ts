@@ -14,6 +14,7 @@ import {
   LOGS_FORMAT_EXPR,
   LogsQueryOptions,
   MIXED_FORMAT_EXPR,
+  SERVICE_LABEL_VAR,
   SERVICE_NAME,
   VAR_DATASOURCE,
   VAR_FIELD_GROUP_BY,
@@ -31,13 +32,26 @@ import {
   VAR_SERVICE,
 } from './variables';
 import { AdHocVariableFilter } from '@grafana/data';
+import { logger } from './logger';
 
-export function getServiceSelectionStringVariable(sceneRef: SceneObject) {
-  const variable = sceneGraph.lookupVariable(VAR_SERVICE, sceneRef);
-  if (!(variable instanceof CustomConstantVariable)) {
-    throw new Error('VAR_SERVICE not found');
+export function getLogsStreamSelector(options: LogsQueryOptions) {
+  const {
+    labelExpressionToAdd = '',
+    structuredMetadataToAdd = '',
+    fieldExpressionToAdd = '',
+    parser = undefined,
+  } = options;
+
+  switch (parser) {
+    case 'structuredMetadata':
+      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTER_EXPR}`;
+    case 'json':
+      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTER_EXPR} ${JSON_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
+    case 'logfmt':
+      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTER_EXPR} ${LOGS_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
+    default:
+      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTER_EXPR} ${MIXED_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
   }
-  return variable;
 }
 
 export function getPatternsVariable(scene: SceneObject) {
@@ -76,6 +90,14 @@ export function getLabelGroupByVariable(scene: SceneObject) {
   return variable;
 }
 
+export function getServiceLabelVariable(scene: SceneObject) {
+  const variable = sceneGraph.lookupVariable(SERVICE_LABEL_VAR, scene);
+  if (!(variable instanceof CustomConstantVariable)) {
+    throw new Error('SERVICE_LABEL_VAR not found');
+  }
+  return variable;
+}
+
 export function getFieldGroupByVariable(scene: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_FIELD_GROUP_BY, scene);
   if (!(variable instanceof CustomConstantVariable)) {
@@ -101,24 +123,12 @@ export function getAdHocFiltersVariable(variableName: string, scene: SceneObject
   return variable;
 }
 
-export function getLogsStreamSelector(options: LogsQueryOptions) {
-  const {
-    labelExpressionToAdd = '',
-    structuredMetadataToAdd = '',
-    fieldExpressionToAdd = '',
-    parser = undefined,
-  } = options;
-
-  switch (parser) {
-    case 'structuredMetadata':
-      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTER_EXPR}`;
-    case 'json':
-      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTER_EXPR} ${JSON_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
-    case 'logfmt':
-      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTER_EXPR} ${LOGS_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
-    default:
-      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTER_EXPR} ${MIXED_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
+export function getServiceSelectionStringVariable(sceneRef: SceneObject) {
+  const variable = sceneGraph.lookupVariable(VAR_SERVICE, sceneRef);
+  if (!(variable instanceof CustomConstantVariable)) {
+    throw new Error('VAR_SERVICE not found');
   }
+  return variable;
 }
 
 export function getUrlParamNameForVariable(variableName: string) {
@@ -129,7 +139,15 @@ export function getValueFromFieldsFilter(filter: AdHocVariableFilter, variableNa
   try {
     return JSON.parse(filter.value);
   } catch (e) {
-    console.error(`Failed to parse ${variableName}`, e);
+    logger.warn(`Failed to parse ${variableName}`, { value: filter.value });
+
+    // If the user has a URL from before 0.1.4 where detected_fields changed the format of the fields value to include the parser, fall back to mixed parser if we have a value
+    if (filter.value) {
+      return {
+        value: filter.value,
+        parser: 'mixed',
+      };
+    }
     throw e;
   }
 }

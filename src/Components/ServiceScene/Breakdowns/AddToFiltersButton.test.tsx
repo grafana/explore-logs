@@ -113,7 +113,7 @@ describe('addToFilters and addAdHocFilter', () => {
             value: 'existingValue',
             parser: 'mixed',
           }),
-          valueLabel: 'existingValue',
+          valueLabels: ['existingValue'],
         },
       ],
     });
@@ -142,7 +142,7 @@ describe('addToFilters and addAdHocFilter', () => {
             value: 'existingValue',
             parser: 'mixed',
           } as FieldValue),
-          valueLabel: 'existingValue',
+          valueLabels: ['existingValue'],
         },
         {
           key: 'key',
@@ -151,7 +151,7 @@ describe('addToFilters and addAdHocFilter', () => {
             value: 'value',
             parser: 'mixed',
           } as FieldValue),
-          valueLabel: 'value',
+          valueLabels: ['value'],
         },
       ]);
     });
@@ -196,13 +196,13 @@ describe('addToFilters and addAdHocFilter', () => {
             value: 'existingValue',
             parser: 'mixed',
           }),
-          valueLabel: 'existingValue',
+          valueLabels: ['existingValue'],
         },
         {
           key: 'indexed',
           operator: '=',
           value: 'value',
-          valueLabel: 'value',
+          valueLabels: ['value'],
         },
       ]);
     });
@@ -230,7 +230,7 @@ describe('addToFilters and addAdHocFilter', () => {
             value: 'existingValue',
             parser: 'mixed',
           }),
-          valueLabel: 'existingValue',
+          valueLabels: ['existingValue'],
         },
         {
           key: 'key',
@@ -239,7 +239,7 @@ describe('addToFilters and addAdHocFilter', () => {
             value: 'value',
             parser: 'mixed',
           }),
-          valueLabel: 'value',
+          valueLabels: ['value'],
         },
       ]);
     });
@@ -266,13 +266,13 @@ describe('addToFilters and addAdHocFilter', () => {
             value: 'existingValue',
             parser: 'mixed',
           }),
-          valueLabel: 'existingValue',
+          valueLabels: ['existingValue'],
         },
         {
           key: 'indexed',
           operator: '=',
           value: 'value',
-          valueLabel: 'value',
+          valueLabels: ['value'],
         },
       ]);
     });

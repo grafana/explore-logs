@@ -7,6 +7,7 @@ import { FieldsBreakdownScene } from './FieldsBreakdownScene';
 import { BusEventBase } from '@grafana/data';
 import { LabelValuesBreakdownScene } from './LabelValuesBreakdownScene';
 import { FieldValuesBreakdownScene } from './FieldValuesBreakdownScene';
+import { logger } from '../../../services/logger';
 
 export class BreakdownSearchReset extends BusEventBase {
   public static type = 'breakdown-search-reset';
@@ -65,7 +66,10 @@ export class BreakdownSearchScene extends SceneObjectBase<BreakdownSearchSceneSt
           }
         });
       } else {
-        console.warn('invalid parent for search', body);
+        logger.warn('invalid parent for search', {
+          typeofBody: typeof body,
+          filter,
+        });
       }
     }
   }

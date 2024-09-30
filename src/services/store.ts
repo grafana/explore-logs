@@ -2,6 +2,7 @@ import pluginJson from '../plugin.json';
 import { SortBy, SortDirection } from '../Components/ServiceScene/Breakdowns/SortByScene';
 import { SceneObject } from '@grafana/scenes';
 import { getDataSourceName, getServiceName } from './variableGetters';
+import { logger } from './logger';
 
 const SERVICES_LOCALSTORAGE_KEY = `${pluginJson.id}.services.favorite`;
 const DS_LOCALSTORAGE_KEY = `${pluginJson.id}.datasource`;
@@ -16,7 +17,7 @@ export function getFavoriteServicesFromStorage(dsKey: string | unknown): string[
   try {
     services = JSON.parse(localStorage.getItem(key) || '[]');
   } catch (e) {
-    console.error('Error parsing favorite services from local storage', e);
+    logger.error(e, { msg: 'Error parsing favorite services from local storage' });
   }
 
   if (!Array.isArray(services)) {
@@ -35,7 +36,7 @@ export function addToFavoriteServicesInStorage(dsKey: string | unknown, serviceN
   try {
     services = JSON.parse(localStorage.getItem(key) || '[]');
   } catch (e) {
-    console.error('Error parsing favorite services from local storage', e);
+    logger.error(e, { msg: 'Error parsing favorite services from local storage' });
   }
 
   if (!Array.isArray(services)) {

@@ -16,17 +16,15 @@ weight: 600
 
 # Log patterns
 
-{{< docs/public-preview product="Explore Logs" >}}
-
 Log patterns let you work with groups of similar log lines. You can hide log patterns that are noisy, or focus only on the patterns that are most useful.
 
-Loki automatically extracts patterns when your logs are ingested. Patterns are ephemeral and are only mined from the past 3 hours of your logs.
+Loki automatically extracts patterns when your logs are ingested. Patterns are ephemeral and are only mined from the previous three hours of your logs.
 
 {{< figure alt="Explore Logs Patterns tab" width="900px" align="center" src="../images/patterns.png" caption="Patterns tab" >}}
 
 The Explore Logs app shows you the patterns alongside their log volumes. From this view, you can investigate spikes and include or exclude specific log lines from your view.
 
-Patterns are ephemeral and can change over time as your logging evolves.
+Patterns can change over time as your logging evolves.
 
 ## Use cases
 
@@ -42,7 +40,7 @@ Log patterns let you:
 
 ## Guided tour of log patterns
 
-We've outlined the steps you'll need to take to perform these common use cases.
+We've outlined the steps you'll need to take to perform some common use cases.
 
 ### Browse log volumes by type
 
@@ -50,27 +48,29 @@ Explore Logs proactively visualizes your log volume data per detected pattern, b
 
 For example, if your HTTP service is suffering from a DDoS attack, the relevant graphs will clearly show the spikes. From here you can drill down to discover enough details about the attack to counter it.
 
-### Targeted analysis
+### Target your analysis
 
 If you know the kind of log line you're looking for, log patterns are an easy way to remove unwanted log lines from the view.
 
 To view only a specific set of patterns, perform the following steps:
 
 1. From the Grafana main menu, select **Explore** > **Logs**.
-1. Select the relevant **Service**. ([No services?]({{< relref "../troubleshooting#there-are-no-services" >}}))
+1. Select the relevant **Service**. ([No services?](https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/troubleshooting/#there-are-no-services))
 1. On the service details page, click the **Patterns** tab.
-1. Identify a pattern that matches the type of logs you're interested in viewing. ([No patterns?]({{< relref "../troubleshooting#there-are-no-patterns" >}}))
+1. Identify a pattern that matches the type of logs you're interested in viewing. ([No patterns?](https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/troubleshooting/#there-are-no-patterns))
 1. Click the **Include** button for the pattern.
 1. Return to the **Logs** tab and notice the filtered view.
+
+You can repeat steps 4 and 5 to include multiple patterns.
 
 ### Hide noisy log lines
 
 To hide noisy log lines, perform the following steps:
 
 1. From the Grafana main menu, select **Explore** > **Logs**.
-1. Select the relevant **Service**. ([No services?]({{< relref "../troubleshooting#there-are-no-services" >}}))
+1. Select the relevant **Service**. ([No services?](https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/troubleshooting/#there-are-no-services))
 1. On the service details page, click the **Patterns** tab.
-1. Identify a pattern that represents noise in the logs that you want to remove. ([No patterns?]({{< relref "../troubleshooting#there-are-no-patterns" >}}))
+1. Identify a pattern that represents noise in the logs that you want to remove. ([No patterns?](https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/troubleshooting/#there-are-no-patterns))
 1. Click the **Exclude** button to exclude that pattern.
 1. Return to the **Logs** tab and notice the noisy pattern has been removed.
 
@@ -82,7 +82,7 @@ Loki extracts patterns from a stream of log lines.
 
 For example, if your service logs lines like this:
 
-```
+```console
 duration=255ms trace_id=abc001 GET /path/to/endpoint/2
 user loaded: 25666
 user loaded: 14544
@@ -104,9 +104,9 @@ Pattern 1: `duration=<_> trace_id=<_> <_> /path/to/endpoint/<_>`
 Pattern 2: `user loaded: <_>`
 
 {{< admonition type="note" >}}
-Since Loki 3.0, you can make queries using this simplified template format which is much faster than using regex.
+Since Loki 3.0, you can make queries using this simplified [pattern match filter operator](https://grafana.com/docs/loki/latest/query/#pattern-match-filter-operators) which is much faster than using regex.
 {{< /admonition >}}
 
 ## What next?
 
-See how Explore Logs works on your own data by following our [Get started guide]({{< relref "../get-started" >}}).
+See how Explore Logs works on your own data by following our [Get started guide](https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/get-started/).

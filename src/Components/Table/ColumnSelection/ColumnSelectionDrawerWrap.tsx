@@ -8,6 +8,7 @@ import { LogsTableMultiSelect } from 'Components/Table/ColumnSelection/LogsTable
 
 import { FieldNameMetaStore } from '../TableTypes';
 import { reportInteraction } from '@grafana/runtime';
+import { logger } from '../../../services/logger';
 
 export function getReorderColumn(setColumns: (cols: FieldNameMetaStore) => void) {
   return (columns: FieldNameMetaStore, sourceIndex: number, destinationIndex: number) => {
@@ -38,12 +39,28 @@ export function getReorderColumn(setColumns: (cols: FieldNameMetaStore) => void)
   };
 }
 
+function logError(columnName: string, columns: FieldNameMetaStore) {
+  let logContext;
+  try {
+    logContext = {
+      columns: JSON.stringify(columns),
+      columnName: columnName,
+    };
+  } catch (e) {
+    logContext = {
+      msg: 'Table: ColumnSelectionDrawerWrap failed to encode context',
+      columnName: columnName,
+    };
+  }
+  logger.warn('failed to get column', logContext);
+}
+
 export function ColumnSelectionDrawerWrap() {
   const { columns, setColumns, setVisible, filteredColumns, setFilteredColumns } = useTableColumnContext();
   const [searchValue, setSearchValue] = useState<string>('');
   const toggleColumn = (columnName: string) => {
     if (!columns || !(columnName in columns)) {
-      console.warn('failed to get column', columns);
+      logError(columnName, columns);
       return;
     }
 

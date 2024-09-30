@@ -42,6 +42,7 @@ import {
   getLevelsVariable,
   getServiceNameFromVariableState,
 } from '../../services/variableGetters';
+import { logger } from '../../services/logger';
 
 const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 const PATTERNS_QUERY_REFID = 'patterns';
@@ -387,7 +388,9 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     const breakdownViewDef = breakdownViewsDefinitions.find((v) => v.value === breakdownView);
 
     if (!body) {
-      throw new Error('body is not defined in setBreakdownView!');
+      const err = new Error('body is not defined in setBreakdownView!');
+      logger.error(err, { msg: 'ServiceScene setBreakdownView error' });
+      throw err;
     }
 
     if (breakdownViewDef) {
@@ -410,7 +413,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
           children: [...body.state.children.slice(0, 1), valueBreakdownViewDef.getScene(this.state.drillDownLabel)],
         });
       } else {
-        console.error('not setting breakdown view');
+        logger.error(new Error('not setting breakdown view'));
       }
     }
   }

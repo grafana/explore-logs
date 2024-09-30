@@ -49,8 +49,12 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
       const data = sceneGraph.getData(this);
 
       this._subs.add(
-        data.subscribeToState((data) => {
-          if (data.data?.state === LoadingState.Done) {
+        data.subscribeToState((data, prevData) => {
+          if (
+            data.data?.state === LoadingState.Done ||
+            (data.data?.state === LoadingState.Streaming &&
+              data.data.series.length > (prevData.data?.series.length ?? 0))
+          ) {
             this.performRepeat(data.data);
           }
         })

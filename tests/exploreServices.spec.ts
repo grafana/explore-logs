@@ -6,15 +6,17 @@ import { mockVolumeApiResponse } from './mocks/mockVolumeApiResponse';
 test.describe('explore services page', () => {
   let explorePage: ExplorePage;
 
-  test.beforeEach(async ({ page }) => {
-    explorePage = new ExplorePage(page);
+  test.beforeEach(async ({ page }, testInfo) => {
+    explorePage = new ExplorePage(page, testInfo);
     await explorePage.setDefaultViewportSize();
-    await page.evaluate(() => window.localStorage.clear());
+    await explorePage.clearLocalStorage();
     await explorePage.gotoServices();
+    explorePage.captureConsoleLogs();
   });
 
   test.afterEach(async ({ page }) => {
-    await page.unrouteAll({ behavior: 'ignoreErrors' });
+    await explorePage.unroute();
+    explorePage.echoConsoleLogsOnRetry();
   });
 
   test('should filter service labels on search', async ({ page }) => {
@@ -125,7 +127,7 @@ test.describe('explore services page', () => {
   });
 
   test.describe('mock volume API calls', () => {
-    let logsVolumeCount: number, logsQueryCount: number;
+    let logsVolumeCount: number, logsQueryCount: number, labelsQueryCount: number;
 
     test.beforeEach(async ({ page }) => {
       logsVolumeCount = 0;
@@ -194,6 +196,7 @@ test.describe('explore services page', () => {
 
     test('changing datasource will trigger new queries', async ({ page }) => {
       await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
+      await explorePage.assertPanelsNotLoading();
       expect(logsVolumeCount).toEqual(1);
       expect(logsQueryCount).toEqual(4);
       await page
@@ -202,6 +205,7 @@ test.describe('explore services page', () => {
         .nth(1)
         .click();
       await page.getByText('gdev-loki-copy').click();
+      await explorePage.assertPanelsNotLoading();
       expect(logsVolumeCount).toEqual(2);
     });
   });

@@ -21,7 +21,7 @@ import { testIds } from '../../../../services/testIds';
 import { PatternsFrameScene } from './PatternsFrameScene';
 import { PatternNameLabel } from './PatternNameLabel';
 import { getExplorationFor } from 'services/scenes';
-import { PatternsTableExpandedRow } from '../PatternsTableExpandedRow';
+import { PatternsTableExpandedRow } from './PatternsTableExpandedRow';
 
 // copied from from grafana repository packages/grafana-data/src/valueFormats/categories.ts
 // that is used in Grafana codebase for "short" units
