@@ -74,10 +74,11 @@ export function navigateToValueBreakdown(newPath: ValueSlugs, label: string, ser
 /**
  * The case for initial navigation from the service selection to the service index is a special case, as we don't yet have a serviceScene constructed to pull the selected service.
  * This function will route users to the initial (logs) page from the service selection view, which will populate the service scene state with the selected service string.
- * @param serviceName
+ * @param labelName
+ * @param labelValue
  */
-export function navigateToInitialPageAfterServiceSelection(serviceName: string) {
-  const breakdownUrl = buildDrilldownPageUrl(ROUTES.logs(serviceName));
+export function navigateToInitialPageAfterServiceSelection(labelName: string, labelValue: string) {
+  const breakdownUrl = buildDrilldownPageUrl(ROUTES.logs(labelValue, labelName));
   locationService.push(breakdownUrl);
 }
 

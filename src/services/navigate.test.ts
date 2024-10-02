@@ -91,9 +91,11 @@ describe('navigate', () => {
   });
   describe('navigateToInitialPageAfterServiceSelection', () => {
     it('should navigate to initial (logs) page', () => {
-      const serviceName = 'service_name_string';
-      navigateToInitialPageAfterServiceSelection(serviceName);
-      expect(locationSpy).toHaveBeenCalledWith(`/a/grafana-lokiexplore-app/explore/service/${serviceName}/logs`);
+      const labelValue = 'label_value_string';
+      const labelName = 'label_name_string';
+
+      navigateToInitialPageAfterServiceSelection(labelName, labelValue);
+      expect(locationSpy).toHaveBeenCalledWith(`/a/grafana-lokiexplore-app/explore/${labelName}/${labelValue}/logs`);
     });
   });
 });

@@ -43,16 +43,14 @@ import {
 import { getFavoriteServicesFromStorage } from 'services/store';
 import {
   LEVEL_VARIABLE_VALUE,
-  SERVICE_LABEL_EXPR,
-  SERVICE_LABEL_VAR,
   SERVICE_NAME,
   SERVICE_UI_LABEL,
+  VAR_AGGREGATED_METRICS,
   VAR_PRIMARY_LABEL,
   VAR_PRIMARY_LABEL_EXPR,
   VAR_PRIMARY_LABEL_SEARCH,
-  VAR_PRIMARY_LABEL_SEARCH_EXPR,
 } from 'services/variables';
-import { selectService, SelectServiceButton } from './SelectServiceButton';
+import { selectLabel, SelectServiceButton } from './SelectServiceButton';
 import { buildDataQuery, buildResourceQuery } from 'services/query';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getQueryRunner, getSceneQueryRunner, setLevelColorOverrides } from 'services/panel';
@@ -63,9 +61,9 @@ import { ServiceFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
 import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 import { areArraysEqual } from '../../services/comparison';
 import {
+  getAggregatedMetricsVariable,
   getDataSourceVariable,
   getLabelsVariable,
-  getServiceLabelVariable,
   getServiceSelectionPrimaryLabel,
   getServiceSelectionSearchVariable,
 } from '../../services/variableGetters';
@@ -73,6 +71,7 @@ import { config } from '@grafana/runtime';
 import { VariableHide } from '@grafana/schema';
 import { ToolbarScene } from '../IndexScene/ToolbarScene';
 import { IndexScene } from '../IndexScene/IndexScene';
+import { capitalizeFirstLetter } from '../../services/text';
 
 // @ts-expect-error
 const aggregatedMetricsEnabled: boolean | undefined = config.featureToggles.exploreLogsAggregatedMetrics;
@@ -100,11 +99,9 @@ interface ServiceSelectionSceneState extends SceneObjectState {
 }
 
 function renderPrimaryLabelFilters(filters: AdHocVariableFilter[]): string {
-  console.log('renderPrimaryLabelFilters', filters);
   if (filters.length) {
     const filter = filters[0];
-    const result = `, ${filter.key}${filter.operator}\`${filter.value}\``;
-    console.log('renderPrimaryLabelFilters result', result);
+    const result = `${filter.key}${filter.operator}\`${filter.value}\``;
     return result;
   }
 
@@ -122,12 +119,12 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
             name: VAR_PRIMARY_LABEL_SEARCH,
             label: 'Service',
             hide: VariableHide.hideVariable,
-            value: '',
             skipUrlSync: true,
+            value: '.+',
           }),
-          // variable to store the service label to use
+          // variable that stores if aggregated metrics are supported for the query
           new CustomConstantVariable({
-            name: SERVICE_LABEL_VAR,
+            name: VAR_AGGREGATED_METRICS,
             label: '',
             hide: VariableHide.hideLabel,
             value: SERVICE_NAME,
@@ -146,19 +143,22 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           // The active tab expression, hidden variable
           new AdHocFiltersVariable({
             name: VAR_PRIMARY_LABEL,
-            label: '',
-            hide: VariableHide.hideVariable,
-            expressionBuilder: renderPrimaryLabelFilters,
+            hide: VariableHide.hideLabel,
+            expressionBuilder: (filters) => {
+              return renderPrimaryLabelFilters(filters);
+            },
+            filters: [
+              {
+                key: SERVICE_NAME,
+                value: '.+',
+                operator: '=~',
+              },
+            ],
           }),
         ],
       }),
       $data: getSceneQueryRunner({
-        queries: [
-          buildResourceQuery(
-            `{${SERVICE_LABEL_EXPR}=~\`.*${VAR_PRIMARY_LABEL_SEARCH_EXPR}.*\` ${VAR_PRIMARY_LABEL_EXPR}}`,
-            'volume'
-          ),
-        ],
+        queries: [buildResourceQuery(`{${VAR_PRIMARY_LABEL_EXPR}}`, 'volume')],
         runQueriesMode: 'manual',
       }),
       $labelsData: getSceneQueryRunner({
@@ -204,6 +204,22 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
     // Get labels
     this.state.$labelsData.runQueries();
+
+    const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
+    this._subs.add(
+      primaryLabelVar.subscribeToState((newState, prevState) => {
+        if (newState.filterExpression !== prevState.filterExpression) {
+          this.runVolumeQuery();
+        }
+      })
+    );
+
+    this._subs.add(
+      this.subscribeToState((newState, prevState) => {
+        if (newState.selectedTab !== prevState.selectedTab) {
+        }
+      })
+    );
 
     this._subs.add(
       this.state.$labelsData.subscribeToState((newState, prevState) => {
@@ -267,7 +283,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
     // agg metrics need parser and unwrap, have to tear down and rebuild panels when the variable changes
     this._subs.add(
-      getServiceLabelVariable(this).subscribeToState((newState, prevState) => {
+      getAggregatedMetricsVariable(this).subscribeToState((newState, prevState) => {
         if (newState.value !== prevState.value) {
           // Clear the body panels
           this.setState({
@@ -319,14 +335,26 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     return !toolbar?.state.options.aggregatedMetrics.disabled && toolbar?.state.options.aggregatedMetrics.active;
   }
 
+  private wrapWildcardSearch(input: string) {
+    if (input !== '.+' && input.substring(0, 2) !== '.*') {
+      return `.*${input}.*`;
+    }
+
+    return input;
+  }
+
   private runVolumeQuery() {
-    const serviceLabelVar = getServiceLabelVariable(this);
+    this.updateAggregatedMetricVariable();
+    this.state.$data.runQueries();
+  }
+
+  private updateAggregatedMetricVariable() {
+    const serviceLabelVar = getAggregatedMetricsVariable(this);
     if ((!this.isTimeRangeTooEarlyForAggMetrics() || !aggregatedMetricsEnabled) && this.isAggregatedMetricsActive()) {
       serviceLabelVar.changeValueTo(AGGREGATED_SERVICE_NAME);
     } else {
       serviceLabelVar.changeValueTo(SERVICE_NAME);
     }
-    this.state.$data.runQueries();
   }
 
   private updateBody() {
@@ -339,12 +367,13 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       const newChildren: SceneCSSGridItem[] = [];
       const existingChildren: SceneCSSGridItem[] = this.state.body.state.children as SceneCSSGridItem[];
       const timeRange = sceneGraph.getTimeRange(this).state.value;
-      const serviceLabelVar = getServiceLabelVariable(this);
+      const aggregatedMetricsVariable = getAggregatedMetricsVariable(this);
+      const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
 
-      for (const service of labelsToQuery.slice(0, SERVICES_LIMIT)) {
+      for (const primaryLabelValue of labelsToQuery.slice(0, SERVICES_LIMIT)) {
         const existing = existingChildren.filter((child) => {
           const vizPanel = child.state.body as VizPanel | undefined;
-          return vizPanel?.state.title === service;
+          return vizPanel?.state.title === primaryLabelValue;
         });
 
         if (existing.length === 2) {
@@ -353,8 +382,14 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         } else {
           // for each service, we create a layout with timeseries and logs panel
           newChildren.push(
-            this.buildServiceLayout(service, timeRange, serviceLabelVar),
-            this.buildServiceLogsLayout(service)
+            this.buildServiceLayout(
+              this.state.selectedTab,
+              primaryLabelValue,
+              timeRange,
+              aggregatedMetricsVariable,
+              primaryLabelVar
+            ),
+            this.buildServiceLogsLayout(primaryLabelValue)
           );
         }
       }
@@ -394,14 +429,23 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   }
 
   private getLogExpression(service: string, levelFilter: string) {
-    return `{${SERVICE_LABEL_EXPR}=\`${service}\`}${levelFilter}`;
+    return `{${VAR_PRIMARY_LABEL_EXPR}}${levelFilter}`;
   }
 
-  private getMetricExpression(service: string, serviceLabelVar: CustomConstantVariable) {
+  private getMetricExpression(
+    labelValue: string,
+    serviceLabelVar: CustomConstantVariable,
+    primaryLabelVar: AdHocFiltersVariable
+  ) {
+    const filter = primaryLabelVar.state.filters[0];
     if (serviceLabelVar.state.value === AGGREGATED_SERVICE_NAME) {
-      return `sum by (${LEVEL_VARIABLE_VALUE}) (sum_over_time({${AGGREGATED_SERVICE_NAME}=\`${service}\`} | logfmt | unwrap count [$__auto]))`;
+      if (filter.key === SERVICE_NAME) {
+        return `sum by (${LEVEL_VARIABLE_VALUE}) (sum_over_time({${AGGREGATED_SERVICE_NAME}=\`${labelValue}\`} | logfmt | unwrap count [$__auto]))`;
+      } else {
+        return `sum by (${LEVEL_VARIABLE_VALUE}) (sum_over_time({${AGGREGATED_SERVICE_NAME}=~\`.+\` } | logfmt | ${filter.key}=\`${labelValue}\` | unwrap count [$__auto]))`;
+      }
     }
-    return `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({${SERVICE_LABEL_EXPR}=\`${service}\`} [$__auto]))`;
+    return `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({ ${filter.key}=\`${labelValue}\` } [$__auto]))`;
   }
 
   private extendTimeSeriesLegendBus = (service: string, context: PanelContext, panel: VizPanel) => {
@@ -419,20 +463,26 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   };
 
   // Creates a layout with timeseries panel
-  buildServiceLayout(service: string, timeRange: TimeRange, serviceLabelVar: CustomConstantVariable) {
+  buildServiceLayout(
+    primaryLabelName: string,
+    primaryLabelValue: string,
+    timeRange: TimeRange,
+    serviceLabelVar: CustomConstantVariable,
+    primaryLabelVar: AdHocFiltersVariable
+  ) {
     let splitDuration;
     if (timeRange.to.diff(timeRange.from, 'hours') >= 4 && timeRange.to.diff(timeRange.from, 'hours') <= 26) {
       splitDuration = '2h';
     }
     const panel = PanelBuilders.timeseries()
       // If service was previously selected, we show it in the title
-      .setTitle(service)
+      .setTitle(primaryLabelValue)
       .setData(
         getQueryRunner([
-          buildDataQuery(this.getMetricExpression(service, serviceLabelVar), {
+          buildDataQuery(this.getMetricExpression(primaryLabelValue, serviceLabelVar, primaryLabelVar), {
             legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`,
             splitDuration,
-            refId: `ts-${service}`,
+            refId: `ts-${primaryLabelValue}`,
           }),
         ])
       )
@@ -449,11 +499,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         placement: 'right',
         displayMode: LegendDisplayMode.Table,
       })
-      .setHeaderActions(new SelectServiceButton({ service }))
+      .setHeaderActions(new SelectServiceButton({ labelValue: primaryLabelValue, labelName: primaryLabelName }))
       .build();
 
     panel.setState({
-      extendPanelContext: (_, context) => this.extendTimeSeriesLegendBus(service, context, panel),
+      extendPanelContext: (_, context) => this.extendTimeSeriesLegendBus(primaryLabelValue, context, panel),
     });
 
     return new SceneCSSGridItem({
@@ -500,16 +550,38 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   };
 
   // We could also run model.setState in component, but it is recommended to implement the state-modifying methods in the scene object
-  public onSearchServicesChange = debounce((serviceString?: string) => {
-    const variable = getServiceSelectionSearchVariable(this);
-    variable.changeValueTo(serviceString ?? '');
-    this.state.$data.runQueries();
+  public onSearchServicesChange = debounce((primaryLabelSearch?: string) => {
+    // Set search variable
+    const searchVar = getServiceSelectionSearchVariable(this);
+
+    const newSearchString = primaryLabelSearch ? this.wrapWildcardSearch(primaryLabelSearch) : '.+';
+    if (newSearchString !== searchVar.state.value) {
+      searchVar.setState({
+        value: primaryLabelSearch ? this.wrapWildcardSearch(primaryLabelSearch) : '.+',
+        label: primaryLabelSearch ?? '',
+      });
+    }
+
+    const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
+    const filter = primaryLabelVar.state.filters[0];
+
+    // Update primary label with search string
+    if (this.wrapWildcardSearch(searchVar.state.value.toString()) !== filter.value) {
+      primaryLabelVar.setState({
+        filters: [
+          {
+            ...filter,
+            value: this.wrapWildcardSearch(searchVar.state.value.toString()),
+          },
+        ],
+      });
+    }
 
     reportAppInteraction(
       USER_EVENTS_PAGES.service_selection,
       USER_EVENTS_ACTIONS.service_selection.search_services_changed,
       {
-        searchQuery: serviceString,
+        searchQuery: primaryLabelSearch,
       }
     );
   }, 500);
@@ -523,18 +595,18 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   public static Component = ({ model }: SceneComponentProps<ServiceSelectionScene>) => {
     const styles = useStyles2(getStyles);
     const popoverStyles = useStyles2(getPopoverStyles);
-    const { body, $data, showPopover } = model.useState();
+    const { body, $data, showPopover, selectedTab } = model.useState();
     const { data } = $data.useState();
 
     const serviceStringVariable = getServiceSelectionSearchVariable(model);
-    const { value } = serviceStringVariable.useState();
+    const { label } = serviceStringVariable.useState();
 
     const { labelsByVolume, labelsToQuery } = model.getLabels(data?.series);
     const isLogVolumeLoading =
       data?.state === LoadingState.Loading || data?.state === LoadingState.Streaming || data === undefined;
     const volumeApiError = $data.state.data?.state === LoadingState.Error;
 
-    const onSearchChange = (serviceName: string) => {
+    const onSearchChange = (serviceName?: string) => {
       model.onSearchServicesChange(serviceName);
     };
     const totalServices = labelsToQuery?.length ?? 0;
@@ -548,7 +620,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         return {
           value: opt.value.toString(),
           label: opt.label,
-          active: model.state.selectedTab === opt.value,
+          active: selectedTab === opt.value,
           counter: undefined,
         };
       }),
@@ -568,6 +640,14 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
             onChange={(opt) => {
               // Hide the popover
               model.toggleShowPopover();
+
+              // clear search
+              const searchVar = getServiceSelectionSearchVariable(model);
+              searchVar.setState({
+                value: '.+',
+                text: '',
+                label: '',
+              });
 
               // Add value to variable
               if (opt.value) {
@@ -618,12 +698,12 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
                 icon: 'filter',
               }}
               isLoading={isLogVolumeLoading}
-              value={String(value)}
-              onChange={(serviceName) => onSearchChange(serviceName ?? '')}
+              value={label}
+              onChange={(serviceName) => onSearchChange(serviceName)}
               selectOption={(value: string) => {
-                selectService(value, model);
+                selectLabel(selectedTab, value, model);
               }}
-              label="Service"
+              label={model.formatPrimaryLabelForUI()}
               options={
                 labelsToQuery?.map((serviceName) => ({
                   value: serviceName,
@@ -637,6 +717,14 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
               <Tab
                 key={tabLabel.value}
                 onChangeTab={() => {
+                  // clear search on previous label
+                  const searchVar = getServiceSelectionSearchVariable(model);
+                  searchVar.setState({
+                    value: '.+',
+                    text: '',
+                    label: '',
+                  });
+
                   model.setState({
                     selectedTab: tabLabel.value,
                   });
@@ -650,7 +738,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
                     ],
                   });
                 }}
-                label={tabLabel.label}
+                label={capitalizeFirstLetter(tabLabel.label)}
                 active={tabLabel.active}
                 counter={tabLabel.counter}
               />
@@ -706,6 +794,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     const labelsToQuery = createListOfLabelsToQuery(labelsByVolume, dsString, String(searchString));
     return { labelsByVolume, labelsToQuery: labelsToQuery };
   }
+
+  public formatPrimaryLabelForUI() {
+    return capitalizeFirstLetter(this.state.selectedTab === SERVICE_NAME ? SERVICE_UI_LABEL : this.state.selectedTab);
+  }
 }
 
 // Create a list of services to query:
@@ -717,13 +809,16 @@ function createListOfLabelsToQuery(services: string[], ds: string, searchString:
     return [];
   }
 
-  const servicesToQuery = services.filter((service) => service.toLowerCase().includes(searchString.toLowerCase()));
+  if (searchString === '.+') {
+    searchString = '';
+  }
+
   const favoriteServicesToQuery = getFavoriteServicesFromStorage(ds).filter(
-    (service) => service.toLowerCase().includes(searchString.toLowerCase()) && servicesToQuery.includes(service)
+    (service) => service.toLowerCase().includes(searchString.toLowerCase()) && services.includes(service)
   );
 
   // Deduplicate
-  return Array.from(new Set([...favoriteServicesToQuery, ...servicesToQuery]));
+  return Array.from(new Set([...favoriteServicesToQuery, ...services]));
 }
 
 function getStyles(theme: GrafanaTheme2) {

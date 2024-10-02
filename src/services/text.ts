@@ -19,3 +19,8 @@ export const copyText = async (text: string, buttonRef: React.MutableRefObject<H
     textarea.remove();
   }
 };
+
+export function capitalizeFirstLetter(input: string) {
+  // capitalize first letter
+  return input.charAt(0).toUpperCase() + input.slice(1);
+}

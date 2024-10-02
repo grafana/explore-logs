@@ -4,46 +4,47 @@ import { SceneComponentProps, SceneObject, SceneObjectBase, SceneObjectState } f
 import { Button } from '@grafana/ui';
 import { VariableHide } from '@grafana/schema';
 import { addToFavoriteServicesInStorage } from 'services/store';
-import { SERVICE_NAME } from 'services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { FilterOp } from 'services/filters';
 import { navigateToInitialPageAfterServiceSelection } from '../../services/navigate';
 import { getDataSourceVariable, getLabelsVariable } from '../../services/variableGetters';
 
 export interface SelectServiceButtonState extends SceneObjectState {
-  service: string;
+  labelValue: string;
+  labelName: string;
 }
-export function selectService(service: string, sceneRef: SceneObject) {
+export function selectLabel(primaryLabelName: string, primaryLabelValue: string, sceneRef: SceneObject) {
   const variable = getLabelsVariable(sceneRef);
 
   reportAppInteraction(USER_EVENTS_PAGES.service_selection, USER_EVENTS_ACTIONS.service_selection.service_selected, {
-    service: service,
+    value: primaryLabelValue,
+    label: primaryLabelName,
   });
 
   variable.setState({
     filters: [
-      ...variable.state.filters.filter((f) => f.key !== SERVICE_NAME),
+      ...variable.state.filters.filter((f) => f.key !== primaryLabelName),
       {
-        key: SERVICE_NAME,
+        key: primaryLabelName,
         operator: FilterOp.Equal,
-        value: service,
+        value: primaryLabelValue,
       },
     ],
     hide: VariableHide.hideLabel,
   });
   const ds = getDataSourceVariable(sceneRef).getValue();
-  addToFavoriteServicesInStorage(ds, service);
+  addToFavoriteServicesInStorage(ds, primaryLabelValue);
 
   // In this case, we don't have a ServiceScene created yet, so we call a special function to navigate there for the first time
-  navigateToInitialPageAfterServiceSelection(service);
+  navigateToInitialPageAfterServiceSelection(primaryLabelName, primaryLabelValue);
 }
 
 export class SelectServiceButton extends SceneObjectBase<SelectServiceButtonState> {
   public onClick = () => {
-    if (!this.state.service) {
+    if (!this.state.labelValue) {
       return;
     }
-    selectService(this.state.service, this);
+    selectLabel(this.state.labelName, this.state.labelValue, this);
   };
 
   public static Component = ({ model }: SceneComponentProps<SelectServiceButton>) => {
