@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {LoadingState, PanelData} from '@grafana/data';
+import { LoadingState, PanelData } from '@grafana/data';
 import {
   QueryRunnerState,
   SceneComponentProps,
@@ -15,9 +15,9 @@ import {
   SceneQueryRunner,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import {LoadingPlaceholder} from '@grafana/ui';
-import {getQueryRunner, getResourceQueryRunner} from 'services/panel';
-import {buildDataQuery, buildResourceQuery} from 'services/query';
+import { LoadingPlaceholder } from '@grafana/ui';
+import { getQueryRunner, getResourceQueryRunner } from 'services/panel';
+import { buildDataQuery, buildResourceQuery } from 'services/query';
 import {
   EMPTY_VARIABLE_VALUE,
   LEVEL_VARIABLE_VALUE,
@@ -31,19 +31,19 @@ import {
   VAR_LEVELS,
   VAR_PATTERNS,
 } from 'services/variables';
-import {getMetadataService} from '../../services/metadata';
-import {navigateToDrilldownPage, navigateToIndex, navigateToValueBreakdown} from '../../services/navigate';
-import {areArraysEqual} from '../../services/comparison';
-import {ActionBarScene} from './ActionBarScene';
-import {breakdownViewsDefinitions, TabNames, valueBreakdownViews} from './BreakdownViews';
+import { getMetadataService } from '../../services/metadata';
+import { navigateToDrilldownPage, navigateToIndex, navigateToValueBreakdown } from '../../services/navigate';
+import { areArraysEqual } from '../../services/comparison';
+import { ActionBarScene } from './ActionBarScene';
+import { breakdownViewsDefinitions, TabNames, valueBreakdownViews } from './BreakdownViews';
 import {
   getDataSourceVariable,
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
 } from '../../services/variableGetters';
-import {logger} from '../../services/logger';
-import {IndexScene} from '../IndexScene/IndexScene';
+import { logger } from '../../services/logger';
+import { IndexScene } from '../IndexScene/IndexScene';
 import {
   getDrilldownSlug,
   getDrilldownValueSlug,
@@ -51,7 +51,7 @@ import {
   PageSlugs,
   ValueSlugs,
 } from '../../services/routing';
-import {replaceSlash} from '../../services/extensions/links';
+import { replaceSlash } from '../../services/extensions/links';
 
 const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 const PATTERNS_QUERY_REFID = 'patterns';
@@ -165,7 +165,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
                 ...prevRouteMatch,
                 params: {
                   ...prevRouteMatch?.params,
-                  labelName: newPrimaryLabel.key,
+                  labelName: newPrimaryLabel.key === SERVICE_NAME ? SERVICE_UI_LABEL : newPrimaryLabel.key,
                   labelValue: replaceSlash(newPrimaryLabel.value),
                 },
                 url: prevRouteMatch?.url ?? '',

@@ -1,6 +1,6 @@
-import {css} from '@emotion/css';
-import {debounce, rest, trim} from 'lodash';
-import React, {useRef} from 'react';
+import { css } from '@emotion/css';
+import { debounce, rest } from 'lodash';
+import React, { useRef } from 'react';
 import {
   AdHocVariableFilter,
   DashboardCursorSync,
@@ -8,7 +8,7 @@ import {
   dateTime,
   GrafanaTheme2,
   LoadingState,
-  TimeRange
+  TimeRange,
 } from '@grafana/data';
 import {
   AdHocFiltersVariable,
@@ -40,26 +40,28 @@ import {
   TabsBar,
   useStyles2,
 } from '@grafana/ui';
-import {getFavoriteServicesFromStorage} from 'services/store';
+import { getFavoriteServicesFromStorage } from 'services/store';
 import {
   LEVEL_VARIABLE_VALUE,
   SERVICE_LABEL_EXPR,
   SERVICE_LABEL_VAR,
-  SERVICE_NAME, SERVICE_UI_LABEL,
-  VAR_PRIMARY_LABEL, VAR_PRIMARY_LABEL_EXPR,
+  SERVICE_NAME,
+  SERVICE_UI_LABEL,
+  VAR_PRIMARY_LABEL,
+  VAR_PRIMARY_LABEL_EXPR,
   VAR_PRIMARY_LABEL_SEARCH,
   VAR_PRIMARY_LABEL_SEARCH_EXPR,
 } from 'services/variables';
-import {selectService, SelectServiceButton} from './SelectServiceButton';
-import {buildDataQuery, buildResourceQuery} from 'services/query';
-import {reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES} from 'services/analytics';
-import {getQueryRunner, getSceneQueryRunner, setLevelColorOverrides} from 'services/panel';
-import {ConfigureVolumeError} from './ConfigureVolumeError';
-import {NoVolumeError} from './NoVolumeError';
-import {getLabelsFromSeries, toggleLevelVisibility} from 'services/levels';
-import {ServiceFieldSelector} from '../ServiceScene/Breakdowns/FieldSelector';
-import {CustomConstantVariable} from '../../services/CustomConstantVariable';
-import {areArraysEqual} from '../../services/comparison';
+import { selectService, SelectServiceButton } from './SelectServiceButton';
+import { buildDataQuery, buildResourceQuery } from 'services/query';
+import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
+import { getQueryRunner, getSceneQueryRunner, setLevelColorOverrides } from 'services/panel';
+import { ConfigureVolumeError } from './ConfigureVolumeError';
+import { NoVolumeError } from './NoVolumeError';
+import { getLabelsFromSeries, toggleLevelVisibility } from 'services/levels';
+import { ServiceFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
+import { CustomConstantVariable } from '../../services/CustomConstantVariable';
+import { areArraysEqual } from '../../services/comparison';
 import {
   getDataSourceVariable,
   getLabelsVariable,
@@ -67,10 +69,10 @@ import {
   getServiceSelectionPrimaryLabel,
   getServiceSelectionSearchVariable,
 } from '../../services/variableGetters';
-import {config} from '@grafana/runtime';
-import {VariableHide} from '@grafana/schema';
-import {ToolbarScene} from '../IndexScene/ToolbarScene';
-import {IndexScene} from '../IndexScene/IndexScene';
+import { config } from '@grafana/runtime';
+import { VariableHide } from '@grafana/schema';
+import { ToolbarScene } from '../IndexScene/ToolbarScene';
+import { IndexScene } from '../IndexScene/IndexScene';
 
 // @ts-expect-error
 const aggregatedMetricsEnabled: boolean | undefined = config.featureToggles.exploreLogsAggregatedMetrics;
@@ -94,19 +96,19 @@ interface ServiceSelectionSceneState extends SceneObjectState {
   tabOptions: Array<{
     label: string;
     value: string;
-  }>
+  }>;
 }
 
 function renderPrimaryLabelFilters(filters: AdHocVariableFilter[]): string {
-  console.log('renderPrimaryLabelFilters', filters)
-  if(filters.length){
+  console.log('renderPrimaryLabelFilters', filters);
+  if (filters.length) {
     const filter = filters[0];
-    const result = `, ${filter.key}${filter.operator}\`${filter.value}\``
-    console.log('renderPrimaryLabelFilters result', result)
-    return result
+    const result = `, ${filter.key}${filter.operator}\`${filter.value}\``;
+    console.log('renderPrimaryLabelFilters result', result);
+    return result;
   }
 
-  return ''
+  return '';
 }
 
 export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionSceneState> {
@@ -141,22 +143,27 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
               },
             ],
           }),
-            // The active tab expression, hidden variable
-            new AdHocFiltersVariable({
-              name: VAR_PRIMARY_LABEL,
-              label: '',
-              hide: VariableHide.hideVariable,
-              expressionBuilder: renderPrimaryLabelFilters
-            })
+          // The active tab expression, hidden variable
+          new AdHocFiltersVariable({
+            name: VAR_PRIMARY_LABEL,
+            label: '',
+            hide: VariableHide.hideVariable,
+            expressionBuilder: renderPrimaryLabelFilters,
+          }),
         ],
       }),
       $data: getSceneQueryRunner({
-        queries: [buildResourceQuery(`{${SERVICE_LABEL_EXPR}=~\`.*${VAR_PRIMARY_LABEL_SEARCH_EXPR}.*\` ${VAR_PRIMARY_LABEL_EXPR}}`, 'volume')],
+        queries: [
+          buildResourceQuery(
+            `{${SERVICE_LABEL_EXPR}=~\`.*${VAR_PRIMARY_LABEL_SEARCH_EXPR}.*\` ${VAR_PRIMARY_LABEL_EXPR}}`,
+            'volume'
+          ),
+        ],
         runQueriesMode: 'manual',
       }),
       $labelsData: getSceneQueryRunner({
         queries: [buildResourceQuery('', 'labels')],
-        runQueriesMode: 'manual'
+        runQueriesMode: 'manual',
       }),
       serviceLevel: new Map<string, string[]>(),
       showPopover: false,
@@ -165,7 +172,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         {
           label: SERVICE_UI_LABEL,
           value: SERVICE_NAME,
-        }
+        },
       ],
       ...state,
     });
@@ -176,14 +183,14 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   private populatePrimaryLabelsVariableOptions(labels: string[]) {
     this.setState({
       tabOptions: labels
-          .filter(l => l !== '__stream_shard__' && l !== '__aggregated_metric__')
-          .map(l => {
-        return {
-          label: (l === SERVICE_NAME) ? SERVICE_UI_LABEL : l,
-          value: l,
-        }
-      })
-    })
+        .filter((l) => l !== '__stream_shard__' && l !== '__aggregated_metric__')
+        .map((l) => {
+          return {
+            label: l === SERVICE_NAME ? SERVICE_UI_LABEL : l,
+            value: l,
+          };
+        }),
+    });
   }
 
   private onActivate() {
@@ -200,12 +207,12 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
     this._subs.add(
       this.state.$labelsData.subscribeToState((newState, prevState) => {
-        if(newState.data?.state === LoadingState.Done){
-          const labels: string[] = newState.data?.series?.[0].fields[0].values
-          this.populatePrimaryLabelsVariableOptions(labels)
+        if (newState.data?.state === LoadingState.Done) {
+          const labels: string[] = newState.data?.series?.[0].fields[0].values;
+          this.populatePrimaryLabelsVariableOptions(labels);
         }
       })
-    )
+    );
 
     this._subs.add(
       this.state.$data.subscribeToState((newState, prevState) => {
@@ -261,7 +268,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     // agg metrics need parser and unwrap, have to tear down and rebuild panels when the variable changes
     this._subs.add(
       getServiceLabelVariable(this).subscribeToState((newState, prevState) => {
-        if (newState.value !== prevState.value){
+        if (newState.value !== prevState.value) {
           // Clear the body panels
           this.setState({
             body: new SceneCSSGridLayout({ children: [] }),
@@ -271,7 +278,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         }
       })
     );
-
   }
 
   private isTimeRangeTooEarlyForAggMetrics(): boolean {
@@ -510,13 +516,13 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
   public toggleShowPopover = () => {
     this.setState({
-      showPopover: !this.state.showPopover
-    })
-  }
+      showPopover: !this.state.showPopover,
+    });
+  };
 
   public static Component = ({ model }: SceneComponentProps<ServiceSelectionScene>) => {
     const styles = useStyles2(getStyles);
-    const popoverStyles = useStyles2(getPopoverStyles)
+    const popoverStyles = useStyles2(getPopoverStyles);
     const { body, $data, showPopover } = model.useState();
     const { data } = $data.useState();
 
@@ -535,60 +541,62 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     // To get the count of services that are currently displayed, divide the number of panels by 2, as there are 2 panels per service (logs and time series)
     const renderedServices = body.state.children.length / 2;
 
-    const primaryLabel = getServiceSelectionPrimaryLabel(model)
+    const primaryLabel = getServiceSelectionPrimaryLabel(model);
 
-    const tabLabels: Array<{label: string, value: string, counter?: number, active: boolean}> = [
-      ...model.state.tabOptions.map(opt => {
+    const tabLabels: Array<{ label: string; value: string; counter?: number; active: boolean }> = [
+      ...model.state.tabOptions.map((opt) => {
         return {
           value: opt.value.toString(),
           label: opt.label,
           active: model.state.selectedTab === opt.value,
-          counter: undefined
-        }
-      })
+          counter: undefined,
+        };
+      }),
     ].sort((a, b) => {
-      return a === b ? 0 : a ? -1 : 1
-    })
-
+      return a === b ? 0 : a ? -1 : 1;
+    });
 
     const popoverRef = useRef<HTMLElement>(null);
 
     const popoverContent = (
-        <Stack direction="column" gap={0} role="tooltip">
-          <div className={popoverStyles.card.body}>
-            <Select placeholder={'Search labels'} options={model.state.tabOptions} isSearchable={true}
-              onChange={(opt) => {
-                // Hide the popover
-                model.toggleShowPopover()
+      <Stack direction="column" gap={0} role="tooltip">
+        <div className={popoverStyles.card.body}>
+          <Select
+            placeholder={'Search labels'}
+            options={model.state.tabOptions}
+            isSearchable={true}
+            onChange={(opt) => {
+              // Hide the popover
+              model.toggleShowPopover();
 
-                // Add value to variable
-                if(opt.value) {
-                  // Add tab
-                  model.setState({
-                    selectedTab: opt.value
-                  })
-                  primaryLabel.setState({
-                    filters: [
-                      {
-                        value: '.+',
-                        operator: '=~',
-                        key: opt.value,
-                      }
-                    ]
-                  })
+              // Add value to variable
+              if (opt.value) {
+                // Add tab
+                model.setState({
+                  selectedTab: opt.value,
+                });
+                primaryLabel.setState({
+                  filters: [
+                    {
+                      value: '.+',
+                      operator: '=~',
+                      key: opt.value,
+                    },
+                  ],
+                });
 
-                  // primaryLabel.changeValueTo(opt.value.toString())
+                // primaryLabel.changeValueTo(opt.value.toString())
 
-                  // Update volume query
-                  // const serviceLabelVar = getServiceLabelVariable(model);
-                  // serviceLabelVar.changeValueTo(opt.value.toString())
-                  $data.runQueries()
-                }
-              }}/>
-          </div>
-        </Stack>
+                // Update volume query
+                // const serviceLabelVar = getServiceLabelVariable(model);
+                // serviceLabelVar.changeValueTo(opt.value.toString())
+                $data.runQueries();
+              }
+            }}
+          />
+        </div>
+      </Stack>
     );
-
 
     return (
       <div className={styles.container}>
@@ -625,24 +633,32 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
             />
           </Field>
           <TabsBar>
-            {tabLabels.map(tabLabel => (
-                <Tab onChangeTab={() => {
+            {tabLabels.map((tabLabel) => (
+              <Tab
+                key={tabLabel.value}
+                onChangeTab={() => {
                   model.setState({
-                    selectedTab: tabLabel.value
-                  })
+                    selectedTab: tabLabel.value,
+                  });
                   primaryLabel.setState({
-                    filters: [{
-                      value: '.+',
-                      key: tabLabel.value,
-                      operator: '=~',
-                    }]
-                  })
-                }} label={tabLabel.label} active={tabLabel.active} counter={tabLabel.counter} />
+                    filters: [
+                      {
+                        value: '.+',
+                        key: tabLabel.value,
+                        operator: '=~',
+                      },
+                    ],
+                  });
+                }}
+                label={tabLabel.label}
+                active={tabLabel.active}
+                counter={tabLabel.counter}
+              />
             ))}
             {/* Add more tabs tab */}
-            <Tab onChangeTab={model.toggleShowPopover} label={''} ref={popoverRef} icon={"plus-circle"} />
+            <Tab onChangeTab={model.toggleShowPopover} label={''} ref={popoverRef} icon={'plus-circle'} />
 
-            <PopoverController content={popoverContent} >
+            <PopoverController content={popoverContent}>
               {(showPopper, hidePopper, popperProps) => {
                 const blurFocusProps = {
                   onBlur: hidePopper,
@@ -650,26 +666,25 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
                 };
 
                 return (
-                    <>
-                      {popoverRef.current && (
-                          <>
-                            {/* @ts-expect-error @todo upgrade typescript */}
-                            <Popover
-                                {...popperProps}
-                                {...rest}
-                                show={showPopover}
-                                wrapperClassName={popoverStyles.popover}
-                                referenceElement={popoverRef.current}
-                                renderArrow={true}
-                                {...blurFocusProps}
-                            />
-                          </>
-                      )}
-                    </>
+                  <>
+                    {popoverRef.current && (
+                      <>
+                        {/* @ts-expect-error @todo upgrade typescript */}
+                        <Popover
+                          {...popperProps}
+                          {...rest}
+                          show={showPopover}
+                          wrapperClassName={popoverStyles.popover}
+                          referenceElement={popoverRef.current}
+                          renderArrow={true}
+                          {...blurFocusProps}
+                        />
+                      </>
+                    )}
+                  </>
                 );
               }}
             </PopoverController>
-
           </TabsBar>
           {/** If we don't have any servicesByVolume, volume endpoint is probably not enabled */}
           {!isLogVolumeLoading && volumeApiError && <ConfigureVolumeError />}
