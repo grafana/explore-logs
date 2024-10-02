@@ -32,7 +32,9 @@ type VolumeResult = {
   metric: {
     service_name?: string;
     __aggregated_metric__?: string;
-  };
+    [index: string]: string | undefined;
+
+  },
   value: VolumeValue;
 };
 
@@ -395,6 +397,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
     const targetsInterpolated = ds.interpolateVariablesInQueries(request.targets, request.scopedVars);
     const expression = targetsInterpolated[0].expr.replace('.*.*', '.+');
+    console.log('interpolated expr', expression)
     subscriber.next({ data: [], state: LoadingState.Loading });
 
     try {
@@ -419,15 +422,23 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
         return Number(rVolumeCount) - Number(lVolumeCount);
       });
       // Scenes will only emit dataframes from the SceneQueryRunner, so for now we need to convert the API response to a dataframe
+      console.log('volumeResponse?.data.result', volumeResponse?.data.result)
+
+      //@todo, do not try to use aggregated metric in volume 
+
       const df = createDataFrame({
         fields: [
           {
             name: SERVICE_NAME,
-            values: volumeResponse?.data.result?.map((r) => r.metric.service_name ?? r.metric.__aggregated_metric__),
+            values: volumeResponse?.data.result?.map((r) => {
+              const key = Object.keys(r.metric)[0];
+              return r.metric[key]
+            }),
           },
           { name: 'volume', values: volumeResponse?.data.result?.map((r) => Number(r.value[1])) },
         ],
       });
+      console.log('response', df)
       subscriber.next({ data: [df] });
     } catch (e) {
       subscriber.next({ data: [], state: LoadingState.Error });
@@ -464,7 +475,8 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
       // Scenes will only emit dataframes from the SceneQueryRunner, so for now we need to convert the API response to a dataframe
       const df = createDataFrame({
-        fields: [{ name: 'labels', values: labelsResponse?.data }],
+        // Limit to 1000 results, @todo search labels
+        fields: [{ name: 'labels', values: labelsResponse?.data.slice(0, 1000) }],
       });
       subscriber.next({ data: [df], state: LoadingState.Done });
     } catch (e) {

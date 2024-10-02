@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { LoadingState, PanelData } from '@grafana/data';
+import {LoadingState, PanelData} from '@grafana/data';
 import {
   QueryRunnerState,
   SceneComponentProps,
@@ -15,35 +15,35 @@ import {
   SceneQueryRunner,
   VariableDependencyConfig,
 } from '@grafana/scenes';
-import { LoadingPlaceholder } from '@grafana/ui';
-import { getQueryRunner, getResourceQueryRunner } from 'services/panel';
-import { buildDataQuery, buildResourceQuery } from 'services/query';
+import {LoadingPlaceholder} from '@grafana/ui';
+import {getQueryRunner, getResourceQueryRunner} from 'services/panel';
+import {buildDataQuery, buildResourceQuery} from 'services/query';
 import {
   EMPTY_VARIABLE_VALUE,
   LEVEL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
   SERVICE_NAME,
+  SERVICE_UI_LABEL,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_LABELS,
   VAR_LABELS_EXPR,
   VAR_LEVELS,
   VAR_PATTERNS,
-  VAR_SERVICE,
 } from 'services/variables';
-import { getMetadataService } from '../../services/metadata';
-import { navigateToDrilldownPage, navigateToIndex, navigateToValueBreakdown } from '../../services/navigate';
-import { areArraysEqual } from '../../services/comparison';
-import { ActionBarScene } from './ActionBarScene';
-import { breakdownViewsDefinitions, TabNames, valueBreakdownViews } from './BreakdownViews';
+import {getMetadataService} from '../../services/metadata';
+import {navigateToDrilldownPage, navigateToIndex, navigateToValueBreakdown} from '../../services/navigate';
+import {areArraysEqual} from '../../services/comparison';
+import {ActionBarScene} from './ActionBarScene';
+import {breakdownViewsDefinitions, TabNames, valueBreakdownViews} from './BreakdownViews';
 import {
   getDataSourceVariable,
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
 } from '../../services/variableGetters';
-import { logger } from '../../services/logger';
-import { IndexScene } from '../IndexScene/IndexScene';
+import {logger} from '../../services/logger';
+import {IndexScene} from '../IndexScene/IndexScene';
 import {
   getDrilldownSlug,
   getDrilldownValueSlug,
@@ -51,7 +51,7 @@ import {
   PageSlugs,
   ValueSlugs,
 } from '../../services/routing';
-import { replaceSlash } from '../../services/extensions/links';
+import {replaceSlash} from '../../services/extensions/links';
 
 const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 const PATTERNS_QUERY_REFID = 'patterns';
@@ -150,7 +150,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         let { labelName, labelValue, breakdownLabel } = getPrimaryLabelFromUrl();
 
         // Before we dynamically pulled label filter keys into the URL, we had hardcoded "service" as the primary label slug, we want to keep URLs the same, so overwrite "service_name" with "service" if that's the primary label
-        if (labelName === VAR_SERVICE) {
+        if (labelName === SERVICE_UI_LABEL) {
           labelName = SERVICE_NAME;
         }
         const indexScene = sceneGraph.getAncestor(this, IndexScene);

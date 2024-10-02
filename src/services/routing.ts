@@ -1,7 +1,8 @@
 import pluginJson from '../plugin.json';
-import { UrlQueryMap, urlUtil } from '@grafana/data';
+import {UrlQueryMap, urlUtil} from '@grafana/data';
 import {
   SERVICE_NAME,
+  SERVICE_UI_LABEL,
   VAR_DATASOURCE,
   VAR_FIELD_GROUP_BY,
   VAR_FIELDS,
@@ -10,11 +11,10 @@ import {
   VAR_LEVELS,
   VAR_LINE_FILTER,
   VAR_PATTERNS,
-  VAR_SERVICE,
 } from './variables';
-import { locationService } from '@grafana/runtime';
-import { RouteMatch, RouteProps } from '../Components/Pages';
-import { replaceSlash } from './extensions/links';
+import {locationService} from '@grafana/runtime';
+import {RouteMatch, RouteProps} from '../Components/Pages';
+import {replaceSlash} from './extensions/links';
 
 export const PLUGIN_ID = pluginJson.id;
 export const PLUGIN_BASE_URL = `/a/${PLUGIN_ID}`;
@@ -126,7 +126,7 @@ export function getPrimaryLabelFromUrl(): RouteProps {
   const breakdownLabel = routeParams?.[3];
   // Keep urls the same
   if (labelName === SERVICE_NAME) {
-    labelName = VAR_SERVICE;
+    labelName = SERVICE_UI_LABEL;
   }
   return { labelName, labelValue, breakdownLabel };
 }

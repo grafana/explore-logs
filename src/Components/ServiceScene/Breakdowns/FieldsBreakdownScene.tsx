@@ -1,7 +1,7 @@
-import { css } from '@emotion/css';
+import {css} from '@emotion/css';
 import React from 'react';
 
-import { DataFrame, GrafanaTheme2, LoadingState } from '@grafana/data';
+import {DataFrame, GrafanaTheme2, LoadingState} from '@grafana/data';
 import {
   AdHocFiltersVariable,
   QueryRunnerState,
@@ -16,29 +16,29 @@ import {
   VariableDependencyConfig,
   VariableValueOption,
 } from '@grafana/scenes';
-import { Alert, Button, useStyles2 } from '@grafana/ui';
-import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { getSortByPreference } from 'services/store';
-import { ALL_VARIABLE_VALUE, SERVICE_NAME, VAR_FIELD_GROUP_BY, VAR_LABELS, VAR_SERVICE } from 'services/variables';
-import { areArraysEqual } from '../../../services/comparison';
-import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
-import { navigateToValueBreakdown } from '../../../services/navigate';
-import { getPrimaryLabelFromUrl, ValueSlugs } from '../../../services/routing';
-import { DEFAULT_SORT_BY } from '../../../services/sorting';
-import { GrotError } from '../../GrotError';
-import { IndexScene } from '../../IndexScene/IndexScene';
-import { getDetectedFieldsFrame, ServiceScene } from '../ServiceScene';
-import { BreakdownSearchReset, BreakdownSearchScene } from './BreakdownSearchScene';
-import { ByFrameRepeater } from './ByFrameRepeater';
-import { FieldsAggregatedBreakdownScene } from './FieldsAggregatedBreakdownScene';
-import { FieldSelector } from './FieldSelector';
-import { FieldValuesBreakdownScene } from './FieldValuesBreakdownScene';
-import { LayoutSwitcher } from './LayoutSwitcher';
-import { SortByScene, SortCriteriaChanged } from './SortByScene';
-import { StatusWrapper } from './StatusWrapper';
-import { getFieldOptions } from 'services/filters';
-import { EmptyLayoutScene } from './EmptyLayoutScene';
-import { getFieldGroupByVariable, getLabelsVariable } from '../../../services/variableGetters';
+import {Alert, Button, useStyles2} from '@grafana/ui';
+import {reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES} from 'services/analytics';
+import {getSortByPreference} from 'services/store';
+import {ALL_VARIABLE_VALUE, SERVICE_NAME, SERVICE_UI_LABEL, VAR_FIELD_GROUP_BY, VAR_LABELS} from 'services/variables';
+import {areArraysEqual} from '../../../services/comparison';
+import {CustomConstantVariable, CustomConstantVariableState} from '../../../services/CustomConstantVariable';
+import {navigateToValueBreakdown} from '../../../services/navigate';
+import {getPrimaryLabelFromUrl, ValueSlugs} from '../../../services/routing';
+import {DEFAULT_SORT_BY} from '../../../services/sorting';
+import {GrotError} from '../../GrotError';
+import {IndexScene} from '../../IndexScene/IndexScene';
+import {getDetectedFieldsFrame, ServiceScene} from '../ServiceScene';
+import {BreakdownSearchReset, BreakdownSearchScene} from './BreakdownSearchScene';
+import {ByFrameRepeater} from './ByFrameRepeater';
+import {FieldsAggregatedBreakdownScene} from './FieldsAggregatedBreakdownScene';
+import {FieldSelector} from './FieldSelector';
+import {FieldValuesBreakdownScene} from './FieldValuesBreakdownScene';
+import {LayoutSwitcher} from './LayoutSwitcher';
+import {SortByScene, SortCriteriaChanged} from './SortByScene';
+import {StatusWrapper} from './StatusWrapper';
+import {getFieldOptions} from 'services/filters';
+import {EmptyLayoutScene} from './EmptyLayoutScene';
+import {getFieldGroupByVariable, getLabelsVariable} from '../../../services/variableGetters';
 
 export const averageFields = ['duration', 'count', 'total', 'bytes'];
 export const FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
@@ -276,7 +276,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       if (variable instanceof AdHocFiltersVariable && variable.state.key === 'adhoc_service_filter') {
         let { labelName } = getPrimaryLabelFromUrl();
         // getPrimaryLabelFromUrl returns the label name that exists in the URL, which is "service" not "service_name"
-        if (labelName === VAR_SERVICE) {
+        if (labelName === SERVICE_UI_LABEL) {
           labelName = SERVICE_NAME;
         }
         variable.setState({
