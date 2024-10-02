@@ -15,6 +15,7 @@ import {
 import { locationService } from '@grafana/runtime';
 import { RouteMatch, RouteProps } from '../Components/Pages';
 import { replaceSlash } from './extensions/links';
+import { logger } from './logger';
 
 export const PLUGIN_ID = pluginJson.id;
 export const PLUGIN_BASE_URL = `/a/${PLUGIN_ID}`;
@@ -121,6 +122,13 @@ export function getPrimaryLabelFromUrl(): RouteProps {
   const startOfUrl = '/a/grafana-lokiexplore-app/explore';
   const endOfUrl = location.pathname.slice(location.pathname.indexOf(startOfUrl) + startOfUrl.length + 1);
   const routeParams = endOfUrl.split('/');
+
+  if (routeParams.length < 2) {
+    const e = new Error('Invalid URL');
+    logger.error(e, { endOfUrl, pathname: location.pathname });
+    throw e;
+  }
+
   let labelName = routeParams[0];
   const labelValue = routeParams[1];
   const breakdownLabel = routeParams?.[3];
