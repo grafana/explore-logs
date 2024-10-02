@@ -165,7 +165,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
                 ...prevRouteMatch,
                 params: {
                   ...prevRouteMatch?.params,
-                  labelName: newPrimaryLabel.key,
+                  //@todo clean up usage of VAR_SERVICE in child branch
+                  labelName: newPrimaryLabel.key === SERVICE_NAME ? VAR_SERVICE : newPrimaryLabel.key,
                   labelValue: replaceSlash(newPrimaryLabel.value),
                 },
                 url: prevRouteMatch?.url ?? '',

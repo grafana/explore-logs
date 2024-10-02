@@ -15,7 +15,9 @@ import {
 import { locationService } from '@grafana/runtime';
 import { RouteMatch, RouteProps } from '../Components/Pages';
 import { replaceSlash } from './extensions/links';
+import { getLabelsVariable } from './variableGetters';
 import { logger } from './logger';
+import { SceneObject } from '@grafana/scenes';
 
 export const PLUGIN_ID = pluginJson.id;
 export const PLUGIN_BASE_URL = `/a/${PLUGIN_ID}`;
@@ -123,12 +125,6 @@ export function getPrimaryLabelFromUrl(): RouteProps {
   const endOfUrl = location.pathname.slice(location.pathname.indexOf(startOfUrl) + startOfUrl.length + 1);
   const routeParams = endOfUrl.split('/');
 
-  if (routeParams.length < 2) {
-    const e = new Error('Invalid URL');
-    logger.error(e, { endOfUrl, pathname: location.pathname });
-    throw e;
-  }
-
   let labelName = routeParams[0];
   const labelValue = routeParams[1];
   const breakdownLabel = routeParams?.[3];
@@ -168,4 +164,37 @@ export function buildServicesRoute(extraQueryParams?: UrlQueryMap): UrlQueryMap 
     }, {}),
     ...extraQueryParams,
   };
+}
+
+/**
+ * Compare slugs against variable filters and log discrepancies
+ * These don't cause errors or render empty UIs, but shouldn't be possible when routing within the app
+ * If we see these logged in production it indicates we're navigating users incorrectly
+ * @param sceneRef
+ */
+export function checkPrimaryLabel(sceneRef: SceneObject) {
+  const labelsVariable = getLabelsVariable(sceneRef);
+  let { labelName, labelValue } = getPrimaryLabelFromUrl();
+  if (labelName === VAR_SERVICE) {
+    labelName = SERVICE_NAME;
+  }
+  const primaryLabel = labelsVariable.state.filters.find((filter) => filter.key === labelName);
+  if (!primaryLabel) {
+    const location = locationService.getLocation();
+
+    logger.info('invalid primary label name in url', {
+      labelName,
+      url: `${location.pathname}${location.search}`,
+    });
+  }
+
+  const primaryLabelValue = labelsVariable.state.filters.find((filter) => filter.value === labelValue);
+  if (!primaryLabelValue) {
+    const location = locationService.getLocation();
+
+    logger.info('invalid primary label value in url', {
+      labelValue,
+      url: `${location.pathname}${location.search}`,
+    });
+  }
 }

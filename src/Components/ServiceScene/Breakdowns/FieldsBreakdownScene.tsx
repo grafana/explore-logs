@@ -23,7 +23,7 @@ import { ALL_VARIABLE_VALUE, SERVICE_NAME, VAR_FIELD_GROUP_BY, VAR_LABELS, VAR_S
 import { areArraysEqual } from '../../../services/comparison';
 import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
 import { navigateToValueBreakdown } from '../../../services/navigate';
-import { getPrimaryLabelFromUrl, ValueSlugs } from '../../../services/routing';
+import { checkPrimaryLabel, getPrimaryLabelFromUrl, ValueSlugs } from '../../../services/routing';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { GrotError } from '../../GrotError';
 import { IndexScene } from '../../IndexScene/IndexScene';
@@ -140,6 +140,8 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     if (detectedFieldsFrame) {
       this.updateOptions(detectedFieldsFrame);
     }
+
+    checkPrimaryLabel(this);
   }
 
   private variableChanged = (newState: CustomConstantVariableState, oldState: CustomConstantVariableState) => {
