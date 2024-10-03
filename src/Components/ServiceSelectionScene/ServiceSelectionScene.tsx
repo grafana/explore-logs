@@ -88,8 +88,6 @@ interface ServiceSelectionSceneState extends SceneObjectState {
   $data: SceneQueryRunner;
   tabs?: ServiceSelectionTabsScene;
   showPopover: boolean;
-  // @todo, do we need this? Can't we just check the key of the filter in the primary label variable?
-  selectedTab: string;
   tabOptions: Array<{
     label: string;
     value: string;
@@ -99,8 +97,7 @@ interface ServiceSelectionSceneState extends SceneObjectState {
 function renderPrimaryLabelFilters(filters: AdHocVariableFilter[]): string {
   if (filters.length) {
     const filter = filters[0];
-    const result = `${filter.key}${filter.operator}\`${filter.value}\``;
-    return result;
+    return `${filter.key}${filter.operator}\`${filter.value}\``;
   }
 
   return '';
@@ -199,7 +196,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       serviceLevel: new Map<string, string[]>(),
 
       showPopover: false,
-      selectedTab: SERVICE_NAME,
       tabOptions: [
         {
           label: SERVICE_UI_LABEL,
@@ -214,8 +210,9 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
   public static Component = ({ model }: SceneComponentProps<ServiceSelectionScene>) => {
     const styles = useStyles2(getStyles);
-    const { body, $data, selectedTab, tabs } = model.useState();
+    const { body, $data, tabs } = model.useState();
     const { data } = $data.useState();
+    const selectedTab = model.getSelectedTab();
 
     const serviceStringVariable = getServiceSelectionSearchVariable(model);
     const { label } = serviceStringVariable.useState();
@@ -280,14 +277,14 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     );
   };
 
-  setTab(labelName: string) {
+  getSelectedTab() {
+    return getServiceSelectionPrimaryLabel(this).state.filters[0]?.key;
+  }
+
+  setSelectedTab(labelName: string) {
     // clear active search
     clearServiceSelectionSearchVariable(this);
 
-    // Set the active tab
-    this.setState({
-      selectedTab: labelName,
-    });
     // Update the primary label variable
     setServiceSelectionPrimaryLabelKey(labelName, this);
   }
@@ -386,7 +383,8 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   };
 
   formatPrimaryLabelForUI() {
-    return capitalizeFirstLetter(this.state.selectedTab === SERVICE_NAME ? SERVICE_UI_LABEL : this.state.selectedTab);
+    const selectedTab = this.getSelectedTab();
+    return capitalizeFirstLetter(selectedTab === SERVICE_NAME ? SERVICE_UI_LABEL : selectedTab);
   }
 
   private onActivate() {
@@ -402,15 +400,8 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     this._subs.add(
       primaryLabelVar.subscribeToState((newState, prevState) => {
         if (newState.filterExpression !== prevState.filterExpression) {
+          console.log('tab change');
           this.runVolumeQuery();
-        }
-      })
-    );
-
-    this._subs.add(
-      this.subscribeToState((newState, prevState) => {
-        if (newState.selectedTab !== prevState.selectedTab) {
-          // @todo clean up
         }
       })
     );
@@ -422,6 +413,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           newState.data?.state === LoadingState.Done &&
           !areArraysEqual(prevState?.data?.series, newState?.data?.series)
         ) {
+          console.log('volume change, update body');
           this.updateBody();
         }
       })
@@ -559,6 +551,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       const timeRange = sceneGraph.getTimeRange(this).state.value;
       const aggregatedMetricsVariable = getAggregatedMetricsVariable(this);
       const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
+      const selectedTab = this.getSelectedTab();
 
       for (const primaryLabelValue of labelsToQuery.slice(0, SERVICES_LIMIT)) {
         const existing = existingChildren.filter((child) => {
@@ -573,13 +566,13 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           // for each service, we create a layout with timeseries and logs panel
           newChildren.push(
             this.buildServiceLayout(
-              this.state.selectedTab,
+              selectedTab,
               primaryLabelValue,
               timeRange,
               aggregatedMetricsVariable,
               primaryLabelVar
             ),
-            this.buildServiceLogsLayout(this.state.selectedTab, primaryLabelValue)
+            this.buildServiceLogsLayout(selectedTab, primaryLabelValue)
           );
         }
       }

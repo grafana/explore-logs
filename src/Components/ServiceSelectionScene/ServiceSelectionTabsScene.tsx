@@ -48,7 +48,7 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
     // Scene vars
     const { tabOptions, showPopover, popover } = model.useState();
     const serviceSelectionScene = sceneGraph.getAncestor(model, ServiceSelectionScene);
-    const { selectedTab } = serviceSelectionScene.useState();
+    const selectedTab = serviceSelectionScene.getSelectedTab();
 
     // Consts
     const styles = useStyles2(getTabsStyles);
@@ -75,7 +75,7 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
             key={tabLabel.value}
             onChangeTab={() => {
               // Set the new active tab
-              serviceSelectionScene.setTab(tabLabel.value);
+              serviceSelectionScene.setSelectedTab(tabLabel.value);
             }}
             label={capitalizeFirstLetter(tabLabel.label)}
             active={tabLabel.active}

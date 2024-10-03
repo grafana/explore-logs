@@ -36,7 +36,7 @@ export class TabPopoverScene extends SceneObjectBase<TabPopoverSceneState> {
               // Add value to variable
               if (option.value) {
                 // Set new tab
-                serviceSelectionScene.setTab(option.value);
+                serviceSelectionScene.setSelectedTab(option.value);
               }
             }}
           />
