@@ -1,3 +1,4 @@
+import pluginJson from '../plugin.json';
 import { Observable, Subscriber, Subscription } from 'rxjs';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -268,7 +269,7 @@ function getInitialGroupSize(shards: number[]) {
 }
 
 // Enable to output debugging logs
-const DEBUG_ENABLED = false;
+const DEBUG_ENABLED = Boolean(localStorage.getItem(`${pluginJson.id}.harding_debug_enabled`));
 function debug(message: string) {
   if (!DEBUG_ENABLED) {
     return;
