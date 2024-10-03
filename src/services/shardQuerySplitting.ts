@@ -1,13 +1,8 @@
 import { Observable, Subscriber, Subscription } from 'rxjs';
 import { v4 as uuidv4 } from 'uuid';
 
-import { DataQueryRequest, LoadingState, DataQueryResponse, TimeRange } from '@grafana/data';
-import {
-  addShardingPlaceholderSelector,
-  getSelectorForShardValues,
-  interpolateShardingSelector,
-  isLogsQuery,
-} from './logql';
+import { DataQueryRequest, LoadingState, DataQueryResponse, QueryResultMetaStat } from '@grafana/data';
+import { addShardingPlaceholderSelector, getSelectorForShardValues, interpolateShardingSelector } from './logql';
 import { combineResponses } from './combineResponses';
 import { DataSourceWithBackend } from '@grafana/runtime';
 import { LokiQuery } from './lokiQuery';
@@ -67,8 +62,14 @@ function splitQueriesByStreamShard(
   let retriesMap = new Map<number, number>();
   let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
-  const runNextRequest = (subscriber: Subscriber<DataQueryResponse>, cycle: number, shardRequests: number[][]) => {
-    if (subquerySubscription) {
+  const runNextRequest = (
+    subscriber: Subscriber<DataQueryResponse>,
+    cycle: number,
+    shards: number[],
+    groupSize: number
+  ) => {
+    let nextGroupSize = groupSize;
+    if (subquerySubscription != null) {
       subquerySubscription.unsubscribe();
       subquerySubscription = null;
     }
@@ -85,9 +86,9 @@ function splitQueriesByStreamShard(
     };
 
     const nextRequest = () => {
-      const nextCycle = cycle + 1;
-      if (nextCycle < shardRequests.length) {
-        runNextRequest(subscriber, nextCycle, shardRequests);
+      const nextCycle = Math.min(cycle + groupSize, shards.length);
+      if (cycle < shards.length && nextCycle <= shards.length) {
+        runNextRequest(subscriber, nextCycle, shards, nextGroupSize);
         return;
       }
       done();
@@ -95,36 +96,44 @@ function splitQueriesByStreamShard(
 
     const retry = (errorResponse?: DataQueryResponse) => {
       if (errorResponse?.errors && errorResponse.errors[0].message?.includes('maximum of series')) {
-        console.log(`Maximum series reached, skipping retry`);
+        logger.info(`Maximum series reached, skipping retry`);
         return false;
+      } else if (errorResponse?.errors && errorResponse.errors[0].message?.includes('parse error')) {
+        logger.info(`Parse error, skipping retry`);
+        shouldStop = true;
+        return false;
+      }
+
+      if (groupSize > 1) {
+        groupSize = Math.floor(Math.sqrt(groupSize));
+        debug(`Possible time out, new group size ${groupSize}`);
+        runNextRequest(subscriber, cycle, shards, groupSize);
+        return true;
       }
 
       const retries = retriesMap.get(cycle) ?? 0;
       if (retries > 3) {
+        shouldStop = true;
         return false;
       }
 
       retriesMap.set(cycle, retries + 1);
 
       retryTimer = setTimeout(() => {
-        console.log(`Retrying ${cycle} (${retries + 1})`);
-        runNextRequest(subscriber, cycle, shardRequests);
+        logger.info(`Retrying ${cycle} (${retries + 1})`);
+        runNextRequest(subscriber, cycle, shards, groupSize);
         retryTimer = null;
       }, 1500 * Math.pow(2, retries)); // Exponential backoff
 
       return true;
     };
 
-    const targets = adjustTargetsFromResponseState(splittingTargets, mergedResponse);
-    if (!targets.length) {
-      nextRequest();
-      return;
-    }
-
-    const subRequest = { ...request, targets: interpolateShardingSelector(targets, shardRequests, cycle) };
+    const shardsToQuery = groupShardRequests(shards, cycle, groupSize);
+    debug(`Querying ${shardsToQuery.join(', ')}`);
+    const subRequest = { ...request, targets: interpolateShardingSelector(splittingTargets, shardsToQuery) };
     // Request may not have a request id
     if (request.requestId) {
-      subRequest.requestId = `${request.requestId}_shard_${cycle}`;
+      subRequest.requestId = `${request.requestId}_shard_${cycle}_${groupSize}`;
     }
 
     // @ts-expect-error
@@ -134,6 +143,10 @@ function splitQueriesByStreamShard(
           if (retry(partialResponse)) {
             return;
           }
+        }
+        nextGroupSize = updateGroupSizeFromResponse(partialResponse, groupSize);
+        if (nextGroupSize !== groupSize) {
+          debug(`New group size ${nextGroupSize}`);
         }
         mergedResponse = combineResponses(mergedResponse, partialResponse);
       },
@@ -156,7 +169,8 @@ function splitQueriesByStreamShard(
   };
 
   const runNonSplitRequest = (subscriber: Subscriber<DataQueryResponse>) => {
-    subquerySubscription = datasource.query(request).subscribe({
+    // @ts-expect-error
+    subquerySubscription = datasource.runQuery(request).subscribe({
       next: (partialResponse: DataQueryResponse) => {
         mergedResponse = partialResponse;
       },
@@ -180,11 +194,12 @@ function splitQueriesByStreamShard(
       .then((values: string[]) => {
         const shards = values.map((value) => parseInt(value, 10));
         if (!shards || !shards.length) {
-          console.warn(`Shard splitting not supported. Issuing a regular query.`);
+          logger.warn(`Shard splitting not supported. Issuing a regular query.`);
           runNonSplitRequest(subscriber);
         } else {
-          const shardRequests = groupShardRequests(shards, request.range);
-          runNextRequest(subscriber, 0, shardRequests);
+          shards.sort((a, b) => b - a);
+          debug(`Querying ${shards.join(', ')} shards`);
+          runNextRequest(subscriber, 0, shards, getInitialGroupSize(shards));
         }
       })
       .catch((e: unknown) => {
@@ -196,7 +211,6 @@ function splitQueriesByStreamShard(
       shouldStop = true;
       if (retryTimer) {
         clearTimeout(retryTimer);
-        retryTimer = null;
       }
       if (subquerySubscription != null) {
         subquerySubscription.unsubscribe();
@@ -208,79 +222,56 @@ function splitQueriesByStreamShard(
   return response;
 }
 
-function groupShardRequests(shards: number[], range: TimeRange) {
-  const hours = range.to.diff(range.from, 'hour');
+function updateGroupSizeFromResponse(response: DataQueryResponse, currentSize: number) {
+  if (!response.data.length) {
+    // Empty response, increase group size
+    return currentSize + 1;
+  }
 
-  // Spread low and high volume around
-  shards = spreadSort(shards);
-  console.log(`Querying ${shards.join(', ')} shards`);
+  const metaExecutionTime: QueryResultMetaStat | undefined = response.data[0].meta?.stats?.find(
+    (stat: QueryResultMetaStat) => stat.displayName === 'Summary: exec time'
+  );
 
-  const maxRequests = calculateMaxRequests(shards.length, hours);
-  const groupSize = Math.ceil(shards.length / maxRequests);
-  const requests: number[][] = [];
-
-  for (let i = 0; i < shards.length; i += groupSize) {
-    const request: number[] = [];
-    for (let j = i; j < i + groupSize && j < shards.length; j += 1) {
-      request.push(shards[j]);
+  if (metaExecutionTime) {
+    debug(`${metaExecutionTime.value}`);
+    // Positive scenarios
+    if (metaExecutionTime.value < 1) {
+      return currentSize * 2;
+    } else if (metaExecutionTime.value < 6) {
+      return currentSize + 2;
+    } else if (metaExecutionTime.value < 16) {
+      return currentSize + 1;
     }
-    requests.push(request);
+
+    // Negative scenarios
+    if (currentSize === 1) {
+      return currentSize;
+    } else if (metaExecutionTime.value < 20) {
+      return currentSize - 1;
+    } else {
+      return Math.floor(currentSize / 2);
+    }
   }
 
-  requests.push([-1]);
-
-  return requests;
+  return currentSize;
 }
 
-/**
- * Simple approach to calculate a maximum amount of requests to send based on
- * the available shards and the requested interval.
- */
-function calculateMaxRequests(shards: number, hours: number) {
-  if (hours < 24) {
-    return Math.max(Math.min(Math.ceil(Math.sqrt(shards)), shards - 1), 1);
+function groupShardRequests(shards: number[], start: number, groupSize: number) {
+  if (start === shards.length) {
+    return [-1];
   }
-  return shards;
+  return shards.slice(start, start + groupSize);
 }
 
-function spreadSort(shards: number[]) {
-  shards.sort((a, b) => b - a);
-  let mid = Math.floor(shards.length / 2);
-  let result = [];
-  for (let i = 0; i < mid; i++) {
-    result.push(shards[i], shards[mid + i]);
-  }
-  if (shards.length % 2 !== 0) {
-    result.push(shards[shards.length - 1]);
-  }
-  return result;
+function getInitialGroupSize(shards: number[]) {
+  return Math.floor(Math.sqrt(shards.length));
 }
 
-/**
- * Based in the state of the current response, if any, adjust target parameters such as `maxLines`.
- * For `maxLines`, we will update it as `maxLines - current amount of lines`.
- * At the end, we will filter the targets that don't need to be executed in the next request batch,
- * because, for example, the `maxLines` have been reached.
- */
-function adjustTargetsFromResponseState(targets: LokiQuery[], response: DataQueryResponse | null): LokiQuery[] {
-  if (!response) {
-    return targets;
+// Enable to output debugging logs
+const DEBUG_ENABLED = true;
+function debug(message: string) {
+  if (!DEBUG_ENABLED) {
+    return;
   }
-
-  return targets
-    .map((target) => {
-      if (!target.maxLines || !isLogsQuery(target.expr)) {
-        return target;
-      }
-      const targetFrame = response.data.find((frame) => frame.refId === target.refId);
-      if (!targetFrame) {
-        return target;
-      }
-      const updatedMaxLines = target.maxLines - targetFrame.length;
-      return {
-        ...target,
-        maxLines: updatedMaxLines < 0 ? 0 : updatedMaxLines,
-      };
-    })
-    .filter((target) => target.maxLines === undefined || target.maxLines > 0);
+  console.log(message);
 }
