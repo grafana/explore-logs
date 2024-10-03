@@ -268,7 +268,7 @@ function getInitialGroupSize(shards: number[]) {
 }
 
 // Enable to output debugging logs
-const DEBUG_ENABLED = false;
+const DEBUG_ENABLED = true;
 function debug(message: string) {
   if (!DEBUG_ENABLED) {
     return;
