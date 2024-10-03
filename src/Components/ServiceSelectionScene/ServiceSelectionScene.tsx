@@ -107,6 +107,43 @@ function renderPrimaryLabelFilters(filters: AdHocVariableFilter[]): string {
 }
 
 export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionSceneState> {
+  // We could also run model.setState in component, but it is recommended to implement the state-modifying methods in the scene object
+  onSearchServicesChange = debounce((primaryLabelSearch?: string) => {
+    // Set search variable
+    const searchVar = getServiceSelectionSearchVariable(this);
+
+    const newSearchString = primaryLabelSearch ? this.wrapWildcardSearch(primaryLabelSearch) : '.+';
+    if (newSearchString !== searchVar.state.value) {
+      searchVar.setState({
+        value: primaryLabelSearch ? this.wrapWildcardSearch(primaryLabelSearch) : '.+',
+        label: primaryLabelSearch ?? '',
+      });
+    }
+
+    const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
+    const filter = primaryLabelVar.state.filters[0];
+
+    // Update primary label with search string
+    if (this.wrapWildcardSearch(searchVar.state.value.toString()) !== filter.value) {
+      primaryLabelVar.setState({
+        filters: [
+          {
+            ...filter,
+            value: this.wrapWildcardSearch(searchVar.state.value.toString()),
+          },
+        ],
+      });
+    }
+
+    reportAppInteraction(
+      USER_EVENTS_PAGES.service_selection,
+      USER_EVENTS_ACTIONS.service_selection.search_services_changed,
+      {
+        searchQuery: primaryLabelSearch,
+      }
+    );
+  }, 500);
+
   constructor(state: Partial<ServiceSelectionSceneState>) {
     super({
       body: new SceneCSSGridLayout({ children: [] }),
@@ -173,6 +210,183 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     });
 
     this.addActivationHandler(this.onActivate.bind(this));
+  }
+
+  public static Component = ({ model }: SceneComponentProps<ServiceSelectionScene>) => {
+    const styles = useStyles2(getStyles);
+    const { body, $data, selectedTab, tabs } = model.useState();
+    const { data } = $data.useState();
+
+    const serviceStringVariable = getServiceSelectionSearchVariable(model);
+    const { label } = serviceStringVariable.useState();
+
+    const { labelsByVolume, labelsToQuery } = model.getLabels(data?.series);
+    const isLogVolumeLoading =
+      data?.state === LoadingState.Loading || data?.state === LoadingState.Streaming || data === undefined;
+    const volumeApiError = $data.state.data?.state === LoadingState.Error;
+
+    const onSearchChange = (serviceName?: string) => {
+      model.onSearchServicesChange(serviceName);
+    };
+    const totalServices = labelsToQuery?.length ?? 0;
+    // To get the count of services that are currently displayed, divide the number of panels by 2, as there are 2 panels per service (logs and time series)
+    const renderedServices = body.state.children.length / 2;
+
+    return (
+      <div className={styles.container}>
+        <div className={styles.bodyWrapper}>
+          <div>
+            {/** When services fetched, show how many services are we showing */}
+            {isLogVolumeLoading && <LoadingPlaceholder text={'Loading services'} className={styles.loadingText} />}
+            {!isLogVolumeLoading && (
+              <>
+                Showing {renderedServices} of {totalServices} service{totalServices !== 1 ? 's' : ''}
+              </>
+            )}
+          </div>
+          <Field className={styles.searchField}>
+            <ServiceFieldSelector
+              initialFilter={{
+                label: serviceStringVariable.getValue().toString(),
+                value: serviceStringVariable.getValue().toString(),
+                icon: 'filter',
+              }}
+              isLoading={isLogVolumeLoading}
+              value={label}
+              onChange={(serviceName) => onSearchChange(serviceName)}
+              selectOption={(value: string) => {
+                selectLabel(selectedTab, value, model);
+              }}
+              label={model.formatPrimaryLabelForUI()}
+              options={
+                labelsToQuery?.map((serviceName) => ({
+                  value: serviceName,
+                  label: serviceName,
+                })) ?? []
+              }
+            />
+          </Field>
+          {tabs && <tabs.Component model={tabs} />}
+          {/** If we don't have any servicesByVolume, volume endpoint is probably not enabled */}
+          {!isLogVolumeLoading && volumeApiError && <ConfigureVolumeError />}
+          {!isLogVolumeLoading && !volumeApiError && !labelsByVolume?.length && <NoVolumeError />}
+          {labelsToQuery && labelsToQuery.length > 0 && (
+            <div className={styles.body}>
+              <body.Component model={body} />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  setTab(labelName: string) {
+    // clear active search
+    clearServiceSelectionSearchVariable(this);
+
+    // Set the active tab
+    this.setState({
+      selectedTab: labelName,
+    });
+    // Update the primary label variable
+    setServiceSelectionPrimaryLabelKey(labelName, this);
+  }
+
+  // Creates a layout with timeseries panel
+  buildServiceLayout(
+    primaryLabelName: string,
+    primaryLabelValue: string,
+    timeRange: TimeRange,
+    serviceLabelVar: CustomConstantVariable,
+    primaryLabelVar: AdHocFiltersVariable
+  ) {
+    let splitDuration;
+    if (timeRange.to.diff(timeRange.from, 'hours') >= 4 && timeRange.to.diff(timeRange.from, 'hours') <= 26) {
+      splitDuration = '2h';
+    }
+    const panel = PanelBuilders.timeseries()
+      // If service was previously selected, we show it in the title
+      .setTitle(primaryLabelValue)
+      .setData(
+        getQueryRunner([
+          buildDataQuery(this.getMetricExpression(primaryLabelValue, serviceLabelVar, primaryLabelVar), {
+            legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`,
+            splitDuration,
+            refId: `ts-${primaryLabelValue}`,
+          }),
+        ])
+      )
+      .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
+      .setCustomFieldConfig('fillOpacity', 100)
+      .setCustomFieldConfig('lineWidth', 0)
+      .setCustomFieldConfig('pointSize', 0)
+      .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+      .setUnit('short')
+      .setOverrides(setLevelColorOverrides)
+      .setOption('legend', {
+        showLegend: true,
+        calcs: ['sum'],
+        placement: 'right',
+        displayMode: LegendDisplayMode.Table,
+      })
+      .setHeaderActions(new SelectServiceButton({ labelValue: primaryLabelValue, labelName: primaryLabelName }))
+      .build();
+
+    panel.setState({
+      extendPanelContext: (_, context) =>
+        this.extendTimeSeriesLegendBus(primaryLabelName, primaryLabelValue, context, panel),
+    });
+
+    return new SceneCSSGridItem({
+      $behaviors: [new behaviors.CursorSync({ key: 'serviceCrosshairSync', sync: DashboardCursorSync.Crosshair })],
+      body: panel,
+    });
+  }
+
+  isAggregatedMetricsActive() {
+    const toolbar = this.getQueryOptionsToolbar();
+    return !toolbar?.state.options.aggregatedMetrics.disabled && toolbar?.state.options.aggregatedMetrics.active;
+  }
+
+  getLevelFilterForService = (service: string) => {
+    let serviceLevels = this.state.serviceLevel.get(service) || [];
+    if (serviceLevels.length === 0) {
+      return '';
+    }
+    const filters = serviceLevels.map((level) => {
+      if (level === 'logs') {
+        level = '';
+      }
+      return `${LEVEL_VARIABLE_VALUE}=\`${level}\``;
+    });
+    return ` | ${filters.join(' or ')} `;
+  };
+
+  // Creates a layout with logs panel
+  buildServiceLogsLayout = (labelName: string, labelValue: string) => {
+    const levelFilter = this.getLevelFilterForService(labelValue);
+    return new SceneCSSGridItem({
+      $behaviors: [new behaviors.CursorSync({ sync: DashboardCursorSync.Off })],
+      body: PanelBuilders.logs()
+        // Hover header set to true removes unused header padding, displaying more logs
+        .setHoverHeader(true)
+        .setData(
+          getQueryRunner([
+            buildDataQuery(this.getLogExpression(labelName, labelValue, levelFilter), {
+              maxLines: 100,
+              refId: `logs-${labelValue}`,
+            }),
+          ])
+        )
+        .setTitle(labelValue)
+        .setOption('showTime', true)
+        .setOption('enableLogDetails', false)
+        .build(),
+    });
+  };
+
+  formatPrimaryLabelForUI() {
+    return capitalizeFirstLetter(this.state.selectedTab === SERVICE_NAME ? SERVICE_UI_LABEL : this.state.selectedTab);
   }
 
   private onActivate() {
@@ -299,11 +513,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         },
       },
     });
-  }
-
-  public isAggregatedMetricsActive() {
-    const toolbar = this.getQueryOptionsToolbar();
-    return !toolbar?.state.options.aggregatedMetrics.disabled && toolbar?.state.options.aggregatedMetrics.active;
   }
 
   private wrapWildcardSearch(input: string) {
@@ -448,282 +657,12 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     };
   };
 
-  setTab(labelName: string) {
-    // clear active search
-    clearServiceSelectionSearchVariable(this);
-
-    // Set the active tab
-    this.setState({
-      selectedTab: labelName,
-    });
-    // Update the primary label variable
-    setServiceSelectionPrimaryLabelKey(labelName, this);
-  }
-
-  // Creates a layout with timeseries panel
-  buildServiceLayout(
-    primaryLabelName: string,
-    primaryLabelValue: string,
-    timeRange: TimeRange,
-    serviceLabelVar: CustomConstantVariable,
-    primaryLabelVar: AdHocFiltersVariable
-  ) {
-    let splitDuration;
-    if (timeRange.to.diff(timeRange.from, 'hours') >= 4 && timeRange.to.diff(timeRange.from, 'hours') <= 26) {
-      splitDuration = '2h';
-    }
-    const panel = PanelBuilders.timeseries()
-      // If service was previously selected, we show it in the title
-      .setTitle(primaryLabelValue)
-      .setData(
-        getQueryRunner([
-          buildDataQuery(this.getMetricExpression(primaryLabelValue, serviceLabelVar, primaryLabelVar), {
-            legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`,
-            splitDuration,
-            refId: `ts-${primaryLabelValue}`,
-          }),
-        ])
-      )
-      .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
-      .setCustomFieldConfig('fillOpacity', 100)
-      .setCustomFieldConfig('lineWidth', 0)
-      .setCustomFieldConfig('pointSize', 0)
-      .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-      .setUnit('short')
-      .setOverrides(setLevelColorOverrides)
-      .setOption('legend', {
-        showLegend: true,
-        calcs: ['sum'],
-        placement: 'right',
-        displayMode: LegendDisplayMode.Table,
-      })
-      .setHeaderActions(new SelectServiceButton({ labelValue: primaryLabelValue, labelName: primaryLabelName }))
-      .build();
-
-    panel.setState({
-      extendPanelContext: (_, context) =>
-        this.extendTimeSeriesLegendBus(primaryLabelName, primaryLabelValue, context, panel),
-    });
-
-    return new SceneCSSGridItem({
-      $behaviors: [new behaviors.CursorSync({ key: 'serviceCrosshairSync', sync: DashboardCursorSync.Crosshair })],
-      body: panel,
-    });
-  }
-
-  getLevelFilterForService = (service: string) => {
-    let serviceLevels = this.state.serviceLevel.get(service) || [];
-    if (serviceLevels.length === 0) {
-      return '';
-    }
-    const filters = serviceLevels.map((level) => {
-      if (level === 'logs') {
-        level = '';
-      }
-      return `${LEVEL_VARIABLE_VALUE}=\`${level}\``;
-    });
-    return ` | ${filters.join(' or ')} `;
-  };
-
-  // Creates a layout with logs panel
-  buildServiceLogsLayout = (labelName: string, labelValue: string) => {
-    const levelFilter = this.getLevelFilterForService(labelValue);
-    return new SceneCSSGridItem({
-      $behaviors: [new behaviors.CursorSync({ sync: DashboardCursorSync.Off })],
-      body: PanelBuilders.logs()
-        // Hover header set to true removes unused header padding, displaying more logs
-        .setHoverHeader(true)
-        .setData(
-          getQueryRunner([
-            buildDataQuery(this.getLogExpression(labelName, labelValue, levelFilter), {
-              maxLines: 100,
-              refId: `logs-${labelValue}`,
-            }),
-          ])
-        )
-        .setTitle(labelValue)
-        .setOption('showTime', true)
-        .setOption('enableLogDetails', false)
-        .build(),
-    });
-  };
-
-  // We could also run model.setState in component, but it is recommended to implement the state-modifying methods in the scene object
-  public onSearchServicesChange = debounce((primaryLabelSearch?: string) => {
-    // Set search variable
-    const searchVar = getServiceSelectionSearchVariable(this);
-
-    const newSearchString = primaryLabelSearch ? this.wrapWildcardSearch(primaryLabelSearch) : '.+';
-    if (newSearchString !== searchVar.state.value) {
-      searchVar.setState({
-        value: primaryLabelSearch ? this.wrapWildcardSearch(primaryLabelSearch) : '.+',
-        label: primaryLabelSearch ?? '',
-      });
-    }
-
-    const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
-    const filter = primaryLabelVar.state.filters[0];
-
-    // Update primary label with search string
-    if (this.wrapWildcardSearch(searchVar.state.value.toString()) !== filter.value) {
-      primaryLabelVar.setState({
-        filters: [
-          {
-            ...filter,
-            value: this.wrapWildcardSearch(searchVar.state.value.toString()),
-          },
-        ],
-      });
-    }
-
-    reportAppInteraction(
-      USER_EVENTS_PAGES.service_selection,
-      USER_EVENTS_ACTIONS.service_selection.search_services_changed,
-      {
-        searchQuery: primaryLabelSearch,
-      }
-    );
-  }, 500);
-
-  public static Component = ({ model }: SceneComponentProps<ServiceSelectionScene>) => {
-    const styles = useStyles2(getStyles);
-    const { body, $data, selectedTab, tabs } = model.useState();
-    const { data } = $data.useState();
-
-    const serviceStringVariable = getServiceSelectionSearchVariable(model);
-    const { label } = serviceStringVariable.useState();
-
-    const { labelsByVolume, labelsToQuery } = model.getLabels(data?.series);
-    const isLogVolumeLoading =
-      data?.state === LoadingState.Loading || data?.state === LoadingState.Streaming || data === undefined;
-    const volumeApiError = $data.state.data?.state === LoadingState.Error;
-
-    const onSearchChange = (serviceName?: string) => {
-      model.onSearchServicesChange(serviceName);
-    };
-    const totalServices = labelsToQuery?.length ?? 0;
-    // To get the count of services that are currently displayed, divide the number of panels by 2, as there are 2 panels per service (logs and time series)
-    const renderedServices = body.state.children.length / 2;
-
-    return (
-      <div className={styles.container}>
-        <div className={styles.bodyWrapper}>
-          <div>
-            {/** When services fetched, show how many services are we showing */}
-            {isLogVolumeLoading && <LoadingPlaceholder text={'Loading services'} className={styles.loadingText} />}
-            {!isLogVolumeLoading && (
-              <>
-                Showing {renderedServices} of {totalServices} service{totalServices !== 1 ? 's' : ''}
-              </>
-            )}
-          </div>
-          <Field className={styles.searchField}>
-            <ServiceFieldSelector
-              initialFilter={{
-                label: serviceStringVariable.getValue().toString(),
-                value: serviceStringVariable.getValue().toString(),
-                icon: 'filter',
-              }}
-              isLoading={isLogVolumeLoading}
-              value={label}
-              onChange={(serviceName) => onSearchChange(serviceName)}
-              selectOption={(value: string) => {
-                selectLabel(selectedTab, value, model);
-              }}
-              label={model.formatPrimaryLabelForUI()}
-              options={
-                labelsToQuery?.map((serviceName) => ({
-                  value: serviceName,
-                  label: serviceName,
-                })) ?? []
-              }
-            />
-          </Field>
-          {tabs && <tabs.Component model={tabs} />}
-          {/*<TabsBar>*/}
-          {/*  {tabLabels.map((tabLabel) => (*/}
-          {/*    <Tab*/}
-          {/*      key={tabLabel.value}*/}
-          {/*      onChangeTab={() => {*/}
-          {/*        // clear search on previous label*/}
-          {/*        const searchVar = getServiceSelectionSearchVariable(model);*/}
-          {/*        searchVar.setState({*/}
-          {/*          value: '.+',*/}
-          {/*          label: '',*/}
-          {/*        });*/}
-
-          {/*        model.setState({*/}
-          {/*          selectedTab: tabLabel.value,*/}
-          {/*        });*/}
-          {/*        primaryLabel.setState({*/}
-          {/*          filters: [*/}
-          {/*            {*/}
-          {/*              value: '.+',*/}
-          {/*              key: tabLabel.value,*/}
-          {/*              operator: '=~',*/}
-          {/*            },*/}
-          {/*          ],*/}
-          {/*        });*/}
-          {/*      }}*/}
-          {/*      label={capitalizeFirstLetter(tabLabel.label)}*/}
-          {/*      active={tabLabel.active}*/}
-          {/*      counter={tabLabel.counter}*/}
-          {/*    />*/}
-          {/*  ))}*/}
-          {/*  /!* Add more tabs tab *!/*/}
-          {/*  <Tab onChangeTab={model.toggleShowPopover} label={''} ref={popoverRef} icon={'plus-circle'} />*/}
-
-          {/*  <PopoverController content={popoverContent}>*/}
-          {/*    {(showPopper, hidePopper, popperProps) => {*/}
-          {/*      const blurFocusProps = {*/}
-          {/*        onBlur: hidePopper,*/}
-          {/*        onFocus: showPopper,*/}
-          {/*      };*/}
-
-          {/*      return (*/}
-          {/*        <>*/}
-          {/*          {popoverRef.current && (*/}
-          {/*            <>*/}
-          {/*              /!* @ts-expect-error @todo upgrade typescript *!/*/}
-          {/*              <Popover*/}
-          {/*                {...popperProps}*/}
-          {/*                {...rest}*/}
-          {/*                show={showPopover}*/}
-          {/*                wrapperClassName={popoverStyles.popover}*/}
-          {/*                referenceElement={popoverRef.current}*/}
-          {/*                renderArrow={true}*/}
-          {/*                {...blurFocusProps}*/}
-          {/*              />*/}
-          {/*            </>*/}
-          {/*          )}*/}
-          {/*        </>*/}
-          {/*      );*/}
-          {/*    }}*/}
-          {/*  </PopoverController>*/}
-          {/*</TabsBar>*/}
-          {/** If we don't have any servicesByVolume, volume endpoint is probably not enabled */}
-          {!isLogVolumeLoading && volumeApiError && <ConfigureVolumeError />}
-          {!isLogVolumeLoading && !volumeApiError && !labelsByVolume?.length && <NoVolumeError />}
-          {labelsToQuery && labelsToQuery.length > 0 && (
-            <div className={styles.body}>
-              <body.Component model={body} />
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
   private getLabels(series?: DataFrame[]) {
     const labelsByVolume: string[] = series?.[0]?.fields[0].values ?? [];
     const dsString = getDataSourceVariable(this).getValue()?.toString();
     const searchString = getServiceSelectionSearchVariable(this).getValue();
     const labelsToQuery = createListOfLabelsToQuery(labelsByVolume, dsString, String(searchString));
     return { labelsByVolume, labelsToQuery: labelsToQuery };
-  }
-
-  public formatPrimaryLabelForUI() {
-    return capitalizeFirstLetter(this.state.selectedTab === SERVICE_NAME ? SERVICE_UI_LABEL : this.state.selectedTab);
   }
 }
 
