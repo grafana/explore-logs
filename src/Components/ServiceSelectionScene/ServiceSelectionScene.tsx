@@ -20,6 +20,8 @@ import {
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
+  SceneObjectUrlSyncConfig,
+  SceneObjectUrlValues,
   SceneQueryRunner,
   SceneVariableSet,
   VizPanel,
@@ -63,7 +65,7 @@ import {
   getServiceSelectionSearchVariable,
   setServiceSelectionPrimaryLabelKey,
 } from '../../services/variableGetters';
-import { config } from '@grafana/runtime';
+import { config, locationService } from '@grafana/runtime';
 import { VariableHide } from '@grafana/schema';
 import { ToolbarScene } from '../IndexScene/ToolbarScene';
 import { IndexScene } from '../IndexScene/IndexScene';
@@ -103,43 +105,12 @@ function renderPrimaryLabelFilters(filters: AdHocVariableFilter[]): string {
   return '';
 }
 
+const primaryLabelUrlKey = 'var-primary_label';
+
 export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionSceneState> {
-  // We could also run model.setState in component, but it is recommended to implement the state-modifying methods in the scene object
-  onSearchServicesChange = debounce((primaryLabelSearch?: string) => {
-    // Set search variable
-    const searchVar = getServiceSelectionSearchVariable(this);
-
-    const newSearchString = primaryLabelSearch ? this.wrapWildcardSearch(primaryLabelSearch) : '.+';
-    if (newSearchString !== searchVar.state.value) {
-      searchVar.setState({
-        value: primaryLabelSearch ? this.wrapWildcardSearch(primaryLabelSearch) : '.+',
-        label: primaryLabelSearch ?? '',
-      });
-    }
-
-    const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
-    const filter = primaryLabelVar.state.filters[0];
-
-    // Update primary label with search string
-    if (this.wrapWildcardSearch(searchVar.state.value.toString()) !== filter.value) {
-      primaryLabelVar.setState({
-        filters: [
-          {
-            ...filter,
-            value: this.wrapWildcardSearch(searchVar.state.value.toString()),
-          },
-        ],
-      });
-    }
-
-    reportAppInteraction(
-      USER_EVENTS_PAGES.service_selection,
-      USER_EVENTS_ACTIONS.service_selection.search_services_changed,
-      {
-        searchQuery: primaryLabelSearch,
-      }
-    );
-  }, 500);
+  protected _urlSync = new SceneObjectUrlSyncConfig(this, {
+    keys: [primaryLabelUrlKey],
+  });
 
   constructor(state: Partial<ServiceSelectionSceneState>) {
     super({
@@ -206,6 +177,68 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     });
 
     this.addActivationHandler(this.onActivate.bind(this));
+  }
+
+  /**
+   * I'm probably not doing this right
+   * Set changes from the URL to the state of the primary label variable
+   */
+  getUrlState() {
+    const location = locationService.getLocation();
+    const search = new URLSearchParams(location.search);
+    const primaryLabelRaw = search.get(primaryLabelUrlKey);
+    const primaryLabelSplit = primaryLabelRaw?.split('|');
+    const key = primaryLabelSplit?.[0];
+
+    if (key) {
+      const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
+      const filter = primaryLabelVar.state.filters[0];
+      if (filter.key !== key) {
+        console.log('getUrlState setting', key);
+        getServiceSelectionPrimaryLabel(this).setState({
+          filters: [
+            {
+              ...filter,
+              key,
+            },
+          ],
+        });
+      }
+    }
+
+    return {};
+  }
+
+  /**
+   * Unused, but required
+   * @param values
+   */
+  updateFromUrl(values: SceneObjectUrlValues) {}
+
+  /**
+   * I'm probably not doing this right
+   * Attempting to add any change to the primary label variable (i.e. the selected tab) as a browser history event
+   * @param newKey
+   */
+  addLabelChangeToBrowserHistory(newKey: string) {
+    this._urlSync.performBrowserHistoryAction(() => {
+      const location = locationService.getLocation();
+      const search = new URLSearchParams(location.search);
+      const primaryLabelRaw = search.get(primaryLabelUrlKey);
+      if (primaryLabelRaw) {
+        const primaryLabelSplit = primaryLabelRaw?.split('|');
+        const keyInUrl = primaryLabelSplit?.[0];
+
+        if (keyInUrl !== newKey) {
+          primaryLabelSplit[0] = newKey;
+          search.set(primaryLabelUrlKey, primaryLabelSplit.join('|'));
+          const currentUrl = location.pathname + location.search;
+          if (currentUrl !== location.pathname + search.toString()) {
+            locationService.push(location.pathname + '?' + search.toString());
+          }
+        }
+      }
+    });
   }
 
   public static Component = ({ model }: SceneComponentProps<ServiceSelectionScene>) => {
@@ -276,6 +309,43 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       </div>
     );
   };
+
+  // We could also run model.setState in component, but it is recommended to implement the state-modifying methods in the scene object
+  onSearchServicesChange = debounce((primaryLabelSearch?: string) => {
+    // Set search variable
+    const searchVar = getServiceSelectionSearchVariable(this);
+
+    const newSearchString = primaryLabelSearch ? this.wrapWildcardSearch(primaryLabelSearch) : '.+';
+    if (newSearchString !== searchVar.state.value) {
+      searchVar.setState({
+        value: primaryLabelSearch ? this.wrapWildcardSearch(primaryLabelSearch) : '.+',
+        label: primaryLabelSearch ?? '',
+      });
+    }
+
+    const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
+    const filter = primaryLabelVar.state.filters[0];
+
+    // Update primary label with search string
+    if (this.wrapWildcardSearch(searchVar.state.value.toString()) !== filter.value) {
+      primaryLabelVar.setState({
+        filters: [
+          {
+            ...filter,
+            value: this.wrapWildcardSearch(searchVar.state.value.toString()),
+          },
+        ],
+      });
+    }
+
+    reportAppInteraction(
+      USER_EVENTS_PAGES.service_selection,
+      USER_EVENTS_ACTIONS.service_selection.search_services_changed,
+      {
+        searchQuery: primaryLabelSearch,
+      }
+    );
+  }, 500);
 
   getSelectedTab() {
     return getServiceSelectionPrimaryLabel(this).state.filters[0]?.key;
@@ -400,6 +470,8 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     this._subs.add(
       primaryLabelVar.subscribeToState((newState, prevState) => {
         if (newState.filterExpression !== prevState.filterExpression) {
+          const newKey = newState.filters[0].key;
+          this.addLabelChangeToBrowserHistory(newKey);
           this.runVolumeQuery();
         }
       })

@@ -42,7 +42,6 @@ interface LabelOptions {
 
 export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionTabsSceneState> {
   constructor(state: Partial<ServiceSelectionTabsSceneState>) {
-    console.log('ServiceSelectionTabsScene constructor');
     super({
       showPopover: false,
       $labelsData: getSceneQueryRunner({
@@ -73,8 +72,6 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
     // Consts
     const styles = useStyles2(getTabsStyles);
     const popoverRef = useRef<HTMLElement>(null);
-
-    console.log('tabOptions', tabOptions);
 
     return (
       <TabsBar>
@@ -139,9 +136,6 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
   };
 
   getLabelsFromQueryRunnerState(state: QueryRunnerState): LabelOptions[] | undefined {
-    console.log('getLabelsFromQueryRunnerState', state);
-
-    // const labels: string[] | undefined = state.data?.series?.[0].fields[0].values;
     return state.data?.series[0].fields.map((f) => {
       return {
         label: f.name,
@@ -160,7 +154,7 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
 
     this._subs.add(
       getServiceSelectionPrimaryLabel(this).subscribeToState((newState, prevState) => {
-        const labels = this.getLabelsFromQueryRunnerState(this.state.$labelsData.state);
+        const labels = this.getLabelsFromQueryRunnerState(this.state.$labelsData?.state);
         if (labels) {
           this.populatePrimaryLabelsVariableOptions(labels);
         }
@@ -201,9 +195,11 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
         return option;
       })
       .sort((a, b) => {
-        if (a.active || b.active) {
-          return a.active === b.active ? 0 : a.active ? -1 : 1;
+        // Sort service first
+        if (a.value === SERVICE_NAME || b.value === SERVICE_NAME) {
+          return a.value === SERVICE_NAME ? -1 : 1;
         }
+        // Then sort alphabetically
         return a.label < b.label ? -1 : a.label > b.label ? 1 : 0;
       });
     this.setState({

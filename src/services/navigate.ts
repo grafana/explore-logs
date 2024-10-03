@@ -59,6 +59,7 @@ export function navigateToValueBreakdown(newPath: ValueSlugs, label: string, ser
         const metadataService = getMetadataService();
         metadataService.setServiceSceneState(serviceScene.state);
       }
+      console.log('fullUrl', fullUrl);
 
       locationService.push(fullUrl);
       return;
@@ -113,6 +114,7 @@ export function navigateToDrilldownPage(path: PageSlugs, serviceScene: ServiceSc
  * Navigate to the services selection url
  */
 export function navigateToIndex() {
+  console.log('navigateToIndex');
   const location = locationService.getLocation();
   const serviceUrl = buildServicesUrl(ROUTES.explore());
   const currentUrl = location.pathname + location.search;
@@ -120,6 +122,8 @@ export function navigateToIndex() {
   if (serviceUrl === currentUrl) {
     return;
   }
+
+  console.log('navigateToIndex changing to', serviceUrl, currentUrl);
 
   locationService.push(serviceUrl);
 }
