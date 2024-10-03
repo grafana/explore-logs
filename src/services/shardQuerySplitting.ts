@@ -272,7 +272,7 @@ function getInitialGroupSize(shards: number[]) {
 }
 
 // Enable to output debugging logs
-const DEBUG_ENABLED = Boolean(localStorage.getItem(`${pluginJson.id}.harding_debug_enabled`));
+const DEBUG_ENABLED = Boolean(localStorage.getItem(`${pluginJson.id}.sharding_debug_enabled`));
 function debug(message: string) {
   if (!DEBUG_ENABLED) {
     return;
