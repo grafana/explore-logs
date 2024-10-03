@@ -249,10 +249,8 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     const activeLayoutChildren = activeLayout?.state.children as SceneCSSGridItem[] | undefined;
     const activePanels = activeLayoutChildren?.filter((child) => !child.state.isHidden);
 
-    if (activePanels) {
-      const fieldsBreakdownScene = sceneGraph.getAncestor(this, FieldsBreakdownScene);
-      fieldsBreakdownScene.state.changeFieldCount?.(activePanels.length);
-    }
+    const fieldsBreakdownScene = sceneGraph.getAncestor(this, FieldsBreakdownScene);
+    fieldsBreakdownScene.state.changeFieldCount?.(activePanels?.length ?? 0);
   }
 
   public static Selector({ model }: SceneComponentProps<FieldsAggregatedBreakdownScene>) {

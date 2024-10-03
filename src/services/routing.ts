@@ -1,6 +1,7 @@
 import pluginJson from '../plugin.json';
 import { UrlQueryMap, urlUtil } from '@grafana/data';
 import {
+  SERVICE_NAME,
   VAR_DATASOURCE,
   VAR_FIELD_GROUP_BY,
   VAR_FIELDS,
@@ -9,10 +10,14 @@ import {
   VAR_LEVELS,
   VAR_LINE_FILTER,
   VAR_PATTERNS,
+  VAR_SERVICE,
 } from './variables';
 import { locationService } from '@grafana/runtime';
-import { SceneRouteMatch } from '@grafana/scenes';
+import { RouteMatch, RouteProps } from '../Components/Pages';
 import { replaceSlash } from './extensions/links';
+import { getLabelsVariable } from './variableGetters';
+import { logger } from './logger';
+import { SceneObject } from '@grafana/scenes';
 
 export const PLUGIN_ID = pluginJson.id;
 export const PLUGIN_BASE_URL = `/a/${PLUGIN_ID}`;
@@ -39,31 +44,38 @@ export type ChildDrilldownSlugs = ValueSlugs.field | ValueSlugs.label;
 
 export const ROUTES = {
   explore: () => prefixRoute(PageSlugs.explore),
-  logs: (service: string) => prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(service)}/${PageSlugs.logs}`),
-  fields: (service: string) => prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(service)}/${PageSlugs.fields}`),
-  patterns: (service: string) =>
-    prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(service)}/${PageSlugs.patterns}`),
-  labels: (service: string) => prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(service)}/${PageSlugs.labels}`),
+  logs: (labelValue: string, labelName = 'service') =>
+    prefixRoute(`${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${PageSlugs.logs}`),
+  fields: (labelValue: string, labelName = 'service') =>
+    prefixRoute(`${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${PageSlugs.fields}`),
+  patterns: (labelValue: string, labelName = 'service') =>
+    prefixRoute(`${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${PageSlugs.patterns}`),
+  labels: (labelValue: string, labelName = 'service') =>
+    prefixRoute(`${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${PageSlugs.labels}`),
 };
 
 export const SUB_ROUTES = {
-  label: (service: string, label: string) =>
-    prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(service)}/${ValueSlugs.label}/${label}`),
-  field: (service: string, label: string) =>
-    prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(service)}/${ValueSlugs.field}/${label}`),
+  label: (labelValue: string, labelName = 'service', breakdownLabelName: string) =>
+    prefixRoute(
+      `${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${ValueSlugs.label}/${breakdownLabelName}`
+    ),
+  field: (labelValue: string, labelName = 'service', breakdownLabelName: string) =>
+    prefixRoute(
+      `${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${ValueSlugs.field}/${breakdownLabelName}`
+    ),
 };
 
 export const ROUTE_DEFINITIONS: Record<keyof typeof PageSlugs, string> = {
   explore: prefixRoute(PageSlugs.explore),
-  logs: prefixRoute(`${PageSlugs.explore}/service/:service/${PageSlugs.logs}`),
-  fields: prefixRoute(`${PageSlugs.explore}/service/:service/${PageSlugs.fields}`),
-  patterns: prefixRoute(`${PageSlugs.explore}/service/:service/${PageSlugs.patterns}`),
-  labels: prefixRoute(`${PageSlugs.explore}/service/:service/${PageSlugs.labels}`),
+  logs: prefixRoute(`${PageSlugs.explore}/:labelName/:labelValue/${PageSlugs.logs}`),
+  fields: prefixRoute(`${PageSlugs.explore}/:labelName/:labelValue/${PageSlugs.fields}`),
+  patterns: prefixRoute(`${PageSlugs.explore}/:labelName/:labelValue/${PageSlugs.patterns}`),
+  labels: prefixRoute(`${PageSlugs.explore}/:labelName/:labelValue/${PageSlugs.labels}`),
 };
 
 export const CHILD_ROUTE_DEFINITIONS: Record<keyof typeof ValueSlugs, string> = {
-  field: prefixRoute(`${PageSlugs.explore}/service/:service/${ValueSlugs.field}/:label`),
-  label: prefixRoute(`${PageSlugs.explore}/service/:service/${ValueSlugs.label}/:label`),
+  field: prefixRoute(`${PageSlugs.explore}/:labelName/:labelValue/${ValueSlugs.field}/:breakdownLabel`),
+  label: prefixRoute(`${PageSlugs.explore}/:labelName/:labelValue/${ValueSlugs.label}/:breakdownLabel`),
 };
 
 export const EXPLORATIONS_ROUTE = `${PLUGIN_BASE_URL}/${PageSlugs.explore}`;
@@ -102,6 +114,27 @@ export function getDrilldownSlug() {
   return slug as PageSlugs;
 }
 
+/**
+ * The "primary" label, is the replacement for the service_name paradigm
+ * It must be an indexed label with an include filter
+ * Note: Will return the label as it exists in the url, so "service_name" will be returned as "service", we'll need to adjust for this case if we want to support URLs from before this change
+ */
+export function getPrimaryLabelFromUrl(): RouteProps {
+  const location = locationService.getLocation();
+  const startOfUrl = '/a/grafana-lokiexplore-app/explore';
+  const endOfUrl = location.pathname.slice(location.pathname.indexOf(startOfUrl) + startOfUrl.length + 1);
+  const routeParams = endOfUrl.split('/');
+
+  let labelName = routeParams[0];
+  const labelValue = routeParams[1];
+  const breakdownLabel = routeParams[3];
+  // Keep urls the same
+  if (labelName === SERVICE_NAME) {
+    labelName = VAR_SERVICE;
+  }
+  return { labelName, labelValue, breakdownLabel };
+}
+
 export function getDrilldownValueSlug() {
   const location = locationService.getLocation();
   const locationArray = location.pathname.split('/');
@@ -112,14 +145,12 @@ export function getDrilldownValueSlug() {
 export function buildServicesUrl(path: string, extraQueryParams?: UrlQueryMap): string {
   return urlUtil.renderUrl(path, buildServicesRoute(extraQueryParams));
 }
-export function extractServiceFromRoute(routeMatch: SceneRouteMatch<{ service: string }>): { service: string } {
-  const service = routeMatch.params.service;
-  return { service };
-}
-
-export function extractLabelNameFromRoute(routeMatch: SceneRouteMatch<{ label: string }>): { label: string } {
-  const label = routeMatch.params.label;
-  return { label };
+export function extractValuesFromRoute(routeMatch: RouteMatch): RouteProps {
+  return {
+    labelName: routeMatch.params.labelName,
+    labelValue: routeMatch.params.labelValue,
+    breakdownLabel: routeMatch.params.breakdownLabel,
+  };
 }
 
 export function buildServicesRoute(extraQueryParams?: UrlQueryMap): UrlQueryMap {
@@ -133,4 +164,37 @@ export function buildServicesRoute(extraQueryParams?: UrlQueryMap): UrlQueryMap 
     }, {}),
     ...extraQueryParams,
   };
+}
+
+/**
+ * Compare slugs against variable filters and log discrepancies
+ * These don't cause errors or render empty UIs, but shouldn't be possible when routing within the app
+ * If we see these logged in production it indicates we're navigating users incorrectly
+ * @param sceneRef
+ */
+export function checkPrimaryLabel(sceneRef: SceneObject) {
+  const labelsVariable = getLabelsVariable(sceneRef);
+  let { labelName, labelValue } = getPrimaryLabelFromUrl();
+  if (labelName === VAR_SERVICE) {
+    labelName = SERVICE_NAME;
+  }
+  const primaryLabel = labelsVariable.state.filters.find((filter) => filter.key === labelName);
+  if (!primaryLabel) {
+    const location = locationService.getLocation();
+
+    logger.info('invalid primary label name in url', {
+      labelName,
+      url: `${location.pathname}${location.search}`,
+    });
+  }
+
+  const primaryLabelValue = labelsVariable.state.filters.find((filter) => filter.value === labelValue);
+  if (!primaryLabelValue) {
+    const location = locationService.getLocation();
+
+    logger.info('invalid primary label value in url', {
+      labelValue,
+      url: `${location.pathname}${location.search}`,
+    });
+  }
 }

@@ -6,6 +6,7 @@ import pluginJson from '../../plugin.json';
 import { LokiQuery } from '../lokiQuery';
 import { getMatcherFromQuery } from '../logqlMatchers';
 import { LabelType } from '../fieldsTypes';
+import { FilterOp } from '../filters';
 
 const title = 'Open in Explore Logs';
 const description = 'Open current query in the Explore Logs view';
@@ -41,13 +42,17 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
 
   const expr = lokiQuery.expr;
   const labelFilters = getMatcherFromQuery(expr);
-  const serviceSelector = labelFilters.find((selector) => selector.key === SERVICE_NAME);
-  if (!serviceSelector) {
+
+  const labelSelector = labelFilters.find((selector) => selector.operator === FilterOp.Equal);
+
+  if (!labelSelector) {
     return undefined;
   }
-  const serviceName = replaceSlash(serviceSelector.value);
-  // sort `service_name` first
-  labelFilters.sort((a, b) => (a.key === SERVICE_NAME ? -1 : 1));
+
+  const labelValue = replaceSlash(labelSelector.value);
+  let labelName = labelSelector.key === SERVICE_NAME ? 'service' : labelSelector.key;
+  // sort `primary label` first
+  labelFilters.sort((a, b) => (a.key === labelName ? -1 : 1));
 
   let params = setUrlParameter(UrlParameters.DatasourceId, lokiQuery.datasource?.uid);
   params = setUrlParameter(UrlParameters.TimeRangeFrom, context.timeRange.from.valueOf().toString(), params);
@@ -65,9 +70,8 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
       params
     );
   }
-
   return {
-    path: createAppUrl(`/explore/service/${serviceName}/logs`, params),
+    path: createAppUrl(`/explore/${labelName}/${labelValue}/logs`, params),
   };
 }
 

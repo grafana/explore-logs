@@ -35,6 +35,65 @@ test.describe('explore services breakdown page', () => {
     await expect(page).toHaveURL(/broadcast/);
   });
 
+  test(`should replace service_name with ${labelName} in url`, async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: ['logsPanelQuery'],
+      legendFormats: [`{{${labelName}}}`, `{{service_name}}`],
+    });
+    await explorePage.goToLabelsTab();
+
+    // Select cluster
+    const selectClusterButton = page.getByLabel(`Select ${labelName}`);
+    await expect(selectClusterButton).toHaveCount(1);
+    await page.getByLabel(`Select ${labelName}`).click();
+
+    // exclude "us-east-1" cluster
+    const excludeCluster = 'us-east-1';
+    const clusterExcludeSelectButton = page
+      .getByTestId(`data-testid Panel header ${excludeCluster}`)
+      .getByTestId('data-testid button-filter-exclude');
+    await expect(clusterExcludeSelectButton).toHaveCount(1);
+    await clusterExcludeSelectButton.click();
+
+    // include eu-west-1 cluster
+    const includeCluster = 'eu-west-1';
+    const clusterIncludeSelectButton = page
+      .getByTestId(`data-testid Panel header ${includeCluster}`)
+      .getByTestId('data-testid button-filter-include');
+    await expect(clusterIncludeSelectButton).toHaveCount(1);
+    await clusterIncludeSelectButton.click();
+
+    // Include should navigate us back to labels tab
+    await explorePage.assertTabsNotLoading();
+    await expect(selectClusterButton).toHaveCount(1);
+
+    // Now remove service_name variable
+    const removeServiceNameFilterBtn = page
+      .getByTestId('data-testid Dashboard template variables submenu Label service_name')
+      .getByLabel('Remove');
+    await expect(removeServiceNameFilterBtn).toHaveCount(1);
+    await removeServiceNameFilterBtn.click();
+
+    // Assert cluster has been added as the new URL slug
+    await explorePage.assertTabsNotLoading();
+    await expect(page).toHaveURL(/\/cluster\/eu-west-1\//);
+
+    // Assert service_name is visible as a normal label
+    const serviceNameSelect = page.getByLabel('Select service_name');
+    await expect(serviceNameSelect).toHaveCount(1);
+    await serviceNameSelect.click();
+
+    // exclude nginx service
+    const nginxExcludeBtn = page
+      .getByTestId('data-testid Panel header nginx')
+      .getByTestId('data-testid button-filter-exclude');
+    await expect(nginxExcludeBtn).toHaveCount(1);
+    await nginxExcludeBtn.click();
+
+    const serviceNameFilter = page.getByTestId('data-testid Dashboard template variables submenu Label service_name');
+    await expect(serviceNameFilter).toHaveCount(1);
+  });
+
   test('logs panel should have panel-content class suffix', async ({ page }) => {
     await explorePage.serviceBreakdownSearch.click();
     await explorePage.serviceBreakdownSearch.fill('broadcast');

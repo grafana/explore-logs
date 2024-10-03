@@ -4,14 +4,12 @@ import { getExplorationFor } from '../../services/scenes';
 import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, ValueSlugs } from '../../services/routing';
 import { GoToExploreButton } from './GoToExploreButton';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
-import { SERVICE_NAME } from '../../services/variables';
-import { navigateToDrilldownPage, navigateToIndex } from '../../services/navigate';
+import { navigateToDrilldownPage } from '../../services/navigate';
 import React from 'react';
 import { ServiceScene, ServiceSceneState } from './ServiceScene';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 import { BreakdownViewDefinition, breakdownViewsDefinitions } from './BreakdownViews';
-import { getLabelsVariable } from '../../services/variableGetters';
 
 export interface ActionBarSceneState extends SceneObjectState {}
 
@@ -67,14 +65,7 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
                     );
 
                     const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
-                    const variable = getLabelsVariable(serviceScene);
-                    const service = variable.state.filters.find((f) => f.key === SERVICE_NAME);
-
-                    if (service?.value) {
-                      navigateToDrilldownPage(tab.value, serviceScene);
-                    } else {
-                      navigateToIndex();
-                    }
+                    navigateToDrilldownPage(tab.value, serviceScene);
                   }
                 }}
               />

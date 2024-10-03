@@ -13,7 +13,6 @@ import {
   SceneObjectUrlSyncConfig,
   SceneObjectUrlValues,
   SceneRefreshPicker,
-  SceneRouteMatch,
   SceneTimePicker,
   SceneTimeRange,
   SceneVariableSet,
@@ -54,6 +53,7 @@ import {
   getUrlParamNameForVariable,
 } from '../../services/variableGetters';
 import { ToolbarScene } from './ToolbarScene';
+import { OptionalRouteMatch } from '../Pages';
 
 export interface AppliedPattern {
   pattern: string;
@@ -67,7 +67,7 @@ export interface IndexSceneState extends SceneObjectState {
   body?: LayoutScene;
   initialFilters?: AdHocVariableFilter[];
   patterns?: AppliedPattern[];
-  routeMatch?: SceneRouteMatch<{ service?: string; label?: string }>;
+  routeMatch?: OptionalRouteMatch;
 }
 
 export class IndexScene extends SceneObjectBase<IndexSceneState> {
@@ -122,7 +122,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     const stateUpdate: Partial<IndexSceneState> = {};
 
     if (!this.state.contentScene) {
-      stateUpdate.contentScene = getContentScene(this.state.routeMatch?.params.label);
+      stateUpdate.contentScene = getContentScene(this.state.routeMatch?.params.breakdownLabel);
     }
 
     this.setState(stateUpdate);
