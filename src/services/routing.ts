@@ -15,9 +15,9 @@ import {
 import { locationService } from '@grafana/runtime';
 import { RouteMatch, RouteProps } from '../Components/Pages';
 import { replaceSlash } from './extensions/links';
+import { SceneObject } from '@grafana/scenes';
 import { getLabelsVariable } from './variableGetters';
 import { logger } from './logger';
-import { SceneObject } from '@grafana/scenes';
 
 export const PLUGIN_ID = pluginJson.id;
 export const PLUGIN_BASE_URL = `/a/${PLUGIN_ID}`;
@@ -127,7 +127,7 @@ export function getPrimaryLabelFromUrl(): RouteProps {
 
   let labelName = routeParams[0];
   const labelValue = routeParams[1];
-  const breakdownLabel = routeParams?.[3];
+  const breakdownLabel = routeParams[3];
   // Keep urls the same
   if (labelName === SERVICE_NAME) {
     labelName = SERVICE_UI_LABEL;
