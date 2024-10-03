@@ -2,7 +2,7 @@ import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState } fr
 import { Select, Stack, useStyles2 } from '@grafana/ui';
 import React from 'react';
 import { ServiceSelectionScene } from './ServiceSelectionScene';
-import { ServiceSelectionTabsScene } from './ServiceSelectionTabsScene';
+import { ServiceSelectionTabsScene, TabOption } from './ServiceSelectionTabsScene';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 
@@ -15,6 +15,14 @@ export class TabPopoverScene extends SceneObjectBase<TabPopoverSceneState> {
     const { tabOptions, showPopover } = serviceSelectionTabsScene.useState();
     const popoverStyles = useStyles2(getPopoverStyles);
 
+    const tabOptionsWithIcon: TabOption[] = tabOptions.map((opt) => {
+      return {
+        ...opt,
+        icon: opt.active ? 'save' : undefined,
+        label: `${opt.label} (${opt.counter})`,
+      };
+    });
+
     return (
       <Stack direction="column" gap={0} role="tooltip">
         <div className={popoverStyles.card.body}>
@@ -26,7 +34,7 @@ export class TabPopoverScene extends SceneObjectBase<TabPopoverSceneState> {
             autoFocus={true}
             isOpen={showPopover}
             placeholder={'Search labels'}
-            options={tabOptions}
+            options={tabOptionsWithIcon}
             isSearchable={true}
             openMenuOnFocus={true}
             onChange={(option) => {

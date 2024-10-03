@@ -1,7 +1,14 @@
-import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState, SceneQueryRunner } from '@grafana/scenes';
+import {
+  QueryRunnerState,
+  SceneComponentProps,
+  sceneGraph,
+  SceneObjectBase,
+  SceneObjectState,
+  SceneQueryRunner,
+} from '@grafana/scenes';
 import React, { useRef } from 'react';
 import { Popover, PopoverController, Tab, TabsBar, useStyles2 } from '@grafana/ui';
-import { GrafanaTheme2, LoadingState } from '@grafana/data';
+import { GrafanaTheme2, IconName, LoadingState, SelectableValue } from '@grafana/data';
 import { css } from '@emotion/css';
 import { SERVICE_NAME, SERVICE_UI_LABEL } from '../../services/variables';
 import { capitalizeFirstLetter } from '../../services/text';
@@ -10,10 +17,15 @@ import { ServiceSelectionScene } from './ServiceSelectionScene';
 import { getSceneQueryRunner } from '../../services/panel';
 import { buildResourceQuery } from '../../services/query';
 import { TabPopoverScene } from './TabPopoverScene';
+import { getServiceSelectionPrimaryLabel } from '../../services/variableGetters';
 
-interface TabOption {
+export interface TabOption extends SelectableValue {
   label: string;
   value: string;
+  icon?: IconName;
+  active?: boolean;
+  counter?: number;
+  saved?: boolean;
 }
 
 export interface ServiceSelectionTabsSceneState extends SceneObjectState {
@@ -23,19 +35,25 @@ export interface ServiceSelectionTabsSceneState extends SceneObjectState {
   popover?: TabPopoverScene;
 }
 
+interface LabelOptions {
+  label: string;
+  cardinality: number;
+}
+
 export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionTabsSceneState> {
   constructor(state: Partial<ServiceSelectionTabsSceneState>) {
     console.log('ServiceSelectionTabsScene constructor');
     super({
       showPopover: false,
       $labelsData: getSceneQueryRunner({
-        queries: [buildResourceQuery('', 'labels')],
+        queries: [buildResourceQuery('', 'detected_labels')],
         runQueriesMode: 'manual',
       }),
       tabOptions: [
         {
           label: SERVICE_UI_LABEL,
           value: SERVICE_NAME,
+          saved: true,
         },
       ],
       ...state,
@@ -48,29 +66,19 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
     // Scene vars
     const { tabOptions, showPopover, popover } = model.useState();
     const serviceSelectionScene = sceneGraph.getAncestor(model, ServiceSelectionScene);
-    const selectedTab = serviceSelectionScene.getSelectedTab();
+    const primaryLabel = getServiceSelectionPrimaryLabel(model);
+    // Re-render when active tab changes, which is stored in the primary label variable
+    primaryLabel.useState();
 
     // Consts
     const styles = useStyles2(getTabsStyles);
     const popoverRef = useRef<HTMLElement>(null);
 
-    // Things that should be refactored into class methods
-    const tabLabels: Array<{ label: string; value: string; counter?: number; active: boolean }> = [
-      ...tabOptions.map((opt) => {
-        return {
-          value: opt.value.toString(),
-          label: opt.label,
-          active: selectedTab === opt.value,
-          counter: undefined,
-        };
-      }),
-    ].sort((a, b) => {
-      return a === b ? 0 : a ? -1 : 1;
-    });
+    console.log('tabOptions', tabOptions);
 
     return (
       <TabsBar>
-        {tabLabels.map((tabLabel) => (
+        {tabOptions.map((tabLabel) => (
           <Tab
             key={tabLabel.value}
             onChangeTab={() => {
@@ -124,11 +132,23 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
     );
   };
 
-  public toggleShowPopover = () => {
+  toggleShowPopover = () => {
     this.setState({
       showPopover: !this.state.showPopover,
     });
   };
+
+  getLabelsFromQueryRunnerState(state: QueryRunnerState): LabelOptions[] | undefined {
+    console.log('getLabelsFromQueryRunnerState', state);
+
+    // const labels: string[] | undefined = state.data?.series?.[0].fields[0].values;
+    return state.data?.series[0].fields.map((f) => {
+      return {
+        label: f.name,
+        cardinality: f.values[0],
+      };
+    });
+  }
 
   private onActivate() {
     // Get labels
@@ -137,6 +157,15 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
     this.setState({
       popover: new TabPopoverScene({}),
     });
+
+    this._subs.add(
+      getServiceSelectionPrimaryLabel(this).subscribeToState((newState, prevState) => {
+        const labels = this.getLabelsFromQueryRunnerState(this.state.$labelsData.state);
+        if (labels) {
+          this.populatePrimaryLabelsVariableOptions(labels);
+        }
+      })
+    );
 
     // Update labels/tabs on time range change
     this._subs.add(
@@ -148,23 +177,37 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
     this._subs.add(
       this.state.$labelsData.subscribeToState((newState, prevState) => {
         if (newState.data?.state === LoadingState.Done) {
-          const labels: string[] = newState.data?.series?.[0].fields[0].values;
-          this.populatePrimaryLabelsVariableOptions(labels);
+          const labels = this.getLabelsFromQueryRunnerState(newState);
+          if (labels) {
+            this.populatePrimaryLabelsVariableOptions(labels);
+          }
         }
       })
     );
   }
 
-  private populatePrimaryLabelsVariableOptions(labels: string[]) {
+  private populatePrimaryLabelsVariableOptions(labels: LabelOptions[]) {
+    const serviceSelectionScene = sceneGraph.getAncestor(this, ServiceSelectionScene);
+    const selectedTab = serviceSelectionScene.getSelectedTab();
+    const tabOptions: TabOption[] = labels
+      .filter((l) => l.label !== '__stream_shard__' && l.label !== '__aggregated_metric__')
+      .map((l) => {
+        const option: TabOption = {
+          label: l.label === SERVICE_NAME ? SERVICE_UI_LABEL : l.label,
+          value: l.label,
+          active: selectedTab === l.label,
+          counter: l.cardinality,
+        };
+        return option;
+      })
+      .sort((a, b) => {
+        if (a.active || b.active) {
+          return a.active === b.active ? 0 : a.active ? -1 : 1;
+        }
+        return a.label < b.label ? -1 : a.label > b.label ? 1 : 0;
+      });
     this.setState({
-      tabOptions: labels
-        .filter((l) => l !== '__stream_shard__' && l !== '__aggregated_metric__')
-        .map((l) => {
-          return {
-            label: l === SERVICE_NAME ? SERVICE_UI_LABEL : l,
-            value: l,
-          };
-        }),
+      tabOptions,
     });
   }
 }

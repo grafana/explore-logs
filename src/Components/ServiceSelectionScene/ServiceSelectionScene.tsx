@@ -400,7 +400,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     this._subs.add(
       primaryLabelVar.subscribeToState((newState, prevState) => {
         if (newState.filterExpression !== prevState.filterExpression) {
-          console.log('tab change');
           this.runVolumeQuery();
         }
       })
@@ -413,7 +412,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           newState.data?.state === LoadingState.Done &&
           !areArraysEqual(prevState?.data?.series, newState?.data?.series)
         ) {
-          console.log('volume change, update body');
           this.updateBody();
         }
       })
