@@ -18,8 +18,8 @@ import {
 import { LoadingPlaceholder } from '@grafana/ui';
 import { getQueryRunner, getResourceQueryRunner } from 'services/panel';
 import { buildDataQuery, buildResourceQuery } from 'services/query';
-import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, ValueSlugs } from 'services/routing';
 import {
+  EMPTY_VARIABLE_VALUE,
   LEVEL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
   SERVICE_NAME,
@@ -29,9 +29,10 @@ import {
   VAR_LABELS_EXPR,
   VAR_LEVELS,
   VAR_PATTERNS,
+  VAR_SERVICE,
 } from 'services/variables';
 import { getMetadataService } from '../../services/metadata';
-import { navigateToIndex } from '../../services/navigate';
+import { navigateToDrilldownPage, navigateToIndex, navigateToValueBreakdown } from '../../services/navigate';
 import { areArraysEqual } from '../../services/comparison';
 import { ActionBarScene } from './ActionBarScene';
 import { breakdownViewsDefinitions, TabNames, valueBreakdownViews } from './BreakdownViews';
@@ -40,9 +41,17 @@ import {
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
-  getServiceNameFromVariableState,
 } from '../../services/variableGetters';
 import { logger } from '../../services/logger';
+import { IndexScene } from '../IndexScene/IndexScene';
+import {
+  getDrilldownSlug,
+  getDrilldownValueSlug,
+  getPrimaryLabelFromUrl,
+  PageSlugs,
+  ValueSlugs,
+} from '../../services/routing';
+import { replaceSlash } from '../../services/extensions/links';
 
 const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 const PATTERNS_QUERY_REFID = 'patterns';
@@ -134,22 +143,46 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     }
     this._subs.add(
       variable.subscribeToState((newState, prevState) => {
-        const newServiceName = getServiceNameFromVariableState(newState);
-        const prevServiceName = getServiceNameFromVariableState(prevState);
         if (newState.filters.length === 0) {
           this.redirectToStart();
         }
         // If we remove the service name filter, we should redirect to the start
-        if (!newState.filters.some((f) => f.key === SERVICE_NAME)) {
-          this.redirectToStart();
-        }
+        let { labelName, labelValue, breakdownLabel } = getPrimaryLabelFromUrl();
 
-        // Clear filters if changing service, they might not exist, or might have a different parser
-        if (prevServiceName !== newServiceName) {
-          const fields = getFieldsVariable(this);
-          fields.setState({
-            filters: [],
-          });
+        // Before we dynamically pulled label filter keys into the URL, we had hardcoded "service" as the primary label slug, we want to keep URLs the same, so overwrite "service_name" with "service" if that's the primary label
+        if (labelName === VAR_SERVICE) {
+          labelName = SERVICE_NAME;
+        }
+        const indexScene = sceneGraph.getAncestor(this, IndexScene);
+        const prevRouteMatch = indexScene.state.routeMatch;
+
+        // The "primary" label used in the URL is no longer active, pick a new one
+        if (!newState.filters.some((f) => f.key === labelName && f.operator === '=' && f.value === labelValue)) {
+          const newPrimaryLabel = newState.filters.find((f) => f.operator === '=' && f.value !== EMPTY_VARIABLE_VALUE);
+          if (newPrimaryLabel) {
+            indexScene.setState({
+              routeMatch: {
+                ...prevRouteMatch,
+                params: {
+                  ...prevRouteMatch?.params,
+                  //@todo clean up usage of VAR_SERVICE in child branch
+                  labelName: newPrimaryLabel.key === SERVICE_NAME ? VAR_SERVICE : newPrimaryLabel.key,
+                  labelValue: replaceSlash(newPrimaryLabel.value),
+                },
+                url: prevRouteMatch?.url ?? '',
+                path: prevRouteMatch?.path ?? '',
+                isExact: prevRouteMatch?.isExact ?? true,
+              },
+            });
+
+            if (!breakdownLabel) {
+              navigateToDrilldownPage(getDrilldownSlug(), this);
+            } else {
+              navigateToValueBreakdown(getDrilldownValueSlug(), breakdownLabel, this);
+            }
+          } else {
+            this.redirectToStart();
+          }
         }
       })
     );
@@ -336,6 +369,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       if (newState.data?.state === LoadingState.Done) {
         const detectedFieldsResponse = newState.data;
         const detectedFieldsFields = detectedFieldsResponse.series[0];
+
         if (detectedFieldsFields !== undefined && detectedFieldsFields.length !== this.state.fieldsCount) {
           this.setState({
             fieldsCount: detectedFieldsFields.length,

@@ -15,7 +15,7 @@ import { LogsListScene } from './LogsListScene';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { addToFilters, FilterType } from './Breakdowns/AddToFiltersButton';
 import { getFilterTypeFromLabelType, getLabelTypeFromFrame } from '../../services/fields';
-import { SERVICE_NAME, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from '../../services/variables';
+import { VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from '../../services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { getAdHocFiltersVariable } from '../../services/variableGetters';
 import { LabelType } from '../../services/fieldsTypes';
@@ -169,10 +169,6 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
   };
 
   private handleLabelFilter(key: string, value: string, frame: DataFrame | undefined, operator: FilterType) {
-    // @TODO: NOOP. We need a way to let the user know why this is not possible.
-    if (key === SERVICE_NAME) {
-      return;
-    }
     const labelType = frame ? getLabelTypeFromFrame(key, frame) : LabelType.Parsed;
     const variableName = getFilterTypeFromLabelType(labelType, key, value);
     addToFilters(key, value, operator, this, variableName);

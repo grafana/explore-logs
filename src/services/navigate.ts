@@ -7,14 +7,17 @@ import { buildServicesUrl, DRILLDOWN_URL_KEYS, PageSlugs, prefixRoute, ROUTES, V
 import { sceneGraph } from '@grafana/scenes';
 import { UrlQueryMap, urlUtil } from '@grafana/data';
 import { replaceSlash } from './extensions/links';
+import { logger } from './logger';
 
-function buildValueBreakdownUrl(label: string, newPath: ValueSlugs, serviceString: string) {
+function buildValueBreakdownUrl(label: string, newPath: ValueSlugs, labelValue: string, labelName = 'service') {
   if (label === ALL_VARIABLE_VALUE && newPath === ValueSlugs.label) {
-    return prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(serviceString)}/${PageSlugs.labels}`);
+    return prefixRoute(`${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${PageSlugs.labels}`);
   } else if (label === ALL_VARIABLE_VALUE && newPath === ValueSlugs.field) {
-    return prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(serviceString)}/${PageSlugs.fields}`);
+    return prefixRoute(`${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${PageSlugs.fields}`);
   } else {
-    return prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(serviceString)}/${newPath}/${replaceSlash(label)}`);
+    return prefixRoute(
+      `${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${newPath}/${replaceSlash(label)}`
+    );
   }
 }
 
@@ -45,9 +48,10 @@ export function navigateToValueBreakdown(newPath: ValueSlugs, label: string, ser
   const indexScene = sceneGraph.getAncestor(serviceScene, IndexScene);
 
   if (indexScene) {
-    const serviceString = indexScene.state.routeMatch?.params.service;
-    if (serviceString) {
-      let urlPath = buildValueBreakdownUrl(label, newPath, serviceString);
+    const urlLabelName = indexScene.state.routeMatch?.params.labelName;
+    const urlLabelValue = indexScene.state.routeMatch?.params.labelValue;
+    if (urlLabelName && urlLabelValue) {
+      let urlPath = buildValueBreakdownUrl(label, newPath, urlLabelValue, urlLabelName);
       const fullUrl = buildDrilldownPageUrl(urlPath);
 
       // If we're going to navigate, we need to share the state between this instantiation of the service scene
@@ -58,6 +62,11 @@ export function navigateToValueBreakdown(newPath: ValueSlugs, label: string, ser
 
       locationService.push(fullUrl);
       return;
+    } else {
+      logger.warn('missing url params', {
+        urlLabelName: urlLabelName ?? '',
+        urlLabelValue: urlLabelValue ?? '',
+      });
     }
   }
 }
@@ -81,10 +90,11 @@ export function navigateToInitialPageAfterServiceSelection(serviceName: string) 
  */
 export function navigateToDrilldownPage(path: PageSlugs, serviceScene: ServiceScene, extraQueryParams?: UrlQueryMap) {
   const indexScene = sceneGraph.getAncestor(serviceScene, IndexScene);
-  const serviceString = indexScene.state.routeMatch?.params.service;
+  const urlLabelValue = indexScene.state.routeMatch?.params.labelValue;
+  const urlLabelName = indexScene.state.routeMatch?.params.labelName;
 
-  if (serviceString) {
-    const fullUrl = prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(serviceString)}/${path}`);
+  if (urlLabelValue) {
+    const fullUrl = prefixRoute(`${PageSlugs.explore}/${urlLabelName}/${replaceSlash(urlLabelValue)}/${path}`);
     const breakdownUrl = buildDrilldownPageUrl(fullUrl, extraQueryParams);
 
     // If we're going to navigate, we need to share the state between this instantiation of the service scene
