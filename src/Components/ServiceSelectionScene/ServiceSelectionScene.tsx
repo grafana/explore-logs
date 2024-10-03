@@ -1,6 +1,6 @@
 import { css } from '@emotion/css';
-import { debounce, rest } from 'lodash';
-import React, { useRef } from 'react';
+import { debounce } from 'lodash';
+import React from 'react';
 import {
   AdHocVariableFilter,
   DashboardCursorSync,
@@ -30,14 +30,8 @@ import {
   LegendDisplayMode,
   LoadingPlaceholder,
   PanelContext,
-  Popover,
-  PopoverController,
-  Select,
   SeriesVisibilityChangeMode,
-  Stack,
   StackingMode,
-  Tab,
-  TabsBar,
   useStyles2,
 } from '@grafana/ui';
 import { getFavoriteServicesFromStorage } from 'services/store';
@@ -72,6 +66,7 @@ import { VariableHide } from '@grafana/schema';
 import { ToolbarScene } from '../IndexScene/ToolbarScene';
 import { IndexScene } from '../IndexScene/IndexScene';
 import { capitalizeFirstLetter } from '../../services/text';
+import { ServiceSelectionTabsScene } from './ServiceSelectionTabsScene';
 
 // @ts-expect-error
 const aggregatedMetricsEnabled: boolean | undefined = config.featureToggles.exploreLogsAggregatedMetrics;
@@ -89,7 +84,7 @@ interface ServiceSelectionSceneState extends SceneObjectState {
   serviceLevel: Map<string, string[]>;
   // Logs volume API response as dataframe with SceneQueryRunner
   $data: SceneQueryRunner;
-  $labelsData: SceneQueryRunner;
+  tabs?: ServiceSelectionTabsScene;
   showPopover: boolean;
   selectedTab: string;
   tabOptions: Array<{
@@ -161,11 +156,8 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         queries: [buildResourceQuery(`{${VAR_PRIMARY_LABEL_EXPR}}`, 'volume')],
         runQueriesMode: 'manual',
       }),
-      $labelsData: getSceneQueryRunner({
-        queries: [buildResourceQuery('', 'labels')],
-        runQueriesMode: 'manual',
-      }),
       serviceLevel: new Map<string, string[]>(),
+
       showPopover: false,
       selectedTab: SERVICE_NAME,
       tabOptions: [
@@ -180,19 +172,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
-  private populatePrimaryLabelsVariableOptions(labels: string[]) {
-    this.setState({
-      tabOptions: labels
-        .filter((l) => l !== '__stream_shard__' && l !== '__aggregated_metric__')
-        .map((l) => {
-          return {
-            label: l === SERVICE_NAME ? SERVICE_UI_LABEL : l,
-            value: l,
-          };
-        }),
-    });
-  }
-
   private onActivate() {
     // Clear all adhoc filters when the scene is activated, if there are any
     const variable = getLabelsVariable(this);
@@ -201,9 +180,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         filters: [],
       });
     }
-
-    // Get labels
-    this.state.$labelsData.runQueries();
 
     const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
     this._subs.add(
@@ -217,15 +193,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     this._subs.add(
       this.subscribeToState((newState, prevState) => {
         if (newState.selectedTab !== prevState.selectedTab) {
-        }
-      })
-    );
-
-    this._subs.add(
-      this.state.$labelsData.subscribeToState((newState, prevState) => {
-        if (newState.data?.state === LoadingState.Done) {
-          const labels: string[] = newState.data?.series?.[0].fields[0].values;
-          this.populatePrimaryLabelsVariableOptions(labels);
+          // @todo clean up
         }
       })
     );
@@ -357,8 +325,18 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     }
   }
 
+  private updateTabs() {
+    if (!this.state.tabs) {
+      const tabs = new ServiceSelectionTabsScene({});
+      this.setState({
+        tabs,
+      });
+    }
+  }
+
   private updateBody() {
     const { labelsToQuery } = this.getLabels(this.state.$data.state.data?.series);
+    this.updateTabs();
     // If no services are to be queried, clear the body
     if (!labelsToQuery || labelsToQuery.length === 0) {
       this.state.body.setState({ children: [] });
@@ -389,7 +367,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
               aggregatedMetricsVariable,
               primaryLabelVar
             ),
-            this.buildServiceLogsLayout(primaryLabelValue)
+            this.buildServiceLogsLayout(this.state.selectedTab, primaryLabelValue)
           );
         }
       }
@@ -411,25 +389,25 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   /**
    * Redraws service logs after toggling level visibility.
    */
-  private updateServiceLogs(service: string) {
+  private updateServiceLogs(labelName: string, labelValue: string) {
     if (!this.state.body) {
       this.updateBody();
       return;
     }
     const { labelsToQuery } = this.getLabels(this.state.$data.state.data?.series);
-    const serviceIndex = labelsToQuery?.indexOf(service);
+    const serviceIndex = labelsToQuery?.indexOf(labelValue);
     if (serviceIndex === undefined || serviceIndex < 0) {
       return;
     }
     if (this.state.body) {
       let newChildren = [...this.state.body.state.children];
-      newChildren.splice(serviceIndex * 2 + 1, 1, this.buildServiceLogsLayout(service));
+      newChildren.splice(serviceIndex * 2 + 1, 1, this.buildServiceLogsLayout(labelName, labelValue));
       this.state.body.setState({ children: newChildren });
     }
   }
 
-  private getLogExpression(service: string, levelFilter: string) {
-    return `{${VAR_PRIMARY_LABEL_EXPR}}${levelFilter}`;
+  private getLogExpression(labelName: string, labelValue: string, levelFilter: string) {
+    return `{${labelName}=\`${labelValue}\`}${levelFilter}`;
   }
 
   private getMetricExpression(
@@ -448,17 +426,22 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     return `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({ ${filter.key}=\`${labelValue}\` } [$__auto]))`;
   }
 
-  private extendTimeSeriesLegendBus = (service: string, context: PanelContext, panel: VizPanel) => {
+  private extendTimeSeriesLegendBus = (
+    labelName: string,
+    labelValue: string,
+    context: PanelContext,
+    panel: VizPanel
+  ) => {
     const originalOnToggleSeriesVisibility = context.onToggleSeriesVisibility;
 
     context.onToggleSeriesVisibility = (level: string, mode: SeriesVisibilityChangeMode) => {
       originalOnToggleSeriesVisibility?.(level, mode);
 
       const allLevels = getLabelsFromSeries(panel.state.$data?.state.data?.series ?? []);
-      const levels = toggleLevelVisibility(level, this.state.serviceLevel.get(service), mode, allLevels);
-      this.state.serviceLevel.set(service, levels);
+      const levels = toggleLevelVisibility(level, this.state.serviceLevel.get(labelValue), mode, allLevels);
+      this.state.serviceLevel.set(labelValue, levels);
 
-      this.updateServiceLogs(service);
+      this.updateServiceLogs(labelName, labelValue);
     };
   };
 
@@ -503,7 +486,8 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       .build();
 
     panel.setState({
-      extendPanelContext: (_, context) => this.extendTimeSeriesLegendBus(primaryLabelValue, context, panel),
+      extendPanelContext: (_, context) =>
+        this.extendTimeSeriesLegendBus(primaryLabelName, primaryLabelValue, context, panel),
     });
 
     return new SceneCSSGridItem({
@@ -527,8 +511,8 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   };
 
   // Creates a layout with logs panel
-  buildServiceLogsLayout = (service: string) => {
-    const levelFilter = this.getLevelFilterForService(service);
+  buildServiceLogsLayout = (labelName: string, labelValue: string) => {
+    const levelFilter = this.getLevelFilterForService(labelValue);
     return new SceneCSSGridItem({
       $behaviors: [new behaviors.CursorSync({ sync: DashboardCursorSync.Off })],
       body: PanelBuilders.logs()
@@ -536,13 +520,13 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         .setHoverHeader(true)
         .setData(
           getQueryRunner([
-            buildDataQuery(this.getLogExpression(service, levelFilter), {
+            buildDataQuery(this.getLogExpression(labelName, labelValue, levelFilter), {
               maxLines: 100,
-              refId: `logs-${service}`,
+              refId: `logs-${labelValue}`,
             }),
           ])
         )
-        .setTitle(service)
+        .setTitle(labelValue)
         .setOption('showTime', true)
         .setOption('enableLogDetails', false)
         .build(),
@@ -586,16 +570,9 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     );
   }, 500);
 
-  public toggleShowPopover = () => {
-    this.setState({
-      showPopover: !this.state.showPopover,
-    });
-  };
-
   public static Component = ({ model }: SceneComponentProps<ServiceSelectionScene>) => {
     const styles = useStyles2(getStyles);
-    const popoverStyles = useStyles2(getPopoverStyles);
-    const { body, $data, showPopover, selectedTab } = model.useState();
+    const { body, $data, selectedTab, tabs } = model.useState();
     const { data } = $data.useState();
 
     const serviceStringVariable = getServiceSelectionSearchVariable(model);
@@ -612,71 +589,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     const totalServices = labelsToQuery?.length ?? 0;
     // To get the count of services that are currently displayed, divide the number of panels by 2, as there are 2 panels per service (logs and time series)
     const renderedServices = body.state.children.length / 2;
-
-    const primaryLabel = getServiceSelectionPrimaryLabel(model);
-
-    const tabLabels: Array<{ label: string; value: string; counter?: number; active: boolean }> = [
-      ...model.state.tabOptions.map((opt) => {
-        return {
-          value: opt.value.toString(),
-          label: opt.label,
-          active: selectedTab === opt.value,
-          counter: undefined,
-        };
-      }),
-    ].sort((a, b) => {
-      return a === b ? 0 : a ? -1 : 1;
-    });
-
-    const popoverRef = useRef<HTMLElement>(null);
-
-    const popoverContent = (
-      <Stack direction="column" gap={0} role="tooltip">
-        <div className={popoverStyles.card.body}>
-          <Select
-            placeholder={'Search labels'}
-            options={model.state.tabOptions}
-            isSearchable={true}
-            onChange={(opt) => {
-              // Hide the popover
-              model.toggleShowPopover();
-
-              // clear search
-              const searchVar = getServiceSelectionSearchVariable(model);
-              searchVar.setState({
-                value: '.+',
-                text: '',
-                label: '',
-              });
-
-              // Add value to variable
-              if (opt.value) {
-                // Add tab
-                model.setState({
-                  selectedTab: opt.value,
-                });
-                primaryLabel.setState({
-                  filters: [
-                    {
-                      value: '.+',
-                      operator: '=~',
-                      key: opt.value,
-                    },
-                  ],
-                });
-
-                // primaryLabel.changeValueTo(opt.value.toString())
-
-                // Update volume query
-                // const serviceLabelVar = getServiceLabelVariable(model);
-                // serviceLabelVar.changeValueTo(opt.value.toString())
-                $data.runQueries();
-              }
-            }}
-          />
-        </div>
-      </Stack>
-    );
 
     return (
       <div className={styles.container}>
@@ -712,68 +624,68 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
               }
             />
           </Field>
-          <TabsBar>
-            {tabLabels.map((tabLabel) => (
-              <Tab
-                key={tabLabel.value}
-                onChangeTab={() => {
-                  // clear search on previous label
-                  const searchVar = getServiceSelectionSearchVariable(model);
-                  searchVar.setState({
-                    value: '.+',
-                    text: '',
-                    label: '',
-                  });
+          {tabs && <tabs.Component model={tabs} />}
+          {/*<TabsBar>*/}
+          {/*  {tabLabels.map((tabLabel) => (*/}
+          {/*    <Tab*/}
+          {/*      key={tabLabel.value}*/}
+          {/*      onChangeTab={() => {*/}
+          {/*        // clear search on previous label*/}
+          {/*        const searchVar = getServiceSelectionSearchVariable(model);*/}
+          {/*        searchVar.setState({*/}
+          {/*          value: '.+',*/}
+          {/*          label: '',*/}
+          {/*        });*/}
 
-                  model.setState({
-                    selectedTab: tabLabel.value,
-                  });
-                  primaryLabel.setState({
-                    filters: [
-                      {
-                        value: '.+',
-                        key: tabLabel.value,
-                        operator: '=~',
-                      },
-                    ],
-                  });
-                }}
-                label={capitalizeFirstLetter(tabLabel.label)}
-                active={tabLabel.active}
-                counter={tabLabel.counter}
-              />
-            ))}
-            {/* Add more tabs tab */}
-            <Tab onChangeTab={model.toggleShowPopover} label={''} ref={popoverRef} icon={'plus-circle'} />
+          {/*        model.setState({*/}
+          {/*          selectedTab: tabLabel.value,*/}
+          {/*        });*/}
+          {/*        primaryLabel.setState({*/}
+          {/*          filters: [*/}
+          {/*            {*/}
+          {/*              value: '.+',*/}
+          {/*              key: tabLabel.value,*/}
+          {/*              operator: '=~',*/}
+          {/*            },*/}
+          {/*          ],*/}
+          {/*        });*/}
+          {/*      }}*/}
+          {/*      label={capitalizeFirstLetter(tabLabel.label)}*/}
+          {/*      active={tabLabel.active}*/}
+          {/*      counter={tabLabel.counter}*/}
+          {/*    />*/}
+          {/*  ))}*/}
+          {/*  /!* Add more tabs tab *!/*/}
+          {/*  <Tab onChangeTab={model.toggleShowPopover} label={''} ref={popoverRef} icon={'plus-circle'} />*/}
 
-            <PopoverController content={popoverContent}>
-              {(showPopper, hidePopper, popperProps) => {
-                const blurFocusProps = {
-                  onBlur: hidePopper,
-                  onFocus: showPopper,
-                };
+          {/*  <PopoverController content={popoverContent}>*/}
+          {/*    {(showPopper, hidePopper, popperProps) => {*/}
+          {/*      const blurFocusProps = {*/}
+          {/*        onBlur: hidePopper,*/}
+          {/*        onFocus: showPopper,*/}
+          {/*      };*/}
 
-                return (
-                  <>
-                    {popoverRef.current && (
-                      <>
-                        {/* @ts-expect-error @todo upgrade typescript */}
-                        <Popover
-                          {...popperProps}
-                          {...rest}
-                          show={showPopover}
-                          wrapperClassName={popoverStyles.popover}
-                          referenceElement={popoverRef.current}
-                          renderArrow={true}
-                          {...blurFocusProps}
-                        />
-                      </>
-                    )}
-                  </>
-                );
-              }}
-            </PopoverController>
-          </TabsBar>
+          {/*      return (*/}
+          {/*        <>*/}
+          {/*          {popoverRef.current && (*/}
+          {/*            <>*/}
+          {/*              /!* @ts-expect-error @todo upgrade typescript *!/*/}
+          {/*              <Popover*/}
+          {/*                {...popperProps}*/}
+          {/*                {...rest}*/}
+          {/*                show={showPopover}*/}
+          {/*                wrapperClassName={popoverStyles.popover}*/}
+          {/*                referenceElement={popoverRef.current}*/}
+          {/*                renderArrow={true}*/}
+          {/*                {...blurFocusProps}*/}
+          {/*              />*/}
+          {/*            </>*/}
+          {/*          )}*/}
+          {/*        </>*/}
+          {/*      );*/}
+          {/*    }}*/}
+          {/*  </PopoverController>*/}
+          {/*</TabsBar>*/}
           {/** If we don't have any servicesByVolume, volume endpoint is probably not enabled */}
           {!isLogVolumeLoading && volumeApiError && <ConfigureVolumeError />}
           {!isLogVolumeLoading && !volumeApiError && !labelsByVolume?.length && <NoVolumeError />}
@@ -856,27 +768,3 @@ function getStyles(theme: GrafanaTheme2) {
     }),
   };
 }
-
-const getPopoverStyles = (theme: GrafanaTheme2) => ({
-  popover: css({
-    borderRadius: theme.shape.radius.default,
-    boxShadow: theme.shadows.z3,
-    background: theme.colors.background.primary,
-    border: `1px solid ${theme.colors.border.weak}`,
-  }),
-  card: {
-    body: css({
-      padding: theme.spacing(1),
-    }),
-    header: css({
-      padding: theme.spacing(1),
-      background: theme.colors.background.secondary,
-      borderBottom: `solid 1px ${theme.colors.border.medium}`,
-    }),
-    footer: css({
-      padding: theme.spacing(0.5, 1),
-      background: theme.colors.background.secondary,
-      borderTop: `solid 1px ${theme.colors.border.medium}`,
-    }),
-  },
-});
