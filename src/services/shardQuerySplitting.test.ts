@@ -222,8 +222,8 @@ describe('runShardSplitQuery()', () => {
     );
 
     // Decreases group size
-    // @ts-expect-error
     jest
+      // @ts-expect-error
       .mocked(datasource.runQuery)
       .mockReturnValueOnce(of({ state: LoadingState.Error, error: { refId: 'A', message: 'timeout' }, data: [] }));
 
