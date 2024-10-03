@@ -127,7 +127,7 @@ export function getPrimaryLabelFromUrl(): RouteProps {
 
   let labelName = routeParams[0];
   const labelValue = routeParams[1];
-  const breakdownLabel = routeParams?.[3];
+  const breakdownLabel = routeParams[3];
   // Keep urls the same
   if (labelName === SERVICE_NAME) {
     labelName = VAR_SERVICE;
