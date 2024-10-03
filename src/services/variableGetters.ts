@@ -132,12 +132,32 @@ export function getServiceSelectionSearchVariable(sceneRef: SceneObject) {
   return variable;
 }
 
+export function clearServiceSelectionSearchVariable(sceneRef: SceneObject) {
+  getServiceSelectionSearchVariable(sceneRef).setState({
+    value: '.+',
+    label: '',
+  });
+}
+
 export function getServiceSelectionPrimaryLabel(sceneRef: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_PRIMARY_LABEL, sceneRef);
   if (!(variable instanceof AdHocFiltersVariable)) {
     throw new Error('VAR_PRIMARY_LABEL not found');
   }
   return variable;
+}
+
+export function setServiceSelectionPrimaryLabelKey(key: string, sceneRef: SceneObject) {
+  getServiceSelectionPrimaryLabel(sceneRef).setState({
+    filters: [
+      {
+        // the value is replaced by the value in VAR_PRIMARY_LABEL_SEARCH if a search is active, so we just need to set the filter key (label name)
+        value: '.+',
+        operator: '=~',
+        key: key,
+      },
+    ],
+  });
 }
 
 export function getUrlParamNameForVariable(variableName: string) {

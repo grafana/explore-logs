@@ -55,11 +55,13 @@ import { ServiceFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
 import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 import { areArraysEqual } from '../../services/comparison';
 import {
+  clearServiceSelectionSearchVariable,
   getAggregatedMetricsVariable,
   getDataSourceVariable,
   getLabelsVariable,
   getServiceSelectionPrimaryLabel,
   getServiceSelectionSearchVariable,
+  setServiceSelectionPrimaryLabelKey,
 } from '../../services/variableGetters';
 import { config } from '@grafana/runtime';
 import { VariableHide } from '@grafana/schema';
@@ -86,6 +88,7 @@ interface ServiceSelectionSceneState extends SceneObjectState {
   $data: SceneQueryRunner;
   tabs?: ServiceSelectionTabsScene;
   showPopover: boolean;
+  // @todo, do we need this? Can't we just check the key of the filter in the primary label variable?
   selectedTab: string;
   tabOptions: Array<{
     label: string;
@@ -444,6 +447,18 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       this.updateServiceLogs(labelName, labelValue);
     };
   };
+
+  setTab(labelName: string) {
+    // clear active search
+    clearServiceSelectionSearchVariable(this);
+
+    // Set the active tab
+    this.setState({
+      selectedTab: labelName,
+    });
+    // Update the primary label variable
+    setServiceSelectionPrimaryLabelKey(labelName, this);
+  }
 
   // Creates a layout with timeseries panel
   buildServiceLayout(
