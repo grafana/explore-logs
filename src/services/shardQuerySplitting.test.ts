@@ -319,9 +319,6 @@ describe('runShardSplitQuery()', () => {
       })
     );
 
-    // @ts-expect-error
-    jest.mocked(datasource.runQuery).mockReturnValueOnce(of({ data: [metricFrameA] }));
-
     await expect(runShardSplitQuery(datasource, request)).toEmitValuesWith(() => {
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
@@ -340,7 +337,7 @@ describe('runShardSplitQuery()', () => {
         targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"8|7|6|5|4|3"}[1m])', refId: 'A' }],
       });
 
-      // Decreased
+      // Error, decreased
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
         intervalMs: expect.any(Number),
