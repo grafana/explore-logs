@@ -208,7 +208,6 @@ function splitQueriesByStreamShard(
       })
       .catch((e: unknown) => {
         logger.error(e, { msg: 'failed to fetch label values for __stream_shard__' });
-        shouldStop = true;
         runNonSplitRequest(subscriber);
       });
     return () => {
