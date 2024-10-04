@@ -145,7 +145,7 @@ describe('runShardSplitQuery()', () => {
   });
 
   test('Retries failed requests', async () => {
-    jest.mocked(datasource.languageProvider.fetchLabelValues).mockResolvedValue([1]);
+    jest.mocked(datasource.languageProvider.fetchLabelValues).mockResolvedValue(['1']);
     jest
       // @ts-expect-error
       .spyOn(datasource, 'runQuery')
