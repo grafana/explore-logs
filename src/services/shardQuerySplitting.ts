@@ -173,8 +173,7 @@ function splitQueriesByStreamShard(
   };
 
   const runNonSplitRequest = (subscriber: Subscriber<DataQueryResponse>) => {
-    // @ts-expect-error
-    subquerySubscription = datasource.runQuery(request).subscribe({
+    subquerySubscription = datasource.query(request).subscribe({
       next: (partialResponse: DataQueryResponse) => {
         mergedResponse = partialResponse;
       },
