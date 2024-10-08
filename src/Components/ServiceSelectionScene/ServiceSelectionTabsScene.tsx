@@ -17,7 +17,7 @@ import { ServiceSelectionScene } from './ServiceSelectionScene';
 import { getSceneQueryRunner } from '../../services/panel';
 import { buildResourceQuery } from '../../services/query';
 import { TabPopoverScene } from './TabPopoverScene';
-import { getServiceSelectionPrimaryLabel } from '../../services/variableGetters';
+import { getDataSourceVariable, getServiceSelectionPrimaryLabel } from '../../services/variableGetters';
 
 export interface TabOption extends SelectableValue {
   label: string;
@@ -152,6 +152,13 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
       popover: new TabPopoverScene({}),
     });
 
+    // Update labels (tabs) when datasource is changed
+    this._subs.add(
+      getDataSourceVariable(this).subscribeToState((newState, prevState) => {
+        this.state.$labelsData.runQueries();
+      })
+    );
+
     this._subs.add(
       getServiceSelectionPrimaryLabel(this).subscribeToState((newState, prevState) => {
         const labels = this.getLabelsFromQueryRunnerState(this.state.$labelsData?.state);
@@ -172,8 +179,16 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
       this.state.$labelsData.subscribeToState((newState, prevState) => {
         if (newState.data?.state === LoadingState.Done) {
           const labels = this.getLabelsFromQueryRunnerState(newState);
+          const serviceSelectionScene = sceneGraph.getAncestor(this, ServiceSelectionScene);
+
           if (labels) {
             this.populatePrimaryLabelsVariableOptions(labels);
+          }
+
+          const selectedTab = serviceSelectionScene.getSelectedTab();
+          // If the tab is no longer available, either because the user changed the datasource, or time range, select the default tab
+          if (!labels?.some((label) => label.label === selectedTab)) {
+            serviceSelectionScene.selectDefaultLabelTab();
           }
         }
       })

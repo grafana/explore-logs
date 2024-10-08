@@ -160,6 +160,8 @@ test.describe('explore services page', () => {
       await explorePage.refreshPicker.click();
       await explorePage.refreshPicker.click();
       await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
+      // Noticed that the below assertions were flaking when not running the trace, we need to wait a tiny bit to let the last requests fire
+      await page.waitForTimeout(50);
       expect(logsVolumeCount).toEqual(4);
       expect(logsQueryCount).toEqual(16);
     });

@@ -37,7 +37,6 @@ export class ExplorePage {
     if (this.testInfo.retry > 0) {
       console.log('logs', this.logs);
     }
-    console.log('logs', this.logs);
   }
 
   async clearLocalStorage() {
@@ -152,12 +151,7 @@ export class ExplorePage {
     await expect(this.page.getByText('FieldAll')).toBeVisible();
   }
 
-  //@todo pull service from url if not in params
   async gotoServicesBreakdown(serviceName = 'tempo-distributor') {
-    console.log(
-      'this is the url',
-      `/a/${pluginJson.id}/explore/service/tempo-distributor/logs?mode=service_details&patterns=[]&var-filters=service_name|=|${serviceName}&var-logsFormat= | logfmt`
-    );
     await this.page.goto(
       `/a/${pluginJson.id}/explore/service/tempo-distributor/logs?mode=service_details&patterns=[]&var-filters=service_name|=|${serviceName}&var-logsFormat= | logfmt`
     );

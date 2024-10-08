@@ -106,6 +106,7 @@ function renderPrimaryLabelFilters(filters: AdHocVariableFilter[]): string {
 }
 
 const primaryLabelUrlKey = 'var-primary_label';
+const datasourceUrlKey = 'var-ds';
 
 export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionSceneState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, {
@@ -152,7 +153,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
             },
             filters: [
               {
-                key: SERVICE_NAME,
+                key: getSelectedTabFromUrl().key ?? SERVICE_NAME,
                 value: '.+',
                 operator: '=~',
               },
@@ -184,28 +185,19 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
    * Set changes from the URL to the state of the primary label variable
    */
   getUrlState() {
-    const location = locationService.getLocation();
-    const search = new URLSearchParams(location.search);
-    const primaryLabelRaw = search.get(primaryLabelUrlKey);
-    const primaryLabelSplit = primaryLabelRaw?.split('|');
-    const key = primaryLabelSplit?.[0];
-
-    if (key) {
-      const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
-      const filter = primaryLabelVar.state.filters[0];
-      if (filter.key !== key) {
-        console.log('getUrlState setting', key);
-        getServiceSelectionPrimaryLabel(this).setState({
-          filters: [
-            {
-              ...filter,
-              key,
-            },
-          ],
-        });
-      }
+    const { key } = getSelectedTabFromUrl();
+    const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
+    const filter = primaryLabelVar.state.filters[0];
+    if (filter.key && filter.key !== key) {
+      getServiceSelectionPrimaryLabel(this).setState({
+        filters: [
+          {
+            ...filter,
+            key: key ?? filter.key,
+          },
+        ],
+      });
     }
-
     return {};
   }
 
@@ -213,18 +205,34 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
    * Unused, but required
    * @param values
    */
-  updateFromUrl(values: SceneObjectUrlValues) {}
+  updateFromUrl(values: SceneObjectUrlValues) {
+    // console.log('updateFromUrl', values)
+  }
+
+  addDatasourceChangeToBrowserHistory(newDs: string) {
+    this._urlSync.performBrowserHistoryAction(() => {
+      const location = locationService.getLocation();
+      const search = new URLSearchParams(location.search);
+      const dsUrl = search.get(datasourceUrlKey);
+      if (dsUrl && newDs !== dsUrl) {
+        const currentUrl = location.pathname + location.search;
+        search.set(datasourceUrlKey, newDs);
+        const newUrl = location.pathname + '?' + search.toString();
+        if (currentUrl !== newUrl) {
+          locationService.push(newUrl);
+        }
+      }
+    });
+  }
 
   /**
    * I'm probably not doing this right
    * Attempting to add any change to the primary label variable (i.e. the selected tab) as a browser history event
    * @param newKey
    */
-  addLabelChangeToBrowserHistory(newKey: string) {
+  addLabelChangeToBrowserHistory(newKey: string, replace = false) {
     this._urlSync.performBrowserHistoryAction(() => {
-      const location = locationService.getLocation();
-      const search = new URLSearchParams(location.search);
-      const primaryLabelRaw = search.get(primaryLabelUrlKey);
+      const { key: primaryLabelRaw, search, location } = getSelectedTabFromUrl();
       if (primaryLabelRaw) {
         const primaryLabelSplit = primaryLabelRaw?.split('|');
         const keyInUrl = primaryLabelSplit?.[0];
@@ -233,10 +241,19 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           primaryLabelSplit[0] = newKey;
           search.set(primaryLabelUrlKey, primaryLabelSplit.join('|'));
           const currentUrl = location.pathname + location.search;
-          if (currentUrl !== location.pathname + search.toString()) {
-            locationService.push(location.pathname + '?' + search.toString());
+          const newUrl = location.pathname + '?' + search.toString();
+          if (currentUrl !== newUrl) {
+            if (replace) {
+              locationService.replace(newUrl);
+            } else {
+              locationService.push(newUrl);
+            }
+          } else {
+            console.log('not adding label to browser history:', newKey, replace);
           }
         }
+      } else {
+        console.log('no primary label in url yet?', primaryLabelRaw, replace);
       }
     });
   }
@@ -349,6 +366,12 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
   getSelectedTab() {
     return getServiceSelectionPrimaryLabel(this).state.filters[0]?.key;
+  }
+
+  selectDefaultLabelTab() {
+    // Need to update the history before the state with replace instead of push, or we'll get invalid services saved to url state after changing datasource
+    this.addLabelChangeToBrowserHistory(SERVICE_NAME, true);
+    this.setSelectedTab(SERVICE_NAME);
   }
 
   setSelectedTab(labelName: string) {
@@ -515,7 +538,8 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
     // Update labels on datasource change
     this._subs.add(
-      getDataSourceVariable(this).subscribeToState(() => {
+      getDataSourceVariable(this).subscribeToState((newState) => {
+        this.addDatasourceChangeToBrowserHistory(newState.value.toString());
         this.runVolumeQuery();
       })
     );
@@ -748,6 +772,15 @@ function createListOfLabelsToQuery(services: string[], ds: string, searchString:
 
   // Deduplicate
   return Array.from(new Set([...favoriteServicesToQuery, ...services]));
+}
+
+function getSelectedTabFromUrl() {
+  const location = locationService.getLocation();
+  const search = new URLSearchParams(location.search);
+  const primaryLabelRaw = search.get(primaryLabelUrlKey);
+  const primaryLabelSplit = primaryLabelRaw?.split('|');
+  const key = primaryLabelSplit?.[0];
+  return { key, search, location };
 }
 
 function getStyles(theme: GrafanaTheme2) {

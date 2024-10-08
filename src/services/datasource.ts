@@ -406,6 +406,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
           start: request.range.from.utc().toISOString(),
           end: request.range.to.utc().toISOString(),
           limit: 5000,
+          // aggregatedMetrics: true,
         },
         {
           requestId: request.requestId ?? 'volume',
