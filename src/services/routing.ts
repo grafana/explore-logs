@@ -188,7 +188,7 @@ export function checkPrimaryLabel(sceneRef: SceneObject) {
     });
   }
 
-  const primaryLabelValue = labelsVariable.state.filters.find((filter) => filter.value === labelValue);
+  const primaryLabelValue = labelsVariable.state.filters.find((filter) => replaceSlash(filter.value) === labelValue);
   if (!primaryLabelValue) {
     const location = locationService.getLocation();
 
