@@ -13,6 +13,7 @@ import {
 import {
   AdHocFiltersVariable,
   behaviors,
+  DataSourceVariable,
   PanelBuilders,
   SceneComponentProps,
   SceneCSSGridItem,
@@ -36,7 +37,7 @@ import {
   StackingMode,
   useStyles2,
 } from '@grafana/ui';
-import { getFavoriteServicesFromStorage } from 'services/store';
+import { getFavoriteLabelValuesFromStorage } from 'services/store';
 import {
   LEVEL_VARIABLE_VALUE,
   SERVICE_NAME,
@@ -71,6 +72,7 @@ import { ToolbarScene } from '../IndexScene/ToolbarScene';
 import { IndexScene } from '../IndexScene/IndexScene';
 import { capitalizeFirstLetter } from '../../services/text';
 import { ServiceSelectionTabsScene } from './ServiceSelectionTabsScene';
+import { FavoriteServiceHeaderActionScene } from './FavoriteServiceHeaderActionScene';
 
 // @ts-expect-error
 const aggregatedMetricsEnabled: boolean | undefined = config.featureToggles.exploreLogsAggregatedMetrics;
@@ -388,7 +390,8 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     primaryLabelValue: string,
     timeRange: TimeRange,
     serviceLabelVar: CustomConstantVariable,
-    primaryLabelVar: AdHocFiltersVariable
+    primaryLabelVar: AdHocFiltersVariable,
+    datasourceVar: DataSourceVariable
   ) {
     let splitDuration;
     if (timeRange.to.diff(timeRange.from, 'hours') >= 4 && timeRange.to.diff(timeRange.from, 'hours') <= 26) {
@@ -419,7 +422,14 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         placement: 'right',
         displayMode: LegendDisplayMode.Table,
       })
-      .setHeaderActions(new SelectServiceButton({ labelValue: primaryLabelValue, labelName: primaryLabelName }))
+      .setHeaderActions([
+        new FavoriteServiceHeaderActionScene({
+          ds: datasourceVar.getValue()?.toString(),
+          labelName: primaryLabelName,
+          labelValue: primaryLabelValue,
+        }),
+        new SelectServiceButton({ labelValue: primaryLabelValue, labelName: primaryLabelName }),
+      ])
       .build();
 
     panel.setState({
@@ -646,6 +656,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       const aggregatedMetricsVariable = getAggregatedMetricsVariable(this);
       const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
       const selectedTab = this.getSelectedTab();
+      const datasourceVariable = getDataSourceVariable(this);
 
       for (const primaryLabelValue of labelsToQuery.slice(0, SERVICES_LIMIT)) {
         const existing = existingChildren.filter((child) => {
@@ -664,7 +675,8 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
               primaryLabelValue,
               timeRange,
               aggregatedMetricsVariable,
-              primaryLabelVar
+              primaryLabelVar,
+              datasourceVariable
             ),
             this.buildServiceLogsLayout(selectedTab, primaryLabelValue)
           );
@@ -748,7 +760,8 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     const labelsByVolume: string[] = series?.[0]?.fields[0].values ?? [];
     const dsString = getDataSourceVariable(this).getValue()?.toString();
     const searchString = getServiceSelectionSearchVariable(this).getValue();
-    const labelsToQuery = createListOfLabelsToQuery(labelsByVolume, dsString, String(searchString));
+    const selectedTab = this.getSelectedTab();
+    const labelsToQuery = createListOfLabelsToQuery(labelsByVolume, dsString, String(searchString), selectedTab);
     return { labelsByVolume, labelsToQuery: labelsToQuery };
   }
 }
@@ -757,7 +770,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 // 1. Filters provided services by searchString
 // 2. Gets favoriteServicesToQuery from localStorage and filters them by searchString
 // 3. Orders them correctly
-function createListOfLabelsToQuery(services: string[], ds: string, searchString: string) {
+function createListOfLabelsToQuery(services: string[], ds: string, searchString: string, labelName: string) {
   if (!services?.length) {
     return [];
   }
@@ -766,7 +779,7 @@ function createListOfLabelsToQuery(services: string[], ds: string, searchString:
     searchString = '';
   }
 
-  const favoriteServicesToQuery = getFavoriteServicesFromStorage(ds).filter(
+  const favoriteServicesToQuery = getFavoriteLabelValuesFromStorage(ds, labelName).filter(
     (service) => service.toLowerCase().includes(searchString.toLowerCase()) && services.includes(service)
   );
 

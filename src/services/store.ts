@@ -3,35 +3,36 @@ import { SortBy, SortDirection } from '../Components/ServiceScene/Breakdowns/Sor
 import { SceneObject } from '@grafana/scenes';
 import { getDataSourceName, getServiceName } from './variableGetters';
 import { logger } from './logger';
+import { SERVICE_NAME } from './variables';
 
 const SERVICES_LOCALSTORAGE_KEY = `${pluginJson.id}.services.favorite`;
 const DS_LOCALSTORAGE_KEY = `${pluginJson.id}.datasource`;
 
 // This should be a string, but we'll accept anything and return an empty array if it's not a string
-export function getFavoriteServicesFromStorage(dsKey: string | unknown): string[] {
+export function getFavoriteLabelValuesFromStorage(dsKey: string | unknown, labelName: string): string[] {
   if (!dsKey || typeof dsKey !== 'string') {
     return [];
   }
-  const key = createServicesLocalStorageKey(dsKey);
-  let services = [];
+  const key = createServicesLocalStorageKey(dsKey, labelName);
+  let labelValues = [];
   try {
-    services = JSON.parse(localStorage.getItem(key) || '[]');
+    labelValues = JSON.parse(localStorage.getItem(key) || '[]');
   } catch (e) {
     logger.error(e, { msg: 'Error parsing favorite services from local storage' });
   }
 
-  if (!Array.isArray(services)) {
-    services = [];
+  if (!Array.isArray(labelValues)) {
+    labelValues = [];
   }
-  return services;
+  return labelValues;
 }
 
 // This should be a string, but we'll accept anything and return early
-export function addToFavoriteServicesInStorage(dsKey: string | unknown, serviceName: string) {
+export function addToFavoriteLabelValueInStorage(dsKey: string | unknown, labelName: string, labelValue: string) {
   if (!dsKey || typeof dsKey !== 'string') {
     return;
   }
-  const key = createServicesLocalStorageKey(dsKey);
+  const key = createServicesLocalStorageKey(dsKey, labelName);
   let services = [];
   try {
     services = JSON.parse(localStorage.getItem(key) || '[]');
@@ -44,14 +45,42 @@ export function addToFavoriteServicesInStorage(dsKey: string | unknown, serviceN
   }
 
   // We want to put this service at the top of the list and remove any duplicates
-  const servicesToStore = services.filter((service: string) => service !== serviceName);
-  servicesToStore.unshift(serviceName);
+  const servicesToStore = services.filter((service: string) => service !== labelValue);
+  servicesToStore.unshift(labelValue);
 
   localStorage.setItem(key, JSON.stringify(servicesToStore));
 }
 
-function createServicesLocalStorageKey(ds: string) {
-  return `${SERVICES_LOCALSTORAGE_KEY}_${ds}`;
+export function removeFromFavoritesInStorage(dsKey: string, labelName: string, labelValue: string) {
+  if (!dsKey || !labelValue || !labelValue) {
+    return;
+  }
+  const key = createServicesLocalStorageKey(dsKey, labelName);
+  let services = [];
+  try {
+    services = JSON.parse(localStorage.getItem(key) || '[]');
+  } catch (e) {
+    logger.error(e, { msg: 'Error parsing favorite services from local storage' });
+  }
+
+  if (!Array.isArray(services)) {
+    services = [];
+  }
+  const servicesToStore = services.filter((service: string) => service !== labelValue);
+  localStorage.setItem(key, JSON.stringify(servicesToStore));
+}
+
+export function addTabToLocalStorage() {}
+
+export function removeTabFromLocalStorage() {}
+
+function createServicesLocalStorageKey(ds: string, labelName: string) {
+  if (labelName === SERVICE_NAME) {
+    labelName = '';
+  } else {
+    labelName = `_${labelName}`;
+  }
+  return `${SERVICES_LOCALSTORAGE_KEY}_${ds}${labelName}`;
 }
 
 export function getLastUsedDataSourceFromStorage(): string | undefined {

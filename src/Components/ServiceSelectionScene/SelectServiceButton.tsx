@@ -3,7 +3,7 @@ import React from 'react';
 import { SceneComponentProps, SceneObject, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { Button } from '@grafana/ui';
 import { VariableHide } from '@grafana/schema';
-import { addToFavoriteServicesInStorage } from 'services/store';
+import { addToFavoriteLabelValueInStorage } from 'services/store';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { FilterOp } from 'services/filters';
 import { navigateToInitialPageAfterServiceSelection } from '../../services/navigate';
@@ -33,7 +33,7 @@ export function selectLabel(primaryLabelName: string, primaryLabelValue: string,
     hide: VariableHide.hideLabel,
   });
   const ds = getDataSourceVariable(sceneRef).getValue();
-  addToFavoriteServicesInStorage(ds, primaryLabelValue);
+  addToFavoriteLabelValueInStorage(ds, primaryLabelName, primaryLabelValue);
 
   // In this case, we don't have a ServiceScene created yet, so we call a special function to navigate there for the first time
   navigateToInitialPageAfterServiceSelection(primaryLabelName, primaryLabelValue);
