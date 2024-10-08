@@ -15,7 +15,7 @@ test.describe('explore services breakdown page', () => {
 
     await explorePage.setExtraTallViewportSize();
     await explorePage.clearLocalStorage();
-    await explorePage.gotoServicesBreakdown();
+    await explorePage.gotoServicesBreakdownOldUrl();
     explorePage.blockAllQueriesExcept({
       refIds: ['logsPanelQuery', fieldName],
       legendFormats: [`{{${levelName}}}`],

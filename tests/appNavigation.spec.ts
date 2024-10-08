@@ -16,13 +16,15 @@ test.describe('navigating app', () => {
   });
 
   test('mega menu click should reset url params (deprecated url)', async ({ page }) => {
-    await explorePage.gotoServicesBreakdown();
+    await explorePage.gotoServicesBreakdownOldUrl();
     await page.getByTestId('data-testid Toggle menu').click();
     await page.getByTestId('data-testid navigation mega-menu').getByRole('link', { name: 'Logs' }).click();
     await expect(page).toHaveURL(/a\/grafana\-lokiexplore\-app\/explore\?patterns\=%5B%5D/);
-    const actualSearchParams = new URLSearchParams(URL.parse(page.url()).search);
+    await expect(page).toHaveURL(/var-primary_label=service_name/);
+    await page.pause();
+    const actualSearchParams = new URLSearchParams(page.url().split('?')[1]);
     const expectedSearchParams = new URLSearchParams(
-      '?patterns=%5B%5D&from=now-15m&to=now&var-ds=gdev-loki&var-filters=&var-fields=&var-levels=&var-patterns=&var-lineFilter=&refresh='
+      '?patterns=%5B%5D&from=now-15m&to=now&var-ds=gdev-loki&var-filters=&var-fields=&var-levels=&var-patterns=&var-lineFilter=&refresh=&var-primary_label=service_name%7C%3D~%7C.%2B'
     );
     actualSearchParams.sort();
     expectedSearchParams.sort();
@@ -35,7 +37,7 @@ test.describe('navigating app', () => {
     await page.getByTestId('data-testid Toggle menu').click();
     await page.getByTestId('data-testid navigation mega-menu').getByRole('link', { name: 'Logs' }).click();
     await expect(page).toHaveURL(/a\/grafana\-lokiexplore\-app\/explore\?patterns\=%5B%5D/);
-    const actualSearchParams = new URLSearchParams(URL.parse(page.url()).search);
+    const actualSearchParams = new URLSearchParams(page.url().split('?')[1]);
     const expectedSearchParams = new URLSearchParams(
       '?patterns=%5B%5D&from=now-15m&to=now&var-ds=gdev-loki&var-filters=&var-fields=&var-levels=&var-patterns=&var-lineFilter=&refresh=&var-primary_label=service_name%7C%3D~%7C.%2B'
     );
