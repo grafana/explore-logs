@@ -1,13 +1,15 @@
 import React from 'react';
 
 import { SceneComponentProps, SceneObject, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
-import { Button } from '@grafana/ui';
+import { Button, useStyles2 } from '@grafana/ui';
 import { VariableHide } from '@grafana/schema';
 import { addToFavoriteLabelValueInStorage } from 'services/store';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { FilterOp } from 'services/filters';
 import { navigateToInitialPageAfterServiceSelection } from '../../services/navigate';
 import { getDataSourceVariable, getLabelsVariable } from '../../services/variableGetters';
+import { GrafanaTheme2 } from '@grafana/data';
+import { css } from '@emotion/css';
 
 export interface SelectServiceButtonState extends SceneObjectState {
   labelValue: string;
@@ -48,10 +50,25 @@ export class SelectServiceButton extends SceneObjectBase<SelectServiceButtonStat
   };
 
   public static Component = ({ model }: SceneComponentProps<SelectServiceButton>) => {
+    const styles = useStyles2(getStyles);
     return (
-      <Button variant="secondary" size="sm" onClick={model.onClick}>
+      <Button
+        tooltip={`View breakdown for ${model.state.labelValue}`}
+        className={styles.button}
+        variant="secondary"
+        size="sm"
+        onClick={model.onClick}
+      >
         Select
       </Button>
     );
+  };
+}
+
+function getStyles(theme: GrafanaTheme2) {
+  return {
+    button: css({
+      alignSelf: 'center',
+    }),
   };
 }

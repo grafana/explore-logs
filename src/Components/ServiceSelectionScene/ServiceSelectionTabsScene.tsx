@@ -1,6 +1,6 @@
 import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState, SceneQueryRunner } from '@grafana/scenes';
 import React, { useRef } from 'react';
-import { Icon, Popover, PopoverController, Tab, TabsBar, useStyles2 } from '@grafana/ui';
+import { Icon, Popover, PopoverController, Tab, TabsBar, Tooltip, useStyles2 } from '@grafana/ui';
 import { GrafanaTheme2, LoadingState, SelectableValue } from '@grafana/data';
 import { css, cx } from '@emotion/css';
 import { SERVICE_NAME, SERVICE_UI_LABEL } from '../../services/variables';
@@ -74,7 +74,6 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
           .map((tabLabel) => (
             <Tab
               key={tabLabel.value}
-              title={tabLabel.value}
               onChangeTab={() => {
                 // Set the new active tab
                 serviceSelectionScene.setSelectedTab(tabLabel.value);
@@ -86,16 +85,24 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
                 tabLabel.value !== SERVICE_NAME
                   ? (props) => {
                       return (
-                        <Icon
-                          onClick={(e) => {
-                            // Don't bubble up to the tab component, we don't want to select the tab we're removing
-                            e.stopPropagation();
-                            model.removeSavedTab(tabLabel.value);
-                          }}
-                          name={'times-circle'}
-                          size={'lg'}
-                          className={cx(props.className, styles.closeIcon)}
-                        />
+                        <>
+                          <Tooltip content={'remove tab'}>
+                            <Icon
+                              onKeyDownCapture={(e) => {
+                                if (e.key === 'Enter') {
+                                  model.removeSavedTab(tabLabel.value);
+                                }
+                              }}
+                              onClick={(e) => {
+                                // Don't bubble up to the tab component, we don't want to select the tab we're removing
+                                e.stopPropagation();
+                                model.removeSavedTab(tabLabel.value);
+                              }}
+                              name={'times'}
+                              className={cx(props.className)}
+                            />
+                          </Tooltip>
+                        </>
                       );
                     }
                   : undefined
@@ -109,7 +116,7 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
           <Tab
             autoFocus={false}
             onChangeTab={model.toggleShowPopover}
-            label={'Add tabs'}
+            label={'New'}
             ref={popoverRef}
             icon={'plus-circle'}
           />
@@ -270,10 +277,5 @@ const getTabsStyles = (theme: GrafanaTheme2) => ({
     boxShadow: theme.shadows.z3,
     background: theme.colors.background.primary,
     border: `1px solid ${theme.colors.border.weak}`,
-  }),
-  closeIcon: css({
-    '&:hover': {
-      fill: 'red', // @todo JOAN
-    },
   }),
 });

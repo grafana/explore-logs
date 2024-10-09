@@ -313,7 +313,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
               />
               {!isLogVolumeLoading && (
                 <span className={styles.searchFieldPlaceholderText}>
-                  {renderedServices} of {totalServices} {model.getSelectedTabLabel()}
+                  Showing {renderedServices} of {totalServices}
                 </span>
               )}
             </div>
