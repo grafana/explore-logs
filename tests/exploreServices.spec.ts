@@ -37,7 +37,7 @@ test.describe('explore services page', () => {
     // Only the first title is visible
     await expect(page.getByText('mimir-ingester').nth(0)).toBeVisible();
     await expect(page.getByText('mimir-ingester').nth(1)).not.toBeVisible();
-    await expect(page.getByText('Showing 4 of 4 services')).toBeVisible();
+    await expect(page.getByText('Showing 4 of 4')).toBeVisible();
   });
 
   test('should filter service labels on exact search', async ({ page }) => {
@@ -58,7 +58,7 @@ test.describe('explore services page', () => {
     await expect(page.getByText('mimir-ingester').nth(1)).toBeVisible();
     // And the logs panel title should be hidden
     await expect(page.getByText('mimir-ingester').nth(2)).not.toBeVisible();
-    await expect(page.getByText('Showing 1 of 1 service')).toBeVisible();
+    await expect(page.getByText('Showing 1 of 1')).toBeVisible();
   });
 
   test('should filter service labels on partial string', async ({ page }) => {
@@ -75,7 +75,7 @@ test.describe('explore services page', () => {
     // Only the first title is visible
     await expect(page.getByText('mimir-ingester').nth(0)).toBeVisible();
     await expect(page.getByText('mimir-ingester').nth(1)).not.toBeVisible();
-    await expect(page.getByText('Showing 4 of 4 services')).toBeVisible();
+    await expect(page.getByText('Showing 4 of 4')).toBeVisible();
   });
 
   test('should select a service label value and navigate to log view', async ({ page }) => {
@@ -89,7 +89,7 @@ test.describe('explore services page', () => {
     await page.keyboard.press('Escape');
     // Volume can differ, scroll down so all of the panels are loaded
     await explorePage.scrollToBottom();
-    await expect(page.getByText('Showing 1 of 1 service')).toBeVisible();
+    await expect(page.getByText('Showing 1 of 1')).toBeVisible();
     await expect(page.getByText(/level=info/).first()).toBeVisible();
     await page.getByTitle('debug').first().click();
     await expect(page.getByText(/level=debug/).first()).toBeVisible();
@@ -115,7 +115,7 @@ test.describe('explore services page', () => {
     await page.getByTestId(testIds.variables.serviceName.label).click();
 
     // Assert we're rendering the right scene and the services have loaded
-    await expect(page.getByText(/Showing \d+ of \d+ services/)).toBeVisible();
+    await expect(page.getByText(/Showing \d+ of \d+/)).toBeVisible();
 
     await explorePage.addServiceName();
 
@@ -187,7 +187,7 @@ test.describe('explore services page', () => {
       await page.getByTestId(testIds.variables.serviceName.label).click();
 
       // Assert we're rendering the right scene and the services have loaded
-      await expect(page.getByText(/Showing \d+ of \d+ services/)).toBeVisible();
+      await expect(page.getByText(/Showing \d+ of \d+/)).toBeVisible();
       await explorePage.assertPanelsNotLoading();
 
       // We just need to wait a few ms for the query to get fired?

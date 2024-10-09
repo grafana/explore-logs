@@ -21,6 +21,7 @@ export class FavoriteServiceHeaderActionScene extends SceneObjectBase<FavoriteSe
     const { ds, labelValue, labelName, hover } = model.useState();
     const isFavorite = getFavoriteLabelValuesFromStorage(ds, labelName).includes(labelValue);
     const styles = useStyles2((theme) => getStyles(theme, isFavorite, hover));
+    const tooltipCopy = isFavorite ? `Remove  ${labelValue} from favorites` : `Add ${labelValue} to favorites`;
 
     return (
       <span className={styles.wrapper}>
@@ -36,8 +37,8 @@ export class FavoriteServiceHeaderActionScene extends SceneObjectBase<FavoriteSe
           // iconType={model.getIconType(isFavorite)}
           onClick={() => model.onClick(isFavorite)}
           name={'star'}
-          aria-label={`Add ${labelValue} to favorites`}
-          tooltip={`Add ${labelValue} to favorites`}
+          aria-label={tooltipCopy}
+          tooltip={tooltipCopy}
         />
       </span>
     );
