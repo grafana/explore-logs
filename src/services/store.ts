@@ -5,7 +5,8 @@ import { getDataSourceName, getServiceName } from './variableGetters';
 import { logger } from './logger';
 import { SERVICE_NAME } from './variables';
 
-const SERVICES_LOCALSTORAGE_KEY = `${pluginJson.id}.services.favorite`;
+const FAVORITE_PRIMARY_LABEL_VALUES_LOCALSTORAGE_KEY = `${pluginJson.id}.services.favorite`;
+const FAVORITE_PRIMARY_LABEL_NAME_LOCALSTORAGE_KEY = `${pluginJson.id}.primarylabels.tabs.favorite`;
 const DS_LOCALSTORAGE_KEY = `${pluginJson.id}.datasource`;
 
 // This should be a string, but we'll accept anything and return an empty array if it's not a string
@@ -13,7 +14,7 @@ export function getFavoriteLabelValuesFromStorage(dsKey: string | unknown, label
   if (!dsKey || typeof dsKey !== 'string') {
     return [];
   }
-  const key = createServicesLocalStorageKey(dsKey, labelName);
+  const key = createPrimaryLabelLocalStorageKey(dsKey, labelName);
   let labelValues = [];
   try {
     labelValues = JSON.parse(localStorage.getItem(key) || '[]');
@@ -32,7 +33,7 @@ export function addToFavoriteLabelValueInStorage(dsKey: string | unknown, labelN
   if (!dsKey || typeof dsKey !== 'string') {
     return;
   }
-  const key = createServicesLocalStorageKey(dsKey, labelName);
+  const key = createPrimaryLabelLocalStorageKey(dsKey, labelName);
   let services = [];
   try {
     services = JSON.parse(localStorage.getItem(key) || '[]');
@@ -52,10 +53,10 @@ export function addToFavoriteLabelValueInStorage(dsKey: string | unknown, labelN
 }
 
 export function removeFromFavoritesInStorage(dsKey: string, labelName: string, labelValue: string) {
-  if (!dsKey || !labelValue || !labelValue) {
+  if (!dsKey || !labelName || !labelValue) {
     return;
   }
-  const key = createServicesLocalStorageKey(dsKey, labelName);
+  const key = createPrimaryLabelLocalStorageKey(dsKey, labelName);
   let services = [];
   try {
     services = JSON.parse(localStorage.getItem(key) || '[]');
@@ -70,17 +71,79 @@ export function removeFromFavoritesInStorage(dsKey: string, labelName: string, l
   localStorage.setItem(key, JSON.stringify(servicesToStore));
 }
 
-export function addTabToLocalStorage() {}
+export function addTabToLocalStorage(dsKey: string, labelName: string) {
+  if (!dsKey || !labelName) {
+    return;
+  }
 
-export function removeTabFromLocalStorage() {}
+  const key = createTabsLocalStorageKey(dsKey);
 
-function createServicesLocalStorageKey(ds: string, labelName: string) {
+  let services = [];
+  try {
+    services = JSON.parse(localStorage.getItem(key) || '[]');
+  } catch (e) {
+    logger.error(e, { msg: 'Error parsing saved tabs from local storage' });
+  }
+
+  if (!Array.isArray(services)) {
+    services = [];
+  }
+
+  // We want to put this service at the top of the list and remove any duplicates
+  const servicesToStore = services.filter((tabName: string) => tabName !== labelName);
+  servicesToStore.unshift(labelName);
+
+  localStorage.setItem(key, JSON.stringify(servicesToStore));
+}
+
+export function removeTabFromLocalStorage(dsKey: string, labelName: string) {
+  if (!dsKey || !labelName) {
+    return;
+  }
+  const key = createTabsLocalStorageKey(dsKey);
+  let services = [];
+  try {
+    services = JSON.parse(localStorage.getItem(key) || '[]');
+  } catch (e) {
+    logger.error(e, { msg: 'Error parsing favorite services from local storage' });
+  }
+
+  if (!Array.isArray(services)) {
+    services = [];
+  }
+  const servicesToStore = services.filter((tabName: string) => tabName !== labelName);
+  localStorage.setItem(key, JSON.stringify(servicesToStore));
+}
+
+export function getFavoriteTabsFromStorage(dsKey: string | unknown): string[] {
+  if (!dsKey || typeof dsKey !== 'string') {
+    return [];
+  }
+  const key = createTabsLocalStorageKey(dsKey);
+  let tabNames = [];
+  try {
+    tabNames = JSON.parse(localStorage.getItem(key) || '[]');
+  } catch (e) {
+    logger.error(e, { msg: 'Error parsing favorite services from local storage' });
+  }
+
+  if (!Array.isArray(tabNames)) {
+    tabNames = [];
+  }
+  return tabNames;
+}
+
+function createPrimaryLabelLocalStorageKey(ds: string, labelName: string) {
   if (labelName === SERVICE_NAME) {
     labelName = '';
   } else {
     labelName = `_${labelName}`;
   }
-  return `${SERVICES_LOCALSTORAGE_KEY}_${ds}${labelName}`;
+  return `${FAVORITE_PRIMARY_LABEL_VALUES_LOCALSTORAGE_KEY}_${ds}${labelName}`;
+}
+
+function createTabsLocalStorageKey(ds: string) {
+  return `${FAVORITE_PRIMARY_LABEL_NAME_LOCALSTORAGE_KEY}_${ds}`;
 }
 
 export function getLastUsedDataSourceFromStorage(): string | undefined {

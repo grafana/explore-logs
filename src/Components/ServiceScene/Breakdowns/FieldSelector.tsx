@@ -69,18 +69,17 @@ export function ServiceFieldSelector({
   const selectedOption = allOptions?.find((opt) => opt.value === value);
 
   return (
-    <InlineField grow={true} label={label}>
+    <InlineField className={styles.selectWrapper} grow={true} label={label}>
       <Select
         isLoading={isLoading}
         data-testid={testIds.exploreServiceSearch.search}
-        placeholder={'Search services'}
+        placeholder={`Search`}
         options={allOptions}
         isClearable={true}
         value={value}
         onOpenMenu={() => setSelected(true)}
         onCloseMenu={() => setSelected(false)}
         allowCustomValue={true}
-        className={styles.asyncSelect}
         prefix={selected || selectedOption?.__isNew__ ? undefined : <Icon name={'search'} />}
         onChange={(value: SelectableValue<string>, actionMeta: ActionMeta) => {
           // Custom added value
@@ -130,8 +129,10 @@ function getStyles(theme: GrafanaTheme2) {
       maxWidth: theme.spacing(64),
       minWidth: theme.spacing(20),
     }),
-    asyncSelect: css({
-      maxWidth: theme.spacing(54.5),
+    selectWrapper: css({
+      maxWidth: theme.spacing(62.5),
+      minWidth: theme.spacing(20),
+      marginRight: theme.spacing.x1,
     }),
   };
 }

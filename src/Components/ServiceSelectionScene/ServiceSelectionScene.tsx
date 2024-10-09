@@ -37,7 +37,7 @@ import {
   StackingMode,
   useStyles2,
 } from '@grafana/ui';
-import { getFavoriteLabelValuesFromStorage } from 'services/store';
+import { addTabToLocalStorage, getFavoriteLabelValuesFromStorage } from 'services/store';
 import {
   LEVEL_VARIABLE_VALUE,
   SERVICE_NAME,
@@ -73,6 +73,7 @@ import { IndexScene } from '../IndexScene/IndexScene';
 import { capitalizeFirstLetter } from '../../services/text';
 import { ServiceSelectionTabsScene } from './ServiceSelectionTabsScene';
 import { FavoriteServiceHeaderActionScene } from './FavoriteServiceHeaderActionScene';
+import { pushUrlHandler } from '../../services/navigate';
 
 // @ts-expect-error
 const aggregatedMetricsEnabled: boolean | undefined = config.featureToggles.exploreLogsAggregatedMetrics;
@@ -207,24 +208,22 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
    * Unused, but required
    * @param values
    */
-  updateFromUrl(values: SceneObjectUrlValues) {
-    // console.log('updateFromUrl', values)
-  }
+  updateFromUrl(values: SceneObjectUrlValues) {}
 
   addDatasourceChangeToBrowserHistory(newDs: string) {
-    this._urlSync.performBrowserHistoryAction(() => {
-      const location = locationService.getLocation();
-      const search = new URLSearchParams(location.search);
-      const dsUrl = search.get(datasourceUrlKey);
-      if (dsUrl && newDs !== dsUrl) {
-        const currentUrl = location.pathname + location.search;
-        search.set(datasourceUrlKey, newDs);
-        const newUrl = location.pathname + '?' + search.toString();
-        if (currentUrl !== newUrl) {
-          locationService.push(newUrl);
-        }
+    // this._urlSync.performBrowserHistoryAction(() => {
+    const location = locationService.getLocation();
+    const search = new URLSearchParams(location.search);
+    const dsUrl = search.get(datasourceUrlKey);
+    if (dsUrl && newDs !== dsUrl) {
+      const currentUrl = location.pathname + location.search;
+      search.set(datasourceUrlKey, newDs);
+      const newUrl = location.pathname + '?' + search.toString();
+      if (currentUrl !== newUrl) {
+        pushUrlHandler(newUrl);
       }
-    });
+    }
+    // });
   }
 
   /**
@@ -233,31 +232,31 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
    * @param newKey
    */
   addLabelChangeToBrowserHistory(newKey: string, replace = false) {
-    this._urlSync.performBrowserHistoryAction(() => {
-      const { key: primaryLabelRaw, search, location } = getSelectedTabFromUrl();
-      if (primaryLabelRaw) {
-        const primaryLabelSplit = primaryLabelRaw?.split('|');
-        const keyInUrl = primaryLabelSplit?.[0];
+    // this._urlSync.performBrowserHistoryAction(() => {
+    const { key: primaryLabelRaw, search, location } = getSelectedTabFromUrl();
+    if (primaryLabelRaw) {
+      const primaryLabelSplit = primaryLabelRaw?.split('|');
+      const keyInUrl = primaryLabelSplit?.[0];
 
-        if (keyInUrl !== newKey) {
-          primaryLabelSplit[0] = newKey;
-          search.set(primaryLabelUrlKey, primaryLabelSplit.join('|'));
-          const currentUrl = location.pathname + location.search;
-          const newUrl = location.pathname + '?' + search.toString();
-          if (currentUrl !== newUrl) {
-            if (replace) {
-              locationService.replace(newUrl);
-            } else {
-              locationService.push(newUrl);
-            }
+      if (keyInUrl !== newKey) {
+        primaryLabelSplit[0] = newKey;
+        search.set(primaryLabelUrlKey, primaryLabelSplit.join('|'));
+        const currentUrl = location.pathname + location.search;
+        const newUrl = location.pathname + '?' + search.toString();
+        if (currentUrl !== newUrl) {
+          if (replace) {
+            locationService.replace(newUrl);
           } else {
-            console.log('not adding label to browser history:', newKey, replace);
+            pushUrlHandler(newUrl);
           }
+        } else {
+          console.log('not adding label to browser history:', newKey, replace);
         }
-      } else {
-        console.log('no primary label in url yet?', primaryLabelRaw, replace);
       }
-    });
+    } else {
+      console.log('no primary label in url yet?', primaryLabelRaw, replace);
+    }
+    // });
   }
 
   public static Component = ({ model }: SceneComponentProps<ServiceSelectionScene>) => {
@@ -287,35 +286,38 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           <div>
             {/** When services fetched, show how many services are we showing */}
             {isLogVolumeLoading && <LoadingPlaceholder text={'Loading services'} className={styles.loadingText} />}
-            {!isLogVolumeLoading && (
-              <>
-                Showing {renderedServices} of {totalServices} service{totalServices !== 1 ? 's' : ''}
-              </>
-            )}
           </div>
-          <Field className={styles.searchField}>
-            <ServiceFieldSelector
-              initialFilter={{
-                label: serviceStringVariable.getValue().toString(),
-                value: serviceStringVariable.getValue().toString(),
-                icon: 'filter',
-              }}
-              isLoading={isLogVolumeLoading}
-              value={label}
-              onChange={(serviceName) => onSearchChange(serviceName)}
-              selectOption={(value: string) => {
-                selectLabel(selectedTab, value, model);
-              }}
-              label={model.formatPrimaryLabelForUI()}
-              options={
-                labelsToQuery?.map((serviceName) => ({
-                  value: serviceName,
-                  label: serviceName,
-                })) ?? []
-              }
-            />
-          </Field>
+
           {tabs && <tabs.Component model={tabs} />}
+          <Field className={styles.searchField}>
+            <div className={styles.searchWrapper}>
+              <ServiceFieldSelector
+                initialFilter={{
+                  label: serviceStringVariable.getValue().toString(),
+                  value: serviceStringVariable.getValue().toString(),
+                  icon: 'filter',
+                }}
+                isLoading={isLogVolumeLoading}
+                value={label}
+                onChange={(serviceName) => onSearchChange(serviceName)}
+                selectOption={(value: string) => {
+                  selectLabel(selectedTab, value, model);
+                }}
+                label={model.formatPrimaryLabelForUI()}
+                options={
+                  labelsToQuery?.map((serviceName) => ({
+                    value: serviceName,
+                    label: serviceName,
+                  })) ?? []
+                }
+              />
+              {!isLogVolumeLoading && (
+                <span className={styles.searchFieldPlaceholderText}>
+                  {renderedServices} of {totalServices} {model.getSelectedTabLabel()}
+                </span>
+              )}
+            </div>
+          </Field>
           {/** If we don't have any servicesByVolume, volume endpoint is probably not enabled */}
           {!isLogVolumeLoading && volumeApiError && <ConfigureVolumeError />}
           {!isLogVolumeLoading && !volumeApiError && !labelsByVolume?.length && <NoVolumeError />}
@@ -370,6 +372,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     return getServiceSelectionPrimaryLabel(this).state.filters[0]?.key;
   }
 
+  getSelectedTabLabel() {
+    return getServiceSelectionPrimaryLabel(this).state.filters[0].key;
+  }
+
   selectDefaultLabelTab() {
     // Need to update the history before the state with replace instead of push, or we'll get invalid services saved to url state after changing datasource
     this.addLabelChangeToBrowserHistory(SERVICE_NAME, true);
@@ -377,6 +383,8 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   }
 
   setSelectedTab(labelName: string) {
+    addTabToLocalStorage(getDataSourceVariable(this).getValue().toString(), labelName);
+
     // clear active search
     clearServiceSelectionSearchVariable(this);
 
@@ -826,8 +834,18 @@ function getStyles(theme: GrafanaTheme2) {
       display: 'flex',
       flexDirection: 'column',
     }),
+    searchFieldPlaceholderText: css({
+      fontSize: theme.typography.bodySmall.fontSize,
+      color: theme.colors.text.disabled,
+    }),
+    searchWrapper: css({
+      display: 'flex',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+    }),
     searchField: css({
       marginTop: theme.spacing(1),
+      position: 'relative',
     }),
   };
 }

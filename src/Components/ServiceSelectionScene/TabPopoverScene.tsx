@@ -18,7 +18,7 @@ export class TabPopoverScene extends SceneObjectBase<TabPopoverSceneState> {
     const tabOptionsWithIcon: TabOption[] = tabOptions.map((opt) => {
       return {
         ...opt,
-        icon: opt.active ? 'save' : undefined,
+        icon: opt.saved ? 'save' : undefined,
         label: `${opt.label} (${opt.counter})`,
       };
     });
@@ -26,7 +26,12 @@ export class TabPopoverScene extends SceneObjectBase<TabPopoverSceneState> {
     return (
       <Stack direction="column" gap={0} role="tooltip">
         <div className={popoverStyles.card.body}>
-          <Select
+          <h5>Select another starting point</h5>
+          <p className={popoverStyles.card.p}>
+            Customize Explore Logs to your data by visualizing another label and start exploring.
+          </p>
+
+          <Select<string, { options: TabOption[] }>
             menuShouldPortal={false}
             onBlur={() => {
               serviceSelectionTabsScene.toggleShowPopover();
@@ -38,13 +43,15 @@ export class TabPopoverScene extends SceneObjectBase<TabPopoverSceneState> {
             isSearchable={true}
             openMenuOnFocus={true}
             onChange={(option) => {
-              // Hide the popover
-              serviceSelectionTabsScene.toggleShowPopover();
+              // @todo how to avoid this type assertion? We don't want to weaken the TabOption type by allowing value as undefined, we always need an option and value defined.
+              const tabOption = option as TabOption;
 
               // Add value to variable
-              if (option.value) {
+              if (tabOption.value) {
+                // Hide the popover
+                serviceSelectionTabsScene.toggleShowPopover();
                 // Set new tab
-                serviceSelectionScene.setSelectedTab(option.value);
+                serviceSelectionScene.setSelectedTab(tabOption.value);
               }
             }}
           />
@@ -58,6 +65,9 @@ const getPopoverStyles = (theme: GrafanaTheme2) => ({
   card: {
     body: css({
       padding: theme.spacing(1),
+    }),
+    p: css({
+      maxWidth: 300,
     }),
   },
 });
