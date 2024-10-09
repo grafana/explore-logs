@@ -26,13 +26,9 @@ export class TabPopoverScene extends SceneObjectBase<TabPopoverSceneState> {
     return (
       <Stack direction="column" gap={0} role="tooltip">
         <div className={popoverStyles.card.body}>
-          <h5>Select another starting point</h5>
-          <p className={popoverStyles.card.p}>
-            Customize Explore Logs to your data by visualizing another label and start exploring.
-          </p>
-
           <Select<string, { options: TabOption[] }>
             menuShouldPortal={false}
+            width={50}
             onBlur={() => {
               serviceSelectionTabsScene.toggleShowPopover();
             }}
@@ -43,15 +39,12 @@ export class TabPopoverScene extends SceneObjectBase<TabPopoverSceneState> {
             isSearchable={true}
             openMenuOnFocus={true}
             onChange={(option) => {
-              // @todo how to avoid this type assertion? We don't want to weaken the TabOption type by allowing value as undefined, we always need an option and value defined.
-              const tabOption = option as TabOption;
-
               // Add value to variable
-              if (tabOption.value) {
+              if (option.value) {
                 // Hide the popover
                 serviceSelectionTabsScene.toggleShowPopover();
                 // Set new tab
-                serviceSelectionScene.setSelectedTab(tabOption.value);
+                serviceSelectionScene.setSelectedTab(option.value);
               }
             }}
           />

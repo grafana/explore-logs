@@ -4,7 +4,7 @@ import { Icon, Popover, PopoverController, Tab, TabsBar, Tooltip, useStyles2 } f
 import { GrafanaTheme2, LoadingState, SelectableValue } from '@grafana/data';
 import { css, cx } from '@emotion/css';
 import { SERVICE_NAME, SERVICE_UI_LABEL } from '../../services/variables';
-import { capitalizeFirstLetter } from '../../services/text';
+import { capitalizeFirstLetter, truncateText } from '../../services/text';
 import { rest } from 'lodash';
 import { ServiceSelectionScene } from './ServiceSelectionScene';
 import { getSceneQueryRunner } from '../../services/panel';
@@ -66,60 +66,67 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
     // Constants
     const styles = useStyles2(getTabsStyles);
     const popoverRef = useRef<HTMLElement>(null);
+    const maxLabelLength = 30;
 
     return (
       <TabsBar>
         {tabOptions
           .filter((tabLabel) => tabLabel.saved || tabLabel.active || tabLabel.value === SERVICE_NAME)
-          .map((tabLabel) => (
-            <Tab
-              key={tabLabel.value}
-              onChangeTab={() => {
-                // Set the new active tab
-                serviceSelectionScene.setSelectedTab(tabLabel.value);
-              }}
-              label={capitalizeFirstLetter(tabLabel.label)}
-              active={tabLabel.active}
-              counter={tabLabel.counter}
-              suffix={
-                tabLabel.value !== SERVICE_NAME
-                  ? (props) => {
-                      return (
-                        <>
-                          <Tooltip content={'remove tab'}>
-                            <Icon
-                              onKeyDownCapture={(e) => {
-                                if (e.key === 'Enter') {
+          .map((tabLabel) => {
+            const tab = (
+              <Tab
+                key={tabLabel.value}
+                onChangeTab={() => {
+                  // Set the new active tab
+                  serviceSelectionScene.setSelectedTab(tabLabel.value);
+                }}
+                label={capitalizeFirstLetter(truncateText(tabLabel.label, maxLabelLength, true))}
+                active={tabLabel.active}
+                counter={tabLabel.counter}
+                suffix={
+                  tabLabel.value !== SERVICE_NAME
+                    ? (props) => {
+                        return (
+                          <>
+                            <Tooltip content={'Remove tab'}>
+                              <Icon
+                                onKeyDownCapture={(e) => {
+                                  if (e.key === 'Enter') {
+                                    model.removeSavedTab(tabLabel.value);
+                                  }
+                                }}
+                                onClick={(e) => {
+                                  // Don't bubble up to the tab component, we don't want to select the tab we're removing
+                                  e.stopPropagation();
                                   model.removeSavedTab(tabLabel.value);
-                                }
-                              }}
-                              onClick={(e) => {
-                                // Don't bubble up to the tab component, we don't want to select the tab we're removing
-                                e.stopPropagation();
-                                model.removeSavedTab(tabLabel.value);
-                              }}
-                              name={'times'}
-                              className={cx(props.className)}
-                            />
-                          </Tooltip>
-                        </>
-                      );
-                    }
-                  : undefined
-              }
-            />
-          ))}
+                                }}
+                                name={'times'}
+                                className={cx(props.className)}
+                              />
+                            </Tooltip>
+                          </>
+                        );
+                      }
+                    : undefined
+                }
+              />
+            );
+
+            if (tabLabel.label.length > maxLabelLength) {
+              return (
+                <Tooltip key={tabLabel.value} content={tabLabel.label}>
+                  {tab}
+                </Tooltip>
+              );
+            } else {
+              return tab;
+            }
+          })}
         {data?.state === LoadingState.Loading && <Tab label={'Loading tabs'} icon={'spinner'} />}
 
         {/* Add more tabs tab */}
         {data?.state === LoadingState.Done && (
-          <Tab
-            autoFocus={false}
-            onChangeTab={model.toggleShowPopover}
-            label={'New'}
-            ref={popoverRef}
-            icon={'plus-circle'}
-          />
+          <Tab onChangeTab={model.toggleShowPopover} label={'New'} ref={popoverRef} icon={'plus-circle'} />
         )}
 
         {popover && (
@@ -206,10 +213,6 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
         if (a.value === SERVICE_NAME || b.value === SERVICE_NAME) {
           return a.value === SERVICE_NAME ? -1 : 1;
         }
-
-        // if(a.saved || b.saved && !(a.saved && b.saved)){
-        //   return (a.saved ? 1 : 0) > (b.saved ? 1 : 0) ? -1 : 1
-        // }
 
         // Then sort alphabetically
         return a.label < b.label ? -1 : a.label > b.label ? 1 : 0;

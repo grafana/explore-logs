@@ -83,7 +83,7 @@ export function ServiceFieldSelector({
         prefix={selected || selectedOption?.__isNew__ ? undefined : <Icon name={'search'} />}
         onChange={(value: SelectableValue<string>, actionMeta: ActionMeta) => {
           // Custom added value
-          if (value?.__isNew__) {
+          if (value?.__isNew__ || value?.icon) {
             setCustomOption({ ...value, icon: 'filter' });
             return onChange(value.value);
           }
