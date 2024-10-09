@@ -293,7 +293,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
             <div className={styles.searchWrapper}>
               <ServiceFieldSelector
                 initialFilter={{
-                  label: model.unwrapWilcardSearch(serviceStringVariable.getValue().toString()),
+                  label: model.unwrapWildcardSearch(serviceStringVariable.getValue().toString()),
                   value: serviceStringVariable.getValue().toString(),
                   icon: 'filter',
                 }}
@@ -627,7 +627,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     return input;
   }
 
-  public unwrapWilcardSearch(input: string) {
+  public unwrapWildcardSearch(input: string) {
     if (input.substring(0, 2) === '.*' && input.slice(-2) === '.*') {
       return input.slice(2).slice(0, -2);
     }
