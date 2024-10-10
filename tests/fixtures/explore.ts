@@ -163,8 +163,7 @@ export class ExplorePage {
     await expect(this.page.getByText('FieldAll')).toBeVisible();
   }
 
-  //@todo pull service from url if not in params
-  async gotoServicesBreakdown(serviceName = 'tempo-distributor') {
+  async gotoServicesBreakdownOldUrl(serviceName = 'tempo-distributor') {
     await this.page.goto(
       `/a/${pluginJson.id}/explore/service/tempo-distributor/logs?mode=service_details&patterns=[]&var-filters=service_name|=|${serviceName}&var-logsFormat= | logfmt`
     );

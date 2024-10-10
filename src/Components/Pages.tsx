@@ -25,6 +25,7 @@ import { PageLayoutType } from '@grafana/data';
 import { IndexScene } from './IndexScene/IndexScene';
 import { navigateToIndex } from '../services/navigate';
 import { logger } from '../services/logger';
+import { capitalizeFirstLetter } from '../services/text';
 
 export type RouteProps = { labelName: string; labelValue: string; breakdownLabel?: string };
 export type RouteMatch = SceneRouteMatch<RouteProps>;
@@ -119,7 +120,7 @@ export function makeBreakdownPage(
 ): SceneAppPage {
   const { labelName, labelValue } = extractValuesFromRoute(routeMatch);
   return new SceneAppPage({
-    title: slugToBreadcrumbTitle(slug),
+    title: capitalizeFirstLetter(slug),
     layout: PageLayoutType.Custom,
     url: ROUTES[slug](labelValue, labelName),
     preserveUrlKeys: DRILLDOWN_URL_KEYS,
@@ -142,16 +143,11 @@ export function makeBreakdownValuePage(
   }
 
   return new SceneAppPage({
-    title: slugToBreadcrumbTitle(breakdownLabel),
+    title: capitalizeFirstLetter(breakdownLabel),
     layout: PageLayoutType.Custom,
     url: SUB_ROUTES[slug](labelValue, labelName, breakdownLabel),
     preserveUrlKeys: DRILLDOWN_URL_KEYS,
     getParentPage: () => parent,
     getScene: (routeMatch) => getServicesScene(routeMatch),
   });
-}
-
-function slugToBreadcrumbTitle(slug: string) {
-  // capitalize first letter
-  return slug.charAt(0).toUpperCase() + slug.slice(1);
 }

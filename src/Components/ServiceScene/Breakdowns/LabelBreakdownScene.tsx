@@ -17,7 +17,7 @@ import {
 import { Alert, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { checkPrimaryLabel, getPrimaryLabelFromUrl, ValueSlugs } from 'services/routing';
-import { ALL_VARIABLE_VALUE, SERVICE_NAME, VAR_LABEL_GROUP_BY, VAR_LABELS, VAR_SERVICE } from 'services/variables';
+import { ALL_VARIABLE_VALUE, SERVICE_NAME, SERVICE_UI_LABEL, VAR_LABEL_GROUP_BY, VAR_LABELS } from 'services/variables';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
 import { StatusWrapper } from './StatusWrapper';
@@ -134,7 +134,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     prevState: SceneVariableState & { filters: AdHocVariableFilter[] }
   ) {
     let { labelName } = getPrimaryLabelFromUrl();
-    if (labelName === VAR_SERVICE) {
+    if (labelName === SERVICE_UI_LABEL) {
       labelName = SERVICE_NAME;
     }
     const variable = getLabelGroupByVariable(this);

@@ -23,13 +23,13 @@ import {
   LEVEL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
   SERVICE_NAME,
+  SERVICE_UI_LABEL,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_LABELS,
   VAR_LABELS_EXPR,
   VAR_LEVELS,
   VAR_PATTERNS,
-  VAR_SERVICE,
 } from 'services/variables';
 import { getMetadataService } from '../../services/metadata';
 import { navigateToDrilldownPage, navigateToIndex, navigateToValueBreakdown } from '../../services/navigate';
@@ -150,7 +150,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         let { labelName, labelValue, breakdownLabel } = getPrimaryLabelFromUrl();
 
         // Before we dynamically pulled label filter keys into the URL, we had hardcoded "service" as the primary label slug, we want to keep URLs the same, so overwrite "service_name" with "service" if that's the primary label
-        if (labelName === VAR_SERVICE) {
+        if (labelName === SERVICE_UI_LABEL) {
           labelName = SERVICE_NAME;
         }
         const indexScene = sceneGraph.getAncestor(this, IndexScene);
@@ -165,8 +165,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
                 ...prevRouteMatch,
                 params: {
                   ...prevRouteMatch?.params,
-                  //@todo clean up usage of VAR_SERVICE in child branch
-                  labelName: newPrimaryLabel.key === SERVICE_NAME ? VAR_SERVICE : newPrimaryLabel.key,
+                  labelName: newPrimaryLabel.key === SERVICE_NAME ? SERVICE_UI_LABEL : newPrimaryLabel.key,
                   labelValue: replaceSlash(newPrimaryLabel.value),
                 },
                 url: prevRouteMatch?.url ?? '',

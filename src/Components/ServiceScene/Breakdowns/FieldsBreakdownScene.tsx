@@ -19,7 +19,7 @@ import {
 import { Alert, Button, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getSortByPreference } from 'services/store';
-import { ALL_VARIABLE_VALUE, SERVICE_NAME, VAR_FIELD_GROUP_BY, VAR_LABELS, VAR_SERVICE } from 'services/variables';
+import { ALL_VARIABLE_VALUE, SERVICE_NAME, SERVICE_UI_LABEL, VAR_FIELD_GROUP_BY, VAR_LABELS } from 'services/variables';
 import { areArraysEqual } from '../../../services/comparison';
 import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
 import { navigateToValueBreakdown } from '../../../services/navigate';
@@ -278,7 +278,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       if (variable instanceof AdHocFiltersVariable && variable.state.key === 'adhoc_service_filter') {
         let { labelName } = getPrimaryLabelFromUrl();
         // getPrimaryLabelFromUrl returns the label name that exists in the URL, which is "service" not "service_name"
-        if (labelName === VAR_SERVICE) {
+        if (labelName === SERVICE_UI_LABEL) {
           labelName = SERVICE_NAME;
         }
         variable.setState({

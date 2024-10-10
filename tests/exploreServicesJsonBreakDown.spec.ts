@@ -12,7 +12,7 @@ test.describe('explore nginx-json breakdown pages ', () => {
     explorePage = new ExplorePage(page, testInfo);
     await explorePage.setExtraTallViewportSize();
     await explorePage.clearLocalStorage();
-    await explorePage.gotoServicesBreakdown('nginx-json');
+    await explorePage.gotoServicesBreakdownOldUrl('nginx-json');
     explorePage.blockAllQueriesExcept({
       refIds: ['logsPanelQuery', fieldName],
     });
