@@ -275,7 +275,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       <div className={styles.container}>
         <div className={styles.bodyWrapper}>
           <div>
-            {/** When services fetched, show how many services are we showing */}
             {isLogVolumeLoading && <LoadingPlaceholder text={'Loading services'} className={styles.loadingText} />}
           </div>
 
