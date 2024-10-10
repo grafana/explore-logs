@@ -69,6 +69,18 @@ export class ExplorePage {
     await this.firstServicePageSelect.click();
   }
 
+  /**
+   * Changes the datasource from gdev-loki to gdev-loki-copy
+   */
+  async changeDatasource(sourceUID = 'gdev-loki', targetUID = 'gdev-loki-copy') {
+    await this.page
+      .locator('div')
+      .filter({ hasText: new RegExp(`^${sourceUID}$`) })
+      .nth(1)
+      .click();
+    await this.page.getByText(targetUID).click();
+  }
+
   async scrollToBottom() {
     const main = this.page.locator('main#pageContent');
 

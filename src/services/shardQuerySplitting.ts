@@ -73,6 +73,8 @@ function splitQueriesByStreamShard(
     groupSize: number
   ) => {
     let nextGroupSize = groupSize;
+    let retrying = false;
+
     if (subquerySubscription != null) {
       subquerySubscription.unsubscribe();
       subquerySubscription = null;
@@ -111,6 +113,7 @@ function splitQueriesByStreamShard(
       if (groupSize > 1) {
         groupSize = Math.floor(Math.sqrt(groupSize));
         debug(`Possible time out, new group size ${groupSize}`);
+        retrying = true;
         runNextRequest(subscriber, cycle, shards, groupSize);
         return true;
       }
@@ -128,6 +131,8 @@ function splitQueriesByStreamShard(
         runNextRequest(subscriber, cycle, shards, groupSize);
         retryTimer = null;
       }, 1500 * Math.pow(2, retries)); // Exponential backoff
+
+      retrying = true;
 
       return true;
     };
@@ -155,6 +160,9 @@ function splitQueriesByStreamShard(
         mergedResponse = combineResponses(mergedResponse, partialResponse);
       },
       complete: () => {
+        if (retrying) {
+          return;
+        }
         // Prevent flashing "no data"
         if (mergedResponse.data.length) {
           subscriber.next(mergedResponse);

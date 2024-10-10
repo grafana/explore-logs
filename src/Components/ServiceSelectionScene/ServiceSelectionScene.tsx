@@ -489,6 +489,14 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   }
 
   private onActivate() {
+    // Clear existing volume data on activate or we'll show stale cached data, potentially from a different datasource
+    this.setState({
+      $data: getSceneQueryRunner({
+        queries: [buildResourceQuery(`{${SERVICE_LABEL_EXPR}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')],
+        runQueriesMode: 'manual',
+      }),
+    });
+
     // Clear all adhoc filters when the scene is activated, if there are any
     const variable = getLabelsVariable(this);
     if (variable.state.filters.length > 0) {
