@@ -406,7 +406,6 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
           start: request.range.from.utc().toISOString(),
           end: request.range.to.utc().toISOString(),
           limit: 5000,
-          // aggregatedMetrics: true,
         },
         {
           requestId: request.requestId ?? 'volume',
@@ -472,8 +471,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
       // Scenes will only emit dataframes from the SceneQueryRunner, so for now we need to convert the API response to a dataframe
       const df = createDataFrame({
-        // Limit to 1000 results, @todo search labels
-        fields: [{ name: 'labels', values: labelsResponse?.data.slice(0, 1000) }],
+        fields: [{ name: 'labels', values: labelsResponse?.data }],
       });
       subscriber.next({ data: [df], state: LoadingState.Done });
     } catch (e) {

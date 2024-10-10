@@ -184,7 +184,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   }
 
   /**
-   * I'm probably not doing this right
    * Set changes from the URL to the state of the primary label variable
    */
   getUrlState() {
@@ -211,7 +210,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   updateFromUrl(values: SceneObjectUrlValues) {}
 
   addDatasourceChangeToBrowserHistory(newDs: string) {
-    // this._urlSync.performBrowserHistoryAction(() => {
     const location = locationService.getLocation();
     const search = new URLSearchParams(location.search);
     const dsUrl = search.get(datasourceUrlKey);
@@ -223,16 +221,13 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         pushUrlHandler(newUrl);
       }
     }
-    // });
   }
 
   /**
-   * I'm probably not doing this right
    * Attempting to add any change to the primary label variable (i.e. the selected tab) as a browser history event
    * @param newKey
    */
   addLabelChangeToBrowserHistory(newKey: string, replace = false) {
-    // this._urlSync.performBrowserHistoryAction(() => {
     const { key: primaryLabelRaw, search, location } = getSelectedTabFromUrl();
     if (primaryLabelRaw) {
       const primaryLabelSplit = primaryLabelRaw?.split('|');
@@ -249,14 +244,9 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           } else {
             pushUrlHandler(newUrl);
           }
-        } else {
-          console.log('not adding label to browser history:', newKey, replace);
         }
       }
-    } else {
-      console.log('no primary label in url yet?', primaryLabelRaw, replace);
     }
-    // });
   }
 
   public static Component = ({ model }: SceneComponentProps<ServiceSelectionScene>) => {

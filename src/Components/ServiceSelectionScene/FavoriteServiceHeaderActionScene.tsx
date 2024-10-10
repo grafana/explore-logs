@@ -34,7 +34,6 @@ export class FavoriteServiceHeaderActionScene extends SceneObjectBase<FavoriteSe
           }}
           icon={<Icon name={isFavorite ? 'favorite' : 'star'} size="lg" type={isFavorite ? 'mono' : 'default'} />}
           color={isFavorite ? 'rgb(235, 123, 24)' : '#ccc'}
-          // iconType={model.getIconType(isFavorite)}
           onClick={() => model.onClick(isFavorite)}
           name={'star'}
           aria-label={tooltipCopy}
