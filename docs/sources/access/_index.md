@@ -43,11 +43,15 @@ The following Loki and Grafana version and configuration are required:
 - Grafana v11.2.0 or later
 - Loki v3.2.0 or later
 
-  - Enable pattern ingestion by setting `--pattern-ingester.enabled=true` in your Loki configuration.
-  - Enable the volume endpoint in your Loki configuration:
+  - Enable pattern ingestion by setting `pattern-ingester.enabled` to `true`in your Loki configuration file.
+  - Enable structured metadata by setting `allow_structured_metadata` to `true` within your Loki config file.
+  - Enable the volume endpoint by setting `volume_enabled` to `true` within your Loki config file.
 
     ```yaml
+    pattern_ingester:
+      enabled: true
     limits_config:
+      allow_structured_metadata: true
       volume_enabled: true
     ```
 
