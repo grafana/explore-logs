@@ -190,6 +190,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     const { key } = getSelectedTabFromUrl();
     const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
     const filter = primaryLabelVar.state.filters[0];
+
     if (filter.key && filter.key !== key) {
       getServiceSelectionPrimaryLabel(this).setState({
         filters: [
@@ -200,6 +201,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         ],
       });
     }
+
     return {};
   }
 
@@ -207,7 +209,9 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
    * Unused, but required
    * @param values
    */
-  updateFromUrl(values: SceneObjectUrlValues) {}
+  updateFromUrl(values: SceneObjectUrlValues) {
+    console.log('updateFromUrl', values);
+  }
 
   addDatasourceChangeToBrowserHistory(newDs: string) {
     const location = locationService.getLocation();
@@ -489,6 +493,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   }
 
   private onActivate() {
+    this.fixRequiredUrlParams();
     // Clear existing volume data on activate or we'll show stale cached data, potentially from a different datasource
     this.setState({
       $data: getSceneQueryRunner({
@@ -581,6 +586,18 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         }
       })
     );
+  }
+
+  /**
+   * If the user copies a partial URL we want to prevent throwing runtime errors or running invalid queries, so we set the default tab which will trigger updates to the primary_label
+   * @private
+   */
+  private fixRequiredUrlParams() {
+    // If the selected tab is not in the URL, set the default
+    const { key } = getSelectedTabFromUrl();
+    if (!key) {
+      this.selectDefaultLabelTab();
+    }
   }
 
   private isTimeRangeTooEarlyForAggMetrics(): boolean {
