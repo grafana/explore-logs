@@ -24,7 +24,7 @@ To use Explore Logs, you need to have Loki properly configured. You can find ful
 If everything is presented as an `unknown_service` when you access Explore Logs, you can try the following fixes:
 
 1. Ensure the Volume API is enabled by setting the [`volume_enabled` configuration value](https://grafana.com/docs/loki/latest/configure/#:~:text=volume_enabled) in Loki. Enabled by default in Loki 3.1 and later.
-1. Specify the label to use to identify services by setting the [`discover_service_name` configuration value](https://grafana.com/docs/loki/latest/configure/#:~:text=discover_service_name) in Loki.
+1. Specify the label to use to identify services (or any meaningful categorization of your logs) by setting the [`discover_service_name` configuration value](https://grafana.com/docs/loki/latest/configure/#:~:text=discover_service_name) in Loki.
 
 ## There are no detected levels
 
