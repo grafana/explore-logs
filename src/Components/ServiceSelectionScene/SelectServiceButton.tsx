@@ -10,6 +10,7 @@ import { navigateToInitialPageAfterServiceSelection } from '../../services/navig
 import { getDataSourceVariable, getLabelsVariable } from '../../services/variableGetters';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
+import { SERVICE_NAME, SERVICE_UI_LABEL } from '../../services/variables';
 
 export interface SelectServiceButtonState extends SceneObjectState {
   labelValue: string;
@@ -35,6 +36,11 @@ export function selectLabel(primaryLabelName: string, primaryLabelValue: string,
     hide: VariableHide.hideLabel,
   });
   const ds = getDataSourceVariable(sceneRef).getValue();
+
+  if (primaryLabelName === SERVICE_NAME) {
+    primaryLabelName = SERVICE_UI_LABEL;
+  }
+
   addToFavoriteLabelValueInStorage(ds, primaryLabelName, primaryLabelValue);
 
   // In this case, we don't have a ServiceScene created yet, so we call a special function to navigate there for the first time

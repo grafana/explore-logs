@@ -1,6 +1,5 @@
 import {
   navigateToDrilldownPage,
-  navigateToIndex,
   navigateToInitialPageAfterServiceSelection,
   navigateToValueBreakdown,
 } from './navigate';
@@ -27,7 +26,7 @@ describe('navigate', () => {
     let drillDownLabel: string, serviceLabel: string, mockServiceSceneState: ServiceSceneCustomState;
     beforeAll(() => {
       drillDownLabel = 'label_name';
-      serviceLabel = 'service_name';
+      serviceLabel = 'tempo-ingester';
       mockIndexScene = {
         state: {
           routeMatch: {
@@ -62,7 +61,7 @@ describe('navigate', () => {
   describe('navigateToDrilldownPage', () => {
     let serviceLabel: string;
     beforeAll(() => {
-      serviceLabel = 'service_name';
+      serviceLabel = 'tempo-ingester';
       mockIndexScene = {
         state: {
           routeMatch: {
@@ -81,12 +80,6 @@ describe('navigate', () => {
       const serviceScene = new ServiceScene({});
       navigateToDrilldownPage(slug, serviceScene);
       expect(locationSpy).toHaveBeenCalledWith(`/a/grafana-lokiexplore-app/explore/service/${serviceLabel}/${slug}`);
-    });
-  });
-  describe('navigateToIndex', () => {
-    it('should navigate to service selection', () => {
-      navigateToIndex();
-      expect(locationSpy).toHaveBeenCalledWith('/a/grafana-lokiexplore-app/explore');
     });
   });
   describe('navigateToInitialPageAfterServiceSelection', () => {

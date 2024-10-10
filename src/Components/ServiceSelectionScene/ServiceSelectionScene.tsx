@@ -226,6 +226,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   /**
    * Attempting to add any change to the primary label variable (i.e. the selected tab) as a browser history event
    * @param newKey
+   * @param replace
    */
   addLabelChangeToBrowserHistory(newKey: string, replace = false) {
     const { key: primaryLabelRaw, search, location } = getSelectedTabFromUrl();
@@ -492,7 +493,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     // Clear existing volume data on activate or we'll show stale cached data, potentially from a different datasource
     this.setState({
       $data: getSceneQueryRunner({
-        queries: [buildResourceQuery(`{${SERVICE_LABEL_EXPR}=~\`.*${VAR_SERVICE_EXPR}.*\`}`, 'volume')],
+        queries: [buildResourceQuery(`{${VAR_PRIMARY_LABEL_EXPR}}`, 'volume')],
         runQueriesMode: 'manual',
       }),
     });
