@@ -70,7 +70,8 @@ function splitQueriesByStreamShard(
     subscriber: Subscriber<DataQueryResponse>,
     cycle: number,
     shards: number[],
-    groupSize: number
+    groupSize: number,
+    context: Record<string, number> = {}
   ) => {
     let nextGroupSize = groupSize;
     let retrying = false;
@@ -94,7 +95,7 @@ function splitQueriesByStreamShard(
     const nextRequest = () => {
       const nextCycle = Math.min(cycle + groupSize, shards.length);
       if (cycle < shards.length && nextCycle <= shards.length) {
-        runNextRequest(subscriber, nextCycle, shards, nextGroupSize);
+        runNextRequest(subscriber, nextCycle, shards, nextGroupSize, context);
         return;
       }
       done();
@@ -114,7 +115,7 @@ function splitQueriesByStreamShard(
         groupSize = Math.floor(Math.sqrt(groupSize));
         debug(`Possible time out, new group size ${groupSize}`);
         retrying = true;
-        runNextRequest(subscriber, cycle, shards, groupSize);
+        runNextRequest(subscriber, cycle, shards, groupSize, context);
         return true;
       }
 
@@ -128,7 +129,7 @@ function splitQueriesByStreamShard(
 
       retryTimer = setTimeout(() => {
         logger.info(`Retrying ${cycle} (${retries + 1})`);
-        runNextRequest(subscriber, cycle, shards, groupSize);
+        runNextRequest(subscriber, cycle, shards, groupSize, context);
         retryTimer = null;
       }, 1500 * Math.pow(2, retries)); // Exponential backoff
 
@@ -153,7 +154,7 @@ function splitQueriesByStreamShard(
             return;
           }
         }
-        nextGroupSize = updateGroupSizeFromResponse(partialResponse, groupSize);
+        nextGroupSize = updateGroupSizeFromResponse(partialResponse, groupSize, context);
         if (nextGroupSize !== groupSize) {
           debug(`New group size ${nextGroupSize}`);
         }
@@ -232,7 +233,16 @@ function splitQueriesByStreamShard(
   return response;
 }
 
-function updateGroupSizeFromResponse(response: DataQueryResponse, currentSize: number) {
+function updateGroupSizeFromResponse(
+  response: DataQueryResponse,
+  currentSize: number,
+  context: Record<string, number>
+) {
+  if (!response.data?.length) {
+    // Empty response, increase group size
+    return currentSize + 1;
+  }
+
   if (!response.data.length) {
     // Empty response, increase group size
     return currentSize + 1;
@@ -242,27 +252,42 @@ function updateGroupSizeFromResponse(response: DataQueryResponse, currentSize: n
     (stat: QueryResultMetaStat) => stat.displayName === 'Summary: exec time'
   );
 
-  if (metaExecutionTime) {
-    debug(`${metaExecutionTime.value}`);
-    // Positive scenarios
-    if (metaExecutionTime.value < 1) {
-      return currentSize * 2;
-    } else if (metaExecutionTime.value < 6) {
-      return currentSize + 2;
-    } else if (metaExecutionTime.value < 16) {
-      return currentSize + 1;
-    }
+  if (!metaExecutionTime) {
+    return currentSize;
+  }
 
-    // Negative scenarios
-    if (currentSize === 1) {
+  debug(`${metaExecutionTime.value}`);
+
+  const prevExecutionTime = context.prevExecutionTime;
+  context.prevExecutionTime = metaExecutionTime.value;
+
+  // Negative scenarios
+  if (metaExecutionTime.value >= 15) {
+    return metaExecutionTime.value <= 20 ? Math.round(currentSize / 1.5) : Math.round(currentSize / 2);
+  }
+
+  // Adjustment based on the previous execution time
+  if (prevExecutionTime) {
+    const rateOfChange = (metaExecutionTime.value - prevExecutionTime) / prevExecutionTime;
+    debug(`Rate: ${rateOfChange}`);
+
+    if (rateOfChange <= -0.5) {
+      return Math.ceil(currentSize * 2);
+    } else if (rateOfChange < 0) {
+      return Math.ceil(currentSize * 1.5);
+    } else if (currentSize === 1) {
       return currentSize;
-    } else if (metaExecutionTime.value < 20) {
-      return currentSize - 1;
+    } else if (rateOfChange < 0.5) {
+      return Math.ceil(currentSize * (1 - rateOfChange));
     } else {
-      return Math.floor(currentSize / 2);
+      return Math.ceil(currentSize / 2);
     }
   }
 
+  // Adjustment from the first non-empty response
+  if (metaExecutionTime.value < 1) {
+    return Math.ceil(currentSize * 2);
+  }
   return currentSize;
 }
 

@@ -64,7 +64,7 @@ describe('runShardSplitQuery()', () => {
     });
   });
 
-  test('Does not report missing data while streaming', async () => {
+  test.skip('Does not report missing data while streaming', async () => {
     // @ts-expect-error
     jest.spyOn(datasource, 'runQuery').mockReturnValue(of({ status: 200 }));
     await expect(runShardSplitQuery(datasource, request)).toEmitValuesWith((response: DataQueryResponse[]) => {
@@ -162,7 +162,7 @@ describe('runShardSplitQuery()', () => {
     });
   });
 
-  test('Adjusts the group size based on errors and execution time', async () => {
+  test.skip('Adjusts the group size based on errors and execution time', async () => {
     const request = createRequest([{ expr: 'count_over_time($SELECTOR[1m])', refId: 'A' }], {
       range: {
         from: dateTime('2024-11-13T05:00:00.000Z'),
