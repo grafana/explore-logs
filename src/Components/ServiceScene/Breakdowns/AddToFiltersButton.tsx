@@ -49,13 +49,6 @@ export function addToFilters(
     variableType = resolveVariableTypeForField(key, scene);
   }
 
-  console.log('addToFilters', {
-    key,
-    value,
-    variableType,
-    operator,
-  });
-
   const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableType), scene);
 
   let valueObject: string | undefined = undefined;
@@ -132,7 +125,6 @@ function resolveVariableTypeForField(field: string, scene: SceneObject): Variabl
 
 export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState> {
   public onClick = (type: FilterType) => {
-    console.log('AddToFiltersButton onClick', type, this.state);
     const filter = getFilter(this.state.frame);
     if (!filter) {
       return;
