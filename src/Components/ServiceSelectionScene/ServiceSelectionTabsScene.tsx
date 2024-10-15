@@ -19,6 +19,7 @@ export interface TabOption extends SelectableValue<string> {
   active?: boolean;
   counter?: number;
   saved?: boolean;
+  savedIndex?: number;
 }
 
 export interface ServiceSelectionTabsSceneState extends SceneObjectState {
@@ -72,6 +73,15 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
       <TabsBar>
         {tabOptions
           .filter((tabLabel) => tabLabel.saved || tabLabel.active || tabLabel.value === SERVICE_NAME)
+          .sort((a, b) => {
+            // Service name goes first
+            if (a.value === SERVICE_NAME || b.value === SERVICE_NAME) {
+              return a.value === SERVICE_NAME ? -1 : 1;
+            }
+
+            // Then sort by the order added to local storage
+            return (a.savedIndex ?? 0) - (b.savedIndex ?? 0);
+          })
           .map((tabLabel) => {
             const tab = (
               <Tab
@@ -196,15 +206,18 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
     const serviceSelectionScene = sceneGraph.getAncestor(this, ServiceSelectionScene);
     const selectedTab = serviceSelectionScene.getSelectedTab();
     const savedTabs = getFavoriteTabsFromStorage(getDataSourceVariable(this).getValue().toString());
+
     const tabOptions: TabOption[] = labels
       .filter((l) => l.label !== '__stream_shard__' && l.label !== '__aggregated_metric__')
       .map((l) => {
+        const savedIndex = savedTabs.indexOf(l.label);
         const option: TabOption = {
           label: l.label === SERVICE_NAME ? SERVICE_UI_LABEL : l.label,
           value: l.label,
           active: selectedTab === l.label,
           counter: l.cardinality,
-          saved: savedTabs.includes(l.label),
+          saved: savedIndex !== -1,
+          savedIndex,
         };
         return option;
       })

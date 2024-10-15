@@ -89,11 +89,13 @@ export function addTabToLocalStorage(dsKey: string, labelName: string) {
     services = [];
   }
 
-  // We want to put this service at the top of the list and remove any duplicates
-  const servicesToStore = services.filter((tabName: string) => tabName !== labelName);
-  servicesToStore.unshift(labelName);
+  if (services.indexOf(labelName) === -1) {
+    // We want to put this service at the top of the list and remove any duplicates
+    const servicesToStore = services.filter((tabName: string) => tabName !== labelName);
+    servicesToStore.unshift(labelName);
 
-  localStorage.setItem(key, JSON.stringify(servicesToStore));
+    localStorage.setItem(key, JSON.stringify(servicesToStore));
+  }
 }
 
 export function removeTabFromLocalStorage(dsKey: string, labelName: string) {
