@@ -229,7 +229,7 @@ test.describe('explore services page', () => {
 
       // Add "namespace" as a new tab
       await page.getByText(/namespace/).click();
-      const newNamespaceTabLoc = page.getByTestId('data-testid Tab Namespace');
+      const newNamespaceTabLoc = page.getByTestId('data-testid Tab namespace');
       await expect(newNamespaceTabLoc).toHaveCount(1);
 
       // Search for "gateway"
@@ -254,9 +254,9 @@ test.describe('explore services page', () => {
     test('user can use browser history to navigate through tabs', async ({ page }) => {
       const addNewTab = page.getByTestId(testIds.index.addNewLabelTab);
       const selectNewLabelSelect = page.locator('[role="tooltip"]');
-      const newNamespaceTabLoc = page.getByTestId('data-testid Tab Namespace');
-      const newLevelTabLoc = page.getByTestId('data-testid Tab Level');
-      const serviceTabLoc = page.getByTestId('data-testid Tab Service');
+      const newNamespaceTabLoc = page.getByTestId('data-testid Tab namespace');
+      const newLevelTabLoc = page.getByTestId('data-testid Tab level');
+      const serviceTabLoc = page.getByTestId('data-testid Tab service');
       const allTabLoc = page.getByTestId(/data-testid Tab .+/);
 
       // Assert only 2 tabs are visible (service, add new)

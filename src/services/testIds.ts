@@ -29,7 +29,7 @@ export const testIds = {
   },
 
   index: {
-    addNewLabelTab: 'data-testid Tab New',
+    addNewLabelTab: 'data-testid Tab Add label',
     searchLabelValueInput: 'data-testid search-services-input',
   },
 
