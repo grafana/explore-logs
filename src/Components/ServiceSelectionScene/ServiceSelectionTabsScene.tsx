@@ -66,7 +66,7 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
     // Constants
     const styles = useStyles2(getTabsStyles);
     const popoverRef = useRef<HTMLElement>(null);
-    const maxLabelLength = 30;
+    const maxLabelLength = 15;
 
     return (
       <TabsBar>
@@ -126,7 +126,7 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
 
         {/* Add more tabs tab */}
         {data?.state === LoadingState.Done && (
-          <Tab onChangeTab={model.toggleShowPopover} label={'New'} ref={popoverRef} icon={'plus-circle'} />
+          <Tab onChangeTab={model.toggleShowPopover} label={'Add label'} ref={popoverRef} icon={'plus-circle'} />
         )}
 
         {popover && (

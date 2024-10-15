@@ -30,6 +30,7 @@ import {
 import {
   DrawStyle,
   Field,
+  IconButton,
   LegendDisplayMode,
   PanelContext,
   SeriesVisibilityChangeMode,
@@ -301,7 +302,13 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
               />
               {!isLogVolumeLoading && (
                 <span className={styles.searchFieldPlaceholderText}>
-                  Showing {renderedServices} of {totalServices}
+                  Showing {renderedServices} of {totalServices}{' '}
+                  <IconButton
+                    className={styles.icon}
+                    aria-label="Count info"
+                    name={'info-circle'}
+                    tooltip={`${totalServices} labels have values for the selected time range. Total label count may differ`}
+                  />
                 </span>
               )}
             </div>
@@ -850,9 +857,15 @@ function getStyles(theme: GrafanaTheme2) {
       display: 'flex',
       flexDirection: 'column',
     }),
+    icon: css({
+      color: theme.colors.text.disabled,
+      marginLeft: theme.spacing.x1,
+    }),
     searchFieldPlaceholderText: css({
       fontSize: theme.typography.bodySmall.fontSize,
       color: theme.colors.text.disabled,
+      alignItems: 'center',
+      display: 'flex',
     }),
     searchWrapper: css({
       display: 'flex',

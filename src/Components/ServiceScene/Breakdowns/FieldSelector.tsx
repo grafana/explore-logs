@@ -125,6 +125,9 @@ export function ServiceFieldSelector({
 
 function getStyles(theme: GrafanaTheme2) {
   return {
+    input: css({
+      marginBottom: 0,
+    }),
     select: css({
       maxWidth: theme.spacing(64),
       minWidth: theme.spacing(20),
@@ -133,6 +136,7 @@ function getStyles(theme: GrafanaTheme2) {
       maxWidth: theme.spacing(62.5),
       minWidth: theme.spacing(20),
       marginRight: theme.spacing.x1,
+      marginBottom: 0,
     }),
   };
 }
