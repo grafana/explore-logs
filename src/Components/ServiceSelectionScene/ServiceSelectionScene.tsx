@@ -31,7 +31,6 @@ import {
   DrawStyle,
   Field,
   LegendDisplayMode,
-  LoadingPlaceholder,
   PanelContext,
   SeriesVisibilityChangeMode,
   StackingMode,
@@ -277,10 +276,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     return (
       <div className={styles.container}>
         <div className={styles.bodyWrapper}>
-          <div>
-            {isLogVolumeLoading && <LoadingPlaceholder text={'Loading services'} className={styles.loadingText} />}
-          </div>
-
           {tabs && <tabs.Component model={tabs} />}
           <Field className={styles.searchField}>
             <div className={styles.searchWrapper}>
