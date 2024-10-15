@@ -6,6 +6,7 @@ import { LokiQuery } from '../src/services/lokiQuery';
 const mixedFieldName = 'method';
 const logFmtFieldName = 'caller';
 const jsonFmtFieldName = 'status';
+const metadataFieldName = 'pod';
 const serviceName = 'nginx-json-mixed';
 // const levelName = 'cluster'
 test.describe('explore nginx-json-mixed breakdown pages ', () => {
@@ -60,7 +61,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
       const queries: LokiQuery[] = post.queries;
       queries.forEach((query) => {
         expect(query.expr).toContain(
-          `sum by (${mixedFieldName}) (count_over_time({service_name=\`${serviceName}\`}     | json | logfmt | drop __error__, __error_details__ | ${mixedFieldName}!=""`
+          `sum by (${mixedFieldName}) (count_over_time({service_name=\`${serviceName}\`}      | json | logfmt | drop __error__, __error_details__ | ${mixedFieldName}!=""`
         );
       });
     });
@@ -106,12 +107,12 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
       queries.forEach((query) => {
         if (index < 2) {
           expect(query.expr).toContain(
-            `sum by (${logFmtFieldName}) (count_over_time({service_name=\`${serviceName}\`}     | logfmt | ${logFmtFieldName}!=""  [$__auto]))`
+            `sum by (${logFmtFieldName}) (count_over_time({service_name=\`${serviceName}\`}      | logfmt | ${logFmtFieldName}!=""  [$__auto]))`
           );
         }
         if (index >= 2) {
           expect(query.expr).toContain(
-            `sum by (${logFmtFieldName}) (count_over_time({service_name=\`${serviceName}\`}     | logfmt | ${logFmtFieldName}!="" | caller!=\`flush.go:253\` [$__auto]))`
+            `sum by (${logFmtFieldName}) (count_over_time({service_name=\`${serviceName}\`}      | logfmt | ${logFmtFieldName}!="" | caller!=\`flush.go:253\` [$__auto]))`
           );
         }
       });
@@ -153,7 +154,47 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
       const queries: LokiQuery[] = post.queries;
       queries.forEach((query) => {
         expect(query.expr).toContain(
-          `sum by (${jsonFmtFieldName}) (count_over_time({service_name=\`${serviceName}\`}     | json | drop __error__, __error_details__ | ${jsonFmtFieldName}!=""`
+          `sum by (${jsonFmtFieldName}) (count_over_time({service_name=\`${serviceName}\`}      | json | drop __error__, __error_details__ | ${jsonFmtFieldName}!=""`
+        );
+      });
+    });
+    expect(requests).toHaveLength(3);
+  });
+  test(`should exclude ${metadataFieldName}, request should contain no parser`, async ({ page }) => {
+    let requests: PlaywrightRequest[] = [];
+    explorePage.blockAllQueriesExcept({
+      refIds: [metadataFieldName],
+      requests,
+    });
+    // First request should fire here
+    await explorePage.goToFieldsTab();
+
+    await page
+      .getByTestId(`data-testid Panel header ${metadataFieldName}`)
+      .getByRole('button', { name: 'Select' })
+      .click();
+    const allPanels = explorePage.getAllPanelsLocator();
+    // We should have 12 panels
+    await expect(allPanels).toHaveCount(12);
+    // Should have 2 queries by now
+    expect(requests).toHaveLength(2);
+    // Exclude a panel
+    await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
+    // We should have 11 panels after excluding 1
+    await expect(allPanels).toHaveCount(11);
+
+    // Adhoc content filter should be added
+    await expect(
+      page.getByTestId(`data-testid Dashboard template variables submenu Label ${metadataFieldName}`)
+    ).toBeVisible();
+    await expect(page.getByText('!=')).toBeVisible();
+
+    requests.forEach((req) => {
+      const post = req.post;
+      const queries: LokiQuery[] = post.queries;
+      queries.forEach((query) => {
+        expect(query.expr).toContain(
+          `sum by (${metadataFieldName}) (count_over_time({service_name=\`${serviceName}\`} | ${metadataFieldName}!=""`
         );
       });
     });

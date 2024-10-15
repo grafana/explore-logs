@@ -170,7 +170,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
 
   private handleLabelFilter(key: string, value: string, frame: DataFrame | undefined, operator: FilterType) {
     const labelType = frame ? getLabelTypeFromFrame(key, frame) : LabelType.Parsed;
-    const variableName = getFilterTypeFromLabelType(labelType, key, value);
+    const variableName = getFilterTypeFromLabelType(labelType, key, value, this);
     addToFilters(key, value, operator, this, variableName);
 
     reportAppInteraction(
