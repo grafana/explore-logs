@@ -4,7 +4,7 @@ import { Icon, Popover, PopoverController, Tab, TabsBar, Tooltip, useStyles2 } f
 import { GrafanaTheme2, LoadingState, SelectableValue } from '@grafana/data';
 import { css, cx } from '@emotion/css';
 import { SERVICE_NAME, SERVICE_UI_LABEL } from '../../services/variables';
-import { capitalizeFirstLetter, truncateText } from '../../services/text';
+import { truncateText } from '../../services/text';
 import { rest } from 'lodash';
 import { ServiceSelectionScene } from './ServiceSelectionScene';
 import { getSceneQueryRunner } from '../../services/panel';
@@ -80,7 +80,7 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
                   // Set the new active tab
                   serviceSelectionScene.setSelectedTab(tabLabel.value);
                 }}
-                label={capitalizeFirstLetter(truncateText(tabLabel.label, maxLabelLength, true))}
+                label={truncateText(tabLabel.label, maxLabelLength, true)}
                 active={tabLabel.active}
                 counter={tabLabel.counter}
                 suffix={

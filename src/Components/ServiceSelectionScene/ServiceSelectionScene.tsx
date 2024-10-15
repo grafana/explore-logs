@@ -70,7 +70,6 @@ import { config, locationService } from '@grafana/runtime';
 import { VariableHide } from '@grafana/schema';
 import { ToolbarScene } from '../IndexScene/ToolbarScene';
 import { IndexScene } from '../IndexScene/IndexScene';
-import { capitalizeFirstLetter } from '../../services/text';
 import { ServiceSelectionTabsScene } from './ServiceSelectionTabsScene';
 import { FavoriteServiceHeaderActionScene } from './FavoriteServiceHeaderActionScene';
 import { pushUrlHandler } from '../../services/navigate';
@@ -489,7 +488,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
   formatPrimaryLabelForUI() {
     const selectedTab = this.getSelectedTab();
-    return capitalizeFirstLetter(selectedTab === SERVICE_NAME ? SERVICE_UI_LABEL : selectedTab);
+    return selectedTab === SERVICE_NAME ? SERVICE_UI_LABEL : selectedTab;
   }
 
   private onActivate() {

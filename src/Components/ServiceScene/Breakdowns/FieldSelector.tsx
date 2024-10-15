@@ -73,7 +73,7 @@ export function ServiceFieldSelector({
       <Select
         isLoading={isLoading}
         data-testid={testIds.exploreServiceSearch.search}
-        placeholder={`Search`}
+        placeholder={`Search values`}
         options={allOptions}
         isClearable={true}
         value={value}
