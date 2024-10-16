@@ -2,6 +2,7 @@ import pluginJson from '../plugin.json';
 import { UrlQueryMap, urlUtil } from '@grafana/data';
 import {
   SERVICE_NAME,
+  SERVICE_UI_LABEL,
   VAR_DATASOURCE,
   VAR_FIELD_GROUP_BY,
   VAR_FIELDS,
@@ -10,14 +11,13 @@ import {
   VAR_LEVELS,
   VAR_LINE_FILTER,
   VAR_PATTERNS,
-  VAR_SERVICE,
 } from './variables';
 import { locationService } from '@grafana/runtime';
 import { RouteMatch, RouteProps } from '../Components/Pages';
 import { replaceSlash } from './extensions/links';
+import { SceneObject } from '@grafana/scenes';
 import { getLabelsVariable } from './variableGetters';
 import { logger } from './logger';
-import { SceneObject } from '@grafana/scenes';
 
 export const PLUGIN_ID = pluginJson.id;
 export const PLUGIN_BASE_URL = `/a/${PLUGIN_ID}`;
@@ -130,7 +130,7 @@ export function getPrimaryLabelFromUrl(): RouteProps {
   const breakdownLabel = routeParams[3];
   // Keep urls the same
   if (labelName === SERVICE_NAME) {
-    labelName = VAR_SERVICE;
+    labelName = SERVICE_UI_LABEL;
   }
   return { labelName, labelValue, breakdownLabel };
 }
@@ -175,7 +175,7 @@ export function buildServicesRoute(extraQueryParams?: UrlQueryMap): UrlQueryMap 
 export function checkPrimaryLabel(sceneRef: SceneObject) {
   const labelsVariable = getLabelsVariable(sceneRef);
   let { labelName, labelValue } = getPrimaryLabelFromUrl();
-  if (labelName === VAR_SERVICE) {
+  if (labelName === SERVICE_UI_LABEL) {
     labelName = SERVICE_NAME;
   }
   const primaryLabel = labelsVariable.state.filters.find((filter) => filter.key === labelName);

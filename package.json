@@ -91,7 +91,7 @@
     "@lezer/common": "^1.2.1",
     "@lezer/lr": "^1.4.1",
     "@hello-pangea/dnd": "^16.6.0",
-    "@playwright/test": "^1.43.1",
+    "@playwright/test": "^1.48.0",
     "@types/react-table": "^7.7.20",
     "react": "18.2.0",
     "react-dom": "18.2.0",

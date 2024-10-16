@@ -28,6 +28,11 @@ export const testIds = {
     },
   },
 
+  index: {
+    addNewLabelTab: 'data-testid Tab Add label',
+    searchLabelValueInput: 'data-testid search-services-input',
+  },
+
   exploreServiceDetails: {
     searchLogs: 'data-testid search-logs',
     openExplore: 'data-testid open-explore',
