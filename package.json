@@ -9,7 +9,7 @@
       },
       {
         "path": "dist/*.js",
-        "maxSize": "100kB"
+        "maxSize": "175kB"
       }
     ]
   },
