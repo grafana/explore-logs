@@ -175,13 +175,13 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
       .click();
     const allPanels = explorePage.getAllPanelsLocator();
     // We should have 12 panels
-    await expect(allPanels).toHaveCount(12);
+    await expect(allPanels).toHaveCount(20);
     // Should have 2 queries by now
     expect(requests).toHaveLength(2);
     // Exclude a panel
     await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
     // We should have 11 panels after excluding 1
-    await expect(allPanels).toHaveCount(11);
+    await expect(allPanels).toHaveCount(19);
 
     // Adhoc content filter should be added
     await expect(
