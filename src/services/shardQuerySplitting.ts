@@ -250,18 +250,16 @@ function updateGroupSizeFromResponse(response: DataQueryResponse, currentSize: n
     debug(`${metaExecutionTime.value}`);
     // Positive scenarios
     if (metaExecutionTime.value < 1) {
-      return currentSize * 2;
+      return Math.floor(currentSize * 1.5);
     } else if (metaExecutionTime.value < 6) {
-      return currentSize + 2;
-    } else if (metaExecutionTime.value < 16) {
-      return currentSize + 1;
+      return Math.ceil(currentSize * 1.1);
     }
 
     // Negative scenarios
     if (currentSize === 1) {
       return currentSize;
     } else if (metaExecutionTime.value < 20) {
-      return currentSize - 1;
+      return Math.ceil(currentSize * 0.9);
     } else {
       return Math.floor(currentSize / 2);
     }
