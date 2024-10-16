@@ -23,5 +23,5 @@ const App = lazy(async () => {
 export const plugin = new AppPlugin<{}>().setRootPage(App);
 
 for (const linkConfig of linkConfigs) {
-  plugin.configureExtensionLink(linkConfig);
+  plugin.addLink(linkConfig);
 }

@@ -56,5 +56,14 @@
     "grafanaDependency": ">=11.2.0",
     "plugins": []
   },
-  "preload": true
+  "preload": true,
+  "extensions": {
+    "addedLinks": [
+      {
+        "targets": ["grafana/dashboard/panel/menu", "grafana/explore/toolbar/action"],
+        "title": "Open in Explore Logs",
+        "description": "Open current query in the Explore Logs view"
+      }
+    ]
+  }
 }
