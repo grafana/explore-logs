@@ -104,31 +104,22 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     const parentModel = this.getParentScene();
     const visualizationType = parentModel.state.visualizationType;
 
-    return (
-      PanelBuilders.logs()
-        .setTitle('Logs')
-        .setOption('showTime', true)
-        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
-        .setOption('onClickFilterLabel', this.handleLabelFilterClick)
-        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
-        .setOption('onClickFilterOutLabel', this.handleLabelFilterOutClick)
-        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
-        .setOption('isFilterLabelActive', this.handleIsFilterLabelActive)
-        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
-        .setOption('onClickFilterString', this.handleFilterStringClick)
-        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
-        .setOption('onClickShowField', this.onClickShowField)
-        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
-        .setOption('onClickHideField', this.onClickHideField)
-        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
-        .setOption('displayedFields', parentModel.state.displayedFields)
-        .setOption('wrapLogMessage', Boolean(getLogOption('wrapLines')))
-        .setOption('showLogContextToggle', true)
-        .setHeaderActions(
-          <LogsPanelHeaderActions vizType={visualizationType} onChange={parentModel.setVisualizationType} />
-        )
-        .build()
-    );
+    return PanelBuilders.logs()
+      .setTitle('Logs')
+      .setOption('showTime', true)
+      .setOption('onClickFilterLabel', this.handleLabelFilterClick)
+      .setOption('onClickFilterOutLabel', this.handleLabelFilterOutClick)
+      .setOption('isFilterLabelActive', this.handleIsFilterLabelActive)
+      .setOption('onClickFilterString', this.handleFilterStringClick)
+      .setOption('onClickShowField', this.onClickShowField)
+      .setOption('onClickHideField', this.onClickHideField)
+      .setOption('displayedFields', parentModel.state.displayedFields)
+      .setOption('wrapLogMessage', Boolean(getLogOption('wrapLines')))
+      .setOption('showLogContextToggle', true)
+      .setHeaderActions(
+        <LogsPanelHeaderActions vizType={visualizationType} onChange={parentModel.setVisualizationType} />
+      )
+      .build();
   }
 
   private handleLabelFilterClick = (key: string, value: string, frame?: DataFrame) => {
