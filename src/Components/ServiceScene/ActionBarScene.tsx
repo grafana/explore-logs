@@ -1,16 +1,17 @@
 import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
-import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
+import { Box, Stack, Tab, TabsBar, ToolbarButton, useStyles2 } from '@grafana/ui';
 import { getExplorationFor } from '../../services/scenes';
 import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, ValueSlugs } from '../../services/routing';
 import { GoToExploreButton } from './GoToExploreButton';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { getLabelsVariable, SERVICE_NAME } from '../../services/variables';
 import { navigateToDrilldownPage, navigateToIndex } from '../../services/navigate';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ServiceScene, ServiceSceneState } from './ServiceScene';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 import { BreakdownViewDefinition, breakdownViewsDefinitions } from './BreakdownViews';
+import { usePluginLinks } from '@grafana/runtime';
 
 export interface ActionBarSceneState extends SceneObjectState {}
 
@@ -36,10 +37,23 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
     const { loading, $data, ...state } = serviceScene.useState();
     const loadingStates = state.loadingStates;
 
+    const [filters, setFilters] = useState<Array<{ key: string; value: string }>>(
+      getLabelsVariable(serviceScene).state.filters
+    );
+    useEffect(() => {
+      const sub = getLabelsVariable(serviceScene).subscribeToState((newState) => {
+        setFilters(newState.filters);
+      });
+      return () => {
+        sub.unsubscribe();
+      };
+    });
+
     return (
       <Box paddingY={0}>
         <div className={styles.actions}>
           <Stack gap={1}>
+            <ExtensionsRenderer context={{ filters }} />
             <GoToExploreButton exploration={exploration} />
           </Stack>
         </div>
@@ -107,4 +121,26 @@ function getStyles(theme: GrafanaTheme2) {
       },
     }),
   };
+}
+
+function ExtensionsRenderer(props: { context: { filters: Array<{ key: string; value: string }> } }) {
+  const extensions = usePluginLinks({
+    extensionPointId: 'grafana-lokiexplore-app/toolbar',
+    limitPerPlugin: 3,
+    context: props.context,
+  });
+
+  if (extensions.isLoading || extensions.links.length === 0) {
+    return null;
+  }
+
+  const e = extensions.links[0];
+
+  return (
+    <div>
+      <ToolbarButton variant={'canvas'} key={e.id} onClick={(event) => e.onClick?.(event)} icon={e.icon}>
+        {e.title}
+      </ToolbarButton>
+    </div>
+  );
 }

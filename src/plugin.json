@@ -4,6 +4,7 @@
   "name": "Explore Logs",
   "id": "grafana-lokiexplore-app",
   "autoEnabled": true,
+  "preload": true,
   "info": {
     "keywords": ["app", "loki", "explore", "logs"],
     "description": "Query-less exploration of log data stored in Loki",
@@ -56,5 +57,13 @@
     "grafanaDependency": ">=11.2.0",
     "plugins": []
   },
-  "preload": true
+  "preload": true,
+  "extensions": {
+    "extensionPoints": [
+      {
+        "id": "grafana-lokiexplore-app/toolbar",
+        "title": "open things"
+      }
+    ]
+  }
 }
