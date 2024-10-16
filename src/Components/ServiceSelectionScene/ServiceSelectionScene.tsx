@@ -208,7 +208,9 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
    * Unused, but required
    * @param values
    */
-  updateFromUrl(values: SceneObjectUrlValues) {}
+  updateFromUrl(values: SceneObjectUrlValues) {
+    console.log('updateFromUrl', values);
+  }
 
   addDatasourceChangeToBrowserHistory(newDs: string) {
     const location = locationService.getLocation();
