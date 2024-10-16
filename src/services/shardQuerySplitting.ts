@@ -268,6 +268,9 @@ function updateGroupSizeFromResponse(response: DataQueryResponse, currentSize: n
   return currentSize;
 }
 
+/**
+ * Prevents the group size for ever being more than maxFactor% of the pending shards.
+ */
 function constrainGroupSize(cycle: number, groupSize: number, shards: number) {
   const maxFactor = 0.5;
   return Math.min(groupSize, Math.max(Math.ceil((shards - cycle) * maxFactor), 1));
