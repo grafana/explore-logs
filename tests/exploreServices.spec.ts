@@ -37,7 +37,7 @@ test.describe('explore services page', () => {
     // Only the first title is visible
     await expect(page.getByText('mimir-ingester').nth(0)).toBeVisible();
     await expect(page.getByText('mimir-ingester').nth(1)).not.toBeVisible();
-    await expect(page.getByText('Showing 4 of 4 services')).toBeVisible();
+    await expect(page.getByText('Showing 4 of 4')).toBeVisible();
   });
 
   test('should filter service labels on exact search', async ({ page }) => {
@@ -58,7 +58,7 @@ test.describe('explore services page', () => {
     await expect(page.getByText('mimir-ingester').nth(1)).toBeVisible();
     // And the logs panel title should be hidden
     await expect(page.getByText('mimir-ingester').nth(2)).not.toBeVisible();
-    await expect(page.getByText('Showing 1 of 1 service')).toBeVisible();
+    await expect(page.getByText('Showing 1 of 1')).toBeVisible();
   });
 
   test('should filter service labels on partial string', async ({ page }) => {
@@ -75,7 +75,7 @@ test.describe('explore services page', () => {
     // Only the first title is visible
     await expect(page.getByText('mimir-ingester').nth(0)).toBeVisible();
     await expect(page.getByText('mimir-ingester').nth(1)).not.toBeVisible();
-    await expect(page.getByText('Showing 4 of 4 services')).toBeVisible();
+    await expect(page.getByText('Showing 4 of 4')).toBeVisible();
   });
 
   test('should select a service label value and navigate to log view', async ({ page }) => {
@@ -89,7 +89,7 @@ test.describe('explore services page', () => {
     await page.keyboard.press('Escape');
     // Volume can differ, scroll down so all of the panels are loaded
     await explorePage.scrollToBottom();
-    await expect(page.getByText('Showing 1 of 1 service')).toBeVisible();
+    await expect(page.getByText('Showing 1 of 1')).toBeVisible();
     await expect(page.getByText(/level=info/).first()).toBeVisible();
     await page.getByTitle('debug').first().click();
     await expect(page.getByText(/level=debug/).first()).toBeVisible();
@@ -115,7 +115,7 @@ test.describe('explore services page', () => {
     await page.getByTestId(testIds.variables.serviceName.label).click();
 
     // Assert we're rendering the right scene and the services have loaded
-    await expect(page.getByText(/Showing \d+ of \d+ services/)).toBeVisible();
+    await expect(page.getByText(/Showing \d+ of \d+/)).toBeVisible();
 
     await explorePage.addServiceName();
 
@@ -160,6 +160,8 @@ test.describe('explore services page', () => {
       await explorePage.refreshPicker.click();
       await explorePage.refreshPicker.click();
       await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
+      // Noticed that the below assertions were flaking when not running the trace, we need to wait a tiny bit to let the last requests fire
+      await page.waitForTimeout(50);
       expect(logsVolumeCount).toEqual(4);
       expect(logsQueryCount).toEqual(16);
     });
@@ -187,7 +189,7 @@ test.describe('explore services page', () => {
       await page.getByTestId(testIds.variables.serviceName.label).click();
 
       // Assert we're rendering the right scene and the services have loaded
-      await expect(page.getByText(/Showing \d+ of \d+ services/)).toBeVisible();
+      await expect(page.getByText(/Showing \d+ of \d+/)).toBeVisible();
       await explorePage.assertPanelsNotLoading();
 
       // We just need to wait a few ms for the query to get fired?
@@ -212,6 +214,141 @@ test.describe('explore services page', () => {
       await expect(explorePage.logVolumeGraph).toBeVisible();
       await explorePage.changeDatasource();
       expect(logsVolumeCount).toBe(2);
+    });
+  });
+  test.describe('tabs', () => {
+    test('user can add namespace label as a new tab and navigate to breakdown', async ({ page }) => {
+      // Click "New" tab
+      const addNewTab = page.getByTestId(testIds.index.addNewLabelTab);
+      await expect(addNewTab).toHaveCount(1);
+      await addNewTab.click();
+
+      // Dropdown should be open
+      const selectNewLabelSelect = page.locator('[role="tooltip"]');
+      await expect(selectNewLabelSelect).toContainText('Search labels');
+
+      // Add "namespace" as a new tab
+      await page.getByText(/namespace/).click();
+      const newNamespaceTabLoc = page.getByTestId('data-testid Tab namespace');
+      await expect(newNamespaceTabLoc).toHaveCount(1);
+
+      // Search for "gateway"
+      await page.getByTestId(testIds.index.searchLabelValueInput).fill('gate');
+      await page.getByTestId(testIds.index.searchLabelValueInput).press('Escape');
+
+      // Asser this filters down to only one result
+      await expect(page.getByText('Select')).toHaveCount(1);
+
+      // Select the first and only result
+      await explorePage.addServiceName();
+      await explorePage.assertTabsNotLoading();
+
+      // Logs tab should be visible and selected
+      await expect(page.getByTestId(testIds.exploreServiceDetails.tabLogs)).toHaveCount(1);
+      expect(await page.getByTestId(testIds.exploreServiceDetails.tabLogs).getAttribute('aria-selected')).toEqual(
+        'true'
+      );
+
+      expect(page.url()).toMatch(/a\/grafana-lokiexplore-app\/explore\/namespace\/gateway\/logs/);
+    });
+    test('user can use browser history to navigate through tabs', async ({ page }) => {
+      const addNewTab = page.getByTestId(testIds.index.addNewLabelTab);
+      const selectNewLabelSelect = page.locator('[role="tooltip"]');
+      const newNamespaceTabLoc = page.getByTestId('data-testid Tab namespace');
+      const newLevelTabLoc = page.getByTestId('data-testid Tab level');
+      const serviceTabLoc = page.getByTestId('data-testid Tab service');
+      const allTabLoc = page.getByTestId(/data-testid Tab .+/);
+
+      // Assert only 2 tabs are visible (service, add new)
+      await expect(allTabLoc).toHaveCount(2);
+
+      // Assert add new tab is visible
+      await expect(addNewTab).toHaveCount(1);
+      // Click "New" tab
+      await addNewTab.click();
+
+      // Dropdown should be open
+      await expect(selectNewLabelSelect).toContainText('Search labels');
+
+      // Add "namespace" as a new tab
+      await page.getByText(/namespace/).click();
+      await expect(newNamespaceTabLoc).toHaveCount(1);
+
+      // Click "New" tab
+      await addNewTab.click();
+
+      // Dropdown should be open
+      await expect(selectNewLabelSelect).toContainText('Search labels');
+      await page.getByText(/level \(\d+\)/).click();
+
+      // Assert we have 4 tabs open
+      await expect(allTabLoc).toHaveCount(4);
+
+      // Assert level is selected
+      expect(await newLevelTabLoc.getAttribute('aria-selected')).toEqual('true');
+
+      // Go back to last tab
+      await page.goBack();
+      // Assert namespace is selected
+      await expect(newNamespaceTabLoc).toHaveCount(1);
+      expect(await newNamespaceTabLoc.getAttribute('aria-selected')).toEqual('true');
+
+      await page.goBack();
+      await expect(serviceTabLoc).toHaveCount(1);
+      expect(await serviceTabLoc.getAttribute('aria-selected')).toEqual('true');
+    });
+    test('removing the primary label should redirect back to index, user can go back to breakdown with browser history', async ({
+      page,
+    }) => {
+      // Select the first service
+      await explorePage.addServiceName();
+
+      const serviceNameVariableLoc = page.getByTestId(testIds.variables.serviceName.label);
+      const removeVariableBtn = serviceNameVariableLoc.getByLabel('Remove');
+      await expect(serviceNameVariableLoc).toHaveCount(1);
+      await expect(removeVariableBtn).toHaveCount(1);
+
+      // Remove the only variable
+      await removeVariableBtn.click();
+
+      // assert navigated back to index page
+      await expect(page.getByText(/Showing \d+ of \d+/)).toBeVisible();
+
+      // Navigate back with browser history
+      await page.goBack();
+
+      // Assert the variable is visible and we're back on the breakdown view
+      await expect(serviceNameVariableLoc).toHaveCount(1);
+      await expect(removeVariableBtn).toHaveCount(1);
+
+      // Logs tab should be visible and selected
+      await expect(page.getByTestId(testIds.exploreServiceDetails.tabLogs)).toHaveCount(1);
+      expect(await page.getByTestId(testIds.exploreServiceDetails.tabLogs).getAttribute('aria-selected')).toEqual(
+        'true'
+      );
+
+      // Navigate to the fields breakdown tab
+      await explorePage.goToFieldsTab();
+
+      // Assert fields tab is selected and active
+      await expect(page.getByTestId(testIds.exploreServiceDetails.tabFields)).toHaveCount(1);
+      expect(await page.getByTestId(testIds.exploreServiceDetails.tabFields).getAttribute('aria-selected')).toEqual(
+        'true'
+      );
+
+      // Go back to the logs tab
+      await page.goBack();
+
+      // Logs tab should be visible and selected
+      await expect(page.getByTestId(testIds.exploreServiceDetails.tabLogs)).toHaveCount(1);
+      expect(await page.getByTestId(testIds.exploreServiceDetails.tabLogs).getAttribute('aria-selected')).toEqual(
+        'true'
+      );
+
+      await page.goBack();
+
+      // assert navigated back to index page
+      await expect(page.getByText(/Showing \d+ of \d+/)).toBeVisible();
     });
   });
 });

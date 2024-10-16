@@ -1,3 +1,5 @@
+import { logger } from './logger';
+
 export const copyText = async (text: string, buttonRef: React.MutableRefObject<HTMLButtonElement | null>) => {
   if (navigator.clipboard && window.isSecureContext) {
     return navigator.clipboard.writeText(text);
@@ -19,3 +21,16 @@ export const copyText = async (text: string, buttonRef: React.MutableRefObject<H
     textarea.remove();
   }
 };
+
+export function capitalizeFirstLetter(input: string) {
+  if (input.length) {
+    return input?.charAt(0).toUpperCase() + input.slice(1);
+  }
+
+  logger.warn('invalid string argument');
+  return input;
+}
+
+export function truncateText(input: string, length: number, ellipsis: boolean) {
+  return input.substring(0, length) + (ellipsis && input.length > length ? '…' : '');
+}

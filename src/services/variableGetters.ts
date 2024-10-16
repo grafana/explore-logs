@@ -14,7 +14,7 @@ import {
   LOGS_FORMAT_EXPR,
   LogsQueryOptions,
   MIXED_FORMAT_EXPR,
-  SERVICE_LABEL_VAR,
+  VAR_AGGREGATED_METRICS,
   SERVICE_NAME,
   VAR_DATASOURCE,
   VAR_FIELD_GROUP_BY,
@@ -29,7 +29,8 @@ import {
   VAR_LINE_FILTER_EXPR,
   VAR_PATTERNS,
   VAR_PATTERNS_EXPR,
-  VAR_SERVICE,
+  VAR_PRIMARY_LABEL,
+  VAR_PRIMARY_LABEL_SEARCH,
 } from './variables';
 import { AdHocVariableFilter } from '@grafana/data';
 import { logger } from './logger';
@@ -90,8 +91,8 @@ export function getLabelGroupByVariable(scene: SceneObject) {
   return variable;
 }
 
-export function getServiceLabelVariable(scene: SceneObject) {
-  const variable = sceneGraph.lookupVariable(SERVICE_LABEL_VAR, scene);
+export function getAggregatedMetricsVariable(scene: SceneObject) {
+  const variable = sceneGraph.lookupVariable(VAR_AGGREGATED_METRICS, scene);
   if (!(variable instanceof CustomConstantVariable)) {
     throw new Error('SERVICE_LABEL_VAR not found');
   }
@@ -123,12 +124,40 @@ export function getAdHocFiltersVariable(variableName: string, scene: SceneObject
   return variable;
 }
 
-export function getServiceSelectionStringVariable(sceneRef: SceneObject) {
-  const variable = sceneGraph.lookupVariable(VAR_SERVICE, sceneRef);
+export function getServiceSelectionSearchVariable(sceneRef: SceneObject) {
+  const variable = sceneGraph.lookupVariable(VAR_PRIMARY_LABEL_SEARCH, sceneRef);
   if (!(variable instanceof CustomConstantVariable)) {
-    throw new Error('VAR_SERVICE not found');
+    throw new Error('VAR_PRIMARY_LABEL_SEARCH not found');
   }
   return variable;
+}
+
+export function clearServiceSelectionSearchVariable(sceneRef: SceneObject) {
+  getServiceSelectionSearchVariable(sceneRef).setState({
+    value: '.+',
+    label: '',
+  });
+}
+
+export function getServiceSelectionPrimaryLabel(sceneRef: SceneObject) {
+  const variable = sceneGraph.lookupVariable(VAR_PRIMARY_LABEL, sceneRef);
+  if (!(variable instanceof AdHocFiltersVariable)) {
+    throw new Error('VAR_PRIMARY_LABEL not found');
+  }
+  return variable;
+}
+
+export function setServiceSelectionPrimaryLabelKey(key: string, sceneRef: SceneObject) {
+  getServiceSelectionPrimaryLabel(sceneRef).setState({
+    filters: [
+      {
+        // the value is replaced by the value in VAR_PRIMARY_LABEL_SEARCH if a search is active, so we just need to set the filter key (label name)
+        value: '.+',
+        operator: '=~',
+        key: key,
+      },
+    ],
+  });
 }
 
 export function getUrlParamNameForVariable(variableName: string) {

@@ -9,6 +9,8 @@ import { UrlQueryMap, urlUtil } from '@grafana/data';
 import { replaceSlash } from './extensions/links';
 import { logger } from './logger';
 
+let previousRoute: string | undefined = undefined;
+
 function buildValueBreakdownUrl(label: string, newPath: ValueSlugs, labelValue: string, labelName = 'service') {
   if (label === ALL_VARIABLE_VALUE && newPath === ValueSlugs.label) {
     return prefixRoute(`${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${PageSlugs.labels}`);
@@ -60,7 +62,7 @@ export function navigateToValueBreakdown(newPath: ValueSlugs, label: string, ser
         metadataService.setServiceSceneState(serviceScene.state);
       }
 
-      locationService.push(fullUrl);
+      pushUrlHandler(fullUrl);
       return;
     } else {
       logger.warn('missing url params', {
@@ -74,11 +76,12 @@ export function navigateToValueBreakdown(newPath: ValueSlugs, label: string, ser
 /**
  * The case for initial navigation from the service selection to the service index is a special case, as we don't yet have a serviceScene constructed to pull the selected service.
  * This function will route users to the initial (logs) page from the service selection view, which will populate the service scene state with the selected service string.
- * @param serviceName
+ * @param labelName
+ * @param labelValue
  */
-export function navigateToInitialPageAfterServiceSelection(serviceName: string) {
-  const breakdownUrl = buildDrilldownPageUrl(ROUTES.logs(serviceName));
-  locationService.push(breakdownUrl);
+export function navigateToInitialPageAfterServiceSelection(labelName: string, labelValue: string) {
+  const breakdownUrl = buildDrilldownPageUrl(ROUTES.logs(labelValue, labelName));
+  pushUrlHandler(breakdownUrl);
 }
 
 /**
@@ -103,9 +106,14 @@ export function navigateToDrilldownPage(path: PageSlugs, serviceScene: ServiceSc
       metadataService.setServiceSceneState(serviceScene.state);
     }
 
-    locationService.push(breakdownUrl);
+    pushUrlHandler(breakdownUrl);
     return;
   }
+}
+
+export function pushUrlHandler(newUrl: string) {
+  previousRoute = newUrl;
+  locationService.push(newUrl);
 }
 
 /**
@@ -115,10 +123,19 @@ export function navigateToIndex() {
   const location = locationService.getLocation();
   const serviceUrl = buildServicesUrl(ROUTES.explore());
   const currentUrl = location.pathname + location.search;
+  const search = locationService.getSearch();
 
-  if (serviceUrl === currentUrl) {
+  if (serviceUrl === currentUrl || currentUrl.includes(serviceUrl)) {
     return;
   }
 
-  locationService.push(serviceUrl);
+  if (!search.get('var-filters')) {
+    // If we don't have filters, we don't want to keep this url in browser history since this is fired AFTER the url props are made invalid, push the previous route and replace it
+    if (previousRoute) {
+      locationService.replace(previousRoute);
+    }
+    locationService.push(serviceUrl);
+  } else {
+    pushUrlHandler(serviceUrl);
+  }
 }

@@ -9,6 +9,10 @@ import { initializeMetadataService } from '../services/metadata';
 const getSceneApp = () =>
   new SceneApp({
     pages: [makeIndexPage(), makeRedirectPage()],
+    urlSyncOptions: {
+      createBrowserHistorySteps: false,
+      updateUrlOnInit: true,
+    },
   });
 
 function LogExplorationView() {
