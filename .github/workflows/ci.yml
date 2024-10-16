@@ -9,6 +9,8 @@ on:
     branches:
       - master
       - main
+env:
+  BUNDLEWATCH_GITHUB_TOKEN: ${{secrets.BUNDLEWATCH_GITHUB_TOKEN}}
 
 jobs:
   build:
@@ -20,7 +22,6 @@ jobs:
       has-backend: ${{ steps.check-for-backend.outputs.has-backend }}
     env:
       GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
-      BUNDLEWATCH_GITHUB_TOKEN: ${{secrets.BUNDLEWATCH_GITHUB_TOKEN}}
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node.js environment
