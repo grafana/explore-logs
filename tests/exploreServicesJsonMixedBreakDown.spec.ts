@@ -160,7 +160,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     });
     expect(requests).toHaveLength(3);
   });
-  test.only(`should exclude ${metadataFieldName}, request should contain no parser`, async ({ page }) => {
+  test(`should exclude ${metadataFieldName}, request should contain no parser`, async ({ page }) => {
     let requests: PlaywrightRequest[] = [];
     explorePage.blockAllQueriesExcept({
       refIds: [metadataFieldName],
