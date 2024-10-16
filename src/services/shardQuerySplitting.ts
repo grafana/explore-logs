@@ -153,7 +153,11 @@ function splitQueriesByStreamShard(
             return;
           }
         }
-        nextGroupSize = updateGroupSizeFromResponse(partialResponse, groupSize);
+        nextGroupSize = constrainGroupSize(
+          cycle + groupSize,
+          updateGroupSizeFromResponse(partialResponse, groupSize),
+          shards.length
+        );
         if (nextGroupSize !== groupSize) {
           debug(`New group size ${nextGroupSize}`);
         }
@@ -264,6 +268,11 @@ function updateGroupSizeFromResponse(response: DataQueryResponse, currentSize: n
   }
 
   return currentSize;
+}
+
+function constrainGroupSize(cycle: number, groupSize: number, shards: number) {
+  const maxFactor = 0.5;
+  return Math.min(groupSize, Math.max(Math.ceil((shards - cycle) * maxFactor), 1));
 }
 
 function groupShardRequests(shards: number[], start: number, groupSize: number) {
