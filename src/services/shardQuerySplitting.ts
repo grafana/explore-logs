@@ -71,7 +71,7 @@ function splitQueriesByStreamShard(
     cycle: number,
     shards: number[],
     groupSize: number,
-    context: Record<string, number> = {}
+    context: Record<string, number> = { prevExecutionTime: 1 }
   ) => {
     let nextGroupSize = groupSize;
     let retrying = false;
@@ -243,11 +243,6 @@ function updateGroupSizeFromResponse(
     return currentSize + 1;
   }
 
-  if (!response.data.length) {
-    // Empty response, increase group size
-    return currentSize + 1;
-  }
-
   const metaExecutionTime: QueryResultMetaStat | undefined = response.data[0].meta?.stats?.find(
     (stat: QueryResultMetaStat) => stat.displayName === 'Summary: exec time'
   );
@@ -259,29 +254,30 @@ function updateGroupSizeFromResponse(
   debug(`${metaExecutionTime.value}`);
 
   const prevExecutionTime = context.prevExecutionTime;
-  context.prevExecutionTime = metaExecutionTime.value;
+  context.prevExecutionTime =
+    !prevExecutionTime || metaExecutionTime.value > prevExecutionTime ? metaExecutionTime.value : prevExecutionTime;
+
+  // Adjustment based on the previous execution time
+  if (prevExecutionTime) {
+    const rateOfChange = parseFloat(((metaExecutionTime.value - prevExecutionTime) / prevExecutionTime).toFixed(2));
+    debug(`Rate: ${rateOfChange} / ${currentSize}`);
+    if (metaExecutionTime.value > prevExecutionTime) {
+      debug(`Rate execution time worsened to ${metaExecutionTime.value}`);
+      return Math.ceil(currentSize * 0.5);
+    }
+
+    if (rateOfChange < 0) {
+      return Math.ceil(currentSize * 1.5);
+    } else if (rateOfChange <= 0.3) {
+      return currentSize;
+    } else {
+      return Math.ceil(currentSize * 0.5);
+    }
+  }
 
   // Negative scenarios
   if (metaExecutionTime.value >= 15) {
     return metaExecutionTime.value <= 20 ? Math.round(currentSize / 1.5) : Math.round(currentSize / 2);
-  }
-
-  // Adjustment based on the previous execution time
-  if (prevExecutionTime) {
-    const rateOfChange = (metaExecutionTime.value - prevExecutionTime) / prevExecutionTime;
-    debug(`Rate: ${rateOfChange}`);
-
-    if (rateOfChange <= -0.5) {
-      return Math.ceil(currentSize * 2);
-    } else if (rateOfChange < 0) {
-      return Math.ceil(currentSize * 1.5);
-    } else if (currentSize === 1) {
-      return currentSize;
-    } else if (rateOfChange < 0.5) {
-      return Math.ceil(currentSize * (1 - rateOfChange));
-    } else {
-      return Math.ceil(currentSize / 2);
-    }
   }
 
   // Adjustment from the first non-empty response
