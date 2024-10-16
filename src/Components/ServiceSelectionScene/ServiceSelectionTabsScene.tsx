@@ -208,7 +208,6 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
     const savedTabs = getFavoriteTabsFromStorage(getDataSourceVariable(this).getValue().toString());
 
     const tabOptions: TabOption[] = labels
-      .filter((l) => l.label !== '__stream_shard__' && l.label !== '__aggregated_metric__')
       .map((l) => {
         const savedIndex = savedTabs.indexOf(l.label);
         const option: TabOption = {

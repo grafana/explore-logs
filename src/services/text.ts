@@ -32,5 +32,5 @@ export function capitalizeFirstLetter(input: string) {
 }
 
 export function truncateText(input: string, length: number, ellipsis: boolean) {
-  return input.substring(0, length) + (ellipsis && input.length > length ? '...' : '');
+  return input.substring(0, length) + (ellipsis && input.length > length ? '…' : '');
 }
