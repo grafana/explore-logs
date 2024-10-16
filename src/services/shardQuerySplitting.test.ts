@@ -75,6 +75,14 @@ describe('runShardSplitQuery()', () => {
     });
   });
 
+  test('Does not run invalid queries', async () => {
+    request.targets[0].expr = '{ ,insight != ""}';
+    await expect(runShardSplitQuery(datasource, request)).toEmitValuesWith(() => {
+      // @ts-expect-error
+      expect(datasource.runQuery).toHaveBeenCalledTimes(0);
+    });
+  });
+
   test('Interpolates queries before running', async () => {
     await expect(runShardSplitQuery(datasource, request)).toEmitValuesWith(() => {
       expect(datasource.interpolateVariablesInQueries).toHaveBeenCalledTimes(1);

@@ -8,6 +8,7 @@ import { combineResponses } from './combineResponses';
 import { DataSourceWithBackend } from '@grafana/runtime';
 import { LokiQuery } from './lokiQuery';
 import { logger } from './logger';
+import { isValidQuery } from './logqlMatchers';
 
 /**
  * Query splitting by stream shards.
@@ -201,6 +202,13 @@ function splitQueriesByStreamShard(
 
   const response = new Observable<DataQueryResponse>((subscriber) => {
     const selector = getSelectorForShardValues(splittingTargets[0].expr);
+
+    if (!isValidQuery(selector)) {
+      console.log(`Skipping invalid selector: ${selector}`);
+      subscriber.complete();
+      return;
+    }
+
     datasource.languageProvider
       .fetchLabelValues('__stream_shard__', {
         timeRange: request.range,
