@@ -4,12 +4,12 @@
   "bundlewatch": {
     "files": [
       {
-        "path": "dist/module.js",
-        "maxSize": "62kB"
-      },
-      {
         "path": "dist/*.js",
         "maxSize": "175kB"
+      },
+      {
+        "path": "dist/module.js",
+        "maxSize": "30kB"
       }
     ]
   },
