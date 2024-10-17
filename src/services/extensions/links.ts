@@ -3,32 +3,39 @@ import { PluginExtensionLinkConfig, PluginExtensionPanelContext, PluginExtension
 
 import { SERVICE_NAME, VAR_DATASOURCE, VAR_FIELDS, VAR_LABELS } from 'services/variables';
 import pluginJson from '../../plugin.json';
-import { LokiQuery } from '../lokiQuery';
-import { getMatcherFromQuery } from '../logqlMatchers';
 import { LabelType } from '../fieldsTypes';
 import { FilterOp } from '../filters';
+import { getMatcherFromQuery } from '../logqlMatchers';
+import { LokiQuery } from '../lokiQuery';
 
 const title = 'Open in Explore Logs';
 const description = 'Open current query in the Explore Logs view';
 const icon = 'gf-logs';
 
-export const linkConfigs: PluginExtensionLinkConfig[] = [
+// `plugin.addLink` requires these types; unfortunately, the correct `PluginExtensionAddedLinkConfig` type is not exported with 11.2.x
+// TODO: fix this type when we move to `@grafana/data` 11.3.x
+export const linkConfigs: Array<
   {
-    extensionPointId: PluginExtensionPoints.DashboardPanelMenu,
+    targets: string | string[];
+    // eslint-disable-next-line deprecation/deprecation
+  } & Omit<PluginExtensionLinkConfig<PluginExtensionPanelContext>, 'type' | 'extensionPointId'>
+> = [
+  {
+    targets: PluginExtensionPoints.DashboardPanelMenu,
     title,
     description,
     icon,
     path: createAppUrl(),
     configure: contextToLink,
-  } as PluginExtensionLinkConfig,
+  },
   {
-    extensionPointId: PluginExtensionPoints.ExploreToolbarAction,
+    targets: PluginExtensionPoints.ExploreToolbarAction,
     title,
     description,
     icon,
     path: createAppUrl(),
     configure: contextToLink,
-  } as PluginExtensionLinkConfig,
+  },
 ];
 
 function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
