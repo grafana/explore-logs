@@ -8,6 +8,7 @@ import { combineResponses } from './combineResponses';
 import { DataSourceWithBackend } from '@grafana/runtime';
 import { LokiQuery } from './lokiQuery';
 import { logger } from './logger';
+import { isValidQuery } from './logqlMatchers';
 
 /**
  * Query splitting by stream shards.
@@ -153,7 +154,11 @@ function splitQueriesByStreamShard(
             return;
           }
         }
-        nextGroupSize = updateGroupSizeFromResponse(partialResponse, groupSize);
+        nextGroupSize = constrainGroupSize(
+          cycle + groupSize,
+          updateGroupSizeFromResponse(partialResponse, groupSize),
+          shards.length
+        );
         if (nextGroupSize !== groupSize) {
           debug(`New group size ${nextGroupSize}`);
         }
@@ -197,6 +202,13 @@ function splitQueriesByStreamShard(
 
   const response = new Observable<DataQueryResponse>((subscriber) => {
     const selector = getSelectorForShardValues(splittingTargets[0].expr);
+
+    if (!isValidQuery(selector)) {
+      console.log(`Skipping invalid selector: ${selector}`);
+      subscriber.complete();
+      return;
+    }
+
     datasource.languageProvider
       .fetchLabelValues('__stream_shard__', {
         timeRange: request.range,
@@ -243,27 +255,34 @@ function updateGroupSizeFromResponse(response: DataQueryResponse, currentSize: n
   );
 
   if (metaExecutionTime) {
+    const executionTime = Math.round(metaExecutionTime.value);
     debug(`${metaExecutionTime.value}`);
     // Positive scenarios
-    if (metaExecutionTime.value < 1) {
-      return currentSize * 2;
-    } else if (metaExecutionTime.value < 6) {
-      return currentSize + 2;
-    } else if (metaExecutionTime.value < 16) {
-      return currentSize + 1;
+    if (executionTime <= 1) {
+      return Math.floor(currentSize * 1.5);
+    } else if (executionTime < 6) {
+      return Math.ceil(currentSize * 1.1);
     }
 
     // Negative scenarios
     if (currentSize === 1) {
       return currentSize;
-    } else if (metaExecutionTime.value < 20) {
-      return currentSize - 1;
+    } else if (executionTime < 20) {
+      return Math.ceil(currentSize * 0.9);
     } else {
       return Math.floor(currentSize / 2);
     }
   }
 
   return currentSize;
+}
+
+/**
+ * Prevents the group size for ever being more than maxFactor% of the pending shards.
+ */
+function constrainGroupSize(cycle: number, groupSize: number, shards: number) {
+  const maxFactor = 0.7;
+  return Math.min(groupSize, Math.max(Math.floor((shards - cycle) * maxFactor), 1));
 }
 
 function groupShardRequests(shards: number[], start: number, groupSize: number) {

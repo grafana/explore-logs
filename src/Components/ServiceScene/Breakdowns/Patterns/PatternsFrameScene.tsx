@@ -192,7 +192,7 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
           targetBlank: false,
           onClick: (event) => {
             onPatternClick({
-              pattern: event.origin.name,
+              pattern: event.origin.labels.name,
               type: 'include',
               indexScene: logExploration,
             });
@@ -204,7 +204,7 @@ export class PatternsFrameScene extends SceneObjectBase<PatternsFrameSceneState>
           targetBlank: false,
           onClick: (event) => {
             onPatternClick({
-              pattern: event.origin.name,
+              pattern: event.origin.labels.name,
               type: 'exclude',
               indexScene: logExploration,
             });
