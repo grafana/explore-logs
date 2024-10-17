@@ -52,7 +52,7 @@ import { buildDataQuery, buildResourceQuery } from 'services/query';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getQueryRunner, getSceneQueryRunner, setLevelColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
-import { NoVolumeError } from './NoVolumeError';
+import { NoServiceSearchResults } from './NoServiceSearchResults';
 import { getLabelsFromSeries, toggleLevelVisibility } from 'services/levels';
 import { ServiceFieldSelector } from '../ServiceScene/Breakdowns/FieldSelector';
 import { CustomConstantVariable } from '../../services/CustomConstantVariable';
@@ -73,6 +73,7 @@ import { IndexScene } from '../IndexScene/IndexScene';
 import { ServiceSelectionTabsScene } from './ServiceSelectionTabsScene';
 import { FavoriteServiceHeaderActionScene } from './FavoriteServiceHeaderActionScene';
 import { pushUrlHandler } from '../../services/navigate';
+import { NoServiceVolume } from './NoServiceVolume';
 
 // @ts-expect-error
 const aggregatedMetricsEnabled: boolean | undefined = config.featureToggles.exploreLogsAggregatedMetrics;
@@ -260,7 +261,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     const selectedTab = model.getSelectedTab();
 
     const serviceStringVariable = getServiceSelectionSearchVariable(model);
-    const { label } = serviceStringVariable.useState();
+    const { label, value: searchValue } = serviceStringVariable.useState();
+    const hasSearch = searchValue && searchValue !== '.+';
+
+    console.log('serviceStringVariable', { serviceStringVariable, label, searchValue });
 
     const { labelsByVolume, labelsToQuery } = model.getLabels(data?.series);
     const isLogVolumeLoading =
@@ -315,7 +319,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           </Field>
           {/** If we don't have any servicesByVolume, volume endpoint is probably not enabled */}
           {!isLogVolumeLoading && volumeApiError && <ConfigureVolumeError />}
-          {!isLogVolumeLoading && !volumeApiError && !labelsByVolume?.length && <NoVolumeError />}
+          {!isLogVolumeLoading && !volumeApiError && hasSearch && !labelsByVolume?.length && <NoServiceSearchResults />}
+          {!isLogVolumeLoading && !volumeApiError && !hasSearch && !labelsByVolume?.length && (
+            <NoServiceVolume labelName={selectedTab} />
+          )}
           {labelsToQuery && labelsToQuery.length > 0 && (
             <div className={styles.body}>
               <body.Component model={body} />
