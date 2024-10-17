@@ -92,3 +92,27 @@ export function getMatcherFromQuery(query: string): Filter[] {
 
   return filter;
 }
+
+export function isQueryWithNode(query: string, nodeType: number): boolean {
+  let isQueryWithNode = false;
+  const tree = parser.parse(query);
+  tree.iterate({
+    enter: ({ type }): false | void => {
+      if (type.id === nodeType) {
+        isQueryWithNode = true;
+        return false;
+      }
+    },
+  });
+  return isQueryWithNode;
+}
+
+/**
+ * Parses the query and looks for error nodes. If there is at least one, it returns true.
+ * Grafana variables are considered errors, so if you need to validate a query
+ * with variables you should interpolate it first.
+ */
+export const ErrorId = 0;
+export function isValidQuery(query: string): boolean {
+  return isQueryWithNode(query, ErrorId) === false;
+}
