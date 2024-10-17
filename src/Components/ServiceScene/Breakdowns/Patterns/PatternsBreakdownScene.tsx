@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import React from 'react';
 
-import { DataFrame, dateTime, GrafanaTheme2 } from '@grafana/data';
+import { DataFrame, dateTime, GrafanaTheme2, LoadingState } from '@grafana/data';
 import {
   CustomVariable,
   SceneComponentProps,
@@ -114,8 +114,19 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
   private onDataChange = (newState: SceneDataState, prevState: SceneDataState) => {
     const newFrames = newState.data?.series;
     const prevFrames = prevState.data?.series;
-    if (!areArraysEqual(newFrames, prevFrames) || this.state.loading) {
-      this.updatePatternFrames(newFrames);
+
+    if (newState.data?.state === LoadingState.Done) {
+      this.setState({
+        loading: false,
+      });
+
+      if (!areArraysEqual(newFrames, prevFrames)) {
+        this.updatePatternFrames(newFrames);
+      }
+    } else if (newState.data?.state === LoadingState.Loading) {
+      this.setState({
+        loading: true,
+      });
     }
   };
 
@@ -145,7 +156,6 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
 
     this.setState({
       patternFrames,
-      loading: false,
     });
   }
 
