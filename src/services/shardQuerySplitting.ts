@@ -255,18 +255,19 @@ function updateGroupSizeFromResponse(response: DataQueryResponse, currentSize: n
   );
 
   if (metaExecutionTime) {
+    const executionTime = Math.round(metaExecutionTime.value);
     debug(`${metaExecutionTime.value}`);
     // Positive scenarios
-    if (metaExecutionTime.value < 1) {
+    if (executionTime <= 1) {
       return Math.floor(currentSize * 1.5);
-    } else if (metaExecutionTime.value < 6) {
+    } else if (executionTime < 6) {
       return Math.ceil(currentSize * 1.1);
     }
 
     // Negative scenarios
     if (currentSize === 1) {
       return currentSize;
-    } else if (metaExecutionTime.value < 20) {
+    } else if (executionTime < 20) {
       return Math.ceil(currentSize * 0.9);
     } else {
       return Math.floor(currentSize / 2);
@@ -280,8 +281,8 @@ function updateGroupSizeFromResponse(response: DataQueryResponse, currentSize: n
  * Prevents the group size for ever being more than maxFactor% of the pending shards.
  */
 function constrainGroupSize(cycle: number, groupSize: number, shards: number) {
-  const maxFactor = 0.5;
-  return Math.min(groupSize, Math.max(Math.ceil((shards - cycle) * maxFactor), 1));
+  const maxFactor = 0.7;
+  return Math.min(groupSize, Math.max(Math.floor((shards - cycle) * maxFactor), 1));
 }
 
 function groupShardRequests(shards: number[], start: number, groupSize: number) {
