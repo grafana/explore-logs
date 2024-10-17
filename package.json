@@ -11,7 +11,10 @@
         "path": "dist/module.js",
         "maxSize": "30kB"
       }
-    ]
+    ],
+    "ci": {
+      "trackBranches": ["main"]
+    }
   },
   "description": "Query less exploration of log data stored in Loki",
   "scripts": {
