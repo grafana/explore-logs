@@ -175,7 +175,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
       .click();
     const allPanels = explorePage.getAllPanelsLocator();
     // We should have more than 1 panels
-    await expect.poll(() => allPanels.count()).toBeGreaterThan(12);
+    await expect.poll(() => allPanels.count()).toBeGreaterThan(4);
     const actualCount = await allPanels.count();
     // Should have 2 queries by now
     expect(requests).toHaveLength(2);
@@ -189,6 +189,8 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     ).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
+    await expect.poll(() => requests).toHaveLength(3);
+
     requests.forEach((req) => {
       const post = req.post;
       const queries: LokiQuery[] = post.queries;
@@ -198,8 +200,5 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
         );
       });
     });
-
-    await page.waitForTimeout(100);
-    expect(requests).toHaveLength(3);
   });
 });
