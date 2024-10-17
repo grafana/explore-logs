@@ -59,6 +59,8 @@ jobs:
         run: yarn test:ci
       - name: Build frontend
         run: yarn build
+      - name: Check bundlesize
+        run: yarn run bundlewatch
       - name: Start grafana docker
         run: yarn server:ci
       - name: Install Playwright Browsers
