@@ -1,6 +1,13 @@
 import React from 'react';
 
-import { AdHocVariableFilter, SelectableValue } from '@grafana/data';
+import {
+  AdHocVariableFilter,
+  DataSourceGetTagKeysOptions,
+  DataSourceGetTagValuesOptions,
+  GetTagResponse,
+  MetricFindValue,
+  SelectableValue,
+} from '@grafana/data';
 import {
   AdHocFiltersVariable,
   CustomVariable,
@@ -38,8 +45,9 @@ import { FilterOp } from 'services/filters';
 import { getDrilldownSlug, PageSlugs } from '../../services/routing';
 import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LoadingPlaceholder } from '@grafana/ui';
-import { config, locationService } from '@grafana/runtime';
+import { config, DataSourceWithBackend, getDataSourceSrv, locationService } from '@grafana/runtime';
 import {
+  getLogQLLabelGroups,
   renderLogQLFieldFilters,
   renderLogQLLabelFilters,
   renderLogQLMetadataFilters,
@@ -49,12 +57,23 @@ import { VariableHide } from '@grafana/schema';
 import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 import {
   getFieldsVariable,
+  getLabelsVariable,
   getLevelsVariable,
   getPatternsVariable,
   getUrlParamNameForVariable,
 } from '../../services/variableGetters';
 import { ToolbarScene } from './ToolbarScene';
 import { OptionalRouteMatch } from '../Pages';
+import { getDataSource } from '../../services/scenes';
+import { LokiQuery } from '../../services/lokiQuery';
+import { logger } from '../../services/logger';
+import { isArray } from 'lodash';
+
+//@todo export from scenes
+interface AdHocFilterWithLabels extends AdHocVariableFilter {
+  keyLabel?: string;
+  valueLabels?: string[];
+}
 
 export interface AppliedPattern {
   pattern: string;
@@ -69,6 +88,33 @@ export interface IndexSceneState extends SceneObjectState {
   initialFilters?: AdHocVariableFilter[];
   patterns?: AppliedPattern[];
   routeMatch?: OptionalRouteMatch;
+}
+
+function joinTagFilters(variable: AdHocFiltersVariable) {
+  const { positiveGroups, negative } = getLogQLLabelGroups(variable.state.filters);
+
+  const filters: AdHocFilterWithLabels[] = [];
+  for (const key in positiveGroups) {
+    const values = positiveGroups[key].map((filter) => filter.value);
+    if (values.length === 1) {
+      filters.push({
+        key,
+        value: positiveGroups[key][0].value,
+        operator: '=',
+      });
+    } else {
+      filters.push({
+        key,
+        value: values.join('|'),
+        operator: '=~',
+      });
+    }
+  }
+
+  negative.forEach((filter) => {
+    filters.push(filter);
+  });
+  return filters;
 }
 
 export class IndexScene extends SceneObjectBase<IndexSceneState> {
@@ -119,12 +165,89 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     return <LoadingPlaceholder text={'Loading...'} />;
   };
 
+  private getTagKeysProvider = async (
+    variable: AdHocFiltersVariable
+  ): Promise<{
+    replace?: boolean;
+    values: GetTagResponse | MetricFindValue[];
+  }> => {
+    const datasource_ = await getDataSourceSrv().get(getDataSource(this));
+    if (!(datasource_ instanceof DataSourceWithBackend)) {
+      logger.error(new Error('getTagKeysProvider: Invalid datasource!'));
+      throw new Error('Invalid datasource!');
+    }
+    const datasource = datasource_ as DataSourceWithBackend<LokiQuery>;
+
+    if (datasource && datasource.getTagKeys) {
+      const filters = joinTagFilters(variable);
+
+      const options: DataSourceGetTagKeysOptions<LokiQuery> = {
+        filters,
+      };
+
+      const result = await datasource.getTagKeys(options);
+      return { replace: true, values: result };
+    } else {
+      logger.error(new Error('getTagKeysProvider: missing or invalid datasource!'));
+      return { replace: true, values: [] };
+    }
+  };
+
+  private getTagValuesProvider = async (
+    variable: AdHocFiltersVariable,
+    filter: AdHocFilterWithLabels
+  ): Promise<{
+    replace?: boolean;
+    values: GetTagResponse | MetricFindValue[];
+  }> => {
+    const datasource_ = await getDataSourceSrv().get(getDataSource(this));
+    if (!(datasource_ instanceof DataSourceWithBackend)) {
+      logger.error(new Error('getTagValuesProvider: Invalid datasource!'));
+      throw new Error('Invalid datasource!');
+    }
+    const datasource = datasource_ as DataSourceWithBackend<LokiQuery>;
+
+    if (datasource && datasource.getTagValues) {
+      // Filter out other values for this key so users can include other values for this label
+      const filters = joinTagFilters(variable).filter((f) => !(filter.operator === '=' && f.key === filter.key));
+
+      const options: DataSourceGetTagValuesOptions<LokiQuery> = {
+        key: filter.key,
+        filters,
+      };
+      let results = await datasource.getTagValues(options);
+
+      if (isArray(results)) {
+        results = results.filter((result) => {
+          // Filter out values that we already have added as filters
+          return !variable.state.filters
+            .filter((f) => f.key === filter.key)
+            .some((f) => {
+              // If true, the results should be filtered out
+              return f.operator === '=' && f.value === result.text;
+            });
+        });
+      }
+
+      return { replace: true, values: results };
+    } else {
+      logger.error(new Error('getTagValuesProvider: missing or invalid datasource!'));
+      return { replace: true, values: [] };
+    }
+  };
+
   public onActivate() {
     const stateUpdate: Partial<IndexSceneState> = {};
 
     if (!this.state.contentScene) {
       stateUpdate.contentScene = getContentScene(this.state.routeMatch?.params.breakdownLabel);
     }
+
+    const labelsVar = getLabelsVariable(this);
+    labelsVar.setState({
+      getTagKeysProvider: this.getTagKeysProvider,
+      getTagValuesProvider: this.getTagValuesProvider,
+    });
 
     this.setState(stateUpdate);
 
@@ -205,6 +328,8 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     hide: VariableHide.hideLabel,
     key: 'adhoc_service_filter',
     supportsMultiValueOperators: true,
+    getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
+    getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
   });
 
   labelVariable._getOperators = function () {
@@ -250,6 +375,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
     expressionBuilder: renderLogQLMetadataFilters,
     hide: VariableHide.hideLabel,
+    supportsMultiValueOperators: true,
   });
 
   levelsVariable._getOperators = () => {

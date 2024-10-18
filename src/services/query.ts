@@ -49,11 +49,16 @@ const defaultQueryParams = {
   supportingQueryType: PLUGIN_ID,
 };
 
-export function renderLogQLLabelFilters(filters: AdHocVariableFilter[]) {
+export function getLogQLLabelGroups(filters: AdHocVariableFilter[]) {
   const positive = filters.filter((filter) => filter.operator === FilterOp.Equal);
   const negative = filters.filter((filter) => filter.operator === FilterOp.NotEqual);
 
   const positiveGroups = groupBy(positive, (filter) => filter.key);
+  return { negative, positiveGroups };
+}
+
+export function getLogQLLabelFilters(filters: AdHocVariableFilter[]) {
+  const { negative, positiveGroups } = getLogQLLabelGroups(filters);
 
   let positiveFilters: string[] = [];
   for (const key in positiveGroups) {
@@ -63,9 +68,16 @@ export function renderLogQLLabelFilters(filters: AdHocVariableFilter[]) {
     );
   }
 
+  return { positiveFilters, negative };
+}
+
+export function renderLogQLLabelFilters(filters: AdHocVariableFilter[]) {
+  let { positiveFilters, negative } = getLogQLLabelFilters(filters);
   const negativeFilters = negative.map((filter) => renderMetadata(filter)).join(', ');
 
-  return trim(`${positiveFilters.join(', ')}, ${negativeFilters}`, ' ,');
+  const result = trim(`${positiveFilters.join(', ')}, ${negativeFilters}`, ' ,');
+  console.log('renderLogQLLabelFilters', result);
+  return result;
 }
 
 export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
@@ -118,7 +130,7 @@ function fieldFilterToQueryString(filter: AdHocVariableFilter) {
   return `${filter.key}${filter.operator}\`${value}\``;
 }
 
-function renderRegexLabelFilter(key: string, values: string[]) {
+export function renderRegexLabelFilter(key: string, values: string[]) {
   return `${key}=~"${values.join('|')}"`;
 }
 
