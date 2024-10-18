@@ -73,6 +73,7 @@ import { IndexScene } from '../IndexScene/IndexScene';
 import { ServiceSelectionTabsScene } from './ServiceSelectionTabsScene';
 import { FavoriteServiceHeaderActionScene } from './FavoriteServiceHeaderActionScene';
 import { pushUrlHandler } from '../../services/navigate';
+import { AddLabelToFiltersHeaderActionScene } from './AddLabelToFiltersHeaderActionScene';
 
 // @ts-expect-error
 const aggregatedMetricsEnabled: boolean | undefined = config.featureToggles.exploreLogsAggregatedMetrics;
@@ -431,6 +432,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           labelName: primaryLabelName,
           labelValue: primaryLabelValue,
         }),
+        new AddLabelToFiltersHeaderActionScene({
+          name: primaryLabelName,
+          value: primaryLabelValue,
+        }),
         new SelectServiceButton({ labelValue: primaryLabelValue, labelName: primaryLabelName }),
       ])
       .build();
@@ -760,7 +765,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     const filter = primaryLabelVar.state.filters[0];
     if (serviceLabelVar.state.value === AGGREGATED_SERVICE_NAME) {
       if (filter.key === SERVICE_NAME) {
-        return `sum by (${LEVEL_VARIABLE_VALUE}) (sum_over_time({${AGGREGATED_SERVICE_NAME}=\`${labelValue}\`} | logfmt | unwrap count [$__auto]))`;
+        return `sum by (${LEVEL_VARIABLE_VALUE}) (sum_over_time({${AGGREGATED_SERVICE_NAME}=\`${labelValue}\` } | logfmt | unwrap count [$__auto]))`;
       } else {
         return `sum by (${LEVEL_VARIABLE_VALUE}) (sum_over_time({${AGGREGATED_SERVICE_NAME}=~\`.+\` } | logfmt | ${filter.key}=\`${labelValue}\` | unwrap count [$__auto]))`;
       }

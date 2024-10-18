@@ -198,12 +198,13 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
   const labelVariable = new AdHocFiltersVariable({
     name: VAR_LABELS,
     datasource: EXPLORATION_DS,
-    layout: 'vertical',
+    layout: 'combobox',
     label: 'Service',
     filters: initialFilters ?? [],
     expressionBuilder: renderLogQLLabelFilters,
     hide: VariableHide.hideLabel,
     key: 'adhoc_service_filter',
+    supportsMultiValueOperators: true,
   });
 
   labelVariable._getOperators = function () {
