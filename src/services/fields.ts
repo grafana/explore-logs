@@ -18,6 +18,7 @@ import { averageFields } from '../Components/ServiceScene/Breakdowns/FieldsBreak
 import { getLogsStreamSelector, getValueFromFieldsFilter } from './variableGetters';
 import { LabelType } from './fieldsTypes';
 import { logger } from './logger';
+import { AddToExplorationButton } from 'Components/ServiceScene/Breakdowns/AddToExplorationButton';
 
 export type DetectedLabel = {
   label: string;
@@ -110,7 +111,8 @@ export function getFilterBreakdownValueScene(
   getTitle: (df: DataFrame) => string,
   style: DrawStyle,
   variableName: typeof VAR_FIELDS | typeof VAR_LABELS,
-  sortByScene: SortByScene
+  sortByScene: SortByScene,
+  labelKey?: string
 ) {
   return (frame: DataFrame, frameIndex: number) => {
     const reducerID = getReducerId(sortByScene.state.sortBy);
@@ -125,7 +127,10 @@ export function getFilterBreakdownValueScene(
       )
       .setColor({ mode: 'fixed', fixedColor: getColorByIndex(frameIndex) })
       .setOverrides(setLevelColorOverrides)
-      .setHeaderActions(new AddToFiltersButton({ frame, variableName }));
+      .setHeaderActions([
+        new AddToFiltersButton({ frame, variableName }),
+        new AddToExplorationButton({ frame, fieldName: getTitle(frame), labelName: labelKey }),
+      ]);
 
     if (style === DrawStyle.Bars) {
       panel
