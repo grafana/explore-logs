@@ -24,15 +24,21 @@ export function selectLabel(primaryLabelName: string, primaryLabelValue: string,
     label: primaryLabelName,
   });
 
+  const filteredFilters = variable.state.filters.filter(
+    (f) => !(f.key === primaryLabelName && f.value === primaryLabelValue)
+  );
+
+  const filters = [
+    ...filteredFilters,
+    {
+      key: primaryLabelName,
+      operator: FilterOp.Equal,
+      value: primaryLabelValue,
+    },
+  ];
+
   variable.setState({
-    filters: [
-      ...variable.state.filters.filter((f) => f.key !== primaryLabelName),
-      {
-        key: primaryLabelName,
-        operator: FilterOp.Equal,
-        value: primaryLabelValue,
-      },
-    ],
+    filters,
     hide: VariableHide.hideLabel,
   });
   const ds = getDataSourceVariable(sceneRef).getValue();

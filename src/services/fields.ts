@@ -9,7 +9,15 @@ import {
 } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
 import { AddToFiltersButton, VariableFilterType } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
-import { LEVEL_VARIABLE_VALUE, LogsQueryOptions, ParserType, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from './variables';
+import {
+  LEVEL_VARIABLE_VALUE,
+  LogsQueryOptions,
+  ParserType,
+  VAR_FIELDS,
+  VAR_LABELS,
+  VAR_LEVELS,
+  VAR_METADATA,
+} from './variables';
 import { setLevelColorOverrides } from './panel';
 import { map, Observable } from 'rxjs';
 import { SortBy, SortByScene } from '../Components/ServiceScene/Breakdowns/SortByScene';
@@ -109,7 +117,7 @@ export function getParserForField(fieldName: string, sceneRef: SceneObject): Par
 export function getFilterBreakdownValueScene(
   getTitle: (df: DataFrame) => string,
   style: DrawStyle,
-  variableName: typeof VAR_FIELDS | typeof VAR_LABELS,
+  variableName: typeof VAR_FIELDS | typeof VAR_LABELS | typeof VAR_METADATA,
   sortByScene: SortByScene
 ) {
   return (frame: DataFrame, frameIndex: number) => {
@@ -179,7 +187,18 @@ export function getLabelTypeFromFrame(labelKey: string, frame: DataFrame, index 
   }
 }
 
-export function getFilterTypeFromLabelType(type: LabelType | null, key: string, value: string): VariableFilterType {
+export function getFilterTypeFromLabelType(
+  type: LabelType | null,
+  key: string,
+  value: string,
+  sceneRef: SceneObject
+): VariableFilterType {
+  const parserForThisField = getParserForField(key, sceneRef);
+
+  if (parserForThisField === 'structuredMetadata') {
+    return VAR_METADATA;
+  }
+
   switch (type) {
     case LabelType.Indexed: {
       return VAR_LABELS;

@@ -74,6 +74,7 @@ import { ServiceSelectionTabsScene } from './ServiceSelectionTabsScene';
 import { FavoriteServiceHeaderActionScene } from './FavoriteServiceHeaderActionScene';
 import { pushUrlHandler } from '../../services/navigate';
 import { NoServiceVolume } from './NoServiceVolume';
+import { AddLabelToFiltersHeaderActionScene } from './AddLabelToFiltersHeaderActionScene';
 
 // @ts-expect-error
 const aggregatedMetricsEnabled: boolean | undefined = config.featureToggles.exploreLogsAggregatedMetrics;
@@ -209,9 +210,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
    * Unused, but required
    * @param values
    */
-  updateFromUrl(values: SceneObjectUrlValues) {
-    console.log('updateFromUrl', values);
-  }
+  updateFromUrl(values: SceneObjectUrlValues) {}
 
   addDatasourceChangeToBrowserHistory(newDs: string) {
     const location = locationService.getLocation();
@@ -435,6 +434,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           ds: datasourceVar.getValue()?.toString(),
           labelName: primaryLabelName,
           labelValue: primaryLabelValue,
+        }),
+        new AddLabelToFiltersHeaderActionScene({
+          name: primaryLabelName,
+          value: primaryLabelValue,
         }),
         new SelectServiceButton({ labelValue: primaryLabelValue, labelName: primaryLabelName }),
       ])
@@ -765,7 +768,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     const filter = primaryLabelVar.state.filters[0];
     if (serviceLabelVar.state.value === AGGREGATED_SERVICE_NAME) {
       if (filter.key === SERVICE_NAME) {
-        return `sum by (${LEVEL_VARIABLE_VALUE}) (sum_over_time({${AGGREGATED_SERVICE_NAME}=\`${labelValue}\`} | logfmt | unwrap count [$__auto]))`;
+        return `sum by (${LEVEL_VARIABLE_VALUE}) (sum_over_time({${AGGREGATED_SERVICE_NAME}=\`${labelValue}\` } | logfmt | unwrap count [$__auto]))`;
       } else {
         return `sum by (${LEVEL_VARIABLE_VALUE}) (sum_over_time({${AGGREGATED_SERVICE_NAME}=~\`.+\` } | logfmt | ${filter.key}=\`${labelValue}\` | unwrap count [$__auto]))`;
       }

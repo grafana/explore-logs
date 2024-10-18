@@ -31,7 +31,7 @@ export class LogsTableScene extends SceneObjectBase {
       const { key, value } = filter;
 
       const labelType = dataFrame ? getLabelTypeFromFrame(key, dataFrame) : LabelType.Parsed;
-      const variableType = getFilterTypeFromLabelType(labelType, key, value);
+      const variableType = getFilterTypeFromLabelType(labelType, key, value, model);
       addAdHocFilter(filter, parentModel, variableType);
     };
 

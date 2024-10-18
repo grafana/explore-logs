@@ -6,6 +6,7 @@ import { LabelType } from './fieldsTypes';
 export enum FilterOp {
   Equal = '=',
   NotEqual = '!=',
+  RegexEqual = '=~',
 }
 
 export type Filter = {
