@@ -14,7 +14,7 @@ import React from 'react';
 import { LogsListScene } from './LogsListScene';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { addToFilters, FilterType } from './Breakdowns/AddToFiltersButton';
-import { getDesiredVariableForLabel } from '../../services/fields';
+import { getVariableForLabel } from '../../services/fields';
 import { VAR_FIELDS, VAR_LABELS, VAR_LEVELS, VAR_METADATA } from '../../services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { getAdHocFiltersVariable, getValueFromFieldsFilter } from '../../services/variableGetters';
@@ -181,7 +181,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
   };
 
   private handleLabelFilter(key: string, value: string, frame: DataFrame | undefined, operator: FilterType) {
-    const variableType = getDesiredVariableForLabel(frame, key, this);
+    const variableType = getVariableForLabel(frame, key, this);
 
     addToFilters(key, value, operator, this, variableType);
 

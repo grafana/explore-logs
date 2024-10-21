@@ -193,7 +193,7 @@ export function getLabelTypeFromFrame(labelKey: string, frame: DataFrame, index 
  * @param key
  * @param sceneRef
  */
-export function getDesiredVariableForLabel(
+export function getVariableForLabel(
   frame: DataFrame | undefined,
   key: string,
   sceneRef: SceneObject

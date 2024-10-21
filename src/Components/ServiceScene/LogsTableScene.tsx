@@ -9,7 +9,7 @@ import { css } from '@emotion/css';
 import { addAdHocFilter } from './Breakdowns/AddToFiltersButton';
 import { areArraysEqual } from '../../services/comparison';
 import { getLogsPanelFrame } from './ServiceScene';
-import { getDesiredVariableForLabel } from '../../services/fields';
+import { getVariableForLabel } from '../../services/fields';
 
 export class LogsTableScene extends SceneObjectBase {
   public static Component = ({ model }: SceneComponentProps<LogsTableScene>) => {
@@ -27,7 +27,7 @@ export class LogsTableScene extends SceneObjectBase {
 
     // Define callback function to update filters in react
     const addFilter = (filter: AdHocVariableFilter) => {
-      const variableType = getDesiredVariableForLabel(dataFrame, filter.key, model);
+      const variableType = getVariableForLabel(dataFrame, filter.key, model);
       addAdHocFilter(filter, parentModel, variableType);
     };
 
