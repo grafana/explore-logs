@@ -234,6 +234,11 @@ export function getFilterTypeFromLabelType(type: LabelType, key: string): Variab
       }
       return VAR_METADATA;
     }
+    default: {
+      const err = new Error(`Invalid label type for ${key}`);
+      logger.error(err, { type, msg: `Invalid label type for ${key}` });
+      throw err;
+    }
   }
 }
 
