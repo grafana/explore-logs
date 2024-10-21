@@ -14,11 +14,10 @@ import React from 'react';
 import { LogsListScene } from './LogsListScene';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { addToFilters, FilterType } from './Breakdowns/AddToFiltersButton';
-import { getFilterTypeFromLabelType, getLabelTypeFromFrame } from '../../services/fields';
-import { VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from '../../services/variables';
+import { getDesiredVariableForLabel } from '../../services/fields';
+import { VAR_FIELDS, VAR_LABELS, VAR_LEVELS, VAR_METADATA } from '../../services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
-import { getAdHocFiltersVariable } from '../../services/variableGetters';
-import { LabelType } from '../../services/fieldsTypes';
+import { getAdHocFiltersVariable, getValueFromFieldsFilter } from '../../services/variableGetters';
 
 interface LogsPanelSceneState extends SceneObjectState {
   body?: VizPanel;
@@ -134,14 +133,36 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     const labels = getAdHocFiltersVariable(VAR_LABELS, this);
     const fields = getAdHocFiltersVariable(VAR_FIELDS, this);
     const levels = getAdHocFiltersVariable(VAR_LEVELS, this);
+    const metadata = getAdHocFiltersVariable(VAR_METADATA, this);
 
-    const hasKeyValueFilter = (filter: AdHocFiltersVariable | null) =>
-      filter &&
-      filter.state.filters.findIndex(
-        (filter) => filter.operator === '=' && filter.key === key && filter.value === value
-      ) >= 0;
+    const hasKeyValueFilter = (filter: AdHocFiltersVariable | null) => {
+      return (
+        filter &&
+        filter.state.filters.findIndex(
+          (filter) => filter.operator === '=' && filter.key === key && filter.value === value
+        ) >= 0
+      );
+    };
 
-    return hasKeyValueFilter(labels) || hasKeyValueFilter(fields) || hasKeyValueFilter(levels);
+    // Fields have json encoded values unlike the other variables, get the value for the matching filter and parse it before comparing
+    const hasKeyValueFilterField = (filter: AdHocFiltersVariable | null) => {
+      if (filter) {
+        const fieldFilter = filter.state.filters.find((filter) => filter.operator === '=' && filter.key === key);
+
+        if (fieldFilter) {
+          const fieldValue = getValueFromFieldsFilter(fieldFilter, key);
+          return fieldValue.value === value;
+        }
+      }
+      return false;
+    };
+
+    return (
+      hasKeyValueFilter(labels) ||
+      hasKeyValueFilterField(fields) ||
+      hasKeyValueFilter(levels) ||
+      hasKeyValueFilter(metadata)
+    );
   };
 
   private handleFilterStringClick = (value: string) => {
@@ -160,15 +181,15 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
   };
 
   private handleLabelFilter(key: string, value: string, frame: DataFrame | undefined, operator: FilterType) {
-    const labelType = frame ? getLabelTypeFromFrame(key, frame) : LabelType.Parsed;
-    const variableName = getFilterTypeFromLabelType(labelType, key, value, this);
-    addToFilters(key, value, operator, this, variableName);
+    const variableType = getDesiredVariableForLabel(frame, key, this);
+
+    addToFilters(key, value, operator, this, variableType);
 
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.logs_detail_filter_applied,
       {
-        filterType: variableName,
+        filterType: variableType,
         key,
         action: operator,
       }

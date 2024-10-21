@@ -187,18 +187,39 @@ export function getLabelTypeFromFrame(labelKey: string, frame: DataFrame, index 
   }
 }
 
-export function getFilterTypeFromLabelType(
-  type: LabelType | null,
+/**
+ * Returns the variable to use when adding filters in a panel.
+ * @param frame
+ * @param key
+ * @param sceneRef
+ */
+export function getDesiredVariableForLabel(
+  frame: DataFrame | undefined,
   key: string,
-  value: string,
   sceneRef: SceneObject
 ): VariableFilterType {
-  const parserForThisField = getParserForField(key, sceneRef);
+  const labelType = frame ? getLabelTypeFromFrame(key, frame) : LabelType.Parsed;
 
+  if (labelType) {
+    // Otherwise use the labelType from the dataframe
+    return getFilterTypeFromLabelType(labelType, key);
+  }
+
+  // If the dataframe doesn't have labelTypes, check if the detected_fields response returned a parser.
+  const parserForThisField = getParserForField(key, sceneRef);
   if (parserForThisField === 'structuredMetadata') {
     return VAR_METADATA;
   }
 
+  logger.warn('unable to determine label variable, falling back to parsed field', {
+    key,
+    parserForThisField: parserForThisField ?? '',
+  });
+
+  return VAR_FIELDS;
+}
+
+export function getFilterTypeFromLabelType(type: LabelType, key: string): VariableFilterType {
   switch (type) {
     case LabelType.Indexed: {
       return VAR_LABELS;
@@ -211,12 +232,7 @@ export function getFilterTypeFromLabelType(
       if (key === LEVEL_VARIABLE_VALUE) {
         return VAR_LEVELS;
       }
-      return VAR_FIELDS;
-    }
-    default: {
-      const err = new Error(`Invalid label type for ${key}`);
-      logger.error(err, { value, msg: `Invalid label type for ${key}` });
-      throw err;
+      return VAR_METADATA;
     }
   }
 }
