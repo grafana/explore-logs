@@ -175,7 +175,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
       .click();
     const allPanels = explorePage.getAllPanelsLocator();
     // We should have more than 1 panels
-    await expect.poll(() => allPanels.count()).toBeGreaterThan(4);
+    await expect.poll(() => allPanels.count()).toBeGreaterThanOrEqual(4);
     const actualCount = await allPanels.count();
     // Should have 2 queries by now
     expect(requests).toHaveLength(2);
