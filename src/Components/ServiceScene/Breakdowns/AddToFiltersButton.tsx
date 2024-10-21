@@ -4,7 +4,7 @@ import { AdHocVariableFilter, BusEventBase, DataFrame } from '@grafana/data';
 import { SceneComponentProps, SceneObject, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { VariableHide } from '@grafana/schema';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from 'services/variables';
+import { LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS, VAR_LEVELS, VAR_METADATA } from 'services/variables';
 import { FilterButton } from 'Components/FilterButton';
 import { FilterOp } from 'services/filters';
 import { getDetectedLabelsFrame } from '../ServiceScene';
@@ -36,7 +36,7 @@ export function addAdHocFilter(filter: AdHocVariableFilter, scene: SceneObject, 
   addToFilters(filter.key, filter.value, type, scene, variableType);
 }
 
-export type VariableFilterType = typeof VAR_LABELS | typeof VAR_FIELDS | typeof VAR_LEVELS;
+export type VariableFilterType = typeof VAR_LABELS | typeof VAR_FIELDS | typeof VAR_LEVELS | typeof VAR_METADATA;
 
 export function addToFilters(
   key: string,

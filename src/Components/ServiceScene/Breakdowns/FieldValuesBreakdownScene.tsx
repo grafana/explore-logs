@@ -19,9 +19,9 @@ import { LayoutSwitcher } from './LayoutSwitcher';
 import { getQueryRunner } from '../../../services/panel';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { Alert, DrawStyle, LoadingPlaceholder } from '@grafana/ui';
-import { buildFieldsQueryString, getFilterBreakdownValueScene } from '../../../services/fields';
+import { buildFieldsQueryString, getFilterBreakdownValueScene, getParserForField } from '../../../services/fields';
 import { getLabelValue } from './SortByScene';
-import { VAR_FIELDS } from '../../../services/variables';
+import { VAR_FIELDS, VAR_METADATA } from '../../../services/variables';
 import React from 'react';
 import { FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS, FieldsBreakdownScene } from './FieldsBreakdownScene';
 import { AddFilterEvent } from './AddToFiltersButton';
@@ -158,12 +158,14 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
 
   private build(query: LokiQuery) {
     const groupByVariable = getFieldGroupByVariable(this);
-    const tagKey = String(groupByVariable.state.value);
+    const optionValue = String(groupByVariable.state.value);
 
     const { sortBy, direction } = getSortByPreference('fields', DEFAULT_SORT_BY, 'desc');
 
     const fieldsBreakdownScene = sceneGraph.getAncestor(this, FieldsBreakdownScene);
     const getFilter = () => fieldsBreakdownScene.state.search.state.filter ?? '';
+
+    const parserForThisField = getParserForField(optionValue, this);
 
     return new LayoutSwitcher({
       options: [
@@ -178,7 +180,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
           children: [
             new SceneFlexItem({
               minHeight: 300,
-              body: PanelBuilders.timeseries().setTitle(tagKey).build(),
+              body: PanelBuilders.timeseries().setTitle(optionValue).build(),
             }),
           ],
         }),
@@ -198,9 +200,9 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
           getLayoutChild: getFilterBreakdownValueScene(
             getLabelValue,
             query?.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-            VAR_FIELDS,
+            parserForThisField === 'structuredMetadata' ? VAR_METADATA : VAR_FIELDS,
             sceneGraph.getAncestor(this, FieldsBreakdownScene).state.sort,
-            tagKey
+            optionValue
           ),
           sortBy,
           direction,
@@ -222,9 +224,9 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
           getLayoutChild: getFilterBreakdownValueScene(
             getLabelValue,
             query?.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-            VAR_FIELDS,
+            parserForThisField === 'structuredMetadata' ? VAR_METADATA : VAR_FIELDS,
             sceneGraph.getAncestor(this, FieldsBreakdownScene).state.sort,
-            tagKey
+            optionValue
           ),
           sortBy,
           direction,
