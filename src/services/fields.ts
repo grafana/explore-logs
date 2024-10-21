@@ -9,7 +9,15 @@ import {
 } from '@grafana/scenes';
 import { getColorByIndex } from './scenes';
 import { AddToFiltersButton, VariableFilterType } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
-import { LEVEL_VARIABLE_VALUE, LogsQueryOptions, ParserType, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from './variables';
+import {
+  LEVEL_VARIABLE_VALUE,
+  LogsQueryOptions,
+  ParserType,
+  VAR_FIELDS,
+  VAR_LABELS,
+  VAR_LEVELS,
+  VAR_METADATA,
+} from './variables';
 import { setLevelColorOverrides } from './panel';
 import { map, Observable } from 'rxjs';
 import { SortBy, SortByScene } from '../Components/ServiceScene/Breakdowns/SortByScene';
@@ -109,7 +117,7 @@ export function getParserForField(fieldName: string, sceneRef: SceneObject): Par
 export function getFilterBreakdownValueScene(
   getTitle: (df: DataFrame) => string,
   style: DrawStyle,
-  variableName: typeof VAR_FIELDS | typeof VAR_LABELS,
+  variableName: typeof VAR_FIELDS | typeof VAR_LABELS | typeof VAR_METADATA,
   sortByScene: SortByScene
 ) {
   return (frame: DataFrame, frameIndex: number) => {
@@ -179,7 +187,39 @@ export function getLabelTypeFromFrame(labelKey: string, frame: DataFrame, index 
   }
 }
 
-export function getFilterTypeFromLabelType(type: LabelType | null, key: string, value: string): VariableFilterType {
+/**
+ * Returns the variable to use when adding filters in a panel.
+ * @param frame
+ * @param key
+ * @param sceneRef
+ */
+export function getVariableForLabel(
+  frame: DataFrame | undefined,
+  key: string,
+  sceneRef: SceneObject
+): VariableFilterType {
+  const labelType = frame ? getLabelTypeFromFrame(key, frame) : LabelType.Parsed;
+
+  if (labelType) {
+    // Otherwise use the labelType from the dataframe
+    return getFilterTypeFromLabelType(labelType, key);
+  }
+
+  // If the dataframe doesn't have labelTypes, check if the detected_fields response returned a parser.
+  const parserForThisField = getParserForField(key, sceneRef);
+  if (parserForThisField === 'structuredMetadata') {
+    return VAR_METADATA;
+  }
+
+  logger.warn('unable to determine label variable, falling back to parsed field', {
+    key,
+    parserForThisField: parserForThisField ?? '',
+  });
+
+  return VAR_FIELDS;
+}
+
+export function getFilterTypeFromLabelType(type: LabelType, key: string): VariableFilterType {
   switch (type) {
     case LabelType.Indexed: {
       return VAR_LABELS;
@@ -192,11 +232,11 @@ export function getFilterTypeFromLabelType(type: LabelType | null, key: string, 
       if (key === LEVEL_VARIABLE_VALUE) {
         return VAR_LEVELS;
       }
-      return VAR_FIELDS;
+      return VAR_METADATA;
     }
     default: {
       const err = new Error(`Invalid label type for ${key}`);
-      logger.error(err, { value, msg: `Invalid label type for ${key}` });
+      logger.error(err, { type, msg: `Invalid label type for ${key}` });
       throw err;
     }
   }

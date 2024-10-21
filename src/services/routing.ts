@@ -10,6 +10,7 @@ import {
   VAR_LABELS,
   VAR_LEVELS,
   VAR_LINE_FILTER,
+  VAR_METADATA,
   VAR_PATTERNS,
 } from './variables';
 import { locationService } from '@grafana/runtime';
@@ -106,6 +107,7 @@ export const DRILLDOWN_URL_KEYS = [
   `var-${VAR_LABEL_GROUP_BY}`,
   `var-${VAR_DATASOURCE}`,
   `var-${VAR_LINE_FILTER}`,
+  `var-${VAR_METADATA}`,
 ];
 
 export function getDrilldownSlug() {
