@@ -408,7 +408,7 @@ test.describe('explore services breakdown page', () => {
     // Panel on the top should not
     await expect(page.getByTestId(/data-testid Panel header/).first()).not.toBeInViewport();
     // Wait for a bit for the requests to be made
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(250);
     // if this flakes we could just assert that it's greater then 3
     expect(requestCount).toEqual(17);
   });
