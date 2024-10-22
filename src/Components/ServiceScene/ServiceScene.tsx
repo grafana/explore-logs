@@ -268,6 +268,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.setSubscribeToLabelsVariable();
     this._subs.add(this.subscribeToFieldsVariable());
     this._subs.add(this.subscribeToMetadataVariable());
+    this._subs.add(this.subscribeToLevelsVariable());
     this._subs.add(this.subscribeToDataSourceVariable());
 
     // Update query runner on manual time range change
@@ -300,6 +301,14 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
   private subscribeToMetadataVariable() {
     return getMetadataVariable(this).subscribeToState((newState, prevState) => {
+      if (!areArraysEqual(newState.filters, prevState.filters)) {
+        this.state.$detectedFieldsData?.runQueries();
+      }
+    });
+  }
+
+  private subscribeToLevelsVariable() {
+    return getLevelsVariable(this).subscribeToState((newState, prevState) => {
       if (!areArraysEqual(newState.filters, prevState.filters)) {
         this.state.$detectedFieldsData?.runQueries();
       }
