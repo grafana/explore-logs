@@ -325,18 +325,72 @@ test.describe('explore services page', () => {
     });
   });
 
-  test.describe('sequential', () => {
+  test.describe.only('sequential', () => {
     test.describe.configure({ mode: 'serial' });
     test.describe('tabs - namespace', () => {
       let page: Page;
+      let logsVolumeCount: number,
+        logsQueryCount: number,
+        detectedLabelsCount: number,
+        patternsCount: number,
+        detectedFieldsCount: number;
+
       test.beforeAll(async ({ browser }, testInfo) => {
         const pagePre = await browser.newPage();
         explorePage = new ExplorePage(pagePre, testInfo);
+        page = explorePage.page;
+
+        await page.route('**/index/volume*', async (route) => {
+          const response = await route.fetch();
+          const json = await response.json();
+
+          logsVolumeCount++;
+          await page.waitForTimeout(25);
+          await route.fulfill({ response, json });
+        });
+        await page.route('**/resources/detected_fields*', async (route) => {
+          const response = await route.fetch();
+          const json = await response.json();
+
+          detectedFieldsCount++;
+          await page.waitForTimeout(25);
+          await route.fulfill({ response, json });
+        });
+        await page.route('**/resources/detected_labels*', async (route) => {
+          const response = await route.fetch();
+          const json = await response.json();
+
+          detectedLabelsCount++;
+          await page.waitForTimeout(25);
+          await route.fulfill({ response, json });
+        });
+        await page.route('**/resources/patterns*', async (route) => {
+          const response = await route.fetch();
+          const json = await response.json();
+
+          patternsCount++;
+          await page.waitForTimeout(25);
+          await route.fulfill({ response, json });
+        });
+
+        // Can skip logs query for this test
+        await page.route('**/ds/query*', async (route) => {
+          logsQueryCount++;
+          await route.fulfill({ json: {} });
+        });
+
         await explorePage.gotoServices();
         await explorePage.setDefaultViewportSize();
         await explorePage.clearLocalStorage();
         explorePage.captureConsoleLogs();
-        page = explorePage.page;
+      });
+
+      test.beforeEach(async ({}) => {
+        logsVolumeCount = 0;
+        logsQueryCount = 0;
+        patternsCount = 0;
+        detectedLabelsCount = 0;
+        detectedFieldsCount = 0;
       });
 
       test.afterAll(async ({}) => {
@@ -345,7 +399,9 @@ test.describe('explore services page', () => {
       });
 
       test('Part 1: user can add namespace label as a new tab and navigate to breakdown', async ({}) => {
-        // Part 1
+        await expect(page.getByText('Showing 0 of 0')).not.toBeVisible();
+        await expect(page.getByText(/Showing \d+ of \d+/)).toBeVisible();
+
         // Click "New" tab
         const addNewTab = page.getByTestId(testIds.index.addNewLabelTab);
         await expect(addNewTab).toHaveCount(1);
@@ -360,12 +416,15 @@ test.describe('explore services page', () => {
         const newNamespaceTabLoc = page.getByTestId('data-testid Tab namespace');
         await expect(newNamespaceTabLoc).toHaveCount(1);
 
+        // Assert results have loaded before we search or we'll cancel the ongoing volume query
+        await expect(page.getByText('Showing 6 of 6')).toBeVisible();
         // Search for "gateway"
         await page.getByTestId(testIds.index.searchLabelValueInput).fill('gate');
         await page.getByTestId(testIds.index.searchLabelValueInput).press('Escape');
 
         // Asser this filters down to only one result
         await expect(page.getByText('Select')).toHaveCount(1);
+        await expect(page.getByText('Showing 1 of 1')).toBeVisible();
 
         // Select the first and only result
         await explorePage.addServiceName();
@@ -378,10 +437,14 @@ test.describe('explore services page', () => {
         );
 
         expect(page.url()).toMatch(/a\/grafana-lokiexplore-app\/explore\/namespace\/gateway\/logs/);
+
+        await expect.poll(() => logsVolumeCount).toEqual(3);
+        await expect.poll(() => patternsCount).toEqual(1);
+        await expect.poll(() => detectedLabelsCount).toEqual(2);
+        await expect.poll(() => detectedFieldsCount).toEqual(1);
       });
 
       test('Part 2: changing primary label updates tab counts', async ({}) => {
-        await page.pause();
         await explorePage.assertTabsNotLoading();
         const gatewayPatternsCount = await page
           .getByTestId(testIds.exploreServiceDetails.tabPatterns)
@@ -432,6 +495,11 @@ test.describe('explore services page', () => {
 
         expect(mimirPatternsCount).not.toEqual(gatewayPatternsCount);
         expect(mimirFieldsCount).not.toEqual(gatewayFieldsCount);
+
+        await expect.poll(() => logsVolumeCount).toEqual(0);
+        await expect.poll(() => patternsCount).toEqual(1);
+        await expect.poll(() => detectedLabelsCount).toEqual(1);
+        await expect.poll(() => detectedFieldsCount).toEqual(1);
       });
     });
   });
