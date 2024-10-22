@@ -41,6 +41,7 @@ import {
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
+  getMetadataVariable,
 } from '../../services/variableGetters';
 import { logger } from '../../services/logger';
 import { IndexScene } from '../IndexScene/IndexScene';
@@ -266,6 +267,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     // Variable subscriptions
     this.setSubscribeToLabelsVariable();
     this._subs.add(this.subscribeToFieldsVariable());
+    this._subs.add(this.subscribeToMetadataVariable());
     this._subs.add(this.subscribeToDataSourceVariable());
 
     // Update query runner on manual time range change
@@ -290,6 +292,14 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
   private subscribeToFieldsVariable() {
     return getFieldsVariable(this).subscribeToState((newState, prevState) => {
+      if (!areArraysEqual(newState.filters, prevState.filters)) {
+        this.state.$detectedFieldsData?.runQueries();
+      }
+    });
+  }
+
+  private subscribeToMetadataVariable() {
+    return getMetadataVariable(this).subscribeToState((newState, prevState) => {
       if (!areArraysEqual(newState.filters, prevState.filters)) {
         this.state.$detectedFieldsData?.runQueries();
       }
