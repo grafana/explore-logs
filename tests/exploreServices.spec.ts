@@ -325,7 +325,7 @@ test.describe('explore services page', () => {
     });
   });
 
-  test.describe.only('sequential', () => {
+  test.describe('sequential', () => {
     test.describe.configure({ mode: 'serial' });
     test.describe('tabs - namespace', () => {
       let page: Page;
