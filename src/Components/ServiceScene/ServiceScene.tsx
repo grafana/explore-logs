@@ -174,6 +174,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
               },
             });
 
+            this.resetTabCount();
+
             if (!breakdownLabel) {
               navigateToDrilldownPage(getDrilldownSlug(), this);
             } else {
@@ -182,6 +184,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
           } else {
             this.redirectToStart();
           }
+        } else if (!areArraysEqual(newState.filters, prevState.filters)) {
+          this.state.$patternsData?.runQueries();
+          this.state.$detectedLabelsData?.runQueries();
+          this.state.$detectedFieldsData?.runQueries();
         }
       })
     );
@@ -242,7 +248,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.resetBodyAndData();
 
     this.setBreakdownView();
-    this.setSubscribeToLabelsVariable();
 
     // Run queries on activate
     this.runQueries();
@@ -259,7 +264,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this._subs.add(this.subscribeToLogsQuery());
 
     // Variable subscriptions
-    this._subs.add(this.subscribeToLabelsVariable());
+    this.setSubscribeToLabelsVariable();
     this._subs.add(this.subscribeToFieldsVariable());
     this._subs.add(this.subscribeToDataSourceVariable());
 
@@ -273,14 +278,14 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     });
   }
 
-  private subscribeToLabelsVariable() {
-    return getLabelsVariable(this).subscribeToState((newState, prevState) => {
-      if (!areArraysEqual(newState.filters, prevState.filters)) {
-        this.state.$patternsData?.runQueries();
-        this.state.$detectedLabelsData?.runQueries();
-        this.state.$detectedFieldsData?.runQueries();
-      }
+  private resetTabCount() {
+    this.setState({
+      fieldsCount: undefined,
+      labelsCount: undefined,
+      patternsCount: undefined,
     });
+
+    getMetadataService().setServiceSceneState(this.state);
   }
 
   private subscribeToFieldsVariable() {
