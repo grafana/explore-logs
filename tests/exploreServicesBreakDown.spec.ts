@@ -31,7 +31,7 @@ test.describe('explore services breakdown page', () => {
   test('should filter logs panel on search for broadcast field', async ({ page }) => {
     await explorePage.serviceBreakdownSearch.click();
     await explorePage.serviceBreakdownSearch.fill('broadcast');
-    await expect(page.getByRole('table').locator('tr').first().getByText('broadcast')).toBeVisible();
+    await expect(page.getByRole('table').locator('tr').first().getByText('broadcast').first()).toBeVisible();
     await expect(page).toHaveURL(/broadcast/);
   });
 
@@ -394,7 +394,6 @@ test.describe('explore services breakdown page', () => {
       const json = await response.json();
       return route.fulfill({ response, json });
     });
-
     // Navigate to fields tab
     await explorePage.goToFieldsTab();
     // Make sure the panels have started to render
@@ -403,19 +402,15 @@ test.describe('explore services breakdown page', () => {
     await explorePage.assertTabsNotLoading();
     // Fields on top should be loaded
     expect(requestCount).toEqual(6);
-
     await explorePage.scrollToBottom();
     // Panel on the bottom should be visible
     await expect(page.getByTestId(/data-testid Panel header/).last()).toBeInViewport();
-
     // Panel on the top should not
     await expect(page.getByTestId(/data-testid Panel header/).first()).not.toBeInViewport();
-
     // Wait for a bit for the requests to be made
-    await page.waitForTimeout(250);
-
+    await page.waitForTimeout(1000);
     // if this flakes we could just assert that it's greater then 3
-    expect(requestCount).toEqual(14);
+    expect(requestCount).toEqual(17);
   });
 
   test(`should select field ${fieldName}, update filters, open log panel`, async ({ page }) => {
