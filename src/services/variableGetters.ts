@@ -32,6 +32,7 @@ import {
   VAR_PRIMARY_LABEL,
   VAR_PRIMARY_LABEL_SEARCH,
   VAR_METADATA_EXPR,
+  VAR_METADATA,
 } from './variables';
 import { AdHocVariableFilter } from '@grafana/data';
 import { logger } from './logger';
@@ -66,6 +67,10 @@ export function getPatternsVariable(scene: SceneObject) {
 
 export function getLabelsVariable(scene: SceneObject) {
   return getAdHocFiltersVariable(VAR_LABELS, scene);
+}
+
+export function getMetadataVariable(scene: SceneObject) {
+  return getAdHocFiltersVariable(VAR_METADATA, scene);
 }
 
 export function getFieldsVariable(scene: SceneObject) {
