@@ -5,9 +5,7 @@ import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState, Sce
 import { DataQuery, DataSourceRef } from '@grafana/schema';
 import { IconButton } from '@grafana/ui';
 import { getLokiDatasource } from 'services/scenes';
-
-// using `require` to satisfy typescript compiler
-const LokiLogo = require('../../../img/logo.svg');
+import LokiLogo from 'img/logo.svg';
 
 export interface AddToExplorationButtonState extends SceneObjectState {
   frame?: DataFrame;
