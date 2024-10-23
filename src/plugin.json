@@ -4,7 +4,6 @@
   "name": "Explore Logs",
   "id": "grafana-lokiexplore-app",
   "autoEnabled": true,
-  "preload": true,
   "info": {
     "keywords": ["app", "loki", "explore", "logs"],
     "description": "Query-less exploration of log data stored in Loki",
