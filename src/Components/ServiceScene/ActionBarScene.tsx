@@ -107,6 +107,12 @@ function getStyles(theme: GrafanaTheme2) {
   };
 }
 
+/**
+ * Shows extensions in the toolbar.
+ * Shows a single button if there is only one extension or a dropdown if there are multiple.
+ * @param props
+ * @constructor
+ */
 function ToolbarExtensionsRenderer(props: { serviceScene: SceneObject }) {
   const [filters, setFilters] = useState<Array<{ key: string; value: string }>>(
     getLabelsVariable(props.serviceScene).state.filters
