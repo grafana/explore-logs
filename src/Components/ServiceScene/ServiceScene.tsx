@@ -41,6 +41,8 @@ import {
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
+  getMetadataVariable,
+  getPatternsVariable,
 } from '../../services/variableGetters';
 import { logger } from '../../services/logger';
 import { IndexScene } from '../IndexScene/IndexScene';
@@ -266,10 +268,21 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     // Variable subscriptions
     this.setSubscribeToLabelsVariable();
     this._subs.add(this.subscribeToFieldsVariable());
+    this._subs.add(this.subscribeToMetadataVariable());
+    this._subs.add(this.subscribeToLevelsVariable());
     this._subs.add(this.subscribeToDataSourceVariable());
+    this._subs.add(this.subscribeToPatternsVariable());
 
     // Update query runner on manual time range change
     this._subs.add(this.subscribeToTimeRange());
+  }
+
+  private subscribeToPatternsVariable() {
+    return getPatternsVariable(this).subscribeToState((newState, prevState) => {
+      if (newState.value !== prevState.value) {
+        this.state.$detectedFieldsData?.runQueries();
+      }
+    });
   }
 
   private subscribeToDataSourceVariable() {
@@ -290,6 +303,22 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
   private subscribeToFieldsVariable() {
     return getFieldsVariable(this).subscribeToState((newState, prevState) => {
+      if (!areArraysEqual(newState.filters, prevState.filters)) {
+        this.state.$detectedFieldsData?.runQueries();
+      }
+    });
+  }
+
+  private subscribeToMetadataVariable() {
+    return getMetadataVariable(this).subscribeToState((newState, prevState) => {
+      if (!areArraysEqual(newState.filters, prevState.filters)) {
+        this.state.$detectedFieldsData?.runQueries();
+      }
+    });
+  }
+
+  private subscribeToLevelsVariable() {
+    return getLevelsVariable(this).subscribeToState((newState, prevState) => {
       if (!areArraysEqual(newState.filters, prevState.filters)) {
         this.state.$detectedFieldsData?.runQueries();
       }

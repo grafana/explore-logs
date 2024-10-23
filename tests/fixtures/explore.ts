@@ -44,7 +44,7 @@ export class ExplorePage {
   }
 
   async setDefaultViewportSize() {
-    await this.page.setViewportSize({ width: 1280, height: 720 });
+    await this.page.setViewportSize({ width: 1280, height: 680 });
   }
 
   async setExtraTallViewportSize() {
@@ -82,7 +82,7 @@ export class ExplorePage {
   }
 
   async scrollToBottom() {
-    const main = this.page.locator('main#pageContent');
+    const main = this.page.locator('html');
 
     // Scroll the page container to the bottom
     await main.evaluate((main) => main.scrollTo(0, main.scrollHeight));
