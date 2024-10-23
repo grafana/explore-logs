@@ -1,21 +1,31 @@
-import { linkConfigs } from './links';
-import { LokiQuery } from '../query';
 import { dateTime } from '@grafana/data';
+import { LokiQuery } from '../lokiQuery';
+import { linkConfigs } from './links';
 
 describe('contextToLink', () => {
   it('should strip slashes', () => {
     const links = linkConfigs;
-    const target: Partial<LokiQuery> = {
+    const target: { refId: string } & Partial<LokiQuery> = {
       expr: '{service_name=`cloud/gcp`, resource_type!=`gce_firewall_rule`} | json | logfmt | drop __error__, __error_details__',
       datasource: {
         type: 'loki',
         uid: '123abc',
       },
+      refId: 'A', // Ensure refId is defined
     };
     const config = links?.[0].configure?.({
       timeRange: {
         from: dateTime('2023-02-08T04:00:00.000Z'),
         to: dateTime('2023-02-08T11:00:00.000Z'),
+      },
+      pluginId: 'grafana-lokiexplore-app',
+      timeZone: 'browser',
+      id: 0,
+      title: 'test',
+      dashboard: {
+        tags: [],
+        title: 'test',
+        uid: 'test',
       },
       targets: [target],
     });

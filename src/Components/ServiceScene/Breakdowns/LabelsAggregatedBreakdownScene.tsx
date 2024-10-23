@@ -15,20 +15,16 @@ import {
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
 import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
-import {
-  ALL_VARIABLE_VALUE,
-  getFieldsVariable,
-  getLabelGroupByVariable,
-  LEVEL_VARIABLE_VALUE,
-} from '../../../services/variables';
+import { ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE } from '../../../services/variables';
 import React from 'react';
 import { LabelBreakdownScene } from './LabelBreakdownScene';
 import { SelectLabelActionScene } from './SelectLabelActionScene';
 import { ValueSlugs } from '../../../services/routing';
 import { limitMaxNumberOfSeriesForPanel, MAX_NUMBER_OF_TIME_SERIES } from './TimeSeriesLimitSeriesTitleItem';
 import { limitFramesTransformation } from './FieldsAggregatedBreakdownScene';
-import { LokiQuery } from '../../../services/query';
 import { buildLabelsQuery, LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS } from '../../../services/labels';
+import { getFieldsVariable, getLabelGroupByVariable } from '../../../services/variableGetters';
+import { LokiQuery } from '../../../services/lokiQuery';
 import { ServiceScene } from '../ServiceScene';
 import { DataFrame, LoadingState } from '@grafana/data';
 

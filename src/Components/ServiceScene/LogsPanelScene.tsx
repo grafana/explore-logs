@@ -14,9 +14,10 @@ import React from 'react';
 import { LogsListScene } from './LogsListScene';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { addToFilters, FilterType } from './Breakdowns/AddToFiltersButton';
-import { getFilterTypeFromLabelType, getLabelTypeFromFrame, LabelType } from '../../services/fields';
-import { getAdHocFiltersVariable, SERVICE_NAME, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from '../../services/variables';
+import { getVariableForLabel } from '../../services/fields';
+import { VAR_FIELDS, VAR_LABELS, VAR_LEVELS, VAR_METADATA } from '../../services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
+import { getAdHocFiltersVariable, getValueFromFieldsFilter } from '../../services/variableGetters';
 
 interface LogsPanelSceneState extends SceneObjectState {
   body?: VizPanel;
@@ -102,31 +103,22 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     const parentModel = this.getParentScene();
     const visualizationType = parentModel.state.visualizationType;
 
-    return (
-      PanelBuilders.logs()
-        .setTitle('Logs')
-        .setOption('showTime', true)
-        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
-        .setOption('onClickFilterLabel', this.handleLabelFilterClick)
-        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
-        .setOption('onClickFilterOutLabel', this.handleLabelFilterOutClick)
-        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
-        .setOption('isFilterLabelActive', this.handleIsFilterLabelActive)
-        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
-        .setOption('onClickFilterString', this.handleFilterStringClick)
-        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
-        .setOption('onClickShowField', this.onClickShowField)
-        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
-        .setOption('onClickHideField', this.onClickHideField)
-        // @ts-expect-error Requires unreleased @grafana/data. Type error, doesn't cause other errors.
-        .setOption('displayedFields', parentModel.state.displayedFields)
-        .setOption('wrapLogMessage', Boolean(getLogOption('wrapLines')))
-        .setOption('showLogContextToggle', true)
-        .setHeaderActions(
-          <LogsPanelHeaderActions vizType={visualizationType} onChange={parentModel.setVisualizationType} />
-        )
-        .build()
-    );
+    return PanelBuilders.logs()
+      .setTitle('Logs')
+      .setOption('showTime', true)
+      .setOption('onClickFilterLabel', this.handleLabelFilterClick)
+      .setOption('onClickFilterOutLabel', this.handleLabelFilterOutClick)
+      .setOption('isFilterLabelActive', this.handleIsFilterLabelActive)
+      .setOption('onClickFilterString', this.handleFilterStringClick)
+      .setOption('onClickShowField', this.onClickShowField)
+      .setOption('onClickHideField', this.onClickHideField)
+      .setOption('displayedFields', parentModel.state.displayedFields)
+      .setOption('wrapLogMessage', Boolean(getLogOption('wrapLines')))
+      .setOption('showLogContextToggle', true)
+      .setHeaderActions(
+        <LogsPanelHeaderActions vizType={visualizationType} onChange={parentModel.setVisualizationType} />
+      )
+      .build();
   }
 
   private handleLabelFilterClick = (key: string, value: string, frame?: DataFrame) => {
@@ -141,21 +133,43 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     const labels = getAdHocFiltersVariable(VAR_LABELS, this);
     const fields = getAdHocFiltersVariable(VAR_FIELDS, this);
     const levels = getAdHocFiltersVariable(VAR_LEVELS, this);
+    const metadata = getAdHocFiltersVariable(VAR_METADATA, this);
 
-    const hasKeyValueFilter = (filter: AdHocFiltersVariable | null) =>
-      filter &&
-      filter.state.filters.findIndex(
-        (filter) => filter.operator === '=' && filter.key === key && filter.value === value
-      ) >= 0;
+    const hasKeyValueFilter = (filter: AdHocFiltersVariable | null) => {
+      return (
+        filter &&
+        filter.state.filters.findIndex(
+          (filter) => filter.operator === '=' && filter.key === key && filter.value === value
+        ) >= 0
+      );
+    };
 
-    return hasKeyValueFilter(labels) || hasKeyValueFilter(fields) || hasKeyValueFilter(levels);
+    // Fields have json encoded values unlike the other variables, get the value for the matching filter and parse it before comparing
+    const hasKeyValueFilterField = (filter: AdHocFiltersVariable | null) => {
+      if (filter) {
+        const fieldFilter = filter.state.filters.find((filter) => filter.operator === '=' && filter.key === key);
+
+        if (fieldFilter) {
+          const fieldValue = getValueFromFieldsFilter(fieldFilter, key);
+          return fieldValue.value === value;
+        }
+      }
+      return false;
+    };
+
+    return (
+      hasKeyValueFilter(labels) ||
+      hasKeyValueFilterField(fields) ||
+      hasKeyValueFilter(levels) ||
+      hasKeyValueFilter(metadata)
+    );
   };
 
   private handleFilterStringClick = (value: string) => {
     const parentModel = sceneGraph.getAncestor(this, LogsListScene);
     const lineFilterScene = parentModel.getLineFilterScene();
     if (lineFilterScene) {
-      lineFilterScene.updateFilter(value);
+      lineFilterScene.updateFilter(value, false);
       reportAppInteraction(
         USER_EVENTS_PAGES.service_details,
         USER_EVENTS_ACTIONS.service_details.logs_popover_line_filter,
@@ -167,19 +181,15 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
   };
 
   private handleLabelFilter(key: string, value: string, frame: DataFrame | undefined, operator: FilterType) {
-    // @TODO: NOOP. We need a way to let the user know why this is not possible.
-    if (key === SERVICE_NAME) {
-      return;
-    }
-    const labelType = frame ? getLabelTypeFromFrame(key, frame) : LabelType.Parsed;
-    const variableName = getFilterTypeFromLabelType(labelType, key, value);
-    addToFilters(key, value, operator, this, variableName);
+    const variableType = getVariableForLabel(frame, key, this);
+
+    addToFilters(key, value, operator, this, variableType);
 
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.logs_detail_filter_applied,
       {
-        filterType: variableName,
+        filterType: variableType,
         key,
         action: operator,
       }

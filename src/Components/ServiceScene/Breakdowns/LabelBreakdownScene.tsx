@@ -16,15 +16,8 @@ import {
 } from '@grafana/scenes';
 import { Alert, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { ValueSlugs } from 'services/routing';
-import {
-  ALL_VARIABLE_VALUE,
-  getLabelGroupByVariable,
-  getLabelsVariable,
-  SERVICE_NAME,
-  VAR_LABEL_GROUP_BY,
-  VAR_LABELS,
-} from 'services/variables';
+import { checkPrimaryLabel, getPrimaryLabelFromUrl, ValueSlugs } from 'services/routing';
+import { ALL_VARIABLE_VALUE, SERVICE_NAME, SERVICE_UI_LABEL, VAR_LABEL_GROUP_BY, VAR_LABELS } from 'services/variables';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { FieldSelector } from './FieldSelector';
 import { StatusWrapper } from './StatusWrapper';
@@ -40,6 +33,7 @@ import { LabelValuesBreakdownScene } from './LabelValuesBreakdownScene';
 import { LabelsAggregatedBreakdownScene } from './LabelsAggregatedBreakdownScene';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { EmptyLayoutScene } from './EmptyLayoutScene';
+import { getLabelGroupByVariable, getLabelsVariable } from '../../../services/variableGetters';
 
 export interface LabelBreakdownSceneState extends SceneObjectState {
   body?: SceneObject;
@@ -119,6 +113,8 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     if (detectedLabelsFrame) {
       this.updateOptions(detectedLabelsFrame);
     }
+
+    checkPrimaryLabel(this);
   }
 
   private onGroupByVariableChange(newState: CustomConstantVariableState, prevState: CustomConstantVariableState) {
@@ -137,12 +133,16 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     newState: SceneVariableState & { filters: AdHocVariableFilter[] },
     prevState: SceneVariableState & { filters: AdHocVariableFilter[] }
   ) {
+    let { labelName } = getPrimaryLabelFromUrl();
+    if (labelName === SERVICE_UI_LABEL) {
+      labelName = SERVICE_NAME;
+    }
     const variable = getLabelGroupByVariable(this);
-    const newService = newState.filters.find((filter) => filter.key === SERVICE_NAME);
-    const prevService = prevState.filters.find((filter) => filter.key === SERVICE_NAME);
+    const newPrimaryLabel = newState.filters.find((filter) => filter.key === labelName);
+    const prevPrimaryLabel = prevState.filters.find((filter) => filter.key === labelName);
 
     // If the user changes the service
-    if (variable.state.value === ALL_VARIABLE_VALUE && newService !== prevService) {
+    if (variable.state.value === ALL_VARIABLE_VALUE && newPrimaryLabel !== prevPrimaryLabel) {
       this.setState({
         loading: true,
         body: undefined,

@@ -1,6 +1,21 @@
 {
   "name": "grafana-lokiexplore-app",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "bundlewatch": {
+    "files": [
+      {
+        "path": "dist/*.js",
+        "maxSize": "175kB"
+      },
+      {
+        "path": "dist/module.js",
+        "maxSize": "30kB"
+      }
+    ],
+    "ci": {
+      "trackBranches": ["main"]
+    }
+  },
   "description": "Query less exploration of log data stored in Loki",
   "scripts": {
     "build": "webpack -c ./webpack.config.ts --env production",
@@ -18,7 +33,7 @@
     "e2e:debug": "playwright test --debug -x --trace on /test",
     "e2e:codegen": "playwright install && playwright codegen",
     "generate-logs": "pushd generator; go mod download; go run . -url http://localhost:3100/loki/api/v1/push; popd",
-    "server": "docker compose -f docker-compose.dev.yaml up --build",
+    "server": "docker compose -f docker-compose.local.yaml up --build",
     "server:localLoki": "docker compose -f docker-compose-local-loki.dev.yaml up --build",
     "server:ci": "docker compose -f docker-compose.dev.yaml up --build -d",
     "sign": "npx --yes @grafana/sign-plugin@latest",
@@ -49,6 +64,7 @@
     "@types/react-table": "^7.7.20",
     "@types/testing-library__jest-dom": "5.14.8",
     "@types/uuid": "^10.0.0",
+    "bundlewatch": "^0.4.0",
     "copy-webpack-plugin": "^11.0.0",
     "cspell": "6.13.3",
     "css-loader": "^6.7.3",
@@ -73,6 +89,7 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "4.8.4",
     "webpack": "^5.86.0",
+    "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^5.1.4",
     "webpack-livereload-plugin": "^3.0.2"
   },
@@ -82,15 +99,15 @@
   "dependencies": {
     "@bsull/augurs": "^0.3.1",
     "@emotion/css": "^11.10.6",
-    "@grafana/data": "^11.1.1",
+    "@grafana/data": "^11.2.2",
     "@grafana/lezer-logql": "^0.2.6",
-    "@grafana/runtime": "^11.1.1",
+    "@grafana/runtime": "^11.2.2",
     "@grafana/scenes": "5.14.7",
-    "@grafana/ui": "^11.1.1",
+    "@grafana/ui": "^11.2.2",
+    "@hello-pangea/dnd": "^16.6.0",
     "@lezer/common": "^1.2.1",
     "@lezer/lr": "^1.4.1",
-    "@hello-pangea/dnd": "^16.6.0",
-    "@playwright/test": "^1.43.1",
+    "@playwright/test": "^1.48.0",
     "@types/react-table": "^7.7.20",
     "react": "18.2.0",
     "react-dom": "18.2.0",

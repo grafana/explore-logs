@@ -1,32 +1,41 @@
+// Warning: This file (and any imports) are included in the main bundle with Grafana in order to provide link extension support in Grafana core, in an effort to keep Grafana loading quickly, please do not add any unnecessary imports to this file and run the bundle analyzer before committing any changes!
 import { PluginExtensionLinkConfig, PluginExtensionPanelContext, PluginExtensionPoints } from '@grafana/data';
-import { LabelType } from 'services/fields';
-import { getMatcherFromQuery } from 'services/logql';
 
-import { LokiQuery } from 'services/query';
-import { appendUrlParameter, createAppUrl, replaceSlash, setUrlParameter, UrlParameters } from 'services/routing';
-import { SERVICE_NAME } from 'services/variables';
+import { SERVICE_NAME, VAR_DATASOURCE, VAR_FIELDS, VAR_LABELS } from 'services/variables';
+import pluginJson from '../../plugin.json';
+import { LabelType } from '../fieldsTypes';
+import { FilterOp } from '../filters';
+import { getMatcherFromQuery } from '../logqlMatchers';
+import { LokiQuery } from '../lokiQuery';
 
 const title = 'Open in Explore Logs';
 const description = 'Open current query in the Explore Logs view';
 const icon = 'gf-logs';
 
-export const linkConfigs: PluginExtensionLinkConfig[] = [
+// `plugin.addLink` requires these types; unfortunately, the correct `PluginExtensionAddedLinkConfig` type is not exported with 11.2.x
+// TODO: fix this type when we move to `@grafana/data` 11.3.x
+export const linkConfigs: Array<
   {
-    extensionPointId: PluginExtensionPoints.DashboardPanelMenu,
+    targets: string | string[];
+    // eslint-disable-next-line deprecation/deprecation
+  } & Omit<PluginExtensionLinkConfig<PluginExtensionPanelContext>, 'type' | 'extensionPointId'>
+> = [
+  {
+    targets: PluginExtensionPoints.DashboardPanelMenu,
     title,
     description,
     icon,
     path: createAppUrl(),
     configure: contextToLink,
-  } as PluginExtensionLinkConfig,
+  },
   {
-    extensionPointId: PluginExtensionPoints.ExploreToolbarAction,
+    targets: PluginExtensionPoints.ExploreToolbarAction,
     title,
     description,
     icon,
     path: createAppUrl(),
     configure: contextToLink,
-  } as PluginExtensionLinkConfig,
+  },
 ];
 
 function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
@@ -40,13 +49,17 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
 
   const expr = lokiQuery.expr;
   const labelFilters = getMatcherFromQuery(expr);
-  const serviceSelector = labelFilters.find((selector) => selector.key === SERVICE_NAME);
-  if (!serviceSelector) {
+
+  const labelSelector = labelFilters.find((selector) => selector.operator === FilterOp.Equal);
+
+  if (!labelSelector) {
     return undefined;
   }
-  const serviceName = replaceSlash(serviceSelector.value);
-  // sort `service_name` first
-  labelFilters.sort((a, b) => (a.key === SERVICE_NAME ? -1 : 1));
+
+  const labelValue = replaceSlash(labelSelector.value);
+  let labelName = labelSelector.key === SERVICE_NAME ? 'service' : labelSelector.key;
+  // sort `primary label` first
+  labelFilters.sort((a, b) => (a.key === labelName ? -1 : 1));
 
   let params = setUrlParameter(UrlParameters.DatasourceId, lokiQuery.datasource?.uid);
   params = setUrlParameter(UrlParameters.TimeRangeFrom, context.timeRange.from.valueOf().toString(), params);
@@ -64,8 +77,42 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
       params
     );
   }
-
   return {
-    path: createAppUrl(`/explore/service/${serviceName}/logs`, params),
+    path: createAppUrl(`/explore/${labelName}/${labelValue}/logs`, params),
   };
+}
+
+export function createAppUrl(path = '/explore', urlParams?: URLSearchParams): string {
+  return `/a/${pluginJson.id}${path}${urlParams ? `?${urlParams.toString()}` : ''}`;
+}
+
+export const UrlParameters = {
+  DatasourceId: `var-${VAR_DATASOURCE}`,
+  TimeRangeFrom: 'from',
+  TimeRangeTo: 'to',
+  Labels: `var-${VAR_LABELS}`,
+  Fields: `var-${VAR_FIELDS}`,
+} as const;
+export type UrlParameterType = (typeof UrlParameters)[keyof typeof UrlParameters];
+
+export function setUrlParameter(key: UrlParameterType, value: string, initalParams?: URLSearchParams): URLSearchParams {
+  const searchParams = new URLSearchParams(initalParams?.toString() ?? location.search);
+  searchParams.set(key, value);
+
+  return searchParams;
+}
+
+export function appendUrlParameter(
+  key: UrlParameterType,
+  value: string,
+  initalParams?: URLSearchParams
+): URLSearchParams {
+  const searchParams = new URLSearchParams(initalParams?.toString() ?? location.search);
+  searchParams.append(key, value);
+
+  return searchParams;
+}
+
+export function replaceSlash(parameter: string): string {
+  return parameter.replace(/\//g, '-');
 }

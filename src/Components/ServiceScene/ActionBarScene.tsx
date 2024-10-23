@@ -1,17 +1,17 @@
-import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
+import { SceneComponentProps, sceneGraph, SceneObject, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { Box, Dropdown, Menu, Stack, Tab, TabsBar, ToolbarButton, useStyles2 } from '@grafana/ui';
 import { getExplorationFor } from '../../services/scenes';
 import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, ValueSlugs } from '../../services/routing';
 import { GoToExploreButton } from './GoToExploreButton';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
-import { getLabelsVariable, SERVICE_NAME } from '../../services/variables';
-import { navigateToDrilldownPage, navigateToIndex } from '../../services/navigate';
+import { navigateToDrilldownPage } from '../../services/navigate';
 import React, { useEffect, useState } from 'react';
 import { ServiceScene, ServiceSceneState } from './ServiceScene';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 import { BreakdownViewDefinition, breakdownViewsDefinitions } from './BreakdownViews';
 import { config, usePluginLinks } from '@grafana/runtime';
+import { getLabelsVariable } from '../../services/variableGetters';
 
 export interface ActionBarSceneState extends SceneObjectState {}
 
@@ -37,23 +37,14 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
     const { loading, $data, ...state } = serviceScene.useState();
     const loadingStates = state.loadingStates;
 
-    const [filters, setFilters] = useState<Array<{ key: string; value: string }>>(
-      getLabelsVariable(serviceScene).state.filters
-    );
-    useEffect(() => {
-      const sub = getLabelsVariable(serviceScene).subscribeToState((newState) => {
-        setFilters(newState.filters);
-      });
-      return () => {
-        sub.unsubscribe();
-      };
-    });
-
     return (
       <Box paddingY={0}>
         <div className={styles.actions}>
           <Stack gap={1}>
-            <ToolbarExtensionsRenderer context={{ filters }} />
+            {
+              // @ts-ignore appSidecar not yet in stable runtime
+              config.featureToggles.appSidecar && <ToolbarExtensionsRenderer serviceScene={serviceScene} />
+            }
             <GoToExploreButton exploration={exploration} />
           </Stack>
         </div>
@@ -80,14 +71,7 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
                     );
 
                     const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
-                    const variable = getLabelsVariable(serviceScene);
-                    const service = variable.state.filters.find((f) => f.key === SERVICE_NAME);
-
-                    if (service?.value) {
-                      navigateToDrilldownPage(tab.value, serviceScene);
-                    } else {
-                      navigateToIndex();
-                    }
+                    navigateToDrilldownPage(tab.value, serviceScene);
                   }
                 }}
               />
@@ -123,17 +107,25 @@ function getStyles(theme: GrafanaTheme2) {
   };
 }
 
-function ToolbarExtensionsRenderer(props: { context: { filters: Array<{ key: string; value: string }> } }) {
+function ToolbarExtensionsRenderer(props: { serviceScene: SceneObject }) {
+  const [filters, setFilters] = useState<Array<{ key: string; value: string }>>(
+    getLabelsVariable(props.serviceScene).state.filters
+  );
+  useEffect(() => {
+    const sub = getLabelsVariable(props.serviceScene).subscribeToState((newState) => {
+      setFilters(newState.filters);
+    });
+    return () => {
+      sub.unsubscribe();
+    };
+  }, [props.serviceScene]);
+
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const extensions = usePluginLinks({
     extensionPointId: 'grafana-lokiexplore-app/toolbar',
     limitPerPlugin: 3,
-    context: props.context,
+    context: { filters },
   });
-
-  if (!config.featureToggles.appSidecar) {
-    return null;
-  }
 
   if (extensions.isLoading || extensions.links.length === 0) {
     return null;

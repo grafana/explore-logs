@@ -19,18 +19,11 @@ import {
 import { Alert, Button, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getSortByPreference } from 'services/store';
-import {
-  ALL_VARIABLE_VALUE,
-  getFieldGroupByVariable,
-  getLabelsVariable,
-  SERVICE_NAME,
-  VAR_FIELD_GROUP_BY,
-  VAR_LABELS,
-} from 'services/variables';
+import { ALL_VARIABLE_VALUE, SERVICE_NAME, SERVICE_UI_LABEL, VAR_FIELD_GROUP_BY, VAR_LABELS } from 'services/variables';
 import { areArraysEqual } from '../../../services/comparison';
 import { CustomConstantVariable, CustomConstantVariableState } from '../../../services/CustomConstantVariable';
 import { navigateToValueBreakdown } from '../../../services/navigate';
-import { ValueSlugs } from '../../../services/routing';
+import { checkPrimaryLabel, getPrimaryLabelFromUrl, ValueSlugs } from '../../../services/routing';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { GrotError } from '../../GrotError';
 import { IndexScene } from '../../IndexScene/IndexScene';
@@ -45,6 +38,7 @@ import { SortByScene, SortCriteriaChanged } from './SortByScene';
 import { StatusWrapper } from './StatusWrapper';
 import { getFieldOptions } from 'services/filters';
 import { EmptyLayoutScene } from './EmptyLayoutScene';
+import { getFieldGroupByVariable, getLabelsVariable } from '../../../services/variableGetters';
 
 export const averageFields = ['duration', 'count', 'total', 'bytes'];
 export const FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';
@@ -114,10 +108,12 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     this._subs.add(
       getLabelsVariable(this).subscribeToState((newState, prevState) => {
         const variable = getFieldGroupByVariable(this);
-        const newService = newState.filters.find((filter) => filter.key === SERVICE_NAME);
-        const prevService = prevState.filters.find((filter) => filter.key === SERVICE_NAME);
+        let { labelName } = getPrimaryLabelFromUrl();
 
-        // If the user changes the service
+        const newService = newState.filters.find((filter) => filter.key === labelName);
+        const prevService = prevState.filters.find((filter) => filter.key === labelName);
+
+        // If the user changes the primary label
         if (variable.state.value === ALL_VARIABLE_VALUE && newService !== prevService) {
           this.setState({
             loading: true,
@@ -144,6 +140,8 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     if (detectedFieldsFrame) {
       this.updateOptions(detectedFieldsFrame);
     }
+
+    checkPrimaryLabel(this);
   }
 
   private variableChanged = (newState: CustomConstantVariableState, oldState: CustomConstantVariableState) => {
@@ -165,6 +163,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
       let body;
       if (variablesToClear.length > 1) {
+        this.state.changeFieldCount?.(0);
         body = this.buildClearFiltersLayout(() => this.clearVariables(variablesToClear));
       } else {
         body = new EmptyLayoutScene({ type: 'fields' });
@@ -226,6 +225,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       const variablesToClear = this.getVariablesThatCanBeCleared(indexScene);
 
       if (variablesToClear.length > 1) {
+        this.state.changeFieldCount?.(0);
         stateUpdate.body = this.buildClearFiltersLayout(() => this.clearVariables(variablesToClear));
       } else {
         stateUpdate.body = new EmptyLayoutScene({ type: 'fields' });
@@ -276,8 +276,13 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
     variablesToClear.forEach((variable) => {
       if (variable instanceof AdHocFiltersVariable && variable.state.key === 'adhoc_service_filter') {
+        let { labelName } = getPrimaryLabelFromUrl();
+        // getPrimaryLabelFromUrl returns the label name that exists in the URL, which is "service" not "service_name"
+        if (labelName === SERVICE_UI_LABEL) {
+          labelName = SERVICE_NAME;
+        }
         variable.setState({
-          filters: variable.state.filters.filter((filter) => filter.key === SERVICE_NAME),
+          filters: variable.state.filters.filter((filter) => filter.key === labelName),
         });
       } else if (variable instanceof AdHocFiltersVariable) {
         variable.setState({

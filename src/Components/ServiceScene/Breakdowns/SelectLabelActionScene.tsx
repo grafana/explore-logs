@@ -8,22 +8,20 @@ import {
 } from '@grafana/scenes';
 import { getLogsPanelFrame, ServiceScene } from '../ServiceScene';
 import { navigateToValueBreakdown } from '../../../services/navigate';
-import { ValueSlugs } from '../../../services/routing';
+import { getPrimaryLabelFromUrl, ValueSlugs } from '../../../services/routing';
 import { Button } from '@grafana/ui';
 import React from 'react';
 import { addToFilters, VariableFilterType } from './AddToFiltersButton';
 import { FilterButton } from '../../FilterButton';
+import { EMPTY_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE } from '../../../services/variables';
+import { AdHocVariableFilter, Field, Labels, LoadingState } from '@grafana/data';
+import { FilterOp } from '../../../services/filters';
 import {
-  EMPTY_VARIABLE_VALUE,
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
   getValueFromAdHocVariableFilter,
-  LEVEL_VARIABLE_VALUE,
-  SERVICE_NAME,
-} from '../../../services/variables';
-import { AdHocVariableFilter, Field, Labels, LoadingState } from '@grafana/data';
-import { FilterOp } from '../../../services/filters';
+} from '../../../services/variableGetters';
 
 interface SelectLabelActionSceneState extends SceneObjectState {
   labelName: string;
@@ -80,7 +78,8 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
   };
 
   private getExistingFilter(variable?: AdHocFiltersVariable): AdHocVariableFilter | undefined {
-    if (this.state.labelName !== SERVICE_NAME) {
+    let { labelName } = getPrimaryLabelFromUrl();
+    if (this.state.labelName !== labelName) {
       return variable?.state.filters.find((filter) => {
         const value = getValueFromAdHocVariableFilter(variable, filter);
         return filter.key === this.state.labelName && value.value === EMPTY_VARIABLE_VALUE;

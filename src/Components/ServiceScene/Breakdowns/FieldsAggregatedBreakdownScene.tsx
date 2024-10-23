@@ -10,7 +10,7 @@ import {
   SceneObjectState,
   VizPanel,
 } from '@grafana/scenes';
-import { ALL_VARIABLE_VALUE, getFieldGroupByVariable, getFieldsVariable } from '../../../services/variables';
+import { ALL_VARIABLE_VALUE } from '../../../services/variables';
 import { buildDataQuery } from '../../../services/query';
 import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
 import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
@@ -30,6 +30,7 @@ import { DataFrame, LoadingState } from '@grafana/data';
 import { limitMaxNumberOfSeriesForPanel, MAX_NUMBER_OF_TIME_SERIES } from './TimeSeriesLimitSeriesTitleItem';
 import { map, Observable } from 'rxjs';
 import { buildFieldsQueryString, isAvgField } from '../../../services/fields';
+import { getFieldGroupByVariable, getFieldsVariable } from '../../../services/variableGetters';
 
 export interface FieldsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -248,10 +249,8 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     const activeLayoutChildren = activeLayout?.state.children as SceneCSSGridItem[] | undefined;
     const activePanels = activeLayoutChildren?.filter((child) => !child.state.isHidden);
 
-    if (activePanels) {
-      const fieldsBreakdownScene = sceneGraph.getAncestor(this, FieldsBreakdownScene);
-      fieldsBreakdownScene.state.changeFieldCount?.(activePanels.length);
-    }
+    const fieldsBreakdownScene = sceneGraph.getAncestor(this, FieldsBreakdownScene);
+    fieldsBreakdownScene.state.changeFieldCount?.(activePanels?.length ?? 0);
   }
 
   public static Selector({ model }: SceneComponentProps<FieldsAggregatedBreakdownScene>) {

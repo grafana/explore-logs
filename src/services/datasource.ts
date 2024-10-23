@@ -9,28 +9,22 @@ import {
   TestDataSourceResponse,
 } from '@grafana/data';
 import { config, DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
-import { RuntimeDataSource, SceneObject, sceneUtils } from '@grafana/scenes';
+import { RuntimeDataSource, sceneUtils } from '@grafana/scenes';
 import { DataQuery } from '@grafana/schema';
 import { Observable, Subscriber } from 'rxjs';
 import { getDataSource } from './scenes';
-import { LokiQuery } from './query';
-import { PLUGIN_ID } from './routing';
+import { getPrimaryLabelFromUrl, PLUGIN_ID } from './routing';
 import { DetectedFieldsResponse, DetectedLabelsResponse } from './fields';
 import { FIELDS_TO_REMOVE, LABELS_TO_REMOVE, sortLabelsByCardinality } from './filters';
 import { SERVICE_NAME } from './variables';
 import { runShardSplitQuery } from './shardQuerySplitting';
 import { requestSupportsSharding } from './logql';
+import { LokiQuery } from './lokiQuery';
+import { SceneDataQueryRequest, SceneDataQueryResourceRequest } from './datasourceTypes';
 import { logger } from './logger';
 
 export const WRAPPED_LOKI_DS_UID = 'wrapped-loki-ds-uid';
 
-export type SceneDataQueryRequest = DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest> & {
-  scopedVars?: { __sceneObject?: { valueOf: () => SceneObject } };
-};
-
-export type SceneDataQueryResourceRequest = {
-  resource: 'volume' | 'patterns' | 'detected_labels' | 'detected_fields' | 'labels';
-};
 type TimeStampOfVolumeEval = number;
 type VolumeCount = string;
 type VolumeValue = [TimeStampOfVolumeEval, VolumeCount];
@@ -38,6 +32,7 @@ type VolumeResult = {
   metric: {
     service_name?: string;
     __aggregated_metric__?: string;
+    [index: string]: string | undefined;
   };
   value: VolumeValue;
 };
@@ -296,8 +291,11 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
           },
         }
       );
+
+      const { labelName: primaryLabelName } = getPrimaryLabelFromUrl();
+
       const labels = response.detectedLabels
-        ?.filter((label) => !LABELS_TO_REMOVE.includes(label.label))
+        ?.filter((label) => primaryLabelName !== label.label && !LABELS_TO_REMOVE.includes(label.label))
         ?.sort((a, b) => sortLabelsByCardinality(a, b));
 
       const detectedLabelFields: Array<Partial<Field>> = labels?.map((label) => {
@@ -422,15 +420,21 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
         return Number(rVolumeCount) - Number(lVolumeCount);
       });
       // Scenes will only emit dataframes from the SceneQueryRunner, so for now we need to convert the API response to a dataframe
+
       const df = createDataFrame({
         fields: [
           {
+            // @todo rename
             name: SERVICE_NAME,
-            values: volumeResponse?.data.result?.map((r) => r.metric.service_name ?? r.metric.__aggregated_metric__),
+            values: volumeResponse?.data.result?.map((r) => {
+              const key = Object.keys(r.metric)[0];
+              return r.metric[key];
+            }),
           },
           { name: 'volume', values: volumeResponse?.data.result?.map((r) => Number(r.value[1])) },
         ],
       });
+
       subscriber.next({ data: [df] });
     } catch (e) {
       subscriber.next({ data: [], state: LoadingState.Error });
@@ -484,8 +488,10 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
   }
 }
 
-export function init() {
+function init() {
   sceneUtils.registerRuntimeDataSource({
     dataSource: new WrappedLokiDatasource('wrapped-loki-ds', WRAPPED_LOKI_DS_UID),
   });
 }
+
+export default init;

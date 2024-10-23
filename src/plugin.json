@@ -59,6 +59,13 @@
   },
   "preload": true,
   "extensions": {
+    "addedLinks": [
+      {
+        "targets": ["grafana/dashboard/panel/menu", "grafana/explore/toolbar/action"],
+        "title": "Open in Explore Logs",
+        "description": "Open current query in the Explore Logs view"
+      }
+    ],
     "extensionPoints": [
       {
         "id": "grafana-lokiexplore-app/toolbar",

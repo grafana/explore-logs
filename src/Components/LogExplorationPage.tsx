@@ -9,9 +9,13 @@ import { initializeMetadataService } from '../services/metadata';
 const getSceneApp = () =>
   new SceneApp({
     pages: [makeIndexPage(), makeRedirectPage()],
+    urlSyncOptions: {
+      createBrowserHistorySteps: false,
+      updateUrlOnInit: true,
+    },
   });
 
-export function LogExplorationView() {
+function LogExplorationView() {
   const [isInitialized, setIsInitialized] = React.useState(false);
 
   initializeMetadataService();
@@ -36,3 +40,5 @@ export function LogExplorationView() {
 
   return <scene.Component model={scene} />;
 }
+
+export default LogExplorationView;

@@ -5,7 +5,7 @@ import { DataQueryRequest, DataQueryResponse, dateTime, LoadingState } from '@gr
 import { runShardSplitQuery } from './shardQuerySplitting';
 import { DataSourceWithBackend } from '@grafana/runtime';
 
-import { LokiQuery } from './query';
+import { LokiQuery } from './lokiQuery';
 import { getMockFrames } from './combineResponses.test';
 
 jest.mock('uuid', () => ({
@@ -66,7 +66,7 @@ describe('runShardSplitQuery()', () => {
 
   test('Does not report missing data while streaming', async () => {
     // @ts-expect-error
-    jest.spyOn(datasource, 'runQuery').mockReturnValue(of({ status: 200 }));
+    jest.spyOn(datasource, 'runQuery').mockReturnValue(of({ status: 200, data: [] }));
     await expect(runShardSplitQuery(datasource, request)).toEmitValuesWith((response: DataQueryResponse[]) => {
       // 4 shard requests
       // @ts-expect-error
@@ -75,36 +75,43 @@ describe('runShardSplitQuery()', () => {
     });
   });
 
+  test('Does not run invalid queries', async () => {
+    request.targets[0].expr = '{ ,insight != ""}';
+    await expect(runShardSplitQuery(datasource, request)).toEmitValuesWith(() => {
+      // @ts-expect-error
+      expect(datasource.runQuery).toHaveBeenCalledTimes(0);
+    });
+  });
+
   test('Interpolates queries before running', async () => {
     await expect(runShardSplitQuery(datasource, request)).toEmitValuesWith(() => {
       expect(datasource.interpolateVariablesInQueries).toHaveBeenCalledTimes(1);
-
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
         intervalMs: expect.any(Number),
         range: expect.any(Object),
-        requestId: 'TEST_shard_0',
-        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"20|3"}[1m])', refId: 'A' }],
+        requestId: 'TEST_shard_0_2',
+        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"20|10"}[1m])', refId: 'A' }],
       });
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
         intervalMs: expect.any(Number),
         range: expect.any(Object),
-        requestId: 'TEST_shard_1',
-        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"10|2"}[1m])', refId: 'A' }],
+        requestId: 'TEST_shard_2_2',
+        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"3|2"}[1m])', refId: 'A' }],
       });
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
         intervalMs: expect.any(Number),
         range: expect.any(Object),
-        requestId: 'TEST_shard_2',
+        requestId: 'TEST_shard_4_1',
         targets: [{ expr: 'count_over_time({a="b", __stream_shard__="1"}[1m])', refId: 'A' }],
       });
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
         intervalMs: expect.any(Number),
         range: expect.any(Object),
-        requestId: 'TEST_shard_3',
+        requestId: 'TEST_shard_5_1',
         targets: [{ expr: 'count_over_time({a="b", __stream_shard__=""}[1m])', refId: 'A' }],
       });
     });
@@ -128,9 +135,9 @@ describe('runShardSplitQuery()', () => {
       expect(datasource.runQuery).toHaveBeenCalledWith({
         intervalMs: expect.any(Number),
         range: expect.any(Object),
-        requestId: 'TEST_shard_0',
+        requestId: 'TEST_shard_0_2',
         targets: [
-          { expr: 'count_over_time({service_name="test", filter="true", __stream_shard__=~"20|3"}[1m])', refId: 'A' },
+          { expr: 'count_over_time({service_name="test", filter="true", __stream_shard__=~"20|10"}[1m])', refId: 'A' },
         ],
       });
     });
@@ -145,7 +152,7 @@ describe('runShardSplitQuery()', () => {
   });
 
   test('Retries failed requests', async () => {
-    jest.mocked(datasource.languageProvider.fetchLabelValues).mockResolvedValue([1]);
+    jest.mocked(datasource.languageProvider.fetchLabelValues).mockResolvedValue(['1']);
     jest
       // @ts-expect-error
       .spyOn(datasource, 'runQuery')
@@ -162,7 +169,7 @@ describe('runShardSplitQuery()', () => {
     });
   });
 
-  test('For time ranges over a day queries shards independently', async () => {
+  test('Adjusts the group size based on errors and execution time', async () => {
     const request = createRequest([{ expr: 'count_over_time($SELECTOR[1m])', refId: 'A' }], {
       range: {
         from: dateTime('2024-11-13T05:00:00.000Z'),
@@ -174,47 +181,234 @@ describe('runShardSplitQuery()', () => {
       },
     });
 
+    datasource.languageProvider.fetchLabelValues.mockResolvedValue([
+      '1',
+      '10',
+      '2',
+      '20',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+      '8',
+      '9',
+    ]);
+
+    // @ts-expect-error
+    jest.spyOn(global, 'setTimeout').mockImplementationOnce((callback) => {
+      callback();
+    });
+
+    const { metricFrameA } = getMockFrames();
+
+    // @ts-expect-error
+    jest.mocked(datasource.runQuery).mockReset();
+
+    // + 50%
+    // @ts-expect-error
+    jest.mocked(datasource.runQuery).mockReturnValueOnce(
+      of({
+        data: [
+          {
+            ...metricFrameA,
+            meta: {
+              ...metricFrameA.meta,
+              stats: [
+                ...metricFrameA.meta!.stats!,
+                {
+                  displayName: 'Summary: exec time',
+                  unit: 's',
+                  value: 0.5,
+                },
+              ],
+            },
+          },
+        ],
+      })
+    );
+
+    // sqrt(currentSize)
+    jest
+      // @ts-expect-error
+      .mocked(datasource.runQuery)
+      .mockReturnValueOnce(of({ state: LoadingState.Error, error: { refId: 'A', message: 'timeout' }, data: [] }));
+
+    // +10%
+    // @ts-expect-error
+    jest.mocked(datasource.runQuery).mockReturnValueOnce(
+      of({
+        data: [
+          {
+            ...metricFrameA,
+            meta: {
+              ...metricFrameA.meta,
+              stats: [
+                ...metricFrameA.meta!.stats!,
+                {
+                  displayName: 'Summary: exec time',
+                  unit: 's',
+                  value: 5,
+                },
+              ],
+            },
+          },
+        ],
+      })
+    );
+
+    // -10%
+    // @ts-expect-error
+    jest.mocked(datasource.runQuery).mockReturnValueOnce(
+      of({
+        data: [
+          {
+            ...metricFrameA,
+            meta: {
+              ...metricFrameA.meta,
+              stats: [
+                ...metricFrameA.meta!.stats!,
+                {
+                  displayName: 'Summary: exec time',
+                  unit: 's',
+                  value: 15,
+                },
+              ],
+            },
+          },
+        ],
+      })
+    );
+
+    // -10%
+    // @ts-expect-error
+    jest.mocked(datasource.runQuery).mockReturnValueOnce(
+      of({
+        data: [
+          {
+            ...metricFrameA,
+            meta: {
+              ...metricFrameA.meta,
+              stats: [
+                ...metricFrameA.meta!.stats!,
+                {
+                  displayName: 'Summary: exec time',
+                  unit: 's',
+                  value: 19,
+                },
+              ],
+            },
+          },
+        ],
+      })
+    );
+
+    // -50%
+    // @ts-expect-error
+    jest.mocked(datasource.runQuery).mockReturnValueOnce(
+      of({
+        data: [
+          {
+            ...metricFrameA,
+            meta: {
+              ...metricFrameA.meta,
+              stats: [
+                ...metricFrameA.meta!.stats!,
+                {
+                  displayName: 'Summary: exec time',
+                  unit: 's',
+                  value: 21,
+                },
+              ],
+            },
+          },
+        ],
+      })
+    );
+
+    // No more than 50% of the remaining shards
+    // @ts-expect-error
+    jest.mocked(datasource.runQuery).mockReturnValue(
+      of({
+        data: [
+          {
+            ...metricFrameA,
+            meta: {
+              ...metricFrameA.meta,
+              stats: [
+                ...metricFrameA.meta!.stats!,
+                {
+                  displayName: 'Summary: exec time',
+                  unit: 's',
+                  value: 0.5,
+                },
+              ],
+            },
+          },
+        ],
+      })
+    );
+
     await expect(runShardSplitQuery(datasource, request)).toEmitValuesWith(() => {
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
         intervalMs: expect.any(Number),
         range: expect.any(Object),
-        requestId: 'TEST_shard_0',
-        targets: [{ expr: 'count_over_time({a="b", __stream_shard__="20"}[1m])', refId: 'A' }],
+        requestId: 'TEST_shard_0_3',
+        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"20|10|9"}[1m])', refId: 'A' }],
       });
+
+      // +50%
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
         intervalMs: expect.any(Number),
         range: expect.any(Object),
-        requestId: 'TEST_shard_1',
-        targets: [{ expr: 'count_over_time({a="b", __stream_shard__="3"}[1m])', refId: 'A' }],
+        requestId: 'TEST_shard_3_4',
+        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"8|7|6|5"}[1m])', refId: 'A' }],
       });
+
+      // Error, sqrt(currentSize)
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
         intervalMs: expect.any(Number),
         range: expect.any(Object),
-        requestId: 'TEST_shard_2',
-        targets: [{ expr: 'count_over_time({a="b", __stream_shard__="10"}[1m])', refId: 'A' }],
+        requestId: 'TEST_shard_3_2',
+        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"8|7"}[1m])', refId: 'A' }],
       });
+
+      // +10%
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
         intervalMs: expect.any(Number),
         range: expect.any(Object),
-        requestId: 'TEST_shard_3',
-        targets: [{ expr: 'count_over_time({a="b", __stream_shard__="2"}[1m])', refId: 'A' }],
+        requestId: 'TEST_shard_5_3',
+        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"6|5|4"}[1m])', refId: 'A' }],
       });
+
+      // -10%
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
         intervalMs: expect.any(Number),
         range: expect.any(Object),
-        requestId: 'TEST_shard_4',
+        requestId: 'TEST_shard_8_2',
+        targets: [{ expr: 'count_over_time({a="b", __stream_shard__=~"3|2"}[1m])', refId: 'A' }],
+      });
+
+      // No more than 50% of the remaining shards
+      // @ts-expect-error
+      expect(datasource.runQuery).toHaveBeenCalledWith({
+        intervalMs: expect.any(Number),
+        range: expect.any(Object),
+        requestId: 'TEST_shard_10_1',
         targets: [{ expr: 'count_over_time({a="b", __stream_shard__="1"}[1m])', refId: 'A' }],
       });
+
+      // No more than 50% of the remaining shards
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledWith({
         intervalMs: expect.any(Number),
         range: expect.any(Object),
-        requestId: 'TEST_shard_5',
+        requestId: 'TEST_shard_11_1',
         targets: [{ expr: 'count_over_time({a="b", __stream_shard__=""}[1m])', refId: 'A' }],
       });
     });

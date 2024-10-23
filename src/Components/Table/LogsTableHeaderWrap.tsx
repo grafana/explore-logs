@@ -16,6 +16,8 @@ export function LogsTableHeaderWrap(props: {
   // Moves the current column forward or backward one index
   slideLeft?: (cols: FieldNameMetaStore) => void;
   slideRight?: (cols: FieldNameMetaStore) => void;
+
+  autoColumnWidths?: () => void;
 }) {
   const { setHeaderMenuActive } = useTableHeaderContext();
   const { columns, setColumns, bodyState, setBodyState } = useTableColumnContext();
@@ -123,6 +125,15 @@ export function LogsTableHeaderWrap(props: {
             )}
 
             {bodyState === LogLineState.text ? 'Show labels' : 'Show log text'}
+          </a>
+        </div>
+      )}
+
+      {props.autoColumnWidths && (
+        <div className={styles.linkWrap}>
+          <a className={styles.link} onClick={() => props.autoColumnWidths?.()}>
+            <Icon className={styles.icon} name={'arrows-h'} size={'md'} />
+            Reset column widths
           </a>
         </div>
       )}

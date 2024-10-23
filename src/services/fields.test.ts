@@ -1,12 +1,13 @@
 import { createDataFrame, FieldType, toDataFrame } from '@grafana/data';
 
-import { extractParserFromArray, getLabelTypeFromFrame, LabelType } from './fields';
+import { extractParserFromArray, getLabelTypeFromFrame } from './fields';
 import {
   DETECTED_FIELDS_CARDINALITY_NAME,
   DETECTED_FIELDS_NAME_FIELD,
   DETECTED_FIELDS_PARSER_NAME,
   DETECTED_FIELDS_TYPE_NAME,
 } from './datasource';
+import { LabelType } from './fieldsTypes';
 
 jest.mock('./variables');
 

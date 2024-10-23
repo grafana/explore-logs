@@ -1,6 +1,7 @@
 import { expect, test } from '@grafana/plugin-e2e';
 import { ExplorePage, PlaywrightRequest } from './fixtures/explore';
-import { LokiQuery } from '../src/services/query';
+
+import { LokiQuery } from '../src/services/lokiQuery';
 
 const fieldName = 'method';
 // const levelName = 'cluster'
@@ -11,7 +12,7 @@ test.describe('explore nginx-json breakdown pages ', () => {
     explorePage = new ExplorePage(page, testInfo);
     await explorePage.setExtraTallViewportSize();
     await explorePage.clearLocalStorage();
-    await explorePage.gotoServicesBreakdown('nginx-json');
+    await explorePage.gotoServicesBreakdownOldUrl('nginx-json');
     explorePage.blockAllQueriesExcept({
       refIds: ['logsPanelQuery', fieldName],
     });
@@ -52,7 +53,7 @@ test.describe('explore nginx-json breakdown pages ', () => {
       const queries: LokiQuery[] = post.queries;
       queries.forEach((query) => {
         expect(query.expr).toContain(
-          `sum by (${fieldName}) (count_over_time({service_name=\`nginx-json\`}     | json | drop __error__, __error_details__ | ${fieldName}!=""`
+          `sum by (${fieldName}) (count_over_time({service_name=\`nginx-json\`}      | json | drop __error__, __error_details__ | ${fieldName}!=""`
         );
       });
     });

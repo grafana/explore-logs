@@ -3,25 +3,23 @@ import { IndexScene } from '../Components/IndexScene/IndexScene';
 import { ALL_VARIABLE_VALUE } from './variables';
 import { getMetadataService } from './metadata';
 import { locationService } from '@grafana/runtime';
-import {
-  buildServicesUrl,
-  DRILLDOWN_URL_KEYS,
-  PageSlugs,
-  prefixRoute,
-  replaceSlash,
-  ROUTES,
-  ValueSlugs,
-} from './routing';
+import { buildServicesUrl, DRILLDOWN_URL_KEYS, PageSlugs, prefixRoute, ROUTES, ValueSlugs } from './routing';
 import { sceneGraph } from '@grafana/scenes';
 import { UrlQueryMap, urlUtil } from '@grafana/data';
+import { replaceSlash } from './extensions/links';
+import { logger } from './logger';
 
-function buildValueBreakdownUrl(label: string, newPath: ValueSlugs, serviceString: string) {
+let previousRoute: string | undefined = undefined;
+
+function buildValueBreakdownUrl(label: string, newPath: ValueSlugs, labelValue: string, labelName = 'service') {
   if (label === ALL_VARIABLE_VALUE && newPath === ValueSlugs.label) {
-    return prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(serviceString)}/${PageSlugs.labels}`);
+    return prefixRoute(`${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${PageSlugs.labels}`);
   } else if (label === ALL_VARIABLE_VALUE && newPath === ValueSlugs.field) {
-    return prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(serviceString)}/${PageSlugs.fields}`);
+    return prefixRoute(`${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${PageSlugs.fields}`);
   } else {
-    return prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(serviceString)}/${newPath}/${replaceSlash(label)}`);
+    return prefixRoute(
+      `${PageSlugs.explore}/${labelName}/${replaceSlash(labelValue)}/${newPath}/${replaceSlash(label)}`
+    );
   }
 }
 
@@ -52,9 +50,10 @@ export function navigateToValueBreakdown(newPath: ValueSlugs, label: string, ser
   const indexScene = sceneGraph.getAncestor(serviceScene, IndexScene);
 
   if (indexScene) {
-    const serviceString = indexScene.state.routeMatch?.params.service;
-    if (serviceString) {
-      let urlPath = buildValueBreakdownUrl(label, newPath, serviceString);
+    const urlLabelName = indexScene.state.routeMatch?.params.labelName;
+    const urlLabelValue = indexScene.state.routeMatch?.params.labelValue;
+    if (urlLabelName && urlLabelValue) {
+      let urlPath = buildValueBreakdownUrl(label, newPath, urlLabelValue, urlLabelName);
       const fullUrl = buildDrilldownPageUrl(urlPath);
 
       // If we're going to navigate, we need to share the state between this instantiation of the service scene
@@ -63,8 +62,13 @@ export function navigateToValueBreakdown(newPath: ValueSlugs, label: string, ser
         metadataService.setServiceSceneState(serviceScene.state);
       }
 
-      locationService.push(fullUrl);
+      pushUrlHandler(fullUrl);
       return;
+    } else {
+      logger.warn('missing url params', {
+        urlLabelName: urlLabelName ?? '',
+        urlLabelValue: urlLabelValue ?? '',
+      });
     }
   }
 }
@@ -72,11 +76,12 @@ export function navigateToValueBreakdown(newPath: ValueSlugs, label: string, ser
 /**
  * The case for initial navigation from the service selection to the service index is a special case, as we don't yet have a serviceScene constructed to pull the selected service.
  * This function will route users to the initial (logs) page from the service selection view, which will populate the service scene state with the selected service string.
- * @param serviceName
+ * @param labelName
+ * @param labelValue
  */
-export function navigateToInitialPageAfterServiceSelection(serviceName: string) {
-  const breakdownUrl = buildDrilldownPageUrl(ROUTES.logs(serviceName));
-  locationService.push(breakdownUrl);
+export function navigateToInitialPageAfterServiceSelection(labelName: string, labelValue: string) {
+  const breakdownUrl = buildDrilldownPageUrl(ROUTES.logs(labelValue, labelName));
+  pushUrlHandler(breakdownUrl);
 }
 
 /**
@@ -88,10 +93,11 @@ export function navigateToInitialPageAfterServiceSelection(serviceName: string) 
  */
 export function navigateToDrilldownPage(path: PageSlugs, serviceScene: ServiceScene, extraQueryParams?: UrlQueryMap) {
   const indexScene = sceneGraph.getAncestor(serviceScene, IndexScene);
-  const serviceString = indexScene.state.routeMatch?.params.service;
+  const urlLabelValue = indexScene.state.routeMatch?.params.labelValue;
+  const urlLabelName = indexScene.state.routeMatch?.params.labelName;
 
-  if (serviceString) {
-    const fullUrl = prefixRoute(`${PageSlugs.explore}/service/${replaceSlash(serviceString)}/${path}`);
+  if (urlLabelValue) {
+    const fullUrl = prefixRoute(`${PageSlugs.explore}/${urlLabelName}/${replaceSlash(urlLabelValue)}/${path}`);
     const breakdownUrl = buildDrilldownPageUrl(fullUrl, extraQueryParams);
 
     // If we're going to navigate, we need to share the state between this instantiation of the service scene
@@ -100,9 +106,14 @@ export function navigateToDrilldownPage(path: PageSlugs, serviceScene: ServiceSc
       metadataService.setServiceSceneState(serviceScene.state);
     }
 
-    locationService.push(breakdownUrl);
+    pushUrlHandler(breakdownUrl);
     return;
   }
+}
+
+export function pushUrlHandler(newUrl: string) {
+  previousRoute = newUrl;
+  locationService.push(newUrl);
 }
 
 /**
@@ -112,10 +123,19 @@ export function navigateToIndex() {
   const location = locationService.getLocation();
   const serviceUrl = buildServicesUrl(ROUTES.explore());
   const currentUrl = location.pathname + location.search;
+  const search = locationService.getSearch();
 
-  if (serviceUrl === currentUrl) {
+  if (serviceUrl === currentUrl || currentUrl.includes(serviceUrl)) {
     return;
   }
 
-  locationService.push(serviceUrl);
+  if (!search.get('var-filters')) {
+    // If we don't have filters, we don't want to keep this url in browser history since this is fired AFTER the url props are made invalid, push the previous route and replace it
+    if (previousRoute) {
+      locationService.replace(previousRoute);
+    }
+    locationService.push(serviceUrl);
+  } else {
+    pushUrlHandler(serviceUrl);
+  }
 }

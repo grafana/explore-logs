@@ -13,7 +13,6 @@ import {
   SceneObjectUrlSyncConfig,
   SceneObjectUrlValues,
   SceneRefreshPicker,
-  SceneRouteMatch,
   SceneTimePicker,
   SceneTimeRange,
   SceneVariableSet,
@@ -21,10 +20,6 @@ import {
 } from '@grafana/scenes';
 import {
   EXPLORATION_DS,
-  getFieldsVariable,
-  getLevelsVariable,
-  getPatternsVariable,
-  getUrlParamNameForVariable,
   MIXED_FORMAT_EXPR,
   VAR_DATASOURCE,
   VAR_FIELDS,
@@ -32,6 +27,7 @@ import {
   VAR_LEVELS,
   VAR_LINE_FILTER,
   VAR_LOGS_FORMAT,
+  VAR_METADATA,
   VAR_PATTERNS,
 } from 'services/variables';
 
@@ -51,7 +47,14 @@ import {
 } from 'services/query';
 import { VariableHide } from '@grafana/schema';
 import { CustomConstantVariable } from '../../services/CustomConstantVariable';
+import {
+  getFieldsVariable,
+  getLevelsVariable,
+  getPatternsVariable,
+  getUrlParamNameForVariable,
+} from '../../services/variableGetters';
 import { ToolbarScene } from './ToolbarScene';
+import { OptionalRouteMatch } from '../Pages';
 
 export interface AppliedPattern {
   pattern: string;
@@ -65,7 +68,7 @@ export interface IndexSceneState extends SceneObjectState {
   body?: LayoutScene;
   initialFilters?: AdHocVariableFilter[];
   patterns?: AppliedPattern[];
-  routeMatch?: SceneRouteMatch<{ service?: string; label?: string }>;
+  routeMatch?: OptionalRouteMatch;
 }
 
 export class IndexScene extends SceneObjectBase<IndexSceneState> {
@@ -120,7 +123,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     const stateUpdate: Partial<IndexSceneState> = {};
 
     if (!this.state.contentScene) {
-      stateUpdate.contentScene = getContentScene(this.state.routeMatch?.params.label);
+      stateUpdate.contentScene = getContentScene(this.state.routeMatch?.params.breakdownLabel);
     }
 
     this.setState(stateUpdate);
@@ -222,6 +225,21 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     return operators;
   };
 
+  const metadataVariable = new AdHocFiltersVariable({
+    name: VAR_METADATA,
+    label: 'Metadata',
+    applyMode: 'manual',
+    layout: 'vertical',
+    getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
+    getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
+    expressionBuilder: renderLogQLMetadataFilters,
+    hide: VariableHide.hideLabel,
+  });
+
+  metadataVariable._getOperators = () => {
+    return operators;
+  };
+
   const levelsVariable = new AdHocFiltersVariable({
     name: VAR_LEVELS,
     label: 'Filters',
@@ -256,7 +274,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
         labelVariable,
         fieldsVariable,
         levelsVariable,
-        // @todo where is patterns being added to the url? Why do we have var-patterns and patterns?
+        metadataVariable,
         new CustomVariable({
           name: VAR_PATTERNS,
           value: '',

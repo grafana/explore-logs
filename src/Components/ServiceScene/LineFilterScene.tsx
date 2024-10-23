@@ -2,12 +2,12 @@ import { css } from '@emotion/css';
 import { SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { Field } from '@grafana/ui';
 import { debounce, escapeRegExp } from 'lodash';
-import React, { ChangeEvent } from 'react';
-import { getLineFilterVariable } from 'services/variables';
+import React, { ChangeEvent, KeyboardEvent } from 'react';
 import { testIds } from 'services/testIds';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { SearchInput } from './Breakdowns/SearchInput';
 import { LineFilterIcon } from './LineFilterIcon';
+import { getLineFilterVariable } from '../../services/variableGetters';
 
 interface LineFilterState extends SceneObjectState {
   lineFilter: string;
@@ -44,15 +44,25 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
     });
   };
 
-  updateFilter(lineFilter: string) {
+  updateFilter(lineFilter: string, debounced = true) {
     this.setState({
       lineFilter,
     });
-    this.updateVariable(lineFilter);
+    if (debounced) {
+      this.updateVariableDebounced(lineFilter);
+    } else {
+      this.updateVariable(lineFilter);
+    }
   }
 
   handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     this.updateFilter(e.target.value);
+  };
+
+  handleEnter = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      this.updateVariable(this.state.lineFilter);
+    }
   };
 
   onCaseSensitiveToggle = (newState: 'sensitive' | 'insensitive') => {
@@ -63,7 +73,11 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
     this.updateFilter(this.state.lineFilter);
   };
 
-  updateVariable = debounce((search: string) => {
+  updateVariableDebounced = debounce((search: string) => {
+    this.updateVariable(search);
+  }, 1000);
+
+  updateVariable = (search: string) => {
     const variable = getLineFilterVariable(this);
     if (search === '') {
       variable.changeValueTo('');
@@ -83,7 +97,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
         containsLevel: search.toLowerCase().includes('level'),
       }
     );
-  }, 350);
+  };
 }
 
 function LineFilterRenderer({ model }: SceneComponentProps<LineFilterScene>) {
@@ -98,8 +112,9 @@ function LineFilterRenderer({ model }: SceneComponentProps<LineFilterScene>) {
         suffix={<LineFilterIcon caseSensitive={caseSensitive} onCaseSensitiveToggle={model.onCaseSensitiveToggle} />}
         placeholder="Search in log lines"
         onClear={() => {
-          model.updateFilter('');
+          model.updateFilter('', false);
         }}
+        onKeyUp={model.handleEnter}
       />
     </Field>
   );

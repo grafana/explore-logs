@@ -2,7 +2,8 @@ import { ConsoleMessage, Locator, Page, TestInfo } from '@playwright/test';
 import pluginJson from '../../src/plugin.json';
 import { testIds } from '../../src/services/testIds';
 import { expect } from '@grafana/plugin-e2e';
-import { LokiQuery } from '../../src/services/query';
+
+import { LokiQuery } from '../../src/services/lokiQuery';
 
 export interface PlaywrightRequest {
   post: any;
@@ -66,6 +67,18 @@ export class ExplorePage {
 
   async addServiceName() {
     await this.firstServicePageSelect.click();
+  }
+
+  /**
+   * Changes the datasource from gdev-loki to gdev-loki-copy
+   */
+  async changeDatasource(sourceUID = 'gdev-loki', targetUID = 'gdev-loki-copy') {
+    await this.page
+      .locator('div')
+      .filter({ hasText: new RegExp(`^${sourceUID}$`) })
+      .nth(1)
+      .click();
+    await this.page.getByText(targetUID).click();
   }
 
   async scrollToBottom() {
@@ -150,8 +163,7 @@ export class ExplorePage {
     await expect(this.page.getByText('FieldAll')).toBeVisible();
   }
 
-  //@todo pull service from url if not in params
-  async gotoServicesBreakdown(serviceName = 'tempo-distributor') {
+  async gotoServicesBreakdownOldUrl(serviceName = 'tempo-distributor') {
     await this.page.goto(
       `/a/${pluginJson.id}/explore/service/tempo-distributor/logs?mode=service_details&patterns=[]&var-filters=service_name|=|${serviceName}&var-logsFormat= | logfmt`
     );
