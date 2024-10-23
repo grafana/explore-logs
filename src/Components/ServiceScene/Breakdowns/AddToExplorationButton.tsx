@@ -6,11 +6,16 @@ import { DataQuery, DataSourceRef } from '@grafana/schema';
 import { IconButton } from '@grafana/ui';
 import { getLokiDatasource } from 'services/scenes';
 
+// using `require` to satisfy typescript compiler
+const LokiLogo = require('../../../img/logo.svg');
+
 export interface AddToExplorationButtonState extends SceneObjectState {
   frame?: DataFrame;
   ds?: DataSourceWithBackend<DataQuery, DataSourceJsonData>;
   labelName?: string;
   fieldName?: string;
+
+  disabledLinks: string[];
 }
 
 type ExtensionContext = {
@@ -23,11 +28,12 @@ type ExtensionContext = {
   title: string;
   note?: string;
   id: string;
+  logoPath: string;
 };
 
 export class AddToExplorationButton extends SceneObjectBase<AddToExplorationButtonState> {
-  constructor(state: AddToExplorationButtonState) {
-    super(state);
+  constructor(state: Omit<AddToExplorationButtonState, 'disabledLinks'>) {
+    super({ ...state, disabledLinks: [] });
     this.addActivationHandler(this.onActivate);
   }
 
@@ -38,7 +44,7 @@ export class AddToExplorationButton extends SceneObjectBase<AddToExplorationButt
   };
 
   public static Component = ({ model }: SceneComponentProps<AddToExplorationButton>) => {
-    const { ds, frame, labelName, fieldName } = model.useState();
+    const { ds, frame, labelName, fieldName, disabledLinks } = model.useState();
 
     const data = sceneGraph.getData(model);
     const sqr = sceneGraph.findObject(data, (o) => o instanceof SceneQueryRunner) as SceneQueryRunner;
@@ -79,23 +85,29 @@ export class AddToExplorationButton extends SceneObjectBase<AddToExplorationButt
         url: window.location.href,
         id: `${JSON.stringify(queries)}${labelName}`,
         title: `${labelName}${fieldName ? ` > ${fieldName}` : ''}`,
+        logoPath: LokiLogo,
       };
     }, [datasourceUid, timeRange, queries, labelName, fieldName]);
 
     const { links } = usePluginLinks({ extensionPointId, context });
-
     return (
       <>
         {links
-          .filter((link) => link.pluginId === 'grafana-investigations-app')
+          .filter((link) => link.pluginId === 'grafana-investigations-app' && link.onClick)
           .map((link) => (
             <IconButton
               tooltip={link.description}
-              disabled={link.category === 'disabled'}
+              disabled={link.category === 'disabled' || disabledLinks.includes(link.id)}
               aria-label="extension-link-to-open-exploration"
               key={link.id}
               name={link.icon ?? 'panel-add'}
-              onClick={link.onClick}
+              onClick={(e) => {
+                if (link.onClick) {
+                  link.onClick(e);
+                }
+                disabledLinks.push(link.id);
+                model.setState({ disabledLinks: disabledLinks });
+              }}
             />
           ))}
       </>
