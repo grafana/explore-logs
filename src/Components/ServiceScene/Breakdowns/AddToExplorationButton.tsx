@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
 import { DataFrame, DataSourceJsonData, TimeRange } from '@grafana/data';
 import { DataSourceWithBackend, usePluginLinks } from '@grafana/runtime';
 import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState, SceneQueryRunner } from '@grafana/scenes';
 import { DataQuery, DataSourceRef } from '@grafana/schema';
 import { IconButton } from '@grafana/ui';
+import React from 'react';
+import { ExtensionPoints } from 'services/extensions/links';
 import { getLokiDatasource } from 'services/scenes';
 import LokiLogo from '../../../img/logo.svg';
 
@@ -12,8 +13,10 @@ export interface AddToExplorationButtonState extends SceneObjectState {
   ds?: DataSourceWithBackend<DataQuery, DataSourceJsonData>;
   labelName?: string;
   fieldName?: string;
+  context?: ExtensionContext;
 
   disabledLinks: string[];
+  queries: DataQuery[];
 }
 
 type ExtensionContext = {
@@ -31,8 +34,8 @@ type ExtensionContext = {
 };
 
 export class AddToExplorationButton extends SceneObjectBase<AddToExplorationButtonState> {
-  constructor(state: Omit<AddToExplorationButtonState, 'disabledLinks'>) {
-    super({ ...state, disabledLinks: [] });
+  constructor(state: Omit<AddToExplorationButtonState, 'disabledLinks' | 'queries'>) {
+    super({ ...state, disabledLinks: [], queries: [] });
     this.addActivationHandler(this.onActivate);
   }
 
@@ -40,56 +43,59 @@ export class AddToExplorationButton extends SceneObjectBase<AddToExplorationButt
     getLokiDatasource(this).then((ds) => {
       this.setState({ ds });
     });
+
+    this._subs.add(
+      this.subscribeToState(() => {
+        this.getQueries();
+        this.getContext();
+      })
+    );
+  };
+
+  private getQueries = () => {
+    const data = sceneGraph.getData(this);
+    const queryRunner = sceneGraph.findObject(data, (o) => o instanceof SceneQueryRunner) as SceneQueryRunner;
+    if (queryRunner) {
+      const filter = this.state.frame ? getFilter(this.state.frame) : null;
+      const queries = queryRunner.state.queries.map((q) => ({
+        ...q,
+        expr: sceneGraph.interpolate(queryRunner, q.expr),
+        legendFormat: filter?.name ? `{{ ${filter.name} }}` : sceneGraph.interpolate(queryRunner, q.legendFormat),
+      }));
+      if (JSON.stringify(queries) !== JSON.stringify(this.state.queries)) {
+        this.setState({ queries });
+      }
+    }
+  };
+
+  private getContext = () => {
+    const { queries, ds, labelName, fieldName } = this.state;
+    const timeRange = sceneGraph.getTimeRange(this);
+
+    if (!timeRange || !queries || !ds?.uid) {
+      return;
+    }
+    const ctx = {
+      origin: 'Explore Logs',
+      type: 'timeseries',
+      queries,
+      timeRange: { ...timeRange.state.value },
+      datasource: { uid: ds.uid },
+      url: window.location.href,
+      id: `${JSON.stringify(queries)}${labelName}${fieldName}`,
+      title: `${labelName}${fieldName ? ` > ${fieldName}` : ''}`,
+      logoPath: LokiLogo,
+      drillDownLabel: fieldName,
+    };
+    if (JSON.stringify(ctx) !== JSON.stringify(this.state.context)) {
+      this.setState({ context: ctx });
+    }
   };
 
   public static Component = ({ model }: SceneComponentProps<AddToExplorationButton>) => {
-    const { ds, frame, labelName, fieldName, disabledLinks } = model.useState();
+    const { context, disabledLinks } = model.useState();
+    const { links } = usePluginLinks({ extensionPointId: ExtensionPoints.MetricExploration, context });
 
-    const data = sceneGraph.getData(model);
-    const sqr = sceneGraph.findObject(data, (o) => o instanceof SceneQueryRunner) as SceneQueryRunner;
-
-    const queries = useMemo(() => {
-      return sqr?.state.queries.map((q) => ({
-        ...q,
-        expr: sceneGraph.interpolate(sqr, q.expr),
-        legendFormat: sceneGraph.interpolate(sqr, q.legendFormat),
-      }));
-    }, [sqr]);
-
-    const datasourceUid = ds?.uid;
-    const timeRange = sceneGraph.getTimeRange(model);
-
-    useMemo(() => {
-      if (frame) {
-        const filter = getFilter(frame);
-        queries?.forEach((query: DataQuery & { legendFormat: string }) => {
-          if (filter) {
-            query.legendFormat = `{{${filter.name}}}`;
-          }
-        });
-      }
-    }, [frame, queries]);
-
-    const extensionPointId = 'grafana-lokiexplore-app/metric-exploration/v1';
-    const context = useMemo<ExtensionContext | undefined>(() => {
-      if (!timeRange || !queries || !datasourceUid) {
-        return;
-      }
-      return {
-        timeRange: { ...timeRange.state.value },
-        type: 'timeseries',
-        queries,
-        datasource: { uid: datasourceUid },
-        origin: 'Explore Logs',
-        url: window.location.href,
-        id: `${JSON.stringify(queries)}${labelName}${fieldName}`,
-        title: `${labelName}${fieldName ? ` > ${fieldName}` : ''}`,
-        logoPath: LokiLogo,
-        drillDownLabel: fieldName,
-      };
-    }, [datasourceUid, timeRange, queries, labelName, fieldName]);
-
-    const { links } = usePluginLinks({ extensionPointId, context });
     return (
       <>
         {links
@@ -105,8 +111,7 @@ export class AddToExplorationButton extends SceneObjectBase<AddToExplorationButt
                 if (link.onClick) {
                   link.onClick(e);
                 }
-                disabledLinks.push(link.id);
-                model.setState({ disabledLinks: disabledLinks });
+                model.setState({ disabledLinks: [...disabledLinks, link.id] });
               }}
             />
           ))}
