@@ -41,6 +41,8 @@ import {
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
+  getMetadataVariable,
+  getPatternsVariable,
 } from '../../services/variableGetters';
 import { logger } from '../../services/logger';
 import { IndexScene } from '../IndexScene/IndexScene';
@@ -174,6 +176,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
               },
             });
 
+            this.resetTabCount();
+
             if (!breakdownLabel) {
               navigateToDrilldownPage(getDrilldownSlug(), this);
             } else {
@@ -182,6 +186,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
           } else {
             this.redirectToStart();
           }
+        } else if (!areArraysEqual(newState.filters, prevState.filters)) {
+          this.state.$patternsData?.runQueries();
+          this.state.$detectedLabelsData?.runQueries();
+          this.state.$detectedFieldsData?.runQueries();
         }
       })
     );
@@ -242,7 +250,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.resetBodyAndData();
 
     this.setBreakdownView();
-    this.setSubscribeToLabelsVariable();
 
     // Run queries on activate
     this.runQueries();
@@ -259,12 +266,23 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this._subs.add(this.subscribeToLogsQuery());
 
     // Variable subscriptions
-    this._subs.add(this.subscribeToLabelsVariable());
+    this.setSubscribeToLabelsVariable();
     this._subs.add(this.subscribeToFieldsVariable());
+    this._subs.add(this.subscribeToMetadataVariable());
+    this._subs.add(this.subscribeToLevelsVariable());
     this._subs.add(this.subscribeToDataSourceVariable());
+    this._subs.add(this.subscribeToPatternsVariable());
 
     // Update query runner on manual time range change
     this._subs.add(this.subscribeToTimeRange());
+  }
+
+  private subscribeToPatternsVariable() {
+    return getPatternsVariable(this).subscribeToState((newState, prevState) => {
+      if (newState.value !== prevState.value) {
+        this.state.$detectedFieldsData?.runQueries();
+      }
+    });
   }
 
   private subscribeToDataSourceVariable() {
@@ -273,18 +291,34 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     });
   }
 
-  private subscribeToLabelsVariable() {
-    return getLabelsVariable(this).subscribeToState((newState, prevState) => {
+  private resetTabCount() {
+    this.setState({
+      fieldsCount: undefined,
+      labelsCount: undefined,
+      patternsCount: undefined,
+    });
+
+    getMetadataService().setServiceSceneState(this.state);
+  }
+
+  private subscribeToFieldsVariable() {
+    return getFieldsVariable(this).subscribeToState((newState, prevState) => {
       if (!areArraysEqual(newState.filters, prevState.filters)) {
-        this.state.$patternsData?.runQueries();
-        this.state.$detectedLabelsData?.runQueries();
         this.state.$detectedFieldsData?.runQueries();
       }
     });
   }
 
-  private subscribeToFieldsVariable() {
-    return getFieldsVariable(this).subscribeToState((newState, prevState) => {
+  private subscribeToMetadataVariable() {
+    return getMetadataVariable(this).subscribeToState((newState, prevState) => {
+      if (!areArraysEqual(newState.filters, prevState.filters)) {
+        this.state.$detectedFieldsData?.runQueries();
+      }
+    });
+  }
+
+  private subscribeToLevelsVariable() {
+    return getLevelsVariable(this).subscribeToState((newState, prevState) => {
       if (!areArraysEqual(newState.filters, prevState.filters)) {
         this.state.$detectedFieldsData?.runQueries();
       }

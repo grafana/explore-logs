@@ -1,6 +1,6 @@
 {
   "name": "grafana-lokiexplore-app",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "bundlewatch": {
     "files": [
       {
@@ -13,7 +13,9 @@
       }
     ],
     "ci": {
-      "trackBranches": ["main"]
+      "trackBranches": [
+        "main"
+      ]
     }
   },
   "description": "Query less exploration of log data stored in Loki",
@@ -99,11 +101,11 @@
   "dependencies": {
     "@bsull/augurs": "^0.3.1",
     "@emotion/css": "^11.10.6",
-    "@grafana/data": "^11.2.2",
+    "@grafana/data": "^11.3.0",
     "@grafana/lezer-logql": "^0.2.6",
-    "@grafana/runtime": "^11.2.2",
+    "@grafana/runtime": "^11.3.0",
     "@grafana/scenes": "5.14.7",
-    "@grafana/ui": "^11.2.2",
+    "@grafana/ui": "^11.3.0",
     "@hello-pangea/dnd": "^16.6.0",
     "@lezer/common": "^1.2.1",
     "@lezer/lr": "^1.4.1",
