@@ -5,7 +5,7 @@ import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState, Sce
 import { DataQuery, DataSourceRef } from '@grafana/schema';
 import { IconButton } from '@grafana/ui';
 import { getLokiDatasource } from 'services/scenes';
-import LokiLogo from 'img/logo.svg';
+import LokiLogo from '../../../img/logo.svg';
 
 export interface AddToExplorationButtonState extends SceneObjectState {
   frame?: DataFrame;
@@ -91,7 +91,7 @@ export class AddToExplorationButton extends SceneObjectBase<AddToExplorationButt
     return (
       <>
         {links
-          .filter((link) => link.pluginId === 'grafana-investigations-app' && link.onClick)
+          .filter((link) => link.pluginId === 'grafana-explorations-app' && link.onClick)
           .map((link) => (
             <IconButton
               tooltip={link.description}
