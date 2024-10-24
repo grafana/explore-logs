@@ -24,9 +24,9 @@ type ExtensionContext = {
   url: string;
   type: string;
   title: string;
-  note?: string;
   id: string;
   logoPath: string;
+  note?: string;
   drillDownLabel?: string;
 };
 
