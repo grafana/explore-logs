@@ -82,7 +82,7 @@ export class AddToExplorationButton extends SceneObjectBase<AddToExplorationButt
         datasource: { uid: datasourceUid },
         origin: 'Explore Logs',
         url: window.location.href,
-        id: `${JSON.stringify(queries)}${labelName}`,
+        id: `${JSON.stringify(queries)}${labelName}${fieldName}`,
         title: `${labelName}${fieldName ? ` > ${fieldName}` : ''}`,
         logoPath: LokiLogo,
         drillDownLabel: fieldName,
