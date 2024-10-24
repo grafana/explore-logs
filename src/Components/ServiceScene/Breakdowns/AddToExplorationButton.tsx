@@ -27,6 +27,7 @@ type ExtensionContext = {
   note?: string;
   id: string;
   logoPath: string;
+  drillDownLabel?: string;
 };
 
 export class AddToExplorationButton extends SceneObjectBase<AddToExplorationButtonState> {
@@ -84,6 +85,7 @@ export class AddToExplorationButton extends SceneObjectBase<AddToExplorationButt
         id: `${JSON.stringify(queries)}${labelName}`,
         title: `${labelName}${fieldName ? ` > ${fieldName}` : ''}`,
         logoPath: LokiLogo,
+        drillDownLabel: fieldName,
       };
     }, [datasourceUid, timeRange, queries, labelName, fieldName]);
 
