@@ -20,7 +20,16 @@ const App = lazy(async () => {
   return import('Components/App');
 });
 
-export const plugin = new AppPlugin<{}>().setRootPage(App);
+const AppConfig = lazy(async () => {
+  return await import('./Components/AppConfig/AppConfig');
+});
+
+export const plugin = new AppPlugin<{}>().setRootPage(App).addConfigPage({
+  title: 'Configuration',
+  icon: 'cog',
+  body: AppConfig,
+  id: 'configuration',
+});
 
 for (const linkConfig of linkConfigs) {
   plugin.addLink(linkConfig);
