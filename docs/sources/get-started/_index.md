@@ -36,7 +36,7 @@ To take a tour of Explore Logs, follow these steps:
    - With the standard time range picker on the top right.
    - By clicking and dragging the time range on any time series visualization.
 1. Services are shown based on the volume of logs, or you can use the **Search Services** field to search for the service by name.
-1. To explore logs for a service, slick the **Select** button on the service graph. *New for version 1.0.2*: You can now begin a workflow with any label, not just service, by clicking **Add Label**.
+1. To explore logs for a service, click the **Select** button on the service graph. *New for version 1.0.2*: You can now begin a workflow with any label, not just service, by clicking **Add Label**.
 1. On the service details page, click the **Labels** tab to see visualizations of the log volume for each label. ([No labels?](https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/troubleshooting/#there-are-no-labels))
 1. On the **Labels** tab, select a label to see the log volume for each value of that label.
    Explore Logs shows you the volume of logs with specific labels and fields. Learn more about [Labels and Fields](https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/labels-and-fields/).
