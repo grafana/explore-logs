@@ -13,7 +13,7 @@ weight: 500
 
 # Labels and Fields
 
-Explore Logs visualises log volumes for the labels attached to your log lines, and fields automatically extracted from the text of the line itself.
+Explore Logs visualizes log volumes for the labels attached to your log lines, and fields automatically extracted from the text of the line itself.
 
 {{< figure alt="Explore Logs Labels tab" width="900px" align="center" src="../images/labels.png" caption="Labels tab" >}}
 
