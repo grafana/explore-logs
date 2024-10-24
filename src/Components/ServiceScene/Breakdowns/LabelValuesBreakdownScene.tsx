@@ -225,7 +225,8 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
             getLabelValue,
             DrawStyle.Bars,
             VAR_LABELS,
-            sceneGraph.getAncestor(this, LabelBreakdownScene).state.sort
+            sceneGraph.getAncestor(this, LabelBreakdownScene).state.sort,
+            tagKey
           ),
           sortBy,
           direction,
@@ -247,7 +248,8 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
             getLabelValue,
             DrawStyle.Bars,
             VAR_LABELS,
-            sceneGraph.getAncestor(this, LabelBreakdownScene).state.sort
+            sceneGraph.getAncestor(this, LabelBreakdownScene).state.sort,
+            tagKey
           ),
           sortBy,
           direction,
