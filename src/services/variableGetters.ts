@@ -69,6 +69,10 @@ export function getLabelsVariable(scene: SceneObject) {
   return getAdHocFiltersVariable(VAR_LABELS, scene);
 }
 
+export function getMetadataVariable(scene: SceneObject) {
+  return getAdHocFiltersVariable(VAR_METADATA, scene);
+}
+
 export function getFieldsVariable(scene: SceneObject) {
   return getAdHocFiltersVariable(VAR_FIELDS, scene);
 }
