@@ -18,6 +18,7 @@ import { getVariableForLabel } from '../../services/fields';
 import { VAR_FIELDS, VAR_LABELS, VAR_LEVELS, VAR_METADATA } from '../../services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { getAdHocFiltersVariable, getValueFromFieldsFilter } from '../../services/variableGetters';
+import { copyText, generateLogShortlink } from 'services/text';
 
 interface LogsPanelSceneState extends SceneObjectState {
   body?: VizPanel;
@@ -137,7 +138,11 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
   }
 
   private handleShareLogLineClick(event: MouseEvent<HTMLElement>, row?: LogRowModel) {
-    console.log(event, row);
+    if (row?.rowId) {
+      const timeRange = sceneGraph.getTimeRange(this);
+      const buttonRef = event.currentTarget instanceof HTMLButtonElement ? event.currentTarget : undefined;
+      copyText(generateLogShortlink(row.rowId, timeRange.state.value), buttonRef)
+    }
   }
 
   private handleLabelFilterClick = (key: string, value: string, frame?: DataFrame) => {
