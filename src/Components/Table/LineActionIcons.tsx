@@ -1,17 +1,10 @@
 import { ClipboardButton, IconButton, Modal, useTheme2 } from '@grafana/ui';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
-import { SelectedTableRow } from 'Components/Table/LogLineCellComponent';
 import { useQueryContext } from 'Components/Table/Context/QueryContext';
 import { testIds } from '../../services/testIds';
-import { locationService } from '@grafana/runtime';
-
-export enum UrlParameterType {
-  SelectedLine = 'selectedLine',
-  From = 'from',
-  To = 'to',
-}
+import { generateLogShortlink } from 'services/text';
 
 export const getStyles = (theme: GrafanaTheme2, bgColor?: string) => ({
   clipboardButton: css({
@@ -53,6 +46,12 @@ export function LineActionIcons(props: { rowIndex: number; value: unknown }) {
   const logId = logsFrame?.idField?.values[props.rowIndex];
   const lineValue = logsFrame?.bodyField.values[props.rowIndex];
   const [isInspecting, setIsInspecting] = useState(false);
+  const getText = useCallback(() => {
+    if (timeRange) {
+      return generateLogShortlink(logId, timeRange, { row: props.rowIndex });
+    }
+    return '';
+  }, [logId, props.rowIndex, timeRange])
   return (
     <>
       <div className={styles.iconWrapper}>
@@ -80,26 +79,7 @@ export function LineActionIcons(props: { rowIndex: number; value: unknown }) {
             tooltip="Copy link to log line"
             tooltipPlacement="top"
             tabIndex={0}
-            getText={() => {
-              const location = locationService.getLocation();
-              const searchParams = new URLSearchParams(location.search);
-              if (searchParams && timeRange) {
-                const selectedLine: SelectedTableRow = {
-                  row: props.rowIndex,
-                  id: logId,
-                };
-
-                searchParams.set(UrlParameterType.From, timeRange.from.toISOString());
-                searchParams.set(UrlParameterType.To, timeRange.to.toISOString());
-                searchParams.set(UrlParameterType.SelectedLine, JSON.stringify(selectedLine));
-
-                // @todo can encoding + as %20 break other stuff? Can label names or values have + in them that we don't want encoded? Should we just update values?
-                // + encoding for whitespace is for application/x-www-form-urlencoded, which appears to be the default encoding for URLSearchParams, replacing + with %20 to keep urls meant for the browser from breaking
-                const searchString = searchParams.toString().replace(/\+/g, '%20');
-                return window.location.origin + location.pathname + '?' + searchString;
-              }
-              return '';
-            }}
+            getText={getText}
           />
         </div>
       </div>

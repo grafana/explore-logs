@@ -1,4 +1,6 @@
+import { locationService } from '@grafana/runtime';
 import { logger } from './logger';
+import { TimeRange } from '@grafana/data';
 
 export const copyText = async (text: string, buttonRef: React.MutableRefObject<HTMLButtonElement | null>) => {
   if (navigator.clipboard && window.isSecureContext) {
@@ -21,6 +23,33 @@ export const copyText = async (text: string, buttonRef: React.MutableRefObject<H
     textarea.remove();
   }
 };
+
+export enum UrlParameterType {
+  SelectedLine = 'selectedLine',
+  From = 'from',
+  To = 'to',
+}
+
+export const generateLogShortlink = (logId: string, timeRange: TimeRange, metadata: Record<string, string | number> = {}) => {
+  const location = locationService.getLocation();
+  const searchParams = new URLSearchParams(location.search);
+  if (searchParams) {
+    const selectedLine = {
+      id: logId,
+      ...metadata,
+    };
+
+    searchParams.set(UrlParameterType.From, timeRange.from.toISOString());
+    searchParams.set(UrlParameterType.To, timeRange.to.toISOString());
+    searchParams.set(UrlParameterType.SelectedLine, JSON.stringify(selectedLine));
+
+    // @todo can encoding + as %20 break other stuff? Can label names or values have + in them that we don't want encoded? Should we just update values?
+    // + encoding for whitespace is for application/x-www-form-urlencoded, which appears to be the default encoding for URLSearchParams, replacing + with %20 to keep urls meant for the browser from breaking
+    const searchString = searchParams.toString().replace(/\+/g, '%20');
+    return window.location.origin + location.pathname + '?' + searchString;
+  }
+  return '';
+}
 
 export function capitalizeFirstLetter(input: string) {
   if (input.length) {
