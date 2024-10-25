@@ -7,12 +7,12 @@ import {
   SceneObjectState,
   VizPanel,
 } from '@grafana/scenes';
-import { DataFrame } from '@grafana/data';
+import { DataFrame, LogRowModel } from '@grafana/data';
 import { getLogOption, setDisplayedFields } from '../../services/store';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
-import React from 'react';
+import React, { MouseEvent } from 'react';
 import { LogsListScene } from './LogsListScene';
-import { LoadingPlaceholder } from '@grafana/ui';
+import { IconButton, LoadingPlaceholder } from '@grafana/ui';
 import { addToFilters, FilterType } from './Breakdowns/AddToFiltersButton';
 import { getVariableForLabel } from '../../services/fields';
 import { VAR_FIELDS, VAR_LABELS, VAR_LEVELS, VAR_METADATA } from '../../services/variables';
@@ -103,22 +103,41 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     const parentModel = this.getParentScene();
     const visualizationType = parentModel.state.visualizationType;
 
-    return PanelBuilders.logs()
-      .setTitle('Logs')
-      .setOption('showTime', true)
-      .setOption('onClickFilterLabel', this.handleLabelFilterClick)
-      .setOption('onClickFilterOutLabel', this.handleLabelFilterOutClick)
-      .setOption('isFilterLabelActive', this.handleIsFilterLabelActive)
-      .setOption('onClickFilterString', this.handleFilterStringClick)
-      .setOption('onClickShowField', this.onClickShowField)
-      .setOption('onClickHideField', this.onClickHideField)
-      .setOption('displayedFields', parentModel.state.displayedFields)
-      .setOption('wrapLogMessage', Boolean(getLogOption('wrapLines')))
-      .setOption('showLogContextToggle', true)
-      .setHeaderActions(
-        <LogsPanelHeaderActions vizType={visualizationType} onChange={parentModel.setVisualizationType} />
-      )
-      .build();
+    return (
+      PanelBuilders.logs()
+        .setTitle('Logs')
+        .setOption('showTime', true)
+        .setOption('onClickFilterLabel', this.handleLabelFilterClick)
+        .setOption('onClickFilterOutLabel', this.handleLabelFilterOutClick)
+        .setOption('isFilterLabelActive', this.handleIsFilterLabelActive)
+        .setOption('onClickFilterString', this.handleFilterStringClick)
+        .setOption('onClickShowField', this.onClickShowField)
+        .setOption('onClickHideField', this.onClickHideField)
+        .setOption('displayedFields', parentModel.state.displayedFields)
+        .setOption('wrapLogMessage', Boolean(getLogOption('wrapLines')))
+        .setOption('showLogContextToggle', true)
+        .setOption('showLogContextToggle', true)
+        // @ts-expect-error
+        .setOption('logRowMenuIconsAfter', [
+          <IconButton
+            aria-label="Copy link to log line"
+            tooltip="Copy link to log line"
+            tooltipPlacement="top"
+            size="md"
+            name="share-alt"
+            onClick={this.handleShareLogLineClick}
+            key={0}
+          />,
+        ])
+        .setHeaderActions(
+          <LogsPanelHeaderActions vizType={visualizationType} onChange={parentModel.setVisualizationType} />
+        )
+        .build()
+    );
+  }
+
+  private handleShareLogLineClick(event: MouseEvent<HTMLElement>, row?: LogRowModel) {
+    console.log(event, row);
   }
 
   private handleLabelFilterClick = (key: string, value: string, frame?: DataFrame) => {
