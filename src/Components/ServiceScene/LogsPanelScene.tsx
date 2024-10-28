@@ -12,13 +12,14 @@ import { getLogOption, setDisplayedFields } from '../../services/store';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 import React, { MouseEvent } from 'react';
 import { LogsListScene } from './LogsListScene';
-import { IconButton, LoadingPlaceholder } from '@grafana/ui';
+import { LoadingPlaceholder } from '@grafana/ui';
 import { addToFilters, FilterType } from './Breakdowns/AddToFiltersButton';
 import { getVariableForLabel } from '../../services/fields';
 import { VAR_FIELDS, VAR_LABELS, VAR_LEVELS, VAR_METADATA } from '../../services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { getAdHocFiltersVariable, getValueFromFieldsFilter } from '../../services/variableGetters';
 import { copyText, generateLogShortlink } from 'services/text';
+import { CopyLinkButton } from './CopyLinkButton';
 
 interface LogsPanelSceneState extends SceneObjectState {
   body?: VizPanel;
@@ -120,12 +121,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         .setOption('showLogContextToggle', true)
         // @ts-expect-error
         .setOption('logRowMenuIconsAfter', [
-          <IconButton
-            aria-label="Copy link to log line"
-            tooltip="Copy link to log line"
-            tooltipPlacement="top"
-            size="md"
-            name="share-alt"
+          <CopyLinkButton
             onClick={this.handleShareLogLineClick}
             key={0}
           />,
