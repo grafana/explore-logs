@@ -1,10 +1,13 @@
-import { Alert } from '@grafana/ui';
+import { Alert, useStyles2 } from '@grafana/ui';
 import React from 'react';
+import { GrafanaTheme2 } from '@grafana/data';
+import { css } from '@emotion/css';
 
 export function InterceptBanner(props: { onRemove: () => void }) {
+  const styles = useStyles2(getStyles);
   return (
     <>
-      <Alert severity={'info'} title={'Welcome to Explore Logs!'} onRemove={props.onRemove}>
+      <Alert className={styles.alert} severity={'info'} title={'Welcome to Explore Logs!'} onRemove={props.onRemove}>
         <div>
           Check out our{' '}
           <a
@@ -43,4 +46,12 @@ export function InterceptBanner(props: { onRemove: () => void }) {
       </Alert>
     </>
   );
+}
+
+function getStyles(theme: GrafanaTheme2) {
+  return {
+    alert: css({
+      flex: 'none',
+    }),
+  };
 }
