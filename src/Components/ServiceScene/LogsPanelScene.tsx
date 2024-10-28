@@ -120,12 +120,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         .setOption('showLogContextToggle', true)
         .setOption('showLogContextToggle', true)
         // @ts-expect-error
-        .setOption('logRowMenuIconsAfter', [
-          <CopyLinkButton
-            onClick={this.handleShareLogLineClick}
-            key={0}
-          />,
-        ])
+        .setOption('logRowMenuIconsAfter', [<CopyLinkButton onClick={this.handleShareLogLineClick} key={0} />])
         .setHeaderActions(
           <LogsPanelHeaderActions vizType={visualizationType} onChange={parentModel.setVisualizationType} />
         )
@@ -137,11 +132,18 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     if (row?.rowId && this.state.body) {
       const timeRange = sceneGraph.getTimeRange(this.state.body);
       const buttonRef = event.currentTarget instanceof HTMLButtonElement ? event.currentTarget : undefined;
-      copyText(generateLogShortlink('panelState', {
-        logs: { id: row.uid },
-      }, timeRange.state.value), buttonRef);
+      copyText(
+        generateLogShortlink(
+          'panelState',
+          {
+            logs: { id: row.uid },
+          },
+          timeRange.state.value
+        ),
+        buttonRef
+      );
     }
-  }
+  };
 
   private handleLabelFilterClick = (key: string, value: string, frame?: DataFrame) => {
     this.handleLabelFilter(key, value, frame, 'toggle');

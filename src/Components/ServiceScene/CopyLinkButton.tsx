@@ -1,6 +1,6 @@
-import { LogRowModel } from "@grafana/data";
-import { IconButton } from "@grafana/ui";
-import React, { MouseEvent, useCallback, useEffect, useRef, useState } from "react";
+import { LogRowModel } from '@grafana/data';
+import { IconButton } from '@grafana/ui';
+import React, { MouseEvent, useCallback, useEffect, useRef, useState } from 'react';
 
 interface Props {
   onClick(event: MouseEvent<HTMLElement>, row?: LogRowModel): void;
@@ -24,20 +24,23 @@ export const CopyLinkButton = ({ onClick }: Props) => {
     };
   }, [copied]);
 
-  const handleClick = useCallback((event: MouseEvent<HTMLElement>, row?: LogRowModel) => {
-    setCopied(true);
-    onClick(event, row);
-  }, [onClick]);
+  const handleClick = useCallback(
+    (event: MouseEvent<HTMLElement>, row?: LogRowModel) => {
+      setCopied(true);
+      onClick(event, row);
+    },
+    [onClick]
+  );
 
   return (
     <IconButton
       aria-label="Copy link to log line"
-      tooltip={copied ? "Copied" : "Copy link to log line"}
+      tooltip={copied ? 'Copied' : 'Copy link to log line'}
       tooltipPlacement="top"
       size="md"
-      name={copied ? "check" : "share-alt"}
+      name={copied ? 'check' : 'share-alt'}
       onClick={handleClick}
       ref={buttonRef}
     />
-  )
-}
+  );
+};
