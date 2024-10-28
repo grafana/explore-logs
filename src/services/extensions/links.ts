@@ -12,6 +12,10 @@ const title = 'Open in Explore Logs';
 const description = 'Open current query in the Explore Logs view';
 const icon = 'gf-logs';
 
+export const ExtensionPoints = {
+  MetricExploration: 'grafana-lokiexplore-app/metric-exploration/v1',
+} as const;
+
 // `plugin.addLink` requires these types; unfortunately, the correct `PluginExtensionAddedLinkConfig` type is not exported with 11.2.x
 // TODO: fix this type when we move to `@grafana/data` 11.3.x
 export const linkConfigs: Array<

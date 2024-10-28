@@ -139,7 +139,6 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     ds: DataSourceWithBackend<LokiQuery>,
     subscriber: Subscriber<DataQueryResponse>
   ) {
-    // @ts-expect-error
     const shardingEnabled = config.featureToggles.exploreLogsShardSplitting;
 
     // Query the datasource and return either observable or promise
