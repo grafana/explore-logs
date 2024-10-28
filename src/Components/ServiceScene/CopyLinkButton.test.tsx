@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { CopyLinkButton } from './CopyLinkButton';
 import React from 'react';
 import userEvent from '@testing-library/user-event';
@@ -17,15 +17,17 @@ test('Renders correctly', () => {
 
 test('Calls event listener and displays a success message', async () => {
   const onClick = jest.fn();
-  render(<CopyLinkButton onClick={onClick} />);
+  const { getByLabelText, queryByLabelText } = render(<CopyLinkButton onClick={onClick} />);
 
-  await userEvent.hover(screen.getByRole('button'));
-  await userEvent.click(screen.getByRole('button'));
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+
+  await act(() => user.click(screen.getByRole('button')));
 
   expect(onClick).toHaveBeenCalled();
-  expect(await screen.findByText('Copied')).toBeInTheDocument();
+  expect(getByLabelText('Copied')).toBeInTheDocument();
 
-  jest.advanceTimersByTime(2000);
+  act(() => jest.advanceTimersByTime(2000));
 
-  expect(await screen.findByText('Copy link to log line')).toBeInTheDocument();
+  expect(queryByLabelText('Copied')).not.toBeInTheDocument();
+  expect(getByLabelText('Copy link to log line')).toBeInTheDocument();
 });
