@@ -1,6 +1,6 @@
 import { LogRowModel } from '@grafana/data';
 import { IconButton } from '@grafana/ui';
-import React, { MouseEvent, useCallback, useEffect, useRef, useState } from 'react';
+import React, { MouseEvent, useCallback, useEffect, useState } from 'react';
 
 interface Props {
   onClick(event: MouseEvent<HTMLElement>, row?: LogRowModel): void;
@@ -8,7 +8,6 @@ interface Props {
 
 export const CopyLinkButton = ({ onClick }: Props) => {
   const [copied, setCopied] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout>;
@@ -20,27 +19,27 @@ export const CopyLinkButton = ({ onClick }: Props) => {
     }
 
     return () => {
-      window.clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
     };
   }, [copied]);
 
   const handleClick = useCallback(
     (event: MouseEvent<HTMLElement>, row?: LogRowModel) => {
-      setCopied(true);
       onClick(event, row);
+      setCopied(true);
     },
     [onClick]
   );
 
   return (
     <IconButton
-      aria-label="Copy link to log line"
+      aria-label={copied ? 'Copied' : 'Copy link to log line'}
       tooltip={copied ? 'Copied' : 'Copy link to log line'}
       tooltipPlacement="top"
+      variant={copied ? 'primary' : 'secondary'}
       size="md"
       name={copied ? 'check' : 'share-alt'}
       onClick={handleClick}
-      ref={buttonRef}
     />
   );
 };
