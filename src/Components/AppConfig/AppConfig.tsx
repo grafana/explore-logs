@@ -42,7 +42,7 @@ const AppConfig = ({ plugin }: Props) => {
   return (
     <div data-testid={testIds.appConfig.container}>
       {/* CUSTOM SETTINGS */}
-      <FieldSet label="Settings" className={s.marginTopXl}>
+      <FieldSet label="Settings">
         {/* interval */}
         <Field
           description={
