@@ -2,7 +2,7 @@ import { getBackendSrv, locationService } from '@grafana/runtime';
 import { AppPluginMeta, GrafanaTheme2, PluginConfigPageProps, PluginMeta, rangeUtil } from '@grafana/data';
 import { lastValueFrom } from 'rxjs';
 import { css } from '@emotion/css';
-import { Button, Field, FieldSet, Icon, Input, Tooltip, useStyles2 } from '@grafana/ui';
+import { Button, Field, FieldSet, Input, useStyles2 } from '@grafana/ui';
 import React, { ChangeEvent, useState } from 'react';
 import { isNumber } from 'lodash';
 import { logger } from '../../services/logger';
@@ -45,19 +45,14 @@ const AppConfig = ({ plugin }: Props) => {
       <FieldSet label="Settings" className={s.marginTopXl}>
         {/* interval */}
         <Field
-          label={
-            <span className={s.label}>
-              Max interval{' '}
-              <Tooltip
-                content={
-                  'The maximum interval that can be selected in the time picker within the Explore Logs app. e.g. 7d, 24h, 24hours Unused if empty.'
-                }
-              >
-                <Icon className={s.icon} name={'question-circle'} />
-              </Tooltip>
+          description={
+            <span>
+              The maximum interval that can be selected in the time picker within the Explore Logs app. If empty users
+              can select any time range interval in Explore Logs. <br />
+              Example values: 7d, 24h, 2w
             </span>
           }
-          description=""
+          label={'Max interval'}
           className={s.marginTop}
         >
           <Input
@@ -66,7 +61,7 @@ const AppConfig = ({ plugin }: Props) => {
             data-testid={testIds.appConfig.interval}
             label={`Max interval`}
             value={state?.interval}
-            placeholder={`e.g.: 7d`}
+            placeholder={`7d`}
             onChange={onChangeInterval}
           />
         </Field>
