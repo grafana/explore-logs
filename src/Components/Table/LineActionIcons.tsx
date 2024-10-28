@@ -48,7 +48,7 @@ export function LineActionIcons(props: { rowIndex: number; value: unknown }) {
   const [isInspecting, setIsInspecting] = useState(false);
   const getText = useCallback(() => {
     if (timeRange) {
-      return generateLogShortlink(logId, timeRange, { row: props.rowIndex });
+      return generateLogShortlink('selectedLine', { id: logId, row: props.rowIndex }, timeRange);
     }
     return '';
   }, [logId, props.rowIndex, timeRange])

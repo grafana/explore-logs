@@ -141,7 +141,9 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     if (row?.rowId) {
       const timeRange = sceneGraph.getTimeRange(this);
       const buttonRef = event.currentTarget instanceof HTMLButtonElement ? event.currentTarget : undefined;
-      copyText(generateLogShortlink(row.rowId, timeRange.state.value), buttonRef)
+      copyText(generateLogShortlink('panelState', {
+        logs: { id: row.uid },
+      }, timeRange.state.value), buttonRef);
     }
   }
 

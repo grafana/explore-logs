@@ -26,30 +26,24 @@ export const copyText = async (text: string, buttonRef?: React.MutableRefObject<
 };
 
 export enum UrlParameterType {
-  SelectedLine = 'selectedLine',
   From = 'from',
   To = 'to',
 }
 
-export const generateLogShortlink = (logId: string, timeRange: TimeRange, metadata: Record<string, string | number> = {}) => {
+type PermalinkDataType = Record<string, string | number | Record<string, string | number>>;
+
+export const generateLogShortlink = (paramName: string, data: PermalinkDataType, timeRange: TimeRange) => {
   const location = locationService.getLocation();
   const searchParams = new URLSearchParams(location.search);
-  if (searchParams) {
-    const selectedLine = {
-      id: logId,
-      ...metadata,
-    };
 
-    searchParams.set(UrlParameterType.From, timeRange.from.toISOString());
-    searchParams.set(UrlParameterType.To, timeRange.to.toISOString());
-    searchParams.set(UrlParameterType.SelectedLine, JSON.stringify(selectedLine));
+  searchParams.set(UrlParameterType.From, timeRange.from.toISOString());
+  searchParams.set(UrlParameterType.To, timeRange.to.toISOString());
+  searchParams.set(paramName, JSON.stringify(data));
 
-    // @todo can encoding + as %20 break other stuff? Can label names or values have + in them that we don't want encoded? Should we just update values?
-    // + encoding for whitespace is for application/x-www-form-urlencoded, which appears to be the default encoding for URLSearchParams, replacing + with %20 to keep urls meant for the browser from breaking
-    const searchString = searchParams.toString().replace(/\+/g, '%20');
-    return window.location.origin + location.pathname + '?' + searchString;
-  }
-  return '';
+  // @todo can encoding + as %20 break other stuff? Can label names or values have + in them that we don't want encoded? Should we just update values?
+  // + encoding for whitespace is for application/x-www-form-urlencoded, which appears to be the default encoding for URLSearchParams, replacing + with %20 to keep urls meant for the browser from breaking
+  const searchString = searchParams.toString().replace(/\+/g, '%20');
+  return window.location.origin + location.pathname + '?' + searchString;
 }
 
 export function capitalizeFirstLetter(input: string) {
