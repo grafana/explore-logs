@@ -20,8 +20,11 @@ type FetchDetectedLabelValuesOptions = {
   scopedVars?: ScopedVars;
 };
 
-interface LokiLanguageProvider {
-  fetchDetectedLabelValues: (labelName: string, options?: FetchDetectedLabelValuesOptions) => Promise<string[]>;
+interface LokiLanguageProviderWithDetectedLabelValues {
+  fetchDetectedLabelValues: (
+    labelName: string,
+    options?: FetchDetectedLabelValuesOptions
+  ) => Promise<string[]> | undefined;
 }
 
 export const getDetectedFieldValuesTagValuesProvider = async (
@@ -41,9 +44,9 @@ export const getDetectedFieldValuesTagValuesProvider = async (
   }
   const datasource = datasource_ as DataSourceWithBackend<LokiQuery>;
 
-  const languageProvider = datasource.languageProvider as LokiLanguageProvider;
+  const languageProvider = datasource.languageProvider as LokiLanguageProviderWithDetectedLabelValues;
 
-  if (languageProvider) {
+  if (languageProvider && languageProvider.fetchDetectedLabelValues) {
     // Filter out other values for this key so users can include other values for this label
     const options: FetchDetectedLabelValuesOptions = {
       expr,
@@ -54,7 +57,7 @@ export const getDetectedFieldValuesTagValuesProvider = async (
     let results = await languageProvider.fetchDetectedLabelValues(filter.key, options);
     // If the variable has a parser in the value, make sure we extract it and carry it over
     // @todo can the parser ever change?
-    if (variable === VAR_FIELDS) {
+    if (results && variable === VAR_FIELDS) {
       const valueDecoded = getValueFromFieldsFilter(filter, variable);
       return {
         replace: true,
@@ -68,9 +71,9 @@ export const getDetectedFieldValuesTagValuesProvider = async (
       };
     }
 
-    return { replace: true, values: results.map((v) => ({ text: v })) };
+    return { replace: true, values: results?.map((v) => ({ text: v })) ?? [] };
   } else {
-    logger.error(new Error('getTagValuesProvider: missing or invalid languageProvider!'));
+    logger.warn('getDetectedFieldValuesTagValuesProvider: languageProvider missing fetchDetectedLabelValues!');
     return { replace: true, values: [] };
   }
 };
