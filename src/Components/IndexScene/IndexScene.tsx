@@ -158,38 +158,42 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       const { jsonData } = plugin.meta as AppPluginMeta<JsonData>;
       try {
         const maxInterval = rangeUtil.intervalToSeconds(jsonData?.interval ?? '');
-        if (maxInterval) {
-          const timeRangeInterval = newState.value.to.diff(newState.value.from, 'seconds');
-          if (timeRangeInterval > maxInterval) {
-            const prevInterval = prevState.value.to.diff(prevState.value.from, 'seconds');
-            if (timeRangeInterval <= prevInterval) {
-              timeRange.setState({
-                value: prevState.value,
-                from: prevState.from,
-                to: prevState.to,
-              });
-            } else {
-              const defaultRange = new SceneTimeRange(DEFAULT_TIME_RANGE);
-              timeRange.setState({
-                value: defaultRange.state.value,
-                from: defaultRange.state.from,
-                to: defaultRange.state.to,
-              });
-            }
-
-            const appEvents = getAppEvents();
-            appEvents.publish({
-              type: AppEvents.alertWarning.name,
-              payload: [`Time range interval exceeds maximum interval configured by the administrator.`],
+        if (!maxInterval) { // added this
+          return;
+        }
+        const timeRangeInterval = newState.value.to.diff(newState.value.from, 'seconds');
+        if (timeRangeInterval > maxInterval) {
+          const prevInterval = prevState.value.to.diff(prevState.value.from, 'seconds');
+          if (timeRangeInterval <= prevInterval) {
+            timeRange.setState({
+              value: prevState.value,
+              from: prevState.from,
+              to: prevState.to,
             });
-
-            reportAppInteraction('all', 'interval_too_long', {
-              attempted_duration_seconds: timeRangeInterval,
-              configured_max_interval: maxInterval,
+          } else {
+            const defaultRange = new SceneTimeRange(DEFAULT_TIME_RANGE);
+            timeRange.setState({
+              value: defaultRange.state.value,
+              from: defaultRange.state.from,
+              to: defaultRange.state.to,
             });
           }
+
+          const appEvents = getAppEvents();
+          appEvents.publish({
+            type: AppEvents.alertWarning.name,
+            payload: [`Time range interval exceeds maximum interval configured by the administrator.`],
+          });
+
+          reportAppInteraction('all', 'interval_too_long', {
+            attempted_duration_seconds: timeRangeInterval,
+            configured_max_interval: maxInterval,
+          });
         }
-      } catch (e) {}
+      }
+    } catch (e) {
+      console.error(e); // and this
+    }
     };
   }
 

@@ -26,7 +26,7 @@ const AppConfig = ({ plugin }: Props) => {
   const { enabled, pinned, jsonData } = plugin.meta;
 
   const [state, setState] = useState<State>({
-    interval: jsonData?.interval || '',
+    interval: jsonData?.interval ?? '',
     isValid: isValid(jsonData?.interval ?? ''),
   });
 
@@ -41,18 +41,16 @@ const AppConfig = ({ plugin }: Props) => {
 
   return (
     <div data-testid={testIds.appConfig.container}>
-      {/* CUSTOM SETTINGS */}
       <FieldSet label="Settings">
-        {/* interval */}
         <Field
           description={
             <span>
-              The maximum interval that can be selected in the time picker within the Explore Logs app. If empty users
+              The maximum interval that can be selected in the time picker within the Explore Logs app. If empty, users
               can select any time range interval in Explore Logs. <br />
               Example values: 7d, 24h, 2w
             </span>
           }
-          label={'Max interval'}
+          label={'Maximum time picker interval'}
           className={s.marginTop}
         >
           <Input
