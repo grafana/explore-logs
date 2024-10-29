@@ -7,10 +7,10 @@ import {
   SceneObjectState,
   VizPanel,
 } from '@grafana/scenes';
-import { DataFrame } from '@grafana/data';
+import { DataFrame, LogRowModel } from '@grafana/data';
 import { getLogOption, setDisplayedFields } from '../../services/store';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
-import React from 'react';
+import React, { MouseEvent } from 'react';
 import { LogsListScene } from './LogsListScene';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { addToFilters, FilterType } from './Breakdowns/AddToFiltersButton';
@@ -18,6 +18,8 @@ import { getVariableForLabel } from '../../services/fields';
 import { VAR_FIELDS, VAR_LABELS, VAR_LEVELS, VAR_METADATA } from '../../services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { getAdHocFiltersVariable, getValueFromFieldsFilter } from '../../services/variableGetters';
+import { copyText, generateLogShortlink } from 'services/text';
+import { CopyLinkButton } from './CopyLinkButton';
 
 interface LogsPanelSceneState extends SceneObjectState {
   body?: VizPanel;
@@ -103,23 +105,45 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     const parentModel = this.getParentScene();
     const visualizationType = parentModel.state.visualizationType;
 
-    return PanelBuilders.logs()
-      .setTitle('Logs')
-      .setOption('showTime', true)
-      .setOption('onClickFilterLabel', this.handleLabelFilterClick)
-      .setOption('onClickFilterOutLabel', this.handleLabelFilterOutClick)
-      .setOption('isFilterLabelActive', this.handleIsFilterLabelActive)
-      .setOption('onClickFilterString', this.handleFilterStringClick)
-      .setOption('onClickShowField', this.onClickShowField)
-      .setOption('onClickHideField', this.onClickHideField)
-      .setOption('displayedFields', parentModel.state.displayedFields)
-      .setOption('wrapLogMessage', Boolean(getLogOption('wrapLines')))
-      .setOption('showLogContextToggle', true)
-      .setHeaderActions(
-        <LogsPanelHeaderActions vizType={visualizationType} onChange={parentModel.setVisualizationType} />
-      )
-      .build();
+    return (
+      PanelBuilders.logs()
+        .setTitle('Logs')
+        .setOption('showTime', true)
+        .setOption('onClickFilterLabel', this.handleLabelFilterClick)
+        .setOption('onClickFilterOutLabel', this.handleLabelFilterOutClick)
+        .setOption('isFilterLabelActive', this.handleIsFilterLabelActive)
+        .setOption('onClickFilterString', this.handleFilterStringClick)
+        .setOption('onClickShowField', this.onClickShowField)
+        .setOption('onClickHideField', this.onClickHideField)
+        .setOption('displayedFields', parentModel.state.displayedFields)
+        .setOption('wrapLogMessage', Boolean(getLogOption('wrapLines')))
+        .setOption('showLogContextToggle', true)
+        .setOption('showLogContextToggle', true)
+        // @ts-expect-error
+        .setOption('logRowMenuIconsAfter', [<CopyLinkButton onClick={this.handleShareLogLineClick} key={0} />])
+        .setHeaderActions(
+          <LogsPanelHeaderActions vizType={visualizationType} onChange={parentModel.setVisualizationType} />
+        )
+        .build()
+    );
   }
+
+  private handleShareLogLineClick = (event: MouseEvent<HTMLElement>, row?: LogRowModel) => {
+    if (row?.rowId && this.state.body) {
+      const timeRange = sceneGraph.getTimeRange(this.state.body);
+      const buttonRef = event.currentTarget instanceof HTMLButtonElement ? event.currentTarget : undefined;
+      copyText(
+        generateLogShortlink(
+          'panelState',
+          {
+            logs: { id: row.uid },
+          },
+          timeRange.state.value
+        ),
+        buttonRef
+      );
+    }
+  };
 
   private handleLabelFilterClick = (key: string, value: string, frame?: DataFrame) => {
     this.handleLabelFilter(key, value, frame, 'toggle');
