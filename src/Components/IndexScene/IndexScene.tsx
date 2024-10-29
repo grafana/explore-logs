@@ -159,7 +159,6 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       try {
         const maxInterval = rangeUtil.intervalToSeconds(jsonData?.interval ?? '');
         if (!maxInterval) {
-          // added this
           return;
         }
         const timeRangeInterval = newState.value.to.diff(newState.value.from, 'seconds');
@@ -192,7 +191,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
           });
         }
       } catch (e) {
-        console.error(e); // and this
+        console.error(e);
       }
     };
   }

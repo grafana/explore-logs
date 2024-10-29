@@ -43,6 +43,8 @@ const AppConfig = ({ plugin }: Props) => {
     <div data-testid={testIds.appConfig.container}>
       <FieldSet label="Settings">
         <Field
+          invalid={!isValid(state.interval)}
+          error={'Interval is invalid. Please enter an interval longer then "60m". For example: 3d, 1w, 1m'}
           description={
             <span>
               The maximum interval that can be selected in the time picker within the Explore Logs app. If empty, users
