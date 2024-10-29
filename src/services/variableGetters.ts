@@ -77,10 +77,6 @@ export function getFieldsVariable(scene: SceneObject) {
   return getAdHocFiltersVariable(VAR_FIELDS, scene);
 }
 
-export function getMetadataVariable(scene: SceneObject) {
-  return getAdHocFiltersVariable(VAR_METADATA, scene);
-}
-
 export function getLevelsVariable(scene: SceneObject) {
   return getAdHocFiltersVariable(VAR_LEVELS, scene);
 }
