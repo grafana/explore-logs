@@ -22,7 +22,7 @@ const MIN_INTERVAL_SECONDS = 3600;
 interface Props extends PluginConfigPageProps<AppPluginMeta<JsonData>> {}
 
 const AppConfig = ({ plugin }: Props) => {
-  const s = useStyles2(getStyles);
+  const styles = useStyles2(getStyles);
   const { enabled, pinned, jsonData } = plugin.meta;
 
   const [state, setState] = useState<State>({
@@ -51,7 +51,7 @@ const AppConfig = ({ plugin }: Props) => {
             </span>
           }
           label={'Maximum time picker interval'}
-          className={s.marginTop}
+          className={styles.marginTop}
         >
           <Input
             width={60}
@@ -64,7 +64,7 @@ const AppConfig = ({ plugin }: Props) => {
           />
         </Field>
 
-        <div className={s.marginTop}>
+        <div className={styles.marginTop}>
           <Button
             type="submit"
             data-testid={testIds.appConfig.submit}
