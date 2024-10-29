@@ -96,7 +96,6 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       new SceneRefreshPicker({}),
     ];
 
-    //@ts-expect-error
     if (getDrilldownSlug() === 'explore' && config.featureToggles.exploreLogsAggregatedMetrics) {
       controls.push(
         new ToolbarScene({

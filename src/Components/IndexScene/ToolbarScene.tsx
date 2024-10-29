@@ -22,14 +22,13 @@ export interface ToolbarSceneState extends SceneObjectState {
 export class ToolbarScene extends SceneObjectBase<ToolbarSceneState> {
   constructor(state: Partial<ToolbarSceneState>) {
     const userOverride = localStorage.getItem(AGGREGATED_METRICS_USER_OVERRIDE_LOCALSTORAGE_KEY);
-    // @ts-expect-error
     const active = config.featureToggles.exploreLogsAggregatedMetrics && userOverride !== 'false';
 
     super({
       isOpen: false,
       options: {
         aggregatedMetrics: {
-          active,
+          active: active ?? false,
           userOverride: userOverride === 'true' ?? false,
           disabled: false,
         },
