@@ -66,20 +66,25 @@ export const getDetectedFieldValuesTagValuesProvider = async (
 
     try {
       let results = await languageProvider.fetchDetectedLabelValues(filter.key, options, requestOptions);
+      console.log('results', results);
       // If the variable has a parser in the value, make sure we extract it and carry it over, this assumes the parser for the currently selected value is the same as any value in the response.
       // @todo is the parser always the same for the currently selected values and the results from detected_field/.../values?
-      if (results && isArray(results) && variable === VAR_FIELDS) {
-        const valueDecoded = getValueFromFieldsFilter(filter, variable);
-        return {
-          replace: true,
-          values: results.map((v) => ({
-            text: v,
-            value: JSON.stringify({
-              value: v,
-              parser: valueDecoded.parser,
-            }),
-          })),
-        };
+      if (results && isArray(results)) {
+        if (variable === VAR_FIELDS) {
+          const valueDecoded = getValueFromFieldsFilter(filter, variable);
+          return {
+            replace: true,
+            values: results.map((v) => ({
+              text: v,
+              value: JSON.stringify({
+                value: v,
+                parser: valueDecoded.parser,
+              }),
+            })),
+          };
+        } else {
+          return { replace: true, values: results.map((r) => ({ text: r })) };
+        }
       } else {
         return { replace: true, values: [] };
       }
