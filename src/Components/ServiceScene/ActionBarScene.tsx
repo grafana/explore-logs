@@ -42,7 +42,7 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
         <div className={styles.actions}>
           <Stack gap={1}>
             {
-              // @ts-ignore appSidecar not yet in stable runtime
+              // @ts-expect-error appSidecar not yet in stable runtime
               config.featureToggles.appSidecar && <ToolbarExtensionsRenderer serviceScene={serviceScene} />
             }
             <GoToExploreButton exploration={exploration} />
