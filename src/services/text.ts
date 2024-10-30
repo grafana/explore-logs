@@ -2,7 +2,10 @@ import { locationService } from '@grafana/runtime';
 import { logger } from './logger';
 import { TimeRange } from '@grafana/data';
 
-export const copyText = async (text: string, buttonRef?: React.MutableRefObject<HTMLButtonElement | null> | HTMLButtonElement) => {
+export const copyText = async (
+  text: string,
+  buttonRef?: React.MutableRefObject<HTMLButtonElement | null> | HTMLButtonElement
+) => {
   if (navigator.clipboard && window.isSecureContext) {
     return navigator.clipboard.writeText(text);
     // eslint-disable-next-line deprecation/deprecation
@@ -14,7 +17,7 @@ export const copyText = async (text: string, buttonRef?: React.MutableRefObject<
     // Normally we'd append this to the body. However if we're inside a focus manager
     // from react-aria, we can't focus anything outside of the managed area.
     // Instead, let's append it to the button. Then we're guaranteed to be able to focus + copy.
-    const buttonElement = buttonRef instanceof HTMLButtonElement ? buttonRef : buttonRef?.current
+    const buttonElement = buttonRef instanceof HTMLButtonElement ? buttonRef : buttonRef?.current;
     buttonElement?.appendChild(textarea);
     textarea.value = text;
     textarea.focus();
@@ -44,7 +47,7 @@ export const generateLogShortlink = (paramName: string, data: PermalinkDataType,
   // + encoding for whitespace is for application/x-www-form-urlencoded, which appears to be the default encoding for URLSearchParams, replacing + with %20 to keep urls meant for the browser from breaking
   const searchString = searchParams.toString().replace(/\+/g, '%20');
   return window.location.origin + location.pathname + '?' + searchString;
-}
+};
 
 export function capitalizeFirstLetter(input: string) {
   if (input.length) {
