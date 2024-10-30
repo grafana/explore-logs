@@ -31,6 +31,7 @@ import { limitMaxNumberOfSeriesForPanel, MAX_NUMBER_OF_TIME_SERIES } from './Tim
 import { map, Observable } from 'rxjs';
 import { buildFieldsQueryString, isAvgField } from '../../../services/fields';
 import { getFieldGroupByVariable, getFieldsVariable } from '../../../services/variableGetters';
+import { AddToExplorationButton } from './AddToExplorationButton';
 
 export interface FieldsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -214,17 +215,18 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
       });
       let body = PanelBuilders.timeseries().setTitle(optionValue).setData(dataTransformer);
 
+      const headerActions = [];
       if (!isAvgField(optionValue)) {
         body = body
-          .setHeaderActions(new SelectLabelActionScene({ labelName: String(optionValue), fieldType: ValueSlugs.field }))
           .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
           .setCustomFieldConfig('fillOpacity', 100)
           .setCustomFieldConfig('lineWidth', 0)
           .setCustomFieldConfig('pointSize', 0)
           .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
           .setOverrides(setLevelColorOverrides);
+        headerActions.push(new SelectLabelActionScene({ labelName: String(optionValue), fieldType: ValueSlugs.field }));
       } else {
-        body = body.setHeaderActions(
+        headerActions.push(
           new SelectLabelActionScene({
             labelName: String(optionValue),
             hideValueDrilldown: true,
@@ -232,6 +234,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
           })
         );
       }
+      body.setHeaderActions([...headerActions, new AddToExplorationButton({ labelName: optionValue })]);
 
       const viz = body.build();
       const gridItem = new SceneCSSGridItem({

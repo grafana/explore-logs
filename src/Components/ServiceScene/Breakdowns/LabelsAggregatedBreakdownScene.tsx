@@ -27,6 +27,7 @@ import { getFieldsVariable, getLabelGroupByVariable } from '../../../services/va
 import { LokiQuery } from '../../../services/lokiQuery';
 import { ServiceScene } from '../ServiceScene';
 import { DataFrame, LoadingState } from '@grafana/data';
+import { AddToExplorationButton } from './AddToExplorationButton';
 
 export interface LabelsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -223,7 +224,10 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
           body: PanelBuilders.timeseries()
             .setTitle(optionValue)
             .setData(dataTransformer)
-            .setHeaderActions(new SelectLabelActionScene({ labelName: optionValue, fieldType: ValueSlugs.label }))
+            .setHeaderActions([
+              new SelectLabelActionScene({ labelName: optionValue, fieldType: ValueSlugs.label }),
+              new AddToExplorationButton({ labelName: optionValue }),
+            ])
             .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
             .setCustomFieldConfig('fillOpacity', 100)
             .setCustomFieldConfig('lineWidth', 0)

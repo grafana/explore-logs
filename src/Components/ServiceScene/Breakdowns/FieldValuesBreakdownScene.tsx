@@ -201,7 +201,8 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
             getLabelValue,
             query?.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
             parserForThisField === 'structuredMetadata' ? VAR_METADATA : VAR_FIELDS,
-            sceneGraph.getAncestor(this, FieldsBreakdownScene).state.sort
+            sceneGraph.getAncestor(this, FieldsBreakdownScene).state.sort,
+            optionValue
           ),
           sortBy,
           direction,
@@ -224,7 +225,8 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
             getLabelValue,
             query?.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
             parserForThisField === 'structuredMetadata' ? VAR_METADATA : VAR_FIELDS,
-            sceneGraph.getAncestor(this, FieldsBreakdownScene).state.sort
+            sceneGraph.getAncestor(this, FieldsBreakdownScene).state.sort,
+            optionValue
           ),
           sortBy,
           direction,
