@@ -125,7 +125,7 @@ function ToolbarExtensionsRenderer(props: { serviceScene: SceneObject }) {
 
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const extensions = usePluginLinks({
-    extensionPointId: 'grafana-lokiexplore-app/toolbar',
+    extensionPointId: 'grafana-lokiexplore-app/toolbar-open-related/v1',
     limitPerPlugin: 3,
     context: { filters },
   });
