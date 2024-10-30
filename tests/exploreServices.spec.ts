@@ -154,6 +154,10 @@ test.describe('explore services page', () => {
           page.waitForResponse((resp) => resp.url().includes('ds/query')),
         ]);
       });
+      test.afterEach(async ({ page }) => {
+        await explorePage.unroute();
+        explorePage.echoConsoleLogsOnRetry();
+      });
 
       test('refreshing time range should request panel data once', async ({ page }) => {
         await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));

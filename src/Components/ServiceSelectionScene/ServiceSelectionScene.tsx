@@ -75,7 +75,6 @@ import { FavoriteServiceHeaderActionScene } from './FavoriteServiceHeaderActionS
 import { pushUrlHandler } from '../../services/navigate';
 import { NoServiceVolume } from './NoServiceVolume';
 
-// @ts-expect-error
 const aggregatedMetricsEnabled: boolean | undefined = config.featureToggles.exploreLogsAggregatedMetrics;
 // Don't export AGGREGATED_SERVICE_NAME, we want to rename things so the rest of the application is agnostic to how we got the services
 const AGGREGATED_SERVICE_NAME = '__aggregated_metric__';

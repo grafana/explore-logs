@@ -53,7 +53,7 @@
   ],
   "roles": [],
   "dependencies": {
-    "grafanaDependency": ">=11.2.0",
+    "grafanaDependency": ">=11.3.0",
     "plugins": []
   },
   "preload": true,
@@ -66,6 +66,9 @@
       }
     ],
     "extensionPoints": [
+      {
+        "id": "grafana-lokiexplore-app/metric-exploration/v1"
+      },
       {
         "id": "grafana-lokiexplore-app/toolbar",
         "title": "open things"
