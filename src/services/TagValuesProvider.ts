@@ -1,11 +1,12 @@
 import { SceneObject } from '@grafana/scenes';
 import { AdHocVariableFilter, MetricFindValue, ScopedVars, TimeRange } from '@grafana/data';
-import { DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
+import { BackendSrvRequest, DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
 import { getDataSource } from './scenes';
 import { logger } from './logger';
 import { LokiQuery } from './lokiQuery';
 import { getValueFromFieldsFilter } from './variableGetters';
 import { VAR_FIELDS, VAR_LEVELS, VAR_METADATA } from './variables';
+import { isArray } from 'lodash';
 
 //@todo export from scenes
 export interface AdHocFilterWithLabels extends AdHocVariableFilter {
@@ -18,13 +19,15 @@ type FetchDetectedLabelValuesOptions = {
   timeRange?: TimeRange;
   limit?: number;
   scopedVars?: ScopedVars;
+  throwError: boolean;
 };
 
 interface LokiLanguageProviderWithDetectedLabelValues {
   fetchDetectedLabelValues: (
     labelName: string,
-    options?: FetchDetectedLabelValuesOptions
-  ) => Promise<string[]> | undefined;
+    queryOptions?: FetchDetectedLabelValuesOptions,
+    requestOptions?: Partial<BackendSrvRequest>
+  ) => Promise<string[] | Error>;
 }
 
 export const getDetectedFieldValuesTagValuesProvider = async (
@@ -37,43 +40,60 @@ export const getDetectedFieldValuesTagValuesProvider = async (
   replace?: boolean;
   values: MetricFindValue[];
 }> => {
-  const datasource_ = await getDataSourceSrv().get(getDataSource(sceneRef));
-  if (!(datasource_ instanceof DataSourceWithBackend)) {
+  const datasourceUnknownType = await getDataSourceSrv().get(getDataSource(sceneRef));
+  // Narrow the DataSourceApi type to DataSourceWithBackend
+  if (!(datasourceUnknownType instanceof DataSourceWithBackend)) {
     logger.error(new Error('getTagValuesProvider: Invalid datasource!'));
     throw new Error('Invalid datasource!');
   }
-  const datasource = datasource_ as DataSourceWithBackend<LokiQuery>;
 
-  const languageProvider = datasource.languageProvider as LokiLanguageProviderWithDetectedLabelValues;
+  // Assert datasource is Loki
+  const lokiDatasource = datasourceUnknownType as DataSourceWithBackend<LokiQuery>;
+  // Assert language provider is LokiLanguageProvider
+  const languageProvider = lokiDatasource.languageProvider as LokiLanguageProviderWithDetectedLabelValues;
 
   if (languageProvider && languageProvider.fetchDetectedLabelValues) {
-    // Filter out other values for this key so users can include other values for this label
     const options: FetchDetectedLabelValuesOptions = {
       expr,
       limit: 1000,
       timeRange,
+      throwError: true,
     };
 
-    let results = await languageProvider.fetchDetectedLabelValues(filter.key, options);
-    // If the variable has a parser in the value, make sure we extract it and carry it over
-    // @todo can the parser ever change?
-    if (results && variable === VAR_FIELDS) {
-      const valueDecoded = getValueFromFieldsFilter(filter, variable);
-      return {
-        replace: true,
-        values: results.map((v) => ({
-          text: v,
-          value: JSON.stringify({
-            value: v,
-            parser: valueDecoded.parser,
-          }),
-        })),
-      };
-    }
+    const requestOptions: Partial<BackendSrvRequest> = {
+      showErrorAlert: false,
+    };
 
-    return { replace: true, values: results?.map((v) => ({ text: v })) ?? [] };
+    try {
+      let results = await languageProvider.fetchDetectedLabelValues(filter.key, options, requestOptions);
+      // If the variable has a parser in the value, make sure we extract it and carry it over, this assumes the parser for the currently selected value is the same as any value in the response.
+      // @todo is the parser always the same for the currently selected values and the results from detected_field/.../values?
+      if (results && isArray(results) && variable === VAR_FIELDS) {
+        const valueDecoded = getValueFromFieldsFilter(filter, variable);
+        return {
+          replace: true,
+          values: results.map((v) => ({
+            text: v,
+            value: JSON.stringify({
+              value: v,
+              parser: valueDecoded.parser,
+            }),
+          })),
+        };
+      } else {
+        return { replace: true, values: [] };
+      }
+    } catch (e) {
+      logger.error(e);
+      logger.warn(
+        'getDetectedFieldValuesTagValuesProvider: loki missing detected_field/.../values endpoint. Upgrade to Loki 3.3.0 or higher.'
+      );
+      return { replace: true, values: [] };
+    }
   } else {
-    logger.warn('getDetectedFieldValuesTagValuesProvider: languageProvider missing fetchDetectedLabelValues!');
+    logger.warn(
+      'getDetectedFieldValuesTagValuesProvider: fetchDetectedLabelValues is not defined in Loki datasource. Upgrade to Grafana 11.4 or higher.'
+    );
     return { replace: true, values: [] };
   }
 };
