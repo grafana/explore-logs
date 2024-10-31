@@ -52,6 +52,8 @@ export const getDetectedFieldValuesTagValuesProvider = async (
   // Assert language provider is LokiLanguageProvider
   const languageProvider = lokiDatasource.languageProvider as LokiLanguageProviderWithDetectedLabelValues;
 
+  let values: MetricFindValue[] = [];
+
   if (languageProvider && languageProvider.fetchDetectedLabelValues) {
     const options: FetchDetectedLabelValuesOptions = {
       expr,
@@ -82,22 +84,24 @@ export const getDetectedFieldValuesTagValuesProvider = async (
             })),
           };
         } else {
-          return { replace: true, values: results.map((r) => ({ text: r })) };
+          values = results.map((r) => ({ text: r }));
         }
       } else {
-        return { replace: true, values: [] };
+        values = [];
       }
     } catch (e) {
       logger.error(e);
       logger.warn(
         'getDetectedFieldValuesTagValuesProvider: loki missing detected_field/.../values endpoint. Upgrade to Loki 3.3.0 or higher.'
       );
-      return { replace: true, values: [] };
+      values = [];
     }
   } else {
     logger.warn(
       'getDetectedFieldValuesTagValuesProvider: fetchDetectedLabelValues is not defined in Loki datasource. Upgrade to Grafana 11.4 or higher.'
     );
-    return { replace: true, values: [] };
+    values = [];
   }
+
+  return { replace: true, values };
 };

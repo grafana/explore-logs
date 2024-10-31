@@ -64,6 +64,7 @@ import { ToolbarScene } from './ToolbarScene';
 import { OptionalRouteMatch } from '../Pages';
 import { AdHocFilterWithLabels, getDetectedFieldValuesTagValuesProvider } from '../../services/TagValuesProvider';
 import { lokiRegularEscape } from '../../services/fields';
+import { logger } from '../../services/logger';
 
 export interface AppliedPattern {
   pattern: string;
@@ -195,6 +196,12 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
         return DETECTED_METADATA_VALUES_EXPR;
       case VAR_LEVELS:
         return DETECTED_LEVELS_VALUES_EXPR;
+      default:
+        const error = new Error(`Unknown variable type: ${variableType}`);
+        logger.error(error, {
+          variableType,
+        });
+        throw error;
     }
   }
 
