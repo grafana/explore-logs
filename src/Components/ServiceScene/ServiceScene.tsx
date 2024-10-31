@@ -107,6 +107,8 @@ export const getDetectedFieldsNamesFromQueryRunnerState = (state: QueryRunnerSta
   return state.data?.series?.[0]?.fields?.[0];
 };
 
+export const ServiceSceneKey = 'ServiceScene'
+
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
     variableNames: [VAR_DATASOURCE, VAR_LABELS, VAR_FIELDS, VAR_PATTERNS, VAR_LEVELS],
@@ -131,6 +133,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       $patternsData: getPatternsQueryRunner(),
       $detectedLabelsData: getDetectedLabelsQueryRunner(),
       $detectedFieldsData: getDetectedFieldsQueryRunner(),
+      key: ServiceSceneKey,
       ...state,
     });
 

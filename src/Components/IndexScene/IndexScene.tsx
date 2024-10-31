@@ -9,7 +9,7 @@ import {
   SelectableValue,
 } from '@grafana/data';
 import {
-  AdHocFiltersVariable,
+  AdHocFiltersVariable, AdHocFilterWithLabels,
   CustomVariable,
   DataSourceVariable,
   SceneComponentProps,
@@ -27,7 +27,7 @@ import {
 } from '@grafana/scenes';
 import {
   EXPLORATION_DS,
-  MIXED_FORMAT_EXPR,
+  MIXED_FORMAT_EXPR, SERVICE_NAME,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_LABELS,
@@ -35,17 +35,17 @@ import {
   VAR_LINE_FILTER,
   VAR_LOGS_FORMAT,
   VAR_METADATA,
-  VAR_PATTERNS,
+  VAR_PATTERNS, VAR_PRIMARY_LABEL,
 } from 'services/variables';
 
-import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
-import { ServiceScene } from '../ServiceScene/ServiceScene';
-import { LayoutScene } from './LayoutScene';
-import { FilterOp } from 'services/filters';
-import { getDrilldownSlug, PageSlugs } from '../../services/routing';
-import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
-import { LoadingPlaceholder } from '@grafana/ui';
-import { config, DataSourceWithBackend, getDataSourceSrv, locationService } from '@grafana/runtime';
+import {addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage} from 'services/store';
+import {ServiceScene} from '../ServiceScene/ServiceScene';
+import {LayoutScene} from './LayoutScene';
+import {FilterOp} from 'services/filters';
+import {getDrilldownSlug, PageSlugs} from '../../services/routing';
+import {ServiceSelectionScene} from '../ServiceSelectionScene/ServiceSelectionScene';
+import {LoadingPlaceholder} from '@grafana/ui';
+import {config, DataSourceWithBackend, getDataSourceSrv, locationService} from '@grafana/runtime';
 import {
   getLogQLLabelGroups,
   renderLogQLFieldFilters,
@@ -53,8 +53,8 @@ import {
   renderLogQLMetadataFilters,
   renderPatternFilters,
 } from 'services/query';
-import { VariableHide } from '@grafana/schema';
-import { CustomConstantVariable } from '../../services/CustomConstantVariable';
+import {VariableHide} from '@grafana/schema';
+import {CustomConstantVariable} from '../../services/CustomConstantVariable';
 import {
   getFieldsVariable,
   getLabelsVariable,
@@ -62,18 +62,12 @@ import {
   getPatternsVariable,
   getUrlParamNameForVariable,
 } from '../../services/variableGetters';
-import { ToolbarScene } from './ToolbarScene';
-import { OptionalRouteMatch } from '../Pages';
-import { getDataSource } from '../../services/scenes';
-import { LokiQuery } from '../../services/lokiQuery';
-import { logger } from '../../services/logger';
-import { isArray } from 'lodash';
-
-//@todo export from scenes
-interface AdHocFilterWithLabels extends AdHocVariableFilter {
-  keyLabel?: string;
-  valueLabels?: string[];
-}
+import {ToolbarScene} from './ToolbarScene';
+import {OptionalRouteMatch} from '../Pages';
+import {getDataSource} from '../../services/scenes';
+import {LokiQuery} from '../../services/lokiQuery';
+import {logger} from '../../services/logger';
+import {isArray} from 'lodash';
 
 export interface AppliedPattern {
   pattern: string;
@@ -311,12 +305,12 @@ function getContentScene(drillDownLabel?: string) {
   });
 }
 
-function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVariableFilter[]) {
-  const operators = [FilterOp.Equal, FilterOp.NotEqual].map<SelectableValue<string>>((value) => ({
-    label: value,
-    value,
-  }));
+export const operators = [FilterOp.Equal, FilterOp.NotEqual].map<SelectableValue<string>>((value) => ({
+  label: value,
+  value,
+}));
 
+function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVariableFilter[]) {
   const labelVariable = new AdHocFiltersVariable({
     name: VAR_LABELS,
     datasource: EXPLORATION_DS,
@@ -340,8 +334,6 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     label: 'Filters',
     applyMode: 'manual',
     layout: 'vertical',
-    getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
-    getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
     expressionBuilder: renderLogQLFieldFilters,
     hide: VariableHide.hideLabel,
   });
@@ -355,8 +347,6 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     label: 'Metadata',
     applyMode: 'manual',
     layout: 'vertical',
-    getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
-    getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
     expressionBuilder: renderLogQLMetadataFilters,
     hide: VariableHide.hideLabel,
   });
@@ -370,8 +360,6 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     label: 'Filters',
     applyMode: 'manual',
     layout: 'vertical',
-    getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
-    getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
     expressionBuilder: renderLogQLMetadataFilters,
     hide: VariableHide.hideLabel,
     supportsMultiValueOperators: true,
@@ -393,9 +381,26 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     newState.value && addLastUsedDataSourceToStorage(dsValue);
   });
 
+  // The active tab expression, hidden variable
+  const primaryLabel = new AdHocFiltersVariable({
+    name: VAR_PRIMARY_LABEL,
+    hide: VariableHide.hideVariable,
+    expressionBuilder: (filters) => {
+      return renderPrimaryLabelFilters(filters);
+    },
+    filters: [
+      {
+        key: getSelectedTabFromUrl().key ?? SERVICE_NAME,
+        value: '.+',
+        operator: '=~',
+      },
+    ],
+  });
+
   return {
     variablesScene: new SceneVariableSet({
       variables: [
+        primaryLabel,
         dsVariable,
         labelVariable,
         fieldsVariable,
@@ -421,3 +426,23 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     unsub,
   };
 }
+
+function renderPrimaryLabelFilters(filters: AdHocVariableFilter[]): string {
+  if (filters.length) {
+    const filter = filters[0];
+    return `${filter.key}${filter.operator}\`${filter.value}\``;
+  }
+
+  return '';
+}
+
+export function getSelectedTabFromUrl() {
+  const location = locationService.getLocation();
+  const search = new URLSearchParams(location.search);
+  const primaryLabelRaw = search.get(primaryLabelUrlKey);
+  const primaryLabelSplit = primaryLabelRaw?.split('|');
+  const key = primaryLabelSplit?.[0];
+  return { key, search, location };
+}
+
+export const primaryLabelUrlKey = 'var-primary_label';

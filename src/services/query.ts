@@ -1,12 +1,13 @@
-import { AdHocVariableFilter } from '@grafana/data';
-import { AppliedPattern } from 'Components/IndexScene/IndexScene';
-import { PLUGIN_ID } from './routing';
-import { EMPTY_VARIABLE_VALUE, VAR_DATASOURCE_EXPR } from './variables';
-import { FilterOp } from './filters';
-import { groupBy, trim } from 'lodash';
-import { getValueFromFieldsFilter } from './variableGetters';
-import { LokiQuery } from './lokiQuery';
-import { SceneDataQueryResourceRequest } from './datasourceTypes';
+import {AdHocVariableFilter} from '@grafana/data';
+import {AppliedPattern} from 'Components/IndexScene/IndexScene';
+import {getPrimaryLabelFromUrl, PLUGIN_ID} from './routing';
+import {EMPTY_VARIABLE_VALUE, VAR_DATASOURCE_EXPR} from './variables';
+import {FilterOp} from './filters';
+import {groupBy, trim} from 'lodash';
+import {getValueFromFieldsFilter} from './variableGetters';
+import {LokiQuery} from './lokiQuery';
+import {SceneDataQueryResourceRequest} from './datasourceTypes';
+import {AdHocFilterWithLabels} from "../../../scenes/packages/scenes";
 
 /**
  * Builds the resource query
@@ -28,6 +29,15 @@ export const buildResourceQuery = (
     expr,
   };
 };
+
+export const buildVolumeQuery = (
+    expr: string,
+    resource: 'volume' | 'patterns' | 'detected_labels' | 'detected_fields' | 'labels',
+    primaryLabel: string,
+    queryParamsOverrides?: Record<string, unknown>
+): LokiQuery & SceneDataQueryResourceRequest => {
+  return buildResourceQuery(expr, resource, {...queryParamsOverrides, primaryLabel})
+}
 /**
  * Builds a loki data query
  * @param expr
@@ -71,12 +81,24 @@ export function getLogQLLabelFilters(filters: AdHocVariableFilter[]) {
   return { positiveFilters, negative };
 }
 
-export function renderLogQLLabelFilters(filters: AdHocVariableFilter[]) {
+export function renderLogQLLabelFilters(filters: AdHocFilterWithLabels[]) {
+  const {labelValue} = getPrimaryLabelFromUrl()
+
+  // @todo remove this, clean up filters after nav
+  if(!labelValue){
+    filters = filters.filter(f => !f.meta?.excludeFromQuery)
+  }
+
   let { positiveFilters, negative } = getLogQLLabelFilters(filters);
   const negativeFilters = negative.map((filter) => renderMetadata(filter)).join(', ');
 
   const result = trim(`${positiveFilters.join(', ')}, ${negativeFilters}`, ' ,');
-  console.log('renderLogQLLabelFilters', result);
+  // console.log('renderLogQLLabelFilters', {result, filters });
+  // Since we use this variable after other non-interpolated labels in some queries, and on its own in others, we need to know that this expression can be preceded by a comma, so we output a placeholder value that shouldn't impact the query if the expression is empty, otherwise we'll output invalid logQL
+  if(!result){
+    return '__placeholder__=""'
+  }
+
   return result;
 }
 

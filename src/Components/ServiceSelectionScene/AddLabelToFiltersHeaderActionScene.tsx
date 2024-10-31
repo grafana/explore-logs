@@ -1,4 +1,4 @@
-import { SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
+import {SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState} from '@grafana/scenes';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 import React from 'react';
@@ -8,6 +8,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '..
 import { VAR_LABELS } from '../../services/variables';
 import { Button, useStyles2 } from '@grafana/ui';
 import { testIds } from '../../services/testIds';
+import {ServiceSelectionScene} from "./ServiceSelectionScene";
 
 export interface AddLabelToFiltersHeaderActionSceneState extends SceneObjectState {
   name: string;
@@ -56,7 +57,9 @@ export class AddLabelToFiltersHeaderActionScene extends SceneObjectBase<AddLabel
       return;
     }
 
-    addToFilters(filter.name, filter.value, type, this, VAR_LABELS);
+    const serviceSelectionScene = sceneGraph.getAncestor(this, ServiceSelectionScene)
+    const selectedTab = serviceSelectionScene.getSelectedTab()
+    addToFilters(filter.name, filter.value, type, this, VAR_LABELS, selectedTab === filter.name);
 
     const variable = getLabelsVariable(this);
     reportAppInteraction(USER_EVENTS_PAGES.service_selection, USER_EVENTS_ACTIONS.service_selection.add_to_filters, {

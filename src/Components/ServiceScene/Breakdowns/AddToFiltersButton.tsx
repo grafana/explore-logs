@@ -43,7 +43,8 @@ export function addToFilters(
   value: string,
   operator: FilterType,
   scene: SceneObject,
-  variableType?: VariableFilterType
+  variableType?: VariableFilterType,
+  excludeFromQuery?: boolean
 ) {
   if (!variableType) {
     variableType = resolveVariableTypeForField(key, scene);
@@ -75,9 +76,14 @@ export function addToFilters(
         operator: operator === 'exclude' ? FilterOp.NotEqual : FilterOp.Equal,
         value: valueObject ? valueObject : value,
         valueLabels: [value],
+        meta: {
+          excludeFromQuery: 'true'
+        }
       },
     ];
   }
+
+  // console.log('filters', filters)
 
   scene.publishEvent(new AddFilterEvent(operator, key, value), true);
 

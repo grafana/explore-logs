@@ -27,7 +27,7 @@ import { navigateToIndex } from '../services/navigate';
 import { logger } from '../services/logger';
 import { capitalizeFirstLetter } from '../services/text';
 
-export type RouteProps = { labelName: string; labelValue: string; breakdownLabel?: string };
+export type RouteProps = { labelName: string; labelValue?: string; breakdownLabel?: string };
 export type RouteMatch = SceneRouteMatch<RouteProps>;
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 export type OptionalRouteProps = Optional<RouteProps, 'labelName' | 'labelValue'>;
@@ -119,6 +119,10 @@ export function makeBreakdownPage(
   slug: ParentDrilldownSlugs
 ): SceneAppPage {
   const { labelName, labelValue } = extractValuesFromRoute(routeMatch);
+  if(!labelValue){
+    //@todo cleanup
+    throw new Error('Label value undefined!')
+  }
   return new SceneAppPage({
     title: capitalizeFirstLetter(slug),
     layout: PageLayoutType.Custom,
@@ -135,6 +139,11 @@ export function makeBreakdownValuePage(
   slug: ChildDrilldownSlugs
 ): SceneAppPage {
   const { labelName, labelValue, breakdownLabel } = extractValuesFromRoute(routeMatch);
+
+  if(!labelValue){
+    //@todo cleanup
+    throw new Error('Label value undefined!')
+  }
 
   if (!breakdownLabel) {
     const e = new Error('Breakdown value missing!');

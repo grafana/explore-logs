@@ -20,7 +20,7 @@ import { SERVICE_NAME } from './variables';
 import { runShardSplitQuery } from './shardQuerySplitting';
 import { requestSupportsSharding } from './logql';
 import { LokiQuery } from './lokiQuery';
-import { SceneDataQueryRequest, SceneDataQueryResourceRequest } from './datasourceTypes';
+import {SceneDataQueryRequest, SceneDataQueryResourceRequest, VolumeRequestProps} from './datasourceTypes';
 import { logger } from './logger';
 
 export const WRAPPED_LOKI_DS_UID = 'wrapped-loki-ds-uid';
@@ -385,7 +385,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
   //@todo doesn't work with multiple queries
   private async getVolume(
-    request: DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest>,
+    request: DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest & VolumeRequestProps>,
     ds: DataSourceWithBackend<LokiQuery>,
     subscriber: Subscriber<DataQueryResponse>
   ) {
@@ -393,9 +393,21 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
       throw new Error('Volume query can only have a single target!');
     }
 
-    const targetsInterpolated = ds.interpolateVariablesInQueries(request.targets, request.scopedVars);
+    const target = request.targets[0];
+    const primaryLabel = target.primaryLabel
+
+    if(!primaryLabel){
+      throw new Error('Primary label is required for volume queries!')
+    }
+
+    // const uninterpolatedExpression = target.expr
+    // console.log('uninterpolatedExpression', uninterpolatedExpression)
+    const targetsInterpolated = ds.interpolateVariablesInQueries([target], request.scopedVars);
     const expression = targetsInterpolated[0].expr.replace('.*.*', '.+');
+    // console.log('volume', expression)
     subscriber.next({ data: [], state: LoadingState.Loading });
+
+    // console.log('getVolume', {request, expression, primaryLabel: target.primaryLabel})
 
     try {
       const volumeResponse: IndexVolumeResponse = await ds.getResource(
@@ -418,16 +430,15 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
         const rVolumeCount: VolumeCount = rhs.value[1];
         return Number(rVolumeCount) - Number(lVolumeCount);
       });
-      // Scenes will only emit dataframes from the SceneQueryRunner, so for now we need to convert the API response to a dataframe
 
+      // Scenes will only emit dataframes from the SceneQueryRunner, so for now we need to convert the API response to a dataframe
       const df = createDataFrame({
         fields: [
           {
             // @todo rename
             name: SERVICE_NAME,
             values: volumeResponse?.data.result?.map((r) => {
-              const key = Object.keys(r.metric)[0];
-              return r.metric[key];
+              return r.metric[primaryLabel];
             }),
           },
           { name: 'volume', values: volumeResponse?.data.result?.map((r) => Number(r.value[1])) },
@@ -436,6 +447,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
       subscriber.next({ data: [df] });
     } catch (e) {
+      logger.error(e)
       subscriber.next({ data: [], state: LoadingState.Error });
     }
 

@@ -128,7 +128,7 @@ export function getPrimaryLabelFromUrl(): RouteProps {
   const routeParams = endOfUrl.split('/');
 
   let labelName = routeParams[0];
-  const labelValue = routeParams[1];
+  const labelValue: string = routeParams[1];
   const breakdownLabel = routeParams[3];
   // Keep urls the same
   if (labelName === SERVICE_NAME) {
@@ -195,7 +195,7 @@ export function checkPrimaryLabel(sceneRef: SceneObject) {
     const location = locationService.getLocation();
 
     logger.info('invalid primary label value in url', {
-      labelValue,
+      labelValue: labelValue ?? '',
       url: `${location.pathname}${location.search}`,
     });
   }
