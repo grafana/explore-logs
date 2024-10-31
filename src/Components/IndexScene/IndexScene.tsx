@@ -7,6 +7,7 @@ import {
   DataSourceVariable,
   SceneComponentProps,
   SceneControlsSpacer,
+  sceneGraph,
   SceneObject,
   SceneObjectBase,
   SceneObjectState,
@@ -19,8 +20,12 @@ import {
   VariableValueSelectors,
 } from '@grafana/scenes';
 import {
+  DETECTED_FIELD_VALUES_EXPR,
+  DETECTED_LEVELS_VALUES_EXPR,
+  DETECTED_METADATA_VALUES_EXPR,
   EXPLORATION_DS,
   MIXED_FORMAT_EXPR,
+  PENDING_FIELDS_EXPR,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_LABELS,
@@ -50,11 +55,16 @@ import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 import {
   getFieldsVariable,
   getLevelsVariable,
+  getMetadataVariable,
   getPatternsVariable,
   getUrlParamNameForVariable,
+  getValueFromFieldsFilter,
 } from '../../services/variableGetters';
 import { ToolbarScene } from './ToolbarScene';
 import { OptionalRouteMatch } from '../Pages';
+import { AdHocFilterWithLabels, getDetectedFieldValuesTagValuesProvider } from '../../services/TagValuesProvider';
+import { lokiRegularEscape } from '../../services/fields';
+import { logger } from '../../services/logger';
 
 export interface AppliedPattern {
   pattern: string;
@@ -120,6 +130,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
   public onActivate() {
     const stateUpdate: Partial<IndexSceneState> = {};
+    this.setVariableTagValuesProviders();
 
     if (!this.state.contentScene) {
       stateUpdate.contentScene = getContentScene(this.state.routeMatch?.params.breakdownLabel);
@@ -136,6 +147,62 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
         this.updatePatterns(newState, getPatternsVariable(this));
       })
     );
+  }
+
+  private setVariableTagValuesProviders() {
+    const fieldsVariable = getFieldsVariable(this);
+    const levelsVariable = getLevelsVariable(this);
+    const metadataVariable = getMetadataVariable(this);
+
+    fieldsVariable.setState({
+      getTagValuesProvider: this.getFieldsTagValuesProvider(VAR_FIELDS),
+    });
+
+    levelsVariable.setState({
+      getTagValuesProvider: this.getFieldsTagValuesProvider(VAR_LEVELS),
+    });
+
+    metadataVariable.setState({
+      getTagValuesProvider: this.getFieldsTagValuesProvider(VAR_METADATA),
+    });
+  }
+
+  private getFieldsTagValuesProvider(variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS) {
+    return (variable: AdHocFiltersVariable, filter: AdHocFilterWithLabels) => {
+      const filters = variable.state.filters.filter((f) => f.key !== filter.key);
+      const values = filters.map((f) => {
+        const parsed = variableType === VAR_FIELDS ? getValueFromFieldsFilter(f, variableType) : { value: f.value };
+        return `${f.key}${f.operator}\`${lokiRegularEscape(parsed.value)}\``;
+      });
+      const otherFiltersString = values.length ? '| ' + values.join(' |') : '';
+      const uninterpolatedExpression = this.getFieldsTagValuesExpression(variableType);
+      const expr = uninterpolatedExpression.replace(PENDING_FIELDS_EXPR, otherFiltersString);
+      const interpolated = sceneGraph.interpolate(this, expr);
+      return getDetectedFieldValuesTagValuesProvider(
+        filter,
+        interpolated,
+        this,
+        sceneGraph.getTimeRange(this).state.value,
+        variableType
+      );
+    };
+  }
+
+  private getFieldsTagValuesExpression(variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS) {
+    switch (variableType) {
+      case VAR_FIELDS:
+        return DETECTED_FIELD_VALUES_EXPR;
+      case VAR_METADATA:
+        return DETECTED_METADATA_VALUES_EXPR;
+      case VAR_LEVELS:
+        return DETECTED_LEVELS_VALUES_EXPR;
+      default:
+        const error = new Error(`Unknown variable type: ${variableType}`);
+        logger.error(error, {
+          variableType,
+        });
+        throw error;
+    }
   }
 
   /**
