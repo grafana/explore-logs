@@ -68,6 +68,10 @@
     "extensionPoints": [
       {
         "id": "grafana-lokiexplore-app/metric-exploration/v1"
+      },
+      {
+        "id": "grafana-lokiexplore-app/toolbar-open-related/v1",
+        "title": "Open related signals like metrics/traces/profiles"
       }
     ]
   }

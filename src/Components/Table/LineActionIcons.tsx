@@ -51,7 +51,7 @@ export function LineActionIcons(props: { rowIndex: number; value: unknown }) {
       return generateLogShortlink('selectedLine', { id: logId, row: props.rowIndex }, timeRange);
     }
     return '';
-  }, [logId, props.rowIndex, timeRange])
+  }, [logId, props.rowIndex, timeRange]);
   return (
     <>
       <div className={styles.iconWrapper}>
