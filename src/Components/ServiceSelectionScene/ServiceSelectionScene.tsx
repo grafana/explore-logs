@@ -302,9 +302,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
             <NoServiceVolume labelName={selectedTab} />
           )}
 
-          <div className={styles.body}>
-            <body.Component model={body} />
-          </div>
+          {!(!isLogVolumeLoading && volumeApiError) && (
+            <div className={styles.body}>
+              <body.Component model={body} />
+            </div>
+          )}
         </div>
       </div>
     );
@@ -644,7 +646,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     this._subs.add(
       this.getQueryOptionsToolbar()?.subscribeToState((newState, prevState) => {
         if (newState.options.aggregatedMetrics.userOverride !== prevState.options.aggregatedMetrics.userOverride) {
-          this.runVolumeQuery();
+          this.runVolumeQuery(true);
         }
       })
     );
@@ -751,9 +753,18 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
   private updateAggregatedMetricVariable() {
     const serviceLabelVar = getAggregatedMetricsVariable(this);
+    const labelsVar = getLabelsVariable(this);
     if ((!this.isTimeRangeTooEarlyForAggMetrics() || !aggregatedMetricsEnabled) && this.isAggregatedMetricsActive()) {
       serviceLabelVar.changeValueTo(AGGREGATED_SERVICE_NAME);
+      // Hide combobox if aggregated metrics
+      labelsVar.setState({
+        hide: VariableHide.hideVariable,
+      });
     } else {
+      // Show combobox if not aggregated metrics
+      labelsVar.setState({
+        hide: VariableHide.dontHide,
+      });
       serviceLabelVar.changeValueTo(SERVICE_NAME);
     }
   }
