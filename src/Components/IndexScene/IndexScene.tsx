@@ -448,4 +448,4 @@ export function getSelectedTabFromUrl() {
   return { key, search, location };
 }
 
-export const primaryLabelUrlKey = 'var-primary_label';
+export const primaryLabelUrlKey = 'var-service_selection_tab';

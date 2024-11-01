@@ -1,6 +1,6 @@
 import { urlUtil } from '@grafana/data';
 import { config, DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
-import { sceneGraph, SceneObject, SceneObjectUrlValues } from '@grafana/scenes';
+import { sceneGraph, SceneObject, SceneObjectUrlValues, SceneQueryRunner } from '@grafana/scenes';
 import { LOG_STREAM_SELECTOR_EXPR, VAR_DATASOURCE_EXPR, VAR_LABELS_EXPR } from './variables';
 import { EXPLORATIONS_ROUTE } from './routing';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
@@ -39,4 +39,9 @@ export async function getLokiDatasource(sceneObject: SceneObject) {
 
 export function isDefined<T>(value: T | null | undefined): value is T {
   return value !== null && value !== undefined;
+}
+
+export function getQueryRunnerFromChildren(sceneObject: SceneObject) {
+  return sceneGraph.findDescendents(sceneObject, SceneQueryRunner);
+  // const queryRunner = sceneGraph.findObject(sceneObject, (o) => o instanceof SceneQueryRunner) as SceneQueryRunner;
 }

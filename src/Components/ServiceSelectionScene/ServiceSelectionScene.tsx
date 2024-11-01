@@ -38,8 +38,8 @@ import {
   VAR_AGGREGATED_METRICS,
   VAR_LABELS_REPLICA,
   VAR_LABELS_REPLICA_EXPR,
-  VAR_SERVICE_SELECTION_TAB_EXPR,
   VAR_PRIMARY_LABEL_SEARCH,
+  VAR_SERVICE_SELECTION_TAB_EXPR,
 } from 'services/variables';
 import { selectLabel, SelectServiceButton } from './SelectServiceButton';
 import { buildDataQuery, buildVolumeQuery, renderLogQLLabelFilters } from 'services/query';
@@ -70,6 +70,7 @@ import { FavoriteServiceHeaderActionScene } from './FavoriteServiceHeaderActionS
 import { pushUrlHandler } from '../../services/navigate';
 import { NoServiceVolume } from './NoServiceVolume';
 import { AddLabelToFiltersHeaderActionScene } from './AddLabelToFiltersHeaderActionScene';
+import { getQueryRunnerFromChildren } from '../../services/scenes';
 
 const aggregatedMetricsEnabled: boolean | undefined = config.featureToggles.exploreLogsAggregatedMetrics;
 // Don't export AGGREGATED_SERVICE_NAME, we want to rename things so the rest of the application is agnostic to how we got the services
@@ -396,7 +397,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
             }),
           ],
           {
-            // runQueriesMode: 'manual'
+            runQueriesMode: 'manual',
           }
         )
       )
@@ -407,6 +408,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
       .setUnit('short')
       .setOverrides(setLevelColorOverrides)
+
       .setOption('legend', {
         showLegend: true,
         calcs: ['sum'],
@@ -432,10 +434,16 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         this.extendTimeSeriesLegendBus(primaryLabelName, primaryLabelValue, context, panel),
     });
 
-    return new SceneCSSGridItem({
+    const cssGridItem = new SceneCSSGridItem({
       $behaviors: [new behaviors.CursorSync({ key: 'serviceCrosshairSync', sync: DashboardCursorSync.Crosshair })],
       body: panel,
     });
+
+    cssGridItem.addActivationHandler(() => {
+      this.runPanelQuery(cssGridItem);
+    });
+
+    return cssGridItem;
   }
 
   isAggregatedMetricsActive() {
@@ -460,24 +468,35 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   // Creates a layout with logs panel
   buildServiceLogsLayout = (labelName: string, labelValue: string) => {
     const levelFilter = this.getLevelFilterForService(labelValue);
-    return new SceneCSSGridItem({
+    const cssGridItem = new SceneCSSGridItem({
       $behaviors: [new behaviors.CursorSync({ sync: DashboardCursorSync.Off })],
       body: PanelBuilders.logs()
         // Hover header set to true removes unused header padding, displaying more logs
         .setHoverHeader(true)
         .setData(
-          getQueryRunner([
-            buildDataQuery(this.getLogExpression(labelName, labelValue, levelFilter), {
-              maxLines: 100,
-              refId: `logs-${labelValue}`,
-            }),
-          ])
+          getQueryRunner(
+            [
+              buildDataQuery(this.getLogExpression(labelName, labelValue, levelFilter), {
+                maxLines: 100,
+                refId: `logs-${labelValue}`,
+              }),
+            ],
+            {
+              runQueriesMode: 'manual',
+            }
+          )
         )
         .setTitle(labelValue)
         .setOption('showTime', true)
         .setOption('enableLogDetails', false)
         .build(),
     });
+
+    cssGridItem.addActivationHandler(() => {
+      this.runPanelQuery(cssGridItem);
+    });
+
+    return cssGridItem;
   };
 
   formatPrimaryLabelForUI() {
@@ -603,17 +622,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       }
     }
 
-    // Update labels on time range change
-    this._subs.add(
-      sceneGraph.getTimeRange(this).subscribeToState(() => {
-        if (this.isTimeRangeTooEarlyForAggMetrics()) {
-          this.onUnsupportedAggregatedMetricTimeRange();
-        } else {
-          this.onSupportedAggregatedMetricTimeRange();
-        }
-        this.runVolumeQuery();
-      })
-    );
+    this.subscribeToTimeRange();
 
     // Update labels on datasource change
     this._subs.add(
@@ -643,6 +652,21 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           // And re-init with the new query
           this.updateBody();
         }
+      })
+    );
+  }
+
+  private subscribeToTimeRange() {
+    this._subs.add(
+      sceneGraph.getTimeRange(this).subscribeToState(() => {
+        if (this.isTimeRangeTooEarlyForAggMetrics()) {
+          this.onUnsupportedAggregatedMetricTimeRange();
+        } else {
+          this.onSupportedAggregatedMetricTimeRange();
+        }
+
+        // Run volume query on time range change
+        this.runVolumeQuery();
       })
     );
   }
@@ -731,6 +755,29 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     }
   }
 
+  private getGridItems(): SceneCSSGridItem[] {
+    return this.state.body.state.children as SceneCSSGridItem[];
+  }
+
+  private getVizPanel(child: SceneCSSGridItem) {
+    return child.state.body as VizPanel | undefined;
+  }
+
+  private runPanelQuery(child: SceneCSSGridItem) {
+    if (child && child.isActive) {
+      const queryRunners = getQueryRunnerFromChildren(child);
+      if (queryRunners.length === 1) {
+        const queryRunner = queryRunners[0];
+        queryRunner.runQueries();
+      }
+    }
+  }
+
+  // private runPanelQueries() {
+  //   const gridItems = this.getGridItems();
+  //   gridItems.forEach(this.runPanelQuery)
+  // }
+
   private updateBody() {
     const { labelsToQuery } = this.getLabels(this.state.$data.state.data?.series);
     this.updateTabs();
@@ -740,7 +787,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     } else {
       // If we have services to query, build the layout with the services. Children is an array of layouts for each service (1 row with 2 columns - timeseries and logs panel)
       const newChildren: SceneCSSGridItem[] = [];
-      const existingChildren: SceneCSSGridItem[] = this.state.body.state.children as SceneCSSGridItem[];
+      const existingChildren: SceneCSSGridItem[] = this.getGridItems();
       const timeRange = sceneGraph.getTimeRange(this).state.value;
       const aggregatedMetricsVariable = getAggregatedMetricsVariable(this);
       const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
@@ -749,7 +796,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
       for (const primaryLabelValue of labelsToQuery.slice(0, SERVICES_LIMIT)) {
         const existing = existingChildren.filter((child) => {
-          const vizPanel = child.state.body as VizPanel | undefined;
+          const vizPanel = this.getVizPanel(child);
           return vizPanel?.state.title === primaryLabelValue;
         });
 
@@ -799,11 +846,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     if (serviceIndex === undefined || serviceIndex < 0) {
       return;
     }
-    if (this.state.body) {
-      let newChildren = [...this.state.body.state.children];
-      newChildren.splice(serviceIndex * 2 + 1, 1, this.buildServiceLogsLayout(labelName, labelValue));
-      this.state.body.setState({ children: newChildren });
-    }
+
+    let newChildren = [...this.getGridItems()];
+    newChildren.splice(serviceIndex * 2 + 1, 1, this.buildServiceLogsLayout(labelName, labelValue));
+    this.state.body.setState({ children: newChildren });
   }
 
   private getLogExpression(labelName: string, labelValue: string, levelFilter: string) {
