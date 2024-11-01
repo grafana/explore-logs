@@ -57,7 +57,7 @@ import {
   getDataSourceVariable,
   getLabelsVariable,
   getLabelsVariableReplica,
-  getServiceSelectionPrimaryLabel,
+  getServiceSelectionActiveTabVariable,
   getServiceSelectionSearchVariable,
   setServiceSelectionPrimaryLabelKey,
 } from '../../services/variableGetters';
@@ -89,6 +89,7 @@ interface ServiceSelectionSceneState extends SceneObjectState {
   $data: SceneQueryRunner;
   tabs?: ServiceSelectionTabsScene;
   showPopover: boolean;
+
   tabOptions: Array<{
     label: string;
     value: string;
@@ -169,11 +170,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
    */
   getUrlState() {
     const { key } = getSelectedTabFromUrl();
-    const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
-    const filter = primaryLabelVar.state.filters[0];
+    const activeTabVariable = getServiceSelectionActiveTabVariable(this);
+    const filter = activeTabVariable.state.filters[0];
 
     if (filter.key && filter.key !== key) {
-      getServiceSelectionPrimaryLabel(this).setState({
+      getServiceSelectionActiveTabVariable(this).setState({
         filters: [
           {
             ...filter,
@@ -300,11 +301,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           {!isLogVolumeLoading && !volumeApiError && !hasSearch && !labelsByVolume?.length && (
             <NoServiceVolume labelName={selectedTab} />
           )}
-          {labelsToQuery && labelsToQuery.length > 0 && (
-            <div className={styles.body}>
-              <body.Component model={body} />
-            </div>
-          )}
+
+          <div className={styles.body}>
+            <body.Component model={body} />
+          </div>
         </div>
       </div>
     );
@@ -323,12 +323,12 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       });
     }
 
-    const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
-    const filter = primaryLabelVar.state.filters[0];
+    const activeTabVariable = getServiceSelectionActiveTabVariable(this);
+    const filter = activeTabVariable.state.filters[0];
 
     // Update primary label with search string
     if (this.wrapWildcardSearch(searchVar.state.value.toString()) !== filter.value) {
-      primaryLabelVar.setState({
+      activeTabVariable.setState({
         filters: [
           {
             ...filter,
@@ -348,11 +348,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   }, 500);
 
   getSelectedTab() {
-    return getServiceSelectionPrimaryLabel(this).state.filters[0]?.key;
-  }
-
-  getSelectedTabLabel() {
-    return getServiceSelectionPrimaryLabel(this).state.filters[0].key;
+    return getServiceSelectionActiveTabVariable(this).state.filters[0]?.key;
   }
 
   selectDefaultLabelTab() {
@@ -534,44 +530,45 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           newState.data?.state === LoadingState.Done &&
           !areArraysEqual(prevState?.data?.series, newState?.data?.series)
         ) {
-          this.updateBody();
+          this.updateBody(true);
         }
       })
     );
   }
 
-  private syncVariables() {
-    const labelsVarReplica = getLabelsVariableReplica(this);
+  private doVariablesNeedSync() {
     const labelsVarPrimary = getLabelsVariable(this);
+    const labelsVarReplica = getLabelsVariableReplica(this);
 
     const activeTab = this.getSelectedTab();
-    // who filters the filter?
     const filteredFilters = labelsVarPrimary.state.filters.filter((f) => f.key !== activeTab);
-    labelsVarReplica.setState({ filters: filteredFilters });
+
+    return { filters: filteredFilters, needsSync: !areArraysEqual(filteredFilters, labelsVarReplica.state.filters) };
+  }
+
+  private syncVariables() {
+    const labelsVarReplica = getLabelsVariableReplica(this);
+
+    const { filters, needsSync } = this.doVariablesNeedSync();
+    if (needsSync) {
+      labelsVarReplica.setState({ filters });
+    }
   }
 
   private subscribeToActiveTabVariable() {
-    const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
+    const activeTabVariable = getServiceSelectionActiveTabVariable(this);
     this._subs.add(
-      primaryLabelVar.subscribeToState((newState, prevState) => {
+      activeTabVariable.subscribeToState((newState, prevState) => {
         if (newState.filterExpression !== prevState.filterExpression) {
           const newKey = newState.filters[0].key;
           this.addLabelChangeToBrowserHistory(newKey);
+          const { needsSync } = this.doVariablesNeedSync();
 
-          // we've got a problem
-          // Changing the primary tab requires we sync filters
-          // Sync vars can change the filters, triggering panel queries
-          // Which also triggers change to volume
-          // Which triggers panel queries
-          // How to stop the duplicate query before the volume update?
-
-          // We have to sync before running volume
-          // And we need sync to somehow not trigger changes to panels even though it changes the filters
-          // Is the only solution manually running the queries, and exclude when we sync before volume?
-          // I think so
-          this.syncVariables();
-          this.setVolumeQueryRunner();
-          this.runVolumeQuery();
+          if (needsSync) {
+            this.syncVariables();
+          } else {
+            this.runVolumeQuery(true);
+          }
         }
       })
     );
@@ -592,6 +589,17 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     );
   }
 
+  private subscribeToLabelFilterChanges() {
+    const labelsVar = getLabelsVariableReplica(this);
+    this._subs.add(
+      labelsVar.subscribeToState((newState, prevState) => {
+        if (!areArraysEqual(newState.filters, prevState.filters)) {
+          this.runVolumeQuery(true);
+        }
+      })
+    );
+  }
+
   private onActivate() {
     // Set primary tab label from url
     this.fixRequiredUrlParams();
@@ -599,13 +607,13 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     // Sync initial state from primary labels var to filtered replica
     this.syncVariables();
 
-    // @todo audit
     this.setVolumeQueryRunner();
 
     // Subscribe to primary labels for further updates
     this.subscribeToPrimaryLabelsVariable();
 
-    // subscribe to VAR_LABELS, any changes made there need to be pulled down into the replica
+    // Subscribe to variables replica
+    this.subscribeToLabelFilterChanges();
 
     // Subscribe to tab changes (primary label)
     this.subscribeToActiveTabVariable();
@@ -650,7 +658,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
             body: new SceneCSSGridLayout({ children: [] }),
           });
           // And re-init with the new query
-          this.updateBody();
+          this.updateBody(true);
         }
       })
     );
@@ -732,7 +740,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     return input;
   }
 
-  private runVolumeQuery() {
+  private runVolumeQuery(resetQueryRunner = false) {
+    if (resetQueryRunner) {
+      this.setVolumeQueryRunner();
+    }
+
     this.updateAggregatedMetricVariable();
     this.state.$data.runQueries();
   }
@@ -773,14 +785,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     }
   }
 
-  // private runPanelQueries() {
-  //   const gridItems = this.getGridItems();
-  //   gridItems.forEach(this.runPanelQuery)
-  // }
-
-  private updateBody() {
+  private updateBody(runQueries = false) {
     const { labelsToQuery } = this.getLabels(this.state.$data.state.data?.series);
+    const selectedTab = this.getSelectedTab();
     this.updateTabs();
+
     // If no services are to be queried, clear the body
     if (!labelsToQuery || labelsToQuery.length === 0) {
       this.state.body.setState({ children: [] });
@@ -790,8 +799,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       const existingChildren: SceneCSSGridItem[] = this.getGridItems();
       const timeRange = sceneGraph.getTimeRange(this).state.value;
       const aggregatedMetricsVariable = getAggregatedMetricsVariable(this);
-      const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
-      const selectedTab = this.getSelectedTab();
+      const activeTabVariable = getServiceSelectionActiveTabVariable(this);
       const datasourceVariable = getDataSourceVariable(this);
 
       for (const primaryLabelValue of labelsToQuery.slice(0, SERVICES_LIMIT)) {
@@ -802,6 +810,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
         if (existing.length === 2) {
           // If we already have grid items for this service, move them over to the new array of children, this will preserve their queryRunners, preventing duplicate queries from getting run
+          // @todo it would be nice to re-create panels outside of the viewport, this would prevent their queries from being triggered on updates until the user scrolls them back into view, but prevent the visible panels from flickering
           newChildren.push(existing[0], existing[1]);
         } else {
           // for each service, we create a layout with timeseries and logs panel
@@ -811,7 +820,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
               primaryLabelValue,
               timeRange,
               aggregatedMetricsVariable,
-              primaryLabelVar,
+              activeTabVariable,
               datasourceVariable
             ),
             this.buildServiceLogsLayout(selectedTab, primaryLabelValue)
@@ -819,8 +828,15 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         }
       }
 
+      // Run queries for active panels
+      newChildren.forEach((child) => {
+        if (child.isActive && runQueries) {
+          this.runPanelQuery(child);
+        }
+      });
+
       this.state.body.setState({
-        children: newChildren,
+        children: newChildren.map((child) => child),
         isLazy: true,
         templateColumns: 'repeat(auto-fit, minmax(500px, 1fr) minmax(300px, 70vw))',
         autoRows: '200px',

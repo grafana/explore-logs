@@ -150,7 +150,7 @@ export function clearServiceSelectionSearchVariable(sceneRef: SceneObject) {
   });
 }
 
-export function getServiceSelectionPrimaryLabel(sceneRef: SceneObject) {
+export function getServiceSelectionActiveTabVariable(sceneRef: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_SERVICE_SELECTION_TAB, sceneRef);
   if (!(variable instanceof AdHocFiltersVariable)) {
     throw new Error('VAR_PRIMARY_LABEL not found');
@@ -159,7 +159,7 @@ export function getServiceSelectionPrimaryLabel(sceneRef: SceneObject) {
 }
 
 export function setServiceSelectionPrimaryLabelKey(key: string, sceneRef: SceneObject) {
-  getServiceSelectionPrimaryLabel(sceneRef).setState({
+  getServiceSelectionActiveTabVariable(sceneRef).setState({
     filters: [
       {
         // the value is replaced by the value in VAR_PRIMARY_LABEL_SEARCH if a search is active, so we just need to set the filter key (label name)

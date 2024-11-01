@@ -10,7 +10,7 @@ import { ServiceSelectionScene } from './ServiceSelectionScene';
 import { getSceneQueryRunner } from '../../services/panel';
 import { buildResourceQuery } from '../../services/query';
 import { TabPopoverScene } from './TabPopoverScene';
-import { getDataSourceVariable, getServiceSelectionPrimaryLabel } from '../../services/variableGetters';
+import { getDataSourceVariable, getServiceSelectionActiveTabVariable } from '../../services/variableGetters';
 import { getFavoriteTabsFromStorage, removeTabFromLocalStorage } from '../../services/store';
 
 export interface TabOption extends SelectableValue<string> {
@@ -61,7 +61,7 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
     const { tabOptions, showPopover, popover, $labelsData } = model.useState();
     const { data } = $labelsData.useState();
     const serviceSelectionScene = sceneGraph.getAncestor(model, ServiceSelectionScene);
-    const primaryLabel = getServiceSelectionPrimaryLabel(model);
+    const primaryLabel = getServiceSelectionActiveTabVariable(model);
     // Re-render when active tab changes, which is stored in the primary label variable
     primaryLabel.useState();
 
@@ -266,7 +266,7 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
     this.runDetectedLabelsSubs();
 
     this._subs.add(
-      getServiceSelectionPrimaryLabel(this).subscribeToState(() => {
+      getServiceSelectionActiveTabVariable(this).subscribeToState(() => {
         const labels = this.getLabelsFromQueryRunnerState(this.state.$labelsData?.state);
         if (labels) {
           this.populatePrimaryLabelsVariableOptions(labels);
