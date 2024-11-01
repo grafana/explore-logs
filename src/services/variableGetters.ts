@@ -29,10 +29,11 @@ import {
   VAR_LINE_FILTER_EXPR,
   VAR_PATTERNS,
   VAR_PATTERNS_EXPR,
-  VAR_PRIMARY_LABEL,
+  VAR_SERVICE_SELECTION_TAB,
   VAR_PRIMARY_LABEL_SEARCH,
   VAR_METADATA_EXPR,
   VAR_METADATA,
+  VAR_LABELS_REPLICA,
 } from './variables';
 import { AdHocVariableFilter } from '@grafana/data';
 import { logger } from './logger';
@@ -67,6 +68,10 @@ export function getPatternsVariable(scene: SceneObject) {
 
 export function getLabelsVariable(scene: SceneObject) {
   return getAdHocFiltersVariable(VAR_LABELS, scene);
+}
+
+export function getLabelsVariableReplica(scene: SceneObject) {
+  return getAdHocFiltersVariable(VAR_LABELS_REPLICA, scene);
 }
 
 export function getFieldsVariable(scene: SceneObject) {
@@ -146,7 +151,7 @@ export function clearServiceSelectionSearchVariable(sceneRef: SceneObject) {
 }
 
 export function getServiceSelectionPrimaryLabel(sceneRef: SceneObject) {
-  const variable = sceneGraph.lookupVariable(VAR_PRIMARY_LABEL, sceneRef);
+  const variable = sceneGraph.lookupVariable(VAR_SERVICE_SELECTION_TAB, sceneRef);
   if (!(variable instanceof AdHocFiltersVariable)) {
     throw new Error('VAR_PRIMARY_LABEL not found');
   }

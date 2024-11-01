@@ -2,7 +2,9 @@
 // import {AdHocVariableFilter} from "@grafana/data";
 
 //@todo export AdHocFilterWithLabels from scenes core and delete the following
-// export interface AdHocFilterWithLabels extends AdHocVariableFilter {
-//     keyLabel?: string;
-//     valueLabels?: string[];
-// }
+import { AdHocVariableFilter } from '@grafana/data';
+
+export interface AdHocFilterWithLabels extends AdHocVariableFilter {
+  keyLabel?: string;
+  valueLabels?: string[];
+}

@@ -20,8 +20,9 @@ import { SERVICE_NAME } from './variables';
 import { runShardSplitQuery } from './shardQuerySplitting';
 import { requestSupportsSharding } from './logql';
 import { LokiQuery } from './lokiQuery';
-import {SceneDataQueryRequest, SceneDataQueryResourceRequest, VolumeRequestProps} from './datasourceTypes';
+import { SceneDataQueryRequest, SceneDataQueryResourceRequest, VolumeRequestProps } from './datasourceTypes';
 import { logger } from './logger';
+import { PLACEHOLDER_QUERY } from './query';
 
 export const WRAPPED_LOKI_DS_UID = 'wrapped-loki-ds-uid';
 
@@ -271,7 +272,12 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
       throw new Error('Detected labels query can only have a single target!');
     }
 
-    const { interpolatedTarget, expression } = this.interpolate(ds, targets, request);
+    let { interpolatedTarget, expression } = this.interpolate(ds, targets, request);
+
+    // Detected_labels is a bit different then other queries that interpolate the labels variable, it can be empty, but if it is empty it must be completely empty or we'll get the "queries require at least one regexp or equality" error from Loki
+    if (expression.trim() === `{${PLACEHOLDER_QUERY}}`) {
+      expression = '';
+    }
 
     subscriber.next({ data: [], state: LoadingState.Loading });
 
@@ -394,17 +400,14 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     }
 
     const target = request.targets[0];
-    const primaryLabel = target.primaryLabel
+    const primaryLabel = target.primaryLabel;
 
-    if(!primaryLabel){
-      throw new Error('Primary label is required for volume queries!')
+    if (!primaryLabel) {
+      throw new Error('Primary label is required for volume queries!');
     }
 
-    // const uninterpolatedExpression = target.expr
-    // console.log('uninterpolatedExpression', uninterpolatedExpression)
     const targetsInterpolated = ds.interpolateVariablesInQueries([target], request.scopedVars);
     const expression = targetsInterpolated[0].expr.replace('.*.*', '.+');
-    // console.log('volume', expression)
     subscriber.next({ data: [], state: LoadingState.Loading });
 
     // console.log('getVolume', {request, expression, primaryLabel: target.primaryLabel})
@@ -447,7 +450,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
       subscriber.next({ data: [df] });
     } catch (e) {
-      logger.error(e)
+      logger.error(e);
       subscriber.next({ data: [], state: LoadingState.Error });
     }
 

@@ -9,7 +9,7 @@ import {
   SelectableValue,
 } from '@grafana/data';
 import {
-  AdHocFiltersVariable, AdHocFilterWithLabels,
+  AdHocFiltersVariable,
   CustomVariable,
   DataSourceVariable,
   SceneComponentProps,
@@ -27,7 +27,8 @@ import {
 } from '@grafana/scenes';
 import {
   EXPLORATION_DS,
-  MIXED_FORMAT_EXPR, SERVICE_NAME,
+  MIXED_FORMAT_EXPR,
+  SERVICE_NAME,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_LABELS,
@@ -35,17 +36,18 @@ import {
   VAR_LINE_FILTER,
   VAR_LOGS_FORMAT,
   VAR_METADATA,
-  VAR_PATTERNS, VAR_PRIMARY_LABEL,
+  VAR_PATTERNS,
+  VAR_SERVICE_SELECTION_TAB,
 } from 'services/variables';
 
-import {addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage} from 'services/store';
-import {ServiceScene} from '../ServiceScene/ServiceScene';
-import {LayoutScene} from './LayoutScene';
-import {FilterOp} from 'services/filters';
-import {getDrilldownSlug, PageSlugs} from '../../services/routing';
-import {ServiceSelectionScene} from '../ServiceSelectionScene/ServiceSelectionScene';
-import {LoadingPlaceholder} from '@grafana/ui';
-import {config, DataSourceWithBackend, getDataSourceSrv, locationService} from '@grafana/runtime';
+import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
+import { ServiceScene } from '../ServiceScene/ServiceScene';
+import { LayoutScene } from './LayoutScene';
+import { FilterOp } from 'services/filters';
+import { getDrilldownSlug, PageSlugs } from '../../services/routing';
+import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
+import { LoadingPlaceholder } from '@grafana/ui';
+import { config, DataSourceWithBackend, getDataSourceSrv, locationService } from '@grafana/runtime';
 import {
   getLogQLLabelGroups,
   renderLogQLFieldFilters,
@@ -53,8 +55,8 @@ import {
   renderLogQLMetadataFilters,
   renderPatternFilters,
 } from 'services/query';
-import {VariableHide} from '@grafana/schema';
-import {CustomConstantVariable} from '../../services/CustomConstantVariable';
+import { VariableHide } from '@grafana/schema';
+import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 import {
   getFieldsVariable,
   getLabelsVariable,
@@ -62,12 +64,13 @@ import {
   getPatternsVariable,
   getUrlParamNameForVariable,
 } from '../../services/variableGetters';
-import {ToolbarScene} from './ToolbarScene';
-import {OptionalRouteMatch} from '../Pages';
-import {getDataSource} from '../../services/scenes';
-import {LokiQuery} from '../../services/lokiQuery';
-import {logger} from '../../services/logger';
-import {isArray} from 'lodash';
+import { ToolbarScene } from './ToolbarScene';
+import { OptionalRouteMatch } from '../Pages';
+import { getDataSource } from '../../services/scenes';
+import { LokiQuery } from '../../services/lokiQuery';
+import { logger } from '../../services/logger';
+import { isArray } from 'lodash';
+import { AdHocFilterWithLabels } from '../../services/MethodsCopiedFromScenesCore';
 
 export interface AppliedPattern {
   pattern: string;
@@ -305,7 +308,7 @@ function getContentScene(drillDownLabel?: string) {
   });
 }
 
-export const operators = [FilterOp.Equal, FilterOp.NotEqual].map<SelectableValue<string>>((value) => ({
+export const variableOperators = [FilterOp.Equal, FilterOp.NotEqual].map<SelectableValue<string>>((value) => ({
   label: value,
   value,
 }));
@@ -326,7 +329,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
   });
 
   labelVariable._getOperators = function () {
-    return operators;
+    return variableOperators;
   };
 
   const fieldsVariable = new AdHocFiltersVariable({
@@ -339,7 +342,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
   });
 
   fieldsVariable._getOperators = () => {
-    return operators;
+    return variableOperators;
   };
 
   const metadataVariable = new AdHocFiltersVariable({
@@ -352,7 +355,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
   });
 
   metadataVariable._getOperators = () => {
-    return operators;
+    return variableOperators;
   };
 
   const levelsVariable = new AdHocFiltersVariable({
@@ -366,7 +369,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
   });
 
   levelsVariable._getOperators = () => {
-    return operators;
+    return variableOperators;
   };
 
   const dsVariable = new DataSourceVariable({
@@ -383,7 +386,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
 
   // The active tab expression, hidden variable
   const primaryLabel = new AdHocFiltersVariable({
-    name: VAR_PRIMARY_LABEL,
+    name: VAR_SERVICE_SELECTION_TAB,
     hide: VariableHide.hideVariable,
     expressionBuilder: (filters) => {
       return renderPrimaryLabelFilters(filters);

@@ -3,15 +3,21 @@ import React, { useRef } from 'react';
 import { Icon, Popover, PopoverController, Tab, TabsBar, Tooltip, useStyles2 } from '@grafana/ui';
 import { GrafanaTheme2, LoadingState, SelectableValue } from '@grafana/data';
 import { css, cx } from '@emotion/css';
-import { SERVICE_NAME, SERVICE_UI_LABEL } from '../../services/variables';
+import { SERVICE_NAME, SERVICE_UI_LABEL, VAR_LABELS_REPLICA_EXPR } from '../../services/variables';
 import { truncateText } from '../../services/text';
 import { rest } from 'lodash';
 import { ServiceSelectionScene } from './ServiceSelectionScene';
 import { getSceneQueryRunner } from '../../services/panel';
 import { buildResourceQuery } from '../../services/query';
 import { TabPopoverScene } from './TabPopoverScene';
-import { getDataSourceVariable, getServiceSelectionPrimaryLabel } from '../../services/variableGetters';
+import {
+  getDataSourceVariable,
+  getLabelsVariableReplica,
+  getServiceSelectionPrimaryLabel,
+} from '../../services/variableGetters';
 import { getFavoriteTabsFromStorage, removeTabFromLocalStorage } from '../../services/store';
+import { areArraysEqual } from '../../services/comparison';
+import { AdHocFilterWithLabels } from '../../services/MethodsCopiedFromScenesCore';
 
 export interface TabOption extends SelectableValue<string> {
   label: string;
@@ -27,6 +33,7 @@ export interface ServiceSelectionTabsSceneState extends SceneObjectState {
   showPopover: boolean;
   $labelsData: SceneQueryRunner;
   popover?: TabPopoverScene;
+  filtersFromLastQuery?: AdHocFilterWithLabels[];
 }
 
 interface LabelOptions {
@@ -39,7 +46,7 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
     super({
       showPopover: false,
       $labelsData: getSceneQueryRunner({
-        queries: [buildResourceQuery('', 'detected_labels')],
+        queries: [buildResourceQuery(`{${VAR_LABELS_REPLICA_EXPR}}`, 'detected_labels')],
         runQueriesMode: 'manual',
       }),
       tabOptions: [
@@ -234,20 +241,55 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
     });
   }
 
+  private runDetectedLabels() {
+    const filters = getLabelsVariableReplica(this).state.filters;
+    this.setState({
+      filtersFromLastQuery: filters,
+    });
+
+    this.state.$labelsData.runQueries();
+  }
+
+  private runDetectedLabelsSubs() {
+    // Run detected_labels when filters are changed
+    getLabelsVariableReplica(this).subscribeToState((newState, prevState) => {
+      if (!areArraysEqual(newState.filters, this.state.filtersFromLastQuery)) {
+        this.runDetectedLabels();
+      }
+    });
+
+    // Update labels/tabs on time range change
+    this._subs.add(
+      sceneGraph.getTimeRange(this).subscribeToState(() => {
+        this.runDetectedLabels();
+      })
+    );
+
+    // Update labels (tabs) when datasource is changed
+    this._subs.add(
+      getDataSourceVariable(this).subscribeToState(() => {
+        this.runDetectedLabels();
+      })
+    );
+
+    // this._subs.add(
+    //     getServiceSelectionPrimaryLabel(this).subscribeToState((newState, prevState) => {
+    //       if(!areArraysEqual(newState.filters, prevState.filters)){
+    //         this.state.$labelsData.runQueries();
+    //       }
+    //     })
+    // )
+  }
+
   private onActivate() {
     // Get labels
-    this.state.$labelsData.runQueries();
+    this.runDetectedLabels();
 
     this.setState({
       popover: new TabPopoverScene({}),
     });
 
-    // Update labels (tabs) when datasource is changed
-    this._subs.add(
-      getDataSourceVariable(this).subscribeToState(() => {
-        this.state.$labelsData.runQueries();
-      })
-    );
+    this.runDetectedLabelsSubs();
 
     this._subs.add(
       getServiceSelectionPrimaryLabel(this).subscribeToState(() => {
@@ -255,13 +297,6 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
         if (labels) {
           this.populatePrimaryLabelsVariableOptions(labels);
         }
-      })
-    );
-
-    // Update labels/tabs on time range change
-    this._subs.add(
-      sceneGraph.getTimeRange(this).subscribeToState(() => {
-        this.state.$labelsData.runQueries();
       })
     );
 

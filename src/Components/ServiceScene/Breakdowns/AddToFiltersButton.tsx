@@ -76,14 +76,9 @@ export function addToFilters(
         operator: operator === 'exclude' ? FilterOp.NotEqual : FilterOp.Equal,
         value: valueObject ? valueObject : value,
         valueLabels: [value],
-        meta: {
-          excludeFromQuery: 'true'
-        }
       },
     ];
   }
-
-  // console.log('filters', filters)
 
   scene.publishEvent(new AddFilterEvent(operator, key, value), true);
 
