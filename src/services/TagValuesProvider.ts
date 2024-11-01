@@ -43,7 +43,7 @@ export const getDetectedFieldValuesTagValuesProvider = async (
   const datasourceUnknownType = await getDataSourceSrv().get(getDataSource(sceneRef));
   // Narrow the DataSourceApi type to DataSourceWithBackend
   if (!(datasourceUnknownType instanceof DataSourceWithBackend)) {
-    logger.error(new Error('getTagValuesProvider: Invalid datasource!'));
+    logger.error(new Error('getTagValuesProvider: Invalid datasource! usless change'));
     throw new Error('Invalid datasource!');
   }
 
