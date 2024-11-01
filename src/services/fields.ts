@@ -324,3 +324,11 @@ export function buildFieldsQueryString(
 
   return buildFieldsQuery(optionValue, options);
 }
+
+// copied from /grafana/grafana/public/app/plugins/datasource/loki/datasource.ts:1204
+export function lokiRegularEscape<T>(value: T) {
+  if (typeof value === 'string') {
+    return value.replace(/'/g, "\\\\'");
+  }
+  return value;
+}

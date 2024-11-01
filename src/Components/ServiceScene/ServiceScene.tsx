@@ -107,7 +107,7 @@ export const getDetectedFieldsNamesFromQueryRunnerState = (state: QueryRunnerSta
   return state.data?.series?.[0]?.fields?.[0];
 };
 
-export const ServiceSceneKey = 'ServiceScene'
+export const ServiceSceneKey = 'ServiceScene';
 
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
@@ -262,10 +262,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this._subs.add(this.subscribeToDetectedLabelsQuery());
 
     // Fields tab will update its own count, and update count when a query fails
-    if (getDrilldownSlug() !== PageSlugs.fields) {
-      this._subs.add(this.subscribeToDetectedFieldsQuery());
-    }
-
+    this._subs.add(this.subscribeToDetectedFieldsQuery(getDrilldownSlug() !== PageSlugs.fields));
     this._subs.add(this.subscribeToLogsQuery());
 
     // Variable subscriptions
@@ -399,10 +396,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     });
   }
 
-  private subscribeToDetectedFieldsQuery() {
+  private subscribeToDetectedFieldsQuery(updateFieldsCount: boolean) {
     return this.state.$detectedFieldsData?.subscribeToState((newState) => {
       this.updateLoadingState(newState, TabNames.fields);
-      if (newState.data?.state === LoadingState.Done) {
+      if (updateFieldsCount && newState.data?.state === LoadingState.Done) {
         const detectedFieldsResponse = newState.data;
         const detectedFieldsFields = detectedFieldsResponse.series[0];
 

@@ -74,12 +74,12 @@ export function getLabelsVariableReplica(scene: SceneObject) {
   return getAdHocFiltersVariable(VAR_LABELS_REPLICA, scene);
 }
 
-export function getFieldsVariable(scene: SceneObject) {
-  return getAdHocFiltersVariable(VAR_FIELDS, scene);
-}
-
 export function getMetadataVariable(scene: SceneObject) {
   return getAdHocFiltersVariable(VAR_METADATA, scene);
+}
+
+export function getFieldsVariable(scene: SceneObject) {
+  return getAdHocFiltersVariable(VAR_FIELDS, scene);
 }
 
 export function getLevelsVariable(scene: SceneObject) {

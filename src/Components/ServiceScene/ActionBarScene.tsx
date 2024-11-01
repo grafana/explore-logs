@@ -1,15 +1,17 @@
-import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
-import { Box, Stack, Tab, TabsBar, useStyles2 } from '@grafana/ui';
+import { SceneComponentProps, sceneGraph, SceneObject, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
+import { Box, Dropdown, Menu, Stack, Tab, TabsBar, ToolbarButton, useStyles2 } from '@grafana/ui';
 import { getExplorationFor } from '../../services/scenes';
 import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, ValueSlugs } from '../../services/routing';
 import { GoToExploreButton } from './GoToExploreButton';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { navigateToDrilldownPage } from '../../services/navigate';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ServiceScene, ServiceSceneState } from './ServiceScene';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 import { BreakdownViewDefinition, breakdownViewsDefinitions } from './BreakdownViews';
+import { config, usePluginLinks } from '@grafana/runtime';
+import { getLabelsVariable } from '../../services/variableGetters';
 
 export interface ActionBarSceneState extends SceneObjectState {}
 
@@ -39,6 +41,7 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
       <Box paddingY={0}>
         <div className={styles.actions}>
           <Stack gap={1}>
+            {config.featureToggles.appSidecar && <ToolbarExtensionsRenderer serviceScene={serviceScene} />}
             <GoToExploreButton exploration={exploration} />
           </Stack>
         </div>
@@ -99,4 +102,73 @@ function getStyles(theme: GrafanaTheme2) {
       },
     }),
   };
+}
+
+/**
+ * Shows extensions in the toolbar.
+ * Shows a single button if there is only one extension or a dropdown if there are multiple.
+ * @param props
+ * @constructor
+ */
+function ToolbarExtensionsRenderer(props: { serviceScene: SceneObject }) {
+  const [filters, setFilters] = useState<Array<{ key: string; value: string }>>(
+    getLabelsVariable(props.serviceScene).state.filters
+  );
+  useEffect(() => {
+    const sub = getLabelsVariable(props.serviceScene).subscribeToState((newState) => {
+      setFilters(newState.filters);
+    });
+    return () => {
+      sub.unsubscribe();
+    };
+  }, [props.serviceScene]);
+
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const extensions = usePluginLinks({
+    extensionPointId: 'grafana-lokiexplore-app/toolbar-open-related/v1',
+    limitPerPlugin: 3,
+    context: { filters },
+  });
+
+  if (extensions.isLoading || extensions.links.length === 0) {
+    return null;
+  }
+
+  if (extensions.links.length === 1) {
+    const e = extensions.links[0];
+
+    return (
+      <div>
+        <ToolbarButton variant={'canvas'} key={e.id} onClick={(event) => e.onClick?.(event)} icon={e.icon}>
+          Related {e.title}
+        </ToolbarButton>
+      </div>
+    );
+  }
+
+  const menu = (
+    <Menu>
+      {extensions.links.map((link) => {
+        return (
+          <Menu.Item
+            ariaLabel={link.title}
+            icon={link?.icon || 'plug'}
+            key={link.id}
+            label={link.title}
+            onClick={(event) => {
+              link.onClick?.(event);
+            }}
+          />
+        );
+      })}
+    </Menu>
+  );
+
+  return (
+    <Dropdown onVisibleChange={setIsOpen} placement="bottom-start" overlay={menu}>
+      <ToolbarButton aria-label="Open related" variant="canvas" isOpen={isOpen}>
+        Open related
+      </ToolbarButton>
+    </Dropdown>
+  );
 }
