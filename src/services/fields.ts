@@ -261,9 +261,26 @@ export function isAvgField(field: string) {
 
 export function buildFieldsQuery(optionValue: string, options: LogsQueryOptions) {
   if (isAvgField(optionValue)) {
+    const detectedFieldsFrame = getDetectedFieldsFrame(options.sceneRef);
+    const typeField: Field<string> | undefined = detectedFieldsFrame?.fields.find(f => f.name === 'type');
+    const namesField: Field<string> | undefined = detectedFieldsFrame?.fields.find(f => f.name === 'name');
+    const index = namesField?.values.indexOf(optionValue);
+    const fieldType = index !== undefined && index !== -1 ? typeField?.values[index] : undefined;
+
+    let unwrapFunction = '';
+    if (fieldType === 'duration') {
+      unwrapFunction = 'duration';
+    } else if (fieldType === 'bytes') {
+      unwrapFunction = 'bytes';
+    } else if (fieldType === 'float') {
+      unwrapFunction = '';
+    } else {
+      // Default behavior if type is not recognized
+      unwrapFunction = '';
+    }
+
     return (
-      `avg_over_time(${getLogsStreamSelector(options)} | unwrap ` +
-      (optionValue === 'duration' ? `duration` : optionValue === 'bytes' ? `bytes` : ``) +
+      `avg_over_time(${getLogsStreamSelector(options)} | unwrap ${unwrapFunction}` +
       `(${optionValue}) [$__auto]) by ()`
     );
   } else {
@@ -281,7 +298,7 @@ export function buildFieldsQueryString(
   const index = namesField?.values.indexOf(optionValue);
 
   const parserForThisField =
-    index !== undefined && index !== -1 ? extractParserFromString(parserField?.values?.[index]) : 'mixed';
+    index !== undefined && index !== -1 ? extractParserFromString(parserField?.values?.[index] ?? '') : 'mixed';
 
   // Get the parser from the json payload of each filter
   const parsers = fieldsVariable.state.filters.map((filter) => {
@@ -316,6 +333,7 @@ export function buildFieldsQueryString(
     structuredMetadataToAdd,
     fieldExpressionToAdd,
     parser: parser,
+    sceneRef: fieldsVariable, // Pass the scene reference
   };
 
   return buildFieldsQuery(optionValue, options);
@@ -324,7 +342,7 @@ export function buildFieldsQueryString(
 // copied from /grafana/grafana/public/app/plugins/datasource/loki/datasource.ts:1204
 export function lokiRegularEscape<T>(value: T) {
   if (typeof value === 'string') {
-    return value.replace(/'/g, "\\\\'");
+    return value.replace(/'/g, "\\\'");
   }
   return value;
 }
