@@ -372,10 +372,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     return getServiceSelectionPrimaryLabel(this).state.filters[0]?.key;
   }
 
-  getSelectedTabLabel() {
-    return getServiceSelectionPrimaryLabel(this).state.filters[0].key;
-  }
-
   selectDefaultLabelTab() {
     // Need to update the history before the state with replace instead of push, or we'll get invalid services saved to url state after changing datasource
     this.addLabelChangeToBrowserHistory(SERVICE_NAME, true);
@@ -542,7 +538,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         if (newState.filterExpression !== prevState.filterExpression) {
           const newKey = newState.filters[0].key;
           this.addLabelChangeToBrowserHistory(newKey);
-          this.runVolumeQuery();
+          this.runVolumeQuery(true);
         }
       })
     );
@@ -575,12 +571,23 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     this._subs.add(
       this.getQueryOptionsToolbar()?.subscribeToState((newState, prevState) => {
         if (newState.options.aggregatedMetrics.userOverride !== prevState.options.aggregatedMetrics.userOverride) {
-          this.runVolumeQuery();
+          this.runVolumeQuery(true);
         }
       })
     );
 
     this.subscribeToAggregatedMetricVariable();
+  }
+
+  private setVolumeQueryRunner() {
+    this.setState({
+      $data: getSceneQueryRunner({
+        queries: [buildResourceQuery(`{${VAR_PRIMARY_LABEL_EXPR}}`, 'volume')],
+        runQueriesMode: 'manual',
+      }),
+    });
+
+    this.subscribeToVolume();
   }
 
   /**
@@ -690,7 +697,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     return input;
   }
 
-  private runVolumeQuery() {
+  private runVolumeQuery(resetQueryRunner = false) {
+    if (resetQueryRunner) {
+      this.setVolumeQueryRunner();
+    }
+
     this.updateAggregatedMetricVariable();
     this.state.$data.runQueries();
   }
