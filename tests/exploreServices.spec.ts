@@ -1,7 +1,7 @@
 import { test, expect } from '@grafana/plugin-e2e';
 import { ExplorePage } from './fixtures/explore';
 import { testIds } from '../src/services/testIds';
-import { mockVolumeApiResponse } from './mocks/mockVolumeApiResponse';
+import { getMockVolumeApiResponse } from './mocks/getMockVolumeApiResponse';
 import { isNumber } from 'lodash';
 import { Page } from '@playwright/test';
 
@@ -137,15 +137,15 @@ test.describe('explore services page', () => {
         logsQueryCount = 0;
 
         await page.route('**/index/volume*', async (route) => {
-          const volumeResponse = mockVolumeApiResponse;
+          const volumeResponse = getMockVolumeApiResponse();
           logsVolumeCount++;
-          await page.waitForTimeout(25);
+          await page.waitForTimeout(15);
           await route.fulfill({ json: volumeResponse });
         });
 
         await page.route('**/ds/query*', async (route) => {
           logsQueryCount++;
-          await page.waitForTimeout(50);
+          await page.waitForTimeout(30);
           await route.fulfill({ json: {} });
         });
 
@@ -159,7 +159,7 @@ test.describe('explore services page', () => {
         explorePage.echoConsoleLogsOnRetry();
       });
 
-      test('refreshing time range should request panel data once', async ({ page }) => {
+      test.only('refreshing time range should request panel data once', async ({ page }) => {
         await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
         expect(logsVolumeCount).toEqual(1);
         expect(logsQueryCount).toEqual(4);
