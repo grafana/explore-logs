@@ -33,8 +33,8 @@ type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 export type OptionalRouteProps = Optional<RouteProps, 'labelName' | 'labelValue'>;
 export type OptionalRouteMatch = SceneRouteMatch<OptionalRouteProps>;
 
+export const DEFAULT_TIME_RANGE = { from: 'now-15m', to: 'now' };
 function getServicesScene(routeMatch: OptionalRouteMatch) {
-  const DEFAULT_TIME_RANGE = { from: 'now-15m', to: 'now' };
   return new EmbeddedScene({
     body: new IndexScene({
       $timeRange: new SceneTimeRange(DEFAULT_TIME_RANGE),
