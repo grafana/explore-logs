@@ -159,7 +159,7 @@ test.describe('explore services page', () => {
         explorePage.echoConsoleLogsOnRetry();
       });
 
-      test.only('refreshing time range should request panel data once', async ({ page }) => {
+      test('refreshing time range should request panel data once', async ({ page }) => {
         await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
         expect(logsVolumeCount).toEqual(1);
         expect(logsQueryCount).toEqual(4);
