@@ -137,6 +137,7 @@ export function getQueryRunner(queries: LokiQuery[], queryRunnerOptions?: Partia
       $data: getSceneQueryRunner({
         datasource: { uid: WRAPPED_LOKI_DS_UID },
         queries: queries,
+        ...queryRunnerOptions,
       }),
       transformations: [sortLevelTransformation],
     });
