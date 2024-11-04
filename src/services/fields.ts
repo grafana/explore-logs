@@ -10,6 +10,7 @@ import {
 import { getColorByIndex } from './scenes';
 import { AddToFiltersButton, VariableFilterType } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import {
+  DetectedFieldType,
   LEVEL_VARIABLE_VALUE,
   LogsQueryOptions,
   ParserType,
@@ -74,6 +75,23 @@ export function extractParserFromString(parserString?: string): ParserType {
       return 'structuredMetadata';
     default: // if we get a parser with multiple
       return 'mixed';
+  }
+}
+
+export function extractFieldTypeFromString(fieldString?: string): DetectedFieldType {
+  switch (fieldString) {
+    case 'int':
+      return 'int';
+    case 'float':
+      return 'float';
+    case 'duration':
+      return 'duration';
+    case 'boolean':
+      return 'boolean';
+    case 'bytes':
+      return 'bytes';
+    default:
+      return 'string';
   }
 }
 
@@ -260,11 +278,15 @@ export function isAvgField(field: string) {
 }
 
 export function buildFieldsQuery(optionValue: string, options: LogsQueryOptions) {
-  if (isAvgField(optionValue)) {
+  if (options.fieldType && ['bytes', 'duration'].includes(options.fieldType)) {
     return (
       `avg_over_time(${getLogsStreamSelector(options)} | unwrap ` +
-      (optionValue === 'duration' ? `duration` : optionValue === 'bytes' ? `bytes` : ``) +
-      `(${optionValue}) [$__auto]) by ()`
+      options.fieldType +
+      `(${optionValue}) | __error__="" [$__auto]) by ()`
+    );
+  } else if (options.fieldType && options.fieldType === 'float') {
+    return (
+      `avg_over_time(${getLogsStreamSelector(options)} | unwrap ` + optionValue + ` | __error__="" [$__auto]) by ()`
     );
   } else {
     return `sum by (${optionValue}) (count_over_time(${getLogsStreamSelector(options)} [$__auto]))`;
@@ -278,10 +300,14 @@ export function buildFieldsQueryString(
 ) {
   const parserField: Field<string> | undefined = detectedFieldsFrame?.fields[2];
   const namesField: Field<string> | undefined = detectedFieldsFrame?.fields[0];
+  const typesField: Field<string> | undefined = detectedFieldsFrame?.fields[3];
   const index = namesField?.values.indexOf(optionValue);
 
   const parserForThisField =
     index !== undefined && index !== -1 ? extractParserFromString(parserField?.values?.[index]) : 'mixed';
+
+  const optionType =
+    index !== undefined && index !== -1 ? extractFieldTypeFromString(typesField?.values?.[index]) : undefined;
 
   // Get the parser from the json payload of each filter
   const parsers = fieldsVariable.state.filters.map((filter) => {
@@ -316,6 +342,7 @@ export function buildFieldsQueryString(
     structuredMetadataToAdd,
     fieldExpressionToAdd,
     parser: parser,
+    fieldType: optionType,
   };
 
   return buildFieldsQuery(optionValue, options);
