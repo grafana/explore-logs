@@ -538,7 +538,8 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         if (newState.filterExpression !== prevState.filterExpression) {
           const newKey = newState.filters[0].key;
           this.addLabelChangeToBrowserHistory(newKey);
-          this.runVolumeQuery(true);
+          // Will need to tear down volume instance when we introduce the ability to select other labels, as we'll need to pass the selected tab to parse the volume response
+          this.runVolumeQuery();
         }
       })
     );
@@ -697,6 +698,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     return input;
   }
 
+  /**
+   * Executes the Volume API call
+   * @param resetQueryRunner - optional param which will replace the query runner state with a new instantiation
+   * @private
+   */
   private runVolumeQuery(resetQueryRunner = false) {
     if (resetQueryRunner) {
       this.setVolumeQueryRunner();
