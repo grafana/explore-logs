@@ -521,10 +521,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     });
 
     // Need to re-init any subscriptions since we changed the query runner
-    this.setVolumeSubscriptions();
+    this.subscribeToVolume();
   }
 
-  private setVolumeSubscriptions() {
+  private subscribeToVolume() {
     this._subs.add(
       this.state.$data.subscribeToState((newState, prevState) => {
         // update body if the data is done loading, and the dataframes have changed
