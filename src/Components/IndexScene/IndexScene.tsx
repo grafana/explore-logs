@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { AdHocVariableFilter, SelectableValue } from '@grafana/data';
+import { AdHocVariableFilter, AppEvents, AppPluginMeta, rangeUtil, SelectableValue } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   CustomVariable,
@@ -16,6 +16,8 @@ import {
   SceneRefreshPicker,
   SceneTimePicker,
   SceneTimeRange,
+  SceneTimeRangeLike,
+  SceneTimeRangeState,
   SceneVariableSet,
   VariableValueSelectors,
 } from '@grafana/scenes';
@@ -43,7 +45,7 @@ import { FilterOp } from 'services/filters';
 import { getDrilldownSlug, PageSlugs } from '../../services/routing';
 import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LoadingPlaceholder } from '@grafana/ui';
-import { config, locationService } from '@grafana/runtime';
+import { config, getAppEvents, locationService } from '@grafana/runtime';
 import {
   renderLogQLFieldFilters,
   renderLogQLLabelFilters,
@@ -61,7 +63,10 @@ import {
   getValueFromFieldsFilter,
 } from '../../services/variableGetters';
 import { ToolbarScene } from './ToolbarScene';
-import { OptionalRouteMatch } from '../Pages';
+import { DEFAULT_TIME_RANGE, OptionalRouteMatch } from '../Pages';
+import { plugin } from '../../module';
+import { JsonData } from '../AppConfig/AppConfig';
+import { reportAppInteraction } from '../../services/analytics';
 import { AdHocFilterWithLabels, getDetectedFieldValuesTagValuesProvider } from '../../services/TagValuesProvider';
 import { lokiRegularEscape } from '../../services/fields';
 import { logger } from '../../services/logger';
@@ -147,6 +152,58 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
         this.updatePatterns(newState, getPatternsVariable(this));
       })
     );
+
+    const timeRange = sceneGraph.getTimeRange(this);
+
+    this._subs.add(timeRange.subscribeToState(this.limitMaxInterval(timeRange)));
+  }
+
+  /**
+   * If user selects a time range longer then the max configured interval, show toast and set the previous time range.
+   * @param timeRange
+   * @private
+   */
+  private limitMaxInterval(timeRange: SceneTimeRangeLike) {
+    return (newState: SceneTimeRangeState, prevState: SceneTimeRangeState) => {
+      const { jsonData } = plugin.meta as AppPluginMeta<JsonData>;
+      try {
+        const maxInterval = rangeUtil.intervalToSeconds(jsonData?.interval ?? '');
+        if (!maxInterval) {
+          return;
+        }
+        const timeRangeInterval = newState.value.to.diff(newState.value.from, 'seconds');
+        if (timeRangeInterval > maxInterval) {
+          const prevInterval = prevState.value.to.diff(prevState.value.from, 'seconds');
+          if (timeRangeInterval <= prevInterval) {
+            timeRange.setState({
+              value: prevState.value,
+              from: prevState.from,
+              to: prevState.to,
+            });
+          } else {
+            const defaultRange = new SceneTimeRange(DEFAULT_TIME_RANGE);
+            timeRange.setState({
+              value: defaultRange.state.value,
+              from: defaultRange.state.from,
+              to: defaultRange.state.to,
+            });
+          }
+
+          const appEvents = getAppEvents();
+          appEvents.publish({
+            type: AppEvents.alertWarning.name,
+            payload: [`Time range interval exceeds maximum interval configured by the administrator.`],
+          });
+
+          reportAppInteraction('all', 'interval_too_long', {
+            attempted_duration_seconds: timeRangeInterval,
+            configured_max_interval: maxInterval,
+          });
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
   }
 
   private setVariableTagValuesProviders() {
