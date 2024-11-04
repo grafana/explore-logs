@@ -33,8 +33,8 @@ type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 export type OptionalRouteProps = Optional<RouteProps, 'labelName' | 'labelValue'>;
 export type OptionalRouteMatch = SceneRouteMatch<OptionalRouteProps>;
 
+export const DEFAULT_TIME_RANGE = { from: 'now-15m', to: 'now' };
 function getServicesScene(routeMatch: OptionalRouteMatch) {
-  const DEFAULT_TIME_RANGE = { from: 'now-15m', to: 'now' };
   return new EmbeddedScene({
     body: new IndexScene({
       $timeRange: new SceneTimeRange(DEFAULT_TIME_RANGE),
@@ -119,9 +119,9 @@ export function makeBreakdownPage(
   slug: ParentDrilldownSlugs
 ): SceneAppPage {
   const { labelName, labelValue } = extractValuesFromRoute(routeMatch);
-  if(!labelValue){
+  if (!labelValue) {
     //@todo cleanup
-    throw new Error('Label value undefined!')
+    throw new Error('Label value undefined!');
   }
   return new SceneAppPage({
     title: capitalizeFirstLetter(slug),
@@ -140,9 +140,9 @@ export function makeBreakdownValuePage(
 ): SceneAppPage {
   const { labelName, labelValue, breakdownLabel } = extractValuesFromRoute(routeMatch);
 
-  if(!labelValue){
+  if (!labelValue) {
     //@todo cleanup
-    throw new Error('Label value undefined!')
+    throw new Error('Label value undefined!');
   }
 
   if (!breakdownLabel) {

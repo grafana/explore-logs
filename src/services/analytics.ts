@@ -18,12 +18,14 @@ export const reportAppInteraction = (
 export const USER_EVENTS_PAGES = {
   service_selection: 'service_selection',
   service_details: 'service_details',
+  all: 'all',
 } as const;
 
 type UserEventPagesType = keyof typeof USER_EVENTS_PAGES;
 type UserEventActionType =
   | keyof (typeof USER_EVENTS_ACTIONS)['service_selection']
-  | keyof (typeof USER_EVENTS_ACTIONS)['service_details'];
+  | keyof (typeof USER_EVENTS_ACTIONS)['service_details']
+  | keyof (typeof USER_EVENTS_ACTIONS)['all'];
 
 export const USER_EVENTS_ACTIONS = {
   [USER_EVENTS_PAGES.service_selection]: {
@@ -69,5 +71,8 @@ export const USER_EVENTS_ACTIONS = {
     value_breakdown_sort_change: 'value_breakdown_sort_change',
     // Wasm not supported
     wasm_not_supported: 'wasm_not_supported',
+  },
+  [USER_EVENTS_PAGES.all]: {
+    interval_too_long: 'interval_too_long',
   },
 } as const;

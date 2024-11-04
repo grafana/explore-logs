@@ -6,6 +6,7 @@ import { IconButton } from '@grafana/ui';
 import React from 'react';
 import { ExtensionPoints } from 'services/extensions/links';
 import { getLokiDatasource } from 'services/scenes';
+
 import LokiLogo from '../../../img/logo.svg';
 
 export interface AddToExplorationButtonState extends SceneObjectState {
