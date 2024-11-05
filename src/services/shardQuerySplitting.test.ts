@@ -175,7 +175,7 @@ describe('runShardSplitQuery()', () => {
     jest
       // @ts-expect-error
       .spyOn(datasource, 'runQuery')
-      .mockReturnValue(of({ state: LoadingState.Error, error: { refId: 'A', message: 'max entries' }, data: [] }));
+      .mockReturnValue(of({ state: LoadingState.Error, error: { refId: 'A', message: 'parse error' }, data: [] }));
     await expect(runShardSplitQuery(datasource, request)).toEmitValuesWith((response: DataQueryResponse[]) => {
       expect(response[0].state).toBe(LoadingState.Error);
     });
