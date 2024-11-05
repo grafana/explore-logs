@@ -515,6 +515,8 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   }
 
   private onActivate() {
+    // Temporarily hide the combobox until the final PR in this series
+    this.hideLabelsVar();
     this.fixRequiredUrlParams();
     // Clear existing volume data on activate or we'll show stale cached data, potentially from a different datasource
     this.setState({
@@ -635,6 +637,13 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         this.runVolumeQuery();
       })
     );
+  }
+
+  private hideLabelsVar() {
+    const labelsVar = getLabelsVariable(this);
+    labelsVar.setState({
+      hide: VariableHide.hideVariable,
+    });
   }
 
   /**

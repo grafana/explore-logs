@@ -1,7 +1,9 @@
 import { DetectedLabel } from './fields';
 import { ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE } from './variables';
-import { VariableValueOption } from '@grafana/scenes';
+import { AdHocFiltersVariable, VariableValueOption } from '@grafana/scenes';
 import { LabelType } from './fieldsTypes';
+import { getLogQLLabelGroups } from './query';
+import { AdHocFilterWithLabels } from './scenes';
 
 export enum FilterOp {
   Equal = '=',
@@ -54,4 +56,31 @@ export function getFieldOptions(labels: string[]) {
   }));
 
   return [{ label: 'All', value: ALL_VARIABLE_VALUE }, ...labelOptions];
+}
+
+export function joinTagFilters(variable: AdHocFiltersVariable) {
+  const { positiveGroups, negative } = getLogQLLabelGroups(variable.state.filters);
+
+  const filters: AdHocFilterWithLabels[] = [];
+  for (const key in positiveGroups) {
+    const values = positiveGroups[key].map((filter) => filter.value);
+    if (values.length === 1) {
+      filters.push({
+        key,
+        value: positiveGroups[key][0].value,
+        operator: '=',
+      });
+    } else {
+      filters.push({
+        key,
+        value: values.join('|'),
+        operator: '=~',
+      });
+    }
+  }
+
+  negative.forEach((filter) => {
+    filters.push(filter);
+  });
+  return filters;
 }

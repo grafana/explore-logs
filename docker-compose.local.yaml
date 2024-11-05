@@ -4,7 +4,7 @@ services:
   grafana:
     container_name: 'grafana-logsapp'
     environment:
-      - GF_FEATURE_TOGGLES_ENABLE=accessControlOnCall lokiLogsDataplane exploreLogsAggregatedMetrics
+      - GF_FEATURE_TOGGLES_ENABLE=accessControlOnCall lokiLogsDataplane exploreLogsAggregatedMetrics exploreLogsShardSplitting
       - GF_LOG_FRONTEND_ENABLED=true
       - GF_LOG_FRONTEND_CUSTOM_ENDPOINT=http://localhost:12347/collect
       - GF_TRACING_OPENTELEMETRY_JAEGER_ADDRESS=http://host.docker.internal:14268/api/traces

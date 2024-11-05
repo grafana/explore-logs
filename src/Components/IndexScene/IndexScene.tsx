@@ -56,6 +56,7 @@ import { VariableHide } from '@grafana/schema';
 import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 import {
   getFieldsVariable,
+  getLabelsVariable,
   getLevelsVariable,
   getMetadataVariable,
   getPatternsVariable,
@@ -67,9 +68,11 @@ import { DEFAULT_TIME_RANGE, OptionalRouteMatch } from '../Pages';
 import { plugin } from '../../module';
 import { JsonData } from '../AppConfig/AppConfig';
 import { reportAppInteraction } from '../../services/analytics';
-import { AdHocFilterWithLabels, getDetectedFieldValuesTagValuesProvider } from '../../services/TagValuesProvider';
+import { getDetectedFieldValuesTagValuesProvider, getLabelsTagValuesProvider } from '../../services/TagValuesProviders';
 import { lokiRegularEscape } from '../../services/fields';
 import { logger } from '../../services/logger';
+import { getLabelsTagKeysProvider } from '../../services/TagKeysProviders';
+import { AdHocFilterWithLabels } from '../../services/scenes';
 
 export interface AppliedPattern {
   pattern: string;
@@ -140,6 +143,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     if (!this.state.contentScene) {
       stateUpdate.contentScene = getContentScene(this.state.routeMatch?.params.breakdownLabel);
     }
+    this.setTagProviders();
 
     this.setState(stateUpdate);
 
@@ -156,6 +160,14 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     const timeRange = sceneGraph.getTimeRange(this);
 
     this._subs.add(timeRange.subscribeToState(this.limitMaxInterval(timeRange)));
+  }
+
+  private setTagProviders() {
+    const labelsVar = getLabelsVariable(this);
+    labelsVar.setState({
+      getTagKeysProvider: getLabelsTagKeysProvider,
+      getTagValuesProvider: getLabelsTagValuesProvider,
+    });
   }
 
   /**
@@ -321,11 +333,11 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
   const labelVariable = new AdHocFiltersVariable({
     name: VAR_LABELS,
     datasource: EXPLORATION_DS,
-    layout: 'vertical',
-    label: 'Service',
+    layout: 'combobox',
+    label: 'Indexed labels',
     filters: initialFilters ?? [],
     expressionBuilder: renderLogQLLabelFilters,
-    hide: VariableHide.hideLabel,
+    hide: VariableHide.dontHide,
     key: 'adhoc_service_filter',
   });
 

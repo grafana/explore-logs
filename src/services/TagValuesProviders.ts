@@ -1,18 +1,13 @@
-import { SceneObject } from '@grafana/scenes';
-import { AdHocVariableFilter, MetricFindValue, ScopedVars, TimeRange } from '@grafana/data';
+import { AdHocFiltersVariable, SceneObject } from '@grafana/scenes';
+import { DataSourceGetTagValuesOptions, GetTagResponse, MetricFindValue, ScopedVars, TimeRange } from '@grafana/data';
 import { BackendSrvRequest, DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
-import { getDataSource } from './scenes';
+import { AdHocFilterWithLabels, getDataSource } from './scenes';
 import { logger } from './logger';
 import { LokiQuery } from './lokiQuery';
 import { getValueFromFieldsFilter } from './variableGetters';
 import { VAR_FIELDS, VAR_LEVELS, VAR_METADATA } from './variables';
 import { isArray } from 'lodash';
-
-//@todo export from scenes
-export interface AdHocFilterWithLabels extends AdHocVariableFilter {
-  keyLabel?: string;
-  valueLabels?: string[];
-}
+import { joinTagFilters } from './filters';
 
 type FetchDetectedLabelValuesOptions = {
   expr?: string;
@@ -105,3 +100,46 @@ export const getDetectedFieldValuesTagValuesProvider = async (
 
   return { replace: true, values };
 };
+
+export async function getLabelsTagValuesProvider(
+  variable: AdHocFiltersVariable,
+  filter: AdHocFilterWithLabels
+): Promise<{
+  replace?: boolean;
+  values: GetTagResponse | MetricFindValue[];
+}> {
+  const datasource_ = await getDataSourceSrv().get(getDataSource(variable));
+  if (!(datasource_ instanceof DataSourceWithBackend)) {
+    logger.error(new Error('getTagValuesProvider: Invalid datasource!'));
+    throw new Error('Invalid datasource!');
+  }
+  const datasource = datasource_ as DataSourceWithBackend<LokiQuery>;
+
+  if (datasource && datasource.getTagValues) {
+    // Filter out other values for this key so users can include other values for this label
+    const filters = joinTagFilters(variable).filter((f) => !(filter.operator === '=' && f.key === filter.key));
+
+    const options: DataSourceGetTagValuesOptions<LokiQuery> = {
+      key: filter.key,
+      filters,
+    };
+    let results = await datasource.getTagValues(options);
+
+    if (isArray(results)) {
+      results = results.filter((result) => {
+        // Filter out values that we already have added as filters
+        return !variable.state.filters
+          .filter((f) => f.key === filter.key)
+          .some((f) => {
+            // If true, the results should be filtered out
+            return f.operator === '=' && f.value === result.text;
+          });
+      });
+    }
+
+    return { replace: true, values: results };
+  } else {
+    logger.error(new Error('getTagValuesProvider: missing or invalid datasource!'));
+    return { replace: true, values: [] };
+  }
+}

@@ -1,4 +1,4 @@
-import { urlUtil } from '@grafana/data';
+import { AdHocVariableFilter, urlUtil } from '@grafana/data';
 import { config, DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
 import { sceneGraph, SceneObject, SceneObjectUrlValues, SceneQueryRunner } from '@grafana/scenes';
 import { LOG_STREAM_SELECTOR_EXPR, VAR_DATASOURCE_EXPR, VAR_LABELS_EXPR } from './variables';
@@ -43,4 +43,10 @@ export function isDefined<T>(value: T | null | undefined): value is T {
 
 export function getQueryRunnerFromChildren(sceneObject: SceneObject) {
   return sceneGraph.findDescendents(sceneObject, SceneQueryRunner);
+}
+
+//@todo export from scenes
+export interface AdHocFilterWithLabels extends AdHocVariableFilter {
+  keyLabel?: string;
+  valueLabels?: string[];
 }
