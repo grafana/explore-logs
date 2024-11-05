@@ -16,7 +16,7 @@ export const testIds = {
       label: 'data-testid Dashboard template variables submenu Label Data source',
     },
     serviceName: {
-      label: 'data-testid Dashboard template variables submenu Label service_name',
+      label: 'data-testid Dashboard template variables submenu Label Indexed labels',
     },
   },
   breakdowns: {

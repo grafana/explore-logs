@@ -752,7 +752,19 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       const queryRunners = getQueryRunnerFromChildren(child);
       if (queryRunners.length === 1) {
         const queryRunner = queryRunners[0];
-        queryRunner.runQueries();
+
+        // If the scene was cached, the time range will still be the same as what was executed in the query
+        const requestTimeRange = queryRunner.state.data?.timeRange;
+        const sceneTimeRange = sceneGraph.getTimeRange(this);
+        const fromDiff = requestTimeRange
+          ? sceneTimeRange.state.value.from.diff(requestTimeRange?.from, 's')
+          : Infinity;
+        const toDiff = requestTimeRange ? sceneTimeRange.state.value.to.diff(requestTimeRange?.to, 's') : Infinity;
+
+        // If the time range hasn't changed, or the loading state isn't complete, run the query
+        if (queryRunner.state.data?.state !== LoadingState.Done || fromDiff > 0 || toDiff > 0) {
+          queryRunner.runQueries();
+        }
       }
     }
   }
@@ -798,7 +810,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         }
       }
 
-      // Run queries for active panels
+      // Re-execute queries for active panels
       newChildren.forEach((child) => {
         if (child.isActive && runQueries) {
           this.runPanelQuery(child);
