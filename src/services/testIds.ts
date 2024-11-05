@@ -15,6 +15,7 @@ export const testIds = {
     datasource: {
       label: 'data-testid Dashboard template variables submenu Label Data source',
     },
+    combobox: {},
     serviceName: {
       label: 'data-testid Dashboard template variables submenu Label Indexed labels',
     },

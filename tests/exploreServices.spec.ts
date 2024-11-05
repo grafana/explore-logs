@@ -5,6 +5,11 @@ import { getMockVolumeApiResponse } from './mocks/getMockVolumeApiResponse';
 import { isNumber } from 'lodash';
 import { Page } from '@playwright/test';
 
+const combobox = {
+  labels: {
+    removeOnlyFilterLabel: 'Remove filter with key',
+  },
+};
 test.describe('explore services page', () => {
   let explorePage: ExplorePage;
 
@@ -115,7 +120,7 @@ test.describe('explore services page', () => {
       await expect(page.getByTestId('AdHocFilter-detected_level')).toBeVisible();
 
       // Remove service so we're redirected back to the start
-      await page.getByTestId(testIds.variables.serviceName.label).click();
+      await page.getByLabel(combobox.labels.removeOnlyFilterLabel).click();
 
       // Assert we're rendering the right scene and the services have loaded
       await expect(page.getByText(/Showing \d+ of \d+/)).toBeVisible();
@@ -163,9 +168,15 @@ test.describe('explore services page', () => {
         await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
         expect(logsVolumeCount).toEqual(1);
         expect(logsQueryCount).toEqual(4);
+
+        // We're only updating if the time range is more then a second diff...
+        await page.waitForTimeout(1001);
         await explorePage.refreshPicker.click();
+        await page.waitForTimeout(1001);
         await explorePage.refreshPicker.click();
+        await page.waitForTimeout(1001);
         await explorePage.refreshPicker.click();
+        await page.waitForTimeout(1001);
         await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
         // Noticed that the below assertions were flaking when not running the trace, we need to wait a tiny bit to let the last requests fire
         await page.waitForTimeout(50);
@@ -176,7 +187,7 @@ test.describe('explore services page', () => {
       // Since the addition of the runtime datasource, the query doesn't contain the datasource, and won't re-run when the datasource is changed, as such we need to manually re-run volume queries when the service selection scene is activated or users could be presented with an invalid set of services
       // This isn't ideal as we won't take advantage of being able to use the cached volume result for users that did not change the datasource any longer
       test('navigating back will re-run volume query', async ({ page }) => {
-        const removeVariableBtn = page.getByLabel('Remove filter with key');
+        const removeVariableBtn = page.getByLabel(combobox.labels.removeOnlyFilterLabel);
         await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
         expect(logsVolumeCount).toEqual(1);
         expect(logsQueryCount).toBeLessThanOrEqual(4);
@@ -291,7 +302,7 @@ test.describe('explore services page', () => {
 
           const serviceNameVariableLoc = page.getByTestId(testIds.variables.serviceName.label);
           await expect(serviceNameVariableLoc).toHaveCount(1);
-          const removeVariableBtn = page.getByLabel('Remove filter with key');
+          const removeVariableBtn = page.getByLabel(combobox.labels.removeOnlyFilterLabel);
           await expect(serviceNameVariableLoc).toHaveCount(1);
           await expect(removeVariableBtn).toHaveCount(1);
 
