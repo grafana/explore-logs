@@ -81,16 +81,16 @@ function splitQueriesByStreamShard(
       subquerySubscription = null;
     }
 
-    if (shouldStop) {
-      subscriber.complete();
-      return;
-    }
-
     const done = () => {
-      mergedResponse.state = LoadingState.Done;
+      mergedResponse.state = shouldStop ? LoadingState.Error : LoadingState.Done;
       subscriber.next(mergedResponse);
       subscriber.complete();
     };
+
+    if (shouldStop) {
+      done();
+      return;
+    }
 
     const nextRequest = () => {
       const nextCycle = Math.min(cycle + groupSize, shards.length);
@@ -102,11 +102,12 @@ function splitQueriesByStreamShard(
     };
 
     const retry = (errorResponse?: DataQueryResponse) => {
-      if (errorResponse?.errors && errorResponse.errors[0].message?.includes('maximum of series')) {
-        logger.info(`Maximum series reached, skipping retry`);
-        return false;
-      } else if (errorResponse?.errors && errorResponse.errors[0].message?.includes('parse error')) {
-        logger.info(`Parse error, skipping retry`);
+      try {
+        if (errorResponse && !isRetriableError(errorResponse)) {
+          return false;
+        }
+      } catch (e) {
+        logger.error(e);
         shouldStop = true;
         return false;
       }
@@ -204,7 +205,7 @@ function splitQueriesByStreamShard(
     const selector = getSelectorForShardValues(splittingTargets[0].expr);
 
     if (!isValidQuery(selector)) {
-      console.log(`Skipping invalid selector: ${selector}`);
+      debug(`Skipping invalid selector: ${selector}`);
       subscriber.complete();
       return;
     }
@@ -294,6 +295,19 @@ function groupShardRequests(shards: number[], start: number, groupSize: number) 
 
 function getInitialGroupSize(shards: number[]) {
   return Math.floor(Math.sqrt(shards.length));
+}
+
+function isRetriableError(errorResponse: DataQueryResponse) {
+  const message = errorResponse.errors
+    ? (errorResponse.errors[0].message ?? '').toLowerCase()
+    : errorResponse.error?.message ?? '';
+  if (message.includes('timeout')) {
+    return true;
+  } else if (message.includes('parse error')) {
+    // If the error is a parse error, we want to signal to stop querying.
+    throw new Error(message);
+  }
+  return false;
 }
 
 // Enable to output debugging logs

@@ -17,6 +17,7 @@ const originalWarn = console.warn;
 beforeAll(() => {
   jest.spyOn(console, 'log').mockImplementation(() => {});
   jest.spyOn(console, 'warn').mockImplementation(() => {});
+  jest.spyOn(console, 'error').mockImplementation(() => {});
 });
 afterAll(() => {
   console.log = originalLog;
@@ -156,7 +157,7 @@ describe('runShardSplitQuery()', () => {
     jest
       // @ts-expect-error
       .spyOn(datasource, 'runQuery')
-      .mockReturnValueOnce(of({ state: LoadingState.Error, error: { refId: 'A', message: 'Error' }, data: [] }));
+      .mockReturnValueOnce(of({ state: LoadingState.Error, error: { refId: 'A', message: 'timeout' }, data: [] }));
     // @ts-expect-error
     jest.spyOn(global, 'setTimeout').mockImplementationOnce((callback) => {
       callback();
@@ -166,6 +167,17 @@ describe('runShardSplitQuery()', () => {
       expect(response).toHaveLength(3);
       // @ts-expect-error
       expect(datasource.runQuery).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  test('Failed requests have loading state Error', async () => {
+    jest.mocked(datasource.languageProvider.fetchLabelValues).mockResolvedValue(['1']);
+    jest
+      // @ts-expect-error
+      .spyOn(datasource, 'runQuery')
+      .mockReturnValue(of({ state: LoadingState.Error, error: { refId: 'A', message: 'parse error' }, data: [] }));
+    await expect(runShardSplitQuery(datasource, request)).toEmitValuesWith((response: DataQueryResponse[]) => {
+      expect(response[0].state).toBe(LoadingState.Error);
     });
   });
 
