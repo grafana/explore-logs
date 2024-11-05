@@ -1,6 +1,5 @@
 import { AdHocVariableFilter } from '@grafana/data';
 import { AppliedPattern } from 'Components/IndexScene/IndexScene';
-import { PLUGIN_ID } from './routing';
 import { EMPTY_VARIABLE_VALUE, VAR_DATASOURCE_EXPR } from './variables';
 import { FilterOp } from './filters';
 import { groupBy, trim } from 'lodash';
@@ -8,6 +7,7 @@ import { getValueFromFieldsFilter } from './variableGetters';
 import { LokiQuery } from './lokiQuery';
 import { SceneDataQueryResourceRequest } from './datasourceTypes';
 import { AdHocFilterWithLabels } from './scenes';
+import { PLUGIN_ID } from './plugin';
 
 /**
  * Builds the resource query

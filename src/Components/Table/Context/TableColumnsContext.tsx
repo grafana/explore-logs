@@ -2,7 +2,8 @@ import React, { createContext, ReactNode, useCallback, useContext, useEffect, us
 import { ActiveFieldMeta, FieldNameMetaStore } from 'Components/Table/TableTypes';
 import { getBodyName, getTimeName, LogsFrame } from '../../../services/logsFrame';
 import { logger } from '../../../services/logger';
-import { PLUGIN_ID } from '../../../services/routing';
+
+import { PLUGIN_ID } from '../../../services/plugin';
 
 const tableColumnCustomWidths = `${PLUGIN_ID}.tableColumnWidths`;
 

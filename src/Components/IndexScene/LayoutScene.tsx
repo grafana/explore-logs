@@ -7,7 +7,8 @@ import { AppliedPattern, IndexSceneState } from './IndexScene';
 import { css } from '@emotion/css';
 import { GiveFeedbackButton } from './GiveFeedbackButton';
 import { InterceptBanner } from './InterceptBanner';
-import { PLUGIN_ID } from '../../services/routing';
+
+import { PLUGIN_ID } from '../../services/plugin';
 
 interface LayoutSceneState extends SceneObjectState {
   interceptDismissed: boolean;

@@ -13,7 +13,7 @@ import { RuntimeDataSource, sceneUtils } from '@grafana/scenes';
 import { DataQuery } from '@grafana/schema';
 import { Observable, Subscriber } from 'rxjs';
 import { getDataSource } from './scenes';
-import { getPrimaryLabelFromUrl, PLUGIN_ID } from './routing';
+import { getPrimaryLabelFromUrl } from './routing';
 import { DetectedFieldsResponse, DetectedLabelsResponse } from './fields';
 import { FIELDS_TO_REMOVE, LABELS_TO_REMOVE, sortLabelsByCardinality } from './filters';
 import { SERVICE_NAME } from './variables';
@@ -22,6 +22,7 @@ import { requestSupportsSharding } from './logql';
 import { LokiQuery } from './lokiQuery';
 import { SceneDataQueryRequest, SceneDataQueryResourceRequest } from './datasourceTypes';
 import { logger } from './logger';
+import { PLUGIN_ID } from './plugin';
 
 export const WRAPPED_LOKI_DS_UID = 'wrapped-loki-ds-uid';
 
