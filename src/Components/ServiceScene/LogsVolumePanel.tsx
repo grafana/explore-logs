@@ -10,6 +10,7 @@ import { getTimeSeriesExpr } from '../../services/expressions';
 import { toggleLevelFromFilter } from 'services/levels';
 import { LoadingState } from '@grafana/data';
 import { getFieldsVariable, getLabelsVariable, getLevelsVariable } from '../../services/variableGetters';
+import { areArraysEqual } from '../../services/comparison';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
@@ -32,16 +33,20 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     const labels = getLabelsVariable(this);
     const fields = getFieldsVariable(this);
 
-    labels.subscribeToState(() => {
-      this.setState({
-        panel: this.getVizPanel(),
-      });
+    labels.subscribeToState((newState, prevState) => {
+      if (!areArraysEqual(newState.filters, prevState.filters)) {
+        this.setState({
+          panel: this.getVizPanel(),
+        });
+      }
     });
 
-    fields.subscribeToState(() => {
-      this.setState({
-        panel: this.getVizPanel(),
-      });
+    fields.subscribeToState((newState, prevState) => {
+      if (!areArraysEqual(newState.filters, prevState.filters)) {
+        this.setState({
+          panel: this.getVizPanel(),
+        });
+      }
     });
   }
 
@@ -66,10 +71,11 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     });
 
     this._subs.add(
-      panel.state.$data?.subscribeToState((newState) => {
+      panel.state.$data?.subscribeToState((newState, prevState) => {
         if (newState.data?.state !== LoadingState.Done) {
           return;
         }
+
         syncLogsPanelVisibleSeries(panel, newState.data.series, this);
       })
     );
