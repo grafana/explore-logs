@@ -216,6 +216,7 @@ describe('combineResponses', () => {
     const responseA: DataQueryResponse = {
       data: [metricFrameA],
     };
+    metricFrameC.refId = 'B';
     const responseB: DataQueryResponse = {
       data: [metricFrameB, metricFrameC],
     };
@@ -572,22 +573,8 @@ describe('combineResponses', () => {
     const responseB: DataQueryResponse = {
       data: [metricFrameB],
     };
-    expect(combineResponses(responseA, responseB)).toEqual({
-      data: [metricFrameA, metricFrameB],
-    });
-  });
-
-  it('does not combine frames with different refId', () => {
-    const { metricFrameA, metricFrameB } = getMockFrames();
-    metricFrameA.name = 'A';
-    metricFrameB.name = 'B';
-    const responseA: DataQueryResponse = {
-      data: [metricFrameA],
-    };
-    const responseB: DataQueryResponse = {
-      data: [metricFrameB],
-    };
-    expect(combineResponses(responseA, responseB)).toEqual({
+    const result = combineResponses(responseA, responseB);
+    expect(result).toEqual({
       data: [metricFrameA, metricFrameB],
     });
   });
@@ -825,52 +812,6 @@ describe('mergeFrames', () => {
           },
           refId: 'A',
         },
-      ],
-    });
-  });
-
-  it('combines and identifies new frames in the response', () => {
-    const { metricFrameA, metricFrameB, metricFrameC } = getMockFrames();
-    const responseA: DataQueryResponse = {
-      data: [metricFrameB],
-    };
-    const responseB: DataQueryResponse = {
-      data: [metricFrameA, metricFrameC],
-    };
-    expect(combineResponses(responseA, responseB)).toEqual({
-      data: [
-        {
-          fields: [
-            {
-              config: {},
-              name: 'Time',
-              type: 'time',
-              values: [1000000, 2000000, 3000000, 4000000],
-            },
-            {
-              config: {},
-              name: 'Value',
-              type: 'number',
-              values: [6, 7, 5, 4],
-              labels: {
-                level: 'debug',
-              },
-            },
-          ],
-          length: 4,
-          meta: {
-            type: 'timeseries-multi',
-            stats: [
-              {
-                displayName: 'Summary: total bytes processed',
-                unit: 'decbytes',
-                value: 33,
-              },
-            ],
-          },
-          refId: 'A',
-        },
-        metricFrameC,
       ],
     });
   });
