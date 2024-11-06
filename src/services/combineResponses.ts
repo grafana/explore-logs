@@ -1,7 +1,6 @@
 import {
   closestIdx,
   DataFrame,
-  DataFrameType,
   DataQueryResponse,
   DataQueryResponseData,
   Field,
