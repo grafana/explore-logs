@@ -735,11 +735,16 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   }
 
   private getVizPanel(child: SceneCSSGridItem) {
-    return child.state.body as VizPanel | undefined;
+    return child.state.body instanceof VizPanel ? child.state.body : undefined;
   }
 
+  /**
+   * Runs logs/volume panel queries if lazy loaded grid item is active
+   * @param child
+   * @private
+   */
   private runPanelQuery(child: SceneCSSGridItem) {
-    if (child && child.isActive) {
+    if (child.isActive) {
       const queryRunners = getQueryRunnerFromChildren(child);
       if (queryRunners.length === 1) {
         const queryRunner = queryRunners[0];
