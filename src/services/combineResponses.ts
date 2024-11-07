@@ -227,7 +227,10 @@ function cloneDataFrame(frame: DataQueryResponseData): DataQueryResponseData {
 }
 
 function shouldCombine(frame1: DataFrame, frame2: DataFrame): boolean {
-  if (frame1.refId !== frame2.refId || frame1.name !== frame2.name) {
+  if (frame1.refId !== frame2.refId) {
+    return false;
+  }
+  if (frame1.name && frame2.name && frame1.name !== frame2.name) {
     return false;
   }
 
@@ -268,10 +271,10 @@ function compareLabels(frame1: DataFrame, frame2: DataFrame) {
     // should never happen
     return false;
   }
-  if (!frame1.name && field1.labels) {
+  if (!frame1.name) {
     frame1.name = JSON.stringify(field1.labels);
   }
-  if (!frame2.name && field2.labels) {
+  if (!frame2.name) {
     frame2.name = JSON.stringify(field2.labels);
   }
   return frame1.name === frame2.name;
