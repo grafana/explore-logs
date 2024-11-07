@@ -7,7 +7,7 @@ import { LokiQuery } from './lokiQuery';
 import { getValueFromFieldsFilter } from './variableGetters';
 import { VAR_FIELDS, VAR_LEVELS, VAR_METADATA } from './variables';
 import { isArray } from 'lodash';
-import { joinTagFilters } from './filters';
+import { joinTagFilters } from './query';
 
 type FetchDetectedLabelValuesOptions = {
   expr?: string;

@@ -1,13 +1,14 @@
 import { AdHocVariableFilter } from '@grafana/data';
 import { AppliedPattern } from 'Components/IndexScene/IndexScene';
 import { EMPTY_VARIABLE_VALUE, VAR_DATASOURCE_EXPR } from './variables';
-import { FilterOp } from './filters';
 import { groupBy, trim } from 'lodash';
 import { getValueFromFieldsFilter } from './variableGetters';
 import { LokiQuery } from './lokiQuery';
 import { SceneDataQueryResourceRequest } from './datasourceTypes';
 import { AdHocFilterWithLabels } from './scenes';
 import { PLUGIN_ID } from './plugin';
+import { AdHocFiltersVariable } from '@grafana/scenes';
+import { FilterOp } from './filterTypes';
 
 /**
  * Builds the resource query
@@ -159,4 +160,31 @@ export function renderPatternFilters(patterns: AppliedPattern[]) {
     }
   }
   return `${excludePatternsLine} ${includePatternsLine}`.trim();
+}
+
+export function joinTagFilters(variable: AdHocFiltersVariable) {
+  const { positiveGroups, negative } = getLogQLLabelGroups(variable.state.filters);
+
+  const filters: AdHocFilterWithLabels[] = [];
+  for (const key in positiveGroups) {
+    const values = positiveGroups[key].map((filter) => filter.value);
+    if (values.length === 1) {
+      filters.push({
+        key,
+        value: positiveGroups[key][0].value,
+        operator: '=',
+      });
+    } else {
+      filters.push({
+        key,
+        value: values.join('|'),
+        operator: '=~',
+      });
+    }
+  }
+
+  negative.forEach((filter) => {
+    filters.push(filter);
+  });
+  return filters;
 }

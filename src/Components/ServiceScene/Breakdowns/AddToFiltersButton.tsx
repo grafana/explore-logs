@@ -6,10 +6,10 @@ import { VariableHide } from '@grafana/schema';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS, VAR_LEVELS, VAR_METADATA } from 'services/variables';
 import { FilterButton } from 'Components/FilterButton';
-import { FilterOp } from 'services/filters';
 import { getDetectedLabelsFrame } from '../ServiceScene';
 import { getParserForField } from '../../../services/fields';
 import { getAdHocFiltersVariable, getValueFromAdHocVariableFilter } from '../../../services/variableGetters';
+import { FilterOp } from '../../../services/filterTypes';
 
 export interface AddToFiltersButtonState extends SceneObjectState {
   frame: DataFrame;

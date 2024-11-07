@@ -4,9 +4,9 @@ import { PluginExtensionLinkConfig, PluginExtensionPanelContext, PluginExtension
 import { SERVICE_NAME, VAR_DATASOURCE, VAR_FIELDS, VAR_LABELS } from 'services/variables';
 import pluginJson from '../../plugin.json';
 import { LabelType } from '../fieldsTypes';
-import { FilterOp } from '../filters';
 import { getMatcherFromQuery } from '../logqlMatchers';
 import { LokiQuery } from '../lokiQuery';
+import { FilterOp } from '../filterTypes';
 
 const title = 'Open in Explore Logs';
 const description = 'Open current query in the Explore Logs view';

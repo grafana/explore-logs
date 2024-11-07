@@ -1,8 +1,7 @@
 import { SelectableValue } from '@grafana/data';
 import { DetectedLabel } from './fields';
-import { getFieldOptions, getLabelOptions, joinTagFilters, sortLabelsByCardinality } from './filters';
+import { getFieldOptions, getLabelOptions, sortLabelsByCardinality } from './filters';
 import { ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE } from './variables';
-import { AdHocFiltersVariable } from '@grafana/scenes';
 
 describe('sortLabelsByCardinality', () => {
   it('should move labels with cardinality 1 to the end', () => {
@@ -122,69 +121,5 @@ describe('getFieldOptions', () => {
     const expectedOptions: Array<SelectableValue<string>> = [{ label: 'All', value: ALL_VARIABLE_VALUE }];
 
     expect(getFieldOptions(labels)).toEqual(expectedOptions);
-  });
-});
-
-describe('joinTagFilters', () => {
-  it('joins multiple include', () => {
-    const adHoc = new AdHocFiltersVariable({
-      filters: [
-        {
-          key: 'service_name',
-          value: 'service_value',
-          operator: '=',
-        },
-        {
-          key: 'service_name',
-          value: 'service_value_2',
-          operator: '=',
-        },
-        {
-          key: 'not_service_name',
-          value: 'not_service_name_value',
-          operator: '=',
-        },
-      ],
-    });
-
-    const result = joinTagFilters(adHoc);
-    expect(result).toEqual([
-      {
-        key: 'service_name',
-        value: 'service_value|service_value_2',
-        operator: '=~',
-      },
-      {
-        key: 'not_service_name',
-        value: 'not_service_name_value',
-        operator: '=',
-      },
-    ]);
-  });
-  it('does not join multiple exclude', () => {
-    const filters = [
-      {
-        key: 'not_service_name',
-        value: 'not_service_name_value',
-        operator: '=',
-      },
-      {
-        key: 'service_name',
-        value: 'service_value',
-        operator: '!=',
-      },
-      {
-        key: 'service_name',
-        value: 'service_value_2',
-        operator: '!=',
-      },
-    ];
-
-    const adHoc = new AdHocFiltersVariable({
-      filters,
-    });
-
-    const result = joinTagFilters(adHoc);
-    expect(result).toEqual(filters);
   });
 });

@@ -4,7 +4,8 @@ import { DataSourceGetTagKeysOptions, GetTagResponse, MetricFindValue } from '@g
 import { AdHocFiltersVariable } from '@grafana/scenes';
 import { DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
 import { getDataSource } from './scenes';
-import { joinTagFilters, LABELS_TO_REMOVE } from './filters';
+import { LABELS_TO_REMOVE } from './filters';
+import { joinTagFilters } from './query';
 
 export async function getLabelsTagKeysProvider(variable: AdHocFiltersVariable): Promise<{
   replace?: boolean;

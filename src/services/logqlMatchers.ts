@@ -1,9 +1,9 @@
 // Warning: This file (and any imports) are included in the main bundle with Grafana in order to provide link extension support in Grafana core, in an effort to keep Grafana loading quickly, please do not add any unnecessary imports to this file and run the bundle analyzer before committing any changes!
 
-import { Filter, FilterOp } from './filters';
 import { Identifier, Matcher, parser, Selector, String } from '@grafana/lezer-logql';
 import { NodeType, SyntaxNode, Tree } from '@lezer/common';
 import { LabelType } from './fieldsTypes';
+import { Filter, FilterOp } from './filterTypes';
 
 export class NodePosition {
   from: number;
