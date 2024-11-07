@@ -833,7 +833,6 @@ test.describe('explore services breakdown page', () => {
 
     await explorePage.assertTabsNotLoading();
     await explorePage.goToLogsTab();
-    // old page.getByTestId('AdHocFilter-service_name')
     await page.getByLabel('Edit filter with key').click();
     await page.getByText('mimir-ingester').click();
     await explorePage.assertTabsNotLoading();

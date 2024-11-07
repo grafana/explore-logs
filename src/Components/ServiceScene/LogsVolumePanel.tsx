@@ -71,7 +71,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     });
 
     this._subs.add(
-      panel.state.$data?.subscribeToState((newState, prevState) => {
+      panel.state.$data?.subscribeToState((newState) => {
         if (newState.data?.state !== LoadingState.Done) {
           return;
         }
