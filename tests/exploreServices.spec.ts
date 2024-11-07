@@ -356,11 +356,19 @@ test.describe('explore services page', () => {
     test.describe.configure({ mode: 'serial' });
     test.describe('tabs - namespace', () => {
       let page: Page;
-      let logsVolumeCount: number,
-        logsQueryCount: number,
-        detectedLabelsCount: number,
-        patternsCount: number,
-        detectedFieldsCount: number;
+      let logsVolumeCount = 0;
+      let logsQueryCount = 0;
+      let detectedLabelsCount = 0;
+      let patternsCount = 0;
+      let detectedFieldsCount = 0;
+
+      const resetQueryCounts = () => {
+        logsVolumeCount = 0;
+        logsQueryCount = 0;
+        patternsCount = 0;
+        detectedLabelsCount = 0;
+        detectedFieldsCount = 0;
+      };
 
       test.beforeAll(async ({ browser }, testInfo) => {
         const pagePre = await browser.newPage();
@@ -410,14 +418,6 @@ test.describe('explore services page', () => {
         await explorePage.setDefaultViewportSize();
         await explorePage.clearLocalStorage();
         explorePage.captureConsoleLogs();
-      });
-
-      test.beforeEach(async ({}) => {
-        logsVolumeCount = 0;
-        logsQueryCount = 0;
-        patternsCount = 0;
-        detectedLabelsCount = 0;
-        detectedFieldsCount = 0;
       });
 
       test.afterAll(async ({}) => {
@@ -472,6 +472,7 @@ test.describe('explore services page', () => {
       });
 
       test('Part 2: changing primary label updates tab counts', async ({}) => {
+        resetQueryCounts();
         await explorePage.assertTabsNotLoading();
         const gatewayPatternsCount = await page
           .getByTestId(testIds.exploreServiceDetails.tabPatterns)
@@ -489,15 +490,15 @@ test.describe('explore services page', () => {
         expect(isNumber(Number(gatewayFieldsCount))).toEqual(true);
         expect(isNumber(Number(gatewayLabelsCount))).toEqual(true);
 
-        // Namespace dropdown should exist
-        const selectLoc = page.getByTestId('AdHocFilter-namespace').locator('svg').nth(2);
+        // Namespace filter should exist
+        const selectLoc = page.getByLabel('Edit filter with key namespace');
         await expect(selectLoc).toHaveCount(1);
 
         // Open service name / primary label dropdown
         await selectLoc.click();
 
-        // Change to apache service
-        const optionLoc = page.getByRole('option', { name: /^mimir$/ });
+        // Change to mimir namespace
+        const optionLoc = page.getByRole('option', { name: 'mimir', exact: true });
         await expect(optionLoc).toHaveCount(1);
         await optionLoc.click();
 

@@ -68,9 +68,7 @@ test.describe('explore services breakdown page', () => {
     await expect(selectClusterButton).toHaveCount(1);
 
     // Now remove service_name variable
-    const removeServiceNameFilterBtn = page
-      .getByTestId('data-testid Dashboard template variables submenu Label service_name')
-      .getByLabel('Remove');
+    const removeServiceNameFilterBtn = page.getByLabel('Remove filter with key service_name');
     await expect(removeServiceNameFilterBtn).toHaveCount(1);
     await removeServiceNameFilterBtn.click();
 
@@ -90,8 +88,10 @@ test.describe('explore services breakdown page', () => {
     await expect(nginxExcludeBtn).toHaveCount(1);
     await nginxExcludeBtn.click();
 
-    const serviceNameFilter = page.getByTestId('data-testid Dashboard template variables submenu Label service_name');
+    // Assert service name exclusion filter is visible
+    const serviceNameFilter = page.getByLabel('Edit filter with key service_name');
     await expect(serviceNameFilter).toHaveCount(1);
+    await expect(serviceNameFilter).toHaveText('service_name != nginx');
   });
 
   test('logs panel should have panel-content class suffix', async ({ page }) => {
@@ -157,7 +157,7 @@ test.describe('explore services breakdown page', () => {
     await explorePage.goToLabelsTab();
     await page.getByLabel(`Select ${labelName}`).click();
     await page.getByTestId(`data-testid Panel header ${valueName}`).getByRole('button', { name: 'Include' }).click();
-    await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${labelName}`)).toBeVisible();
+    await expect(page.getByLabel(`Edit filter with key ${labelName}`)).toBeVisible();
     const page1Promise = page.waitForEvent('popup');
     await explorePage.serviceBreakdownOpenExplore.click();
     const page1 = await page1Promise;
@@ -186,19 +186,21 @@ test.describe('explore services breakdown page', () => {
     await openInThisTabButtonLoc.click();
 
     // Assert the variables are visible
-    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label cluster')).toBeVisible();
-    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label service_name')).toBeVisible();
+    await expect(page.getByLabel(`Edit filter with key ${labelName}`)).toBeVisible();
+    await expect(page.getByLabel(`Edit filter with key service_name`)).toBeVisible();
+
     await explorePage.assertTabsNotLoading();
 
     // Assert the label variable has the correct value
-    const labelFilter = page.getByTestId('AdHocFilter-cluster');
+    // const labelFilter = page.getByTestId('AdHocFilter-cluster');
+    const labelFilter = page.getByLabel(`Edit filter with key ${labelName}`);
     await expect(labelFilter).toBeVisible();
-    await expect(labelFilter).toHaveText('cluster=eu-west-1');
+    await expect(labelFilter).toHaveText('cluster = eu-west-1');
 
     // Assert service variable has correct value
-    const serviceFilter = page.getByTestId('AdHocFilter-service_name');
+    const serviceFilter = page.getByLabel(`Edit filter with key service_name`);
     await expect(serviceFilter).toBeVisible();
-    await expect(serviceFilter).toHaveText('service_name=tempo-distributor');
+    await expect(serviceFilter).toHaveText('service_name = tempo-distributor');
   });
 
   test('should select a label, label added to url', async ({ page }) => {
@@ -611,7 +613,7 @@ test.describe('explore services breakdown page', () => {
   });
 
   test('should update a filter and run new logs', async ({ page }) => {
-    await page.getByTestId('AdHocFilter-service_name').locator('svg').nth(2).click();
+    await page.getByLabel('Edit filter with key').click();
     await page.getByText('mimir-distributor').click();
 
     // Assert the panel is done loading before going on
@@ -831,7 +833,8 @@ test.describe('explore services breakdown page', () => {
 
     await explorePage.assertTabsNotLoading();
     await explorePage.goToLogsTab();
-    await page.getByTestId('AdHocFilter-service_name').click();
+    // old page.getByTestId('AdHocFilter-service_name')
+    await page.getByLabel('Edit filter with key').click();
     await page.getByText('mimir-ingester').click();
     await explorePage.assertTabsNotLoading();
     await explorePage.goToLabelsTab();
