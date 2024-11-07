@@ -38,7 +38,7 @@ test.describe('navigating app', () => {
     await expect(page).toHaveURL(/a\/grafana\-lokiexplore\-app\/explore\?patterns\=%5B%5D/);
     const actualSearchParams = new URLSearchParams(page.url().split('?')[1]);
     const expectedSearchParams = new URLSearchParams(
-      '?patterns=%5B%5D&from=now-15m&to=now&var-ds=gdev-loki&var-filters=&var-fields=&var-levels=&var-patterns=&var-lineFilter=&var-metadata=&refresh=&var-primary_label=service_name%7C%3D~%7C.%2B'
+      '?patterns=%5B%5D&from=now-15m&to=now&var-ds=gdev-loki&var-filters=service_name%7C%3D%7Ctempo-ingester&var-fields=&var-filters_replica=&var-levels=&var-patterns=&var-lineFilter=&var-metadata=&refresh=&var-primary_label=service_name%7C%3D~%7C.%2B'
     );
     actualSearchParams.sort();
     expectedSearchParams.sort();

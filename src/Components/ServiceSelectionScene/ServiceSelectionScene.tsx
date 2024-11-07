@@ -176,7 +176,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
             expressionBuilder: renderLogQLLabelFilters,
             hide: VariableHide.hideVariable,
             key: 'adhoc_service_filter_replica',
-            supportsMultiValueOperators: true,
+            skipUrlSync: true,
           }),
         ],
       }),
@@ -847,6 +847,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       const queryRunners = getQueryRunnerFromChildren(child);
       if (queryRunners.length === 1) {
         const queryRunner = queryRunners[0];
+        const query = queryRunner.state.queries[0];
 
         // If the scene was cached, the time range will still be the same as what was executed in the query
         const requestTimeRange = queryRunner.state.data?.timeRange;
@@ -856,11 +857,12 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           : Infinity;
         const toDiff = requestTimeRange ? sceneTimeRange.state.value.to.diff(requestTimeRange?.to, 's') : Infinity;
 
-        // If the time range hasn't changed, or the loading state isn't complete, run the query
-        if (queryRunner.state.data?.state !== LoadingState.Done || fromDiff > 0 || toDiff > 0) {
-          queryRunner.runQueries();
-        } else {
-          // @todo, this breaks the scene cache, but also runs queries on label change
+        const interpolated = sceneGraph.interpolate(this, query.expr);
+        // If we haven't already run this exact same query
+        if (queryRunner.state.key !== interpolated || fromDiff > 0 || toDiff > 0) {
+          queryRunner.setState({
+            key: interpolated,
+          });
           queryRunner.runQueries();
         }
       }
