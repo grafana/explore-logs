@@ -639,6 +639,33 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     );
   }
 
+  private subscribeToVolume() {
+    this._subs.add(
+      this.state.$data.subscribeToState((newState, prevState) => {
+        // update body if the data is done loading, and the dataframes have changed
+        if (
+          newState.data?.state === LoadingState.Done &&
+          !areArraysEqual(prevState?.data?.series, newState?.data?.series)
+        ) {
+          this.updateBody(true);
+        }
+      })
+    );
+  }
+
+  private subscribeToTimeRange() {
+    this._subs.add(
+      sceneGraph.getTimeRange(this).subscribeToState(() => {
+        if (this.isTimeRangeTooEarlyForAggMetrics()) {
+          this.onUnsupportedAggregatedMetricTimeRange();
+        } else {
+          this.onSupportedAggregatedMetricTimeRange();
+        }
+        this.runVolumeQuery();
+      })
+    );
+  }
+
   private hideLabelsVar() {
     const labelsVar = getLabelsVariable(this);
     labelsVar.setState({

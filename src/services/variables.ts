@@ -11,12 +11,14 @@ export interface AdHocFieldValue {
 }
 
 export type ParserType = 'logfmt' | 'json' | 'mixed' | 'structuredMetadata';
+export type DetectedFieldType = 'int' | 'float' | 'duration' | 'bytes' | 'boolean' | 'string';
 
 export type LogsQueryOptions = {
   labelExpressionToAdd?: string;
   structuredMetadataToAdd?: string;
   fieldExpressionToAdd?: string;
   parser?: ParserType;
+  fieldType?: DetectedFieldType;
 };
 
 export const VAR_LABELS = 'filters';
