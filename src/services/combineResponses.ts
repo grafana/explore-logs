@@ -7,7 +7,6 @@ import {
   Field,
   FieldType,
   QueryResultMetaStat,
-  shallowCompare,
 } from '@grafana/data';
 import { logger } from './logger';
 
@@ -180,10 +179,6 @@ function findSourceField(referenceField: Field, sourceFields: Field[], index: nu
     return candidates[0];
   }
 
-  if (referenceField.labels) {
-    return candidates.find((candidate) => shallowCompare(referenceField.labels ?? {}, candidate.labels ?? {}));
-  }
-
   return sourceFields[index];
 }
 
@@ -246,14 +241,7 @@ function shouldCombine(frame1: DataFrame, frame2: DataFrame): boolean {
 
   // metric range query data
   if (frameType1 === DataFrameType.TimeSeriesMulti) {
-    const field1 = frame1.fields.find((f) => f.type === FieldType.number);
-    const field2 = frame2.fields.find((f) => f.type === FieldType.number);
-    if (field1 === undefined || field2 === undefined) {
-      // should never happen
-      return false;
-    }
-
-    return shallowCompare(field1.labels ?? {}, field2.labels ?? {});
+    return compareLabels(frame1, frame2);
   }
 
   // logs query data
@@ -271,4 +259,20 @@ function shouldCombine(frame1: DataFrame, frame2: DataFrame): boolean {
 
   // should never reach here
   return false;
+}
+
+function compareLabels(frame1: DataFrame, frame2: DataFrame) {
+  const field1 = frame1.fields.find((f) => f.type === FieldType.number);
+  const field2 = frame2.fields.find((f) => f.type === FieldType.number);
+  if (field1 === undefined || field2 === undefined) {
+    // should never happen
+    return false;
+  }
+  if (!frame1.name && field1.labels) {
+    frame1.name = JSON.stringify(field1.labels);
+  }
+  if (!frame2.name && field2.labels) {
+    frame2.name = JSON.stringify(field2.labels);
+  }
+  return frame1.name === frame2.name;
 }
