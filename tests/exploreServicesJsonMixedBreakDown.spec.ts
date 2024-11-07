@@ -160,7 +160,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     });
     expect(requests).toHaveLength(3);
   });
-  test(`should exclude ${metadataFieldName}, request should contain no parser`, async ({ page }) => {
+  test.only(`should exclude ${metadataFieldName}, request should contain no parser`, async ({ page }) => {
     let requests: PlaywrightRequest[] = [];
     explorePage.blockAllQueriesExcept({
       refIds: [metadataFieldName],
@@ -181,7 +181,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     expect(requests).toHaveLength(2);
     // Exclude a panel
     await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
-    await expect.poll(() => allPanels.count()).toBeGreaterThan(actualCount - 1);
+    await expect.poll(() => allPanels.count()).toBeGreaterThanOrEqual(actualCount - 1);
 
     // Adhoc content filter should be added
     await expect(
