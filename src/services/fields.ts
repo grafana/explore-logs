@@ -81,15 +81,11 @@ export function extractParserFromString(parserString?: string): ParserType {
 export function extractFieldTypeFromString(fieldString?: string): DetectedFieldType {
   switch (fieldString) {
     case 'int':
-      return 'int';
     case 'float':
-      return 'float';
     case 'duration':
-      return 'duration';
     case 'boolean':
-      return 'boolean';
     case 'bytes':
-      return 'bytes';
+      return fieldString;
     default:
       return 'string';
   }
