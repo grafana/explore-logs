@@ -234,13 +234,35 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
     });
   }
 
+  private runDetectedLabels() {
+    this.state.$labelsData.runQueries();
+  }
+
+  private runDetectedLabelsSubs() {
+    // Update labels/tabs on time range change
+    this._subs.add(
+      sceneGraph.getTimeRange(this).subscribeToState(() => {
+        this.runDetectedLabels();
+      })
+    );
+
+    // Update labels (tabs) when datasource is changed
+    this._subs.add(
+      getDataSourceVariable(this).subscribeToState(() => {
+        this.runDetectedLabels();
+      })
+    );
+  }
+
   private onActivate() {
     // Get labels
-    this.state.$labelsData.runQueries();
+    this.runDetectedLabels();
 
     this.setState({
       popover: new TabPopoverScene({}),
     });
+
+    this.runDetectedLabelsSubs();
 
     // Update labels (tabs) when datasource is changed
     this._subs.add(
@@ -259,11 +281,11 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
     );
 
     // Update labels/tabs on time range change
-    this._subs.add(
-      sceneGraph.getTimeRange(this).subscribeToState(() => {
-        this.state.$labelsData.runQueries();
-      })
-    );
+    // this._subs.add(
+    //   sceneGraph.getTimeRange(this).subscribeToState(() => {
+    //     this.state.$labelsData.runQueries();
+    //   })
+    // );
 
     this._subs.add(
       this.state.$labelsData.subscribeToState((newState) => {

@@ -221,7 +221,7 @@ export function getVariableForLabel(
 
   if (labelType) {
     // Otherwise use the labelType from the dataframe
-    return getFilterTypeFromLabelType(labelType, key);
+    return getFilterTypeFromLabelType(labelType, key, sceneRef);
   }
 
   // If the dataframe doesn't have labelTypes, check if the detected_fields response returned a parser.
@@ -238,7 +238,14 @@ export function getVariableForLabel(
   return VAR_FIELDS;
 }
 
-export function getFilterTypeFromLabelType(type: LabelType, key: string): VariableFilterType {
+export function getFilterTypeFromLabelType(type: LabelType, key: string, sceneRef: SceneObject): VariableFilterType {
+  console.log('getFilterTypeFromLabelType', type, key);
+  const parserForThisField = getParserForField(key, sceneRef);
+
+  if (parserForThisField === 'structuredMetadata') {
+    return VAR_METADATA;
+  }
+
   switch (type) {
     case LabelType.Indexed: {
       return VAR_LABELS;

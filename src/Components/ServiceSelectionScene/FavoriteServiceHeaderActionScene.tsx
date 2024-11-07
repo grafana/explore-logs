@@ -1,6 +1,6 @@
 import { SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import React from 'react';
-import { Icon, IconType, ToolbarButton, useStyles2 } from '@grafana/ui';
+import { Icon, ToolbarButton, useStyles2 } from '@grafana/ui';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 import {
@@ -47,13 +47,6 @@ export class FavoriteServiceHeaderActionScene extends SceneObjectBase<FavoriteSe
     this.setState({
       hover,
     });
-  }
-
-  public getIconType(isFavorite: boolean): IconType {
-    if (isFavorite) {
-      return this.state.hover ? 'default' : 'solid';
-    }
-    return this.state.hover ? 'solid' : 'default';
   }
 
   public onClick(isFavorite: boolean) {
