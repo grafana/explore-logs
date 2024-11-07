@@ -468,7 +468,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     });
 
     cssGridItem.addActivationHandler(() => {
-      this.runPanelQuery(cssGridItem);
+      const runner = getQueryRunnerFromChildren(cssGridItem)[0];
+      // If the query runner has already ran, the scene must be cached, don't re-run as the volume query will be triggered which will execute another panel query
+      if (runner.state.data?.state !== LoadingState.Done) {
+        this.runPanelQuery(cssGridItem);
+      }
     });
 
     return cssGridItem;
@@ -521,7 +525,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     });
 
     cssGridItem.addActivationHandler(() => {
-      this.runPanelQuery(cssGridItem);
+      const runner = getQueryRunnerFromChildren(cssGridItem)[0];
+      // If the query runner has already ran, the scene must be cached, don't re-run as the volume query will be triggered which will execute another panel query
+      if (runner.state.data?.state !== LoadingState.Done) {
+        this.runPanelQuery(cssGridItem);
+      }
     });
 
     return cssGridItem;
@@ -549,11 +557,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   private doVariablesNeedSync() {
     const labelsVarPrimary = getLabelsVariable(this);
     const labelsVarReplica = getLabelsVariableReplica(this);
-
-    console.log('doVariablesNeedSync', {
-      primary: labelsVarReplica.state.filters,
-      replica: labelsVarReplica.state.filters,
-    });
 
     const activeTab = this.getSelectedTab();
     const filteredFilters = labelsVarPrimary.state.filters.filter((f) => f.key !== activeTab);
@@ -588,7 +591,9 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     // Subscribe to tab changes (primary label)
     this.subscribeToActiveTabVariable(getServiceSelectionPrimaryLabel(this));
 
-    this.runVolumeOnActivate();
+    if (this.state.$data.state.data?.state !== LoadingState.Done) {
+      this.runVolumeOnActivate();
+    }
 
     // Update labels on time range change
     this.subscribeToTimeRange();
@@ -856,8 +861,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           queryRunner.runQueries();
         } else {
           // @todo, this breaks the scene cache, but also runs queries on label change
-          // Can we determine when this is called on activation and check then?
-          // No, the labels could have changed for this route and then the user could redirect back, we'd need to compare the filter state
           queryRunner.runQueries();
         }
       }
@@ -889,28 +892,28 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         if (existing.length === 2) {
           // If we already have grid items for this service, move them over to the new array of children, this will preserve their queryRunners, preventing duplicate queries from getting run
           newChildren.push(existing[0], existing[1]);
+
+          if (existing[0].isActive && runQueries) {
+            this.runPanelQuery(existing[0]);
+          }
+
+          if (existing[1].isActive && runQueries) {
+            this.runPanelQuery(existing[1]);
+          }
         } else {
-          // for each service, we create a layout with timeseries and logs panel
-          newChildren.push(
-            this.buildServiceLayout(
-              selectedTab,
-              primaryLabelValue,
-              timeRange,
-              aggregatedMetricsVariable,
-              primaryLabelVar,
-              datasourceVariable
-            ),
-            this.buildServiceLogsLayout(selectedTab, primaryLabelValue)
+          const newChildTs = this.buildServiceLayout(
+            selectedTab,
+            primaryLabelValue,
+            timeRange,
+            aggregatedMetricsVariable,
+            primaryLabelVar,
+            datasourceVariable
           );
+          const newChildLogs = this.buildServiceLogsLayout(selectedTab, primaryLabelValue);
+          // for each service, we create a layout with timeseries and logs panel
+          newChildren.push(newChildTs, newChildLogs);
         }
       }
-
-      // Re-execute queries for active panels
-      newChildren.forEach((child) => {
-        if (child.isActive && runQueries) {
-          this.runPanelQuery(child);
-        }
-      });
 
       this.state.body.setState({
         children: newChildren,

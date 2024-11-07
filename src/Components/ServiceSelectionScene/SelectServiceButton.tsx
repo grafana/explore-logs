@@ -2,7 +2,6 @@ import React from 'react';
 
 import { SceneComponentProps, SceneObject, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { Button, useStyles2 } from '@grafana/ui';
-import { VariableHide } from '@grafana/schema';
 import { addToFavoriteLabelValueInStorage } from 'services/store';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { navigateToInitialPageAfterServiceSelection } from '../../services/navigate';
@@ -24,16 +23,21 @@ export function selectLabel(primaryLabelName: string, primaryLabelValue: string,
     label: primaryLabelName,
   });
 
+  const filteredFilters = variable.state.filters.filter(
+    (f) => !(f.key === primaryLabelName && f.value === primaryLabelValue)
+  );
+
+  const filters = [
+    ...filteredFilters,
+    {
+      key: primaryLabelName,
+      operator: FilterOp.Equal,
+      value: primaryLabelValue,
+    },
+  ];
+
   variable.setState({
-    filters: [
-      ...variable.state.filters.filter((f) => f.key !== primaryLabelName),
-      {
-        key: primaryLabelName,
-        operator: FilterOp.Equal,
-        value: primaryLabelValue,
-      },
-    ],
-    hide: VariableHide.hideLabel,
+    filters,
   });
   const ds = getDataSourceVariable(sceneRef).getValue();
 
