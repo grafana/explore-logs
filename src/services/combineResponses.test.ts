@@ -206,6 +206,7 @@ describe('combineResponses', () => {
             ],
           },
           refId: 'A',
+          name: '{"level":"debug"}',
         },
       ],
     });
@@ -251,6 +252,7 @@ describe('combineResponses', () => {
             ],
           },
           refId: 'A',
+          name: '{"level":"debug"}',
         },
         metricFrameC,
       ],
@@ -662,6 +664,7 @@ describe('combineResponses', () => {
             ],
           },
           refId: 'A',
+          name: '{"level":"debug"}',
         },
       ],
     });
@@ -775,6 +778,7 @@ describe('mergeFrames', () => {
             ],
           },
           refId: 'A',
+          name: '{"level":"debug"}',
         },
       ],
     });
@@ -824,6 +828,7 @@ describe('mergeFrames', () => {
             ],
           },
           refId: 'A',
+          name: '{"level":"debug"}',
         },
       ],
     });
@@ -869,6 +874,7 @@ describe('mergeFrames', () => {
             ],
           },
           refId: 'A',
+          name: '{"level":"debug"}',
         },
         metricFrameC,
       ],
