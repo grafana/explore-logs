@@ -1,4 +1,3 @@
-import pluginJson from '../plugin.json';
 import { UrlQueryMap, urlUtil } from '@grafana/data';
 import {
   SERVICE_NAME,
@@ -19,9 +18,7 @@ import { replaceSlash } from './extensions/links';
 import { SceneObject } from '@grafana/scenes';
 import { getLabelsVariable } from './variableGetters';
 import { logger } from './logger';
-
-export const PLUGIN_ID = pluginJson.id;
-export const PLUGIN_BASE_URL = `/a/${PLUGIN_ID}`;
+import { PLUGIN_BASE_URL, prefixRoute } from './plugin';
 
 export enum PageSlugs {
   explore = 'explore',
@@ -80,11 +77,6 @@ export const CHILD_ROUTE_DEFINITIONS: Record<keyof typeof ValueSlugs, string> = 
 };
 
 export const EXPLORATIONS_ROUTE = `${PLUGIN_BASE_URL}/${PageSlugs.explore}`;
-
-// Prefixes the route with the base URL of the plugin
-export function prefixRoute(route: string): string {
-  return `${PLUGIN_BASE_URL}/${route}`;
-}
 
 // For redirect back to service, we just want to keep datasource, and timerange
 export const SERVICE_URL_KEYS = ['from', 'to', `var-${VAR_DATASOURCE}`];

@@ -3,11 +3,12 @@ import { IndexScene } from '../Components/IndexScene/IndexScene';
 import { ALL_VARIABLE_VALUE } from './variables';
 import { getMetadataService } from './metadata';
 import { locationService } from '@grafana/runtime';
-import { buildServicesUrl, DRILLDOWN_URL_KEYS, PageSlugs, prefixRoute, ROUTES, ValueSlugs } from './routing';
+import { buildServicesUrl, DRILLDOWN_URL_KEYS, PageSlugs, ROUTES, ValueSlugs } from './routing';
 import { sceneGraph } from '@grafana/scenes';
 import { UrlQueryMap, urlUtil } from '@grafana/data';
 import { replaceSlash } from './extensions/links';
 import { logger } from './logger';
+import { prefixRoute } from './plugin';
 
 let previousRoute: string | undefined = undefined;
 

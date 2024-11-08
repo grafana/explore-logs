@@ -515,6 +515,8 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
   }
 
   private onActivate() {
+    // Temporarily hide the combobox until the final PR in this series
+    this.hideLabelsVar();
     this.fixRequiredUrlParams();
     // Clear existing volume data on activate or we'll show stale cached data, potentially from a different datasource
     this.setState({
@@ -637,6 +639,13 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     );
   }
 
+  private hideLabelsVar() {
+    const labelsVar = getLabelsVariable(this);
+    labelsVar.setState({
+      hide: VariableHide.hideVariable,
+    });
+  }
+
   /**
    * If the user copies a partial URL we want to prevent throwing runtime errors or running invalid queries, so we set the default tab which will trigger updates to the primary_label
    * @private
@@ -748,7 +757,21 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       const queryRunners = getQueryRunnerFromChildren(child);
       if (queryRunners.length === 1) {
         const queryRunner = queryRunners[0];
-        queryRunner.runQueries();
+
+        // If the scene was cached, the time range will still be the same as what was executed in the query
+        const requestTimeRange = queryRunner.state.data?.timeRange;
+        const sceneTimeRange = sceneGraph.getTimeRange(this);
+        const fromDiff = requestTimeRange
+          ? Math.abs(sceneTimeRange.state.value.from.diff(requestTimeRange?.from, 's'))
+          : Infinity;
+        const toDiff = requestTimeRange
+          ? Math.abs(sceneTimeRange.state.value.to.diff(requestTimeRange?.to, 's'))
+          : Infinity;
+
+        // If the time range hasn't changed, or the loading state isn't complete, run the query
+        if (queryRunner.state.data?.state !== LoadingState.Done || fromDiff > 0 || toDiff > 0) {
+          queryRunner.runQueries();
+        }
       }
     }
   }
@@ -794,7 +817,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         }
       }
 
-      // Run queries for active panels
+      // Re-execute queries for active panels
       newChildren.forEach((child) => {
         if (child.isActive && runQueries) {
           this.runPanelQuery(child);

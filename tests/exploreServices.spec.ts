@@ -5,6 +5,11 @@ import { getMockVolumeApiResponse } from './mocks/getMockVolumeApiResponse';
 import { isNumber } from 'lodash';
 import { Page } from '@playwright/test';
 
+const combobox = {
+  labels: {
+    removeOnlyFilterLabel: 'Remove filter with key',
+  },
+};
 test.describe('explore services page', () => {
   let explorePage: ExplorePage;
 
@@ -115,7 +120,7 @@ test.describe('explore services page', () => {
       await expect(page.getByTestId('AdHocFilter-detected_level')).toBeVisible();
 
       // Remove service so we're redirected back to the start
-      await page.getByTestId(testIds.variables.serviceName.label).click();
+      await page.getByLabel(combobox.labels.removeOnlyFilterLabel).click();
 
       // Assert we're rendering the right scene and the services have loaded
       await expect(page.getByText(/Showing \d+ of \d+/)).toBeVisible();
@@ -163,9 +168,15 @@ test.describe('explore services page', () => {
         await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
         expect(logsVolumeCount).toEqual(1);
         expect(logsQueryCount).toEqual(4);
+
+        // We're only updating if the time range is more then a second diff...
+        await page.waitForTimeout(1001);
         await explorePage.refreshPicker.click();
+        await page.waitForTimeout(1001);
         await explorePage.refreshPicker.click();
+        await page.waitForTimeout(1001);
         await explorePage.refreshPicker.click();
+        await page.waitForTimeout(1001);
         await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
         // Noticed that the below assertions were flaking when not running the trace, we need to wait a tiny bit to let the last requests fire
         await page.waitForTimeout(50);
@@ -176,15 +187,23 @@ test.describe('explore services page', () => {
       // Since the addition of the runtime datasource, the query doesn't contain the datasource, and won't re-run when the datasource is changed, as such we need to manually re-run volume queries when the service selection scene is activated or users could be presented with an invalid set of services
       // This isn't ideal as we won't take advantage of being able to use the cached volume result for users that did not change the datasource any longer
       test('navigating back will re-run volume query', async ({ page }) => {
+        const removeVariableBtn = page.getByLabel(combobox.labels.removeOnlyFilterLabel);
         await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
         expect(logsVolumeCount).toEqual(1);
         expect(logsQueryCount).toBeLessThanOrEqual(4);
+        await expect(page.getByText(/Showing \d+ of \d+/)).toBeVisible();
 
         // Click on first service
         await explorePage.addServiceName();
         await explorePage.assertTabsNotLoading();
+
         // Clear variable
-        await page.getByTestId(testIds.variables.serviceName.label).click();
+        await expect(page.getByText(/Showing \d+ of \d+/)).toHaveCount(0);
+        await expect(removeVariableBtn).toHaveCount(1);
+        await removeVariableBtn.click();
+
+        // Assert we navigated back
+        await expect(page.getByText(/Showing \d+ of \d+/)).toBeVisible();
 
         expect(logsVolumeCount).toEqual(2);
         expect(logsQueryCount).toBeLessThanOrEqual(6);
@@ -192,8 +211,11 @@ test.describe('explore services page', () => {
         // Click on first service
         await explorePage.addServiceName();
         await explorePage.assertTabsNotLoading();
+
         // Clear variable
-        await page.getByTestId(testIds.variables.serviceName.label).click();
+        await expect(page.getByText(/Showing \d+ of \d+/)).toHaveCount(0);
+        await expect(removeVariableBtn).toHaveCount(1);
+        await removeVariableBtn.click();
 
         // Assert we're rendering the right scene and the services have loaded
         await expect(page.getByText(/Showing \d+ of \d+/)).toBeVisible();
@@ -279,7 +301,8 @@ test.describe('explore services page', () => {
           await explorePage.addServiceName();
 
           const serviceNameVariableLoc = page.getByTestId(testIds.variables.serviceName.label);
-          const removeVariableBtn = serviceNameVariableLoc.getByLabel('Remove');
+          await expect(serviceNameVariableLoc).toHaveCount(1);
+          const removeVariableBtn = page.getByLabel(combobox.labels.removeOnlyFilterLabel);
           await expect(serviceNameVariableLoc).toHaveCount(1);
           await expect(removeVariableBtn).toHaveCount(1);
 
@@ -333,11 +356,19 @@ test.describe('explore services page', () => {
     test.describe.configure({ mode: 'serial' });
     test.describe('tabs - namespace', () => {
       let page: Page;
-      let logsVolumeCount: number,
-        logsQueryCount: number,
-        detectedLabelsCount: number,
-        patternsCount: number,
-        detectedFieldsCount: number;
+      let logsVolumeCount = 0;
+      let logsQueryCount = 0;
+      let detectedLabelsCount = 0;
+      let patternsCount = 0;
+      let detectedFieldsCount = 0;
+
+      const resetQueryCounts = () => {
+        logsVolumeCount = 0;
+        logsQueryCount = 0;
+        patternsCount = 0;
+        detectedLabelsCount = 0;
+        detectedFieldsCount = 0;
+      };
 
       test.beforeAll(async ({ browser }, testInfo) => {
         const pagePre = await browser.newPage();
@@ -387,14 +418,6 @@ test.describe('explore services page', () => {
         await explorePage.setDefaultViewportSize();
         await explorePage.clearLocalStorage();
         explorePage.captureConsoleLogs();
-      });
-
-      test.beforeEach(async ({}) => {
-        logsVolumeCount = 0;
-        logsQueryCount = 0;
-        patternsCount = 0;
-        detectedLabelsCount = 0;
-        detectedFieldsCount = 0;
       });
 
       test.afterAll(async ({}) => {
@@ -449,6 +472,7 @@ test.describe('explore services page', () => {
       });
 
       test('Part 2: changing primary label updates tab counts', async ({}) => {
+        resetQueryCounts();
         await explorePage.assertTabsNotLoading();
         const gatewayPatternsCount = await page
           .getByTestId(testIds.exploreServiceDetails.tabPatterns)
@@ -466,15 +490,15 @@ test.describe('explore services page', () => {
         expect(isNumber(Number(gatewayFieldsCount))).toEqual(true);
         expect(isNumber(Number(gatewayLabelsCount))).toEqual(true);
 
-        // Namespace dropdown should exist
-        const selectLoc = page.getByTestId('AdHocFilter-namespace').locator('svg').nth(2);
+        // Namespace filter should exist
+        const selectLoc = page.getByLabel('Edit filter with key namespace');
         await expect(selectLoc).toHaveCount(1);
 
         // Open service name / primary label dropdown
         await selectLoc.click();
 
-        // Change to apache service
-        const optionLoc = page.getByRole('option', { name: /^mimir$/ });
+        // Change to mimir namespace
+        const optionLoc = page.getByRole('option', { name: 'mimir', exact: true });
         await expect(optionLoc).toHaveCount(1);
         await optionLoc.click();
 

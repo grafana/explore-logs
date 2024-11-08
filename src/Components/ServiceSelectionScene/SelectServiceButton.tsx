@@ -5,12 +5,12 @@ import { Button, useStyles2 } from '@grafana/ui';
 import { VariableHide } from '@grafana/schema';
 import { addToFavoriteLabelValueInStorage } from 'services/store';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { FilterOp } from 'services/filters';
 import { navigateToInitialPageAfterServiceSelection } from '../../services/navigate';
 import { getDataSourceVariable, getLabelsVariable } from '../../services/variableGetters';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 import { SERVICE_NAME, SERVICE_UI_LABEL } from '../../services/variables';
+import { FilterOp } from '../../services/filterTypes';
 
 export interface SelectServiceButtonState extends SceneObjectState {
   labelValue: string;

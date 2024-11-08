@@ -1,8 +1,9 @@
 import { AdHocVariableFilter } from '@grafana/data';
-import { buildDataQuery, renderLogQLFieldFilters, renderLogQLLabelFilters } from './query';
-import { FilterOp } from './filters';
+import { buildDataQuery, joinTagFilters, renderLogQLFieldFilters, renderLogQLLabelFilters } from './query';
 
 import { FieldValue } from './variables';
+import { AdHocFiltersVariable } from '@grafana/scenes';
+import { FilterOp } from './filterTypes';
 
 describe('buildDataQuery', () => {
   test('Given an expression outputs a Loki query', () => {
@@ -230,5 +231,69 @@ describe('renderLogQLLabelFilters', () => {
     expect(renderLogQLLabelFilters(filters)).toEqual(
       'level=~"info|error", cluster=`lil-cluster`, component!=`comp1`, pod!=`pod1`'
     );
+  });
+});
+
+describe('joinTagFilters', () => {
+  it('joins multiple include', () => {
+    const adHoc = new AdHocFiltersVariable({
+      filters: [
+        {
+          key: 'service_name',
+          value: 'service_value',
+          operator: '=',
+        },
+        {
+          key: 'service_name',
+          value: 'service_value_2',
+          operator: '=',
+        },
+        {
+          key: 'not_service_name',
+          value: 'not_service_name_value',
+          operator: '=',
+        },
+      ],
+    });
+
+    const result = joinTagFilters(adHoc);
+    expect(result).toEqual([
+      {
+        key: 'service_name',
+        value: 'service_value|service_value_2',
+        operator: '=~',
+      },
+      {
+        key: 'not_service_name',
+        value: 'not_service_name_value',
+        operator: '=',
+      },
+    ]);
+  });
+  it('does not join multiple exclude', () => {
+    const filters = [
+      {
+        key: 'not_service_name',
+        value: 'not_service_name_value',
+        operator: '=',
+      },
+      {
+        key: 'service_name',
+        value: 'service_value',
+        operator: '!=',
+      },
+      {
+        key: 'service_name',
+        value: 'service_value_2',
+        operator: '!=',
+      },
+    ];
+
+    const adHoc = new AdHocFiltersVariable({
+      filters,
+    });
+
+    const result = joinTagFilters(adHoc);
+    expect(result).toEqual(filters);
   });
 });

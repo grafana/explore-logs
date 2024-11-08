@@ -3,10 +3,10 @@ import { getLabelsFromSeries, getVisibleLevels, toggleLevelFromFilter, toggleLev
 import { AdHocVariableFilter, FieldType, toDataFrame } from '@grafana/data';
 import { VAR_LEVELS } from './variables';
 import { AdHocFiltersVariable, SceneObject } from '@grafana/scenes';
-import { FilterOp } from './filters';
 import { addToFilters, replaceFilter } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { LEVEL_NAME } from 'Components/Table/constants';
 import { getLevelsVariable } from './variableGetters';
+import { FilterOp } from './filterTypes';
 
 jest.mock('./variables');
 jest.mock('./variableGetters');

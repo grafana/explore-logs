@@ -54,6 +54,7 @@ import {
   ValueSlugs,
 } from '../../services/routing';
 import { replaceSlash } from '../../services/extensions/links';
+import { VariableHide } from '@grafana/schema';
 
 const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 const PATTERNS_QUERY_REFID = 'patterns';
@@ -229,6 +230,13 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     });
   };
 
+  private showLabelsVariable() {
+    const labelsVar = getLabelsVariable(this);
+    labelsVar.setState({
+      hide: VariableHide.dontHide,
+    });
+  }
+
   /**
    * After routing we need to pull any data set to the service scene by other routes from the metadata singleton,
    * as each route has a different instantiation of this scene
@@ -246,6 +254,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private onActivate() {
+    // Temporarily show labels var on activate until the final PR in this series
+    this.showLabelsVariable();
     this.getMetadata();
     this.resetBodyAndData();
 

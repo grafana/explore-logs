@@ -1,12 +1,14 @@
 import { AdHocVariableFilter } from '@grafana/data';
 import { AppliedPattern } from 'Components/IndexScene/IndexScene';
-import { PLUGIN_ID } from './routing';
 import { EMPTY_VARIABLE_VALUE, VAR_DATASOURCE_EXPR } from './variables';
-import { FilterOp } from './filters';
 import { groupBy, trim } from 'lodash';
 import { getValueFromFieldsFilter } from './variableGetters';
 import { LokiQuery } from './lokiQuery';
 import { SceneDataQueryResourceRequest } from './datasourceTypes';
+import { AdHocFilterWithLabels } from './scenes';
+import { PLUGIN_ID } from './plugin';
+import { AdHocFiltersVariable } from '@grafana/scenes';
+import { FilterOp } from './filterTypes';
 
 /**
  * Builds the resource query
@@ -49,11 +51,18 @@ const defaultQueryParams = {
   supportingQueryType: PLUGIN_ID,
 };
 
-export function renderLogQLLabelFilters(filters: AdHocVariableFilter[]) {
+export const PLACEHOLDER_QUERY = '__placeholder__=""';
+
+export function getLogQLLabelGroups(filters: AdHocVariableFilter[]) {
   const positive = filters.filter((filter) => filter.operator === FilterOp.Equal);
   const negative = filters.filter((filter) => filter.operator === FilterOp.NotEqual);
 
   const positiveGroups = groupBy(positive, (filter) => filter.key);
+  return { negative, positiveGroups };
+}
+
+export function getLogQLLabelFilters(filters: AdHocVariableFilter[]) {
+  const { negative, positiveGroups } = getLogQLLabelGroups(filters);
 
   let positiveFilters: string[] = [];
   for (const key in positiveGroups) {
@@ -63,9 +72,20 @@ export function renderLogQLLabelFilters(filters: AdHocVariableFilter[]) {
     );
   }
 
+  return { positiveFilters, negative };
+}
+
+export function renderLogQLLabelFilters(filters: AdHocFilterWithLabels[]) {
+  let { positiveFilters, negative } = getLogQLLabelFilters(filters);
   const negativeFilters = negative.map((filter) => renderMetadata(filter)).join(', ');
 
-  return trim(`${positiveFilters.join(', ')}, ${negativeFilters}`, ' ,');
+  const result = trim(`${positiveFilters.join(', ')}, ${negativeFilters}`, ' ,');
+  // Since we use this variable after other non-interpolated labels in some queries, and on its own in others, we need to know that this expression can be preceded by a comma, so we output a placeholder value that shouldn't impact the query if the expression is empty, otherwise we'll output invalid logQL
+  if (!result) {
+    return PLACEHOLDER_QUERY;
+  }
+
+  return result;
 }
 
 export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
@@ -118,7 +138,7 @@ function fieldFilterToQueryString(filter: AdHocVariableFilter) {
   return `${filter.key}${filter.operator}\`${value}\``;
 }
 
-function renderRegexLabelFilter(key: string, values: string[]) {
+export function renderRegexLabelFilter(key: string, values: string[]) {
   return `${key}=~"${values.join('|')}"`;
 }
 
@@ -139,4 +159,31 @@ export function renderPatternFilters(patterns: AppliedPattern[]) {
     }
   }
   return `${excludePatternsLine} ${includePatternsLine}`.trim();
+}
+
+export function joinTagFilters(variable: AdHocFiltersVariable) {
+  const { positiveGroups, negative } = getLogQLLabelGroups(variable.state.filters);
+
+  const filters: AdHocFilterWithLabels[] = [];
+  for (const key in positiveGroups) {
+    const values = positiveGroups[key].map((filter) => filter.value);
+    if (values.length === 1) {
+      filters.push({
+        key,
+        value: positiveGroups[key][0].value,
+        operator: '=',
+      });
+    } else {
+      filters.push({
+        key,
+        value: values.join('|'),
+        operator: '=~',
+      });
+    }
+  }
+
+  negative.forEach((filter) => {
+    filters.push(filter);
+  });
+  return filters;
 }

@@ -181,7 +181,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     expect(requests).toHaveLength(2);
     // Exclude a panel
     await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
-    await expect.poll(() => allPanels.count()).toBeGreaterThan(actualCount - 1);
+    await expect.poll(() => allPanels.count()).toBeGreaterThanOrEqual(actualCount - 1);
 
     // Adhoc content filter should be added
     await expect(

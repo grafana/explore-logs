@@ -15,13 +15,13 @@ import { addToFilters, VariableFilterType } from './AddToFiltersButton';
 import { FilterButton } from '../../FilterButton';
 import { EMPTY_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE } from '../../../services/variables';
 import { AdHocVariableFilter, Field, Labels, LoadingState } from '@grafana/data';
-import { FilterOp } from '../../../services/filters';
 import {
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
   getValueFromAdHocVariableFilter,
 } from '../../../services/variableGetters';
+import { FilterOp } from '../../../services/filterTypes';
 
 interface SelectLabelActionSceneState extends SceneObjectState {
   labelName: string;

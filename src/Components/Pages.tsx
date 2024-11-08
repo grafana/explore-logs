@@ -13,8 +13,6 @@ import {
   extractValuesFromRoute,
   PageSlugs,
   ParentDrilldownSlugs,
-  PLUGIN_BASE_URL,
-  prefixRoute,
   ROUTE_DEFINITIONS,
   ROUTES,
   SERVICE_URL_KEYS,
@@ -26,6 +24,7 @@ import { IndexScene } from './IndexScene/IndexScene';
 import { navigateToIndex } from '../services/navigate';
 import { logger } from '../services/logger';
 import { capitalizeFirstLetter } from '../services/text';
+import { PLUGIN_BASE_URL, prefixRoute } from '../services/plugin';
 
 export type RouteProps = { labelName: string; labelValue: string; breakdownLabel?: string };
 export type RouteMatch = SceneRouteMatch<RouteProps>;
