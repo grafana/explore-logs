@@ -3,15 +3,17 @@ import { Button, useStyles2 } from '@grafana/ui';
 import { testIds } from '../../services/testIds';
 import { addToFilters, FilterType } from '../ServiceScene/Breakdowns/AddToFiltersButton';
 import { VAR_LABELS } from '../../services/variables';
-import { getLabelsVariable } from '../../services/variableGetters';
+import { getLabelsVariable, getValueFromAdHocVariableFilter } from '../../services/variableGetters';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
-import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 import React from 'react';
+import { FilterOp } from '../../services/filterTypes';
 
 export interface AddLabelToFiltersHeaderActionSceneState extends SceneObjectState {
   name: string;
   value: string;
+  isIncluded?: boolean;
+  isExcluded?: boolean;
 }
 
 export class AddLabelToFiltersHeaderActionScene extends SceneObjectBase<AddLabelToFiltersHeaderActionSceneState> {
@@ -19,25 +21,56 @@ export class AddLabelToFiltersHeaderActionScene extends SceneObjectBase<AddLabel
     super({
       ...state,
     });
+
+    this.addActivationHandler(this.onActivate.bind(this));
   }
 
-  public static Component = ({ model }: SceneComponentProps<AddLabelToFiltersHeaderActionScene>) => {
-    const { value } = model.useState();
-    const isIncluded = false;
-    const isExcluded = false;
+  onActivate() {
+    this.setState({ ...this.isSelected() });
+    this._subs.add(
+      getLabelsVariable(this).subscribeToState(() => {
+        const selected = this.isSelected();
+        if (this.state.isIncluded !== selected.isIncluded || this.state.isExcluded !== selected.isExcluded) {
+          this.setState({ ...selected });
+        }
+      })
+    );
+  }
 
-    const styles = useStyles2(getStyles, isIncluded, isExcluded);
+  isSelected = () => {
+    const variable = getLabelsVariable(this);
+
+    // Check if the filter is already there
+    const filterInSelectedFilters = variable.state.filters.find((f) => {
+      const value = getValueFromAdHocVariableFilter(variable, f);
+      return f.key === this.state.name && value.value === this.state.value;
+    });
+
+    if (!filterInSelectedFilters) {
+      return { isIncluded: false, isExcluded: false };
+    }
+
+    return {
+      isIncluded: filterInSelectedFilters.operator === FilterOp.Equal,
+      isExcluded: filterInSelectedFilters.operator === FilterOp.NotEqual,
+    };
+  };
+
+  public static Component = ({ model }: SceneComponentProps<AddLabelToFiltersHeaderActionScene>) => {
+    const { value, isIncluded } = model.useState();
+
+    const styles = useStyles2(getStyles);
     return (
       <span className={styles.wrapper}>
         <Button
-          tooltip={`Add ${value} to filters`}
-          variant={isIncluded ? 'primary' : 'secondary'}
+          tooltip={isIncluded ? `Remove ${value} from filters` : `Add ${value} to filters`}
+          variant={'secondary'}
           fill={'outline'}
-          icon={'plus'}
+          icon={isIncluded ? 'minus' : 'plus'}
           size="sm"
           aria-selected={isIncluded}
           className={styles.includeButton}
-          onClick={() => (isIncluded ? () => model.onClick('clear') : model.onClick('include'))}
+          onClick={() => (isIncluded ? model.onClick('clear') : model.onClick('include'))}
           data-testid={testIds.exploreServiceDetails.buttonFilterInclude}
         />
       </span>
@@ -50,9 +83,6 @@ export class AddLabelToFiltersHeaderActionScene extends SceneObjectBase<AddLabel
 
   public onClick = (type: FilterType) => {
     const filter = this.getFilter();
-    if (!filter) {
-      return;
-    }
 
     addToFilters(filter.name, filter.value, type, this, VAR_LABELS);
 
@@ -63,10 +93,12 @@ export class AddLabelToFiltersHeaderActionScene extends SceneObjectBase<AddLabel
       action: type,
       filtersLength: variable?.state.filters.length || 0,
     });
+
+    this.setState({ ...this.isSelected() });
   };
 }
 
-const getStyles = (theme: GrafanaTheme2, isIncluded: boolean, isExcluded: boolean) => {
+const getStyles = () => {
   return {
     container: css({
       display: 'flex',

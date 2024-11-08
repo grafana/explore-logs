@@ -45,7 +45,7 @@ import {
   getPatternsVariable,
 } from '../../services/variableGetters';
 import { logger } from '../../services/logger';
-import { IndexScene } from '../IndexScene/IndexScene';
+import { IndexScene, showLogsButtonSceneKey } from '../IndexScene/IndexScene';
 import {
   getDrilldownSlug,
   getDrilldownValueSlug,
@@ -54,6 +54,7 @@ import {
   ValueSlugs,
 } from '../../services/routing';
 import { replaceSlash } from '../../services/extensions/links';
+import { ShowLogsButtonScene } from '../IndexScene/ShowLogsButtonScene';
 
 const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 const PATTERNS_QUERY_REFID = 'patterns';
@@ -246,6 +247,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private onActivate() {
+    // Hide show logs button
+    const showLogsButton = sceneGraph.findByKeyAndType(this, showLogsButtonSceneKey, ShowLogsButtonScene);
+    showLogsButton.setState({ hide: true });
+    // showLogsButton.setState({})
     this.getMetadata();
     this.resetBodyAndData();
 

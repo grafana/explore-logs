@@ -136,7 +136,9 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
 
         {/* Add more tabs tab */}
         {data?.state === LoadingState.Done && (
-          <Tab onChangeTab={model.toggleShowPopover} label={'Add label'} ref={popoverRef} icon={'plus-circle'} />
+          <span className={styles.addTab}>
+            <Tab onChangeTab={model.toggleShowPopover} label={'Add label'} ref={popoverRef} icon={'plus-circle'} />
+          </span>
         )}
 
         {popover && (
@@ -309,6 +311,13 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
 }
 
 const getTabsStyles = (theme: GrafanaTheme2) => ({
+  addTab: css({
+    label: 'add-label-tab',
+    color: theme.colors.primary.text,
+    '& button': {
+      color: theme.colors.primary.text,
+    },
+  }),
   popover: css({
     borderRadius: theme.shape.radius.default,
     boxShadow: theme.shadows.z3,

@@ -1,14 +1,15 @@
 import { GrafanaTheme2 } from '@grafana/data';
-import { SceneComponentProps, SceneObjectBase, SceneObjectState, VariableValueSelectors } from '@grafana/scenes';
+import { SceneComponentProps, SceneFlexLayout, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { useStyles2 } from '@grafana/ui';
 import React from 'react';
 import { PatternControls } from './PatternControls';
 import { AppliedPattern, IndexSceneState } from './IndexScene';
-import { css } from '@emotion/css';
+import { css, cx } from '@emotion/css';
 import { GiveFeedbackButton } from './GiveFeedbackButton';
 import { InterceptBanner } from './InterceptBanner';
 
 import { PLUGIN_ID } from '../../services/plugin';
+import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
 
 interface LayoutSceneState extends SceneObjectState {
   interceptDismissed: boolean;
@@ -55,21 +56,37 @@ export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
           )}
           {controls && (
             <div className={styles.controlsContainer}>
-              <div className={styles.filters}>
-                {controls.map((control) =>
-                  control instanceof VariableValueSelectors ? (
-                    <control.Component key={control.state.key} model={control} />
-                  ) : null
-                )}
+              <div className={styles.controlsFirstRowContainer}>
+                <div className={styles.filtersWrap}>
+                  <div className={cx(styles.filters, styles.firstRowWrapper)}>
+                    {controls.map((control) => {
+                      return control instanceof SceneFlexLayout ? (
+                        <control.Component key={control.state.key} model={control} />
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+                <div className={styles.controlsWrapper}>
+                  <GiveFeedbackButton />
+                  <div className={styles.controls}>
+                    {controls.map((control) => {
+                      return !(control instanceof CustomVariableValueSelectors) &&
+                        !(control instanceof SceneFlexLayout) ? (
+                        <control.Component key={control.state.key} model={control} />
+                      ) : null;
+                    })}
+                  </div>
+                </div>
               </div>
-              <div className={styles.controlsWrapper}>
-                <GiveFeedbackButton />
-                <div className={styles.controls}>
-                  {controls.map((control) =>
-                    control instanceof VariableValueSelectors === false ? (
-                      <control.Component key={control.state.key} model={control} />
-                    ) : null
-                  )}
+              <div className={styles.controlsSecondRowContainer}>
+                <div className={styles.filtersWrap}>
+                  <div className={styles.filters}>
+                    {controls.map((control) => {
+                      return control instanceof CustomVariableValueSelectors ? (
+                        <control.Component key={control.state.key} model={control} />
+                      ) : null;
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
@@ -87,6 +104,22 @@ export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
 
 function getStyles(theme: GrafanaTheme2) {
   return {
+    firstRowWrapper: css({
+      '& > div > div': {
+        gap: '16px',
+        label: 'first-row-wrapper',
+
+        [theme.breakpoints.down('lg')]: {
+          flexDirection: 'column',
+        },
+
+        // The datasource variable
+        '& > div:first-child': {
+          flex: '1 0 auto',
+          display: 'inline-block',
+        },
+      },
+    }),
     bodyContainer: css({
       flexGrow: 1,
       display: 'flex',
@@ -108,13 +141,27 @@ function getStyles(theme: GrafanaTheme2) {
       flexDirection: 'column',
       gap: theme.spacing(1),
     }),
-    controlsContainer: css({
+    controlsFirstRowContainer: css({
+      display: 'flex',
+      gap: theme.spacing(2),
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: theme.spacing(2),
+    }),
+    controlsSecondRowContainer: css({
       display: 'flex',
       gap: theme.spacing(2),
       justifyContent: 'space-between',
       alignItems: 'flex-start',
     }),
+    controlsContainer: css({
+      label: 'controlsContainer',
+    }),
     filters: css({
+      label: 'filters',
+    }),
+    filtersWrap: css({
+      label: 'filtersWrap',
       display: 'flex',
       gap: theme.spacing(2),
       width: 'calc(100% - 450)',
@@ -126,7 +173,7 @@ function getStyles(theme: GrafanaTheme2) {
 
       //@todo not like this
       // The filter variables container: i.e. services, filters
-      '&:first-child': {
+      '& > div &:first-child': {
         // The wrapper of each filter
         '& > div': {
           // The actual inputs container
@@ -169,8 +216,10 @@ function getStyles(theme: GrafanaTheme2) {
       },
     }),
     controlsWrapper: css({
+      label: 'controlsWrapper',
       display: 'flex',
       flexDirection: 'column',
+      marginTop: '3px',
     }),
     controls: css({
       display: 'flex',

@@ -63,13 +63,13 @@ export class SelectServiceButton extends SceneObjectBase<SelectServiceButtonStat
     const styles = useStyles2(getStyles);
     return (
       <Button
-        tooltip={`View breakdown for ${model.state.labelValue}`}
+        tooltip={`View logs for ${model.state.labelValue}`}
         className={styles.button}
         variant="secondary"
         size="sm"
         onClick={model.onClick}
       >
-        Select
+        Show logs
       </Button>
     );
   };
