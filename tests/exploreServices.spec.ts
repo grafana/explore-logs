@@ -450,7 +450,7 @@ test.describe('explore services page', () => {
         await page.getByTestId(testIds.index.searchLabelValueInput).press('Escape');
 
         // Asser this filters down to only one result
-        await expect(page.getByText('Select')).toHaveCount(1);
+        await expect(page.getByTestId(testIds.index.showLogsButton)).toHaveCount(1);
         await expect(page.getByText('Showing 1 of 1')).toBeVisible();
 
         // Select the first and only result

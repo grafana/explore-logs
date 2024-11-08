@@ -10,6 +10,7 @@ import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 import { SERVICE_NAME, SERVICE_UI_LABEL } from '../../services/variables';
 import { FilterOp } from '../../services/filterTypes';
+import { testIds } from '../../services/testIds';
 
 export interface SelectServiceButtonState extends SceneObjectState {
   labelValue: string;
@@ -63,6 +64,7 @@ export class SelectServiceButton extends SceneObjectBase<SelectServiceButtonStat
     const styles = useStyles2(getStyles);
     return (
       <Button
+        data-testid={testIds.index.showLogsButton}
         tooltip={`View logs for ${model.state.labelValue}`}
         className={styles.button}
         variant="secondary"

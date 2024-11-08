@@ -30,6 +30,7 @@ export const testIds = {
   },
 
   index: {
+    showLogsButton: 'data-testid Show logs',
     addNewLabelTab: 'data-testid Tab Add label',
     searchLabelValueInput: 'data-testid search-services-input',
   },
