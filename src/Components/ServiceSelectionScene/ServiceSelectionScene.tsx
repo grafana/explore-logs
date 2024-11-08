@@ -762,9 +762,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         const requestTimeRange = queryRunner.state.data?.timeRange;
         const sceneTimeRange = sceneGraph.getTimeRange(this);
         const fromDiff = requestTimeRange
-          ? sceneTimeRange.state.value.from.diff(requestTimeRange?.from, 's')
+          ? Math.abs(sceneTimeRange.state.value.from.diff(requestTimeRange?.from, 's'))
           : Infinity;
-        const toDiff = requestTimeRange ? sceneTimeRange.state.value.to.diff(requestTimeRange?.to, 's') : Infinity;
+        const toDiff = requestTimeRange
+          ? Math.abs(sceneTimeRange.state.value.to.diff(requestTimeRange?.to, 's'))
+          : Infinity;
 
         // If the time range hasn't changed, or the loading state isn't complete, run the query
         if (queryRunner.state.data?.state !== LoadingState.Done || fromDiff > 0 || toDiff > 0) {
