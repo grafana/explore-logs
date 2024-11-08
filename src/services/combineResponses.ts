@@ -7,7 +7,6 @@ import {
   Field,
   FieldType,
   QueryResultMetaStat,
-  shallowCompare,
 } from '@grafana/data';
 import { logger } from './logger';
 
@@ -100,7 +99,7 @@ export function mergeFrames(dest: DataFrame, source: DataFrame) {
               ...dest.fields[f].values[destIdx],
               ...sourceField.values[i],
             };
-          } else if (sourceField.values[i]) {
+          } else if (sourceField.values[i] != null) {
             dest.fields[f].values[destIdx] = sourceField.values[i];
           }
         } else {
@@ -131,7 +130,7 @@ function resolveIdx(destField: Field, sourceField: Field, index: number) {
   if (idx < 0) {
     return 0;
   }
-  if (sourceField.values[index] === destField.values[idx] && sourceField.nanos && destField.nanos) {
+  if (sourceField.values[index] === destField.values[idx] && sourceField.nanos != null && destField.nanos != null) {
     return sourceField.nanos[index] > destField.nanos[idx] ? idx + 1 : idx;
   }
   if (sourceField.values[index] > destField.values[idx]) {
@@ -152,7 +151,7 @@ function compareEntries(
   if (!sameTimestamp) {
     return false;
   }
-  if (!destIdField || !sourceIdField) {
+  if (destIdField == null || sourceIdField == null) {
     return true;
   }
   // Log frames, check indexes
@@ -178,10 +177,6 @@ function findSourceField(referenceField: Field, sourceFields: Field[], index: nu
 
   if (candidates.length === 1) {
     return candidates[0];
-  }
-
-  if (referenceField.labels) {
-    return candidates.find((candidate) => shallowCompare(referenceField.labels ?? {}, candidate.labels ?? {}));
   }
 
   return sourceFields[index];
@@ -232,7 +227,10 @@ function cloneDataFrame(frame: DataQueryResponseData): DataQueryResponseData {
 }
 
 function shouldCombine(frame1: DataFrame, frame2: DataFrame): boolean {
-  if (frame1.refId !== frame2.refId || frame1.name !== frame2.name) {
+  if (frame1.refId !== frame2.refId) {
+    return false;
+  }
+  if (frame1.name != null && frame2.name != null && frame1.name !== frame2.name) {
     return false;
   }
 
@@ -246,14 +244,7 @@ function shouldCombine(frame1: DataFrame, frame2: DataFrame): boolean {
 
   // metric range query data
   if (frameType1 === DataFrameType.TimeSeriesMulti) {
-    const field1 = frame1.fields.find((f) => f.type === FieldType.number);
-    const field2 = frame2.fields.find((f) => f.type === FieldType.number);
-    if (field1 === undefined || field2 === undefined) {
-      // should never happen
-      return false;
-    }
-
-    return shallowCompare(field1.labels ?? {}, field2.labels ?? {});
+    return compareLabels(frame1, frame2);
   }
 
   // logs query data
@@ -271,4 +262,21 @@ function shouldCombine(frame1: DataFrame, frame2: DataFrame): boolean {
 
   // should never reach here
   return false;
+}
+
+function compareLabels(frame1: DataFrame, frame2: DataFrame) {
+  const field1 = frame1.fields.find((f) => f.type === FieldType.number);
+  const field2 = frame2.fields.find((f) => f.type === FieldType.number);
+  if (field1 === undefined || field2 === undefined) {
+    // should never happen
+    return false;
+  }
+  // undefined == null
+  if (frame1.name == null) {
+    frame1.name = JSON.stringify(field1.labels);
+  }
+  if (frame2.name == null) {
+    frame2.name = JSON.stringify(field2.labels);
+  }
+  return frame1.name === frame2.name;
 }
