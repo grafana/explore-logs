@@ -17,7 +17,7 @@ export const testIds = {
     },
     combobox: {},
     serviceName: {
-      label: 'data-testid Dashboard template variables submenu Label Indexed labels',
+      label: 'data-testid Dashboard template variables submenu Label Labels',
     },
   },
   breakdowns: {
