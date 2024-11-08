@@ -99,7 +99,7 @@ export function mergeFrames(dest: DataFrame, source: DataFrame) {
               ...dest.fields[f].values[destIdx],
               ...sourceField.values[i],
             };
-          } else if (sourceField.values[i]) {
+          } else if (sourceField.values[i] != null) {
             dest.fields[f].values[destIdx] = sourceField.values[i];
           }
         } else {
@@ -130,7 +130,7 @@ function resolveIdx(destField: Field, sourceField: Field, index: number) {
   if (idx < 0) {
     return 0;
   }
-  if (sourceField.values[index] === destField.values[idx] && sourceField.nanos && destField.nanos) {
+  if (sourceField.values[index] === destField.values[idx] && sourceField.nanos != null && destField.nanos != null) {
     return sourceField.nanos[index] > destField.nanos[idx] ? idx + 1 : idx;
   }
   if (sourceField.values[index] > destField.values[idx]) {
@@ -151,7 +151,7 @@ function compareEntries(
   if (!sameTimestamp) {
     return false;
   }
-  if (!destIdField || !sourceIdField) {
+  if (destIdField == null || sourceIdField == null) {
     return true;
   }
   // Log frames, check indexes
@@ -230,7 +230,7 @@ function shouldCombine(frame1: DataFrame, frame2: DataFrame): boolean {
   if (frame1.refId !== frame2.refId) {
     return false;
   }
-  if (frame1.name && frame2.name && frame1.name !== frame2.name) {
+  if (frame1.name != null && frame2.name != null && frame1.name !== frame2.name) {
     return false;
   }
 
@@ -271,10 +271,11 @@ function compareLabels(frame1: DataFrame, frame2: DataFrame) {
     // should never happen
     return false;
   }
-  if (!frame1.name) {
+  // undefined == null
+  if (frame1.name == null) {
     frame1.name = JSON.stringify(field1.labels);
   }
-  if (!frame2.name) {
+  if (frame2.name == null) {
     frame2.name = JSON.stringify(field2.labels);
   }
   return frame1.name === frame2.name;
