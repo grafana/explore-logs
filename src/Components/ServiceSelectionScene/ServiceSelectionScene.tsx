@@ -853,9 +853,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         const requestTimeRange = queryRunner.state.data?.timeRange;
         const sceneTimeRange = sceneGraph.getTimeRange(this);
         const fromDiff = requestTimeRange
-          ? sceneTimeRange.state.value.from.diff(requestTimeRange?.from, 's')
+          ? Math.abs(sceneTimeRange.state.value.from.diff(requestTimeRange?.from, 's'))
           : Infinity;
-        const toDiff = requestTimeRange ? sceneTimeRange.state.value.to.diff(requestTimeRange?.to, 's') : Infinity;
+        const toDiff = requestTimeRange
+          ? Math.abs(sceneTimeRange.state.value.to.diff(requestTimeRange?.to, 's'))
+          : Infinity;
 
         const interpolated = sceneGraph.interpolate(this, query.expr);
         // If we haven't already run this exact same query

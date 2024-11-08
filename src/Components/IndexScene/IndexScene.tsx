@@ -354,7 +354,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     name: VAR_LABELS,
     datasource: EXPLORATION_DS,
     layout: 'combobox',
-    label: 'Indexed labels',
+    label: 'Labels',
     filters: initialFilters ?? [],
     expressionBuilder: renderLogQLLabelFilters,
     hide: VariableHide.dontHide,

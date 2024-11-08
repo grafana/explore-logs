@@ -8,6 +8,7 @@ import { getValueFromFieldsFilter } from './variableGetters';
 import { VAR_FIELDS, VAR_LEVELS, VAR_METADATA } from './variables';
 import { isArray } from 'lodash';
 import { joinTagFilters } from './query';
+import { FilterOp } from './filterTypes';
 
 type FetchDetectedLabelValuesOptions = {
   expr?: string;
@@ -132,7 +133,7 @@ export async function getLabelsTagValuesProvider(
           .filter((f) => f.key === filter.key)
           .some((f) => {
             // If true, the results should be filtered out
-            return f.operator === '=' && f.value === result.text;
+            return f.operator === FilterOp.Equal && f.value === result.text;
           });
       });
     }
