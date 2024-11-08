@@ -9,12 +9,13 @@ const App = lazy(async () => {
   const { wasmSupported } = await import('services/sorting');
 
   const { default: initRuntimeDs } = await import('services/datasource');
-  const { default: init } = await import('@bsull/augurs');
+  const { default: initChangepoint } = await import('@bsull/augurs/changepoint');
+  const { default: initOutlier } = await import('@bsull/augurs/outlier');
 
   initRuntimeDs();
 
   if (wasmSupported()) {
-    await init();
+    await Promise.all([initChangepoint(), initOutlier()]);
   }
 
   return import('Components/App');
