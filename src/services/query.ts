@@ -53,7 +53,6 @@ const defaultQueryParams = {
 
 export const PLACEHOLDER_QUERY = '__placeholder__=""';
 
-// @todo should these be moved to filters.ts?
 export function getLogQLLabelGroups(filters: AdHocVariableFilter[]) {
   const positive = filters.filter((filter) => filter.operator === FilterOp.Equal);
   const negative = filters.filter((filter) => filter.operator === FilterOp.NotEqual);
