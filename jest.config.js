@@ -11,7 +11,8 @@ module.exports = {
   ...config,
   moduleNameMapper: {
     ...config.moduleNameMapper,
-    '@bsull/augurs': '@bsull/augurs/augurs.js',
+    '/@bsull\/augurs\/changepoint/': '@bsull/augurs/changepoint.js',
+    '/@bsull\/augurs\/outlier/': '@bsull/augurs/outlier.js',
   },
   transformIgnorePatterns: [nodeModulesToTransform([...grafanaESModules, '@bsull/augurs'])],
 };
