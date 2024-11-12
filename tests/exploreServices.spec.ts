@@ -135,7 +135,7 @@ test.describe('explore services page', () => {
     });
 
     test('should add multiple includes on service selection', async ({ page }) => {
-      await explorePage.aggregatedMetricsToggle();
+      // await explorePage.aggregatedMetricsToggle();
       const showLogsHeaderBtn = page.getByTestId(testIds.index.header.showLogsButton);
 
       // Button should be disabled until a filter is added
