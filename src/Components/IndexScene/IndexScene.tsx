@@ -111,6 +111,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
           }),
           new ShowLogsButtonScene({
             key: showLogsButtonSceneKey,
+            disabled: true,
           }),
         ],
       }),

@@ -6,6 +6,7 @@ import { css } from '@emotion/css';
 import { navigateToInitialPageAfterServiceSelection } from '../../services/navigate';
 import { getLabelsVariable } from '../../services/variableGetters';
 import { FilterOp } from '../../services/filterTypes';
+import { testIds } from '../../services/testIds';
 
 export interface ShowLogsButtonSceneState extends SceneObjectState {
   disabled?: boolean;
@@ -48,7 +49,13 @@ export class ShowLogsButtonScene extends SceneObjectBase<ShowLogsButtonSceneStat
     }
 
     return (
-      <Button disabled={disabled} fill={'outline'} className={styles.button} onClick={model.onClick}>
+      <Button
+        data-testid={testIds.index.header.showLogsButton}
+        disabled={disabled}
+        fill={'outline'}
+        className={styles.button}
+        onClick={model.onClick}
+      >
         Show logs
       </Button>
     );

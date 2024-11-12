@@ -7,6 +7,7 @@ import { config } from '@grafana/runtime';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { AGGREGATED_METRIC_START_DATE } from '../ServiceSelectionScene/ServiceSelectionScene';
 import pluginJson from '../../plugin.json';
+import { testIds } from '../../services/testIds';
 const AGGREGATED_METRICS_USER_OVERRIDE_LOCALSTORAGE_KEY = `${pluginJson.id}.serviceSelection.aggregatedMetrics`;
 
 export interface ToolbarSceneState extends SceneObjectState {
@@ -89,6 +90,8 @@ export class ToolbarScene extends SceneObjectBase<ToolbarSceneState> {
               }
             >
               <Switch
+                label={'Toggle aggregated metrics'}
+                data-testid={testIds.index.aggregatedMetricsToggle}
                 value={options.aggregatedMetrics.active}
                 disabled={options.aggregatedMetrics.disabled}
                 onChange={model.toggleAggregatedMetricsOverride}
@@ -102,7 +105,12 @@ export class ToolbarScene extends SceneObjectBase<ToolbarSceneState> {
     if (options.aggregatedMetrics) {
       return (
         <Dropdown overlay={renderPopover} placement="bottom" onVisibleChange={model.onToggleOpen}>
-          <ToolbarButton icon="cog" variant="canvas" isOpen={isOpen} />
+          <ToolbarButton
+            icon="cog"
+            variant="canvas"
+            isOpen={isOpen}
+            data-testid={testIds.index.aggregatedMetricsMenu}
+          />
         </Dropdown>
       );
     }

@@ -39,6 +39,16 @@ export class ExplorePage {
     }
   }
 
+  async aggregatedMetricsToggle() {
+    const menuOpenBtn = this.page.getByTestId(testIds.index.aggregatedMetricsMenu);
+    await expect(menuOpenBtn).toHaveCount(1);
+    await menuOpenBtn.click();
+
+    const aggregatedMetricsToggleBtn = this.page.getByLabel('Toggle aggregated metrics');
+    await expect(aggregatedMetricsToggleBtn).toHaveCount(1);
+    await aggregatedMetricsToggleBtn.click();
+  }
+
   async clearLocalStorage() {
     await this.page.evaluate(() => window.localStorage.clear());
   }

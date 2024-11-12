@@ -239,7 +239,6 @@ export function getVariableForLabel(
 }
 
 export function getFilterTypeFromLabelType(type: LabelType, key: string, sceneRef: SceneObject): VariableFilterType {
-  console.log('getFilterTypeFromLabelType', type, key);
   const parserForThisField = getParserForField(key, sceneRef);
 
   if (parserForThisField === 'structuredMetadata') {

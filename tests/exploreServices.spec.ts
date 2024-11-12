@@ -134,6 +134,69 @@ test.describe('explore services page', () => {
       await expect(page.getByTestId('AdHocFilter-detected_level')).not.toBeVisible();
     });
 
+    test('should add multiple includes on service selection', async ({ page }) => {
+      await explorePage.aggregatedMetricsToggle();
+      const showLogsHeaderBtn = page.getByTestId(testIds.index.header.showLogsButton);
+
+      // Button should be disabled until a filter is added
+      await expect(showLogsHeaderBtn).toBeDisabled();
+
+      // Filter results for tempo-ingester
+      await explorePage.servicesSearch.click();
+      await explorePage.servicesSearch.pressSequentially('tempo-ingester');
+
+      const tempoIngesterPanelHeader = page.getByTestId('header-container');
+      const tempoIngesterIncludeBtn = tempoIngesterPanelHeader.getByTestId('data-testid button-filter-include');
+      await expect(tempoIngesterIncludeBtn).toHaveCount(1);
+      await page.keyboard.press('Escape');
+
+      // Assert the portal closed
+      await expect(page.getByRole('listbox')).not.toBeVisible();
+
+      // Assert the button is disabled
+      await expect(page.getByRole('heading', { name: 'tempo-ingester' })).toBeVisible();
+
+      // add positive include filter without navigating
+      await tempoIngesterIncludeBtn.click();
+      expect(await tempoIngesterIncludeBtn.getAttribute('aria-selected')).toEqual('true');
+      // Show logs button in headers should no longer be disabled now we've added new filter
+      await expect(showLogsHeaderBtn).not.toBeDisabled();
+
+      await expect(page.getByLabel('Edit filter with key')).toHaveCount(1);
+
+      // Filter results for tempo-distributor
+      await explorePage.servicesSearch.click();
+      await explorePage.servicesSearch.pressSequentially('tempo-d');
+
+      const tempoDistributorPanelHeader = page.getByTestId('header-container');
+      const tempoDistributorIncludeBtn = tempoDistributorPanelHeader.getByTestId('data-testid button-filter-include');
+      await expect(tempoDistributorIncludeBtn).toHaveCount(1);
+      await page.keyboard.press('Escape');
+
+      // Assert the portal closed
+      await expect(page.getByRole('listbox')).not.toBeVisible();
+      await expect(page.getByRole('heading', { name: 'tempo-distributor' })).toBeVisible();
+
+      // add positive include filter without navigating
+      await tempoDistributorIncludeBtn.click();
+      expect(await tempoDistributorIncludeBtn.getAttribute('aria-selected')).toEqual('true');
+
+      // Assert the filters are visible within the combobox
+      await expect(page.locator('div').filter({ hasText: /^service_name = tempo-ingester$/ })).toHaveCount(1);
+      await expect(page.locator('div').filter({ hasText: /^service_name = tempo-distributor$/ })).toHaveCount(1);
+
+      await showLogsHeaderBtn.click();
+
+      // assert we navigated
+      await expect(
+        page.getByTestId('data-testid Panel header Log volume').getByTestId('header-container')
+      ).toBeVisible();
+
+      // assert the filters are still visible in the combobox
+      await expect(page.locator('div').filter({ hasText: /^service_name = tempo-ingester$/ })).toHaveCount(1);
+      await expect(page.locator('div').filter({ hasText: /^service_name = tempo-distributor$/ })).toHaveCount(1);
+    });
+
     test.describe('mock volume API calls', () => {
       let logsVolumeCount: number, logsQueryCount: number, labelsQueryCount: number;
 

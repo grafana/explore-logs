@@ -33,6 +33,11 @@ export const testIds = {
     showLogsButton: 'data-testid Show logs',
     addNewLabelTab: 'data-testid Tab Add label',
     searchLabelValueInput: 'data-testid search-services-input',
+    aggregatedMetricsMenu: 'data-testid aggregated-metrics-menu',
+    aggregatedMetricsToggle: 'data-testid aggregated-metrics-toggle',
+    header: {
+      showLogsButton: 'data-testid Show logs header',
+    },
   },
 
   exploreServiceDetails: {
