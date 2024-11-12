@@ -2,7 +2,7 @@ import React from 'react';
 
 import { toURLRange, urlUtil } from '@grafana/data';
 import { config } from '@grafana/runtime';
-import { sceneGraph, SceneObject } from '@grafana/scenes';
+import { sceneGraph } from '@grafana/scenes';
 import { ToolbarButton } from '@grafana/ui';
 
 import { getDataSource, getQueryExpr } from 'services/scenes';
@@ -12,10 +12,9 @@ import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'se
 import { getDisplayedFields, getLogsVisualizationType } from 'services/store';
 interface GoToExploreButtonState {
   exploration: IndexScene;
-  sceneRef: SceneObject;
 }
 
-export const GoToExploreButton = ({ exploration, sceneRef }: GoToExploreButtonState) => {
+export const GoToExploreButton = ({ exploration }: GoToExploreButtonState) => {
   const onClick = () => {
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
@@ -24,7 +23,7 @@ export const GoToExploreButton = ({ exploration, sceneRef }: GoToExploreButtonSt
     const datasource = getDataSource(exploration);
     const expr = getQueryExpr(exploration).replace(/\s+/g, ' ').trimEnd();
     const timeRange = sceneGraph.getTimeRange(exploration).state.value;
-    const displayedFields = getDisplayedFields(sceneRef);
+    const displayedFields = getDisplayedFields(exploration);
     const visualisationType = getLogsVisualizationType();
     const exploreState = JSON.stringify({
       ['loki-explore']: {
