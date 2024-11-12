@@ -104,7 +104,6 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     const controls: SceneObject[] = [
       new SceneFlexLayout({
         direction: 'row',
-        // wrap: 'nowrap',
         children: [
           new SceneFlexItem({
             body: new CustomVariableValueSelectors({ layout: 'vertical', includeNames: [VAR_LABELS, VAR_DATASOURCE] }),

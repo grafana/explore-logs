@@ -220,7 +220,7 @@ export function getVariableForLabel(
   const labelType = frame ? getLabelTypeFromFrame(key, frame) : LabelType.Parsed;
 
   if (labelType) {
-    // Otherwise use the labelType from the dataframe
+    // Use the labelType from the dataframe
     return getFilterTypeFromLabelType(labelType, key, sceneRef);
   }
 
@@ -239,12 +239,6 @@ export function getVariableForLabel(
 }
 
 export function getFilterTypeFromLabelType(type: LabelType, key: string, sceneRef: SceneObject): VariableFilterType {
-  const parserForThisField = getParserForField(key, sceneRef);
-
-  if (parserForThisField === 'structuredMetadata') {
-    return VAR_METADATA;
-  }
-
   switch (type) {
     case LabelType.Indexed: {
       return VAR_LABELS;

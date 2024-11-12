@@ -250,7 +250,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     // Hide show logs button
     const showLogsButton = sceneGraph.findByKeyAndType(this, showLogsButtonSceneKey, ShowLogsButtonScene);
     showLogsButton.setState({ hide: true });
-    // showLogsButton.setState({})
     this.getMetadata();
     this.resetBodyAndData();
 

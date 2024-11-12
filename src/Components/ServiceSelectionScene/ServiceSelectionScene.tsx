@@ -153,7 +153,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
             ],
           }),
           // The active tab expression, hidden variable
-          // @todo need to move top-level?
           new AdHocFiltersVariable({
             name: VAR_PRIMARY_LABEL,
             hide: VariableHide.hideLabel,
@@ -806,7 +805,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     const labelsVar = getLabelsVariable(this);
     if ((!this.isTimeRangeTooEarlyForAggMetrics() || !aggregatedMetricsEnabled) && this.isAggregatedMetricsActive()) {
       serviceLabelVar.changeValueTo(AGGREGATED_SERVICE_NAME);
-      // Hide combobox if aggregated metrics
+      // Hide combobox if aggregated metrics is enabled
       labelsVar.setState({
         hide: VariableHide.hideVariable,
       });
@@ -860,7 +859,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           : Infinity;
 
         const interpolated = sceneGraph.interpolate(this, query.expr);
-        // If we haven't already run this exact same query
+        // If we haven't already run this exact same query, run it
         if (queryRunner.state.key !== interpolated || fromDiff > 0 || toDiff > 0) {
           queryRunner.setState({
             key: interpolated,

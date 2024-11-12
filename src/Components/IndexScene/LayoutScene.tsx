@@ -113,7 +113,7 @@ function getStyles(theme: GrafanaTheme2) {
           flexDirection: 'column',
         },
 
-        // The datasource variable
+        // The datasource variable width should be auto, not fill the section
         '& > div:first-child': {
           flex: '1 0 auto',
           display: 'inline-block',

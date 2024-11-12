@@ -282,13 +282,6 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
       })
     );
 
-    // Update labels/tabs on time range change
-    // this._subs.add(
-    //   sceneGraph.getTimeRange(this).subscribeToState(() => {
-    //     this.state.$labelsData.runQueries();
-    //   })
-    // );
-
     this._subs.add(
       this.state.$labelsData.subscribeToState((newState) => {
         if (newState.data?.state === LoadingState.Done) {
