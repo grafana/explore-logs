@@ -42,7 +42,7 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
         <div className={styles.actions}>
           <Stack gap={1}>
             {config.featureToggles.appSidecar && <ToolbarExtensionsRenderer serviceScene={serviceScene} />}
-            <GoToExploreButton exploration={exploration} />
+            <GoToExploreButton exploration={exploration} sceneRef={serviceScene} />
           </Stack>
         </div>
 
