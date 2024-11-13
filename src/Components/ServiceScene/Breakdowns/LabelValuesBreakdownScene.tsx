@@ -14,7 +14,7 @@ import {
 } from '@grafana/scenes';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { getLabelValue } from './SortByScene';
-import { Alert, DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
+import { Alert, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
 import { getSortByPreference } from '../../../services/store';
 import { AppEvents, DataQueryError, LoadingState } from '@grafana/data';
@@ -31,6 +31,7 @@ import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { buildLabelsQuery, LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS } from '../../../services/labels';
 import { getAppEvents } from '@grafana/runtime';
 import { getLabelGroupByVariable } from '../../../services/variableGetters';
+import { ExploreLogsVizPanelMenu, getPanelWrapperStyles } from '../../Panels/VizPanelMenu';
 
 type DisplayError = DataQueryError & { displayed: boolean };
 type DisplayErrors = Record<string, DisplayError>;
@@ -184,6 +185,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       .setCustomFieldConfig('pointSize', 0)
       .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
       .setOverrides(setLevelColorOverrides)
+      .setMenu(new ExploreLogsVizPanelMenu({}))
       .setTitle(tagKey);
 
     const body = bodyOpts.build();
@@ -315,8 +317,9 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
 
   public static Component = ({ model }: SceneComponentProps<LabelValuesBreakdownScene>) => {
     const { body } = model.useState();
+    const styles = useStyles2(getPanelWrapperStyles);
     if (body) {
-      return <>{body && <body.Component model={body} />}</>;
+      return <section className={styles.panelWrapper}>{body && <body.Component model={body} />}</section>;
     }
 
     return <LoadingPlaceholder text={'Loading...'} />;

@@ -32,6 +32,7 @@ import { map, Observable } from 'rxjs';
 import { buildFieldsQueryString, isAvgField } from '../../../services/fields';
 import { getFieldGroupByVariable, getFieldsVariable } from '../../../services/variableGetters';
 import { AddToExplorationButton } from './AddToExplorationButton';
+import { ExploreLogsVizPanelMenu } from '../../Panels/VizPanelMenu';
 
 export interface FieldsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -213,7 +214,10 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
         $data: queryRunner,
         transformations: [() => limitFramesTransformation(MAX_NUMBER_OF_TIME_SERIES)],
       });
-      let body = PanelBuilders.timeseries().setTitle(optionValue).setData(dataTransformer);
+      let body = PanelBuilders.timeseries()
+        .setTitle(optionValue)
+        .setData(dataTransformer)
+        .setMenu(new ExploreLogsVizPanelMenu({}));
 
       const headerActions = [];
       if (!isAvgField(optionValue)) {

@@ -28,6 +28,7 @@ import { getLogsStreamSelector, getValueFromFieldsFilter } from './variableGette
 import { LabelType } from './fieldsTypes';
 import { logger } from './logger';
 import { AddToExplorationButton } from 'Components/ServiceScene/Breakdowns/AddToExplorationButton';
+import { ExploreLogsVizPanelMenu } from '../Components/Panels/VizPanelMenu';
 
 export type DetectedLabel = {
   label: string;
@@ -149,6 +150,7 @@ export function getFilterBreakdownValueScene(
       )
       .setColor({ mode: 'fixed', fixedColor: getColorByIndex(frameIndex) })
       .setOverrides(setLevelColorOverrides)
+      .setMenu(new ExploreLogsVizPanelMenu({}))
       .setHeaderActions([
         new AddToFiltersButton({ frame, variableName }),
         new AddToExplorationButton({ frame, fieldName: getTitle(frame), labelName: labelKey }),

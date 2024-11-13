@@ -11,6 +11,7 @@ import { toggleLevelFromFilter } from 'services/levels';
 import { LoadingState } from '@grafana/data';
 import { getFieldsVariable, getLabelsVariable, getLevelsVariable } from '../../services/variableGetters';
 import { areArraysEqual } from '../../services/comparison';
+import { ExploreLogsVizPanelMenu } from '../Panels/VizPanelMenu';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
@@ -55,6 +56,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       .setTitle('Log volume')
       .setOption('legend', { showLegend: true, calcs: ['sum'], displayMode: LegendDisplayMode.List })
       .setUnit('short')
+      .setMenu(new ExploreLogsVizPanelMenu({}))
       .setData(
         getQueryRunner([
           buildDataQuery(getTimeSeriesExpr(this, LEVEL_VARIABLE_VALUE, false), {

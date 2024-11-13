@@ -13,7 +13,7 @@ import {
   VizPanel,
 } from '@grafana/scenes';
 import { LayoutSwitcher } from './LayoutSwitcher';
-import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
+import { DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
 import { ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE } from '../../../services/variables';
 import React from 'react';
@@ -28,6 +28,7 @@ import { LokiQuery } from '../../../services/lokiQuery';
 import { ServiceScene } from '../ServiceScene';
 import { DataFrame, LoadingState } from '@grafana/data';
 import { AddToExplorationButton } from './AddToExplorationButton';
+import { ExploreLogsVizPanelMenu, getPanelWrapperStyles } from '../../Panels/VizPanelMenu';
 
 export interface LabelsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -233,7 +234,9 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
             .setCustomFieldConfig('lineWidth', 0)
             .setCustomFieldConfig('pointSize', 0)
             .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+            .setHoverHeader(false)
             .setOverrides(setLevelColorOverrides)
+            .setMenu(new ExploreLogsVizPanelMenu({}))
             .build(),
         })
       );
@@ -272,8 +275,10 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
 
   public static Component = ({ model }: SceneComponentProps<LabelsAggregatedBreakdownScene>) => {
     const { body } = model.useState();
+    const styles = useStyles2(getPanelWrapperStyles);
+
     if (body) {
-      return <>{body && <body.Component model={body} />}</>;
+      return <section className={styles.panelWrapper}>{body && <body.Component model={body} />}</section>;
     }
 
     return <LoadingPlaceholder text={'Loading...'} />;

@@ -231,11 +231,6 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
 
 const styles = {
   panelWrapper: css({
-    // If you use hover-header without any header options we must manually hide the remnants, or it shows up as a 1px line in the top-right corner of the viz
-    '.show-on-hover': {
-      display: 'none',
-    },
-
     // Hack to select internal div
     'section > div[class$="panel-content"]': css({
       // A components withing the Logs viz sets contain, which creates a new containing block that is not body which breaks the popover menu
