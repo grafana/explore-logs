@@ -16,7 +16,9 @@ test.describe('explore services page', () => {
   test.describe('parallel', () => {
     test.beforeEach(async ({ page }, testInfo) => {
       explorePage = new ExplorePage(page, testInfo);
-      await explorePage.setDefaultViewportSize();
+
+      // Header sizes may change, bringing up the third row in queries, which will break tests in this suite
+      await page.setViewportSize({ width: 1280, height: 600 });
       await explorePage.clearLocalStorage();
       await explorePage.gotoServices();
       explorePage.captureConsoleLogs();
@@ -250,9 +252,6 @@ test.describe('explore services page', () => {
       // Since the addition of the runtime datasource, the query doesn't contain the datasource, and won't re-run when the datasource is changed, as such we need to manually re-run volume queries when the service selection scene is activated or users could be presented with an invalid set of services
       // This isn't ideal as we won't take advantage of being able to use the cached volume result for users that did not change the datasource any longer
       test('navigating back will re-run volume query', async ({ page }) => {
-        // Header sizes have changed, bringing up the third row in queries
-        await page.setViewportSize({ width: 1280, height: 600 });
-
         const removeVariableBtn = page.getByLabel(combobox.labels.removeOnlyFilterLabel);
         await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
         expect(logsVolumeCount).toEqual(1);
