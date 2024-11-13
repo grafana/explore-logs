@@ -50,6 +50,10 @@ export const getPanelWrapperStyles = (theme: GrafanaTheme2) => {
   return {
     panelWrapper: css({
       width: '100%',
+      height: '100%',
+      label: 'panel-wrapper',
+      display: 'flex',
+
       // Need more specificity to override core style
       'button.show-on-hover': {
         opacity: 1,

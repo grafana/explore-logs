@@ -13,7 +13,7 @@ import {
 import { ALL_VARIABLE_VALUE } from '../../../services/variables';
 import { buildDataQuery } from '../../../services/query';
 import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
-import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
+import { DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS, FieldsBreakdownScene } from './FieldsBreakdownScene';
 import {
@@ -32,7 +32,7 @@ import { map, Observable } from 'rxjs';
 import { buildFieldsQueryString, isAvgField } from '../../../services/fields';
 import { getFieldGroupByVariable, getFieldsVariable } from '../../../services/variableGetters';
 import { AddToExplorationButton } from './AddToExplorationButton';
-import { ExploreLogsVizPanelMenu } from '../../Panels/VizPanelMenu';
+import { ExploreLogsVizPanelMenu, getPanelWrapperStyles } from '../../Panels/VizPanelMenu';
 
 export interface FieldsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -267,8 +267,9 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
 
   public static Component = ({ model }: SceneComponentProps<FieldsAggregatedBreakdownScene>) => {
     const { body } = model.useState();
+    const styles = useStyles2(getPanelWrapperStyles);
     if (body) {
-      return <>{body && <body.Component model={body} />}</>;
+      return <span className={styles.panelWrapper}>{body && <body.Component model={body} />}</span>;
     }
 
     return <LoadingPlaceholder text={'Loading...'} />;

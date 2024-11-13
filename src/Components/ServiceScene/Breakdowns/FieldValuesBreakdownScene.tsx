@@ -18,7 +18,7 @@ import { DataQueryError, LoadingState } from '@grafana/data';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { getQueryRunner } from '../../../services/panel';
 import { ByFrameRepeater } from './ByFrameRepeater';
-import { Alert, DrawStyle, LoadingPlaceholder } from '@grafana/ui';
+import { Alert, DrawStyle, LoadingPlaceholder, useStyles2 } from '@grafana/ui';
 import { buildFieldsQueryString, getFilterBreakdownValueScene, getParserForField } from '../../../services/fields';
 import { getLabelValue } from './SortByScene';
 import { VAR_FIELDS, VAR_METADATA } from '../../../services/variables';
@@ -31,7 +31,7 @@ import { getDetectedFieldsFrame, ServiceScene } from '../ServiceScene';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { getFieldGroupByVariable, getFieldsVariable } from '../../../services/variableGetters';
 import { LokiQuery } from '../../../services/lokiQuery';
-import { ExploreLogsVizPanelMenu } from '../../Panels/VizPanelMenu';
+import { ExploreLogsVizPanelMenu, getPanelWrapperStyles } from '../../Panels/VizPanelMenu';
 
 export interface FieldValuesBreakdownSceneState extends SceneObjectState {
   body?: (LayoutSwitcher & SceneObject) | (SceneReactObject & SceneObject);
@@ -56,8 +56,9 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
 
   public static Component = ({ model }: SceneComponentProps<FieldValuesBreakdownScene>) => {
     const { body } = model.useState();
+    const styles = useStyles2(getPanelWrapperStyles);
     if (body) {
-      return <>{body && <body.Component model={body} />}</>;
+      return <span className={styles.panelWrapper}>{body && <body.Component model={body} />}</span>;
     }
 
     return <LoadingPlaceholder text={'Loading...'} />;

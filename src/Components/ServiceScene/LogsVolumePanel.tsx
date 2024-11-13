@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { PanelBuilders, SceneComponentProps, SceneObjectBase, SceneObjectState, VizPanel } from '@grafana/scenes';
-import { LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode } from '@grafana/ui';
+import { LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode, useStyles2 } from '@grafana/ui';
 import { getQueryRunner, setLogsVolumeFieldConfigs, syncLogsPanelVisibleSeries } from 'services/panel';
 import { buildDataQuery } from 'services/query';
 import { LEVEL_VARIABLE_VALUE } from 'services/variables';
@@ -11,7 +11,7 @@ import { toggleLevelFromFilter } from 'services/levels';
 import { LoadingState } from '@grafana/data';
 import { getFieldsVariable, getLabelsVariable, getLevelsVariable } from '../../services/variableGetters';
 import { areArraysEqual } from '../../services/comparison';
-import { ExploreLogsVizPanelMenu } from '../Panels/VizPanelMenu';
+import { ExploreLogsVizPanelMenu, getPanelWrapperStyles } from '../Panels/VizPanelMenu';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
@@ -122,7 +122,12 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     if (!panel) {
       return;
     }
+    const styles = useStyles2(getPanelWrapperStyles);
 
-    return <panel.Component model={panel} />;
+    return (
+      <span className={styles.panelWrapper}>
+        <panel.Component model={panel} />
+      </span>
+    );
   };
 }
