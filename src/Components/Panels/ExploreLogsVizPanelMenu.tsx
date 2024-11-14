@@ -21,6 +21,7 @@ import { getPluginLinkExtensions } from '@grafana/runtime';
 import { ExtensionPoints } from '../../services/extensions/links';
 
 const ADD_TO_INVESTIGATION_MENU_TEXT = 'Add to investigation';
+const ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT = 'Add to investigation div';
 
 interface ExploreLogsVizPanelMenuState extends SceneObjectState {
   body?: VizPanelMenu;
@@ -30,7 +31,13 @@ interface ExploreLogsVizPanelMenuState extends SceneObjectState {
   addToExplorations?: AddToExplorationButton;
 }
 
-export class ExploreLogsVizPanelMenu extends SceneObjectBase<ExploreLogsVizPanelMenuState> implements VizPanelMenu {
+/**
+ * @todo the VizPanelMenu interface is overly restrictive, doesn't allow any member functions on this class, so everything is currently inlined
+ */
+export class ExploreLogsVizPanelMenu
+  extends SceneObjectBase<ExploreLogsVizPanelMenuState>
+  implements VizPanelMenu, SceneObject
+{
   constructor(state: Partial<ExploreLogsVizPanelMenuState>) {
     super(state);
     this.addActivationHandler(() => {
@@ -53,8 +60,6 @@ export class ExploreLogsVizPanelMenu extends SceneObjectBase<ExploreLogsVizPanel
           shortcut: '',
           onClick: () => onExploreClick(this),
         },
-        { text: 'Add to Dashboard', iconClassName: 'compass', shortcut: '' },
-        { text: '', iconClassName: 'compass', shortcut: '', type: 'divider' },
       ];
 
       this.setState({
@@ -63,32 +68,8 @@ export class ExploreLogsVizPanelMenu extends SceneObjectBase<ExploreLogsVizPanel
         }),
       });
 
-      this.state.addToExplorations?.subscribeToState((newState, prevState) => {
-        const addToExplorationButton = this.state.addToExplorations;
-        if (addToExplorationButton) {
-          const link = getInvestigationLink(addToExplorationButton);
-          const disabledLinks = addToExplorationButton.state.disabledLinks;
-
-          const existingMenuItems = this.state.body?.state.items ?? [];
-
-          const existingAddToExplorationLink = existingMenuItems.find(
-            (item) => item.text === ADD_TO_INVESTIGATION_MENU_TEXT
-          );
-
-          if (!(link.category === 'disabled' || disabledLinks.includes(link.id)) && !existingAddToExplorationLink) {
-            this.state.body?.addItem({
-              text: ADD_TO_INVESTIGATION_MENU_TEXT,
-              iconClassName: 'plus-square',
-              onClick: (e) => onAddToInvestigationClick(e, addToExplorationButton),
-            });
-          } else {
-            if (existingAddToExplorationLink) {
-              this.state.body?.setItems(
-                existingMenuItems.filter((item) => item.text !== ADD_TO_INVESTIGATION_MENU_TEXT)
-              );
-            }
-          }
-        }
+      this.state.addToExplorations?.subscribeToState(() => {
+        subscribeToAddToExploration(this);
       });
     });
   }
@@ -145,8 +126,7 @@ const getInvestigationLink = (addToExplorations: AddToExplorationButton) => {
     context: addToExplorations.state.context,
   });
 
-  const link = links.extensions[0];
-  return link;
+  return links.extensions[0];
 };
 
 const onAddToInvestigationClick = (event: React.MouseEvent, addToExplorations: AddToExplorationButton) => {
@@ -155,6 +135,40 @@ const onAddToInvestigationClick = (event: React.MouseEvent, addToExplorations: A
     link.onClick(event);
   }
 };
+
+function subscribeToAddToExploration(exploreLogsVizPanelMenu: ExploreLogsVizPanelMenu) {
+  const addToExplorationButton = exploreLogsVizPanelMenu.state.addToExplorations;
+  if (addToExplorationButton) {
+    const link = getInvestigationLink(addToExplorationButton);
+    const disabledLinks = addToExplorationButton.state.disabledLinks;
+
+    const existingMenuItems = exploreLogsVizPanelMenu.state.body?.state.items ?? [];
+
+    const existingAddToExplorationLink = existingMenuItems.find((item) => item.text === ADD_TO_INVESTIGATION_MENU_TEXT);
+
+    if (!(link.category === 'disabled' || disabledLinks.includes(link.id)) && !existingAddToExplorationLink) {
+      exploreLogsVizPanelMenu.state.body?.addItem({
+        text: ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT,
+        shortcut: '',
+        type: 'divider',
+      });
+      exploreLogsVizPanelMenu.state.body?.addItem({
+        text: ADD_TO_INVESTIGATION_MENU_TEXT,
+        iconClassName: 'plus-square',
+        onClick: (e) => onAddToInvestigationClick(e, addToExplorationButton),
+      });
+    } else {
+      if (existingAddToExplorationLink) {
+        exploreLogsVizPanelMenu.state.body?.setItems(
+          existingMenuItems.filter(
+            (item) =>
+              item.text !== ADD_TO_INVESTIGATION_MENU_TEXT && item.text !== ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT
+          )
+        );
+      }
+    }
+  }
+}
 
 export const getPanelWrapperStyles = (theme: GrafanaTheme2) => {
   return {
