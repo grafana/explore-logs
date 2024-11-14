@@ -146,25 +146,27 @@ function subscribeToAddToExploration(exploreLogsVizPanelMenu: ExploreLogsVizPane
 
     const existingAddToExplorationLink = existingMenuItems.find((item) => item.text === ADD_TO_INVESTIGATION_MENU_TEXT);
 
-    if (!(link.category === 'disabled' || disabledLinks.includes(link.id)) && !existingAddToExplorationLink) {
-      exploreLogsVizPanelMenu.state.body?.addItem({
-        text: ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT,
-        shortcut: '',
-        type: 'divider',
-      });
-      exploreLogsVizPanelMenu.state.body?.addItem({
-        text: ADD_TO_INVESTIGATION_MENU_TEXT,
-        iconClassName: 'plus-square',
-        onClick: (e) => onAddToInvestigationClick(e, addToExplorationButton),
-      });
-    } else {
-      if (existingAddToExplorationLink) {
-        exploreLogsVizPanelMenu.state.body?.setItems(
-          existingMenuItems.filter(
-            (item) =>
-              item.text !== ADD_TO_INVESTIGATION_MENU_TEXT && item.text !== ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT
-          )
-        );
+    if (link) {
+      if (!(link.category === 'disabled' || disabledLinks.includes(link.id)) && !existingAddToExplorationLink) {
+        exploreLogsVizPanelMenu.state.body?.addItem({
+          text: ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT,
+          shortcut: '',
+          type: 'divider',
+        });
+        exploreLogsVizPanelMenu.state.body?.addItem({
+          text: ADD_TO_INVESTIGATION_MENU_TEXT,
+          iconClassName: 'plus-square',
+          onClick: (e) => onAddToInvestigationClick(e, addToExplorationButton),
+        });
+      } else {
+        if (existingAddToExplorationLink) {
+          exploreLogsVizPanelMenu.state.body?.setItems(
+            existingMenuItems.filter(
+              (item) =>
+                item.text !== ADD_TO_INVESTIGATION_MENU_TEXT && item.text !== ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT
+            )
+          );
+        }
       }
     }
   }
