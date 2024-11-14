@@ -11,9 +11,10 @@ import LokiLogo from '../../../img/logo.svg';
 
 export interface AddToExplorationButtonState extends SceneObjectState {
   frame?: DataFrame;
-  ds?: DataSourceWithBackend<DataQuery, DataSourceJsonData>;
   labelName?: string;
   fieldName?: string;
+
+  ds?: DataSourceWithBackend<DataQuery, DataSourceJsonData>;
   context?: ExtensionContext;
 
   disabledLinks: string[];
@@ -46,9 +47,13 @@ export class AddToExplorationButton extends SceneObjectBase<AddToExplorationButt
     });
 
     this._subs.add(
-      this.subscribeToState(() => {
-        this.getQueries();
-        this.getContext();
+      this.subscribeToState((newState, prevState) => {
+        if (!this.state.queries.length) {
+          this.getQueries();
+        }
+        if (!this.state.context && this.state.queries.length) {
+          this.getContext();
+        }
       })
     );
   };

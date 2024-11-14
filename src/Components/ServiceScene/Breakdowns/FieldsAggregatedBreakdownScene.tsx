@@ -31,7 +31,6 @@ import { limitMaxNumberOfSeriesForPanel, MAX_NUMBER_OF_TIME_SERIES } from './Tim
 import { map, Observable } from 'rxjs';
 import { buildFieldsQueryString, isAvgField } from '../../../services/fields';
 import { getFieldGroupByVariable, getFieldsVariable } from '../../../services/variableGetters';
-import { AddToExplorationButton } from './AddToExplorationButton';
 import { ExploreLogsVizPanelMenu, getPanelWrapperStyles } from '../../Panels/VizPanelMenu';
 
 export interface FieldsAggregatedBreakdownSceneState extends SceneObjectState {
@@ -217,7 +216,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
       let body = PanelBuilders.timeseries()
         .setTitle(optionValue)
         .setData(dataTransformer)
-        .setMenu(new ExploreLogsVizPanelMenu({}));
+        .setMenu(new ExploreLogsVizPanelMenu({ labelName: optionValue }));
 
       const headerActions = [];
       if (!isAvgField(optionValue)) {
@@ -238,7 +237,8 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
           })
         );
       }
-      body.setHeaderActions([...headerActions, new AddToExplorationButton({ labelName: optionValue })]);
+      // body.setHeaderActions([...headerActions, new AddToExplorationButton({ labelName: optionValue })]);
+      body.setHeaderActions(headerActions);
 
       const viz = body.build();
       const gridItem = new SceneCSSGridItem({

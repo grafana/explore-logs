@@ -1,8 +1,9 @@
-import { GrafanaTheme2, PanelMenuItem } from '@grafana/data';
+import { DataFrame, GrafanaTheme2, PanelMenuItem } from '@grafana/data';
 import {
   SceneComponentProps,
   SceneCSSGridItem,
   sceneGraph,
+  SceneObject,
   SceneObjectBase,
   SceneObjectState,
   SceneQueryRunner,
@@ -15,9 +16,18 @@ import { IndexScene } from '../IndexScene/IndexScene';
 import { getQueryRunnerFromChildren } from '../../services/scenes';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { logger } from '../../services/logger';
+import { AddToExplorationButton } from '../ServiceScene/Breakdowns/AddToExplorationButton';
+import { getPluginLinkExtensions } from '@grafana/runtime';
+import { ExtensionPoints } from '../../services/extensions/links';
+
+const ADD_TO_INVESTIGATION_MENU_TEXT = 'Add to investigation';
 
 interface ExploreLogsVizPanelMenuState extends SceneObjectState {
   body?: VizPanelMenu;
+  frame?: DataFrame;
+  labelName?: string;
+  fieldName?: string;
+  addToExplorations?: AddToExplorationButton;
 }
 
 export class ExploreLogsVizPanelMenu extends SceneObjectBase<ExploreLogsVizPanelMenuState> implements VizPanelMenu {
@@ -25,41 +35,60 @@ export class ExploreLogsVizPanelMenu extends SceneObjectBase<ExploreLogsVizPanel
     super(state);
     this.addActivationHandler(() => {
       this.setState({
-        body: new VizPanelMenu({
-          items: [
-            {
-              text: 'Explore',
-              iconClassName: 'compass',
-              shortcut: '',
-              onClick: () => {
-                const indexScene = sceneGraph.getAncestor(this, IndexScene);
-                const $data = sceneGraph.getData(this);
-                let queryRunner = getQueryRunnerFromChildren($data)[0];
-
-                // If we don't have a query runner, then our panel is within a SceneCSSGridItem, we need to get the query runner from there
-                if (!queryRunner) {
-                  const sceneGridItem = sceneGraph.getAncestor(this, SceneCSSGridItem);
-                  const queryProvider = sceneGraph.getData(sceneGridItem);
-
-                  if (queryProvider instanceof SceneQueryRunner) {
-                    queryRunner = queryProvider;
-                  } else {
-                    logger.error(new Error('query provider not found!'));
-                  }
-                }
-                const uninterpolatedExpr: string | undefined = queryRunner.state.queries[0].expr;
-                const expr = sceneGraph.interpolate(this, uninterpolatedExpr);
-
-                reportAppInteraction(USER_EVENTS_PAGES.all, USER_EVENTS_ACTIONS.all.open_in_explore_menu_clicked);
-
-                onExploreLinkClick(indexScene, expr);
-              },
-            },
-            { text: 'Add to Dashboard', iconClassName: 'compass', shortcut: '' },
-            { text: '', iconClassName: 'compass', shortcut: '', type: 'divider' },
-            { text: 'Add to investigation', iconClassName: 'plus-square' },
-          ],
+        addToExplorations: new AddToExplorationButton({
+          labelName: this.state.labelName,
+          fieldName: this.state.fieldName,
+          frame: this.state.frame,
         }),
+      });
+
+      // @todo rewrite the AddToExplorationButton
+      // Manually activate scene
+      this.state.addToExplorations?.activate();
+
+      const items: PanelMenuItem[] = [
+        {
+          text: 'Explore',
+          iconClassName: 'compass',
+          shortcut: '',
+          onClick: () => onExploreClick(this),
+        },
+        { text: 'Add to Dashboard', iconClassName: 'compass', shortcut: '' },
+        { text: '', iconClassName: 'compass', shortcut: '', type: 'divider' },
+      ];
+
+      this.setState({
+        body: new VizPanelMenu({
+          items,
+        }),
+      });
+
+      this.state.addToExplorations?.subscribeToState((newState, prevState) => {
+        const addToExplorationButton = this.state.addToExplorations;
+        if (addToExplorationButton) {
+          const link = getInvestigationLink(addToExplorationButton);
+          const disabledLinks = addToExplorationButton.state.disabledLinks;
+
+          const existingMenuItems = this.state.body?.state.items ?? [];
+
+          const existingAddToExplorationLink = existingMenuItems.find(
+            (item) => item.text === ADD_TO_INVESTIGATION_MENU_TEXT
+          );
+
+          if (!(link.category === 'disabled' || disabledLinks.includes(link.id)) && !existingAddToExplorationLink) {
+            this.state.body?.addItem({
+              text: ADD_TO_INVESTIGATION_MENU_TEXT,
+              iconClassName: 'plus-square',
+              onClick: (e) => onAddToInvestigationClick(e, addToExplorationButton),
+            });
+          } else {
+            if (existingAddToExplorationLink) {
+              this.state.body?.setItems(
+                existingMenuItems.filter((item) => item.text !== ADD_TO_INVESTIGATION_MENU_TEXT)
+              );
+            }
+          }
+        }
       });
     });
   }
@@ -85,6 +114,47 @@ export class ExploreLogsVizPanelMenu extends SceneObjectBase<ExploreLogsVizPanel
     return <></>;
   };
 }
+
+const onExploreClick = (sceneRef: SceneObject) => {
+  const indexScene = sceneGraph.getAncestor(sceneRef, IndexScene);
+  const $data = sceneGraph.getData(sceneRef);
+  let queryRunner = getQueryRunnerFromChildren($data)[0];
+
+  // If we don't have a query runner, then our panel is within a SceneCSSGridItem, we need to get the query runner from there
+  if (!queryRunner) {
+    const sceneGridItem = sceneGraph.getAncestor(sceneRef, SceneCSSGridItem);
+    const queryProvider = sceneGraph.getData(sceneGridItem);
+
+    if (queryProvider instanceof SceneQueryRunner) {
+      queryRunner = queryProvider;
+    } else {
+      logger.error(new Error('query provider not found!'));
+    }
+  }
+  const uninterpolatedExpr: string | undefined = queryRunner.state.queries[0].expr;
+  const expr = sceneGraph.interpolate(sceneRef, uninterpolatedExpr);
+
+  reportAppInteraction(USER_EVENTS_PAGES.all, USER_EVENTS_ACTIONS.all.open_in_explore_menu_clicked);
+
+  onExploreLinkClick(indexScene, expr);
+};
+
+const getInvestigationLink = (addToExplorations: AddToExplorationButton) => {
+  const links = getPluginLinkExtensions({
+    extensionPointId: ExtensionPoints.MetricExploration,
+    context: addToExplorations.state.context,
+  });
+
+  const link = links.extensions[0];
+  return link;
+};
+
+const onAddToInvestigationClick = (event: React.MouseEvent, addToExplorations: AddToExplorationButton) => {
+  const link = getInvestigationLink(addToExplorations);
+  if (link && link.onClick) {
+    link.onClick(event);
+  }
+};
 
 export const getPanelWrapperStyles = (theme: GrafanaTheme2) => {
   return {
