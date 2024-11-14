@@ -1,7 +1,20 @@
 import { GrafanaTheme2, PanelMenuItem } from '@grafana/data';
-import { SceneComponentProps, SceneObjectBase, SceneObjectState, VizPanelMenu } from '@grafana/scenes';
+import {
+  SceneComponentProps,
+  SceneCSSGridItem,
+  sceneGraph,
+  SceneObjectBase,
+  SceneObjectState,
+  SceneQueryRunner,
+  VizPanelMenu,
+} from '@grafana/scenes';
 import React from 'react';
 import { css } from '@emotion/css';
+import { onExploreLinkClick } from '../ServiceScene/GoToExploreButton';
+import { IndexScene } from '../IndexScene/IndexScene';
+import { getQueryRunnerFromChildren } from '../../services/scenes';
+import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
+import { logger } from '../../services/logger';
 
 interface ExploreLogsVizPanelMenuState extends SceneObjectState {
   body?: VizPanelMenu;
@@ -14,7 +27,34 @@ export class ExploreLogsVizPanelMenu extends SceneObjectBase<ExploreLogsVizPanel
       this.setState({
         body: new VizPanelMenu({
           items: [
-            { text: 'Explore', iconClassName: 'compass', shortcut: '' },
+            {
+              text: 'Explore',
+              iconClassName: 'compass',
+              shortcut: '',
+              onClick: () => {
+                const indexScene = sceneGraph.getAncestor(this, IndexScene);
+                const $data = sceneGraph.getData(this);
+                let queryRunner = getQueryRunnerFromChildren($data)[0];
+
+                // If we don't have a query runner, then our panel is within a SceneCSSGridItem, we need to get the query runner from there
+                if (!queryRunner) {
+                  const sceneGridItem = sceneGraph.getAncestor(this, SceneCSSGridItem);
+                  const queryProvider = sceneGraph.getData(sceneGridItem);
+
+                  if (queryProvider instanceof SceneQueryRunner) {
+                    queryRunner = queryProvider;
+                  } else {
+                    logger.error(new Error('query provider not found!'));
+                  }
+                }
+                const uninterpolatedExpr: string | undefined = queryRunner.state.queries[0].expr;
+                const expr = sceneGraph.interpolate(this, uninterpolatedExpr);
+
+                reportAppInteraction(USER_EVENTS_PAGES.all, USER_EVENTS_ACTIONS.all.open_in_explore_menu_clicked);
+
+                onExploreLinkClick(indexScene, expr);
+              },
+            },
             { text: 'Add to Dashboard', iconClassName: 'compass', shortcut: '' },
             { text: '', iconClassName: 'compass', shortcut: '', type: 'divider' },
             { text: 'Add to investigation', iconClassName: 'plus-square' },
