@@ -11,7 +11,7 @@ import { toggleLevelFromFilter } from 'services/levels';
 import { LoadingState } from '@grafana/data';
 import { getFieldsVariable, getLabelsVariable, getLevelsVariable } from '../../services/variableGetters';
 import { areArraysEqual } from '../../services/comparison';
-import { ExploreLogsVizPanelMenu, getPanelWrapperStyles } from '../Panels/VizPanelMenu';
+import { ExploreLogsVizPanelMenu, getPanelWrapperStyles } from '../Panels/ExploreLogsVizPanelMenu';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;

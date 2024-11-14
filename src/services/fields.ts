@@ -27,7 +27,7 @@ import { averageFields } from '../Components/ServiceScene/Breakdowns/FieldsBreak
 import { getLogsStreamSelector, getValueFromFieldsFilter } from './variableGetters';
 import { LabelType } from './fieldsTypes';
 import { logger } from './logger';
-import { ExploreLogsVizPanelMenu } from '../Components/Panels/VizPanelMenu';
+import { ExploreLogsVizPanelMenu } from '../Components/Panels/ExploreLogsVizPanelMenu';
 
 export type DetectedLabel = {
   label: string;

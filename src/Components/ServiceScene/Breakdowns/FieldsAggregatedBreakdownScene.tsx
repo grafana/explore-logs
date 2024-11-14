@@ -31,7 +31,7 @@ import { limitMaxNumberOfSeriesForPanel, MAX_NUMBER_OF_TIME_SERIES } from './Tim
 import { map, Observable } from 'rxjs';
 import { buildFieldsQueryString, isAvgField } from '../../../services/fields';
 import { getFieldGroupByVariable, getFieldsVariable } from '../../../services/variableGetters';
-import { ExploreLogsVizPanelMenu, getPanelWrapperStyles } from '../../Panels/VizPanelMenu';
+import { ExploreLogsVizPanelMenu, getPanelWrapperStyles } from '../../Panels/ExploreLogsVizPanelMenu';
 
 export interface FieldsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;

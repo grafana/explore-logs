@@ -31,7 +31,7 @@ import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { buildLabelsQuery, LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS } from '../../../services/labels';
 import { getAppEvents } from '@grafana/runtime';
 import { getLabelGroupByVariable } from '../../../services/variableGetters';
-import { ExploreLogsVizPanelMenu, getPanelWrapperStyles } from '../../Panels/VizPanelMenu';
+import { ExploreLogsVizPanelMenu, getPanelWrapperStyles } from '../../Panels/ExploreLogsVizPanelMenu';
 
 type DisplayError = DataQueryError & { displayed: boolean };
 type DisplayErrors = Record<string, DisplayError>;
