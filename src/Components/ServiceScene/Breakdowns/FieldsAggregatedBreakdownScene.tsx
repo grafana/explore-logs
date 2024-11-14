@@ -237,7 +237,6 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
           })
         );
       }
-      // body.setHeaderActions([...headerActions, new AddToExplorationButton({ labelName: optionValue })]);
       body.setHeaderActions(headerActions);
 
       const viz = body.build();
