@@ -23,6 +23,13 @@ export class AddFilterEvent extends BusEventBase {
   public static type = 'add-filter';
 }
 
+export class ClearFilterEvent extends BusEventBase {
+  constructor(public key: string, public value?: string, public operator?: FilterType) {
+    super();
+  }
+  public static type = 'add-filter';
+}
+
 /**
  * Filter types:
  * - include/exclude: add a negative or positive filter
@@ -37,6 +44,40 @@ export function addAdHocFilter(filter: AdHocVariableFilter, scene: SceneObject, 
 }
 
 export type VariableFilterType = typeof VAR_LABELS | typeof VAR_FIELDS | typeof VAR_LEVELS | typeof VAR_METADATA;
+
+export function clearFilters(
+  key: string,
+  scene: SceneObject,
+  variableType?: VariableFilterType,
+  value?: string,
+  operator?: FilterType
+) {
+  if (!variableType) {
+    variableType = resolveVariableTypeForField(key, scene);
+  }
+  const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableType), scene);
+
+  let filters = variable.state.filters.filter((filter) => {
+    const fieldValue = getValueFromAdHocVariableFilter(variable, filter);
+    if (value && operator) {
+      return !(filter.key === key && fieldValue.value === value && filter.operator === operator);
+    }
+    if (value) {
+      return !(filter.key === key && fieldValue.value === value);
+    }
+    if (operator) {
+      return !(filter.key === key && filter.operator === operator);
+    }
+
+    return !(filter.key === key);
+  });
+
+  scene.publishEvent(new ClearFilterEvent(key, value, operator), true);
+
+  variable.setState({
+    filters,
+  });
+}
 
 export function addToFilters(
   key: string,
