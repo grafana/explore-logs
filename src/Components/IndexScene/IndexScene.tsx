@@ -182,6 +182,20 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
   private setTagProviders() {
     const labelsVar = getLabelsVariable(this);
+
+    // Is this going to work without a setstate?
+    labelsVar._getOperators = function () {
+      const wip = labelsVar.state._wip;
+      if (
+        wip &&
+        labelsVar.state.filters.some((filter) => filter.key === wip.key && filter.operator === FilterOp.Equal)
+      ) {
+        return includeOperators;
+      }
+
+      return operators;
+    };
+
     labelsVar.setState({
       getTagKeysProvider: getLabelsTagKeysProvider,
       getTagValuesProvider: getLabelsTagValuesProvider,
@@ -343,13 +357,17 @@ function getContentScene(drillDownLabel?: string) {
     drillDownLabel,
   });
 }
+const operators = [FilterOp.Equal, FilterOp.NotEqual].map<SelectableValue<string>>((value) => ({
+  label: value,
+  value,
+}));
+
+const includeOperators = [FilterOp.Equal].map<SelectableValue<string>>((value) => ({
+  label: value,
+  value,
+}));
 
 function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVariableFilter[]) {
-  const operators = [FilterOp.Equal, FilterOp.NotEqual].map<SelectableValue<string>>((value) => ({
-    label: value,
-    value,
-  }));
-
   const labelVariable = new AdHocFiltersVariable({
     name: VAR_LABELS,
     datasource: EXPLORATION_DS,
