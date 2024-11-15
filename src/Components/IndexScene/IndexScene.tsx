@@ -183,7 +183,6 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   private setTagProviders() {
     const labelsVar = getLabelsVariable(this);
 
-    // Is this going to work without a setstate?
     labelsVar._getOperators = function () {
       const wip = labelsVar.state._wip;
       if (
