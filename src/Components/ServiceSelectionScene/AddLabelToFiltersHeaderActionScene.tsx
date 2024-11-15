@@ -12,6 +12,7 @@ import { FilterOp } from '../../services/filterTypes';
 export interface AddLabelToFiltersHeaderActionSceneState extends SceneObjectState {
   name: string;
   value: string;
+  hidden?: boolean;
   isIncluded?: boolean;
   isExcluded?: boolean;
 }
@@ -57,7 +58,11 @@ export class AddLabelToFiltersHeaderActionScene extends SceneObjectBase<AddLabel
   };
 
   public static Component = ({ model }: SceneComponentProps<AddLabelToFiltersHeaderActionScene>) => {
-    const { value, isIncluded } = model.useState();
+    const { value, isIncluded, hidden } = model.useState();
+
+    if (hidden) {
+      return <></>;
+    }
 
     const styles = useStyles2(getStyles);
     return (
