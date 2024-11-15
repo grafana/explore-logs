@@ -23,6 +23,11 @@ export class ShowLogsButtonScene extends SceneObjectBase<ShowLogsButtonSceneStat
 
   onActivate() {
     const labelsVar = getLabelsVariable(this);
+    const hasPositiveFilter = labelsVar.state.filters.some((f) => f.operator === FilterOp.Equal);
+    this.setState({
+      disabled: !hasPositiveFilter,
+    });
+
     labelsVar.subscribeToState((newState) => {
       const hasPositiveFilter = newState.filters.some((f) => f.operator === FilterOp.Equal);
       this.setState({
