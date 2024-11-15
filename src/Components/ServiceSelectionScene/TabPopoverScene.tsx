@@ -19,7 +19,7 @@ export class TabPopoverScene extends SceneObjectBase<TabPopoverSceneState> {
       return {
         ...opt,
         icon: opt.saved ? 'save' : undefined,
-        label: `${opt.label} (${opt.counter})`,
+        label: `${opt.label}`,
       };
     });
 
