@@ -156,7 +156,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
     // Show "show logs" button
     const showLogsButton = sceneGraph.findByKeyAndType(this, showLogsButtonSceneKey, ShowLogsButtonScene);
-    showLogsButton.setState({ hide: false });
+    showLogsButton.setState({ hidden: false });
 
     if (!this.state.contentScene) {
       stateUpdate.contentScene = getContentScene(this.state.routeMatch?.params.breakdownLabel);

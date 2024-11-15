@@ -10,7 +10,7 @@ import { testIds } from '../../services/testIds';
 
 export interface ShowLogsButtonSceneState extends SceneObjectState {
   disabled?: boolean;
-  hide?: boolean;
+  hidden?: boolean;
 }
 export class ShowLogsButtonScene extends SceneObjectBase<ShowLogsButtonSceneState> {
   constructor(state: Partial<ShowLogsButtonSceneState>) {
@@ -41,10 +41,10 @@ export class ShowLogsButtonScene extends SceneObjectBase<ShowLogsButtonSceneStat
   };
 
   static Component = ({ model }: SceneComponentProps<ShowLogsButtonScene>) => {
-    const { disabled, hide } = model.useState();
+    const { disabled, hidden } = model.useState();
     const styles = useStyles2(getStyles);
 
-    if (hide === true) {
+    if (hidden === true) {
       return <></>;
     }
 
