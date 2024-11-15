@@ -10,8 +10,8 @@ import {
 import { getLogsPanelFrame, ServiceScene } from '../ServiceScene';
 import { navigateToValueBreakdown } from '../../../services/navigate';
 import { getPrimaryLabelFromUrl, ValueSlugs } from '../../../services/routing';
-import { Button, ButtonGroup, ButtonSelect, IconButton, useStyles2 } from '@grafana/ui';
-import React from 'react';
+import { Button, ButtonGroup, ButtonSelect, IconButton, Popover, PopoverController, useStyles2 } from '@grafana/ui';
+import React, { useRef } from 'react';
 import { addToFilters, clearFilters, VariableFilterType } from './AddToFiltersButton';
 import { EMPTY_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE } from '../../../services/variables';
 import { AdHocVariableFilter, Field, GrafanaTheme2, Labels, LoadingState, SelectableValue } from '@grafana/data';
@@ -24,6 +24,9 @@ import {
 import { FilterOp } from '../../../services/filterTypes';
 import { LokiQuery } from '../../../services/lokiQuery';
 import { css } from '@emotion/css';
+import { rest } from 'lodash';
+import { NumericFilterPopoverScene } from './NumericFilterPopoverScene';
+import { AddToExplorationButtonState } from './AddToExplorationButton';
 
 interface SelectLabelActionSceneState extends SceneObjectState {
   labelName: string;
@@ -32,6 +35,8 @@ interface SelectLabelActionSceneState extends SceneObjectState {
   showSparseFilters?: boolean;
   showNumericFilters?: boolean;
   selectedValue?: SelectableValue<string>;
+  popover?: NumericFilterPopoverScene;
+  showPopover: boolean;
 }
 
 const INCLUDE_VALUE = 'Include';
@@ -39,8 +44,8 @@ const EXCLUDE_VALUE = 'Exclude';
 const NUMERIC_FILTER_VALUE = 'Add to filter';
 
 export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSceneState> {
-  constructor(state: SelectLabelActionSceneState) {
-    super(state);
+  constructor(state: Omit<SelectLabelActionSceneState, 'showPopover'>) {
+    super({ ...state, showPopover: false });
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
@@ -57,6 +62,8 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
       this.onClickExcludeEmpty(variableName);
     } else if (value.value === EXCLUDE_VALUE) {
       this.onClickIncludeEmpty(variableName);
+    } else if (value.value === NUMERIC_FILTER_VALUE) {
+      this.onClickNumericFilter(variableName);
     }
 
     this.setState({
@@ -65,36 +72,58 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
   }
 
   public static Component = ({ model }: SceneComponentProps<SelectLabelActionScene>) => {
-    const { hideValueDrilldown, labelName, showSparseFilters, showNumericFilters, selectedValue } = model.useState();
+    const {
+      hideValueDrilldown,
+      labelName,
+      showSparseFilters,
+      showNumericFilters,
+      selectedValue,
+      popover,
+      showPopover,
+    } = model.useState();
     const variable = model.getVariable();
     const variableName = variable.useState().name as VariableFilterType;
     const existingFilter = model.getExistingFilter(variable);
     const fieldValue = getValueFromAdHocVariableFilter(variable, existingFilter);
     const styles = useStyles2(getStyles);
+    const popoverRef = useRef<HTMLButtonElement>(null);
 
     const isIncluded = existingFilter?.operator === FilterOp.NotEqual && fieldValue.value === EMPTY_VARIABLE_VALUE;
     const hasOtherFilter = !!existingFilter;
 
+    const selectedOptionValue =
+      selectedValue?.value ?? isIncluded ? INCLUDE_VALUE : showNumericFilters ? NUMERIC_FILTER_VALUE : INCLUDE_VALUE;
+
     const sparseIncludeOption: SelectableValue<string> = {
       value: INCLUDE_VALUE,
-      component: () => <span className={styles.description}>Include all log lines with {labelName}</span>,
+      component: () => (
+        <SelectableValueComponent
+          selected={selectedOptionValue === INCLUDE_VALUE}
+          text={`Include all log lines with ${labelName}`}
+        />
+      ),
     };
     const sparseExcludeOption: SelectableValue<string> = {
       value: EXCLUDE_VALUE,
-      component: () => <span className={styles.description}>Exclude all log lines with {labelName}</span>,
+      component: () => <SelectableValueComponent selected={false} text={`Exclude all log lines with ${labelName}`} />,
     };
     const numericFilterOption: SelectableValue<string> = {
       value: NUMERIC_FILTER_VALUE,
-      component: () => <span className={styles.description}>{`Add an expression, i.e. ${labelName} > 30`}</span>,
+      component: () => (
+        <SelectableValueComponent
+          selected={selectedOptionValue === NUMERIC_FILTER_VALUE}
+          text={`Add an expression, i.e. ${labelName} > 30`}
+        />
+      ),
     };
 
     const options: Array<SelectableValue<string>> = [];
-    if (showSparseFilters) {
-      options.push(sparseIncludeOption, sparseExcludeOption);
-    }
-
     if (showNumericFilters) {
       options.push(numericFilterOption);
+    }
+
+    if (showSparseFilters) {
+      options.push(sparseIncludeOption, sparseExcludeOption);
     }
 
     const defaultOption = isIncluded
@@ -116,6 +145,7 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
           <>
             <ButtonGroup>
               <Button
+                ref={popoverRef}
                 onClick={() => model.onChange(selectedValue ?? defaultOption)}
                 size={'sm'}
                 fill={'outline'}
@@ -145,6 +175,36 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
           >
             Select
           </Button>
+        )}
+
+        {popover && (
+          <PopoverController content={<popover.Component model={popover} />}>
+            {(showPopper, hidePopper, popperProps) => {
+              const blurFocusProps = {
+                onBlur: hidePopper,
+                onFocus: showPopper,
+              };
+
+              return (
+                <>
+                  {popoverRef.current && (
+                    <>
+                      {/* @ts-expect-error @todo upgrade typescript */}
+                      <Popover
+                        {...popperProps}
+                        {...rest}
+                        show={showPopover}
+                        wrapperClassName={styles.popover}
+                        referenceElement={popoverRef.current}
+                        renderArrow={true}
+                        {...blurFocusProps}
+                      />
+                    </>
+                  )}
+                </>
+              );
+            }}
+          </PopoverController>
         )}
       </>
     );
@@ -183,18 +243,23 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
     );
   }
 
+  public onClickNumericFilter = (variableType: VariableFilterType) => {
+    this.setState({
+      popover: new NumericFilterPopoverScene({ labelName: this.state.labelName, variableType }),
+    });
+    this.togglePopover();
+  };
+
   public onClickViewValues = () => {
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     navigateToValueBreakdown(this.state.fieldType, this.state.labelName, serviceScene);
   };
 
   public onClickExcludeEmpty = (variableType: VariableFilterType) => {
-    console.log('onClickExcludeEmpty');
     addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'exclude', this, variableType);
   };
 
   public onClickIncludeEmpty = (variableType: VariableFilterType) => {
-    console.log('onClickIncludeEmpty');
     // If json do we want != '{}'?
     addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'include', this, variableType);
   };
@@ -206,6 +271,12 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
   public clearFilters = (variableType: VariableFilterType) => {
     clearFilters(this.state.labelName, this, variableType);
   };
+
+  public togglePopover() {
+    this.setState({
+      showPopover: !this.state.showPopover,
+    });
+  }
 
   private calculateSparsity() {
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
@@ -276,13 +347,49 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
   }
 }
 
-const getStyles = (theme: GrafanaTheme2) => {
+function SelectableValueComponent(props: { text: string; selected: boolean }) {
+  const styles = useStyles2(getSelectableValueComponentStyles);
+  return (
+    <span className={styles.description}>
+      {props.selected && <span className={styles.selected}></span>}
+      {props.text}
+    </span>
+  );
+}
+
+const getSelectableValueComponentStyles = (theme: GrafanaTheme2) => {
   return {
+    selected: css({
+      label: 'selectable-value-selected',
+      '&:before': {
+        content: '""',
+        position: 'absolute',
+        left: 0,
+        top: '4px',
+        height: 'calc(100% - 8px)',
+        width: '2px',
+        backgroundColor: theme.colors.warning.main,
+      },
+    }),
     description: css({
       textAlign: 'left',
       fontSize: theme.typography.pxToRem(12),
     }),
+  };
+};
 
+const getStyles = (theme: GrafanaTheme2) => {
+  return {
+    popover: css({
+      borderRadius: theme.shape.radius.default,
+      boxShadow: theme.shadows.z3,
+      background: theme.colors.background.primary,
+      border: `1px solid ${theme.colors.border.weak}`,
+    }),
+    description: css({
+      textAlign: 'left',
+      fontSize: theme.typography.pxToRem(12),
+    }),
     buttonSelect: css({
       border: `1px solid ${theme.colors.border.strong}`,
       borderLeft: 'none',

@@ -4,6 +4,10 @@ import { LabelType } from './fieldsTypes';
 export enum FilterOp {
   Equal = '=',
   NotEqual = '!=',
+  gt = '>',
+  lt = '<',
+  gte = '>=',
+  lte = '<=',
 }
 
 export type Filter = {

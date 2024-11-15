@@ -150,7 +150,7 @@ export function replaceFilter(
   });
 }
 
-function validateVariableNameForField(field: string, variableName: string) {
+export function validateVariableNameForField(field: string, variableName: string) {
   // Special case: If the key is LEVEL_VARIABLE_VALUE, we need to use the VAR_FIELDS.
   if (field === LEVEL_VARIABLE_VALUE) {
     return VAR_LEVELS;
