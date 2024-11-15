@@ -341,7 +341,8 @@ test.describe('explore services page', () => {
 
           // Dropdown should be open
           await expect(selectNewLabelSelect).toContainText('Search labels');
-          await page.getByText(/level \(\d+\)/).click();
+          await page.getByRole('option', { name: 'level' }).click();
+          // await page.getByText(/level/, { exact: true }).click();
 
           // Assert we have 4 tabs open
           await expect(allTabLoc).toHaveCount(4);

@@ -19,7 +19,7 @@ export class CustomVariableValueSelectors extends SceneObjectBase<VariableValueS
 }
 
 function CustomVariableValueSelectorsRenderer({ model }: SceneComponentProps<CustomVariableValueSelectors>) {
-  const variablesSetState = sceneGraph.getVariables(model)!.useState();
+  const variablesSetState = sceneGraph.getVariables(model).useState();
   let variables = variablesSetState.variables;
 
   if (model.state.includeNames?.length) {

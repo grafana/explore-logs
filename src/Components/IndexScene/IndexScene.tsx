@@ -156,7 +156,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
     // Show "show logs" button
     const showLogsButton = sceneGraph.findByKeyAndType(this, showLogsButtonSceneKey, ShowLogsButtonScene);
-    showLogsButton.setState({ hide: false });
+    showLogsButton.setState({ hidden: false });
 
     if (!this.state.contentScene) {
       stateUpdate.contentScene = getContentScene(this.state.routeMatch?.params.breakdownLabel);
@@ -182,6 +182,19 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
   private setTagProviders() {
     const labelsVar = getLabelsVariable(this);
+
+    labelsVar._getOperators = function () {
+      const wip = labelsVar.state._wip;
+      if (
+        wip &&
+        labelsVar.state.filters.some((filter) => filter.key === wip.key && filter.operator === FilterOp.Equal)
+      ) {
+        return includeOperators;
+      }
+
+      return operators;
+    };
+
     labelsVar.setState({
       getTagKeysProvider: getLabelsTagKeysProvider,
       getTagValuesProvider: getLabelsTagValuesProvider,
@@ -343,13 +356,17 @@ function getContentScene(drillDownLabel?: string) {
     drillDownLabel,
   });
 }
+const operators = [FilterOp.Equal, FilterOp.NotEqual].map<SelectableValue<string>>((value) => ({
+  label: value,
+  value,
+}));
+
+const includeOperators = [FilterOp.Equal].map<SelectableValue<string>>((value) => ({
+  label: value,
+  value,
+}));
 
 function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVariableFilter[]) {
-  const operators = [FilterOp.Equal, FilterOp.NotEqual].map<SelectableValue<string>>((value) => ({
-    label: value,
-    value,
-  }));
-
   const labelVariable = new AdHocFiltersVariable({
     name: VAR_LABELS,
     datasource: EXPLORATION_DS,
