@@ -162,6 +162,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       stateUpdate.contentScene = getContentScene(this.state.routeMatch?.params.breakdownLabel);
     }
     this.setTagProviders();
+    this.setVariableOperators();
 
     this.setState(stateUpdate);
 
@@ -178,6 +179,26 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     const timeRange = sceneGraph.getTimeRange(this);
 
     this._subs.add(timeRange.subscribeToState(this.limitMaxInterval(timeRange)));
+  }
+
+  private setVariableOperators() {
+    const fieldsVar = getFieldsVariable(this);
+    fieldsVar._getOperators = function () {
+      console.log('fields get operator', fieldsVar.state);
+
+      if (fieldsVar.state.filters.some((filter) => numericOperatorArray.includes(filter.operator as FilterOp))) {
+        return [...operators, ...numericOperators];
+      }
+      // const wip = fieldsVar.state._wip;
+      // if (
+      //     wip &&
+      //     fieldsVar.state.filters.some((filter) => filter.key === wip.key && filter.operator === FilterOp.Equal)
+      // ) {
+      //   return numericOperators;
+      // }
+
+      return operators;
+    };
   }
 
   private setTagProviders() {
@@ -362,6 +383,13 @@ const operators = [FilterOp.Equal, FilterOp.NotEqual].map<SelectableValue<string
 }));
 
 const includeOperators = [FilterOp.Equal].map<SelectableValue<string>>((value) => ({
+  label: value,
+  value,
+}));
+
+export const numericOperatorArray = [FilterOp.gt, FilterOp.gte, FilterOp.lt, FilterOp.lte];
+
+const numericOperators = numericOperatorArray.map<SelectableValue<string>>((value) => ({
   label: value,
   value,
 }));

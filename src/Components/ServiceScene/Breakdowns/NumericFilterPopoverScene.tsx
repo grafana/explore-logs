@@ -17,9 +17,8 @@ import { css } from '@emotion/css';
 import { SelectLabelActionScene } from './SelectLabelActionScene';
 import { getAdHocFiltersVariable } from '../../../services/variableGetters';
 import { AdHocFilterWithLabels } from '../../../services/scenes';
-import { validateVariableNameForField, VariableFilterType } from './AddToFiltersButton';
+import { addNumericFilter, validateVariableNameForField, VariableFilterType } from './AddToFiltersButton';
 import { FilterOp } from '../../../services/filterTypes';
-import ButtonRow = Modal.ButtonRow;
 
 export interface NumericFilterPopoverSceneState extends SceneObjectState {
   labelName: string;
@@ -41,31 +40,25 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
 
   onSubmit() {
     // numeric values can only be fields or metadata variable
-    const variable = getAdHocFiltersVariable(
-      validateVariableNameForField(this.state.labelName, this.state.variableType),
-      this
-    );
-
-    const filtersToAdd: AdHocFilterWithLabels[] = [];
     if (this.state.gt) {
-      filtersToAdd.push({
-        value: this.state.gt.toString(),
-        key: this.state.labelName,
-        operator: this.state.gte ? FilterOp.gte : FilterOp.gt,
-      });
+      addNumericFilter(
+        this.state.labelName,
+        this.state.gt.toString(),
+        this.state.gte ? FilterOp.gte : FilterOp.gt,
+        this,
+        this.state.variableType
+      );
     }
 
     if (this.state.lt) {
-      filtersToAdd.push({
-        value: this.state.lt.toString(),
-        key: this.state.labelName,
-        operator: this.state.lte ? FilterOp.lte : FilterOp.lt,
-      });
+      addNumericFilter(
+        this.state.labelName,
+        this.state.lt.toString(),
+        this.state.lte ? FilterOp.lte : FilterOp.lt,
+        this,
+        this.state.variableType
+      );
     }
-
-    variable.setState({
-      filters: [...variable.state.filters, ...filtersToAdd],
-    });
 
     const selectLabelActionScene = sceneGraph.getAncestor(this, SelectLabelActionScene);
     selectLabelActionScene.togglePopover();
@@ -95,8 +88,6 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
                     <Input
                       autoFocus={true}
                       onChange={(e) => {
-                        console.log('ugh', e);
-                        console.log('e.currentTarget.value', e.currentTarget.value);
                         model.setState({
                           gt: e.currentTarget.value !== '' ? Number(e.currentTarget.value) : undefined,
                         });
@@ -147,7 +138,7 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
             </div>
 
             {/* buttons */}
-            <ButtonRow>
+            <Modal.ButtonRow>
               <Button
                 disabled={gt === undefined && lt === undefined}
                 onClick={() => model.onSubmit()}
@@ -166,7 +157,7 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
               >
                 Cancel
               </Button>
-            </ButtonRow>
+            </Modal.ButtonRow>
           </div>
         </Stack>
       </ClickOutsideWrapper>
