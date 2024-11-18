@@ -25,11 +25,12 @@ export const GoToExploreButton = ({ exploration }: GoToExploreButtonState) => {
     const timeRange = sceneGraph.getTimeRange(exploration).state.value;
     const displayedFields = getDisplayedFields(exploration);
     const visualisationType = getLogsVisualizationType();
+    const columns = getUrlColumns();
     const exploreState = JSON.stringify({
       ['loki-explore']: {
         range: toURLRange(timeRange.raw),
         queries: [{ refId: 'logs', expr, datasource }],
-        panelsState: { logs: { displayedFields, visualisationType } },
+        panelsState: { logs: { displayedFields, visualisationType, columns } },
         datasource,
       },
     });
@@ -49,3 +50,21 @@ export const GoToExploreButton = ({ exploration }: GoToExploreButtonState) => {
     </ToolbarButton>
   );
 };
+
+function getUrlColumns() {
+  const params = new URLSearchParams(window.location.search);
+  const urlColumns = params.get('urlColumns');
+  if (urlColumns) {
+    try {
+      const columns: string[] = JSON.parse(urlColumns);
+      let columnsParam: Record<number, string> = {};
+      for (const key in columns) {
+        columnsParam[key] = columns[key];
+      }
+      return columnsParam;
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  return undefined;
+}
