@@ -29,7 +29,7 @@ import { areArraysEqual } from '../../../services/comparison';
 import { DataFrame, LoadingState } from '@grafana/data';
 import { limitMaxNumberOfSeriesForPanel, MAX_NUMBER_OF_TIME_SERIES } from './TimeSeriesLimitSeriesTitleItem';
 import { map, Observable } from 'rxjs';
-import { buildFieldsQueryString, isAvgField } from '../../../services/fields';
+import { buildFieldsQueryString, getDetectedFieldType, isAvgField } from '../../../services/fields';
 import { getFieldGroupByVariable, getFieldsVariable } from '../../../services/variableGetters';
 import { AddToExplorationButton } from './AddToExplorationButton';
 
@@ -201,9 +201,11 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
         continue;
       }
 
+      const fieldType = getDetectedFieldType(optionValue, detectedFieldsFrame);
+
       const queryString = buildFieldsQueryString(optionValue, fieldsVariable, detectedFieldsFrame);
       const query = buildDataQuery(queryString, {
-        legendFormat: isAvgField(optionValue) ? optionValue : `{{${optionValue}}}`,
+        legendFormat: isAvgField(fieldType) ? optionValue : `{{${optionValue}}}`,
         refId: optionValue,
       });
 
@@ -216,7 +218,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
       let body = PanelBuilders.timeseries().setTitle(optionValue).setData(dataTransformer);
 
       const headerActions = [];
-      if (!isAvgField(optionValue)) {
+      if (!isAvgField(fieldType)) {
         body = body
           .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
           .setCustomFieldConfig('fillOpacity', 100)

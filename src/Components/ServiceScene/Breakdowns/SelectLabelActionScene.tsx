@@ -7,7 +7,7 @@ import {
   SceneQueryRunner,
   VizPanel,
 } from '@grafana/scenes';
-import { getLogsPanelFrame, ServiceScene } from '../ServiceScene';
+import { getDetectedFieldsFrame, getLogsPanelFrame, ServiceScene } from '../ServiceScene';
 import { navigateToValueBreakdown } from '../../../services/navigate';
 import { getPrimaryLabelFromUrl, ValueSlugs } from '../../../services/routing';
 import { Button, ButtonGroup, ButtonSelect, IconButton, Popover, PopoverController, useStyles2 } from '@grafana/ui';
@@ -26,14 +26,15 @@ import { LokiQuery } from '../../../services/lokiQuery';
 import { css } from '@emotion/css';
 import { rest } from 'lodash';
 import { NumericFilterPopoverScene } from './NumericFilterPopoverScene';
-import { AddToExplorationButtonState } from './AddToExplorationButton';
+import { getDetectedFieldType } from '../../../services/fields';
+import { logger } from '../../../services/logger';
 
 interface SelectLabelActionSceneState extends SceneObjectState {
   labelName: string;
   fieldType: ValueSlugs;
   hideValueDrilldown?: boolean;
-  showSparseFilters?: boolean;
-  showNumericFilters?: boolean;
+  hasSparseFilters?: boolean;
+  hasNumericFilters?: boolean;
   selectedValue?: SelectableValue<string>;
   popover?: NumericFilterPopoverScene;
   showPopover: boolean;
@@ -72,15 +73,8 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
   }
 
   public static Component = ({ model }: SceneComponentProps<SelectLabelActionScene>) => {
-    const {
-      hideValueDrilldown,
-      labelName,
-      showSparseFilters,
-      showNumericFilters,
-      selectedValue,
-      popover,
-      showPopover,
-    } = model.useState();
+    const { hideValueDrilldown, labelName, hasSparseFilters, hasNumericFilters, selectedValue, popover, showPopover } =
+      model.useState();
     const variable = model.getVariable();
     const variableName = variable.useState().name as VariableFilterType;
     const existingFilter = model.getExistingFilter(variable);
@@ -92,15 +86,18 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
     const hasOtherFilter = !!existingFilter;
 
     const selectedOptionValue =
-      selectedValue?.value ?? isIncluded ? INCLUDE_VALUE : showNumericFilters ? NUMERIC_FILTER_VALUE : INCLUDE_VALUE;
+      selectedValue?.value ?? (isIncluded ? INCLUDE_VALUE : hasNumericFilters ? NUMERIC_FILTER_VALUE : INCLUDE_VALUE);
+
+    const hasExistingNumericFilter = existingFilter?.operator
+      ? [FilterOp.gte, FilterOp.gt, FilterOp.lte, FilterOp.lt].includes(existingFilter.operator as FilterOp)
+      : false;
+    const numericSelected = selectedOptionValue === NUMERIC_FILTER_VALUE || hasExistingNumericFilter;
+    const includeSelected = selectedOptionValue === INCLUDE_VALUE && !numericSelected;
 
     const sparseIncludeOption: SelectableValue<string> = {
       value: INCLUDE_VALUE,
       component: () => (
-        <SelectableValueComponent
-          selected={selectedOptionValue === INCLUDE_VALUE}
-          text={`Include all log lines with ${labelName}`}
-        />
+        <SelectableValueComponent selected={includeSelected} text={`Include all log lines with ${labelName}`} />
       ),
     };
     const sparseExcludeOption: SelectableValue<string> = {
@@ -110,25 +107,26 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
     const numericFilterOption: SelectableValue<string> = {
       value: NUMERIC_FILTER_VALUE,
       component: () => (
-        <SelectableValueComponent
-          selected={selectedOptionValue === NUMERIC_FILTER_VALUE}
-          text={`Add an expression, i.e. ${labelName} > 30`}
-        />
+        <SelectableValueComponent selected={numericSelected} text={`Add an expression, i.e. ${labelName} > 30`} />
       ),
     };
 
     const options: Array<SelectableValue<string>> = [];
-    if (showNumericFilters) {
+    if (hasNumericFilters) {
       options.push(numericFilterOption);
     }
 
-    if (showSparseFilters) {
-      options.push(sparseIncludeOption, sparseExcludeOption);
+    if (hasSparseFilters) {
+      if (!hasExistingNumericFilter) {
+        options.push(sparseIncludeOption);
+      }
+
+      options.push(sparseExcludeOption);
     }
 
     const defaultOption = isIncluded
       ? sparseIncludeOption
-      : showNumericFilters
+      : hasNumericFilters
       ? numericFilterOption
       : sparseIncludeOption;
 
@@ -141,7 +139,7 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
             onClick={() => model.clearFilters(variableName)}
           />
         )}
-        {(showNumericFilters || showSparseFilters) && (
+        {(hasNumericFilters || hasSparseFilters) && (
           <>
             <ButtonGroup>
               <Button
@@ -214,7 +212,6 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
     let { labelName } = getPrimaryLabelFromUrl();
     if (this.state.labelName !== labelName) {
       return variable?.state.filters.find((filter) => {
-        // const value = getValueFromAdHocVariableFilter(variable, filter);
         return filter.key === this.state.labelName;
       });
     }
@@ -244,8 +241,18 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
   }
 
   public onClickNumericFilter = (variableType: VariableFilterType) => {
+    const detectedFieldFrame = getDetectedFieldsFrame(this);
+    const fieldType = getDetectedFieldType(this.state.labelName, detectedFieldFrame);
+
+    // @todo, what can we do if we can't determine the field type?
+    if (!fieldType || fieldType === 'string' || fieldType === 'boolean' || fieldType === 'int') {
+      const error = new Error(`Incorrect field type: ${fieldType}`);
+      logger.error(error);
+      throw error;
+    }
+
     this.setState({
-      popover: new NumericFilterPopoverScene({ labelName: this.state.labelName, variableType }),
+      popover: new NumericFilterPopoverScene({ labelName: this.state.labelName, variableType, fieldType }),
     });
     this.togglePopover();
   };
@@ -290,14 +297,14 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
       const query = queries[0] as LokiQuery | undefined;
       if (query?.expr.includes('avg_over_time')) {
         this.setState({
-          showNumericFilters: true,
+          hasNumericFilters: true,
         });
       }
     }
 
     if (!labels || !logsPanelData) {
       this.setState({
-        showSparseFilters: false,
+        hasSparseFilters: false,
       });
       return;
     }
@@ -327,11 +334,11 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
 
     if (logLinesWithLabelCount < logsPanelData.length || this.getExistingFilter(variable)) {
       this.setState({
-        showSparseFilters: true,
+        hasSparseFilters: true,
       });
     } else {
       this.setState({
-        showSparseFilters: false,
+        hasSparseFilters: false,
       });
     }
   }

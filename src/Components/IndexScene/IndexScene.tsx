@@ -183,20 +183,12 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
   private setVariableOperators() {
     const fieldsVar = getFieldsVariable(this);
+    // No wip set when this is called, so once the operations must be consistent for all filters
+    // @todo we'll need to split out the duration, bytes, and float filters out of the VAR_FIELDS variable and into a new variable if we want to keep comparison operations out of string, int, etc filters
     fieldsVar._getOperators = function () {
-      console.log('fields get operator', fieldsVar.state);
-
       if (fieldsVar.state.filters.some((filter) => numericOperatorArray.includes(filter.operator as FilterOp))) {
         return [...operators, ...numericOperators];
       }
-      // const wip = fieldsVar.state._wip;
-      // if (
-      //     wip &&
-      //     fieldsVar.state.filters.some((filter) => filter.key === wip.key && filter.operator === FilterOp.Equal)
-      // ) {
-      //   return numericOperators;
-      // }
-
       return operators;
     };
   }

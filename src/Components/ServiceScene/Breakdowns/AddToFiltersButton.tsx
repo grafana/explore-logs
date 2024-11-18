@@ -115,7 +115,10 @@ export function addNumericFilter(
   }
 
   let filters = variable.state.filters.filter((filter) => {
-    return !(filter.key === key && getNumericOperatorType(filter.operator) === operatorType);
+    return !(
+      filter.key === key &&
+      (getNumericOperatorType(filter.operator) === operatorType || filter.operator === FilterOp.NotEqual)
+    );
   });
 
   filters = [
@@ -159,6 +162,12 @@ export function addToFilters(
   // If the filter exists, filter it
   let filters = variable.state.filters.filter((filter) => {
     const fieldValue = getValueFromAdHocVariableFilter(variable, filter);
+
+    // if we're including, we want to remove all filters that have this key
+    if (operator === 'include') {
+      return !(filter.key === key);
+    }
+
     return !(filter.key === key && fieldValue.value === value);
   });
 

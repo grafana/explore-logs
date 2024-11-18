@@ -118,13 +118,6 @@ export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
 
   let numericFilters = numeric.map((filter) => `| ${fieldNumericFilterToQueryString(filter)}`).join(' ');
 
-  console.log('filters', {
-    positiveFilters,
-    negativeFilters,
-    numeric,
-    numericFilters,
-  });
-
   return `${positiveFilters} ${negativeFilters} ${numericFilters}`.trim();
 }
 
