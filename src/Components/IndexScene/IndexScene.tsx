@@ -6,7 +6,8 @@ import {
   CustomVariable,
   DataSourceVariable,
   SceneComponentProps,
-  SceneControlsSpacer,
+  SceneFlexItem,
+  SceneFlexLayout,
   sceneGraph,
   SceneObject,
   SceneObjectBase,
@@ -19,7 +20,6 @@ import {
   SceneTimeRangeLike,
   SceneTimeRangeState,
   SceneVariableSet,
-  VariableValueSelectors,
 } from '@grafana/scenes';
 import {
   DETECTED_FIELD_VALUES_EXPR,
@@ -73,7 +73,10 @@ import { logger } from '../../services/logger';
 import { getLabelsTagKeysProvider } from '../../services/TagKeysProviders';
 import { AdHocFilterWithLabels } from '../../services/scenes';
 import { FilterOp } from '../../services/filterTypes';
+import { ShowLogsButtonScene } from './ShowLogsButtonScene';
+import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
 
+export const showLogsButtonSceneKey = 'showLogsButtonScene';
 export interface AppliedPattern {
   pattern: string;
   type: 'include' | 'exclude';
@@ -99,8 +102,19 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     );
 
     const controls: SceneObject[] = [
-      new VariableValueSelectors({ layout: 'vertical' }),
-      new SceneControlsSpacer(),
+      new SceneFlexLayout({
+        direction: 'row',
+        children: [
+          new SceneFlexItem({
+            body: new CustomVariableValueSelectors({ layout: 'vertical', include: [VAR_LABELS, VAR_DATASOURCE] }),
+          }),
+          new ShowLogsButtonScene({
+            key: showLogsButtonSceneKey,
+            disabled: true,
+          }),
+        ],
+      }),
+      new CustomVariableValueSelectors({ layout: 'vertical', exclude: [VAR_LABELS, VAR_DATASOURCE] }),
       new SceneTimePicker({}),
       new SceneRefreshPicker({}),
     ];
@@ -140,6 +154,10 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     const stateUpdate: Partial<IndexSceneState> = {};
     this.setVariableTagValuesProviders();
 
+    // Show "show logs" button
+    const showLogsButton = sceneGraph.findByKeyAndType(this, showLogsButtonSceneKey, ShowLogsButtonScene);
+    showLogsButton.setState({ hidden: false });
+
     if (!this.state.contentScene) {
       stateUpdate.contentScene = getContentScene(this.state.routeMatch?.params.breakdownLabel);
     }
@@ -164,6 +182,19 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
   private setTagProviders() {
     const labelsVar = getLabelsVariable(this);
+
+    labelsVar._getOperators = function () {
+      const wip = labelsVar.state._wip;
+      if (
+        wip &&
+        labelsVar.state.filters.some((filter) => filter.key === wip.key && filter.operator === FilterOp.Equal)
+      ) {
+        return includeOperators;
+      }
+
+      return operators;
+    };
+
     labelsVar.setState({
       getTagKeysProvider: getLabelsTagKeysProvider,
       getTagValuesProvider: getLabelsTagValuesProvider,
@@ -325,13 +356,17 @@ function getContentScene(drillDownLabel?: string) {
     drillDownLabel,
   });
 }
+const operators = [FilterOp.Equal, FilterOp.NotEqual].map<SelectableValue<string>>((value) => ({
+  label: value,
+  value,
+}));
+
+const includeOperators = [FilterOp.Equal].map<SelectableValue<string>>((value) => ({
+  label: value,
+  value,
+}));
 
 function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVariableFilter[]) {
-  const operators = [FilterOp.Equal, FilterOp.NotEqual].map<SelectableValue<string>>((value) => ({
-    label: value,
-    value,
-  }));
-
   const labelVariable = new AdHocFiltersVariable({
     name: VAR_LABELS,
     datasource: EXPLORATION_DS,
@@ -349,7 +384,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
 
   const fieldsVariable = new AdHocFiltersVariable({
     name: VAR_FIELDS,
-    label: 'Filters',
+    label: 'Fields',
     applyMode: 'manual',
     layout: 'vertical',
     getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),

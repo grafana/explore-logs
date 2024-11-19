@@ -79,7 +79,7 @@ export const CHILD_ROUTE_DEFINITIONS: Record<keyof typeof ValueSlugs, string> = 
 export const EXPLORATIONS_ROUTE = `${PLUGIN_BASE_URL}/${PageSlugs.explore}`;
 
 // For redirect back to service, we just want to keep datasource, and timerange
-export const SERVICE_URL_KEYS = ['from', 'to', `var-${VAR_DATASOURCE}`];
+export const SERVICE_URL_KEYS = ['from', 'to', `var-${VAR_DATASOURCE}`, `var-${VAR_LABELS}`];
 //@todo why patterns and var-patterns?
 export const DRILLDOWN_URL_KEYS = [
   'from',

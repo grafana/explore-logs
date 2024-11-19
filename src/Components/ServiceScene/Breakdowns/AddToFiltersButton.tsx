@@ -83,7 +83,6 @@ export function addToFilters(
 
   variable.setState({
     filters,
-    hide: VariableHide.hideLabel,
   });
 }
 

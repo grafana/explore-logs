@@ -35,6 +35,7 @@ export const USER_EVENTS_ACTIONS = {
     service_selected: 'service_selected',
     // Toggling aggregated metrics on/off
     aggregated_metrics_toggled: 'aggregated_metrics_toggled',
+    add_to_filters: 'add_to_filters',
   },
   [USER_EVENTS_PAGES.service_details]: {
     open_in_explore_clicked: 'open_in_explore_clicked',

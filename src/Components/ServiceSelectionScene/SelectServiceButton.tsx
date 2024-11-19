@@ -2,7 +2,6 @@ import React from 'react';
 
 import { SceneComponentProps, SceneObject, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { Button, useStyles2 } from '@grafana/ui';
-import { VariableHide } from '@grafana/schema';
 import { addToFavoriteLabelValueInStorage } from 'services/store';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { navigateToInitialPageAfterServiceSelection } from '../../services/navigate';
@@ -11,6 +10,7 @@ import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 import { SERVICE_NAME, SERVICE_UI_LABEL } from '../../services/variables';
 import { FilterOp } from '../../services/filterTypes';
+import { testIds } from '../../services/testIds';
 
 export interface SelectServiceButtonState extends SceneObjectState {
   labelValue: string;
@@ -24,16 +24,21 @@ export function selectLabel(primaryLabelName: string, primaryLabelValue: string,
     label: primaryLabelName,
   });
 
+  const filteredFilters = variable.state.filters.filter(
+    (f) => !(f.key === primaryLabelName && f.value === primaryLabelValue)
+  );
+
+  const filters = [
+    ...filteredFilters,
+    {
+      key: primaryLabelName,
+      operator: FilterOp.Equal,
+      value: primaryLabelValue,
+    },
+  ];
+
   variable.setState({
-    filters: [
-      ...variable.state.filters.filter((f) => f.key !== primaryLabelName),
-      {
-        key: primaryLabelName,
-        operator: FilterOp.Equal,
-        value: primaryLabelValue,
-      },
-    ],
-    hide: VariableHide.hideLabel,
+    filters,
   });
   const ds = getDataSourceVariable(sceneRef).getValue();
 
@@ -59,13 +64,14 @@ export class SelectServiceButton extends SceneObjectBase<SelectServiceButtonStat
     const styles = useStyles2(getStyles);
     return (
       <Button
-        tooltip={`View breakdown for ${model.state.labelValue}`}
+        data-testid={testIds.index.showLogsButton}
+        tooltip={`View logs for ${model.state.labelValue}`}
         className={styles.button}
         variant="secondary"
         size="sm"
         onClick={model.onClick}
       >
-        Select
+        Show logs
       </Button>
     );
   };

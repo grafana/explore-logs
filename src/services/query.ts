@@ -53,6 +53,15 @@ const defaultQueryParams = {
 
 export const PLACEHOLDER_QUERY = '__placeholder__=""';
 
+export const buildVolumeQuery = (
+  expr: string,
+  resource: 'volume' | 'patterns' | 'detected_labels' | 'detected_fields' | 'labels',
+  primaryLabel: string,
+  queryParamsOverrides?: Record<string, unknown>
+): LokiQuery & SceneDataQueryResourceRequest => {
+  return buildResourceQuery(expr, resource, { ...queryParamsOverrides, primaryLabel });
+};
+
 export function getLogQLLabelGroups(filters: AdHocVariableFilter[]) {
   const positive = filters.filter((filter) => filter.operator === FilterOp.Equal);
   const negative = filters.filter((filter) => filter.operator === FilterOp.NotEqual);

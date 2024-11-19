@@ -19,7 +19,7 @@ export class ExplorePage {
   logs: Array<{ msg: ConsoleMessage; type: string }> = [];
 
   constructor(public readonly page: Page, public readonly testInfo: TestInfo) {
-    this.firstServicePageSelect = this.page.getByText('Select').first();
+    this.firstServicePageSelect = this.page.getByTestId(testIds.index.showLogsButton).first();
     this.logVolumeGraph = this.page.getByText('Log volume');
     this.servicesSearch = this.page.getByTestId(testIds.exploreServiceSearch.search);
     this.serviceBreakdownSearch = this.page.getByTestId(testIds.exploreServiceDetails.searchLogs);
@@ -37,6 +37,16 @@ export class ExplorePage {
     if (this.testInfo.retry > 0) {
       console.log('logs', this.logs);
     }
+  }
+
+  async aggregatedMetricsToggle() {
+    const menuOpenBtn = this.page.getByTestId(testIds.index.aggregatedMetricsMenu);
+    await expect(menuOpenBtn).toHaveCount(1);
+    await menuOpenBtn.click();
+
+    const aggregatedMetricsToggleBtn = this.page.getByLabel('Toggle aggregated metrics');
+    await expect(aggregatedMetricsToggleBtn).toHaveCount(1);
+    await aggregatedMetricsToggleBtn.click();
   }
 
   async clearLocalStorage() {

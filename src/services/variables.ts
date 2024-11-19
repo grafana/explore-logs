@@ -23,6 +23,8 @@ export type LogsQueryOptions = {
 
 export const VAR_LABELS = 'filters';
 export const VAR_LABELS_EXPR = '${filters}';
+export const VAR_LABELS_REPLICA = 'filters_replica';
+export const VAR_LABELS_REPLICA_EXPR = '${filters_replica}';
 export const VAR_FIELDS = 'fields';
 export const VAR_FIELDS_EXPR = '${fields}';
 export const PENDING_FIELDS_EXPR = '${pendingFields}';

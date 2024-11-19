@@ -39,16 +39,19 @@ import {
 } from '@grafana/ui';
 import { addTabToLocalStorage, getFavoriteLabelValuesFromStorage } from 'services/store';
 import {
+  EXPLORATION_DS,
   LEVEL_VARIABLE_VALUE,
   SERVICE_NAME,
   SERVICE_UI_LABEL,
   VAR_AGGREGATED_METRICS,
+  VAR_LABELS_REPLICA,
+  VAR_LABELS_REPLICA_EXPR,
   VAR_PRIMARY_LABEL,
   VAR_PRIMARY_LABEL_EXPR,
   VAR_PRIMARY_LABEL_SEARCH,
 } from 'services/variables';
 import { selectLabel, SelectServiceButton } from './SelectServiceButton';
-import { buildDataQuery, buildResourceQuery } from 'services/query';
+import { buildDataQuery, buildVolumeQuery, renderLogQLLabelFilters } from 'services/query';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getQueryRunner, getSceneQueryRunner, setLevelColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
@@ -62,6 +65,7 @@ import {
   getAggregatedMetricsVariable,
   getDataSourceVariable,
   getLabelsVariable,
+  getLabelsVariableReplica,
   getServiceSelectionPrimaryLabel,
   getServiceSelectionSearchVariable,
   setServiceSelectionPrimaryLabelKey,
@@ -69,12 +73,14 @@ import {
 import { config, locationService } from '@grafana/runtime';
 import { VariableHide } from '@grafana/schema';
 import { ToolbarScene } from '../IndexScene/ToolbarScene';
-import { IndexScene } from '../IndexScene/IndexScene';
+import { IndexScene, showLogsButtonSceneKey } from '../IndexScene/IndexScene';
 import { ServiceSelectionTabsScene } from './ServiceSelectionTabsScene';
 import { FavoriteServiceHeaderActionScene } from './FavoriteServiceHeaderActionScene';
 import { pushUrlHandler } from '../../services/navigate';
 import { NoServiceVolume } from './NoServiceVolume';
 import { getQueryRunnerFromChildren } from '../../services/scenes';
+import { AddLabelToFiltersHeaderActionScene } from './AddLabelToFiltersHeaderActionScene';
+import { ShowLogsButtonScene } from '../IndexScene/ShowLogsButtonScene';
 
 const aggregatedMetricsEnabled: boolean | undefined = config.featureToggles.exploreLogsAggregatedMetrics;
 // Don't export AGGREGATED_SERVICE_NAME, we want to rename things so the rest of the application is agnostic to how we got the services
@@ -162,10 +168,20 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
               },
             ],
           }),
+          new AdHocFiltersVariable({
+            name: VAR_LABELS_REPLICA,
+            datasource: EXPLORATION_DS,
+            layout: 'vertical',
+            filters: [],
+            expressionBuilder: renderLogQLLabelFilters,
+            hide: VariableHide.hideVariable,
+            key: 'adhoc_service_filter_replica',
+            skipUrlSync: true,
+          }),
         ],
       }),
       $data: getSceneQueryRunner({
-        queries: [buildResourceQuery(`{${VAR_PRIMARY_LABEL_EXPR}}`, 'volume')],
+        queries: [],
         runQueriesMode: 'manual',
       }),
       serviceLevel: new Map<string, string[]>(),
@@ -209,9 +225,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
    * Unused, but required
    * @param values
    */
-  updateFromUrl(values: SceneObjectUrlValues) {
-    console.log('updateFromUrl', values);
-  }
+  updateFromUrl(values: SceneObjectUrlValues) {}
 
   addDatasourceChangeToBrowserHistory(newDs: string) {
     const location = locationService.getLocation();
@@ -321,7 +335,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           {!isLogVolumeLoading && !volumeApiError && !hasSearch && !labelsByVolume?.length && (
             <NoServiceVolume labelName={selectedTab} />
           )}
-          {labelsToQuery && labelsToQuery.length > 0 && (
+          {!(!isLogVolumeLoading && volumeApiError) && (
             <div className={styles.body}>
               <body.Component model={body} />
             </div>
@@ -435,6 +449,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           labelName: primaryLabelName,
           labelValue: primaryLabelValue,
         }),
+        new AddLabelToFiltersHeaderActionScene({
+          name: primaryLabelName,
+          value: primaryLabelValue,
+          hidden: this.isAggregatedMetricsActive(),
+        }),
         new SelectServiceButton({ labelValue: primaryLabelValue, labelName: primaryLabelName }),
       ])
       .build();
@@ -450,7 +469,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     });
 
     cssGridItem.addActivationHandler(() => {
-      this.runPanelQuery(cssGridItem);
+      const runner = getQueryRunnerFromChildren(cssGridItem)[0];
+      // If the query runner has already ran, the scene must be cached, don't re-run as the volume query will be triggered which will execute another panel query
+      if (runner.state.data?.state !== LoadingState.Done) {
+        this.runPanelQuery(cssGridItem);
+      }
     });
 
     return cssGridItem;
@@ -503,7 +526,11 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     });
 
     cssGridItem.addActivationHandler(() => {
-      this.runPanelQuery(cssGridItem);
+      const runner = getQueryRunnerFromChildren(cssGridItem)[0];
+      // If the query runner has already ran, the scene must be cached, don't re-run as the volume query will be triggered which will execute another panel query
+      if (runner.state.data?.state !== LoadingState.Done) {
+        this.runPanelQuery(cssGridItem);
+      }
     });
 
     return cssGridItem;
@@ -514,40 +541,73 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     return selectedTab === SERVICE_NAME ? SERVICE_UI_LABEL : selectedTab;
   }
 
-  private onActivate() {
-    // Temporarily hide the combobox until the final PR in this series
-    this.hideLabelsVar();
-    this.fixRequiredUrlParams();
-    // Clear existing volume data on activate or we'll show stale cached data, potentially from a different datasource
+  private setVolumeQueryRunner() {
     this.setState({
       $data: getSceneQueryRunner({
-        queries: [buildResourceQuery(`{${VAR_PRIMARY_LABEL_EXPR}}`, 'volume')],
+        queries: [
+          buildVolumeQuery(`{${VAR_PRIMARY_LABEL_EXPR}, ${VAR_LABELS_REPLICA_EXPR}}`, 'volume', this.getSelectedTab()),
+        ],
         runQueriesMode: 'manual',
       }),
     });
 
-    // Clear all adhoc filters when the scene is activated, if there are any
-    const variable = getLabelsVariable(this);
-    if (variable.state.filters.length > 0) {
-      variable.setState({
-        filters: [],
-      });
+    // Need to re-init any subscriptions since we changed the query runner
+    this.subscribeToVolume();
+  }
+
+  private doVariablesNeedSync() {
+    const labelsVarPrimary = getLabelsVariable(this);
+    const labelsVarReplica = getLabelsVariableReplica(this);
+
+    const activeTab = this.getSelectedTab();
+    const filteredFilters = labelsVarPrimary.state.filters.filter((f) => f.key !== activeTab);
+
+    return { filters: filteredFilters, needsSync: !areArraysEqual(filteredFilters, labelsVarReplica.state.filters) };
+  }
+
+  private syncVariables() {
+    const labelsVarReplica = getLabelsVariableReplica(this);
+
+    const { filters, needsSync } = this.doVariablesNeedSync();
+    if (needsSync) {
+      labelsVarReplica.setState({ filters });
+    }
+  }
+
+  private onActivate() {
+    this.fixRequiredUrlParams();
+
+    // Sync initial state from primary labels to local replica
+    this.syncVariables();
+
+    // Clear existing volume data on activate or we'll show stale cached data, potentially from a different datasource
+    this.setVolumeQueryRunner();
+
+    // Subscribe to primary labels for further updates
+    this.subscribeToPrimaryLabelsVariable();
+
+    // Subscribe to variables replica
+    this.subscribeToLabelFilterChanges();
+
+    // Subscribe to tab changes (primary label)
+    this.subscribeToActiveTabVariable(getServiceSelectionPrimaryLabel(this));
+
+    if (this.state.$data.state.data?.state !== LoadingState.Done) {
+      this.runVolumeOnActivate();
     }
 
-    const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
-    this._subs.add(
-      primaryLabelVar.subscribeToState((newState, prevState) => {
-        if (newState.filterExpression !== prevState.filterExpression) {
-          const newKey = newState.filters[0].key;
-          this.addLabelChangeToBrowserHistory(newKey);
-          // Will need to tear down volume instance when we introduce the ability to select other labels, as we'll need to pass the selected tab to parse the volume response
-          this.runVolumeQuery();
-        }
-      })
-    );
+    // Update labels on time range change
+    this.subscribeToTimeRange();
 
-    this.subscribeToVolume();
+    // Update labels on datasource change
+    this.subscribeToDatasource();
 
+    this.subscribeToAggregatedMetricToggle();
+
+    this.subscribeToAggregatedMetricVariable();
+  }
+
+  private runVolumeOnActivate() {
     if (this.isTimeRangeTooEarlyForAggMetrics()) {
       this.onUnsupportedAggregatedMetricTimeRange();
       if (this.state.$data.state.data?.state !== LoadingState.Done) {
@@ -559,18 +619,9 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         this.runVolumeQuery();
       }
     }
+  }
 
-    // Update labels on time range change
-    this.subscribeToTimeRange();
-
-    // Update labels on datasource change
-    this._subs.add(
-      getDataSourceVariable(this).subscribeToState((newState) => {
-        this.addDatasourceChangeToBrowserHistory(newState.value.toString());
-        this.runVolumeQuery();
-      })
-    );
-
+  private subscribeToAggregatedMetricToggle() {
     this._subs.add(
       this.getQueryOptionsToolbar()?.subscribeToState((newState, prevState) => {
         if (newState.options.aggregatedMetrics.userOverride !== prevState.options.aggregatedMetrics.userOverride) {
@@ -578,19 +629,34 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         }
       })
     );
-
-    this.subscribeToAggregatedMetricVariable();
   }
 
-  private setVolumeQueryRunner() {
-    this.setState({
-      $data: getSceneQueryRunner({
-        queries: [buildResourceQuery(`{${VAR_PRIMARY_LABEL_EXPR}}`, 'volume')],
-        runQueriesMode: 'manual',
-      }),
-    });
+  private subscribeToDatasource() {
+    this._subs.add(
+      getDataSourceVariable(this).subscribeToState((newState) => {
+        this.addDatasourceChangeToBrowserHistory(newState.value.toString());
+        this.runVolumeQuery();
+      })
+    );
+  }
 
-    this.subscribeToVolume();
+  private subscribeToActiveTabVariable(primaryLabelVar: AdHocFiltersVariable) {
+    this._subs.add(
+      primaryLabelVar.subscribeToState((newState, prevState) => {
+        if (newState.filterExpression !== prevState.filterExpression) {
+          const newKey = newState.filters[0].key;
+          this.addLabelChangeToBrowserHistory(newKey);
+          // Need to tear down volume query runner to select other labels, as we need the selected tab to parse the volume response
+          const { needsSync } = this.doVariablesNeedSync();
+
+          if (needsSync) {
+            this.syncVariables();
+          } else {
+            this.runVolumeQuery(true);
+          }
+        }
+      })
+    );
   }
 
   /**
@@ -607,6 +673,28 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           });
           // And re-init with the new query
           this.updateBody(true);
+        }
+      })
+    );
+  }
+
+  private subscribeToPrimaryLabelsVariable() {
+    const labelsVarPrimary = getLabelsVariable(this);
+    this._subs.add(
+      labelsVarPrimary.subscribeToState((newState, prevState) => {
+        if (!areArraysEqual(newState.filters, prevState.filters)) {
+          this.syncVariables();
+        }
+      })
+    );
+  }
+
+  private subscribeToLabelFilterChanges() {
+    const labelsVar = getLabelsVariableReplica(this);
+    this._subs.add(
+      labelsVar.subscribeToState((newState, prevState) => {
+        if (!areArraysEqual(newState.filters, prevState.filters)) {
+          this.runVolumeQuery(true);
         }
       })
     );
@@ -637,13 +725,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         this.runVolumeQuery();
       })
     );
-  }
-
-  private hideLabelsVar() {
-    const labelsVar = getLabelsVariable(this);
-    labelsVar.setState({
-      hide: VariableHide.hideVariable,
-    });
   }
 
   /**
@@ -723,10 +804,30 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
   private updateAggregatedMetricVariable() {
     const serviceLabelVar = getAggregatedMetricsVariable(this);
+    const labelsVar = getLabelsVariable(this);
     if ((!this.isTimeRangeTooEarlyForAggMetrics() || !aggregatedMetricsEnabled) && this.isAggregatedMetricsActive()) {
       serviceLabelVar.changeValueTo(AGGREGATED_SERVICE_NAME);
+
+      // Hide combobox and reset filters if aggregated metrics is enabled
+      labelsVar.setState({
+        hide: VariableHide.hideVariable,
+        filters: [],
+      });
+
+      // Hide the show logs button
+      const showLogsButton = sceneGraph.findByKeyAndType(this, showLogsButtonSceneKey, ShowLogsButtonScene);
+      showLogsButton.setState({ hidden: true });
     } else {
       serviceLabelVar.changeValueTo(SERVICE_NAME);
+      // Show combobox if not aggregated metrics
+      labelsVar.setState({
+        hide: VariableHide.dontHide,
+      });
+      serviceLabelVar.changeValueTo(SERVICE_NAME);
+
+      // Show the show logs button
+      const showLogsButton = sceneGraph.findByKeyAndType(this, showLogsButtonSceneKey, ShowLogsButtonScene);
+      showLogsButton.setState({ hidden: false });
     }
   }
 
@@ -757,6 +858,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       const queryRunners = getQueryRunnerFromChildren(child);
       if (queryRunners.length === 1) {
         const queryRunner = queryRunners[0];
+        const query = queryRunner.state.queries[0];
 
         // If the scene was cached, the time range will still be the same as what was executed in the query
         const requestTimeRange = queryRunner.state.data?.timeRange;
@@ -768,8 +870,12 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
           ? Math.abs(sceneTimeRange.state.value.to.diff(requestTimeRange?.to, 's'))
           : Infinity;
 
-        // If the time range hasn't changed, or the loading state isn't complete, run the query
-        if (queryRunner.state.data?.state !== LoadingState.Done || fromDiff > 0 || toDiff > 0) {
+        const interpolated = sceneGraph.interpolate(this, query.expr);
+        // If we haven't already run this exact same query, run it
+        if (queryRunner.state.key !== interpolated || fromDiff > 0 || toDiff > 0) {
+          queryRunner.setState({
+            key: interpolated,
+          });
           queryRunner.runQueries();
         }
       }
@@ -778,6 +884,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
   private updateBody(runQueries = false) {
     const { labelsToQuery } = this.getLabels(this.state.$data.state.data?.series);
+    const selectedTab = this.getSelectedTab();
     this.updateTabs();
     // If no services are to be queried, clear the body
     if (!labelsToQuery || labelsToQuery.length === 0) {
@@ -785,11 +892,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     } else {
       // If we have services to query, build the layout with the services. Children is an array of layouts for each service (1 row with 2 columns - timeseries and logs panel)
       const newChildren: SceneCSSGridItem[] = [];
-      const existingChildren: SceneCSSGridItem[] = this.state.body.state.children as SceneCSSGridItem[];
+      const existingChildren = this.getGridItems();
       const timeRange = sceneGraph.getTimeRange(this).state.value;
       const aggregatedMetricsVariable = getAggregatedMetricsVariable(this);
       const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
-      const selectedTab = this.getSelectedTab();
       const datasourceVariable = getDataSourceVariable(this);
 
       for (const primaryLabelValue of labelsToQuery.slice(0, SERVICES_LIMIT)) {
@@ -801,28 +907,28 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         if (existing.length === 2) {
           // If we already have grid items for this service, move them over to the new array of children, this will preserve their queryRunners, preventing duplicate queries from getting run
           newChildren.push(existing[0], existing[1]);
+
+          if (existing[0].isActive && runQueries) {
+            this.runPanelQuery(existing[0]);
+          }
+
+          if (existing[1].isActive && runQueries) {
+            this.runPanelQuery(existing[1]);
+          }
         } else {
-          // for each service, we create a layout with timeseries and logs panel
-          newChildren.push(
-            this.buildServiceLayout(
-              selectedTab,
-              primaryLabelValue,
-              timeRange,
-              aggregatedMetricsVariable,
-              primaryLabelVar,
-              datasourceVariable
-            ),
-            this.buildServiceLogsLayout(selectedTab, primaryLabelValue)
+          const newChildTs = this.buildServiceLayout(
+            selectedTab,
+            primaryLabelValue,
+            timeRange,
+            aggregatedMetricsVariable,
+            primaryLabelVar,
+            datasourceVariable
           );
+          const newChildLogs = this.buildServiceLogsLayout(selectedTab, primaryLabelValue);
+          // for each service, we create a layout with timeseries and logs panel
+          newChildren.push(newChildTs, newChildLogs);
         }
       }
-
-      // Re-execute queries for active panels
-      newChildren.forEach((child) => {
-        if (child.isActive && runQueries) {
-          this.runPanelQuery(child);
-        }
-      });
 
       this.state.body.setState({
         children: newChildren,
@@ -851,15 +957,13 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     if (serviceIndex === undefined || serviceIndex < 0) {
       return;
     }
-    // if (this.state.body) {
     let newChildren = [...this.getGridItems()];
     newChildren.splice(serviceIndex * 2 + 1, 1, this.buildServiceLogsLayout(labelName, labelValue));
     this.state.body.setState({ children: newChildren });
-    // }
   }
 
   private getLogExpression(labelName: string, labelValue: string, levelFilter: string) {
-    return `{${labelName}=\`${labelValue}\`}${levelFilter}`;
+    return `{${labelName}=\`${labelValue}\` , ${VAR_LABELS_REPLICA_EXPR} }${levelFilter}`;
   }
 
   private getMetricExpression(
@@ -870,12 +974,12 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     const filter = primaryLabelVar.state.filters[0];
     if (serviceLabelVar.state.value === AGGREGATED_SERVICE_NAME) {
       if (filter.key === SERVICE_NAME) {
-        return `sum by (${LEVEL_VARIABLE_VALUE}) (sum_over_time({${AGGREGATED_SERVICE_NAME}=\`${labelValue}\`} | logfmt | unwrap count [$__auto]))`;
+        return `sum by (${LEVEL_VARIABLE_VALUE}) (sum_over_time({${AGGREGATED_SERVICE_NAME}=\`${labelValue}\` } | logfmt | unwrap count [$__auto]))`;
       } else {
         return `sum by (${LEVEL_VARIABLE_VALUE}) (sum_over_time({${AGGREGATED_SERVICE_NAME}=~\`.+\` } | logfmt | ${filter.key}=\`${labelValue}\` | unwrap count [$__auto]))`;
       }
     }
-    return `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({ ${filter.key}=\`${labelValue}\` } [$__auto]))`;
+    return `sum by (${LEVEL_VARIABLE_VALUE}) (count_over_time({ ${filter.key}=\`${labelValue}\`, ${VAR_LABELS_REPLICA_EXPR} } [$__auto]))`;
   }
 
   private extendTimeSeriesLegendBus = (

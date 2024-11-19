@@ -17,7 +17,6 @@ export interface TabOption extends SelectableValue<string> {
   label: string;
   value: string;
   active?: boolean;
-  counter?: number;
   saved?: boolean;
   savedIndex?: number;
 }
@@ -92,7 +91,6 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
                 }}
                 label={truncateText(tabLabel.label, maxLabelLength, true)}
                 active={tabLabel.active}
-                counter={tabLabel.counter}
                 suffix={
                   tabLabel.value !== SERVICE_NAME
                     ? (props) => {
@@ -136,7 +134,9 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
 
         {/* Add more tabs tab */}
         {data?.state === LoadingState.Done && (
-          <Tab onChangeTab={model.toggleShowPopover} label={'Add label'} ref={popoverRef} icon={'plus-circle'} />
+          <span className={styles.addTab}>
+            <Tab onChangeTab={model.toggleShowPopover} label={'Add label'} ref={popoverRef} icon={'plus-circle'} />
+          </span>
         )}
 
         {popover && (
@@ -214,7 +214,6 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
           label: l.label === SERVICE_NAME ? SERVICE_UI_LABEL : l.label,
           value: l.label,
           active: selectedTab === l.label,
-          counter: l.cardinality,
           saved: savedIndex !== -1,
           savedIndex,
         };
@@ -234,13 +233,35 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
     });
   }
 
+  private runDetectedLabels() {
+    this.state.$labelsData.runQueries();
+  }
+
+  private runDetectedLabelsSubs() {
+    // Update labels/tabs on time range change
+    this._subs.add(
+      sceneGraph.getTimeRange(this).subscribeToState(() => {
+        this.runDetectedLabels();
+      })
+    );
+
+    // Update labels (tabs) when datasource is changed
+    this._subs.add(
+      getDataSourceVariable(this).subscribeToState(() => {
+        this.runDetectedLabels();
+      })
+    );
+  }
+
   private onActivate() {
     // Get labels
-    this.state.$labelsData.runQueries();
+    this.runDetectedLabels();
 
     this.setState({
       popover: new TabPopoverScene({}),
     });
+
+    this.runDetectedLabelsSubs();
 
     // Update labels (tabs) when datasource is changed
     this._subs.add(
@@ -255,13 +276,6 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
         if (labels) {
           this.populatePrimaryLabelsVariableOptions(labels);
         }
-      })
-    );
-
-    // Update labels/tabs on time range change
-    this._subs.add(
-      sceneGraph.getTimeRange(this).subscribeToState(() => {
-        this.state.$labelsData.runQueries();
       })
     );
 
@@ -287,6 +301,13 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
 }
 
 const getTabsStyles = (theme: GrafanaTheme2) => ({
+  addTab: css({
+    label: 'add-label-tab',
+    color: theme.colors.primary.text,
+    '& button': {
+      color: theme.colors.primary.text,
+    },
+  }),
   popover: css({
     borderRadius: theme.shape.radius.default,
     boxShadow: theme.shadows.z3,
