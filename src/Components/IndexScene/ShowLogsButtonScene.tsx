@@ -50,7 +50,7 @@ export class ShowLogsButtonScene extends SceneObjectBase<ShowLogsButtonSceneStat
     const styles = useStyles2(getStyles);
 
     if (hidden === true) {
-      return <></>;
+      return null;
     }
 
     return (
