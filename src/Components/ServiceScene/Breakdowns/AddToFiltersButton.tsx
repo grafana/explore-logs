@@ -145,6 +145,13 @@ export function addToFilters(
   scene: SceneObject,
   variableType?: VariableFilterType
 ) {
+  console.log('addToFilters', {
+    key,
+    value,
+    operator,
+    variableType,
+  });
+
   if (!variableType) {
     variableType = resolveVariableTypeForField(key, scene);
   }
@@ -165,7 +172,7 @@ export function addToFilters(
 
     // if we're including, we want to remove all filters that have this key
     if (operator === 'include') {
-      return !(filter.key === key);
+      return !(filter.key === key && filter.operator !== FilterOp.Equal);
     }
 
     return !(filter.key === key && fieldValue.value === value);
