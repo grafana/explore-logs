@@ -130,13 +130,14 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
 
   private handleShareLogLineClick = (event: MouseEvent<HTMLElement>, row?: LogRowModel) => {
     if (row?.rowId && this.state.body) {
+      const parent = this.getParentScene();
       const timeRange = sceneGraph.getTimeRange(this.state.body);
       const buttonRef = event.currentTarget instanceof HTMLButtonElement ? event.currentTarget : undefined;
       copyText(
         generateLogShortlink(
           'panelState',
           {
-            logs: { id: row.uid },
+            logs: { id: row.uid, displayedFields: parent.state.displayedFields },
           },
           timeRange.state.value
         ),
