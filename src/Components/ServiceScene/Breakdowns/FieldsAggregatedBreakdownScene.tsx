@@ -25,12 +25,20 @@ import {
 import React from 'react';
 import { SelectLabelActionScene } from './SelectLabelActionScene';
 import { ValueSlugs } from '../../../services/routing';
-import { areArraysEqual } from '../../../services/comparison';
-import { DataFrame, LoadingState } from '@grafana/data';
+import { DataFrame, Field, LoadingState } from '@grafana/data';
 import { limitMaxNumberOfSeriesForPanel, MAX_NUMBER_OF_TIME_SERIES } from './TimeSeriesLimitSeriesTitleItem';
 import { map, Observable } from 'rxjs';
-import { buildFieldsQueryString, getDetectedFieldType, isAvgField } from '../../../services/fields';
-import { getFieldGroupByVariable, getFieldsVariable } from '../../../services/variableGetters';
+import {
+  buildFieldsQueryString,
+  extractParserFromArray,
+  getDetectedFieldType,
+  isAvgField,
+} from '../../../services/fields';
+import {
+  getFieldGroupByVariable,
+  getFieldsVariable,
+  getValueFromFieldsFilter,
+} from '../../../services/variableGetters';
 import { AddToExplorationButton } from './AddToExplorationButton';
 
 export interface FieldsAggregatedBreakdownSceneState extends SceneObjectState {
@@ -44,59 +52,64 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
-  private onDetectedFieldsChange = (newState: QueryRunnerState, prevState: QueryRunnerState) => {
+  private onDetectedFieldsChange = (newState: QueryRunnerState) => {
     const newNamesField = getDetectedFieldsNamesFromQueryRunnerState(newState);
-    const prevNamesField = getDetectedFieldsNamesFromQueryRunnerState(prevState);
 
-    if (newState.data?.state === LoadingState.Done && !areArraysEqual(newNamesField?.values, prevNamesField?.values)) {
+    if (newState.data?.state === LoadingState.Done) {
       //@todo cardinality looks wrong in API response
-      const cardinalityMap = this.calculateCardinalityMap(newState);
-
-      // Iterate through all the layouts
-      this.state.body?.state.layouts.forEach((layoutObj) => {
-        const layout = layoutObj as SceneCSSGridLayout;
-        // populate set of new list of fields
-        const newFieldsSet = new Set<string>(newNamesField?.values);
-        const updatedChildren = layout.state.children as SceneCSSGridItem[];
-
-        // Iterate through all the existing panels
-        for (let i = 0; i < updatedChildren.length; i++) {
-          const gridItem = layout.state.children[i] as SceneCSSGridItem;
-          const panel = gridItem.state.body as VizPanel;
-
-          if (newFieldsSet.has(panel.state.title)) {
-            // If the new response has this field, delete it from the set, but leave it in the layout
-            newFieldsSet.delete(panel.state.title);
-          } else {
-            // Otherwise if the panel doesn't exist in the response, delete it from the layout
-            updatedChildren.splice(i, 1);
-            // And make sure to update the index, or we'll skip the next one
-            i--;
-          }
-        }
-
-        const fieldsToAdd = Array.from(newFieldsSet);
-        const options = fieldsToAdd.map((fieldName) => {
-          return {
-            label: fieldName,
-            value: fieldName,
-          };
-        });
-
-        updatedChildren.push(...this.buildChildren(options));
-        updatedChildren.sort(this.sortChildren(cardinalityMap));
-
-        updatedChildren.map((child) => {
-          limitMaxNumberOfSeriesForPanel(child);
-          this.subscribeToPanel(child);
-        });
-
-        layout.setState({
-          children: updatedChildren,
-        });
-      });
+      if (newNamesField) {
+        this.updateChildren(newState, newNamesField);
+      }
     }
   };
+
+  private updateChildren(newState: QueryRunnerState, newNamesField: Field<string>) {
+    const cardinalityMap = this.calculateCardinalityMap(newState);
+
+    // Iterate through all the layouts
+    this.state.body?.state.layouts.forEach((layoutObj) => {
+      const layout = layoutObj as SceneCSSGridLayout;
+      // populate set of new list of fields
+      const newFieldsSet = new Set<string>(newNamesField?.values);
+      const updatedChildren = layout.state.children as SceneCSSGridItem[];
+
+      // Iterate through all the existing panels
+      for (let i = 0; i < updatedChildren.length; i++) {
+        const gridItem = layout.state.children[i] as SceneCSSGridItem;
+        const panel = gridItem.state.body as VizPanel;
+
+        if (newFieldsSet.has(panel.state.title)) {
+          // If the new response has this field, delete it from the set, but leave it in the layout
+          newFieldsSet.delete(panel.state.title);
+        } else {
+          // Otherwise if the panel doesn't exist in the response, delete it from the layout
+          updatedChildren.splice(i, 1);
+          // And make sure to update the index, or we'll skip the next one
+          i--;
+        }
+      }
+
+      const fieldsToAdd = Array.from(newFieldsSet);
+      const options = fieldsToAdd.map((fieldName) => {
+        return {
+          label: fieldName,
+          value: fieldName,
+        };
+      });
+
+      updatedChildren.push(...this.buildChildren(options));
+      updatedChildren.sort(this.sortChildren(cardinalityMap));
+
+      updatedChildren.map((child) => {
+        limitMaxNumberOfSeriesForPanel(child);
+        this.subscribeToPanel(child);
+      });
+
+      layout.setState({
+        children: updatedChildren,
+      });
+    });
+  }
 
   private sortChildren(cardinalityMap: Map<string, number>) {
     return (a: SceneCSSGridItem, b: SceneCSSGridItem) => {
@@ -132,7 +145,31 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     }
 
     this._subs.add(serviceScene.state.$detectedFieldsData?.subscribeToState(this.onDetectedFieldsChange));
+    this._subs.add(this.subscribeToFieldsVar());
   }
+
+  private subscribeToFieldsVar() {
+    const fieldsVar = getFieldsVariable(this);
+
+    return fieldsVar.subscribeToState((newState, prevState) => {
+      const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
+      const newParsers = newState.filters.map((f) => getValueFromFieldsFilter(f).parser);
+      const oldParsers = prevState.filters.map((f) => getValueFromFieldsFilter(f).parser);
+
+      const newParser = extractParserFromArray(newParsers);
+      const oldParser = extractParserFromArray(oldParsers);
+      if (newParser !== oldParser) {
+        const detectedFieldsState = serviceScene.state.$detectedFieldsData?.state;
+        if (detectedFieldsState) {
+          const newNamesField = getDetectedFieldsNamesFromQueryRunnerState(detectedFieldsState);
+          if (newNamesField) {
+            this.updateChildren(detectedFieldsState, newNamesField);
+          }
+        }
+      }
+    });
+  }
+
   private build() {
     const groupByVariable = getFieldGroupByVariable(this);
     const options = groupByVariable.state.options.map((opt) => ({ label: opt.label, value: String(opt.value) }));

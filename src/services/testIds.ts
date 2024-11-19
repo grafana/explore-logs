@@ -26,6 +26,9 @@ export const testIds = {
     common: {
       sortByFunction: 'data-testid SortBy function',
       sortByDirection: 'data-testid SortBy direction',
+      filterButtonGroup: 'data-testid filter-button-group',
+      filterButton: 'data-testid filter-button',
+      filterSelect: 'data-testid filter-select',
     },
   },
 

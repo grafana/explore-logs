@@ -644,9 +644,8 @@ test.describe('explore services breakdown page', () => {
     // Selector
     const bytesIncludeButton = page
       .getByTestId('data-testid Panel header bytes')
-      .getByTestId('data-testid button-filter-include');
-    // Assert button isn't selected
-    expect(await bytesIncludeButton.getAttribute('aria-selected')).toEqual('false');
+      .getByTestId(testIds.breakdowns.common.filterButton);
+
     // Wait for all panels to finish loading, or we might intercept an ongoing query below
     await expect(page.getByLabel('Panel loading bar')).toHaveCount(0);
     // Now we'll intercept any further queries, note that the intercept above is still-preventing the actual request so the panels will return with no-data instantly
@@ -691,9 +690,8 @@ test.describe('explore services breakdown page', () => {
     // Selector
     const bytesIncludeButton = page
       .getByTestId('data-testid Panel header bytes')
-      .getByTestId('data-testid button-filter-exclude');
-    // Assert button isn't selected
-    expect(await bytesIncludeButton.getAttribute('aria-selected')).toEqual('false');
+      .getByTestId(testIds.breakdowns.common.filterButtonGroup);
+
     // Wait for all panels to finish loading, or we might intercept an ongoing query below
     await expect(page.getByLabel('Panel loading bar')).toHaveCount(0);
     // Now we'll intercept any further queries, note that the intercept above is still-preventing the actual request so the panels will return with no-data instantly
@@ -706,8 +704,11 @@ test.describe('explore services breakdown page', () => {
 
       await route.fulfill({ json: [] });
     });
-    // Click the button
-    await bytesIncludeButton.click();
+
+    // Open the dropdown and change from include to exclude
+    await bytesIncludeButton.getByTestId(testIds.breakdowns.common.filterSelect).click();
+    await bytesIncludeButton.getByText('Exclude', { exact: true }).click();
+
     // Assert that the panel is no longer rendered
     await expect(bytesIncludeButton).not.toBeInViewport();
     // Assert that the viz was excluded
@@ -781,18 +782,22 @@ test.describe('explore services breakdown page', () => {
     const contentPanelLocator = page.getByTestId('data-testid Panel header content');
     const versionPanelLocator = page.getByTestId('data-testid Panel header version');
     const versionVariableLocator = page.getByTestId('AdHocFilter-version');
-    const versionIncludeButton = versionPanelLocator.getByTestId('data-testid button-filter-exclude');
+    const versionFilterButton = versionPanelLocator.getByTestId(testIds.breakdowns.common.filterButtonGroup);
 
     // Go to the fields tab and assert errors aren't showing
     await explorePage.goToFieldsTab();
     await expect(panelErrorLocator).toHaveCount(0);
+
     // Now assert that content is hidden (will hit 1000 series limit and throw error)
     await expect(contentPanelLocator).toHaveCount(0);
     await expect(versionPanelLocator).toHaveCount(1);
 
-    await versionIncludeButton.click();
+    // Open the dropdown and change from include to exclude
+    await versionPanelLocator.getByTestId(testIds.breakdowns.common.filterSelect).click();
+    await versionFilterButton.getByText('Exclude', { exact: true }).click();
+
+    // Exclude version
     await expect(versionVariableLocator).toHaveCount(1);
-    await expect(versionPanelLocator.locator('[aria-selected="true"]')).toHaveCount(1);
     await expect(versionVariableLocator.getByText('=', { exact: true })).toHaveCount(1);
     await expect(versionVariableLocator.getByText(/^!=$/)).toHaveCount(0);
     await expect(versionVariableLocator.getByText(/^=$/)).toHaveCount(1);

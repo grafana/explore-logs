@@ -28,6 +28,7 @@ import { rest } from 'lodash';
 import { NumericFilterPopoverScene } from './NumericFilterPopoverScene';
 import { getDetectedFieldType } from '../../../services/fields';
 import { logger } from '../../../services/logger';
+import { testIds } from '../../../services/testIds';
 
 interface SelectLabelActionSceneState extends SceneObjectState {
   labelName: string;
@@ -141,8 +142,9 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
         )}
         {(hasNumericFilters || hasSparseFilters) && (
           <>
-            <ButtonGroup>
+            <ButtonGroup data-testid={testIds.breakdowns.common.filterButtonGroup}>
               <Button
+                data-testid={testIds.breakdowns.common.filterButton}
                 ref={popoverRef}
                 onClick={() => model.onChange(selectedValue ?? defaultOption)}
                 size={'sm'}
@@ -152,6 +154,7 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
                 {selectedValue?.value ?? defaultOption.value}
               </Button>
               <ButtonSelect
+                data-testid={testIds.breakdowns.common.filterSelect}
                 className={styles.buttonSelect}
                 variant={'default'}
                 options={options}

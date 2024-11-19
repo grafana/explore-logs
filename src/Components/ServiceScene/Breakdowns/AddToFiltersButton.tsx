@@ -145,13 +145,6 @@ export function addToFilters(
   scene: SceneObject,
   variableType?: VariableFilterType
 ) {
-  console.log('addToFilters', {
-    key,
-    value,
-    operator,
-    variableType,
-  });
-
   if (!variableType) {
     variableType = resolveVariableTypeForField(key, scene);
   }
