@@ -1,7 +1,7 @@
 import React from 'react';
 import { RadioButtonGroup } from '@grafana/ui';
 import { css } from '@emotion/css';
-import { LogsVisualizationType } from '../ServiceScene/LogsListScene';
+import { LogsVisualizationType } from 'services/store';
 
 export function LogsPanelHeaderActions(props: {
   vizType: LogsVisualizationType;

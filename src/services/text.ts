@@ -33,7 +33,17 @@ export enum UrlParameterType {
   To = 'to',
 }
 
-type PermalinkDataType = Record<string, string | number | Record<string, string | number>>;
+type PermalinkDataType =
+  | {
+      id?: string;
+      row?: number;
+    }
+  | {
+      logs: {
+        id: string;
+        displayedFields: string[];
+      };
+    };
 
 export const generateLogShortlink = (paramName: string, data: PermalinkDataType, timeRange: TimeRange) => {
   const location = locationService.getLocation();
