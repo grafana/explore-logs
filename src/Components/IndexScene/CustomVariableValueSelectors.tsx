@@ -10,8 +10,8 @@ import React from 'react';
 
 export interface VariableValueSelectorsState extends SceneObjectState {
   layout?: ControlsLayout;
-  includeNames?: string[];
-  excludeNames?: string[];
+  include?: string[];
+  exclude?: string[];
 }
 
 export class CustomVariableValueSelectors extends SceneObjectBase<VariableValueSelectorsState> {
@@ -22,14 +22,14 @@ function CustomVariableValueSelectorsRenderer({ model }: SceneComponentProps<Cus
   const variablesSetState = sceneGraph.getVariables(model).useState();
   let variables = variablesSetState.variables;
 
-  if (model.state.includeNames?.length) {
+  if (model.state.include?.length) {
     variables = variablesSetState.variables.filter((variable) =>
-      model.state.includeNames?.includes(variable.state.name ?? '')
+      model.state.include?.includes(variable.state.name ?? '')
     );
   }
-  if (model.state.excludeNames?.length) {
+  if (model.state.exclude?.length) {
     variables = variablesSetState.variables.filter(
-      (variable) => !model.state.excludeNames?.includes(variable.state.name ?? '')
+      (variable) => !model.state.exclude?.includes(variable.state.name ?? '')
     );
   }
 

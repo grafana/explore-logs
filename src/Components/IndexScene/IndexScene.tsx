@@ -106,7 +106,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
         direction: 'row',
         children: [
           new SceneFlexItem({
-            body: new CustomVariableValueSelectors({ layout: 'vertical', includeNames: [VAR_LABELS, VAR_DATASOURCE] }),
+            body: new CustomVariableValueSelectors({ layout: 'vertical', include: [VAR_LABELS, VAR_DATASOURCE] }),
           }),
           new ShowLogsButtonScene({
             key: showLogsButtonSceneKey,
@@ -114,7 +114,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
           }),
         ],
       }),
-      new CustomVariableValueSelectors({ layout: 'vertical', excludeNames: [VAR_LABELS, VAR_DATASOURCE] }),
+      new CustomVariableValueSelectors({ layout: 'vertical', exclude: [VAR_LABELS, VAR_DATASOURCE] }),
       new SceneTimePicker({}),
       new SceneRefreshPicker({}),
     ];
