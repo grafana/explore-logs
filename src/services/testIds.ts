@@ -29,6 +29,17 @@ export const testIds = {
       filterButtonGroup: 'data-testid filter-button-group',
       filterButton: 'data-testid filter-button',
       filterSelect: 'data-testid filter-select',
+      filterNumericPopover: {
+        submitButton: 'data-testid filter-numeric-submit',
+        cancelButton: 'data-testid filter-numeric-cancel',
+        inputGreaterThan: 'data-testid filter-numeric-gt',
+        inputGreaterThanUnit: 'data-testid filter-numeric-gtu',
+        inputGreaterThanInclusive: 'data-testid filter-numeric-gte',
+
+        inputLessThan: 'data-testid filter-numeric-lt',
+        inputLessThanUnit: 'data-testid filter-numeric-ltu',
+        inputLessThanInclusive: 'data-testid filter-numeric-lte',
+      },
     },
   },
 

@@ -20,6 +20,7 @@ import { addNumericFilter, validateVariableNameForField, VariableFilterType } fr
 import { FilterOp } from '../../../services/filterTypes';
 import { getAdHocFiltersVariable, getValueFromFieldsFilter } from '../../../services/variableGetters';
 import { logger } from '../../../services/logger';
+import { testIds } from '../../../services/testIds';
 
 export interface NumericFilterPopoverSceneState extends SceneObjectState {
   labelName: string;
@@ -200,6 +201,7 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
               <FieldSet className={popoverStyles.card.fieldset}>
                 <Label>
                   <Field
+                    data-testid={testIds.breakdowns.common.filterNumericPopover.inputGreaterThan}
                     horizontal={true}
                     className={popoverStyles.card.field}
                     label={<span className={popoverStyles.card.numberFieldLabel}>Greater than</span>}
@@ -220,6 +222,7 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
                 {fieldType !== 'float' && (
                   <Label>
                     <Field
+                      data-testid={testIds.breakdowns.common.filterNumericPopover.inputGreaterThanUnit}
                       horizontal={true}
                       className={popoverStyles.card.field}
                       label={<span className={popoverStyles.card.unitFieldLabel}>Unit</span>}
@@ -238,9 +241,9 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
                     </Field>
                   </Label>
                 )}
-
                 <Label>
                   <Field
+                    data-testid={testIds.breakdowns.common.filterNumericPopover.inputGreaterThanInclusive}
                     horizontal={true}
                     className={popoverStyles.card.field}
                     label={<span className={popoverStyles.card.switchFieldLabel}>Inclusive</span>}
@@ -254,6 +257,7 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
               <FieldSet className={popoverStyles.card.fieldset}>
                 <Label>
                   <Field
+                    data-testid={testIds.breakdowns.common.filterNumericPopover.inputLessThan}
                     horizontal={true}
                     className={popoverStyles.card.field}
                     label={<span className={popoverStyles.card.numberFieldLabel}>Less than</span>}
@@ -271,6 +275,7 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
                 {fieldType !== 'float' && (
                   <Label>
                     <Field
+                      data-testid={testIds.breakdowns.common.filterNumericPopover.inputLessThanUnit}
                       horizontal={true}
                       className={popoverStyles.card.field}
                       label={<span className={popoverStyles.card.unitFieldLabel}>Unit</span>}
@@ -291,6 +296,7 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
                 )}
                 <Label>
                   <Field
+                    data-testid={testIds.breakdowns.common.filterNumericPopover.inputLessThanInclusive}
                     horizontal={true}
                     className={popoverStyles.card.field}
                     label={<span className={popoverStyles.card.switchFieldLabel}>Inclusive</span>}
@@ -304,6 +310,7 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
             {/* buttons */}
             <Modal.ButtonRow>
               <Button
+                data-testid={testIds.breakdowns.common.filterNumericPopover.submitButton}
                 disabled={gt === undefined && lt === undefined}
                 onClick={() => model.onSubmit()}
                 size={'sm'}
@@ -314,6 +321,7 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
               </Button>
 
               <Button
+                data-testid={testIds.breakdowns.common.filterNumericPopover.cancelButton}
                 onClick={() => selectLabelActionScene.togglePopover()}
                 size={'sm'}
                 variant={'secondary'}
