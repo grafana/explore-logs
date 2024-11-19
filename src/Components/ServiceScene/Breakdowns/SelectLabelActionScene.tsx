@@ -13,13 +13,14 @@ import { getPrimaryLabelFromUrl, ValueSlugs } from '../../../services/routing';
 import { Button, ButtonGroup, ButtonSelect, IconButton, Popover, PopoverController, useStyles2 } from '@grafana/ui';
 import React, { useRef } from 'react';
 import { addToFilters, clearFilters, VariableFilterType } from './AddToFiltersButton';
-import { EMPTY_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE } from '../../../services/variables';
+import { EMPTY_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE, VAR_FIELDS } from '../../../services/variables';
 import { AdHocVariableFilter, Field, GrafanaTheme2, Labels, LoadingState, SelectableValue } from '@grafana/data';
 import {
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
   getValueFromAdHocVariableFilter,
+  getValueFromFieldsFilter,
 } from '../../../services/variableGetters';
 import { FilterOp } from '../../../services/filterTypes';
 import { LokiQuery } from '../../../services/lokiQuery';
@@ -335,7 +336,12 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
       });
     }
 
-    if (logLinesWithLabelCount < logsPanelData.length || this.getExistingFilter(variable)) {
+    // Only show for sparse fields and existing include and exclude filters, which will match an empty string in the value
+    const existingFilter = this.getExistingFilter(variable);
+    const existingFilterValue =
+      existingFilter && variable.state.name === VAR_FIELDS ? getValueFromFieldsFilter(existingFilter) : undefined;
+
+    if (logLinesWithLabelCount < logsPanelData.length || existingFilterValue?.value === EMPTY_VARIABLE_VALUE) {
       this.setState({
         hasSparseFilters: true,
       });

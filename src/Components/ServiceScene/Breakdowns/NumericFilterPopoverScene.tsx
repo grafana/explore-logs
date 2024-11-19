@@ -119,6 +119,7 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
     if (this.state.fieldType === 'duration' || this.state.fieldType === 'bytes') {
       if (gtFilter) {
         const extractedValue = extractValueFromString(getValueFromFieldsFilter(gtFilter).value, this.state.fieldType);
+        console.log('gtFilter extractedValue', extractedValue);
 
         if (extractedValue) {
           stateUpdate.gt = extractedValue.value;
@@ -328,7 +329,7 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
   };
 }
 
-function extractValueFromString(
+export function extractValueFromString(
   inputString: string,
   inputType: 'bytes' | 'duration'
 ): { value: number; unit: byteUnitValues | durationUnitValues } | undefined {
@@ -356,9 +357,9 @@ function extractValueFromString(
     const bytesValues = Object.values(byteUnitValues);
 
     // Check the end of the filter value for a unit that exactly matches
-    const bytesValue = bytesValues.find((durationValue) => {
-      const byteValueLength = durationValue.length;
-      return inputString.slice(byteValueLength * -1) === durationValue;
+    const bytesValue = bytesValues.find((bytesValue) => {
+      const byteValueLength = bytesValue.length;
+      return inputString.slice(byteValueLength * -1) === bytesValue;
     });
 
     if (bytesValue) {
@@ -366,7 +367,7 @@ function extractValueFromString(
       if (!isNaN(value)) {
         return {
           unit: bytesValue,
-          value: 1,
+          value: value,
         };
       }
     }
