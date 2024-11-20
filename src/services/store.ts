@@ -59,7 +59,7 @@ export function removeFromFavorites(labelName: string, labelValue: string, scene
 }
 
 // This should be a string, but we'll accept anything and return early
-export function addToFavoriteLabelValueInStorage(dsKey: string | unknown, labelName: string, labelValue: string) {
+function addToFavoriteLabelValueInStorage(dsKey: string | unknown, labelName: string, labelValue: string) {
   if (!dsKey || typeof dsKey !== 'string') {
     return;
   }
@@ -82,7 +82,7 @@ export function addToFavoriteLabelValueInStorage(dsKey: string | unknown, labelN
   localStorage.setItem(key, JSON.stringify(servicesToStore));
 }
 
-export function removeFromFavoritesInStorage(dsKey: string | unknown, labelName: string, labelValue: string) {
+function removeFromFavoritesInStorage(dsKey: string | unknown, labelName: string, labelValue: string) {
   if (!dsKey || !labelName || !labelValue || typeof dsKey !== 'string') {
     return;
   }

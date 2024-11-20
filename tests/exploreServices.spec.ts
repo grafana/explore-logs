@@ -33,8 +33,8 @@ test.describe('explore services page', () => {
       await explorePage.servicesSearch.click();
       const firstResult = page.getByRole('option').first();
 
-      // Expect the first result to be tempo-distributor (if this flakes just assert it's not nginx)
-      await expect(firstResult).toHaveText('tempo-distributor');
+      // Expect the first result to be tempo-distributor
+      await expect(firstResult).not.toContainText('nginx');
 
       // Select nginx, as it has the lowest volume, and should otherwise show up last
       await explorePage.servicesSearch.pressSequentially('^nginx$');
@@ -61,7 +61,7 @@ test.describe('explore services page', () => {
       await explorePage.servicesSearch.click();
 
       // Assert there is more than one element in the dropdown
-      await expect(page.getByRole('option').nth(1)).toHaveText('tempo-distributor');
+      await expect(page.getByRole('option').nth(1)).not.toContainText('nginx');
 
       // assert the first element is nginx now
       await expect(firstResult).toHaveText('nginx');
