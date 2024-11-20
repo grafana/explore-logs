@@ -14,7 +14,7 @@ import {
 } from '@grafana/ui';
 import React from 'react';
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
-import { css } from '@emotion/css';
+import { css, cx } from '@emotion/css';
 import { SelectLabelActionScene } from './SelectLabelActionScene';
 import { addNumericFilter, validateVariableNameForField, VariableFilterType } from './AddToFiltersButton';
 import { FilterOp } from '../../../services/filterTypes';
@@ -204,26 +204,39 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
             <div className={popoverStyles.card.fieldWrap}>
               {/* greater than */}
               <FieldSet className={popoverStyles.card.fieldset}>
-                <Label>
-                  <Field
-                    data-testid={testIds.breakdowns.common.filterNumericPopover.inputGreaterThan}
-                    horizontal={true}
-                    className={popoverStyles.card.field}
-                    label={<span className={popoverStyles.card.numberFieldLabel}>Greater than</span>}
-                  >
-                    <Input
-                      autoFocus={true}
-                      onChange={(e) => {
-                        model.setState({
-                          gt: e.currentTarget.value !== '' ? Number(e.currentTarget.value) : undefined,
-                        });
-                      }}
-                      className={popoverStyles.card.numberInput}
-                      value={gt}
-                      type={'number'}
-                    />
-                  </Field>
-                </Label>
+                <Field
+                  data-testid={testIds.breakdowns.common.filterNumericPopover.inputGreaterThanInclusive}
+                  horizontal={true}
+                  className={cx(popoverStyles.card.field, popoverStyles.card.inclusiveField)}
+                >
+                  <Select<string>
+                    className={popoverStyles.card.inclusiveInput}
+                    menuShouldPortal={false}
+                    value={gte !== undefined ? gte.toString() : 'false'}
+                    options={[
+                      { label: 'Greater than', value: 'false' },
+                      { label: 'Greater than or equal', value: 'true' },
+                    ]}
+                    onChange={(value) => model.setState({ gte: value.value === 'true' })}
+                  />
+                </Field>
+                <Field
+                  data-testid={testIds.breakdowns.common.filterNumericPopover.inputGreaterThan}
+                  horizontal={true}
+                  className={popoverStyles.card.field}
+                >
+                  <Input
+                    autoFocus={true}
+                    onChange={(e) => {
+                      model.setState({
+                        gt: e.currentTarget.value !== '' ? Number(e.currentTarget.value) : undefined,
+                      });
+                    }}
+                    className={popoverStyles.card.numberInput}
+                    value={gt}
+                    type={'number'}
+                  />
+                </Field>
                 {fieldType !== 'float' && (
                   <Label>
                     <Field
@@ -246,37 +259,40 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
                     </Field>
                   </Label>
                 )}
-                <Label>
-                  <Field
-                    data-testid={testIds.breakdowns.common.filterNumericPopover.inputGreaterThanInclusive}
-                    horizontal={true}
-                    className={popoverStyles.card.field}
-                    label={<span className={popoverStyles.card.switchFieldLabel}>Inclusive</span>}
-                  >
-                    <Switch onChange={() => model.setState({ gte: !gte })} value={gte} />
-                  </Field>
-                </Label>
               </FieldSet>
 
               {/* less than */}
               <FieldSet className={popoverStyles.card.fieldset}>
-                <Label>
-                  <Field
-                    data-testid={testIds.breakdowns.common.filterNumericPopover.inputLessThan}
-                    horizontal={true}
-                    className={popoverStyles.card.field}
-                    label={<span className={popoverStyles.card.numberFieldLabel}>Less than</span>}
-                  >
-                    <Input
-                      onChange={(e) =>
-                        model.setState({ lt: e.currentTarget.value !== '' ? Number(e.currentTarget.value) : undefined })
-                      }
-                      className={popoverStyles.card.numberInput}
-                      value={lt}
-                      type={'number'}
-                    />
-                  </Field>
-                </Label>
+                <Field
+                  data-testid={testIds.breakdowns.common.filterNumericPopover.inputGreaterThanInclusive}
+                  horizontal={true}
+                  className={cx(popoverStyles.card.field, popoverStyles.card.inclusiveField)}
+                >
+                  <Select<string>
+                    className={popoverStyles.card.inclusiveInput}
+                    menuShouldPortal={false}
+                    value={lte !== undefined ? lte.toString() : 'false'}
+                    options={[
+                      { label: 'Less than', value: 'false' },
+                      { label: 'Less than or equal', value: 'true' },
+                    ]}
+                    onChange={(value) => model.setState({ lte: value.value === 'true' })}
+                  />
+                </Field>
+                <Field
+                  data-testid={testIds.breakdowns.common.filterNumericPopover.inputLessThan}
+                  horizontal={true}
+                  className={popoverStyles.card.field}
+                >
+                  <Input
+                    onChange={(e) =>
+                      model.setState({ lt: e.currentTarget.value !== '' ? Number(e.currentTarget.value) : undefined })
+                    }
+                    className={popoverStyles.card.numberInput}
+                    value={lt}
+                    type={'number'}
+                  />
+                </Field>
                 {fieldType !== 'float' && (
                   <Label>
                     <Field
@@ -299,16 +315,6 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
                     </Field>
                   </Label>
                 )}
-                <Label>
-                  <Field
-                    data-testid={testIds.breakdowns.common.filterNumericPopover.inputLessThanInclusive}
-                    horizontal={true}
-                    className={popoverStyles.card.field}
-                    label={<span className={popoverStyles.card.switchFieldLabel}>Inclusive</span>}
-                  >
-                    <Switch onChange={() => model.setState({ lte: !lte })} value={lte} />
-                  </Field>
-                </Label>
               </FieldSet>
             </div>
 
@@ -428,6 +434,9 @@ const getPopoverStyles = (theme: GrafanaTheme2) => ({
       gap: theme.spacing(1.5),
       marginTop: theme.spacing(1),
     }),
+    inclusiveInput: css({
+      minWidth: '185px',
+    }),
     selectInput: css({}),
     numberInput: css({
       width: '75px',
@@ -442,6 +451,9 @@ const getPopoverStyles = (theme: GrafanaTheme2) => ({
       display: 'flex',
       alignItems: 'center',
       marginBottom: theme.spacing(1),
+    }),
+    inclusiveField: css({
+      marginRight: theme.spacing(1),
     }),
     unitFieldLabel: css({
       marginLeft: theme.spacing(2),
