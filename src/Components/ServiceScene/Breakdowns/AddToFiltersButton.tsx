@@ -92,6 +92,30 @@ const getNumericOperatorType = (op: NumericFilterType | string): OperatorType | 
   return undefined;
 };
 
+export function removeFilter(
+  key: string,
+  scene: SceneObject,
+  operator?: NumericFilterType,
+  variableType?: VariableFilterType
+) {
+  if (!variableType) {
+    variableType = resolveVariableTypeForField(key, scene);
+  }
+  const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableType), scene);
+  const operatorType = operator ? getNumericOperatorType(operator) : undefined;
+
+  let filters = variable.state.filters.filter((filter) => {
+    return !(
+      filter.key === key &&
+      (getNumericOperatorType(filter.operator) === operatorType || filter.operator === FilterOp.NotEqual)
+    );
+  });
+
+  variable.setState({
+    filters,
+  });
+}
+
 export function addNumericFilter(
   key: string,
   value: string,

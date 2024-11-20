@@ -1,22 +1,10 @@
 import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
-import {
-  Button,
-  ClickOutsideWrapper,
-  Field,
-  FieldSet,
-  Input,
-  Label,
-  Modal,
-  Select,
-  Stack,
-  Switch,
-  useStyles2,
-} from '@grafana/ui';
+import { Button, ClickOutsideWrapper, Field, FieldSet, Input, Label, Select, Stack, useStyles2 } from '@grafana/ui';
 import React from 'react';
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import { css, cx } from '@emotion/css';
 import { SelectLabelActionScene } from './SelectLabelActionScene';
-import { addNumericFilter, validateVariableNameForField, VariableFilterType } from './AddToFiltersButton';
+import { addNumericFilter, removeFilter, validateVariableNameForField, VariableFilterType } from './AddToFiltersButton';
 import { FilterOp } from '../../../services/filterTypes';
 import { getAdHocFiltersVariable, getValueFromFieldsFilter } from '../../../services/variableGetters';
 import { logger } from '../../../services/logger';
@@ -30,6 +18,7 @@ export interface NumericFilterPopoverSceneState extends SceneObjectState {
   lt?: number;
   lte?: boolean;
   fieldType: 'float' | 'duration' | 'bytes';
+  hasExistingFilter?: boolean;
 }
 
 export type NumericFilterPopoverSceneStateTotal =
@@ -122,7 +111,6 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
     if (this.state.fieldType === 'duration' || this.state.fieldType === 'bytes') {
       if (gtFilter) {
         const extractedValue = extractValueFromString(getValueFromFieldsFilter(gtFilter).value, this.state.fieldType);
-        console.log('gtFilter extractedValue', extractedValue);
 
         if (extractedValue) {
           stateUpdate.gt = extractedValue.value;
@@ -156,13 +144,17 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
       }
     }
 
+    if (Object.keys(stateUpdate).length !== 0) {
+      stateUpdate.hasExistingFilter = true;
+    }
+
     this.setState(stateUpdate);
   }
 
   onSubmit() {
-    // @todo "0" values break byte queries see https://github.com/grafana/loki/issues/14993
+    // "0" values break byte queries see https://github.com/grafana/loki/issues/14993, for now we remove the filter when a 0 value is entered to prevent breakage
     // numeric values can only be fields or metadata variable
-    if (this.state.gt !== undefined) {
+    if (this.state.gt) {
       addNumericFilter(
         this.state.labelName,
         this.state.gt.toString() + this.state.gtu,
@@ -170,9 +162,11 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
         this,
         this.state.variableType
       );
+    } else {
+      removeFilter(this.state.labelName, this, this.state.gte ? FilterOp.gte : FilterOp.gt, this.state.variableType);
     }
 
-    if (this.state.lt !== undefined) {
+    if (this.state.lt) {
       addNumericFilter(
         this.state.labelName,
         this.state.lt.toString() + this.state.ltu,
@@ -180,18 +174,27 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
         this,
         this.state.variableType
       );
+    } else {
+      removeFilter(this.state.labelName, this, this.state.lte ? FilterOp.lte : FilterOp.lt, this.state.variableType);
     }
 
     const selectLabelActionScene = sceneGraph.getAncestor(this, SelectLabelActionScene);
     selectLabelActionScene.togglePopover();
   }
+  onInputKeydown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const formDisabled = this.state.gt === undefined && this.state.lt === undefined;
+    if (e.key === 'Enter' && !formDisabled) {
+      this.onSubmit();
+    }
+  };
 
   public static Component = ({ model }: SceneComponentProps<NumericFilterPopoverScene>) => {
     const popoverStyles = useStyles2(getPopoverStyles);
-    const { labelName, gt, lt, gte, lte, gtu, ltu, fieldType } = model.useState();
+    const { labelName, gt, lt, gte, lte, gtu, ltu, fieldType, hasExistingFilter } = model.useState();
     const subTitle = fieldType !== 'float' && fieldType !== labelName ? `(${fieldType})` : undefined;
 
     const selectLabelActionScene = sceneGraph.getAncestor(model, SelectLabelActionScene);
+    const formDisabled = gt === undefined && lt === undefined;
 
     return (
       <ClickOutsideWrapper useCapture={true} onClick={() => selectLabelActionScene.togglePopover()}>
@@ -226,6 +229,7 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
                   className={popoverStyles.card.field}
                 >
                   <Input
+                    onKeyDownCapture={model.onInputKeydown}
                     autoFocus={true}
                     onChange={(e) => {
                       model.setState({
@@ -285,6 +289,7 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
                   className={popoverStyles.card.field}
                 >
                   <Input
+                    onKeyDownCapture={model.onInputKeydown}
                     onChange={(e) =>
                       model.setState({ lt: e.currentTarget.value !== '' ? Number(e.currentTarget.value) : undefined })
                     }
@@ -320,13 +325,32 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
 
             {/* buttons */}
             <div className={popoverStyles.card.buttons}>
+              {hasExistingFilter && (
+                <Button
+                  data-testid={testIds.breakdowns.common.filterNumericPopover.removeButton}
+                  disabled={!hasExistingFilter}
+                  onClick={() => {
+                    model.setState({
+                      gt: undefined,
+                      lt: undefined,
+                    });
+                    model.onSubmit();
+                  }}
+                  size={'sm'}
+                  variant={'destructive'}
+                  fill={'outline'}
+                >
+                  Remove
+                </Button>
+              )}
               <Button
                 data-testid={testIds.breakdowns.common.filterNumericPopover.submitButton}
-                disabled={gt === undefined && lt === undefined}
+                disabled={formDisabled}
                 onClick={() => model.onSubmit()}
                 size={'sm'}
                 variant={'primary'}
                 fill={'outline'}
+                type={'submit'}
               >
                 Add
               </Button>

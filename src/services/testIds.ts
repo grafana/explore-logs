@@ -30,6 +30,7 @@ export const testIds = {
       filterButton: 'data-testid filter-button',
       filterSelect: 'data-testid filter-select',
       filterNumericPopover: {
+        removeButton: 'data-testid filter-numeric-remove',
         submitButton: 'data-testid filter-numeric-submit',
         cancelButton: 'data-testid filter-numeric-cancel',
         inputGreaterThan: 'data-testid filter-numeric-gt',
