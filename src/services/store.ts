@@ -1,6 +1,6 @@
 import pluginJson from '../plugin.json';
 import { SortBy, SortDirection } from '../Components/ServiceScene/Breakdowns/SortByScene';
-import { sceneGraph, SceneObject, SceneQueryRunner } from '@grafana/scenes';
+import { sceneGraph, SceneObject } from '@grafana/scenes';
 import { getDataSourceName, getDataSourceVariable, getServiceName } from './variableGetters';
 import { logger } from './logger';
 import { SERVICE_NAME } from './variables';
