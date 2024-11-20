@@ -5,6 +5,7 @@ import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import { Select, useStyles2, InlineField, Icon, ActionMeta, InputActionMeta } from '@grafana/ui';
 import { testIds } from '../../../services/testIds';
 import { VariableValueOption } from '@grafana/scenes';
+import { wrapWildcardSearch } from '../../ServiceSelectionScene/ServiceSelectionScene';
 
 type Props<T> = {
   options: VariableValueOption[];
@@ -66,6 +67,7 @@ export function ServiceFieldSelector({
     customOption && value && customOption.value?.includes(value)
       ? [customOption, ...selectableOptions]
       : selectableOptions;
+
   const selectedOption = allOptions?.find((opt) => opt.value === value);
 
   return (
@@ -110,7 +112,7 @@ export function ServiceFieldSelector({
           // the user closed the menu, with text in search box
           if (meta.action === 'menu-close' && meta.prevInputValue) {
             setCustomOption({
-              value: meta.prevInputValue,
+              value: wrapWildcardSearch(meta.prevInputValue),
               label: meta.prevInputValue,
               icon: 'filter',
               __isNew__: true,

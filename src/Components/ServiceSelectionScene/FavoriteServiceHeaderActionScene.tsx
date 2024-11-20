@@ -3,11 +3,7 @@ import React from 'react';
 import { Icon, ToolbarButton, useStyles2 } from '@grafana/ui';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
-import {
-  addToFavoriteLabelValueInStorage,
-  getFavoriteLabelValuesFromStorage,
-  removeFromFavoritesInStorage,
-} from '../../services/store';
+import { addToFavorites, getFavoriteLabelValuesFromStorage, removeFromFavorites } from '../../services/store';
 
 export interface FavoriteServiceHeaderActionSceneState extends SceneObjectState {
   labelValue: string;
@@ -51,14 +47,10 @@ export class FavoriteServiceHeaderActionScene extends SceneObjectBase<FavoriteSe
 
   public onClick(isFavorite: boolean) {
     if (isFavorite) {
-      // Remove from favorites
-      removeFromFavoritesInStorage(this.state.ds, this.state.labelName, this.state.labelValue);
+      removeFromFavorites(this.state.labelName, this.state.labelValue, this);
     } else {
-      // add to favorites
-      addToFavoriteLabelValueInStorage(this.state.ds, this.state.labelName, this.state.labelValue);
+      addToFavorites(this.state.labelName, this.state.labelValue, this);
     }
-    // Local storage changes won't trigger re-render, so we need to force the render so the new styles are calculated
-    this.forceRender();
   }
 }
 

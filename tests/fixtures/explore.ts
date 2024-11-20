@@ -10,7 +10,7 @@ export interface PlaywrightRequest {
   url: string;
 }
 export class ExplorePage {
-  private readonly firstServicePageSelect: Locator;
+  readonly firstServicePageSelect: Locator;
   logVolumeGraph: Locator;
   servicesSearch: Locator;
   serviceBreakdownSearch: Locator;

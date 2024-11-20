@@ -175,7 +175,7 @@ describe('addToFilters and addAdHocFilter', () => {
     });
 
     it('allows to specify the variable to write to', () => {
-      const variableName = 'filters';
+      const variableName = 'fields';
       const lookupVariable = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(adHocVariable);
       addToFilters('key', 'value', 'include', scene, variableName);
 
@@ -185,7 +185,7 @@ describe('addToFilters and addAdHocFilter', () => {
     it('identifies indexed labels and uses the appropriate variable', () => {
       const lookupVariable = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(adHocVariable);
       jest.spyOn(sceneGraph, 'getAncestor').mockReturnValue(serviceScene);
-      addToFilters('indexed', 'value', 'include', scene, VAR_LABELS);
+      addToFilters('indexed', 'value', 'include', scene, VAR_LABELS, true);
 
       expect(lookupVariable).toHaveBeenCalledWith(VAR_LABELS, expect.anything());
       expect(adHocVariable.state.filters).toEqual([
@@ -255,7 +255,7 @@ describe('addToFilters and addAdHocFilter', () => {
 
     it('identifies indexed labels and uses the appropriate variable', () => {
       const lookupVariable = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(adHocVariable);
-      addAdHocFilter({ key: 'indexed', value: 'value', operator: '=' }, scene);
+      addToFilters('indexed', 'value', 'include', scene, 'filters', true);
 
       expect(lookupVariable).toHaveBeenCalledWith(VAR_LABELS, expect.anything());
       expect(adHocVariable.state.filters).toEqual([

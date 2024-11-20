@@ -10,6 +10,7 @@ import { getDetectedLabelsFrame } from '../ServiceScene';
 import { getParserForField } from '../../../services/fields';
 import { getAdHocFiltersVariable, getValueFromAdHocVariableFilter } from '../../../services/variableGetters';
 import { FilterOp } from '../../../services/filterTypes';
+import { addToFavorites } from '../../../services/store';
 
 export interface AddToFiltersButtonState extends SceneObjectState {
   frame: DataFrame;
@@ -43,10 +44,15 @@ export function addToFilters(
   value: string,
   operator: FilterType,
   scene: SceneObject,
-  variableType?: VariableFilterType
+  variableType?: VariableFilterType,
+  skipFavorites?: boolean
 ) {
   if (!variableType) {
     variableType = resolveVariableTypeForField(key, scene);
+  }
+
+  if (variableType === VAR_LABELS && !skipFavorites) {
+    addToFavorites(key, value, scene);
   }
 
   const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableType), scene);

@@ -2,10 +2,10 @@ import React from 'react';
 
 import { SceneComponentProps, SceneObject, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { Button, useStyles2 } from '@grafana/ui';
-import { addToFavoriteLabelValueInStorage } from 'services/store';
+import { addToFavorites } from 'services/store';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { navigateToInitialPageAfterServiceSelection } from '../../services/navigate';
-import { getDataSourceVariable, getLabelsVariable } from '../../services/variableGetters';
+import { getLabelsVariable } from '../../services/variableGetters';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 import { SERVICE_NAME, SERVICE_UI_LABEL } from '../../services/variables';
@@ -40,13 +40,12 @@ export function selectLabel(primaryLabelName: string, primaryLabelValue: string,
   variable.setState({
     filters,
   });
-  const ds = getDataSourceVariable(sceneRef).getValue();
+
+  addToFavorites(primaryLabelName, primaryLabelValue, sceneRef);
 
   if (primaryLabelName === SERVICE_NAME) {
     primaryLabelName = SERVICE_UI_LABEL;
   }
-
-  addToFavoriteLabelValueInStorage(ds, primaryLabelName, primaryLabelValue);
 
   // In this case, we don't have a ServiceScene created yet, so we call a special function to navigate there for the first time
   navigateToInitialPageAfterServiceSelection(primaryLabelName, primaryLabelValue);
