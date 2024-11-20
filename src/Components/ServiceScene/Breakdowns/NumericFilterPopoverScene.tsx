@@ -47,16 +47,18 @@ enum durationUnitValues {
 }
 
 enum byteUnitValues {
-  KiB = 'KiB',
-  MiB = 'MiB',
-  GiB = 'GiB',
-  TiB = 'TiB',
-  kB = 'kB',
+  B = 'B',
+  KB = 'KB',
   MB = 'MB',
   GB = 'GB',
   TB = 'TB',
-  KB = 'KB',
-  B = 'B',
+
+  // Supported but potentially confusing values, commented out for now
+  // kB = 'kB',
+  // KiB = 'KiB',
+  // MiB = 'MiB',
+  // GiB = 'GiB',
+  // TiB = 'TiB',
 }
 
 interface FloatUnitTypes {
@@ -187,6 +189,7 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
   public static Component = ({ model }: SceneComponentProps<NumericFilterPopoverScene>) => {
     const popoverStyles = useStyles2(getPopoverStyles);
     const { labelName, gt, lt, gte, lte, gtu, ltu, fieldType } = model.useState();
+    const subTitle = fieldType !== 'float' && fieldType !== labelName ? `(${fieldType})` : undefined;
 
     const selectLabelActionScene = sceneGraph.getAncestor(model, SelectLabelActionScene);
 
@@ -194,7 +197,9 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
       <ClickOutsideWrapper useCapture={true} onClick={() => selectLabelActionScene.togglePopover()}>
         <Stack direction="column" gap={0} role="tooltip">
           <div className={popoverStyles.card.body}>
-            <div className={popoverStyles.card.title}>{labelName}</div>
+            <div className={popoverStyles.card.title}>
+              {labelName} {subTitle}
+            </div>
 
             <div className={popoverStyles.card.fieldWrap}>
               {/* greater than */}
@@ -308,7 +313,7 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
             </div>
 
             {/* buttons */}
-            <Modal.ButtonRow>
+            <div className={popoverStyles.card.buttons}>
               <Button
                 data-testid={testIds.breakdowns.common.filterNumericPopover.submitButton}
                 disabled={gt === undefined && lt === undefined}
@@ -329,7 +334,7 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
               >
                 Cancel
               </Button>
-            </Modal.ButtonRow>
+            </div>
           </div>
         </Stack>
       </ClickOutsideWrapper>
@@ -414,6 +419,13 @@ function getUnitOptions(fieldType: 'duration' | 'bytes'): Array<SelectableValue<
 
 const getPopoverStyles = (theme: GrafanaTheme2) => ({
   card: {
+    buttons: css({
+      display: 'flex',
+      flexWrap: 'wrap',
+      justifyContent: 'flex-end',
+      gap: theme.spacing(1.5),
+      marginTop: theme.spacing(1),
+    }),
     selectInput: css({}),
     numberInput: css({
       width: '75px',
@@ -427,6 +439,7 @@ const getPopoverStyles = (theme: GrafanaTheme2) => ({
     field: css({
       display: 'flex',
       alignItems: 'center',
+      marginBottom: theme.spacing(1),
     }),
     unitFieldLabel: css({
       marginLeft: theme.spacing(2),

@@ -75,14 +75,25 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
   }
 
   public static Component = ({ model }: SceneComponentProps<SelectLabelActionScene>) => {
-    const { hideValueDrilldown, labelName, hasSparseFilters, hasNumericFilters, selectedValue, popover, showPopover } =
-      model.useState();
+    const {
+      hideValueDrilldown,
+      labelName,
+      hasSparseFilters,
+      hasNumericFilters,
+      selectedValue,
+      popover,
+      showPopover,
+      fieldType,
+    } = model.useState();
     const variable = model.getVariable();
     const variableName = variable.useState().name as VariableFilterType;
     const existingFilter = model.getExistingFilter(variable);
     const fieldValue = getValueFromAdHocVariableFilter(variable, existingFilter);
     const styles = useStyles2(getStyles);
     const popoverRef = useRef<HTMLButtonElement>(null);
+    const filterButtonDisabled =
+      fieldType === ValueSlugs.label &&
+      variable.state.filters.filter((f) => f.key !== labelName && f.operator === FilterOp.Equal).length === 0;
 
     const isIncluded = existingFilter?.operator === FilterOp.NotEqual && fieldValue.value === EMPTY_VARIABLE_VALUE;
     const hasOtherFilter = !!existingFilter;
@@ -136,8 +147,9 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
       <>
         {hasOtherFilter && (
           <IconButton
+            disabled={filterButtonDisabled}
             name={'filter'}
-            tooltip={`clear ${labelName} filters`}
+            tooltip={`Clear ${labelName} filters`}
             onClick={() => model.clearFilters(variableName)}
           />
         )}
