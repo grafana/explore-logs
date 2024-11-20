@@ -674,10 +674,10 @@ test.describe('explore services breakdown page', () => {
     await expect(popover).toHaveCount(1);
 
     // Popover copy assertions
-    await expect(popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.inputGreaterThan)).toHaveText(
-      'Greater than'
-    );
-    await expect(popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.inputLessThan)).toHaveText(
+    await expect(
+      popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.inputGreaterThanInclusive)
+    ).toHaveText('Greater than');
+    await expect(popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.inputLessThanInclusive)).toHaveText(
       'Less than'
     );
 
@@ -688,12 +688,6 @@ test.describe('explore services breakdown page', () => {
     await expect(popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.inputLessThanUnit)).toHaveText(
       'UnitB'
     );
-    await expect(popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.inputLessThanInclusive)).toHaveText(
-      'Inclusive'
-    );
-    await expect(
-      popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.inputGreaterThanInclusive)
-    ).toHaveText('Inclusive');
 
     // Add button should be disabled
     await expect(popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.submitButton)).toBeDisabled();
@@ -727,6 +721,7 @@ test.describe('explore services breakdown page', () => {
 
     // Make inclusive
     await popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.inputLessThanInclusive).click();
+    await popover.getByText('Less than or equal').click();
 
     // Add the filter
     await popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.submitButton).click();

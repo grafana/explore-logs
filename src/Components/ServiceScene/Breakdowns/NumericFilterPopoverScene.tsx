@@ -268,7 +268,7 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
               {/* less than */}
               <FieldSet className={popoverStyles.card.fieldset}>
                 <Field
-                  data-testid={testIds.breakdowns.common.filterNumericPopover.inputGreaterThanInclusive}
+                  data-testid={testIds.breakdowns.common.filterNumericPopover.inputLessThanInclusive}
                   horizontal={true}
                   className={cx(popoverStyles.card.field, popoverStyles.card.inclusiveField)}
                 >
