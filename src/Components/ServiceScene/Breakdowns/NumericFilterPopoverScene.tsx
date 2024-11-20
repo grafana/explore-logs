@@ -367,7 +367,9 @@ export function extractValueFromString(
   }
 
   if (inputType === 'bytes') {
-    const bytesValues = Object.values(byteUnitValues);
+    const bytesValues = Object.values(byteUnitValues)
+      // must be sorted from longest to shortest
+      .sort((a, b) => b.length - a.length);
 
     // Check the end of the filter value for a unit that exactly matches
     const bytesValue = bytesValues.find((bytesValue) => {

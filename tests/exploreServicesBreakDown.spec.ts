@@ -722,7 +722,7 @@ test.describe('explore services breakdown page', () => {
     await popover
       .getByTestId(testIds.breakdowns.common.filterNumericPopover.inputLessThanUnit)
       .getByRole('listbox')
-      .getByText('kB', { exact: true })
+      .getByText('KB', { exact: true })
       .click();
 
     // Make inclusive
@@ -746,12 +746,12 @@ test.describe('explore services breakdown page', () => {
     ]);
 
     expect(expressionsAfterNumericFilter[0]).toEqual(
-      'sum by (pod) (count_over_time({service_name=`tempo-distributor`} | pod!=""     | logfmt  | bytes>500B | bytes<=2kB [$__auto]))'
+      'sum by (pod) (count_over_time({service_name=`tempo-distributor`} | pod!=""     | logfmt  | bytes>500B | bytes<=2KB [$__auto]))'
     );
 
     // Assert that the variables were added to the UI
     await expect(page.getByText(/^bytes>500B$/)).toHaveCount(1);
-    await expect(page.getByText(/^bytes<=2kB$/)).toHaveCount(1);
+    await expect(page.getByText(/^bytes<=2KB$/)).toHaveCount(1);
 
     // Assert the pod and bytes panels have data
     await expect(
