@@ -1,5 +1,5 @@
 import { expect, test } from '@grafana/plugin-e2e';
-import { compareLocators, ExplorePage, PlaywrightRequest } from './fixtures/explore';
+import { ExplorePage, PlaywrightRequest } from './fixtures/explore';
 import { testIds } from '../src/services/testIds';
 import { mockEmptyQueryApiResponse } from './mocks/mockEmptyQueryApiResponse';
 import { LokiQuery } from '../src/services/lokiQuery';
