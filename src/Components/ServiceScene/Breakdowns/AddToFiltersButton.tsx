@@ -46,7 +46,6 @@ export function addToFilters(
   operator: FilterType,
   scene: SceneObject,
   variableType?: VariableFilterType
-  // skipFavorites?: boolean
 ) {
   if (!variableType) {
     variableType = resolveVariableTypeForField(key, scene);
