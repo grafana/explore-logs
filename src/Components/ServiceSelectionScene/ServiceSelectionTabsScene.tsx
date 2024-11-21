@@ -17,7 +17,6 @@ export interface TabOption extends SelectableValue<string> {
   label: string;
   value: string;
   active?: boolean;
-  counter?: number;
   saved?: boolean;
   savedIndex?: number;
 }
@@ -92,7 +91,6 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
                 }}
                 label={truncateText(tabLabel.label, maxLabelLength, true)}
                 active={tabLabel.active}
-                counter={tabLabel.counter}
                 suffix={
                   tabLabel.value !== SERVICE_NAME
                     ? (props) => {
@@ -216,7 +214,6 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
           label: l.label === SERVICE_NAME ? SERVICE_UI_LABEL : l.label,
           value: l.label,
           active: selectedTab === l.label,
-          counter: l.cardinality,
           saved: savedIndex !== -1,
           savedIndex,
         };

@@ -18,7 +18,12 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '..
 import { locationService } from '@grafana/runtime';
 import { LogOptionsScene } from './LogOptionsScene';
 import { LogsPanelScene } from './LogsPanelScene';
-import { getDisplayedFields } from 'services/store';
+import {
+  getDisplayedFields,
+  getLogsVisualizationType,
+  LogsVisualizationType,
+  setLogsVisualizationType,
+} from 'services/store';
 import { logger } from '../../services/logger';
 
 export interface LogsListSceneState extends SceneObjectState {
@@ -31,10 +36,6 @@ export interface LogsListSceneState extends SceneObjectState {
   displayedFields: string[];
 }
 
-export type LogsVisualizationType = 'logs' | 'table';
-// If we use the local storage key from explore the user will get more consistent UX?
-const VISUALIZATION_TYPE_LOCALSTORAGE_KEY = 'grafana.explore.logs.visualisationType';
-
 export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, {
     keys: ['urlColumns', 'selectedLine', 'visualizationType', 'displayedFields'],
@@ -44,7 +45,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   constructor(state: Partial<LogsListSceneState>) {
     super({
       ...state,
-      visualizationType: (localStorage.getItem(VISUALIZATION_TYPE_LOCALSTORAGE_KEY) as LogsVisualizationType) ?? 'logs',
+      visualizationType: getLogsVisualizationType(),
       displayedFields: [],
     });
 
@@ -175,7 +176,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         visualisationType: type,
       }
     );
-    localStorage.setItem(VISUALIZATION_TYPE_LOCALSTORAGE_KEY, type);
+    setLogsVisualizationType(type);
   };
 
   private getVizPanel() {

@@ -219,7 +219,7 @@ function getStyles(theme: GrafanaTheme2) {
       label: 'controlsWrapper',
       display: 'flex',
       flexDirection: 'column',
-      marginTop: '3px',
+      marginTop: theme.spacing(0.375),
     }),
     controls: css({
       display: 'flex',

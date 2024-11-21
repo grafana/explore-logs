@@ -212,3 +212,21 @@ export function setDisplayedFields(sceneRef: SceneObject, fields: string[]) {
   const PREFIX = getExplorationPrefix(sceneRef);
   localStorage.setItem(`${pluginJson.id}.${PREFIX}.logs.fields`, JSON.stringify(fields));
 }
+
+export type LogsVisualizationType = 'logs' | 'table';
+
+const VISUALIZATION_TYPE_LOCALSTORAGE_KEY = 'grafana.explore.logs.visualisationType';
+export function getLogsVisualizationType(): LogsVisualizationType {
+  const storedType = localStorage.getItem(VISUALIZATION_TYPE_LOCALSTORAGE_KEY) ?? '';
+  switch (storedType) {
+    case 'table':
+    case 'logs':
+      return storedType;
+    default:
+      return 'logs';
+  }
+}
+
+export function setLogsVisualizationType(type: string) {
+  localStorage.setItem(VISUALIZATION_TYPE_LOCALSTORAGE_KEY, type);
+}

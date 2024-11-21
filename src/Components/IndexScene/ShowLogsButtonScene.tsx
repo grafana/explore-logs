@@ -10,7 +10,7 @@ import { testIds } from '../../services/testIds';
 
 export interface ShowLogsButtonSceneState extends SceneObjectState {
   disabled?: boolean;
-  hide?: boolean;
+  hidden?: boolean;
 }
 export class ShowLogsButtonScene extends SceneObjectBase<ShowLogsButtonSceneState> {
   constructor(state: Partial<ShowLogsButtonSceneState>) {
@@ -23,8 +23,13 @@ export class ShowLogsButtonScene extends SceneObjectBase<ShowLogsButtonSceneStat
 
   onActivate() {
     const labelsVar = getLabelsVariable(this);
+    const hasPositiveFilter = labelsVar.state.filters.some((f) => f.operator === FilterOp.Equal);
+    this.setState({
+      disabled: !hasPositiveFilter,
+    });
+
     labelsVar.subscribeToState((newState) => {
-      const hasPositiveFilter = !!newState.filters.find((f) => f.operator === FilterOp.Equal);
+      const hasPositiveFilter = newState.filters.some((f) => f.operator === FilterOp.Equal);
       this.setState({
         disabled: !hasPositiveFilter,
       });
@@ -41,11 +46,11 @@ export class ShowLogsButtonScene extends SceneObjectBase<ShowLogsButtonSceneStat
   };
 
   static Component = ({ model }: SceneComponentProps<ShowLogsButtonScene>) => {
-    const { disabled, hide } = model.useState();
+    const { disabled, hidden } = model.useState();
     const styles = useStyles2(getStyles);
 
-    if (hide === true) {
-      return <></>;
+    if (hidden === true) {
+      return null;
     }
 
     return (

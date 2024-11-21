@@ -73,13 +73,14 @@ import {
 import { config, locationService } from '@grafana/runtime';
 import { VariableHide } from '@grafana/schema';
 import { ToolbarScene } from '../IndexScene/ToolbarScene';
-import { IndexScene } from '../IndexScene/IndexScene';
+import { IndexScene, showLogsButtonSceneKey } from '../IndexScene/IndexScene';
 import { ServiceSelectionTabsScene } from './ServiceSelectionTabsScene';
 import { FavoriteServiceHeaderActionScene } from './FavoriteServiceHeaderActionScene';
 import { pushUrlHandler } from '../../services/navigate';
 import { NoServiceVolume } from './NoServiceVolume';
 import { getQueryRunnerFromChildren } from '../../services/scenes';
 import { AddLabelToFiltersHeaderActionScene } from './AddLabelToFiltersHeaderActionScene';
+import { ShowLogsButtonScene } from '../IndexScene/ShowLogsButtonScene';
 
 const aggregatedMetricsEnabled: boolean | undefined = config.featureToggles.exploreLogsAggregatedMetrics;
 // Don't export AGGREGATED_SERVICE_NAME, we want to rename things so the rest of the application is agnostic to how we got the services
@@ -451,6 +452,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         new AddLabelToFiltersHeaderActionScene({
           name: primaryLabelName,
           value: primaryLabelValue,
+          hidden: this.isAggregatedMetricsActive(),
         }),
         new SelectServiceButton({ labelValue: primaryLabelValue, labelName: primaryLabelName }),
       ])
@@ -805,10 +807,16 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     const labelsVar = getLabelsVariable(this);
     if ((!this.isTimeRangeTooEarlyForAggMetrics() || !aggregatedMetricsEnabled) && this.isAggregatedMetricsActive()) {
       serviceLabelVar.changeValueTo(AGGREGATED_SERVICE_NAME);
-      // Hide combobox if aggregated metrics is enabled
+
+      // Hide combobox and reset filters if aggregated metrics is enabled
       labelsVar.setState({
         hide: VariableHide.hideVariable,
+        filters: [],
       });
+
+      // Hide the show logs button
+      const showLogsButton = sceneGraph.findByKeyAndType(this, showLogsButtonSceneKey, ShowLogsButtonScene);
+      showLogsButton.setState({ hidden: true });
     } else {
       serviceLabelVar.changeValueTo(SERVICE_NAME);
       // Show combobox if not aggregated metrics
@@ -816,6 +824,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         hide: VariableHide.dontHide,
       });
       serviceLabelVar.changeValueTo(SERVICE_NAME);
+
+      // Show the show logs button
+      const showLogsButton = sceneGraph.findByKeyAndType(this, showLogsButtonSceneKey, ShowLogsButtonScene);
+      showLogsButton.setState({ hidden: false });
     }
   }
 

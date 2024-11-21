@@ -12,14 +12,15 @@ import { FilterOp } from '../../services/filterTypes';
 export interface AddLabelToFiltersHeaderActionSceneState extends SceneObjectState {
   name: string;
   value: string;
-  isIncluded?: boolean;
-  isExcluded?: boolean;
+  hidden?: boolean;
+  included: boolean | null;
 }
 
 export class AddLabelToFiltersHeaderActionScene extends SceneObjectBase<AddLabelToFiltersHeaderActionSceneState> {
-  constructor(state: AddLabelToFiltersHeaderActionSceneState) {
+  constructor(state: Omit<AddLabelToFiltersHeaderActionSceneState, 'included'>) {
     super({
       ...state,
+      included: null,
     });
 
     this.addActivationHandler(this.onActivate.bind(this));
@@ -30,7 +31,7 @@ export class AddLabelToFiltersHeaderActionScene extends SceneObjectBase<AddLabel
     this._subs.add(
       getLabelsVariable(this).subscribeToState(() => {
         const selected = this.isSelected();
-        if (this.state.isIncluded !== selected.isIncluded || this.state.isExcluded !== selected.isExcluded) {
+        if (this.state.included !== selected.included) {
           this.setState({ ...selected });
         }
       })
@@ -47,30 +48,33 @@ export class AddLabelToFiltersHeaderActionScene extends SceneObjectBase<AddLabel
     });
 
     if (!filterInSelectedFilters) {
-      return { isIncluded: false, isExcluded: false };
+      return { included: false };
     }
 
     return {
-      isIncluded: filterInSelectedFilters.operator === FilterOp.Equal,
-      isExcluded: filterInSelectedFilters.operator === FilterOp.NotEqual,
+      included: filterInSelectedFilters.operator === FilterOp.Equal,
     };
   };
 
   public static Component = ({ model }: SceneComponentProps<AddLabelToFiltersHeaderActionScene>) => {
-    const { value, isIncluded } = model.useState();
+    const { value, hidden, included } = model.useState();
+
+    if (hidden) {
+      return <></>;
+    }
 
     const styles = useStyles2(getStyles);
     return (
       <span className={styles.wrapper}>
         <Button
-          tooltip={isIncluded ? `Remove ${value} from filters` : `Add ${value} to filters`}
+          tooltip={included === true ? `Remove ${value} from filters` : `Add ${value} to filters`}
           variant={'secondary'}
           fill={'outline'}
-          icon={isIncluded ? 'minus' : 'plus'}
+          icon={included === true ? 'minus' : 'plus'}
           size="sm"
-          aria-selected={isIncluded}
+          aria-selected={included === true}
           className={styles.includeButton}
-          onClick={() => (isIncluded ? model.onClick('clear') : model.onClick('include'))}
+          onClick={() => (included === true ? model.onClick('clear') : model.onClick('include'))}
           data-testid={testIds.exploreServiceDetails.buttonFilterInclude}
         />
       </span>
