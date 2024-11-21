@@ -162,6 +162,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       stateUpdate.contentScene = getContentScene(this.state.routeMatch?.params.breakdownLabel);
     }
     this.setTagProviders();
+    this.setVariableOperators();
 
     this.setState(stateUpdate);
 
@@ -178,6 +179,18 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     const timeRange = sceneGraph.getTimeRange(this);
 
     this._subs.add(timeRange.subscribeToState(this.limitMaxInterval(timeRange)));
+  }
+
+  private setVariableOperators() {
+    const fieldsVar = getFieldsVariable(this);
+    // No wip set when this is called, so once the operations must be consistent for all filters
+    // @todo we'll need to split out the duration, bytes, and float filters out of the VAR_FIELDS variable and into a new variable if we want to keep comparison operations out of string, int, etc filters
+    fieldsVar._getOperators = function () {
+      if (fieldsVar.state.filters.some((filter) => numericOperatorArray.includes(filter.operator as FilterOp))) {
+        return [...operators, ...numericOperators];
+      }
+      return operators;
+    };
   }
 
   private setTagProviders() {
@@ -362,6 +375,13 @@ const operators = [FilterOp.Equal, FilterOp.NotEqual].map<SelectableValue<string
 }));
 
 const includeOperators = [FilterOp.Equal].map<SelectableValue<string>>((value) => ({
+  label: value,
+  value,
+}));
+
+export const numericOperatorArray = [FilterOp.gt, FilterOp.gte, FilterOp.lt, FilterOp.lte];
+
+const numericOperators = numericOperatorArray.map<SelectableValue<string>>((value) => ({
   label: value,
   value,
 }));

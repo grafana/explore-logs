@@ -26,6 +26,21 @@ export const testIds = {
     common: {
       sortByFunction: 'data-testid SortBy function',
       sortByDirection: 'data-testid SortBy direction',
+      filterButtonGroup: 'data-testid filter-button-group',
+      filterButton: 'data-testid filter-button',
+      filterSelect: 'data-testid filter-select',
+      filterNumericPopover: {
+        removeButton: 'data-testid filter-numeric-remove',
+        submitButton: 'data-testid filter-numeric-submit',
+        cancelButton: 'data-testid filter-numeric-cancel',
+        inputGreaterThan: 'data-testid filter-numeric-gt',
+        inputGreaterThanUnit: 'data-testid filter-numeric-gtu',
+        inputGreaterThanInclusive: 'data-testid filter-numeric-gte',
+
+        inputLessThan: 'data-testid filter-numeric-lt',
+        inputLessThanUnit: 'data-testid filter-numeric-ltu',
+        inputLessThanInclusive: 'data-testid filter-numeric-lte',
+      },
     },
   },
 

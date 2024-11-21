@@ -108,6 +108,11 @@ export const getDetectedFieldsNamesFromQueryRunnerState = (state: QueryRunnerSta
   return state.data?.series?.[0]?.fields?.[0];
 };
 
+export const getDetectedFieldsParsersFromQueryRunnerState = (state: QueryRunnerState) => {
+  // The third field, DETECTED_FIELDS_PARSER_NAME, has the list of parsers of the detected fields
+  return state.data?.series?.[0]?.fields?.[2];
+};
+
 export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   protected _variableDependency = new VariableDependencyConfig(this, {
     variableNames: [VAR_DATASOURCE, VAR_LABELS, VAR_FIELDS, VAR_PATTERNS, VAR_LEVELS],
