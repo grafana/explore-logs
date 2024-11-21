@@ -10,7 +10,7 @@ import {
   SceneObjectState,
   VizPanel,
 } from '@grafana/scenes';
-import { ALL_VARIABLE_VALUE } from '../../../services/variables';
+import { ALL_VARIABLE_VALUE, DetectedFieldType, ParserType } from '../../../services/variables';
 import { buildDataQuery } from '../../../services/query';
 import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
 import { DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
@@ -20,18 +20,28 @@ import {
   getDetectedFieldsFrame,
   getDetectedFieldsFrameFromQueryRunnerState,
   getDetectedFieldsNamesFromQueryRunnerState,
+  getDetectedFieldsParsersFromQueryRunnerState,
   ServiceScene,
 } from '../ServiceScene';
 import React from 'react';
 import { SelectLabelActionScene } from './SelectLabelActionScene';
 import { ValueSlugs } from '../../../services/routing';
-import { areArraysEqual } from '../../../services/comparison';
 import { DataFrame, LoadingState } from '@grafana/data';
 import { limitMaxNumberOfSeriesForPanel, MAX_NUMBER_OF_TIME_SERIES } from './TimeSeriesLimitSeriesTitleItem';
 import { map, Observable } from 'rxjs';
-import { buildFieldsQueryString, isAvgField } from '../../../services/fields';
-import { getFieldGroupByVariable, getFieldsVariable } from '../../../services/variableGetters';
+import {
+  buildFieldsQueryString,
+  extractParserFromArray,
+  getDetectedFieldType,
+  isAvgField,
+} from '../../../services/fields';
+import {
+  getFieldGroupByVariable,
+  getFieldsVariable,
+  getValueFromFieldsFilter,
+} from '../../../services/variableGetters';
 import { ExploreLogsVizPanelMenu, getPanelWrapperStyles } from '../../Panels/ExploreLogsVizPanelMenu';
+import { logger } from '../../../services/logger';
 
 export interface FieldsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -44,34 +54,64 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
-  private onDetectedFieldsChange = (newState: QueryRunnerState, prevState: QueryRunnerState) => {
-    const newNamesField = getDetectedFieldsNamesFromQueryRunnerState(newState);
-    const prevNamesField = getDetectedFieldsNamesFromQueryRunnerState(prevState);
-
-    if (newState.data?.state === LoadingState.Done && !areArraysEqual(newNamesField?.values, prevNamesField?.values)) {
+  private onDetectedFieldsChange = (newState: QueryRunnerState) => {
+    if (newState.data?.state === LoadingState.Done) {
       //@todo cardinality looks wrong in API response
-      const cardinalityMap = this.calculateCardinalityMap(newState);
+      this.updateChildren(newState);
+    }
+  };
 
-      // Iterate through all the layouts
-      this.state.body?.state.layouts.forEach((layoutObj) => {
-        const layout = layoutObj as SceneCSSGridLayout;
+  private updateChildren(newState: QueryRunnerState, newParser: ParserType | undefined = undefined) {
+    const detectedFieldsFrame = getDetectedFieldsFrameFromQueryRunnerState(newState);
+    const newNamesField = getDetectedFieldsNamesFromQueryRunnerState(newState);
+    const newParsersField = getDetectedFieldsParsersFromQueryRunnerState(newState);
+    const cardinalityMap = this.calculateCardinalityMap(newState);
+
+    // Iterate through all the layouts
+    this.state.body?.state.layouts.forEach((layout) => {
+      if (layout instanceof SceneCSSGridLayout) {
         // populate set of new list of fields
         const newFieldsSet = new Set<string>(newNamesField?.values);
         const updatedChildren = layout.state.children as SceneCSSGridItem[];
 
         // Iterate through all the existing panels
         for (let i = 0; i < updatedChildren.length; i++) {
-          const gridItem = layout.state.children[i] as SceneCSSGridItem;
-          const panel = gridItem.state.body as VizPanel;
+          const gridItem = layout.state.children[i];
+          if (gridItem instanceof SceneCSSGridItem) {
+            const panel = gridItem.state.body;
+            if (panel instanceof VizPanel) {
+              if (newParser) {
+                const index = newNamesField?.values.indexOf(panel.state.title);
+                const existingParser = index && index !== -1 ? newParsersField?.values[index] : undefined;
 
-          if (newFieldsSet.has(panel.state.title)) {
-            // If the new response has this field, delete it from the set, but leave it in the layout
-            newFieldsSet.delete(panel.state.title);
+                // If a new field filter was added that updated the parsers, we'll need to rebuild the query
+                if (existingParser !== newParser) {
+                  const fieldType = getDetectedFieldType(panel.state.title, detectedFieldsFrame);
+                  const dataTransformer = this.getDataTransformerForPanel(
+                    panel.state.title,
+                    detectedFieldsFrame,
+                    fieldType
+                  );
+                  panel.setState({
+                    $data: dataTransformer,
+                  });
+                }
+              }
+
+              if (newFieldsSet.has(panel.state.title)) {
+                // If the new response has this field, delete it from the set, but leave it in the layout
+                newFieldsSet.delete(panel.state.title);
+              } else {
+                // Otherwise if the panel doesn't exist in the response, delete it from the layout
+                updatedChildren.splice(i, 1);
+                // And make sure to update the index, or we'll skip the next one
+                i--;
+              }
+            } else {
+              logger.warn('panel is not VizPanel!');
+            }
           } else {
-            // Otherwise if the panel doesn't exist in the response, delete it from the layout
-            updatedChildren.splice(i, 1);
-            // And make sure to update the index, or we'll skip the next one
-            i--;
+            logger.warn('gridItem is not SceneCSSGridItem');
           }
         }
 
@@ -94,9 +134,11 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
         layout.setState({
           children: updatedChildren,
         });
-      });
-    }
-  };
+      } else {
+        logger.warn('Layout is not SceneCSSGridLayout');
+      }
+    });
+  }
 
   private sortChildren(cardinalityMap: Map<string, number>) {
     return (a: SceneCSSGridItem, b: SceneCSSGridItem) => {
@@ -132,7 +174,29 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     }
 
     this._subs.add(serviceScene.state.$detectedFieldsData?.subscribeToState(this.onDetectedFieldsChange));
+    this._subs.add(this.subscribeToFieldsVar());
   }
+
+  private subscribeToFieldsVar() {
+    const fieldsVar = getFieldsVariable(this);
+
+    return fieldsVar.subscribeToState((newState, prevState) => {
+      const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
+      const newParsers = newState.filters.map((f) => getValueFromFieldsFilter(f).parser);
+      const oldParsers = prevState.filters.map((f) => getValueFromFieldsFilter(f).parser);
+
+      const newParser = extractParserFromArray(newParsers);
+      const oldParser = extractParserFromArray(oldParsers);
+
+      if (newParser !== oldParser) {
+        const detectedFieldsState = serviceScene.state.$detectedFieldsData?.state;
+        if (detectedFieldsState) {
+          this.updateChildren(detectedFieldsState, newParser);
+        }
+      }
+    });
+  }
+
   private build() {
     const groupByVariable = getFieldGroupByVariable(this);
     const options = groupByVariable.state.options.map((opt) => ({ label: opt.label, value: String(opt.value) }));
@@ -193,7 +257,6 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
   private buildChildren(options: Array<{ label: string; value: string }>): SceneCSSGridItem[] {
     const children: SceneCSSGridItem[] = [];
     const detectedFieldsFrame = getDetectedFieldsFrame(this);
-    const fieldsVariable = getFieldsVariable(this);
 
     for (const option of options) {
       const { value: optionValue } = option;
@@ -201,25 +264,15 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
         continue;
       }
 
-      const queryString = buildFieldsQueryString(optionValue, fieldsVariable, detectedFieldsFrame);
-      const query = buildDataQuery(queryString, {
-        legendFormat: isAvgField(optionValue) ? optionValue : `{{${optionValue}}}`,
-        refId: optionValue,
-      });
-
-      const queryRunner = getQueryRunner([query]);
-
-      const dataTransformer = new SceneDataTransformer({
-        $data: queryRunner,
-        transformations: [() => limitFramesTransformation(MAX_NUMBER_OF_TIME_SERIES)],
-      });
+      const fieldType = getDetectedFieldType(optionValue, detectedFieldsFrame);
+      const dataTransformer = this.getDataTransformerForPanel(optionValue, detectedFieldsFrame, fieldType);
       let body = PanelBuilders.timeseries()
         .setTitle(optionValue)
         .setData(dataTransformer)
         .setMenu(new ExploreLogsVizPanelMenu({ labelName: optionValue }));
 
       const headerActions = [];
-      if (!isAvgField(optionValue)) {
+      if (!isAvgField(fieldType)) {
         body = body
           .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
           .setCustomFieldConfig('fillOpacity', 100)
@@ -247,6 +300,26 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
       children.push(gridItem);
     }
     return children;
+  }
+
+  private getDataTransformerForPanel(
+    optionValue: string,
+    detectedFieldsFrame: DataFrame | undefined,
+    fieldType?: DetectedFieldType
+  ) {
+    const fieldsVariable = getFieldsVariable(this);
+    const queryString = buildFieldsQueryString(optionValue, fieldsVariable, detectedFieldsFrame);
+    const query = buildDataQuery(queryString, {
+      legendFormat: isAvgField(fieldType) ? optionValue : `{{${optionValue}}}`,
+      refId: optionValue,
+    });
+
+    const queryRunner = getQueryRunner([query]);
+
+    return new SceneDataTransformer({
+      $data: queryRunner,
+      transformations: [() => limitFramesTransformation(MAX_NUMBER_OF_TIME_SERIES)],
+    });
   }
 
   private updateFieldCount() {

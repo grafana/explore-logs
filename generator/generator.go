@@ -144,7 +144,7 @@ var generators = map[model.LabelValue]map[model.LabelValue]LogGenerator{
 var noisyTempo = func(ctx context.Context, logger *AppLogger, metadata push.LabelsAdapter) {
 	const fmt1 = `level=debug ts=%s caller=broadcast.go:48 msg="Invalidating forwarded broadcast" key=collectors/compactor version=%d oldVersion=%d content=[compactor-%s] oldContent=[compactor-%s]`
 	const fmt2 = `level=warn ts=%s caller=instance.go:43 msg="TRACE_TOO_LARGE: max size of trace (52428800) exceeded tenant %s"`
-	const fmt3 = `level=info ts=%s caller=compactor.go:242 msg="flushed to block" bytes=%d objects=%d values=%d`
+	const fmt3 = `level=info ts=%s caller=compactor.go:242 msg="flushed to block" bytes=%dB objects=%d values=%d`
 	const fmt4 = `level=info ts=%s caller=poller.go:133 msg="blocklist poll complete" seconds=%d`
 	const fmt5 = `level=info ts=%s caller=flush.go:253 msg="completing block" userid=%s blockID=%s`
 	const fmt6 = `level=error ts=%s caller=memcached.go:153 msg="Failed to get keys from memcached" err="memcache: connect timeout to %s:11211"`

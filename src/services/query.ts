@@ -1,5 +1,5 @@
 import { AdHocVariableFilter } from '@grafana/data';
-import { AppliedPattern } from 'Components/IndexScene/IndexScene';
+import { AppliedPattern, numericOperatorArray } from 'Components/IndexScene/IndexScene';
 import { EMPTY_VARIABLE_VALUE, VAR_DATASOURCE_EXPR } from './variables';
 import { groupBy, trim } from 'lodash';
 import { getValueFromFieldsFilter } from './variableGetters';
@@ -98,8 +98,14 @@ export function renderLogQLLabelFilters(filters: AdHocFilterWithLabels[]) {
 }
 
 export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
+  // @todo partition instead of looping through again and again
   const positive = filters.filter((filter) => filter.operator === FilterOp.Equal);
   const negative = filters.filter((filter) => filter.operator === FilterOp.NotEqual);
+
+  const numeric = filters.filter((filter) => {
+    const numericValues: string[] = numericOperatorArray;
+    return numericValues.includes(filter.operator);
+  });
 
   const positiveGroups = groupBy(positive, (filter) => filter.key);
 
@@ -110,7 +116,9 @@ export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
 
   const negativeFilters = negative.map((filter) => `| ${fieldFilterToQueryString(filter)}`).join(' ');
 
-  return `${positiveFilters} ${negativeFilters}`.trim();
+  let numericFilters = numeric.map((filter) => `| ${fieldNumericFilterToQueryString(filter)}`).join(' ');
+
+  return `${positiveFilters} ${negativeFilters} ${numericFilters}`.trim();
 }
 
 export function renderLogQLMetadataFilters(filters: AdHocVariableFilter[]) {
@@ -145,6 +153,14 @@ function fieldFilterToQueryString(filter: AdHocVariableFilter) {
     return `${filter.key}${filter.operator}${value}`;
   }
   return `${filter.key}${filter.operator}\`${value}\``;
+}
+
+function fieldNumericFilterToQueryString(filter: AdHocVariableFilter) {
+  const fieldObject = getValueFromFieldsFilter(filter);
+  const value = fieldObject.value;
+  // If the filter value is an empty string, we don't want to wrap it in backticks!
+
+  return `${filter.key}${filter.operator}${value}`;
 }
 
 export function renderRegexLabelFilter(key: string, values: string[]) {
@@ -195,4 +211,19 @@ export function joinTagFilters(variable: AdHocFiltersVariable) {
     filters.push(filter);
   });
   return filters;
+}
+
+export function wrapWildcardSearch(input: string) {
+  if (input !== '.+' && input.substring(0, 2) !== '.*') {
+    return `.*${input}.*`;
+  }
+
+  return input;
+}
+
+export function unwrapWildcardSearch(input: string) {
+  if (input.substring(0, 2) === '.*' && input.slice(-2) === '.*') {
+    return input.slice(2).slice(0, -2);
+  }
+  return input;
 }

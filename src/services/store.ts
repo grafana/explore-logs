@@ -1,6 +1,6 @@
 import pluginJson from '../plugin.json';
 import { SortBy, SortDirection } from '../Components/ServiceScene/Breakdowns/SortByScene';
-import { SceneObject } from '@grafana/scenes';
+import { SceneObject, VariableValue } from '@grafana/scenes';
 import { getDataSourceName, getServiceName } from './variableGetters';
 import { logger } from './logger';
 import { SERVICE_NAME } from './variables';
@@ -52,8 +52,8 @@ export function addToFavoriteLabelValueInStorage(dsKey: string | unknown, labelN
   localStorage.setItem(key, JSON.stringify(servicesToStore));
 }
 
-export function removeFromFavoritesInStorage(dsKey: string, labelName: string, labelValue: string) {
-  if (!dsKey || !labelName || !labelValue) {
+export function removeFromFavoritesInStorage(dsKey: VariableValue, labelName: string, labelValue: string) {
+  if (!dsKey || !labelName || !labelValue || typeof dsKey !== 'string') {
     return;
   }
   const key = createPrimaryLabelLocalStorageKey(dsKey, labelName);

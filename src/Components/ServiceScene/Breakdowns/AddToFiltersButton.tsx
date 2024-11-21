@@ -11,17 +11,28 @@ import { getParserForField } from '../../../services/fields';
 import { getAdHocFiltersVariable, getValueFromAdHocVariableFilter } from '../../../services/variableGetters';
 import { FilterOp } from '../../../services/filterTypes';
 
+import { addToFavorites } from '../../../services/favorites';
+
 export interface AddToFiltersButtonState extends SceneObjectState {
   frame: DataFrame;
   variableName: VariableFilterType;
 }
 
 export class AddFilterEvent extends BusEventBase {
-  constructor(public operator: FilterType, public key: string, public value: string) {
+  constructor(public operator: FilterType | NumericFilterType, public key: string, public value: string) {
     super();
   }
   public static type = 'add-filter';
 }
+
+export class ClearFilterEvent extends BusEventBase {
+  constructor(public key: string, public value?: string, public operator?: FilterType) {
+    super();
+  }
+  public static type = 'add-filter';
+}
+
+export type NumericFilterType = FilterOp.gt | FilterOp.gte | FilterOp.lt | FilterOp.lte;
 
 /**
  * Filter types:
@@ -38,6 +49,121 @@ export function addAdHocFilter(filter: AdHocVariableFilter, scene: SceneObject, 
 
 export type VariableFilterType = typeof VAR_LABELS | typeof VAR_FIELDS | typeof VAR_LEVELS | typeof VAR_METADATA;
 
+export function clearFilters(
+  key: string,
+  scene: SceneObject,
+  variableType?: VariableFilterType,
+  value?: string,
+  operator?: FilterType
+) {
+  if (!variableType) {
+    variableType = resolveVariableTypeForField(key, scene);
+  }
+  const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableType), scene);
+
+  let filters = variable.state.filters.filter((filter) => {
+    const fieldValue = getValueFromAdHocVariableFilter(variable, filter);
+    if (value && operator) {
+      return !(filter.key === key && fieldValue.value === value && filter.operator === operator);
+    }
+    if (value) {
+      return !(filter.key === key && fieldValue.value === value);
+    }
+    if (operator) {
+      return !(filter.key === key && filter.operator === operator);
+    }
+
+    return !(filter.key === key);
+  });
+
+  scene.publishEvent(new ClearFilterEvent(key, value, operator), true);
+
+  variable.setState({
+    filters,
+  });
+}
+
+type OperatorType = 'greater' | 'lesser';
+const getNumericOperatorType = (op: NumericFilterType | string): OperatorType | undefined => {
+  if (op === FilterOp.gt || op === FilterOp.gte) {
+    return 'greater';
+  }
+  if (op === FilterOp.lt || op === FilterOp.lte) {
+    return 'lesser';
+  }
+  return undefined;
+};
+
+export function removeFilter(
+  key: string,
+  scene: SceneObject,
+  operator?: NumericFilterType,
+  variableType?: VariableFilterType
+) {
+  if (!variableType) {
+    variableType = resolveVariableTypeForField(key, scene);
+  }
+  const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableType), scene);
+  const operatorType = operator ? getNumericOperatorType(operator) : undefined;
+
+  let filters = variable.state.filters.filter((filter) => {
+    return !(
+      filter.key === key &&
+      (getNumericOperatorType(filter.operator) === operatorType || filter.operator === FilterOp.NotEqual)
+    );
+  });
+
+  variable.setState({
+    filters,
+  });
+}
+
+export function addNumericFilter(
+  key: string,
+  value: string,
+  operator: NumericFilterType,
+  scene: SceneObject,
+  variableType?: VariableFilterType
+) {
+  const operatorType = getNumericOperatorType(operator);
+
+  if (!variableType) {
+    variableType = resolveVariableTypeForField(key, scene);
+  }
+  const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableType), scene);
+
+  let valueObject: string | undefined = undefined;
+  if (variableType === VAR_FIELDS) {
+    valueObject = JSON.stringify({
+      value,
+      parser: getParserForField(key, scene),
+    });
+  }
+
+  let filters = variable.state.filters.filter((filter) => {
+    return !(
+      filter.key === key &&
+      (getNumericOperatorType(filter.operator) === operatorType || filter.operator === FilterOp.NotEqual)
+    );
+  });
+
+  filters = [
+    ...filters,
+    {
+      key,
+      operator: operator,
+      value: valueObject ? valueObject : value,
+      valueLabels: [value],
+    },
+  ];
+
+  scene.publishEvent(new AddFilterEvent(operator, key, value), true);
+
+  variable.setState({
+    filters,
+  });
+}
+
 export function addToFilters(
   key: string,
   value: string,
@@ -47,6 +173,10 @@ export function addToFilters(
 ) {
   if (!variableType) {
     variableType = resolveVariableTypeForField(key, scene);
+  }
+
+  if (variableType === VAR_LABELS) {
+    addToFavorites(key, value, scene);
   }
 
   const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableType), scene);
@@ -62,6 +192,12 @@ export function addToFilters(
   // If the filter exists, filter it
   let filters = variable.state.filters.filter((filter) => {
     const fieldValue = getValueFromAdHocVariableFilter(variable, filter);
+
+    // if we're including, we want to remove all filters that have this key
+    if (operator === 'include') {
+      return !(filter.key === key && filter.operator !== FilterOp.Equal);
+    }
+
     return !(filter.key === key && fieldValue.value === value);
   });
 
@@ -109,7 +245,7 @@ export function replaceFilter(
   });
 }
 
-function validateVariableNameForField(field: string, variableName: string) {
+export function validateVariableNameForField(field: string, variableName: string) {
   // Special case: If the key is LEVEL_VARIABLE_VALUE, we need to use the VAR_FIELDS.
   if (field === LEVEL_VARIABLE_VALUE) {
     return VAR_LEVELS;

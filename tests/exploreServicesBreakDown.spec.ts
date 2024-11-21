@@ -637,6 +637,126 @@ test.describe('explore services breakdown page', () => {
     await expect(adHocLocator).toBeVisible();
   });
 
+  test('should filter logs by bytes range', async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: ['logsPanelQuery', 'bytes', 'pod'],
+      legendFormats: [`{{${levelName}}}`],
+    });
+
+    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
+
+    // Wait for pod query to execute
+    const expressions: string[] = [];
+    await Promise.all([
+      page.waitForResponse((resp) => {
+        const post = resp.request().postDataJSON();
+        const queries = post?.queries as LokiQuery[];
+        if (queries && queries[0].expr.includes('pod')) {
+          expressions.push(queries[0].expr);
+          return true;
+        }
+        return false;
+      }),
+    ]);
+
+    expect(expressions[0]).toEqual(
+      'sum by (pod) (count_over_time({service_name=`tempo-distributor`} | pod!=""       [$__auto]))'
+    );
+
+    const bytesIncludeButton = page
+      .getByTestId('data-testid Panel header bytes')
+      .getByTestId(testIds.breakdowns.common.filterButtonGroup);
+    await expect(bytesIncludeButton).toHaveText('Add to filter');
+
+    // Show the popover
+    await bytesIncludeButton.click();
+    const popover = page.getByRole('tooltip');
+    await expect(popover).toHaveCount(1);
+
+    // Popover copy assertions
+    await expect(
+      popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.inputGreaterThanInclusive)
+    ).toHaveText('Greater than');
+    await expect(popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.inputLessThanInclusive)).toHaveText(
+      'Less than'
+    );
+
+    // Bytes should be default unit
+    await expect(popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.inputGreaterThanUnit)).toHaveText(
+      'UnitB'
+    );
+    await expect(popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.inputLessThanUnit)).toHaveText(
+      'UnitB'
+    );
+
+    // Add button should be disabled
+    await expect(popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.submitButton)).toBeDisabled();
+    await expect(popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.cancelButton)).not.toBeDisabled();
+
+    // Assert that the first input is focused
+    const expectedFocusedElement = popover
+      .getByTestId(testIds.breakdowns.common.filterNumericPopover.inputGreaterThan)
+      .locator('input:focus');
+    await expect(expectedFocusedElement).toHaveCount(1);
+
+    // Input 100 for greater than value
+    await page.keyboard.type('500');
+
+    // Submit button should be visible now
+    await expect(popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.submitButton)).not.toBeDisabled();
+
+    // input 500 for less than value
+    await popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.inputLessThan).click();
+    await popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.inputLessThan).pressSequentially('2');
+
+    // Open unit "select"
+    await popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.inputLessThanUnit).locator('svg').click();
+
+    // select kilobytes
+    await popover
+      .getByTestId(testIds.breakdowns.common.filterNumericPopover.inputLessThanUnit)
+      .getByRole('listbox')
+      .getByText('KB', { exact: true })
+      .click();
+
+    // Make inclusive
+    await popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.inputLessThanInclusive).click();
+    await popover.getByText('Less than or equal').click();
+
+    // Add the filter
+    await popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.submitButton).click();
+
+    // Wait for pod query to execute
+    const expressionsAfterNumericFilter: string[] = [];
+    await Promise.all([
+      page.waitForResponse((resp) => {
+        const post = resp.request().postDataJSON();
+        const queries = post?.queries as LokiQuery[];
+        if (queries && queries?.[0].expr.includes('pod')) {
+          expressionsAfterNumericFilter.push(queries[0].expr);
+          return true;
+        }
+        return false;
+      }),
+    ]);
+
+    expect(expressionsAfterNumericFilter[0]).toEqual(
+      'sum by (pod) (count_over_time({service_name=`tempo-distributor`} | pod!=""     | logfmt  | bytes>500B | bytes<=2KB [$__auto]))'
+    );
+
+    // Assert that the variables were added to the UI
+    await expect(page.getByText(/^bytes>500B$/)).toHaveCount(1);
+    await expect(page.getByText(/^bytes<=2KB$/)).toHaveCount(1);
+
+    // Assert the pod and bytes panels have data
+    await expect(
+      page.getByTestId('data-testid Panel header pod').getByTestId('data-testid Panel data error message')
+    ).toHaveCount(0);
+    await expect(
+      page.getByTestId('data-testid Panel header bytes').getByTestId('data-testid Panel data error message')
+    ).toHaveCount(0);
+  });
+
   test('should include all logs that contain bytes field', async ({ page }) => {
     let numberOfQueries = 0;
     // Click on the fields tab
@@ -644,9 +764,8 @@ test.describe('explore services breakdown page', () => {
     // Selector
     const bytesIncludeButton = page
       .getByTestId('data-testid Panel header bytes')
-      .getByTestId('data-testid button-filter-include');
-    // Assert button isn't selected
-    expect(await bytesIncludeButton.getAttribute('aria-selected')).toEqual('false');
+      .getByTestId(testIds.breakdowns.common.filterButtonGroup);
+
     // Wait for all panels to finish loading, or we might intercept an ongoing query below
     await expect(page.getByLabel('Panel loading bar')).toHaveCount(0);
     // Now we'll intercept any further queries, note that the intercept above is still-preventing the actual request so the panels will return with no-data instantly
@@ -660,16 +779,18 @@ test.describe('explore services breakdown page', () => {
       await route.fulfill({ json: [] });
       // await route.continue()
     });
-    // Click the button
-    await bytesIncludeButton.click();
+
+    // Include
+    await bytesIncludeButton.getByTestId(testIds.breakdowns.common.filterSelect).click();
+    await bytesIncludeButton.getByText('Include', { exact: true }).click();
 
     // Assert the panel is still there
     expect(page.getByTestId('data-testid Panel header bytes')).toBeDefined();
 
-    // Assert that the button has been removed, as "bytes" is now on 100% of the logs
-    await expect(bytesIncludeButton).not.toBeVisible();
+    // Assert that the button state is now "include"
+    await expect(bytesIncludeButton).toHaveText('Include');
 
-    // Assert that we actually had some queries
+    // Assert that we actually ran some queries
     expect(numberOfQueries).toBeGreaterThan(0);
   });
 
@@ -691,9 +812,8 @@ test.describe('explore services breakdown page', () => {
     // Selector
     const bytesIncludeButton = page
       .getByTestId('data-testid Panel header bytes')
-      .getByTestId('data-testid button-filter-exclude');
-    // Assert button isn't selected
-    expect(await bytesIncludeButton.getAttribute('aria-selected')).toEqual('false');
+      .getByTestId(testIds.breakdowns.common.filterButtonGroup);
+
     // Wait for all panels to finish loading, or we might intercept an ongoing query below
     await expect(page.getByLabel('Panel loading bar')).toHaveCount(0);
     // Now we'll intercept any further queries, note that the intercept above is still-preventing the actual request so the panels will return with no-data instantly
@@ -706,8 +826,11 @@ test.describe('explore services breakdown page', () => {
 
       await route.fulfill({ json: [] });
     });
-    // Click the button
-    await bytesIncludeButton.click();
+
+    // Open the dropdown and change from include to exclude
+    await bytesIncludeButton.getByTestId(testIds.breakdowns.common.filterSelect).click();
+    await bytesIncludeButton.getByText('Exclude', { exact: true }).click();
+
     // Assert that the panel is no longer rendered
     await expect(bytesIncludeButton).not.toBeInViewport();
     // Assert that the viz was excluded
@@ -781,18 +904,22 @@ test.describe('explore services breakdown page', () => {
     const contentPanelLocator = page.getByTestId('data-testid Panel header content');
     const versionPanelLocator = page.getByTestId('data-testid Panel header version');
     const versionVariableLocator = page.getByTestId('AdHocFilter-version');
-    const versionIncludeButton = versionPanelLocator.getByTestId('data-testid button-filter-exclude');
+    const versionFilterButton = versionPanelLocator.getByTestId(testIds.breakdowns.common.filterButtonGroup);
 
     // Go to the fields tab and assert errors aren't showing
     await explorePage.goToFieldsTab();
     await expect(panelErrorLocator).toHaveCount(0);
+
     // Now assert that content is hidden (will hit 1000 series limit and throw error)
     await expect(contentPanelLocator).toHaveCount(0);
     await expect(versionPanelLocator).toHaveCount(1);
 
-    await versionIncludeButton.click();
+    // Open the dropdown and change from include to exclude
+    await versionPanelLocator.getByTestId(testIds.breakdowns.common.filterSelect).click();
+    await versionFilterButton.getByText('Exclude', { exact: true }).click();
+
+    // Exclude version
     await expect(versionVariableLocator).toHaveCount(1);
-    await expect(versionPanelLocator.locator('[aria-selected="true"]')).toHaveCount(1);
     await expect(versionVariableLocator.getByText('=', { exact: true })).toHaveCount(1);
     await expect(versionVariableLocator.getByText(/^!=$/)).toHaveCount(0);
     await expect(versionVariableLocator.getByText(/^=$/)).toHaveCount(1);

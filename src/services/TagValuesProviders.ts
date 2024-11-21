@@ -4,11 +4,12 @@ import { BackendSrvRequest, DataSourceWithBackend, getDataSourceSrv } from '@gra
 import { AdHocFilterWithLabels, getDataSource } from './scenes';
 import { logger } from './logger';
 import { LokiQuery } from './lokiQuery';
-import { getValueFromFieldsFilter } from './variableGetters';
+import { getDataSourceVariable, getValueFromFieldsFilter } from './variableGetters';
 import { VAR_FIELDS, VAR_LEVELS, VAR_METADATA } from './variables';
 import { isArray } from 'lodash';
 import { joinTagFilters } from './query';
 import { FilterOp } from './filterTypes';
+import { getFavoriteLabelValuesFromStorage } from './store';
 
 type FetchDetectedLabelValuesOptions = {
   expr?: string;
@@ -136,6 +137,16 @@ export async function getLabelsTagValuesProvider(
             return f.operator === FilterOp.Equal && f.value === result.text;
           });
       });
+      const favoriteValuesArray = getFavoriteLabelValuesFromStorage(
+        getDataSourceVariable(variable).getValue()?.toString(),
+        filter.key
+      );
+      const favoriteValuesSet = new Set(favoriteValuesArray);
+      if (favoriteValuesArray.length) {
+        results.sort((a, b) => {
+          return (favoriteValuesSet.has(b.text) ? 1 : -1) - (favoriteValuesSet.has(a.text) ? 1 : -1);
+        });
+      }
     }
 
     return { replace: true, values: results };

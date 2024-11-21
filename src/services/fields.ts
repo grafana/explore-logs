@@ -23,7 +23,6 @@ import { setLevelColorOverrides } from './panel';
 import { map, Observable } from 'rxjs';
 import { SortBy, SortByScene } from '../Components/ServiceScene/Breakdowns/SortByScene';
 import { getDetectedFieldsFrame } from '../Components/ServiceScene/ServiceScene';
-import { averageFields } from '../Components/ServiceScene/Breakdowns/FieldsBreakdownScene';
 import { getLogsStreamSelector, getValueFromFieldsFilter } from './variableGetters';
 import { LabelType } from './fieldsTypes';
 import { logger } from './logger';
@@ -267,8 +266,8 @@ export function getParserFromFieldsFilters(fields: AdHocFiltersVariable): Parser
   return extractParserFromArray(parsers);
 }
 
-export function isAvgField(field: string) {
-  return averageFields.includes(field);
+export function isAvgField(fieldType: DetectedFieldType | undefined) {
+  return fieldType === 'duration' || fieldType === 'bytes' || fieldType === 'float';
 }
 
 export function buildFieldsQuery(optionValue: string, options: LogsQueryOptions) {
@@ -285,6 +284,18 @@ export function buildFieldsQuery(optionValue: string, options: LogsQueryOptions)
   } else {
     return `sum by (${optionValue}) (count_over_time(${getLogsStreamSelector(options)} [$__auto]))`;
   }
+}
+
+/**
+ * Returns the DetectedFieldType if available for a specific label
+ * @param optionValue
+ * @param detectedFieldsFrame
+ */
+export function getDetectedFieldType(optionValue: string, detectedFieldsFrame?: DataFrame) {
+  const namesField: Field<string> | undefined = detectedFieldsFrame?.fields[0];
+  const typesField: Field<string> | undefined = detectedFieldsFrame?.fields[3];
+  const index = namesField?.values.indexOf(optionValue);
+  return index !== undefined && index !== -1 ? extractFieldTypeFromString(typesField?.values?.[index]) : undefined;
 }
 
 export function buildFieldsQueryString(
