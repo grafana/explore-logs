@@ -29,6 +29,44 @@ test.describe('explore services page', () => {
       explorePage.echoConsoleLogsOnRetry();
     });
 
+    test('should add labels to favorites', async ({ page }) => {
+      await explorePage.servicesSearch.click();
+      const firstResult = page.getByRole('option').first();
+
+      // Expect the first result to be tempo-distributor
+      await expect(firstResult).not.toContainText('nginx');
+
+      // Select nginx, as it has the lowest volume, and should otherwise show up last
+      await explorePage.servicesSearch.pressSequentially('^nginx$');
+      await page.keyboard.press('Escape');
+
+      // Assert the first is nginx, or we might click before it's done loading
+      await expect(page.getByTestId('header-container').first()).toHaveText('nginxShow logs');
+      await explorePage.addServiceName();
+
+      // Assert we made it to the breakdown, and nginx is selected
+      await expect(page.getByLabel('Edit filter with key')).toHaveText('service_name = nginx');
+
+      // Click on nav to return to service selection
+      await page.getByRole('link', { name: 'Logs' }).click();
+
+      // Clear the existing search filter added above
+      await page.getByLabel('select-clear-value').click();
+
+      // Assert there is more then one result now
+      await expect(page.getByTestId('header-container').nth(1)).toBeVisible();
+
+      // Assert that the first element is nginx now
+      await expect(page.getByTestId('header-container').first()).toHaveText('nginxShow logs');
+      await explorePage.servicesSearch.click();
+
+      // Assert there is more than one element in the dropdown
+      await expect(page.getByRole('option').nth(1)).not.toContainText('nginx');
+
+      // assert the first element is nginx now
+      await expect(firstResult).toHaveText('nginx');
+    });
+
     test('should filter service labels on search', async ({ page }) => {
       await explorePage.setExtraTallViewportSize();
       await explorePage.servicesSearch.click();

@@ -6,6 +6,13 @@ import userEvent from '@testing-library/user-event';
 import { AdHocFiltersVariable, sceneGraph, SceneObject, SceneQueryRunner } from '@grafana/scenes';
 import { FieldValue, LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS, VAR_LEVELS } from 'services/variables';
 import { ServiceScene, ServiceSceneState } from '../ServiceScene';
+jest.mock('services/favorites', () => {
+  return {
+    rerenderFavorites: () => {},
+    addToFavorites: () => {},
+    removeFromFavorites: () => {},
+  };
+});
 
 const scene = { publishEvent(event: BusEvent, bubble?: boolean) {} } as SceneObject;
 
@@ -175,7 +182,7 @@ describe('addToFilters and addAdHocFilter', () => {
     });
 
     it('allows to specify the variable to write to', () => {
-      const variableName = 'filters';
+      const variableName = 'fields';
       const lookupVariable = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(adHocVariable);
       addToFilters('key', 'value', 'include', scene, variableName);
 
@@ -255,7 +262,7 @@ describe('addToFilters and addAdHocFilter', () => {
 
     it('identifies indexed labels and uses the appropriate variable', () => {
       const lookupVariable = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(adHocVariable);
-      addAdHocFilter({ key: 'indexed', value: 'value', operator: '=' }, scene);
+      addToFilters('indexed', 'value', 'include', scene, 'filters');
 
       expect(lookupVariable).toHaveBeenCalledWith(VAR_LABELS, expect.anything());
       expect(adHocVariable.state.filters).toEqual([

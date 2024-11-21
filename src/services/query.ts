@@ -196,3 +196,18 @@ export function joinTagFilters(variable: AdHocFiltersVariable) {
   });
   return filters;
 }
+
+export function wrapWildcardSearch(input: string) {
+  if (input !== '.+' && input.substring(0, 2) !== '.*') {
+    return `.*${input}.*`;
+  }
+
+  return input;
+}
+
+export function unwrapWildcardSearch(input: string) {
+  if (input.substring(0, 2) === '.*' && input.slice(-2) === '.*') {
+    return input.slice(2).slice(0, -2);
+  }
+  return input;
+}

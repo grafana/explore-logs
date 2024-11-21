@@ -51,7 +51,13 @@ import {
   VAR_PRIMARY_LABEL_SEARCH,
 } from 'services/variables';
 import { selectLabel, SelectServiceButton } from './SelectServiceButton';
-import { buildDataQuery, buildVolumeQuery, renderLogQLLabelFilters } from 'services/query';
+import {
+  buildDataQuery,
+  buildVolumeQuery,
+  renderLogQLLabelFilters,
+  unwrapWildcardSearch,
+  wrapWildcardSearch,
+} from 'services/query';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getQueryRunner, getSceneQueryRunner, setLevelColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
@@ -290,6 +296,13 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     // To get the count of services that are currently displayed, divide the number of panels by 2, as there are 2 panels per service (logs and time series)
     const renderedServices = body.state.children.length / 2;
 
+    const filterLabel = model.formatPrimaryLabelForUI();
+    let customValue = serviceStringVariable.getValue().toString();
+    if (customValue === '.+') {
+      customValue = '';
+    }
+    const customLabel = unwrapWildcardSearch(customValue);
+
     return (
       <div className={styles.container}>
         <div className={styles.bodyWrapper}>
@@ -298,17 +311,17 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
             <div className={styles.searchWrapper}>
               <ServiceFieldSelector
                 initialFilter={{
-                  label: model.unwrapWildcardSearch(serviceStringVariable.getValue().toString()),
-                  value: serviceStringVariable.getValue().toString(),
+                  label: customLabel,
+                  value: customValue,
                   icon: 'filter',
                 }}
                 isLoading={isLogVolumeLoading}
-                value={label}
+                value={customValue ? customValue : label}
                 onChange={(serviceName) => onSearchChange(serviceName)}
                 selectOption={(value: string) => {
                   selectLabel(selectedTab, value, model);
                 }}
-                label={model.formatPrimaryLabelForUI()}
+                label={filterLabel}
                 options={
                   labelsToQuery?.map((serviceName) => ({
                     value: serviceName,
@@ -350,10 +363,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     // Set search variable
     const searchVar = getServiceSelectionSearchVariable(this);
 
-    const newSearchString = primaryLabelSearch ? this.wrapWildcardSearch(primaryLabelSearch) : '.+';
+    const newSearchString = primaryLabelSearch ? wrapWildcardSearch(primaryLabelSearch) : '.+';
     if (newSearchString !== searchVar.state.value) {
       searchVar.setState({
-        value: primaryLabelSearch ? this.wrapWildcardSearch(primaryLabelSearch) : '.+',
+        value: primaryLabelSearch ? wrapWildcardSearch(primaryLabelSearch) : '.+',
         label: primaryLabelSearch ?? '',
       });
     }
@@ -362,12 +375,12 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     const filter = primaryLabelVar.state.filters[0];
 
     // Update primary label with search string
-    if (this.wrapWildcardSearch(searchVar.state.value.toString()) !== filter.value) {
+    if (wrapWildcardSearch(searchVar.state.value.toString()) !== filter.value) {
       primaryLabelVar.setState({
         filters: [
           {
             ...filter,
-            value: this.wrapWildcardSearch(searchVar.state.value.toString()),
+            value: wrapWildcardSearch(searchVar.state.value.toString()),
           },
         ],
       });
@@ -772,22 +785,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       },
     });
   }
-
-  private wrapWildcardSearch(input: string) {
-    if (input !== '.+' && input.substring(0, 2) !== '.*') {
-      return `.*${input}.*`;
-    }
-
-    return input;
-  }
-
-  public unwrapWildcardSearch(input: string) {
-    if (input.substring(0, 2) === '.*' && input.slice(-2) === '.*') {
-      return input.slice(2).slice(0, -2);
-    }
-    return input;
-  }
-
   /**
    * Executes the Volume API call
    * @param resetQueryRunner - optional param which will replace the query runner state with a new instantiation
