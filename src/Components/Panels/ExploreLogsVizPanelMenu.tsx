@@ -140,14 +140,13 @@ function subscribeToAddToExploration(exploreLogsVizPanelMenu: ExploreLogsVizPane
   const addToExplorationButton = exploreLogsVizPanelMenu.state.addToExplorations;
   if (addToExplorationButton) {
     const link = getInvestigationLink(addToExplorationButton);
-    const disabledLinks = addToExplorationButton.state.disabledLinks;
 
     const existingMenuItems = exploreLogsVizPanelMenu.state.body?.state.items ?? [];
 
     const existingAddToExplorationLink = existingMenuItems.find((item) => item.text === ADD_TO_INVESTIGATION_MENU_TEXT);
 
     if (link) {
-      if (!(link.category === 'disabled' || disabledLinks.includes(link.id)) && !existingAddToExplorationLink) {
+      if (!existingAddToExplorationLink) {
         exploreLogsVizPanelMenu.state.body?.addItem({
           text: ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT,
           shortcut: '',
@@ -180,6 +179,7 @@ export const getPanelWrapperStyles = (theme: GrafanaTheme2) => {
       label: 'panel-wrapper',
       display: 'flex',
 
+      // @todo remove this wrapper and styles when core changes are introduced in ???
       // Need more specificity to override core style
       'button.show-on-hover': {
         opacity: 1,
