@@ -265,7 +265,6 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
     const detectedFieldFrame = getDetectedFieldsFrame(this);
     const fieldType = getDetectedFieldType(this.state.labelName, detectedFieldFrame);
 
-    // @todo, what can we do if we can't determine the field type?
     if (!fieldType || fieldType === 'string' || fieldType === 'boolean' || fieldType === 'int') {
       const error = new Error(`Incorrect field type: ${fieldType}`);
       logger.error(error);
