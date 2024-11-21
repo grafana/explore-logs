@@ -51,7 +51,13 @@ import {
   VAR_PRIMARY_LABEL_SEARCH,
 } from 'services/variables';
 import { selectLabel, SelectServiceButton } from './SelectServiceButton';
-import { buildDataQuery, buildVolumeQuery, renderLogQLLabelFilters } from 'services/query';
+import {
+  buildDataQuery,
+  buildVolumeQuery,
+  renderLogQLLabelFilters,
+  unwrapWildcardSearch,
+  wrapWildcardSearch,
+} from 'services/query';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getQueryRunner, getSceneQueryRunner, setLevelColorOverrides } from 'services/panel';
 import { ConfigureVolumeError } from './ConfigureVolumeError';
@@ -1082,18 +1088,4 @@ function getStyles(theme: GrafanaTheme2) {
       position: 'relative',
     }),
   };
-}
-
-export function wrapWildcardSearch(input: string) {
-  if (input !== '.+' && input.substring(0, 2) !== '.*') {
-    return `.*${input}.*`;
-  }
-
-  return input;
-}
-export function unwrapWildcardSearch(input: string) {
-  if (input.substring(0, 2) === '.*' && input.slice(-2) === '.*') {
-    return input.slice(2).slice(0, -2);
-  }
-  return input;
 }

@@ -5,7 +5,8 @@ import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import { Select, useStyles2, InlineField, Icon, ActionMeta, InputActionMeta } from '@grafana/ui';
 import { testIds } from '../../../services/testIds';
 import { VariableValueOption } from '@grafana/scenes';
-import { wrapWildcardSearch } from '../../ServiceSelectionScene/ServiceSelectionScene';
+
+import { wrapWildcardSearch } from '../../../services/query';
 
 type Props<T> = {
   options: VariableValueOption[];
