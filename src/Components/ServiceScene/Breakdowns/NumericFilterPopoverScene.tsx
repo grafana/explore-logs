@@ -461,14 +461,16 @@ const getPopoverStyles = (theme: GrafanaTheme2) => ({
     inclusiveInput: css({
       minWidth: '185px',
     }),
-    selectInput: css({}),
+    selectInput: css({
+      minWidth: '65px',
+    }),
     numberInput: css({
       width: '75px',
     }),
     fieldWrap: css({
       display: 'flex',
       flexDirection: 'column',
-      padding: theme.spacing(2),
+      paddingTop: theme.spacing(2),
       paddingBottom: 0,
     }),
     field: css({
