@@ -41,6 +41,7 @@ import {
   getValueFromFieldsFilter,
 } from '../../../services/variableGetters';
 import { AddToExplorationButton } from './AddToExplorationButton';
+import { logger } from '../../../services/logger';
 
 export interface FieldsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -67,61 +68,75 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     const cardinalityMap = this.calculateCardinalityMap(newState);
 
     // Iterate through all the layouts
-    this.state.body?.state.layouts.forEach((layoutObj) => {
-      const layout = layoutObj as SceneCSSGridLayout;
-      // populate set of new list of fields
-      const newFieldsSet = new Set<string>(newNamesField?.values);
-      const updatedChildren = layout.state.children as SceneCSSGridItem[];
+    this.state.body?.state.layouts.forEach((layout) => {
+      if (layout instanceof SceneCSSGridLayout) {
+        // populate set of new list of fields
+        const newFieldsSet = new Set<string>(newNamesField?.values);
+        const updatedChildren = layout.state.children as SceneCSSGridItem[];
 
-      // Iterate through all the existing panels
-      for (let i = 0; i < updatedChildren.length; i++) {
-        const gridItem = layout.state.children[i] as SceneCSSGridItem;
-        const panel = gridItem.state.body as VizPanel;
+        // Iterate through all the existing panels
+        for (let i = 0; i < updatedChildren.length; i++) {
+          const gridItem = layout.state.children[i];
+          if (gridItem instanceof SceneCSSGridItem) {
+            const panel = gridItem.state.body;
+            if (panel instanceof VizPanel) {
+              if (newParser) {
+                const index = newNamesField?.values.indexOf(panel.state.title);
+                const existingParser = index && index !== -1 ? newParsersField?.values[index] : undefined;
 
-        if (newParser) {
-          const index = newNamesField?.values.indexOf(panel.state.title);
-          const existingParser = index && index !== -1 ? newParsersField?.values[index] : undefined;
+                // If a new field filter was added that updated the parsers, we'll need to rebuild the query
+                if (existingParser !== newParser) {
+                  const fieldType = getDetectedFieldType(panel.state.title, detectedFieldsFrame);
+                  const dataTransformer = this.getDataTransformerForPanel(
+                    panel.state.title,
+                    detectedFieldsFrame,
+                    fieldType
+                  );
+                  panel.setState({
+                    $data: dataTransformer,
+                  });
+                }
+              }
 
-          // If a new field filter was added that updated the parsers, we'll need to rebuild the query
-          if (existingParser !== newParser) {
-            const fieldType = getDetectedFieldType(panel.state.title, detectedFieldsFrame);
-            const dataTransformer = this.getDataTransformerForPanel(panel.state.title, detectedFieldsFrame, fieldType);
-            panel.setState({
-              $data: dataTransformer,
-            });
+              if (newFieldsSet.has(panel.state.title)) {
+                // If the new response has this field, delete it from the set, but leave it in the layout
+                newFieldsSet.delete(panel.state.title);
+              } else {
+                // Otherwise if the panel doesn't exist in the response, delete it from the layout
+                updatedChildren.splice(i, 1);
+                // And make sure to update the index, or we'll skip the next one
+                i--;
+              }
+            } else {
+              logger.warn('panel is not VizPanel!');
+            }
+          } else {
+            logger.warn('gridItem is not SceneCSSGridItem');
           }
         }
 
-        if (newFieldsSet.has(panel.state.title)) {
-          // If the new response has this field, delete it from the set, but leave it in the layout
-          newFieldsSet.delete(panel.state.title);
-        } else {
-          // Otherwise if the panel doesn't exist in the response, delete it from the layout
-          updatedChildren.splice(i, 1);
-          // And make sure to update the index, or we'll skip the next one
-          i--;
-        }
+        const fieldsToAdd = Array.from(newFieldsSet);
+        const options = fieldsToAdd.map((fieldName) => {
+          return {
+            label: fieldName,
+            value: fieldName,
+          };
+        });
+
+        updatedChildren.push(...this.buildChildren(options));
+        updatedChildren.sort(this.sortChildren(cardinalityMap));
+
+        updatedChildren.map((child) => {
+          limitMaxNumberOfSeriesForPanel(child);
+          this.subscribeToPanel(child);
+        });
+
+        layout.setState({
+          children: updatedChildren,
+        });
+      } else {
+        logger.warn('Layout is not SceneCSSGridLayout');
       }
-
-      const fieldsToAdd = Array.from(newFieldsSet);
-      const options = fieldsToAdd.map((fieldName) => {
-        return {
-          label: fieldName,
-          value: fieldName,
-        };
-      });
-
-      updatedChildren.push(...this.buildChildren(options));
-      updatedChildren.sort(this.sortChildren(cardinalityMap));
-
-      updatedChildren.map((child) => {
-        limitMaxNumberOfSeriesForPanel(child);
-        this.subscribeToPanel(child);
-      });
-
-      layout.setState({
-        children: updatedChildren,
-      });
     });
   }
 
