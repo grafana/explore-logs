@@ -1,12 +1,9 @@
 import pluginJson from '../plugin.json';
 import { SortBy, SortDirection } from '../Components/ServiceScene/Breakdowns/SortByScene';
-import { sceneGraph, SceneObject } from '@grafana/scenes';
-import { getDataSourceName, getDataSourceVariable, getServiceName } from './variableGetters';
+import { SceneObject } from '@grafana/scenes';
+import { getDataSourceName, getServiceName } from './variableGetters';
 import { logger } from './logger';
 import { SERVICE_NAME } from './variables';
-import { FavoriteServiceHeaderActionScene } from '../Components/ServiceSelectionScene/FavoriteServiceHeaderActionScene';
-import { IndexScene } from '../Components/IndexScene/IndexScene';
-import { ServiceSelectionScene } from '../Components/ServiceSelectionScene/ServiceSelectionScene';
 
 const FAVORITE_PRIMARY_LABEL_VALUES_LOCALSTORAGE_KEY = `${pluginJson.id}.services.favorite`;
 const FAVORITE_PRIMARY_LABEL_NAME_LOCALSTORAGE_KEY = `${pluginJson.id}.primarylabels.tabs.favorite`;
@@ -31,35 +28,8 @@ export function getFavoriteLabelValuesFromStorage(dsKey: string | unknown, label
   return labelValues;
 }
 
-function rerenderFavorites(sceneRef: SceneObject) {
-  // Find all FavoriteServiceHeaderActionScene and re-render
-  const indexScene = sceneGraph.getAncestor(sceneRef, IndexScene);
-  const favoriteServiceHeaderActionScene = sceneGraph.findAllObjects(
-    indexScene,
-    (o) => o instanceof FavoriteServiceHeaderActionScene
-  );
-  favoriteServiceHeaderActionScene.forEach((s) => s.forceRender());
-
-  // Find the ServiceFieldSelector's parent (currently service selection scene) and force re-render so dropdown has correct order
-  // @todo move ServiceFieldSelector to new scene
-  const serviceSelectionScene = sceneGraph.findDescendents(indexScene, ServiceSelectionScene);
-  serviceSelectionScene.forEach((s) => s.forceRender());
-}
-
-export function addToFavorites(labelName: string, labelValue: string, sceneRef: SceneObject) {
-  const ds = getDataSourceVariable(sceneRef).getValue();
-  addToFavoriteLabelValueInStorage(ds, labelName, labelValue);
-  rerenderFavorites(sceneRef);
-}
-
-export function removeFromFavorites(labelName: string, labelValue: string, sceneRef: SceneObject) {
-  const ds = getDataSourceVariable(sceneRef).getValue();
-  removeFromFavoritesInStorage(ds, labelName, labelValue);
-  rerenderFavorites(sceneRef);
-}
-
 // This should be a string, but we'll accept anything and return early
-function addToFavoriteLabelValueInStorage(dsKey: string | unknown, labelName: string, labelValue: string) {
+export function addToFavoriteLabelValueInStorage(dsKey: string | unknown, labelName: string, labelValue: string) {
   if (!dsKey || typeof dsKey !== 'string') {
     return;
   }
@@ -82,7 +52,7 @@ function addToFavoriteLabelValueInStorage(dsKey: string | unknown, labelName: st
   localStorage.setItem(key, JSON.stringify(servicesToStore));
 }
 
-function removeFromFavoritesInStorage(dsKey: string | unknown, labelName: string, labelValue: string) {
+export function removeFromFavoritesInStorage(dsKey: string | unknown, labelName: string, labelValue: string) {
   if (!dsKey || !labelName || !labelValue || typeof dsKey !== 'string') {
     return;
   }

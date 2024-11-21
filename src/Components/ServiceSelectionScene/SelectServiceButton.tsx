@@ -2,7 +2,6 @@ import React from 'react';
 
 import { SceneComponentProps, SceneObject, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { Button, useStyles2 } from '@grafana/ui';
-import { addToFavorites } from 'services/store';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { navigateToInitialPageAfterServiceSelection } from '../../services/navigate';
 import { getLabelsVariable } from '../../services/variableGetters';
@@ -11,6 +10,7 @@ import { css } from '@emotion/css';
 import { SERVICE_NAME, SERVICE_UI_LABEL } from '../../services/variables';
 import { FilterOp } from '../../services/filterTypes';
 import { testIds } from '../../services/testIds';
+import { addToFavorites } from '../../services/favorites';
 
 export interface SelectServiceButtonState extends SceneObjectState {
   labelValue: string;

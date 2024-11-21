@@ -3,7 +3,8 @@ import React from 'react';
 import { Icon, ToolbarButton, useStyles2 } from '@grafana/ui';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
-import { addToFavorites, getFavoriteLabelValuesFromStorage, removeFromFavorites } from '../../services/store';
+import { getFavoriteLabelValuesFromStorage } from '../../services/store';
+import { addToFavorites, removeFromFavorites } from '../../services/favorites';
 
 export interface FavoriteServiceHeaderActionSceneState extends SceneObjectState {
   labelValue: string;
