@@ -107,7 +107,12 @@ function splitQueriesByStreamShard(
           return false;
         }
       } catch (e) {
-        logger.error(e);
+        logger.error(e, {
+          msg: 'sharding retry error',
+          error: errorResponse?.error?.message ?? '',
+          errors: errorResponse?.errors?.map((e) => e.message).join(' | ') ?? '',
+          traces: errorResponse?.traceIds?.join('|') ?? '',
+        });
         shouldStop = true;
         return false;
       }

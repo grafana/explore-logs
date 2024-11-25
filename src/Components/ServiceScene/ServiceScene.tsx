@@ -486,7 +486,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
           children: [...body.state.children.slice(0, 1), valueBreakdownViewDef.getScene(this.state.drillDownLabel)],
         });
       } else {
-        logger.error(new Error('not setting breakdown view'));
+        logger.error(new Error('not setting breakdown view'), { msg: 'setBreakdownView error' });
       }
     }
   }

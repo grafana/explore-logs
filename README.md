@@ -28,7 +28,7 @@ You can install Explore Logs in your own Grafana instance using `grafana-cli`:
 >   volume_enabled: true
 > ```
 >
-> - Grafana v11.2+
+> - Grafana v11.3+
 
 ```sh
 grafana-cli --pluginUrl=https://storage.googleapis.com/integration-artifacts/grafana-lokiexplore-app/grafana-lokiexplore-app-latest.zip plugins install grafana-lokiexplore-app

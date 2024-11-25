@@ -4,7 +4,7 @@ Explore Logs offers a query-less experience for browsing Loki logs without the n
 
 ## Requirements
 
-Requires Grafana 11.2.0 or newer.
+Requires Grafana 11.3.0 or newer.
 
 ## Getting Started
 
