@@ -137,7 +137,12 @@ export function makeBreakdownValuePage(
 
   if (!breakdownLabel) {
     const e = new Error('Breakdown value missing!');
-    logger.error(e, { labelName, labelValue, breakdownLabel: breakdownLabel ?? '' });
+    logger.error(e, {
+      msg: 'makeBreakdownValuePage: Breakdown value missing!',
+      labelName,
+      labelValue,
+      breakdownLabel: breakdownLabel ?? '',
+    });
     throw e;
   }
 

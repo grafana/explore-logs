@@ -267,7 +267,7 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
 
     if (!fieldType || fieldType === 'string' || fieldType === 'boolean' || fieldType === 'int') {
       const error = new Error(`Incorrect field type: ${fieldType}`);
-      logger.error(error);
+      logger.error(error, { msg: `onClickNumericFilter invalid field type ${fieldType}` });
       throw error;
     }
 
