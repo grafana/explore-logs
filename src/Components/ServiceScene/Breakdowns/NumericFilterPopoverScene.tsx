@@ -445,7 +445,7 @@ function getUnitOptions(fieldType: 'duration' | 'bytes'): Array<SelectableValue<
   }
 
   const error = new Error(`invalid field type: ${fieldType}`);
-  logger.error(error);
+  logger.error(error, { msg: 'getUnitOptions, invalid field type' });
   throw error;
 }
 

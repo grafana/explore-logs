@@ -143,6 +143,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
           pattern: this.state.pattern,
           traceIds: JSON.stringify(value.data.traceIds),
           request: JSON.stringify(value.data.request),
+          msg: 'onQueryError',
         };
       } catch (e) {
         logContext = {

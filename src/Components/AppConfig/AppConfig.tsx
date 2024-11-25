@@ -117,7 +117,7 @@ const updatePluginAndReload = async (pluginId: string, data: Partial<PluginMeta<
     // This is not ideal, however unfortunately currently there is no supported way for updating the plugin state.
     locationService.reload();
   } catch (e) {
-    logger.error('Error while updating the plugin');
+    logger.error(e, { msg: 'Error while updating the plugin' });
   }
 };
 
