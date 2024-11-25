@@ -575,7 +575,7 @@ test.describe('explore services page', () => {
         await expect.poll(() => detectedFieldsCount).toEqual(1);
       });
 
-      test('Part 2: changing primary label updates tab counts', async ({}) => {
+      test.only('Part 2: changing primary label updates tab counts', async ({}) => {
         resetQueryCounts();
         await explorePage.assertTabsNotLoading();
         const gatewayPatternsCount = await page

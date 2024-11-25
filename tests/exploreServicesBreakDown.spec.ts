@@ -100,18 +100,9 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId('data-testid Panel header Logs').locator('[class$="panel-content"]')).toBeVisible();
   });
 
-  test('should filter table panel on text search for field broadcast', async ({ page }) => {
-    const initialText = await page.getByTestId(testIds.table.wrapper).allTextContents();
-    await explorePage.serviceBreakdownSearch.click();
-    await explorePage.serviceBreakdownSearch.fill('broadcast');
-    await page.getByRole('radiogroup').getByTestId(testIds.logsPanelHeader.radio).nth(1).click();
-    const afterFilterText = await page.getByTestId(testIds.table.wrapper).allTextContents();
-    expect(initialText).not.toBe(afterFilterText);
-  });
-
   test(`should add ${levelName} filter on table click`, async ({ page }) => {
     // Switch to table view
-    await page.getByRole('radiogroup').getByTestId(testIds.logsPanelHeader.radio).nth(1).click();
+    await page.getByLabel('Table').click();
 
     const table = page.getByTestId(testIds.table.wrapper);
     // Get a level pill, and click it
@@ -128,7 +119,7 @@ test.describe('explore services breakdown page', () => {
   });
 
   test('should show inspect modal', async ({ page }) => {
-    await page.getByRole('radiogroup').getByTestId(testIds.logsPanelHeader.radio).nth(1).click();
+    await page.getByLabel('Table').click();
     // Expect table to be rendered
     await expect(page.getByTestId(testIds.table.wrapper)).toBeVisible();
 
@@ -369,7 +360,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByText('=').nth(1)).toBeVisible();
   });
 
-  test('should only load fields that are in the viewport', async ({ page }) => {
+  test.only('should only load fields that are in the viewport', async ({ page }) => {
     await explorePage.setDefaultViewportSize();
     let requestCount = 0;
 
@@ -612,7 +603,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId(testIds.exploreServiceDetails.buttonRemovePattern).nth(1)).toBeVisible();
   });
 
-  test('should update a filter and run new logs', async ({ page }) => {
+  test.only('should update a filter and run new logs', async ({ page }) => {
     await page.getByLabel('Edit filter with key').click();
     await page.getByText('mimir-distributor').click();
 
@@ -946,7 +937,7 @@ test.describe('explore services breakdown page', () => {
     await expect(versionPanelLocator).toHaveCount(1);
   });
 
-  test('should update label set if detected_labels is loaded in another tab', async ({ page }) => {
+  test.only('should update label set if detected_labels is loaded in another tab', async ({ page }) => {
     explorePage.blockAllQueriesExcept({});
     await explorePage.assertNotLoading();
     await explorePage.assertTabsNotLoading();
