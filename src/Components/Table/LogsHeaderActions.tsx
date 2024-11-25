@@ -3,6 +3,11 @@ import { RadioButtonGroup } from '@grafana/ui';
 import { css } from '@emotion/css';
 import { LogsVisualizationType } from 'services/store';
 
+/**
+ * The options shared between logs and table panels
+ * @param props
+ * @constructor
+ */
 export function LogsPanelHeaderActions(props: {
   vizType: LogsVisualizationType;
   onChange: (type: LogsVisualizationType) => void;
@@ -33,12 +38,11 @@ export function LogsPanelHeaderActions(props: {
 
 const styles = {
   visualisationType: css({
-    display: 'flex',
-    flex: '1',
-    justifyContent: 'space-between',
-    marginTop: '8px',
+    // display: 'flex',
+    // flex: '1',
+    // justifyContent: 'space-between',
   }),
   visualisationTypeRadio: css({
-    margin: `0 0 0 8px`,
+    // margin: `0 0 0 8px`,
   }),
 };

@@ -1,30 +1,47 @@
 import { css } from '@emotion/css';
-import { SceneComponentProps, SceneObjectBase, SceneObjectState, sceneGraph } from '@grafana/scenes';
-import { Button, InlineField, InlineSwitch, Tooltip } from '@grafana/ui';
-import React, { ChangeEvent } from 'react';
-import { getLogOption, setLogOption } from 'services/store';
+import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
+import { Button, InlineField, RadioButtonGroup, Tooltip, useStyles2 } from '@grafana/ui';
+import React from 'react';
+import { getLogOption, LogsVisualizationType, setLogOption } from 'services/store';
 import { LogsListScene } from './LogsListScene';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
+import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
+import { GrafanaTheme2, LogsSortOrder } from '@grafana/data';
 
 interface LogOptionsState extends SceneObjectState {
-  wrapLines?: boolean;
+  wrapLogMessage?: boolean;
+  visualizationType: LogsVisualizationType;
+  onChangeVisualizationType: (type: LogsVisualizationType) => void;
+  sortOrder?: LogsSortOrder;
 }
 
+/**
+ * The options rendered in the logs panel header
+ */
 export class LogOptionsScene extends SceneObjectBase<LogOptionsState> {
   static Component = LogOptionsRenderer;
 
-  constructor(state?: Partial<LogOptionsState>) {
+  constructor(state: LogOptionsState) {
+    const logsSortOrderFromLocalStorage = getLogOption('sortOrder');
     super({
       ...state,
-      wrapLines: Boolean(getLogOption('wrapLines')),
+      sortOrder: (logsSortOrderFromLocalStorage
+        ? logsSortOrderFromLocalStorage
+        : LogsSortOrder.Descending) as LogsSortOrder,
+      wrapLogMessage: Boolean(getLogOption('wrapLogMessage')),
     });
   }
 
-  handleWrapLinesChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const checked = e.target.checked;
-    this.setState({ wrapLines: checked });
-    setLogOption('wrapLines', checked);
-    this.getParentScene().setLogsVizOption({ wrapLogMessage: checked });
+  handleWrapLinesChange = (type: 'wrap' | 'nowrap') => {
+    this.setState({ wrapLogMessage: type === 'wrap' });
+    setLogOption('wrapLogMessage', type === 'wrap');
+    this.getParentScene().setLogsVizOption({ wrapLogMessage: type === 'wrap' });
+  };
+
+  onChangeLogsSortOrder = (sortOrder: LogsSortOrder) => {
+    this.setState({ sortOrder: sortOrder });
+    setLogOption('sortOrder', sortOrder);
+    this.getParentScene().setLogsVizOption({ sortOrder: sortOrder });
   };
 
   getParentScene = () => {
@@ -42,32 +59,74 @@ export class LogOptionsScene extends SceneObjectBase<LogOptionsState> {
 }
 
 function LogOptionsRenderer({ model }: SceneComponentProps<LogOptionsScene>) {
-  const { wrapLines } = model.useState();
+  const { wrapLogMessage, onChangeVisualizationType, visualizationType, sortOrder } = model.useState();
   const { displayedFields } = model.getParentScene().useState();
+  const styles = useStyles2(getStyles);
 
+  const wrapLinesText = wrapLogMessage ? 'wrap' : 'nowrap';
+  // const
   return (
-    <>
-      <InlineField label="Wrap lines" transparent htmlFor="wrap-lines-switch">
-        <InlineSwitch
-          value={wrapLines}
+    <div className={styles.container}>
+      <InlineField className={styles.buttonGroupWrapper} transparent>
+        <RadioButtonGroup
+          size="sm"
+          options={[
+            {
+              label: 'Newest first',
+              value: LogsSortOrder.Descending,
+              description: 'Show results newest to oldest',
+            },
+            {
+              label: 'Oldest first',
+              value: LogsSortOrder.Ascending,
+              description: 'Show results oldest to newest',
+            },
+          ]}
+          value={sortOrder}
+          onChange={model.onChangeLogsSortOrder}
+          className={styles.buttonGroup}
+        />
+      </InlineField>
+
+      <InlineField className={styles.buttonGroupWrapper} transparent>
+        <RadioButtonGroup
+          size="sm"
+          value={wrapLinesText}
           onChange={model.handleWrapLinesChange}
-          className={styles.horizontalInlineSwitch}
-          transparent
-          id="wrap-lines-switch"
+          className={styles.buttonGroup}
+          options={[
+            {
+              label: 'Wrap',
+              value: 'wrap',
+              description: 'Enable wrapping of long log lines',
+            },
+            {
+              label: 'No wrap',
+              value: 'nowrap',
+              description: 'Disable wrapping of long log lines',
+            },
+          ]}
         />
       </InlineField>
       {displayedFields.length > 0 && (
         <Tooltip content={`Clear displayed fields: ${displayedFields.join(', ')}`}>
-          <Button variant="secondary" fill="outline" onClick={model.clearDisplayedFields}>
+          <Button size={'sm'} variant="secondary" fill="outline" onClick={model.clearDisplayedFields}>
             Show original log line
           </Button>
         </Tooltip>
       )}
-    </>
+      <LogsPanelHeaderActions vizType={visualizationType} onChange={onChangeVisualizationType} />
+    </div>
   );
 }
 
-const styles = {
+const getStyles = (theme: GrafanaTheme2) => ({
+  container: css({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(1),
+    marginTop: theme.spacing(0.5),
+  }),
   input: css({
     width: '100%',
   }),
@@ -75,7 +134,11 @@ const styles = {
     label: 'field',
     marginBottom: 0,
   }),
-  horizontalInlineSwitch: css({
-    padding: `0 4px 0 0`,
+  buttonGroupWrapper: css({
+    margin: 0,
+    alignItems: 'center',
   }),
-};
+  buttonGroup: css({
+    // padding: `0 4px 0 0`,
+  }),
+});
