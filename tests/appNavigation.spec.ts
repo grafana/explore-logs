@@ -15,7 +15,7 @@ test.describe('navigating app', () => {
     await expect(page.getByText('Data source')).toBeVisible();
   });
 
-  test.only('mega menu click should reset url params (deprecated url)', async ({ page }) => {
+  test('mega menu click should reset url params (deprecated url)', async ({ page }) => {
     await explorePage.gotoServicesBreakdownOldUrl();
     await page.getByTestId('data-testid Toggle menu').click();
     await page.getByTestId('data-testid navigation mega-menu').getByRole('link', { name: 'Logs' }).click();
@@ -34,7 +34,7 @@ test.describe('navigating app', () => {
   });
 
   // Looks like mega menu clicks no longer trigger navigation, so whatever scene state is persisted after clicking on mega menu
-  test.only('mega menu click should persist url params', async ({ page }) => {
+  test('mega menu click should persist url params', async ({ page }) => {
     await page.goto(`/a/${pluginJson.id}/explore`);
 
     // Filter results to tempo-ingester to prevent flake

@@ -360,7 +360,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByText('=').nth(1)).toBeVisible();
   });
 
-  test.only('should only load fields that are in the viewport', async ({ page }) => {
+  test('should only load fields that are in the viewport', async ({ page }) => {
     await explorePage.setDefaultViewportSize();
     let requestCount = 0;
 
@@ -603,7 +603,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId(testIds.exploreServiceDetails.buttonRemovePattern).nth(1)).toBeVisible();
   });
 
-  test.only('should update a filter and run new logs', async ({ page }) => {
+  test('should update a filter and run new logs', async ({ page }) => {
     await page.getByLabel('Edit filter with key').click();
     await page.getByText('mimir-distributor').click();
 
@@ -937,7 +937,7 @@ test.describe('explore services breakdown page', () => {
     await expect(versionPanelLocator).toHaveCount(1);
   });
 
-  test.only('should update label set if detected_labels is loaded in another tab', async ({ page }) => {
+  test('should update label set if detected_labels is loaded in another tab', async ({ page }) => {
     explorePage.blockAllQueriesExcept({});
     await explorePage.assertNotLoading();
     await explorePage.assertTabsNotLoading();
