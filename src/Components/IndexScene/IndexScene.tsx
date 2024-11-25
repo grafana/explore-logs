@@ -315,6 +315,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
         const error = new Error(`Unknown variable type: ${variableType}`);
         logger.error(error, {
           variableType,
+          msg: `getFieldsTagValuesExpression: Unknown variable type: ${variableType}`,
         });
         throw error;
     }

@@ -87,10 +87,9 @@ export const getDetectedFieldValuesTagValuesProvider = async (
         values = [];
       }
     } catch (e) {
-      logger.error(e);
-      logger.warn(
-        'getDetectedFieldValuesTagValuesProvider: loki missing detected_field/.../values endpoint. Upgrade to Loki 3.3.0 or higher.'
-      );
+      logger.error(e, {
+        msg: 'getDetectedFieldValuesTagValuesProvider: loki missing detected_field/.../values endpoint. Upgrade to Loki 3.3.0 or higher.',
+      });
       values = [];
     }
   } else {
