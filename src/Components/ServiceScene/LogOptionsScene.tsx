@@ -62,11 +62,17 @@ function LogOptionsRenderer({ model }: SceneComponentProps<LogOptionsScene>) {
   const { wrapLogMessage, onChangeVisualizationType, visualizationType, sortOrder } = model.useState();
   const { displayedFields } = model.getParentScene().useState();
   const styles = useStyles2(getStyles);
-
   const wrapLinesText = wrapLogMessage ? 'wrap' : 'nowrap';
-  // const
+
   return (
     <div className={styles.container}>
+      {displayedFields.length > 0 && (
+        <Tooltip content={`Clear displayed fields: ${displayedFields.join(', ')}`}>
+          <Button size={'sm'} variant="secondary" fill="outline" onClick={model.clearDisplayedFields}>
+            Show original log line
+          </Button>
+        </Tooltip>
+      )}
       <InlineField className={styles.buttonGroupWrapper} transparent>
         <RadioButtonGroup
           size="sm"
@@ -108,13 +114,6 @@ function LogOptionsRenderer({ model }: SceneComponentProps<LogOptionsScene>) {
           ]}
         />
       </InlineField>
-      {displayedFields.length > 0 && (
-        <Tooltip content={`Clear displayed fields: ${displayedFields.join(', ')}`}>
-          <Button size={'sm'} variant="secondary" fill="outline" onClick={model.clearDisplayedFields}>
-            Show original log line
-          </Button>
-        </Tooltip>
-      )}
       <LogsPanelHeaderActions vizType={visualizationType} onChange={onChangeVisualizationType} />
     </div>
   );
