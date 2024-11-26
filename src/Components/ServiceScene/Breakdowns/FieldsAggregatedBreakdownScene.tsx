@@ -40,7 +40,7 @@ import {
   getFieldsVariable,
   getValueFromFieldsFilter,
 } from '../../../services/variableGetters';
-import { ExploreLogsVizPanelMenu, getPanelWrapperStyles } from '../../Panels/ExploreLogsVizPanelMenu';
+import { PanelMenu, getPanelWrapperStyles } from '../../Panels/PanelMenu';
 import { logger } from '../../../services/logger';
 
 export interface FieldsAggregatedBreakdownSceneState extends SceneObjectState {
@@ -269,7 +269,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
       let body = PanelBuilders.timeseries()
         .setTitle(optionValue)
         .setData(dataTransformer)
-        .setMenu(new ExploreLogsVizPanelMenu({ labelName: optionValue }));
+        .setMenu(new PanelMenu({ labelName: optionValue }));
 
       const headerActions = [];
       if (!isAvgField(fieldType)) {

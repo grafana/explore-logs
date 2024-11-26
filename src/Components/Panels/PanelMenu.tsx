@@ -23,7 +23,7 @@ import { ExtensionPoints } from '../../services/extensions/links';
 const ADD_TO_INVESTIGATION_MENU_TEXT = 'Add to investigation';
 const ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT = 'Add to investigation div';
 
-interface ExploreLogsVizPanelMenuState extends SceneObjectState {
+interface PanelMenuState extends SceneObjectState {
   body?: VizPanelMenu;
   frame?: DataFrame;
   labelName?: string;
@@ -34,11 +34,8 @@ interface ExploreLogsVizPanelMenuState extends SceneObjectState {
 /**
  * @todo the VizPanelMenu interface is overly restrictive, doesn't allow any member functions on this class, so everything is currently inlined
  */
-export class ExploreLogsVizPanelMenu
-  extends SceneObjectBase<ExploreLogsVizPanelMenuState>
-  implements VizPanelMenu, SceneObject
-{
-  constructor(state: Partial<ExploreLogsVizPanelMenuState>) {
+export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPanelMenu, SceneObject {
+  constructor(state: Partial<PanelMenuState>) {
     super(state);
     this.addActivationHandler(() => {
       this.setState({
@@ -85,7 +82,7 @@ export class ExploreLogsVizPanelMenu
     }
   }
 
-  public static Component = ({ model }: SceneComponentProps<ExploreLogsVizPanelMenu>) => {
+  public static Component = ({ model }: SceneComponentProps<PanelMenu>) => {
     const { body } = model.useState();
 
     if (body) {
@@ -136,7 +133,7 @@ const onAddToInvestigationClick = (event: React.MouseEvent, addToExplorations: A
   }
 };
 
-function subscribeToAddToExploration(exploreLogsVizPanelMenu: ExploreLogsVizPanelMenu) {
+function subscribeToAddToExploration(exploreLogsVizPanelMenu: PanelMenu) {
   const addToExplorationButton = exploreLogsVizPanelMenu.state.addToExplorations;
   if (addToExplorationButton) {
     const link = getInvestigationLink(addToExplorationButton);

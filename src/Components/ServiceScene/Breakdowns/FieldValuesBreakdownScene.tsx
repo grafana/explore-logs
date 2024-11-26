@@ -31,7 +31,7 @@ import { getDetectedFieldsFrame, ServiceScene } from '../ServiceScene';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { getFieldGroupByVariable, getFieldsVariable } from '../../../services/variableGetters';
 import { LokiQuery } from '../../../services/lokiQuery';
-import { ExploreLogsVizPanelMenu, getPanelWrapperStyles } from '../../Panels/ExploreLogsVizPanelMenu';
+import { PanelMenu, getPanelWrapperStyles } from '../../Panels/PanelMenu';
 
 export interface FieldValuesBreakdownSceneState extends SceneObjectState {
   body?: (LayoutSwitcher & SceneObject) | (SceneReactObject & SceneObject);
@@ -182,7 +182,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
           children: [
             new SceneFlexItem({
               minHeight: 300,
-              body: PanelBuilders.timeseries().setTitle(optionValue).setMenu(new ExploreLogsVizPanelMenu({})).build(),
+              body: PanelBuilders.timeseries().setTitle(optionValue).setMenu(new PanelMenu({})).build(),
             }),
           ],
         }),

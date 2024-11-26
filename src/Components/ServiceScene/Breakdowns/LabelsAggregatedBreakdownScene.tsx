@@ -27,7 +27,7 @@ import { getFieldsVariable, getLabelGroupByVariable } from '../../../services/va
 import { LokiQuery } from '../../../services/lokiQuery';
 import { ServiceScene } from '../ServiceScene';
 import { DataFrame, LoadingState } from '@grafana/data';
-import { ExploreLogsVizPanelMenu, getPanelWrapperStyles } from '../../Panels/ExploreLogsVizPanelMenu';
+import { PanelMenu, getPanelWrapperStyles } from '../../Panels/PanelMenu';
 
 export interface LabelsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -232,7 +232,7 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
             .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
             .setHoverHeader(false)
             .setOverrides(setLevelColorOverrides)
-            .setMenu(new ExploreLogsVizPanelMenu({ labelName: optionValue }))
+            .setMenu(new PanelMenu({ labelName: optionValue }))
             .build(),
         })
       );
