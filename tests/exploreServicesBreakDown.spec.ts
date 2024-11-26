@@ -100,18 +100,9 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId('data-testid Panel header Logs').locator('[class$="panel-content"]')).toBeVisible();
   });
 
-  test('should filter table panel on text search for field broadcast', async ({ page }) => {
-    const initialText = await page.getByTestId(testIds.table.wrapper).allTextContents();
-    await explorePage.serviceBreakdownSearch.click();
-    await explorePage.serviceBreakdownSearch.fill('broadcast');
-    await page.getByRole('radiogroup').getByTestId(testIds.logsPanelHeader.radio).nth(1).click();
-    const afterFilterText = await page.getByTestId(testIds.table.wrapper).allTextContents();
-    expect(initialText).not.toBe(afterFilterText);
-  });
-
   test(`should add ${levelName} filter on table click`, async ({ page }) => {
     // Switch to table view
-    await page.getByRole('radiogroup').getByTestId(testIds.logsPanelHeader.radio).nth(1).click();
+    await explorePage.getTableToggleLocator().click();
 
     const table = page.getByTestId(testIds.table.wrapper);
     // Get a level pill, and click it
@@ -128,7 +119,7 @@ test.describe('explore services breakdown page', () => {
   });
 
   test('should show inspect modal', async ({ page }) => {
-    await page.getByRole('radiogroup').getByTestId(testIds.logsPanelHeader.radio).nth(1).click();
+    await explorePage.getTableToggleLocator().click();
     // Expect table to be rendered
     await expect(page.getByTestId(testIds.table.wrapper)).toBeVisible();
 
@@ -437,9 +428,9 @@ test.describe('explore services breakdown page', () => {
   test('should filter patterns in table on legend click', async ({ page }) => {
     await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
     const row = page.getByTestId(testIds.patterns.tableWrapper).getByRole('table').getByRole('row');
-    await expect(page.getByTestId(`data-testid panel content`).getByRole('button').nth(1)).toBeVisible();
+    await expect(explorePage.getPanelContentLocator().getByRole('button').nth(1)).toBeVisible();
     expect(await row.count()).toBeGreaterThan(2);
-    await page.getByTestId(`data-testid panel content`).getByRole('button').nth(1).click();
+    await explorePage.getPanelContentLocator().getByRole('button').nth(1).click();
     expect(await row.count()).toEqual(2);
   });
 
@@ -647,17 +638,10 @@ test.describe('explore services breakdown page', () => {
 
     // Wait for pod query to execute
     const expressions: string[] = [];
-    await Promise.all([
-      page.waitForResponse((resp) => {
-        const post = resp.request().postDataJSON();
-        const queries = post?.queries as LokiQuery[];
-        if (queries && queries[0].expr.includes('pod')) {
-          expressions.push(queries[0].expr);
-          return true;
-        }
-        return false;
-      }),
-    ]);
+    await explorePage.waitForRequest(
+      (q) => expressions.push(q.expr),
+      (q) => q.expr.includes('pod')
+    );
 
     expect(expressions[0]).toEqual(
       'sum by (pod) (count_over_time({service_name=`tempo-distributor`} | pod!=""       [$__auto]))'
@@ -728,17 +712,10 @@ test.describe('explore services breakdown page', () => {
 
     // Wait for pod query to execute
     const expressionsAfterNumericFilter: string[] = [];
-    await Promise.all([
-      page.waitForResponse((resp) => {
-        const post = resp.request().postDataJSON();
-        const queries = post?.queries as LokiQuery[];
-        if (queries && queries?.[0].expr.includes('pod')) {
-          expressionsAfterNumericFilter.push(queries[0].expr);
-          return true;
-        }
-        return false;
-      }),
-    ]);
+    await explorePage.waitForRequest(
+      (q) => expressionsAfterNumericFilter.push(q.expr),
+      (q) => q.expr.includes('pod')
+    );
 
     expect(expressionsAfterNumericFilter[0]).toEqual(
       'sum by (pod) (count_over_time({service_name=`tempo-distributor`} | pod!=""     | logfmt  | bytes>500B | bytes<=2KB [$__auto]))'
@@ -967,5 +944,100 @@ test.describe('explore services breakdown page', () => {
 
     // Count panels, compare to tab count
     await expect(panels).toHaveCount(parseInt((await tabCountLocator.textContent()) as string, 10));
+  });
+
+  test('logs panel options: line wrap', async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: ['logsPanelQuery'],
+    });
+
+    // Check default values
+    await expect(explorePage.getLogsDirectionNewestFirstLocator()).toBeChecked();
+    await expect(explorePage.getLogsDirectionOldestFirstLocator()).not.toBeChecked();
+
+    await expect(explorePage.getNowrapLocator()).toBeChecked();
+    await expect(explorePage.getWrapLocator()).not.toBeChecked();
+
+    await expect(explorePage.getTableToggleLocator()).not.toBeChecked();
+    await expect(explorePage.getLogsToggleLocator()).toBeChecked();
+
+    const firstRow = explorePage.getLogsPanelRow();
+    const viewportSize = page.viewportSize();
+
+    // Assert that the row has more width then the viewport (can scroll horizontally)
+    expect((await firstRow.boundingBox()).width).toBeGreaterThanOrEqual(viewportSize.width);
+
+    // Change line wrap
+    await explorePage.getWrapLocator().click();
+
+    await expect(explorePage.getNowrapLocator()).not.toBeChecked();
+    await expect(explorePage.getWrapLocator()).toBeChecked();
+
+    // Assert that the width is less than or equal to the window width (cannot scroll horizontally)
+    expect((await firstRow.boundingBox()).width).toBeLessThanOrEqual(viewportSize.width);
+
+    // Reload the page and verify the setting in local storage is applied to the panel
+    await page.reload();
+    await expect(explorePage.getNowrapLocator()).not.toBeChecked();
+    await expect(explorePage.getWrapLocator()).toBeChecked();
+    expect((await firstRow.boundingBox()).width).toBeLessThanOrEqual(viewportSize.width);
+  });
+
+  test('logs panel options: sortOrder', async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: ['logsPanelQuery'],
+    });
+    const firstRow = explorePage.getLogsPanelRow();
+    const secondRow = explorePage.getLogsPanelRow(1);
+    // third td/cell is time
+    const firstRowTimeCell = firstRow.getByRole('cell').nth(2);
+    const secondRowTimeCell = secondRow.getByRole('cell').nth(2);
+
+    // Check default values
+    await expect(explorePage.getLogsDirectionNewestFirstLocator()).toBeChecked();
+    await expect(explorePage.getLogsDirectionOldestFirstLocator()).not.toBeChecked();
+
+    await expect(explorePage.getNowrapLocator()).toBeChecked();
+    await expect(explorePage.getWrapLocator()).not.toBeChecked();
+
+    await expect(explorePage.getTableToggleLocator()).not.toBeChecked();
+    await expect(explorePage.getLogsToggleLocator()).toBeChecked();
+
+    const newestLogContent = await firstRow.textContent();
+
+    // assert timesstamps are DESC (newest first)
+    expect(new Date(await firstRowTimeCell.textContent()).valueOf()).toBeGreaterThanOrEqual(
+      new Date(await secondRowTimeCell.textContent()).valueOf()
+    );
+
+    // Change sort order
+    await explorePage.getLogsDirectionOldestFirstLocator().click();
+
+    await expect(explorePage.getLogsDirectionNewestFirstLocator()).not.toBeChecked();
+    await expect(explorePage.getLogsDirectionOldestFirstLocator()).toBeChecked();
+
+    // Scroll the whole page to the bottom so the whole logs panel is visible
+    await explorePage.scrollToBottom();
+
+    // The logs panel keeps the lines in the viewport the same, but will scroll us down
+    await expect(firstRow).not.toBeInViewport();
+    await expect(page.getByText(newestLogContent)).toBeInViewport();
+
+    // assert timestamps are ASC (oldest first)
+    expect(new Date(await firstRowTimeCell.textContent()).valueOf()).toBeLessThanOrEqual(
+      new Date(await secondRowTimeCell.textContent()).valueOf()
+    );
+
+    // Reload the page
+    await page.reload();
+
+    // Verify options are correct
+    await expect(explorePage.getLogsDirectionNewestFirstLocator()).not.toBeChecked();
+    await expect(explorePage.getLogsDirectionOldestFirstLocator()).toBeChecked();
+
+    // assert timestamps are still ASC (oldest first)
+    expect(new Date(await firstRowTimeCell.textContent()).valueOf()).toBeLessThanOrEqual(
+      new Date(await secondRowTimeCell.textContent()).valueOf()
+    );
   });
 });

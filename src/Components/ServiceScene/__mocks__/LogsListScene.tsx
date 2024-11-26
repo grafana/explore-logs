@@ -10,7 +10,12 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       ...state,
       visualizationType: 'logs',
       panel: new SceneFlexLayout({
-        children: [new LogOptionsScene()],
+        children: [
+          new LogOptionsScene({
+            visualizationType: 'logs',
+            onChangeVisualizationType: () => {},
+          }),
+        ],
       }),
       displayedFields: state.displayedFields ?? [],
     });

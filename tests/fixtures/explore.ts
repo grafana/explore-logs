@@ -27,6 +27,45 @@ export class ExplorePage {
     this.refreshPicker = this.page.getByTestId(testIds.header.refreshPicker);
   }
 
+  getTableToggleLocator() {
+    return this.page.getByLabel('Table', { exact: true });
+  }
+
+  getLogsToggleLocator() {
+    return this.page.getByTestId('data-testid Panel header Logs').getByLabel('Logs', { exact: true });
+  }
+
+  getPanelContentLocator() {
+    return this.page.getByTestId('data-testid panel content');
+  }
+
+  getLogsPanelLocator() {
+    return this.page.getByTestId('data-testid Panel header Logs');
+  }
+
+  getLogsPanelContentLocator() {
+    return this.getLogsPanelLocator().locator(this.getPanelContentLocator());
+  }
+
+  getLogsPanelRow(n = 0) {
+    return this.getLogsPanelContentLocator().locator('tr').nth(0);
+  }
+
+  getWrapLocator() {
+    return this.page.getByLabel('Wrap', { exact: true });
+  }
+  getNowrapLocator() {
+    return this.page.getByLabel('No wrap', { exact: true });
+  }
+
+  getLogsDirectionNewestFirstLocator() {
+    return this.page.getByLabel('Newest first', { exact: true });
+  }
+
+  getLogsDirectionOldestFirstLocator() {
+    return this.page.getByLabel('Oldest first', { exact: true });
+  }
+
   captureConsoleLogs() {
     this.page.on('console', (msg) => {
       this.logs.push({ msg, type: msg.type() });
@@ -128,6 +167,20 @@ export class ExplorePage {
   async assertPanelsNotLoading() {
     await expect(this.page.getByLabel('Panel loading bar')).toHaveCount(0);
     await this.page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
+  }
+
+  async waitForRequest(callback: (lokiQuery: LokiQuery) => void, test: (lokiQuery: LokiQuery) => boolean) {
+    await Promise.all([
+      this.page.waitForResponse((resp) => {
+        const post = resp.request().postDataJSON();
+        const queries = post?.queries as LokiQuery[];
+        if (queries && test(queries[0])) {
+          callback(queries[0]);
+          return true;
+        }
+        return false;
+      }),
+    ]);
   }
 
   // This is flakey, panels won't show the state if the requests come back in < 75ms
