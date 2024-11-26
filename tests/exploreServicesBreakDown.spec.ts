@@ -1040,4 +1040,36 @@ test.describe('explore services breakdown page', () => {
       new Date(await secondRowTimeCell.textContent()).valueOf()
     );
   });
+
+  test('panel menu: label name panel should open links in explore', async ({ page, context }) => {
+    await explorePage.goToLabelsTab();
+    await page.getByTestId('data-testid Panel menu detected_level').click();
+
+    // Open link
+    await expect(page.getByTestId('data-testid Panel menu item Explore')).toHaveAttribute('href');
+    await page.getByTestId('data-testid Panel menu item Explore').click();
+
+    const newPageCodeEditor = page.getByRole('code').locator('div').filter({ hasText: 'sum(count_over_time({' }).nth(4);
+    await expect(newPageCodeEditor).toBeInViewport();
+    await expect(newPageCodeEditor).toContainText(
+      'sum(count_over_time({service_name=`tempo-distributor`} | detected_level != "" [$__auto])) by (detected_level)'
+    );
+  });
+
+  test('panel menu: label value panel should open links in explore', async ({ page, context }) => {
+    await explorePage.goToLabelsTab();
+    await page.getByLabel(`Select ${levelName}`).click();
+    await page.pause();
+    await page.getByTestId('data-testid Panel menu error').click();
+
+    // Open link
+    await expect(page.getByTestId('data-testid Panel menu item Explore')).toHaveAttribute('href');
+    await page.getByTestId('data-testid Panel menu item Explore').click();
+
+    const newPageCodeEditor = page.getByRole('code').locator('div').filter({ hasText: 'sum(count_over_time({' }).nth(4);
+    await expect(newPageCodeEditor).toBeInViewport();
+    await expect(newPageCodeEditor).toContainText(
+      'sum(count_over_time({service_name=`tempo-distributor`} | detected_level != "" [$__auto])) by (detected_level)'
+    );
+  });
 });
