@@ -1,7 +1,6 @@
 import { DataFrame, GrafanaTheme2, PanelMenuItem } from '@grafana/data';
 import {
   SceneComponentProps,
-  SceneCSSGridItem,
   sceneGraph,
   SceneObject,
   SceneObjectBase,
