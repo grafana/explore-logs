@@ -181,8 +181,9 @@ export function setSortByPreference(target: string, sortBy: string, direction: s
 }
 
 const LOG_OPTIONS_LOCALSTORAGE_KEY = `${pluginJson.id}.logs.option`;
-export function getLogOption(option: keyof Options) {
-  return localStorage.getItem(`${LOG_OPTIONS_LOCALSTORAGE_KEY}.${option}`);
+export function getLogOption<T>(option: keyof Options, defaultValue: T) {
+  const localStorageResult = localStorage.getItem(`${LOG_OPTIONS_LOCALSTORAGE_KEY}.${option}`);
+  return localStorageResult ? localStorageResult : defaultValue;
 }
 
 export function setLogOption(option: keyof Options, value: string | number | boolean) {

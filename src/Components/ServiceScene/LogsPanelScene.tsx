@@ -19,7 +19,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '..
 import { getAdHocFiltersVariable, getValueFromFieldsFilter } from '../../services/variableGetters';
 import { copyText, generateLogShortlink } from 'services/text';
 import { CopyLinkButton } from './CopyLinkButton';
-import { LogOptionsScene } from './LogOptionsScene';
+import { getLogsPanelSortOrder, LogOptionsScene } from './LogOptionsScene';
 
 interface LogsPanelSceneState extends SceneObjectState {
   body?: VizPanel;
@@ -104,7 +104,6 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
   private getLogsPanel() {
     const parentModel = this.getParentScene();
     const visualizationType = parentModel.state.visualizationType;
-
     return (
       PanelBuilders.logs()
         .setTitle('Logs')
@@ -116,8 +115,10 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         .setOption('onClickShowField', this.onClickShowField)
         .setOption('onClickHideField', this.onClickHideField)
         .setOption('displayedFields', parentModel.state.displayedFields)
-        .setOption('wrapLogMessage', Boolean(getLogOption('wrapLogMessage')))
+        .setOption('sortOrder', getLogsPanelSortOrder())
+        .setOption('wrapLogMessage', Boolean(getLogOption<boolean>('wrapLogMessage', false)))
         .setOption('showLogContextToggle', true)
+
         // @ts-expect-error
         .setOption('logRowMenuIconsAfter', [<CopyLinkButton onClick={this.handleShareLogLineClick} key={0} />])
         .setHeaderActions(

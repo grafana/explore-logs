@@ -3,7 +3,6 @@ import { ExplorePage, PlaywrightRequest } from './fixtures/explore';
 import { testIds } from '../src/services/testIds';
 import { mockEmptyQueryApiResponse } from './mocks/mockEmptyQueryApiResponse';
 import { LokiQuery } from '../src/services/lokiQuery';
-import exp = require('node:constants');
 
 const fieldName = 'caller';
 const levelName = 'detected_level';

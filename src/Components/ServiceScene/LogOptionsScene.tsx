@@ -22,13 +22,10 @@ export class LogOptionsScene extends SceneObjectBase<LogOptionsState> {
   static Component = LogOptionsRenderer;
 
   constructor(state: LogOptionsState) {
-    const logsSortOrderFromLocalStorage = getLogOption('sortOrder');
     super({
       ...state,
-      sortOrder: (logsSortOrderFromLocalStorage
-        ? logsSortOrderFromLocalStorage
-        : LogsSortOrder.Descending) as LogsSortOrder,
-      wrapLogMessage: Boolean(getLogOption('wrapLogMessage')),
+      sortOrder: getLogsPanelSortOrder(),
+      wrapLogMessage: Boolean(getLogOption<boolean>('wrapLogMessage', false)),
     });
   }
 
@@ -115,6 +112,10 @@ function LogOptionsRenderer({ model }: SceneComponentProps<LogOptionsScene>) {
       <LogsPanelHeaderActions vizType={visualizationType} onChange={onChangeVisualizationType} />
     </div>
   );
+}
+
+export function getLogsPanelSortOrder() {
+  return getLogOption<LogsSortOrder>('sortOrder', LogsSortOrder.Descending) as LogsSortOrder;
 }
 
 const getStyles = (theme: GrafanaTheme2) => ({
