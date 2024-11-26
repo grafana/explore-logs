@@ -975,6 +975,12 @@ test.describe('explore services breakdown page', () => {
 
     // Assert that the width is less than or equal to the window width (cannot scroll horizontally)
     expect((await firstRow.boundingBox()).width).toBeLessThanOrEqual(viewportSize.width);
+
+    // Reload the page and verify the setting in local storage is applied to the panel
+    await page.reload();
+    await expect(explorePage.getNowrapLocator()).not.toBeChecked();
+    await expect(explorePage.getWrapLocator()).toBeChecked();
+    expect((await firstRow.boundingBox()).width).toBeLessThanOrEqual(viewportSize.width);
   });
 
   test('logs panel options: sortOrder', async ({ page }) => {
@@ -1018,6 +1024,18 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByText(newestLogContent)).toBeInViewport();
 
     // assert timestamps are ASC (oldest first)
+    expect(new Date(await firstRowTimeCell.textContent()).valueOf()).toBeLessThanOrEqual(
+      new Date(await secondRowTimeCell.textContent()).valueOf()
+    );
+
+    // Reload the page
+    await page.reload();
+
+    // Verify options are correct
+    await expect(explorePage.getLogsDirectionNewestFirstLocator()).not.toBeChecked();
+    await expect(explorePage.getLogsDirectionOldestFirstLocator()).toBeChecked();
+
+    // assert timestamps are still ASC (oldest first)
     expect(new Date(await firstRowTimeCell.textContent()).valueOf()).toBeLessThanOrEqual(
       new Date(await secondRowTimeCell.textContent()).valueOf()
     );

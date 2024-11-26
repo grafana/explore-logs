@@ -29,10 +29,10 @@ export class LogOptionsScene extends SceneObjectBase<LogOptionsState> {
     });
   }
 
-  handleWrapLinesChange = (type: 'wrap' | 'nowrap') => {
-    this.setState({ wrapLogMessage: type === 'wrap' });
-    setLogOption('wrapLogMessage', type === 'wrap');
-    this.getParentScene().setLogsVizOption({ wrapLogMessage: type === 'wrap' });
+  handleWrapLinesChange = (type: boolean) => {
+    this.setState({ wrapLogMessage: type });
+    setLogOption('wrapLogMessage', type);
+    this.getParentScene().setLogsVizOption({ wrapLogMessage: type });
   };
 
   onChangeLogsSortOrder = (sortOrder: LogsSortOrder) => {
@@ -59,7 +59,7 @@ function LogOptionsRenderer({ model }: SceneComponentProps<LogOptionsScene>) {
   const { wrapLogMessage, onChangeVisualizationType, visualizationType, sortOrder } = model.useState();
   const { displayedFields } = model.getParentScene().useState();
   const styles = useStyles2(getStyles);
-  const wrapLinesText = wrapLogMessage ? 'wrap' : 'nowrap';
+  const wrapLines = wrapLogMessage ?? false;
 
   return (
     <div className={styles.container}>
@@ -93,17 +93,17 @@ function LogOptionsRenderer({ model }: SceneComponentProps<LogOptionsScene>) {
       <InlineField className={styles.buttonGroupWrapper} transparent>
         <RadioButtonGroup
           size="sm"
-          value={wrapLinesText}
+          value={wrapLines}
           onChange={model.handleWrapLinesChange}
           options={[
             {
               label: 'Wrap',
-              value: 'wrap',
+              value: true,
               description: 'Enable wrapping of long log lines',
             },
             {
               label: 'No wrap',
-              value: 'nowrap',
+              value: false,
               description: 'Disable wrapping of long log lines',
             },
           ]}
