@@ -16,7 +16,6 @@ import { LogsTableScene } from './LogsTableScene';
 import { css } from '@emotion/css';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { locationService } from '@grafana/runtime';
-import { LogOptionsScene } from './LogOptionsScene';
 import { LogsPanelScene } from './LogsPanelScene';
 import {
   getDisplayedFields,
@@ -25,6 +24,7 @@ import {
   setLogsVisualizationType,
 } from 'services/store';
 import { logger } from '../../services/logger';
+import { Options } from '@grafana/schema/dist/esm/raw/composable/logs/panelcfg/x/LogsPanelCfg_types.gen';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -152,7 +152,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     });
   }
 
-  public setLogsVizOption = (options = {}) => {
+  public setLogsVizOption = (options: Partial<Options> = {}) => {
     if (this.logsPanelScene) {
       this.logsPanelScene.setLogsVizOption(options);
     }
@@ -194,7 +194,6 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
                     body: this.lineFilterScene,
                     xSizing: 'fill',
                   }),
-                  new LogOptionsScene(),
                 ],
               }),
               new SceneFlexItem({

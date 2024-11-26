@@ -492,3 +492,4 @@ Descendents
 Retriable
 Descendents
 combobox
+panelcfg
