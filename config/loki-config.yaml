@@ -21,7 +21,6 @@ frontend:
 pattern_ingester:
   enabled: true
   metric_aggregation:
-    enabled: true
     loki_address: 127.0.0.1:3100
 limits_config:
   max_global_streams_per_user: 0

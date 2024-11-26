@@ -13,7 +13,7 @@ import {
   VizPanel,
 } from '@grafana/scenes';
 import { LayoutSwitcher } from './LayoutSwitcher';
-import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
+import { DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
 import { ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE } from '../../../services/variables';
 import React from 'react';
@@ -27,7 +27,7 @@ import { getFieldsVariable, getLabelGroupByVariable } from '../../../services/va
 import { LokiQuery } from '../../../services/lokiQuery';
 import { ServiceScene } from '../ServiceScene';
 import { DataFrame, LoadingState } from '@grafana/data';
-import { AddToExplorationButton } from './AddToExplorationButton';
+import { PanelMenu, getPanelWrapperStyles } from '../../Panels/PanelMenu';
 
 export interface LabelsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -224,16 +224,15 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
           body: PanelBuilders.timeseries()
             .setTitle(optionValue)
             .setData(dataTransformer)
-            .setHeaderActions([
-              new SelectLabelActionScene({ labelName: optionValue, fieldType: ValueSlugs.label }),
-              new AddToExplorationButton({ labelName: optionValue }),
-            ])
+            .setHeaderActions([new SelectLabelActionScene({ labelName: optionValue, fieldType: ValueSlugs.label })])
             .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
             .setCustomFieldConfig('fillOpacity', 100)
             .setCustomFieldConfig('lineWidth', 0)
             .setCustomFieldConfig('pointSize', 0)
             .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+            .setHoverHeader(false)
             .setOverrides(setLevelColorOverrides)
+            .setMenu(new PanelMenu({ labelName: optionValue }))
             .build(),
         })
       );
@@ -272,8 +271,10 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
 
   public static Component = ({ model }: SceneComponentProps<LabelsAggregatedBreakdownScene>) => {
     const { body } = model.useState();
+    const styles = useStyles2(getPanelWrapperStyles);
+
     if (body) {
-      return <>{body && <body.Component model={body} />}</>;
+      return <span className={styles.panelWrapper}>{body && <body.Component model={body} />}</span>;
     }
 
     return <LoadingPlaceholder text={'Loading...'} />;

@@ -13,7 +13,7 @@ import {
 import { ALL_VARIABLE_VALUE, DetectedFieldType, ParserType } from '../../../services/variables';
 import { buildDataQuery } from '../../../services/query';
 import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
-import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
+import { DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS, FieldsBreakdownScene } from './FieldsBreakdownScene';
 import {
@@ -40,7 +40,7 @@ import {
   getFieldsVariable,
   getValueFromFieldsFilter,
 } from '../../../services/variableGetters';
-import { AddToExplorationButton } from './AddToExplorationButton';
+import { PanelMenu, getPanelWrapperStyles } from '../../Panels/PanelMenu';
 import { logger } from '../../../services/logger';
 
 export interface FieldsAggregatedBreakdownSceneState extends SceneObjectState {
@@ -266,7 +266,10 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
 
       const fieldType = getDetectedFieldType(optionValue, detectedFieldsFrame);
       const dataTransformer = this.getDataTransformerForPanel(optionValue, detectedFieldsFrame, fieldType);
-      let body = PanelBuilders.timeseries().setTitle(optionValue).setData(dataTransformer);
+      let body = PanelBuilders.timeseries()
+        .setTitle(optionValue)
+        .setData(dataTransformer)
+        .setMenu(new PanelMenu({ labelName: optionValue }));
 
       const headerActions = [];
       if (!isAvgField(fieldType)) {
@@ -287,7 +290,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
           })
         );
       }
-      body.setHeaderActions([...headerActions, new AddToExplorationButton({ labelName: optionValue })]);
+      body.setHeaderActions(headerActions);
 
       const viz = body.build();
       const gridItem = new SceneCSSGridItem({
@@ -336,8 +339,9 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
 
   public static Component = ({ model }: SceneComponentProps<FieldsAggregatedBreakdownScene>) => {
     const { body } = model.useState();
+    const styles = useStyles2(getPanelWrapperStyles);
     if (body) {
-      return <>{body && <body.Component model={body} />}</>;
+      return <span className={styles.panelWrapper}>{body && <body.Component model={body} />}</span>;
     }
 
     return <LoadingPlaceholder text={'Loading...'} />;

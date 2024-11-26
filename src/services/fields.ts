@@ -26,7 +26,7 @@ import { getDetectedFieldsFrame } from '../Components/ServiceScene/ServiceScene'
 import { getLogsStreamSelector, getValueFromFieldsFilter } from './variableGetters';
 import { LabelType } from './fieldsTypes';
 import { logger } from './logger';
-import { AddToExplorationButton } from 'Components/ServiceScene/Breakdowns/AddToExplorationButton';
+import { PanelMenu } from '../Components/Panels/PanelMenu';
 
 export type DetectedLabel = {
   label: string;
@@ -148,10 +148,8 @@ export function getFilterBreakdownValueScene(
       )
       .setColor({ mode: 'fixed', fixedColor: getColorByIndex(frameIndex) })
       .setOverrides(setLevelColorOverrides)
-      .setHeaderActions([
-        new AddToFiltersButton({ frame, variableName }),
-        new AddToExplorationButton({ frame, fieldName: getTitle(frame), labelName: labelKey }),
-      ]);
+      .setMenu(new PanelMenu({ frame, fieldName: getTitle(frame), labelName: labelKey }))
+      .setHeaderActions([new AddToFiltersButton({ frame, variableName })]);
 
     if (style === DrawStyle.Bars) {
       panel

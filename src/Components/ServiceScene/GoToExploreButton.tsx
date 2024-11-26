@@ -20,23 +20,7 @@ export const GoToExploreButton = ({ exploration }: GoToExploreButtonState) => {
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.open_in_explore_clicked
     );
-    const datasource = getDataSource(exploration);
-    const expr = getQueryExpr(exploration).replace(/\s+/g, ' ').trimEnd();
-    const timeRange = sceneGraph.getTimeRange(exploration).state.value;
-    const displayedFields = getDisplayedFields(exploration);
-    const visualisationType = getLogsVisualizationType();
-    const columns = getUrlColumns();
-    const exploreState = JSON.stringify({
-      ['loki-explore']: {
-        range: toURLRange(timeRange.raw),
-        queries: [{ refId: 'logs', expr, datasource }],
-        panelsState: { logs: { displayedFields, visualisationType, columns } },
-        datasource,
-      },
-    });
-    const subUrl = config.appSubUrl ?? '';
-    const link = urlUtil.renderUrl(`${subUrl}/explore`, { panes: exploreState, schemaVersion: 1 });
-    window.open(link, '_blank');
+    onExploreLinkClick(exploration, undefined, true);
   };
 
   return (
@@ -49,6 +33,35 @@ export const GoToExploreButton = ({ exploration }: GoToExploreButtonState) => {
       Open in Explore
     </ToolbarButton>
   );
+};
+
+export const onExploreLinkClick = (indexScene: IndexScene, expr?: string, open = false) => {
+  if (!expr) {
+    expr = getQueryExpr(indexScene);
+  }
+
+  expr = expr.replace(/\s+/g, ' ').trimEnd();
+
+  const datasource = getDataSource(indexScene);
+  const timeRange = sceneGraph.getTimeRange(indexScene).state.value;
+  const displayedFields = getDisplayedFields(indexScene);
+  const visualisationType = getLogsVisualizationType();
+  const columns = getUrlColumns();
+  const exploreState = JSON.stringify({
+    ['loki-explore']: {
+      range: toURLRange(timeRange.raw),
+      queries: [{ refId: 'logs', expr, datasource }],
+      panelsState: { logs: { displayedFields, visualisationType, columns } },
+      datasource,
+    },
+  });
+  const subUrl = config.appSubUrl ?? '';
+  const link = urlUtil.renderUrl(`${subUrl}/explore`, { panes: exploreState, schemaVersion: 1 });
+  if (open) {
+    window.open(link, '_blank');
+  }
+
+  return link;
 };
 
 function getUrlColumns() {
