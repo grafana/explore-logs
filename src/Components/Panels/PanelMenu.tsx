@@ -1,5 +1,6 @@
 import { DataFrame, GrafanaTheme2, PanelMenuItem } from '@grafana/data';
 import {
+  PanelBuilders,
   SceneComponentProps,
   SceneCSSGridItem,
   sceneGraph,
@@ -7,6 +8,7 @@ import {
   SceneObjectBase,
   SceneObjectState,
   SceneQueryRunner,
+  VizPanel,
   VizPanelMenu,
 } from '@grafana/scenes';
 import React from 'react';
@@ -19,9 +21,17 @@ import { logger } from '../../services/logger';
 import { AddToExplorationButton } from '../ServiceScene/Breakdowns/AddToExplorationButton';
 import { getPluginLinkExtensions } from '@grafana/runtime';
 import { ExtensionPoints } from '../../services/extensions/links';
+import { setLevelColorOverrides } from '../../services/panel';
+import { setPanelOption } from '../../services/store';
+import { FieldsAggregatedBreakdownScene } from '../ServiceScene/Breakdowns/FieldsAggregatedBreakdownScene';
 
 const ADD_TO_INVESTIGATION_MENU_TEXT = 'Add to investigation';
-const ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT = 'Add to investigation div';
+const ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT = 'Investigations';
+
+export enum AvgFieldPanelType {
+  'timeseries' = 'timeseries',
+  'histogram' = 'histogram',
+}
 
 interface PanelMenuState extends SceneObjectState {
   body?: VizPanelMenu;
@@ -29,6 +39,59 @@ interface PanelMenuState extends SceneObjectState {
   labelName?: string;
   fieldName?: string;
   addToExplorations?: AddToExplorationButton;
+  panelType?: AvgFieldPanelType;
+}
+
+function addHistogramItem(items: PanelMenuItem[], sceneRef: PanelMenu) {
+  items.push({
+    text: '',
+    type: 'divider',
+  });
+  items.push({
+    text: 'Visualization',
+    type: 'group',
+  });
+  items.push({
+    text: sceneRef.state.panelType !== AvgFieldPanelType.histogram ? 'Histogram' : 'Time series',
+    iconClassName: sceneRef.state.panelType !== AvgFieldPanelType.histogram ? 'graph-bar' : 'chart-line',
+
+    onClick: () => {
+      const gridItem = sceneGraph.getAncestor(sceneRef, SceneCSSGridItem);
+      const viz = sceneGraph.getAncestor(sceneRef, VizPanel).clone();
+      const $data = sceneGraph.getData(sceneRef).clone();
+      const menu = sceneRef.clone();
+      const headerActions = Array.isArray(viz.state.headerActions)
+        ? viz.state.headerActions.map((o) => o.clone())
+        : viz.state.headerActions;
+      let body;
+
+      if (sceneRef.state.panelType !== AvgFieldPanelType.histogram) {
+        body = PanelBuilders.timeseries().setOverrides(setLevelColorOverrides);
+      } else {
+        body = PanelBuilders.histogram();
+      }
+
+      gridItem.setState({
+        body: body.setMenu(menu).setTitle(viz.state.title).setHeaderActions(headerActions).setData($data).build(),
+      });
+
+      // @todo extend findObject and use templates to avoid type assertions
+      const newPanelType =
+        sceneRef.state.panelType !== AvgFieldPanelType.timeseries
+          ? AvgFieldPanelType.timeseries
+          : AvgFieldPanelType.histogram;
+      setPanelOption('panelType', newPanelType);
+      menu.setState({ panelType: newPanelType });
+
+      const fieldsAggregatedBreakdownScene = sceneGraph.findObject(
+        gridItem,
+        (o) => o instanceof FieldsAggregatedBreakdownScene
+      ) as FieldsAggregatedBreakdownScene | null;
+      if (fieldsAggregatedBreakdownScene) {
+        fieldsAggregatedBreakdownScene.rebuildAvgFields();
+      }
+    },
+  });
 }
 
 /**
@@ -52,12 +115,20 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
 
       const items: PanelMenuItem[] = [
         {
+          text: 'Navigation',
+          type: 'group',
+        },
+        {
           text: 'Explore',
           iconClassName: 'compass',
           href: getExploreLink(this),
           onClick: () => onExploreLinkClickTracking(),
         },
       ];
+
+      if (this.state.panelType) {
+        addHistogramItem(items, this);
+      }
 
       this.setState({
         body: new VizPanelMenu({
@@ -149,6 +220,10 @@ function subscribeToAddToExploration(exploreLogsVizPanelMenu: PanelMenu) {
         exploreLogsVizPanelMenu.state.body?.addItem({
           text: ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT,
           type: 'divider',
+        });
+        exploreLogsVizPanelMenu.state.body?.addItem({
+          text: ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT,
+          type: 'group',
         });
         exploreLogsVizPanelMenu.state.body?.addItem({
           text: ADD_TO_INVESTIGATION_MENU_TEXT,
