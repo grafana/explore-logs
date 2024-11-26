@@ -54,7 +54,6 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
         {
           text: 'Explore',
           iconClassName: 'compass',
-          shortcut: '',
           onClick: () => onExploreClick(this),
         },
       ];
@@ -146,7 +145,6 @@ function subscribeToAddToExploration(exploreLogsVizPanelMenu: PanelMenu) {
       if (!existingAddToExplorationLink) {
         exploreLogsVizPanelMenu.state.body?.addItem({
           text: ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT,
-          shortcut: '',
           type: 'divider',
         });
         exploreLogsVizPanelMenu.state.body?.addItem({
