@@ -195,7 +195,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
 
   public build() {
     const groupByVariable = getFieldGroupByVariable(this);
-    const options = groupByVariable.state.options.map((opt) => opt.label);
+    const options = groupByVariable.state.options.map((opt) => String(opt.value));
 
     const fieldsBreakdownScene = sceneGraph.getAncestor(this, FieldsBreakdownScene);
     fieldsBreakdownScene.state.search.reset();
@@ -288,6 +288,10 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     const detectedFieldsFrame = getDetectedFieldsFrame(this);
     const panelType = getPanelOption('panelType') ?? undefined;
     for (const option of options) {
+      if (option === ALL_VARIABLE_VALUE || !option) {
+        continue;
+      }
+
       const child = this.buildChild(option, detectedFieldsFrame, panelType);
       if (child) {
         children.push(child);
