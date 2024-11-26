@@ -86,7 +86,7 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
     const { body } = model.useState();
 
     if (body) {
-      return body && <body.Component model={body} />;
+      return <body.Component model={body} />;
     }
 
     return <></>;
@@ -100,8 +100,7 @@ const getExploreLink = (sceneRef: SceneObject) => {
 
   // If we don't have a query runner, then our panel is within a SceneCSSGridItem, we need to get the query runner from there
   if (!queryRunner) {
-    const sceneGridItem = sceneGraph.getAncestor(sceneRef, SceneCSSGridItem);
-    const queryProvider = sceneGraph.getData(sceneGridItem);
+    const queryProvider = sceneGraph.getData(sceneRef);
 
     if (queryProvider instanceof SceneQueryRunner) {
       queryRunner = queryProvider;
