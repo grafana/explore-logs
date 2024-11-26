@@ -1,6 +1,7 @@
 import { DataFrame, GrafanaTheme2, PanelMenuItem } from '@grafana/data';
 import {
   SceneComponentProps,
+  SceneCSSGridItem,
   sceneGraph,
   SceneObject,
   SceneObjectBase,
@@ -99,7 +100,8 @@ const getExploreLink = (sceneRef: SceneObject) => {
 
   // If we don't have a query runner, then our panel is within a SceneCSSGridItem, we need to get the query runner from there
   if (!queryRunner) {
-    const queryProvider = sceneGraph.getData(sceneRef);
+    const sceneGridItem = sceneGraph.getAncestor(sceneRef, SceneCSSGridItem);
+    const queryProvider = sceneGraph.getData(sceneGridItem);
 
     if (queryProvider instanceof SceneQueryRunner) {
       queryRunner = queryProvider;
