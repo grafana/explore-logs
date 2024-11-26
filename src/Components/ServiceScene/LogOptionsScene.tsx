@@ -90,7 +90,6 @@ function LogOptionsRenderer({ model }: SceneComponentProps<LogOptionsScene>) {
           ]}
           value={sortOrder}
           onChange={model.onChangeLogsSortOrder}
-          className={styles.buttonGroup}
         />
       </InlineField>
 
@@ -99,7 +98,6 @@ function LogOptionsRenderer({ model }: SceneComponentProps<LogOptionsScene>) {
           size="sm"
           value={wrapLinesText}
           onChange={model.handleWrapLinesChange}
-          className={styles.buttonGroup}
           options={[
             {
               label: 'Wrap',
@@ -126,18 +124,8 @@ const getStyles = (theme: GrafanaTheme2) => ({
     gap: theme.spacing(1),
     marginTop: theme.spacing(0.5),
   }),
-  input: css({
-    width: '100%',
-  }),
-  field: css({
-    label: 'field',
-    marginBottom: 0,
-  }),
   buttonGroupWrapper: css({
     margin: 0,
     alignItems: 'center',
-  }),
-  buttonGroup: css({
-    // padding: `0 4px 0 0`,
   }),
 });
