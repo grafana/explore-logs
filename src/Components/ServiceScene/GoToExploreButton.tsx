@@ -20,7 +20,7 @@ export const GoToExploreButton = ({ exploration }: GoToExploreButtonState) => {
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.open_in_explore_clicked
     );
-    onExploreLinkClick(exploration);
+    onExploreLinkClick(exploration, undefined, true);
   };
 
   return (
@@ -35,7 +35,7 @@ export const GoToExploreButton = ({ exploration }: GoToExploreButtonState) => {
   );
 };
 
-export const onExploreLinkClick = (indexScene: IndexScene, expr?: string) => {
+export const onExploreLinkClick = (indexScene: IndexScene, expr?: string, open = false) => {
   if (!expr) {
     expr = getQueryExpr(indexScene);
   }
@@ -57,7 +57,11 @@ export const onExploreLinkClick = (indexScene: IndexScene, expr?: string) => {
   });
   const subUrl = config.appSubUrl ?? '';
   const link = urlUtil.renderUrl(`${subUrl}/explore`, { panes: exploreState, schemaVersion: 1 });
-  window.open(link, '_blank');
+  if (open) {
+    window.open(link, '_blank');
+  }
+
+  return link;
 };
 
 function getUrlColumns() {

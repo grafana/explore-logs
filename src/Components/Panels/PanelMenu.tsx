@@ -54,7 +54,8 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
         {
           text: 'Explore',
           iconClassName: 'compass',
-          onClick: () => onExploreClick(this),
+          href: getExploreLink(this),
+          onClick: () => onExploreLinkClickTracking(),
         },
       ];
 
@@ -92,7 +93,7 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
   };
 }
 
-const onExploreClick = (sceneRef: SceneObject) => {
+const getExploreLink = (sceneRef: SceneObject) => {
   const indexScene = sceneGraph.getAncestor(sceneRef, IndexScene);
   const $data = sceneGraph.getData(sceneRef);
   let queryRunner = getQueryRunnerFromChildren($data)[0];
@@ -111,9 +112,11 @@ const onExploreClick = (sceneRef: SceneObject) => {
   const uninterpolatedExpr: string | undefined = queryRunner.state.queries[0].expr;
   const expr = sceneGraph.interpolate(sceneRef, uninterpolatedExpr);
 
-  reportAppInteraction(USER_EVENTS_PAGES.all, USER_EVENTS_ACTIONS.all.open_in_explore_menu_clicked);
+  return onExploreLinkClick(indexScene, expr);
+};
 
-  onExploreLinkClick(indexScene, expr);
+const onExploreLinkClickTracking = () => {
+  reportAppInteraction(USER_EVENTS_PAGES.all, USER_EVENTS_ACTIONS.all.open_in_explore_menu_clicked);
 };
 
 const getInvestigationLink = (addToExplorations: AddToExplorationButton) => {
