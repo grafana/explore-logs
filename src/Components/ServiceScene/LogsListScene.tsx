@@ -25,6 +25,7 @@ import {
 } from 'services/store';
 import { logger } from '../../services/logger';
 import { Options } from '@grafana/schema/dist/esm/raw/composable/logs/panelcfg/x/LogsPanelCfg_types.gen';
+import { isPropType, isSelectedTableRow, PropType, unknownToStrings } from '../../services/narrowing';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -69,15 +70,18 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     const stateUpdate: Partial<LogsListSceneState> = {};
     try {
       if (typeof values.urlColumns === 'string') {
-        const decodedUrlColumns: string[] = JSON.parse(values.urlColumns);
+        const decodedUrlColumns: string[] = unknownToStrings(JSON.parse(values.urlColumns));
         if (decodedUrlColumns !== this.state.urlColumns) {
           stateUpdate.urlColumns = decodedUrlColumns;
         }
       }
       if (typeof values.selectedLine === 'string') {
-        const decodedSelectedTableRow: SelectedTableRow = JSON.parse(values.selectedLine);
-        if (decodedSelectedTableRow !== this.state.selectedLine) {
-          stateUpdate.selectedLine = decodedSelectedTableRow;
+        const unknownTableRow = JSON.parse(values.selectedLine);
+        if (isSelectedTableRow(unknownTableRow)) {
+          const decodedSelectedTableRow: SelectedTableRow = unknownTableRow;
+          if (decodedSelectedTableRow !== this.state.selectedLine) {
+            stateUpdate.selectedLine = decodedSelectedTableRow;
+          }
         }
       }
 
