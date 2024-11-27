@@ -8,7 +8,7 @@ import {
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
-  VizPanel,
+  VizPanel, VizPanelBuilder,
 } from '@grafana/scenes';
 import { ALL_VARIABLE_VALUE, DetectedFieldType, ParserType } from '../../../services/variables';
 import { buildDataQuery } from '../../../services/query';
@@ -257,20 +257,16 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     const panelType = getPanelOption('panelType') ?? AvgFieldPanelType.timeseries;
 
     activeLayout?.state.children.forEach((child) => {
-      if (child instanceof SceneCSSGridItem) {
+      if (child instanceof SceneCSSGridItem && !child.state.isHidden) {
         const panels = sceneGraph.findDescendents(child, VizPanel);
         if (panels.length) {
           // Will only be one panel as a child of CSSGridItem
           const panel = panels[0];
           const labelName = panel.state.title;
-          const fieldType = getDetectedFieldType(labelName, detectedFieldsFrame);
-          if (isAvgField(fieldType)) {
-            const newChild = this.buildChild(labelName, detectedFieldsFrame, panelType);
-            if (newChild) {
-              children.push(newChild);
-            }
-          } else {
-            children.push(child);
+          // const fieldType = getDetectedFieldType(labelName, detectedFieldsFrame);
+          const newChild = this.buildChild(labelName, detectedFieldsFrame, panelType);
+          if (newChild) {
+            children.push(newChild);
           }
         }
       }
@@ -307,27 +303,34 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
 
     const fieldType = getDetectedFieldType(labelName, detectedFieldsFrame);
     const dataTransformer = this.getDataTransformerForPanel(labelName, detectedFieldsFrame, fieldType);
-    let body;
+    let body
 
     const headerActions = [];
+
+    if (panelType === 'histogram') {
+      body = PanelBuilders.histogram();
+    } else {
+      body = PanelBuilders.timeseries();
+    }
+
     if (!isAvgField(fieldType)) {
-      body = PanelBuilders.timeseries()
+
+     body
         .setTitle(labelName)
         .setData(dataTransformer)
-        .setMenu(new PanelMenu({ labelName: labelName }))
-        .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
-        .setCustomFieldConfig('fillOpacity', 100)
-        .setCustomFieldConfig('lineWidth', 0)
-        .setCustomFieldConfig('pointSize', 0)
-        .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-        .setOverrides(setLevelColorOverrides);
+        .setMenu(new PanelMenu({ labelName: labelName, panelType }))
+
+         if(panelType === 'timeseries'){
+           body.setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
+               .setCustomFieldConfig('fillOpacity', 100)
+               .setCustomFieldConfig('lineWidth', 0)
+               .setCustomFieldConfig('pointSize', 0)
+               .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+              .setOverrides(setLevelColorOverrides);
+         }
+
       headerActions.push(new SelectLabelActionScene({ labelName: String(labelName), fieldType: ValueSlugs.field }));
     } else {
-      if (panelType === 'histogram') {
-        body = PanelBuilders.histogram();
-      } else {
-        body = PanelBuilders.timeseries();
-      }
       body
         .setTitle(labelName)
         .setData(dataTransformer)
