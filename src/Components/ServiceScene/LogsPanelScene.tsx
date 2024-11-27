@@ -118,7 +118,8 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         .setOption('sortOrder', getLogsPanelSortOrder())
         .setOption('wrapLogMessage', Boolean(getLogOption<boolean>('wrapLogMessage', false)))
         .setOption('showLogContextToggle', true)
-
+        // @ts-expect-error
+        .setOption('enableInfiniteScrolling', true)
         // @ts-expect-error
         .setOption('logRowMenuIconsAfter', [<CopyLinkButton onClick={this.handleShareLogLineClick} key={0} />])
         .setHeaderActions(
