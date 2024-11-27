@@ -25,7 +25,7 @@ import {
 } from 'services/store';
 import { logger } from '../../services/logger';
 import { Options } from '@grafana/schema/dist/esm/raw/composable/logs/panelcfg/x/LogsPanelCfg_types.gen';
-import { isPropType, isSelectedTableRow, PropType, unknownToStrings } from '../../services/narrowing';
+import { narrowLogsVisualizationType, narrowSelectedTableRow, unknownToStrings } from '../../services/narrowing';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -76,8 +76,8 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         }
       }
       if (typeof values.selectedLine === 'string') {
-        const unknownTableRow = JSON.parse(values.selectedLine);
-        if (isSelectedTableRow(unknownTableRow)) {
+        const unknownTableRow = narrowSelectedTableRow(JSON.parse(values.selectedLine));
+        if (unknownTableRow) {
           const decodedSelectedTableRow: SelectedTableRow = unknownTableRow;
           if (decodedSelectedTableRow !== this.state.selectedLine) {
             stateUpdate.selectedLine = decodedSelectedTableRow;
@@ -86,14 +86,14 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       }
 
       if (typeof values.visualizationType === 'string') {
-        const decodedVisualizationType: LogsVisualizationType = JSON.parse(values.visualizationType);
-        if (decodedVisualizationType !== this.state.visualizationType) {
+        const decodedVisualizationType = narrowLogsVisualizationType(JSON.parse(values.visualizationType));
+        if (decodedVisualizationType && decodedVisualizationType !== this.state.visualizationType) {
           stateUpdate.visualizationType = decodedVisualizationType;
         }
       }
 
       if (typeof values.displayedFields === 'string') {
-        const displayedFields = JSON.parse(values.displayedFields);
+        const displayedFields = unknownToStrings(JSON.parse(values.displayedFields));
         if (displayedFields && displayedFields.length) {
           stateUpdate.displayedFields = displayedFields;
         }

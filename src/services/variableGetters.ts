@@ -37,6 +37,7 @@ import {
 } from './variables';
 import { AdHocVariableFilter } from '@grafana/data';
 import { logger } from './logger';
+import { narrowFieldValue, NarrowingError } from './narrowing';
 
 export function getLogsStreamSelector(options: LogsQueryOptions) {
   const {
@@ -175,11 +176,36 @@ export function getUrlParamNameForVariable(variableName: string) {
   return `var-${variableName}`;
 }
 
+// export function getValueFromFieldsFilter(filter: AdHocVariableFilter, variableName: string = VAR_FIELDS): FieldValue {
+//   try {
+//     return JSON.parse(filter.value);
+//   } catch (e) {
+//     logger.warn(`Failed to parse ${variableName}`, { value: filter.value });
+//
+//     // If the user has a URL from before 0.1.4 where detected_fields changed the format of the fields value to include the parser, fall back to mixed parser if we have a value
+//     if (filter.value) {
+//       return {
+//         value: filter.value,
+//         parser: 'mixed',
+//       };
+//     }
+//     throw e;
+//   }
+// }
+
 export function getValueFromFieldsFilter(filter: AdHocVariableFilter, variableName: string = VAR_FIELDS): FieldValue {
   try {
-    return JSON.parse(filter.value);
+    const fieldValue = narrowFieldValue(JSON.parse(filter.value));
+    if (fieldValue !== false) {
+      return fieldValue;
+    } else {
+      logger.error(new NarrowingError('getValueFromFieldsFilter: invalid filter value!'), {
+        msg: `getValueFromFieldsFilter: Failed to validate ${variableName}`,
+        value: filter.value,
+      });
+    }
   } catch (e) {
-    logger.warn(`Failed to parse ${variableName}`, { value: filter.value });
+    logger.error(e, { msg: `getValueFromFieldsFilter: Failed to parse ${variableName}`, value: filter.value });
 
     // If the user has a URL from before 0.1.4 where detected_fields changed the format of the fields value to include the parser, fall back to mixed parser if we have a value
     if (filter.value) {

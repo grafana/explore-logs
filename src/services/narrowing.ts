@@ -1,11 +1,15 @@
+import { SelectedTableRow } from '../Components/Table/LogLineCellComponent';
+import { LogsVisualizationType } from './store';
+import { FieldValue, ParserType } from './variables';
+const isObj = (o: unknown): o is object => typeof o === 'object' && o !== null;
+
+function hasProp<K extends PropertyKey>(data: object, prop: K): data is Record<K, unknown> {
+  return prop in data;
+}
+
 const isString = (s: unknown) => (typeof s === 'string' && s) || '';
 
-const isPropString = <P extends string, T extends Record<P, T[P]>>(
-  prop: P,
-  object: T
-): object is T & Record<P, string> => {
-  return typeof object[prop] === 'string';
-};
+export const isRecord = (obj: unknown): obj is Record<string, unknown> => typeof obj === 'object';
 
 export function unknownToStrings(a: unknown): string[] {
   let strings: string[] = [];
@@ -17,62 +21,63 @@ export function unknownToStrings(a: unknown): string[] {
   return strings;
 }
 
-export interface PropType {
-  name: string;
-  type: 'string' | 'number';
-}
+export function narrowSelectedTableRow(o: unknown): SelectedTableRow | false {
+  const narrowed = isObj(o) && hasProp(o, 'row') && hasProp(o, 'id') && o;
 
-export function isPropType<T extends SelectedTableRow>(o: unknown, prop: PropType): o is T {
-  return isObj(o) && hasProp(o, prop.name) && typeof o[prop.name] === prop.type;
-}
-
-// Example
-type SelectedTableRow = {
-  row: number;
-  id: string;
-};
-
-const isObj = (o: unknown): o is object => typeof o === 'object' && o !== null;
-
-function hasProp<K extends PropertyKey>(data: object, prop: K): data is Record<K, unknown> {
-  return prop in data;
-}
-
-export function isSelectedTableRow(o: unknown) {
-  return isObj(o) && hasProp(o, 'row') && 'row' in o && typeof o.row === 'string';
-}
-
-export function isSelectedTableRowAssert<T>(o: unknown): o is T {
-  return isObj(o) && hasProp(o, 'row') && 'row' in o && typeof o.row === 'string';
-}
-
-const unknown: unknown = {
-  id: 'string-value',
-};
-
-// This is the closest to a solution, but requires inlining, also the row is not typed as string
-if (isObj(unknown) && hasProp(unknown, 'row') && 'row' in unknown && typeof unknown.row === 'string') {
-  const result = unknown; // type inferred  as Record<"row", unknown>
-  const row = result.row; // type inferred as unknown
-  const unknownRow = unknown.row; // type inferred as string
-  console.log(result.row); // No type error
-  console.log(result.id); // Type error, id does not exist
-
-  if (typeof result.row === 'string') {
-    const row = result.row;
+  if (narrowed) {
+    const row = typeof narrowed.row === 'number' && narrowed.row;
+    const id = typeof narrowed.id === 'string' && narrowed.id;
+    if (id !== false && row !== false) {
+      return { row, id };
+    }
   }
+
+  return false;
 }
 
-// This fails to type the object at all
-if (isSelectedTableRow(unknown)) {
-  const result = unknown; // type inferred as unknown
-  console.log(result.row); // result is type unknown, type error
-  console.log(result.id); // result is type unknown, type error
+export function narrowLogsVisualizationType(o: unknown): LogsVisualizationType | false {
+  return typeof o === 'string' && (o === 'logs' || o === 'table') && o;
 }
 
-// This asserts that the object is the Templated type (SelectedTableRow), it doesnt matter if the interface or implementation changes, you won't get type errors
-if (isSelectedTableRowAssert<SelectedTableRow>(unknown)) {
-  const result = unknown; // type inferred as SelectedTableRow
-  console.log(result.row); // no type error
-  console.log(result.id); // runtime error
+export function narrowFieldValue(o: unknown): FieldValue | false {
+  const narrowed = isObj(o) && hasProp(o, 'value') && hasProp(o, 'parser') && o;
+
+  if (narrowed) {
+    const parser: ParserType | false =
+      typeof narrowed.parser === 'string' &&
+      (narrowed.parser === 'logfmt' ||
+        narrowed.parser === 'json' ||
+        narrowed.parser === 'mixed' ||
+        narrowed.parser === 'structuredMetadata') &&
+      narrowed.parser;
+    const value = typeof narrowed.value === 'string' && narrowed.value;
+
+    if (parser !== false && value !== false) {
+      return { parser, value };
+    }
+  }
+
+  return false;
 }
+
+export function narrowRecordStringNumber(o: unknown): Record<string, number> | false {
+  const narrowed = isObj(o) && isRecord(o) && o;
+
+  if (narrowed) {
+    const keys = Object.keys(narrowed);
+    const returnRecord: Record<string, number> = {};
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const value = narrowed[keys[i]];
+      if (typeof value === 'number') {
+        returnRecord[key] = value;
+      }
+    }
+
+    return returnRecord;
+  }
+
+  return false;
+}
+
+export class NarrowingError extends Error {}
