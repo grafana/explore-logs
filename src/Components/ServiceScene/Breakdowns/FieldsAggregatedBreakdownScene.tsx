@@ -42,7 +42,7 @@ import {
 } from '../../../services/variableGetters';
 import { AvgFieldPanelType, getPanelWrapperStyles, PanelMenu } from '../../Panels/PanelMenu';
 import { logger } from '../../../services/logger';
-import { getPanelOption, PanelOptions } from '../../../services/store';
+import { getPanelOption } from '../../../services/store';
 
 export interface FieldsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
