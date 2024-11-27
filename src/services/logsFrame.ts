@@ -1,4 +1,14 @@
-import { DataFrame, DataFrameType, Field, FieldCache, FieldType, FieldWithIndex, Labels } from '@grafana/data';
+import {
+  arrayToDataFrame,
+  DataFrame,
+  DataFrameType,
+  DataTopic,
+  Field,
+  FieldCache,
+  FieldType,
+  FieldWithIndex,
+  Labels,
+} from '@grafana/data';
 
 // these are like Labels, but their values can be
 // arbitrary structures, not just strings
@@ -179,4 +189,36 @@ export function getBodyName(logsFrame?: LogsFrame | null): string {
 
 export function getIdName(logsFrame?: LogsFrame): string {
   return logsFrame?.idField?.name ?? DATAPLANE_ID_NAME;
+}
+
+export function getSeriesVisibleRange(series: DataFrame[]) {
+  let start = 0;
+  let end = 0;
+
+  const timeField = series[0]?.fields.find((field) => field.type === FieldType.time);
+  if (timeField) {
+    const oldestFirst = timeField.values[0] < timeField.values[timeField.values.length - 1];
+    start = oldestFirst ? timeField.values[0] : timeField.values[timeField.values.length - 1];
+    end = oldestFirst ? timeField.values[timeField.values.length - 1] : timeField.values[0];
+  }
+
+  return { start, end };
+}
+
+export const VISIBLE_RANGE_NAME = 'Visible range';
+export function getVisibleRangeFrame(start: number, end: number) {
+  const frame = arrayToDataFrame([
+    {
+      time: start,
+      timeEnd: end,
+      isRegion: true,
+      color: 'rgba(120, 120, 120, 0.1)',
+    },
+  ]);
+  frame.name = VISIBLE_RANGE_NAME;
+  frame.meta = {
+    dataTopic: DataTopic.Annotations,
+  };
+
+  return frame;
 }

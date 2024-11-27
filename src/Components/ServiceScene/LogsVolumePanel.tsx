@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { PanelBuilders, SceneComponentProps, SceneObjectBase, SceneObjectState, VizPanel } from '@grafana/scenes';
+import { PanelBuilders, SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState, VizPanel } from '@grafana/scenes';
 import { LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode, useStyles2 } from '@grafana/ui';
 import { getQueryRunner, setLogsVolumeFieldConfigs, syncLogsPanelVisibleSeries } from 'services/panel';
 import { buildDataQuery } from 'services/query';
@@ -8,16 +8,19 @@ import { LEVEL_VARIABLE_VALUE } from 'services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getTimeSeriesExpr } from '../../services/expressions';
 import { toggleLevelFromFilter } from 'services/levels';
-import { LoadingState } from '@grafana/data';
+import { DataFrame, LoadingState } from '@grafana/data';
 import { getFieldsVariable, getLabelsVariable, getLevelsVariable } from '../../services/variableGetters';
 import { areArraysEqual } from '../../services/comparison';
 import { PanelMenu, getPanelWrapperStyles } from '../Panels/PanelMenu';
+import { ServiceScene } from './ServiceScene';
+import { getSeriesVisibleRange, getVisibleRangeFrame } from 'services/logsFrame';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
 }
 
 export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
+  private updatedLogSeries: DataFrame[] | null = null;
   constructor(state: LogsVolumePanelState) {
     super(state);
 
@@ -77,12 +80,40 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
         if (newState.data?.state !== LoadingState.Done) {
           return;
         }
-
+        this.updateVisibleRange(panel);
         syncLogsPanelVisibleSeries(panel, newState.data.series, this);
       })
     );
 
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
+    this._subs.add(
+      serviceScene.subscribeToState((newState) => {
+        if (newState.$data?.state.data?.state === LoadingState.Done && panel.state.$data?.state.data) {
+          this.updatedLogSeries = newState.$data?.state.data.series;
+          this.updateVisibleRange(panel);
+        }
+      })
+    );
+
     return panel;
+  }
+
+  private updateVisibleRange(panel: VizPanel) {
+    if (
+      !panel.state.$data?.state.data ||
+      panel.state.$data?.state.data.state !== LoadingState.Done ||
+      !this.updatedLogSeries
+    ) {
+      return;
+    }
+    const visibleRange = getSeriesVisibleRange(this.updatedLogSeries);
+    this.updatedLogSeries = null;
+    panel.state.$data.setState({
+      data: {
+        ...panel.state.$data.state.data,
+        annotations: [getVisibleRangeFrame(visibleRange.start, visibleRange.end)],
+      },
+    });
   }
 
   private extendTimeSeriesLegendBus = (context: PanelContext) => {
