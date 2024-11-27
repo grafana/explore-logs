@@ -257,7 +257,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     const panelType = getPanelOption('panelType') ?? AvgFieldPanelType.timeseries;
 
     activeLayout?.state.children.forEach((child) => {
-      if (child instanceof SceneCSSGridItem) {
+      if (child instanceof SceneCSSGridItem && !child.state.isHidden) {
         const panels = sceneGraph.findDescendents(child, VizPanel);
         if (panels.length) {
           // Will only be one panel as a child of CSSGridItem
