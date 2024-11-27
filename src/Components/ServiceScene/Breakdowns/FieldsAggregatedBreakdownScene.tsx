@@ -42,7 +42,7 @@ import {
 } from '../../../services/variableGetters';
 import { AvgFieldPanelType, getPanelWrapperStyles, PanelMenu } from '../../Panels/PanelMenu';
 import { logger } from '../../../services/logger';
-import { getPanelOption } from '../../../services/store';
+import { getPanelOption, PanelOptions } from '../../../services/store';
 
 export interface FieldsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -254,7 +254,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     const detectedFieldsFrame = getDetectedFieldsFrame(this);
     const activeLayout = this.getActiveGridLayouts();
     const children: SceneCSSGridItem[] = [];
-    const panelType = getPanelOption('panelType') ?? undefined;
+    const panelType = getPanelOption('panelType') ?? AvgFieldPanelType.timeseries;
 
     activeLayout?.state.children.forEach((child) => {
       if (child instanceof SceneCSSGridItem) {
@@ -286,7 +286,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
   private buildChildren(options: string[]): SceneCSSGridItem[] {
     const children: SceneCSSGridItem[] = [];
     const detectedFieldsFrame = getDetectedFieldsFrame(this);
-    const panelType = getPanelOption('panelType') ?? undefined;
+    const panelType = getPanelOption('panelType') ?? AvgFieldPanelType.timeseries;
     for (const option of options) {
       if (option === ALL_VARIABLE_VALUE || !option) {
         continue;
