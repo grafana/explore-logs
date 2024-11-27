@@ -17,7 +17,7 @@ import { getVariableForLabel } from '../../services/fields';
 import { VAR_FIELDS, VAR_LABELS, VAR_LEVELS, VAR_METADATA } from '../../services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { getAdHocFiltersVariable, getValueFromFieldsFilter } from '../../services/variableGetters';
-import { copyText, generateLogShortlink } from 'services/text';
+import { copyText, generateLogShortlink, resolveRowTimeRangeForSharing } from 'services/text';
 import { CopyLinkButton } from './CopyLinkButton';
 import { getLogsPanelSortOrder, LogOptionsScene } from './LogOptionsScene';
 
@@ -132,15 +132,15 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
   private handleShareLogLineClick = (event: MouseEvent<HTMLElement>, row?: LogRowModel) => {
     if (row?.rowId && this.state.body) {
       const parent = this.getParentScene();
-      const timeRange = sceneGraph.getTimeRange(this.state.body);
       const buttonRef = event.currentTarget instanceof HTMLButtonElement ? event.currentTarget : undefined;
+      const timeRange = resolveRowTimeRangeForSharing(sceneGraph.getTimeRange(this.state.body).state.value, row);
       copyText(
         generateLogShortlink(
           'panelState',
           {
             logs: { id: row.uid, displayedFields: parent.state.displayedFields },
           },
-          timeRange.state.value
+          timeRange
         ),
         buttonRef
       );

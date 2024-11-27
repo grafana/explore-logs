@@ -1,6 +1,6 @@
 import { locationService } from '@grafana/runtime';
 import { logger } from './logger';
-import { TimeRange } from '@grafana/data';
+import { dateTime, LogRowModel, TimeRange } from '@grafana/data';
 
 export const copyText = async (
   text: string,
@@ -70,4 +70,17 @@ export function capitalizeFirstLetter(input: string) {
 
 export function truncateText(input: string, length: number, ellipsis: boolean) {
   return input.substring(0, length) + (ellipsis && input.length > length ? '…' : '');
+}
+
+export function resolveRowTimeRangeForSharing(timeRange: TimeRange, row: LogRowModel): TimeRange {
+  const from = dateTime(row.timeEpochMs - 1);
+  const to = dateTime(row.timeEpochMs + 1);
+  return {
+    from,
+    to,
+    raw: {
+      from,
+      to,
+    },
+  };
 }
