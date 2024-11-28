@@ -99,8 +99,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     this._subs.add(
       serviceScene.subscribeToState((newState) => {
-        console.log(newState);
-        if (newState.$data?.state.data?.state === LoadingState.Done && panel.state.$data?.state.data) {
+        if (newState.$data?.state.data?.state === LoadingState.Done) {
           this.updatedLogSeries = newState.$data?.state.data.series;
           this.displayVisibleRange();
         }
