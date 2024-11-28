@@ -175,6 +175,7 @@ export const getPanelWrapperStyles = (theme: GrafanaTheme2) => {
       width: '100%',
       height: '100%',
       label: 'panel-wrapper',
+      position: 'absolute',
       display: 'flex',
 
       // @todo remove this wrapper and styles when core changes are introduced in ???
