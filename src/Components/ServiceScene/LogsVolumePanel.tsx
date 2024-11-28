@@ -1,6 +1,13 @@
 import React from 'react';
 
-import { PanelBuilders, SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState, VizPanel } from '@grafana/scenes';
+import {
+  PanelBuilders,
+  SceneComponentProps,
+  sceneGraph,
+  SceneObjectBase,
+  SceneObjectState,
+  VizPanel,
+} from '@grafana/scenes';
 import { LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode, useStyles2 } from '@grafana/ui';
 import { getQueryRunner, setLogsVolumeFieldConfigs, syncLogsPanelVisibleSeries } from 'services/panel';
 import { buildDataQuery } from 'services/query';
@@ -19,10 +26,14 @@ export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
 }
 
+export const logsVolumePanelKey = 'logs-volume-panel';
 export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
   private updatedLogSeries: DataFrame[] | null = null;
   constructor(state: LogsVolumePanelState) {
-    super(state);
+    super({
+      ...state,
+      key: logsVolumePanelKey,
+    });
 
     this.addActivationHandler(this.onActivate.bind(this));
   }
@@ -80,7 +91,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
         if (newState.data?.state !== LoadingState.Done) {
           return;
         }
-        this.updateVisibleRange(panel);
+        this.displayVisibleRange();
         syncLogsPanelVisibleSeries(panel, newState.data.series, this);
       })
     );
@@ -88,9 +99,10 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     this._subs.add(
       serviceScene.subscribeToState((newState) => {
+        console.log(newState);
         if (newState.$data?.state.data?.state === LoadingState.Done && panel.state.$data?.state.data) {
           this.updatedLogSeries = newState.$data?.state.data.series;
-          this.updateVisibleRange(panel);
+          this.displayVisibleRange();
         }
       })
     );
@@ -98,8 +110,15 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     return panel;
   }
 
-  private updateVisibleRange(panel: VizPanel) {
+  public updateVisibleRange(data: DataFrame[]) {
+    this.updatedLogSeries = data;
+    this.displayVisibleRange();
+  }
+
+  private displayVisibleRange() {
+    const panel = this.state.panel;
     if (
+      !panel ||
       !panel.state.$data?.state.data ||
       panel.state.$data?.state.data.state !== LoadingState.Done ||
       !this.updatedLogSeries

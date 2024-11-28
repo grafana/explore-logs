@@ -197,11 +197,11 @@ export function getSeriesVisibleRange(series: DataFrame[]) {
 
   const timeField = series[0]?.fields.find((field) => field.type === FieldType.time);
   if (timeField) {
-    const oldestFirst = timeField.values[0] < timeField.values[timeField.values.length - 1];
-    start = oldestFirst ? timeField.values[0] : timeField.values[timeField.values.length - 1];
-    end = oldestFirst ? timeField.values[timeField.values.length - 1] : timeField.values[0];
+    const values = timeField.values.sort();
+    const oldestFirst = values[0] < values[values.length - 1];
+    start = oldestFirst ? values[0] : values[values.length - 1];
+    end = oldestFirst ? values[values.length - 1] : values[0];
   }
-
   return { start, end };
 }
 

@@ -20,6 +20,7 @@ import { getAdHocFiltersVariable, getValueFromFieldsFilter } from '../../service
 import { copyText, generateLogShortlink, resolveRowTimeRangeForSharing } from 'services/text';
 import { CopyLinkButton } from './CopyLinkButton';
 import { getLogsPanelSortOrder, LogOptionsScene } from './LogOptionsScene';
+import { LogsVolumePanel, logsVolumePanelKey } from './LogsVolumePanel';
 
 interface LogsPanelSceneState extends SceneObjectState {
   body?: VizPanel;
@@ -121,6 +122,8 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         // @ts-expect-error
         .setOption('enableInfiniteScrolling', true)
         // @ts-expect-error
+        .setOption('onNewLogsReceived', this.updateVisibleRange)
+        // @ts-expect-error
         .setOption('logRowMenuIconsAfter', [<CopyLinkButton onClick={this.handleShareLogLineClick} key={0} />])
         .setHeaderActions(
           new LogOptionsScene({ visualizationType, onChangeVisualizationType: parentModel.setVisualizationType })
@@ -128,6 +131,13 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         .build()
     );
   }
+
+  private updateVisibleRange = (newLogs: DataFrame[]) => {
+    const logsVolumeScene = sceneGraph.findByKeyAndType(this, logsVolumePanelKey, LogsVolumePanel);
+    if (logsVolumeScene instanceof LogsVolumePanel) {
+      logsVolumeScene.updateVisibleRange(newLogs);
+    }
+  };
 
   private handleShareLogLineClick = (event: MouseEvent<HTMLElement>, row?: LogRowModel) => {
     if (row?.rowId && this.state.body) {
