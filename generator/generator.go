@@ -6,8 +6,8 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/cyriltovena/loki-log-generator/flog"
-	"github.com/cyriltovena/loki-log-generator/log"
+	"github.com/grafana/explore-logs/generator/flog"
+	"github.com/grafana/explore-logs/generator/log"
 	"github.com/grafana/loki/pkg/push"
 	"github.com/prometheus/common/model"
 )
@@ -90,6 +90,26 @@ var generators = map[model.LabelValue]map[model.LabelValue]LogGenerator{
 		"tempo-ingester":    noisyTempo,
 		"tempo-distributor": noisyTempo,
 	},
+	"loki-otel": {
+		"loki-ingester-otel": lokiPod,
+	},
+}
+
+func lokiPod(ctx context.Context, logger *log.AppLogger, metadata push.LabelsAdapter) {
+	go func() {
+		for ctx.Err() == nil {
+			t := time.Now()
+			logger.LogWithMetadata(log.ERROR, t, mimirGRPCLog("connection refused to object store", "/loki.Ingester/Push"), log.RandStructuredMetadata("mimir-ingester"))
+			time.Sleep(time.Duration(rand.Intn(10000)) * time.Millisecond)
+		}
+	}()
+	go func() {
+		for ctx.Err() == nil {
+			t := time.Now()
+			logger.LogWithMetadata(log.INFO, t, mimirGRPCLog("", "/loki.Ingester/Push"), log.RandStructuredMetadata("loki-ingester"))
+			time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
+		}
+	}()
 }
 
 var noisyTempo = func(ctx context.Context, logger *log.AppLogger, metadata push.LabelsAdapter) {
