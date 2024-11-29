@@ -100,12 +100,18 @@ export function sortLevelTransformation() {
       map((data: DataFrame[]) => {
         return data
           .map((d) => {
+            if (!d.fields.length) {
+              return d;
+            }
             if (!d.fields[1].config.displayNameFromDS) {
               d.fields[1].config.displayNameFromDS = UNKNOWN_LEVEL_LOGS;
             }
             return d;
           })
           .sort((a, b) => {
+            if (!a.fields.length || !b.fields.length) {
+              return 0;
+            }
             const aName: string | undefined = a.fields[1].config.displayNameFromDS;
             const aVal = aName?.includes('error') ? 4 : aName?.includes('warn') ? 3 : aName?.includes('info') ? 2 : 1;
             const bName: string | undefined = b.fields[1].config.displayNameFromDS;
