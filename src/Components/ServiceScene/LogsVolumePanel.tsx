@@ -88,12 +88,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
 
     this._subs.add(
       panel.state.$data?.subscribeToState((newState) => {
-        // With sharding, state can be error but still show data
-        if (
-          !newState.data ||
-          newState.data.state === LoadingState.Streaming ||
-          newState.data.state === LoadingState.Loading
-        ) {
+        if (newState.data?.state !== LoadingState.Done) {
           return;
         }
         this.displayVisibleRange();
@@ -124,8 +119,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     if (
       !panel ||
       !panel.state.$data?.state.data ||
-      panel.state.$data?.state.data.state === LoadingState.Streaming ||
-      panel.state.$data?.state.data.state === LoadingState.Loading ||
+      panel.state.$data?.state.data.state !== LoadingState.Done ||
       !this.updatedLogSeries
     ) {
       return;
