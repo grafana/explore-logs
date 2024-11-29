@@ -109,7 +109,7 @@ export function sortLevelTransformation() {
             return d;
           })
           .sort((a, b) => {
-            if (!a.fields.length || !b.fields.length) {
+            if (a.fields.length < 2 || b.fields.length < 2) {
               return 0;
             }
             const aName: string | undefined = a.fields[1].config.displayNameFromDS;
