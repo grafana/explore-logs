@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
-	"github.com/cyriltovena/loki-log-generator/log"
+	"github.com/grafana/explore-logs/generator/log"
 	"github.com/grafana/loki-client-go/loki"
 	"github.com/grafana/loki/pkg/push"
 	"github.com/prometheus/common/model"
@@ -49,6 +50,9 @@ func main() {
 				// Remove `metadata` from nginx logs
 				if serviceName == "nginx" {
 					metadata = push.LabelsAdapter{}
+				}
+				if strings.Contains(string(serviceName), "-otel") {
+					logger = log.NewOtelLogger()
 				}
 				generator(ctx, log.NewAppLogger(labels, logger), metadata)
 			})

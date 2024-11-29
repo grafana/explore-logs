@@ -112,7 +112,7 @@ func ForAllClusters(namespace, svc model.LabelValue, cb func(model.LabelSet, pus
 				"env":              model.LabelValue(namespaces[rand.Intn(len(namespaces))]),
 				"cluster":          model.LabelValue(cluster),
 				"__stream_shard__": model.LabelValue(shards[clusterInt%len(shards)]),
-				"namespace":        model.LabelValue(namespace),
+				"namespace":        namespace,
 				"service_name":     svc,
 			}, RandStructuredMetadata(string(svc)))
 		}
