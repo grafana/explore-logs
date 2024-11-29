@@ -13,10 +13,8 @@ processors:
 
 exporters:
   otlphttp/logs:
-    endpoint: http://localhost:4317/v1/logs
-    verbosity: detailed
-    sampling_initial: 1
-    sampling_thereafter: 1
+    # change this depending on where you're running loki (can be made configurable)
+    endpoint: http://localhost:3100/otlp
     tls:
       insecure: true
 
