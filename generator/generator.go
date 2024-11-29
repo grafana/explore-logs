@@ -95,18 +95,18 @@ var generators = map[model.LabelValue]map[model.LabelValue]LogGenerator{
 	},
 }
 
-func lokiPod(ctx context.Context, logger *log.AppLogger, metadata push.LabelsAdapter) {
+var lokiPod = func(ctx context.Context, logger *log.AppLogger, metadata push.LabelsAdapter) {
 	go func() {
 		for ctx.Err() == nil {
 			t := time.Now()
-			logger.LogWithMetadata(log.ERROR, t, mimirGRPCLog("connection refused to object store", "/loki.Ingester/Push"), log.RandStructuredMetadata("mimir-ingester"))
+			logger.LogWithMetadata(log.ERROR, t, lokiGRPCLog("connection refused to object store", "/loki.Ingester/Push"), log.RandStructuredMetadata("loki-ingester"))
 			time.Sleep(time.Duration(rand.Intn(10000)) * time.Millisecond)
 		}
 	}()
 	go func() {
 		for ctx.Err() == nil {
 			t := time.Now()
-			logger.LogWithMetadata(log.INFO, t, mimirGRPCLog("", "/loki.Ingester/Push"), log.RandStructuredMetadata("loki-ingester"))
+			logger.LogWithMetadata(log.INFO, t, lokiGRPCLog("", "/loki.Ingester/Push"), log.RandStructuredMetadata("loki-ingester"))
 			time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
 		}
 	}()
@@ -214,6 +214,7 @@ func startFailingMimirPod(ctx context.Context, logger log.Logger) {
 
 const (
 	mimirGrpcLogFmt = `ts=%s caller=grpc_logging.go:66 tenant=%s level=%s method=%s duration=%s msg=gRPC`
+	lokiGrpcLogFmt  = `ts=%s caller=grpc_logging.go:66 tenant=%s level=%s method=%s duration=%s msg=gRPC`
 	// we need another app may be pyrscope and many different pattern this time to make pattern tab interesting.
 )
 
@@ -227,6 +228,29 @@ func mimirGRPCLog(err string, path string) string {
 
 	log := fmt.Sprintf(
 		mimirGrpcLogFmt,
+		time.Now().Format(time.RFC3339Nano),
+		org,
+		level,
+		path,
+		log.RandDuration(),
+	)
+	if err != "" {
+		log += ` err="` + err + `"`
+	}
+
+	return log
+}
+
+func lokiGRPCLog(err, path string) string {
+	level := log.INFO
+	org := log.RandOrgID()
+	if err != "" {
+		level = log.ERROR
+		org = log.OrgIDs[rand.Intn(len(log.OrgIDs[2:]))]
+	}
+
+	log := fmt.Sprintf(
+		lokiGrpcLogFmt,
 		time.Now().Format(time.RFC3339Nano),
 		org,
 		level,
