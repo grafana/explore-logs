@@ -100,7 +100,7 @@ export function sortLevelTransformation() {
       map((data: DataFrame[]) => {
         return data
           .map((d) => {
-            if (!d.fields.length) {
+            if (d.fields.length < 2) {
               return d;
             }
             if (!d.fields[1].config.displayNameFromDS) {
