@@ -124,7 +124,8 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     if (
       !panel ||
       !panel.state.$data?.state.data ||
-      panel.state.$data?.state.data.state !== LoadingState.Done ||
+      panel.state.$data?.state.data.state === LoadingState.Streaming ||
+      panel.state.$data?.state.data.state === LoadingState.Loading ||
       !this.updatedLogSeries
     ) {
       return;
