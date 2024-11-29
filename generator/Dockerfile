@@ -13,6 +13,7 @@ WORKDIR /go/src/app
 COPY go.mod go.sum ./
 COPY *.go ./
 COPY flog/ flog/
+COPY log/ log/
 
 RUN go mod download
 RUN CGO_ENABLED=0 GOOS=linux go build -o /generator
@@ -29,8 +30,8 @@ COPY <<EOF /start.sh
 # Wait a bit for collector to start
 sleep 2
 
-# Start the log generator with the collector endpoint
-OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 /generator
+# Start the log generator
+/generator
 EOF
 
 RUN chmod +x /start.sh
