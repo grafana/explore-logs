@@ -24,8 +24,8 @@ type OtelLogger struct {
 }
 
 // NewOtelLogger creates a new OpenTelemetry-aware logger
-func NewOtelLogger() *OtelLogger {
-	provider, err := loggingProvider()
+func NewOtelLogger(svcName string) *OtelLogger {
+	provider, err := loggingProvider(svcName)
 	if err != nil {
 		return nil
 	}
@@ -103,7 +103,7 @@ func getSlogLevel(labels model.LabelSet) slog.Level {
 	return slog.LevelInfo
 }
 
-func loggingProvider() (*sdk.LoggerProvider, error) {
+func loggingProvider(svcName string) (*sdk.LoggerProvider, error) {
 	ctx := context.Background()
 
 	// Get collector endpoint from env var or use default
@@ -122,7 +122,7 @@ func loggingProvider() (*sdk.LoggerProvider, error) {
 	// Create resource with service information
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
-			semconv.ServiceName("log-generator"),
+			semconv.ServiceName(svcName),
 			semconv.ServiceVersion("1.0.0"),
 		),
 	)

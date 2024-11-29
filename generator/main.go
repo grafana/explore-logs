@@ -52,9 +52,11 @@ func main() {
 					metadata = push.LabelsAdapter{}
 				}
 				if strings.Contains(string(serviceName), "-otel") {
-					logger = log.NewOtelLogger()
+					generator(ctx, log.NewAppLogger(labels, log.NewOtelLogger(string(serviceName))), metadata)
+				} else {
+					generator(ctx, log.NewAppLogger(labels, logger), metadata)
 				}
-				generator(ctx, log.NewAppLogger(labels, logger), metadata)
+
 			})
 		}
 	}
