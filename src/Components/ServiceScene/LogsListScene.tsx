@@ -25,6 +25,7 @@ import {
 } from 'services/store';
 import { logger } from '../../services/logger';
 import { Options } from '@grafana/schema/dist/esm/raw/composable/logs/panelcfg/x/LogsPanelCfg_types.gen';
+import { narrowLogsVisualizationType, narrowSelectedTableRow, unknownToStrings } from '../../services/narrowing';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;
@@ -69,27 +70,30 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     const stateUpdate: Partial<LogsListSceneState> = {};
     try {
       if (typeof values.urlColumns === 'string') {
-        const decodedUrlColumns: string[] = JSON.parse(values.urlColumns);
+        const decodedUrlColumns: string[] = unknownToStrings(JSON.parse(values.urlColumns));
         if (decodedUrlColumns !== this.state.urlColumns) {
           stateUpdate.urlColumns = decodedUrlColumns;
         }
       }
       if (typeof values.selectedLine === 'string') {
-        const decodedSelectedTableRow: SelectedTableRow = JSON.parse(values.selectedLine);
-        if (decodedSelectedTableRow !== this.state.selectedLine) {
-          stateUpdate.selectedLine = decodedSelectedTableRow;
+        const unknownTableRow = narrowSelectedTableRow(JSON.parse(values.selectedLine));
+        if (unknownTableRow) {
+          const decodedSelectedTableRow: SelectedTableRow = unknownTableRow;
+          if (decodedSelectedTableRow !== this.state.selectedLine) {
+            stateUpdate.selectedLine = decodedSelectedTableRow;
+          }
         }
       }
 
       if (typeof values.visualizationType === 'string') {
-        const decodedVisualizationType: LogsVisualizationType = JSON.parse(values.visualizationType);
-        if (decodedVisualizationType !== this.state.visualizationType) {
+        const decodedVisualizationType = narrowLogsVisualizationType(JSON.parse(values.visualizationType));
+        if (decodedVisualizationType && decodedVisualizationType !== this.state.visualizationType) {
           stateUpdate.visualizationType = decodedVisualizationType;
         }
       }
 
       if (typeof values.displayedFields === 'string') {
-        const displayedFields = JSON.parse(values.displayedFields);
+        const displayedFields = unknownToStrings(JSON.parse(values.displayedFields));
         if (displayedFields && displayedFields.length) {
           stateUpdate.displayedFields = displayedFields;
         }

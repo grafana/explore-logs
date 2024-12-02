@@ -5,6 +5,7 @@ import { getDataSourceName, getServiceName } from './variableGetters';
 import { logger } from './logger';
 import { SERVICE_NAME } from './variables';
 import { Options } from '@grafana/schema/dist/esm/raw/composable/logs/panelcfg/x/LogsPanelCfg_types.gen';
+import { unknownToStrings } from './narrowing';
 
 const FAVORITE_PRIMARY_LABEL_VALUES_LOCALSTORAGE_KEY = `${pluginJson.id}.services.favorite`;
 const FAVORITE_PRIMARY_LABEL_NAME_LOCALSTORAGE_KEY = `${pluginJson.id}.primarylabels.tabs.favorite`;
@@ -16,9 +17,9 @@ export function getFavoriteLabelValuesFromStorage(dsKey: string | unknown, label
     return [];
   }
   const key = createPrimaryLabelLocalStorageKey(dsKey, labelName);
-  let labelValues = [];
+  let labelValues: string[] = [];
   try {
-    labelValues = JSON.parse(localStorage.getItem(key) || '[]');
+    labelValues = unknownToStrings(JSON.parse(localStorage.getItem(key) || '[]'));
   } catch (e) {
     logger.error(e, { msg: 'Error parsing favorite services from local storage' });
   }
@@ -35,9 +36,9 @@ export function addToFavoriteLabelValueInStorage(dsKey: string | unknown, labelN
     return;
   }
   const key = createPrimaryLabelLocalStorageKey(dsKey, labelName);
-  let services = [];
+  let services: string[] = [];
   try {
-    services = JSON.parse(localStorage.getItem(key) || '[]');
+    services = unknownToStrings(JSON.parse(localStorage.getItem(key) || '[]'));
   } catch (e) {
     logger.error(e, { msg: 'Error parsing favorite services from local storage' });
   }
@@ -58,9 +59,9 @@ export function removeFromFavoritesInStorage(dsKey: VariableValue, labelName: st
     return;
   }
   const key = createPrimaryLabelLocalStorageKey(dsKey, labelName);
-  let services = [];
+  let services: string[] = [];
   try {
-    services = JSON.parse(localStorage.getItem(key) || '[]');
+    services = unknownToStrings(JSON.parse(localStorage.getItem(key) || '[]'));
   } catch (e) {
     logger.error(e, { msg: 'Error parsing favorite services from local storage' });
   }
@@ -79,9 +80,9 @@ export function addTabToLocalStorage(dsKey: string, labelName: string) {
 
   const key = createTabsLocalStorageKey(dsKey);
 
-  let services = [];
+  let services: string[] = [];
   try {
-    services = JSON.parse(localStorage.getItem(key) || '[]');
+    services = unknownToStrings(JSON.parse(localStorage.getItem(key) || '[]'));
   } catch (e) {
     logger.error(e, { msg: 'Error parsing saved tabs from local storage' });
   }
@@ -104,9 +105,9 @@ export function removeTabFromLocalStorage(dsKey: string, labelName: string) {
     return;
   }
   const key = createTabsLocalStorageKey(dsKey);
-  let services = [];
+  let services: string[] = [];
   try {
-    services = JSON.parse(localStorage.getItem(key) || '[]');
+    services = unknownToStrings(JSON.parse(localStorage.getItem(key) || '[]'));
   } catch (e) {
     logger.error(e, { msg: 'Error parsing favorite services from local storage' });
   }
@@ -123,9 +124,9 @@ export function getFavoriteTabsFromStorage(dsKey: string | unknown): string[] {
     return [];
   }
   const key = createTabsLocalStorageKey(dsKey);
-  let tabNames = [];
+  let tabNames: string[] = [];
   try {
-    tabNames = JSON.parse(localStorage.getItem(key) || '[]');
+    tabNames = unknownToStrings(JSON.parse(localStorage.getItem(key) || '[]'));
   } catch (e) {
     logger.error(e, { msg: 'Error parsing favorite services from local storage' });
   }
