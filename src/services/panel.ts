@@ -83,7 +83,7 @@ export function setLevelSeriesOverrides(levels: string[], overrideConfig: FieldC
 }
 
 export function syncLogsPanelVisibleSeries(panel: VizPanel, series: DataFrame[], sceneRef: SceneObject) {
-  const focusedLevels = [...getVisibleLevels(getLabelsFromSeries(series), sceneRef)];
+  const focusedLevels = getVisibleLevels(getLabelsFromSeries(series), sceneRef);
   if (focusedLevels?.length) {
     const config = setLogsVolumeFieldConfigs(FieldConfigBuilders.timeseries()).setOverrides(
       setLevelSeriesOverrides.bind(null, focusedLevels)
