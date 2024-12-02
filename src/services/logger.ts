@@ -2,6 +2,7 @@ import { LogContext } from '@grafana/faro-web-sdk';
 import { FetchError, logError, logInfo, logWarning } from '@grafana/runtime';
 import pluginJson from '../plugin.json';
 import packageJson from '../../package.json';
+import { isRecord } from './narrowing';
 
 const defaultContext = {
   app: pluginJson.id,
@@ -41,8 +42,6 @@ const attemptFaroWarn = (msg: string, context?: LogContext) => {
     console.warn('Failed to log faro warning!', { msg, context });
   }
 };
-
-const isRecord = (obj: unknown): obj is Record<string, unknown> => typeof obj === 'object';
 /**
  * Checks unknown error for properties from Records like FetchError and adds them to the context
  * @param err
