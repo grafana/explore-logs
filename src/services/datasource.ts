@@ -23,7 +23,7 @@ import { LokiQuery } from './lokiQuery';
 import { SceneDataQueryRequest, SceneDataQueryResourceRequest, VolumeRequestProps } from './datasourceTypes';
 import { logger } from './logger';
 import { PLUGIN_ID } from './plugin';
-import { PLACEHOLDER_QUERY } from './query';
+import { sanitizeStreamSelector } from './query';
 
 export const WRAPPED_LOKI_DS_UID = 'wrapped-loki-ds-uid';
 
@@ -143,11 +143,20 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
   ) {
     const shardingEnabled = config.featureToggles.exploreLogsShardSplitting;
 
+    const updatedRequest = {
+      ...request,
+      targets: ds.interpolateVariablesInQueries(request.targets, request.scopedVars).map((target) => ({
+        ...target,
+        resource: undefined,
+        expr: sanitizeStreamSelector(target.expr),
+      })),
+    };
+
     // Query the datasource and return either observable or promise
     const dsResponse =
-      requestSupportsSharding(request) === false || !shardingEnabled
-        ? ds.query(request)
-        : runShardSplitQuery(ds, request);
+      requestSupportsSharding(updatedRequest) === false || !shardingEnabled
+        ? ds.query(updatedRequest)
+        : runShardSplitQuery(ds, updatedRequest);
     dsResponse.subscribe(subscriber);
 
     return subscriber;
@@ -256,7 +265,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
       throw new Error('Datasource failed to interpolate query!');
     }
     const interpolatedTarget = targetsInterpolated[0];
-    const expression = interpolatedTarget.expr;
+    const expression = sanitizeStreamSelector(interpolatedTarget.expr);
     return { interpolatedTarget, expression };
   }
 
@@ -276,7 +285,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     let { interpolatedTarget, expression } = this.interpolate(ds, targets, request);
 
     // Detected_labels is a bit different then other queries that interpolate the labels variable, it can be empty, but if it is empty it must be completely empty or we'll get the "queries require at least one regexp or equality" error from Loki
-    if (expression.trim() === `{${PLACEHOLDER_QUERY}}`) {
+    if (expression === `{}`) {
       expression = '';
     }
 
@@ -407,7 +416,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     }
 
     const targetsInterpolated = ds.interpolateVariablesInQueries([target], request.scopedVars);
-    const expression = targetsInterpolated[0].expr.replace('.*.*', '.+');
+    const expression = sanitizeStreamSelector(targetsInterpolated[0].expr.replace('.*.*', '.+'));
 
     subscriber.next({ data: [], state: LoadingState.Loading });
 
