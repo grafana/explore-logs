@@ -254,7 +254,9 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     const detectedFieldsFrame = getDetectedFieldsFrame(this);
     const activeLayout = this.getActiveGridLayouts();
     const children: SceneCSSGridItem[] = [];
-    const panelType = getPanelOption('panelType') ?? AvgFieldPanelType.timeseries;
+    const panelType =
+      getPanelOption('panelType', [AvgFieldPanelType.histogram, AvgFieldPanelType.timeseries]) ??
+      AvgFieldPanelType.timeseries;
 
     activeLayout?.state.children.forEach((child) => {
       if (child instanceof SceneCSSGridItem && !child.state.isHidden) {
@@ -286,7 +288,9 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
   private buildChildren(options: string[]): SceneCSSGridItem[] {
     const children: SceneCSSGridItem[] = [];
     const detectedFieldsFrame = getDetectedFieldsFrame(this);
-    const panelType = getPanelOption('panelType') ?? AvgFieldPanelType.timeseries;
+    const panelType =
+      getPanelOption('panelType', [AvgFieldPanelType.timeseries, AvgFieldPanelType.histogram]) ??
+      AvgFieldPanelType.timeseries;
     for (const option of options) {
       if (option === ALL_VARIABLE_VALUE || !option) {
         continue;

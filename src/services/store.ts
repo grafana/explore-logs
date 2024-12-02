@@ -241,8 +241,16 @@ const PANEL_OPTIONS_LOCALSTORAGE_KEY = `${pluginJson.id}.panel.option`;
 export interface PanelOptions {
   panelType: AvgFieldPanelType;
 }
-export function getPanelOption<K extends keyof PanelOptions, V extends PanelOptions[K]>(option: K): V | null {
-  return localStorage.getItem(`${PANEL_OPTIONS_LOCALSTORAGE_KEY}.${option}`) as V | null;
+export function getPanelOption<K extends keyof PanelOptions, V extends PanelOptions[K]>(
+  option: K,
+  values: V[]
+): V | null {
+  const result = localStorage.getItem(`${PANEL_OPTIONS_LOCALSTORAGE_KEY}.${option}`);
+  if (result !== null) {
+    return values.find((v) => result === v) ?? null;
+  }
+
+  return null;
 }
 
 export function setPanelOption<K extends keyof PanelOptions, V extends PanelOptions[K]>(option: K, value: V) {
