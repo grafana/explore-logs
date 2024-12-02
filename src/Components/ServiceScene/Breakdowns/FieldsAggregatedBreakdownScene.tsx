@@ -40,8 +40,9 @@ import {
   getFieldsVariable,
   getValueFromFieldsFilter,
 } from '../../../services/variableGetters';
-import { PanelMenu, getPanelWrapperStyles } from '../../Panels/PanelMenu';
+import { AvgFieldPanelType, getPanelWrapperStyles, PanelMenu } from '../../Panels/PanelMenu';
 import { logger } from '../../../services/logger';
+import { getPanelOption } from '../../../services/store';
 
 export interface FieldsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -116,12 +117,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
         }
 
         const fieldsToAdd = Array.from(newFieldsSet);
-        const options = fieldsToAdd.map((fieldName) => {
-          return {
-            label: fieldName,
-            value: fieldName,
-          };
-        });
+        const options = fieldsToAdd.map((fieldName) => fieldName);
 
         updatedChildren.push(...this.buildChildren(options));
         updatedChildren.sort(this.sortChildren(cardinalityMap));
@@ -197,9 +193,9 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     });
   }
 
-  private build() {
+  public build() {
     const groupByVariable = getFieldGroupByVariable(this);
-    const options = groupByVariable.state.options.map((opt) => ({ label: opt.label, value: String(opt.value) }));
+    const options = groupByVariable.state.options.map((opt) => String(opt.value));
 
     const fieldsBreakdownScene = sceneGraph.getAncestor(this, FieldsBreakdownScene);
     fieldsBreakdownScene.state.search.reset();
@@ -254,52 +250,106 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     }
   }
 
-  private buildChildren(options: Array<{ label: string; value: string }>): SceneCSSGridItem[] {
+  public rebuildAvgFields() {
+    const detectedFieldsFrame = getDetectedFieldsFrame(this);
+    const activeLayout = this.getActiveGridLayouts();
+    const children: SceneCSSGridItem[] = [];
+    const panelType =
+      getPanelOption('panelType', [AvgFieldPanelType.histogram, AvgFieldPanelType.timeseries]) ??
+      AvgFieldPanelType.timeseries;
+
+    activeLayout?.state.children.forEach((child) => {
+      if (child instanceof SceneCSSGridItem && !child.state.isHidden) {
+        const panels = sceneGraph.findDescendents(child, VizPanel);
+        if (panels.length) {
+          // Will only be one panel as a child of CSSGridItem
+          const panel = panels[0];
+          const labelName = panel.state.title;
+          const fieldType = getDetectedFieldType(labelName, detectedFieldsFrame);
+          if (isAvgField(fieldType)) {
+            const newChild = this.buildChild(labelName, detectedFieldsFrame, panelType);
+            if (newChild) {
+              children.push(newChild);
+            }
+          } else {
+            children.push(child);
+          }
+        }
+      }
+    });
+
+    if (children.length) {
+      activeLayout?.setState({
+        children,
+      });
+    }
+  }
+
+  private buildChildren(options: string[]): SceneCSSGridItem[] {
     const children: SceneCSSGridItem[] = [];
     const detectedFieldsFrame = getDetectedFieldsFrame(this);
-
+    const panelType =
+      getPanelOption('panelType', [AvgFieldPanelType.timeseries, AvgFieldPanelType.histogram]) ??
+      AvgFieldPanelType.timeseries;
     for (const option of options) {
-      const { value: optionValue } = option;
-      if (optionValue === ALL_VARIABLE_VALUE || !optionValue) {
+      if (option === ALL_VARIABLE_VALUE || !option) {
         continue;
       }
 
-      const fieldType = getDetectedFieldType(optionValue, detectedFieldsFrame);
-      const dataTransformer = this.getDataTransformerForPanel(optionValue, detectedFieldsFrame, fieldType);
-      let body = PanelBuilders.timeseries()
-        .setTitle(optionValue)
-        .setData(dataTransformer)
-        .setMenu(new PanelMenu({ labelName: optionValue }));
-
-      const headerActions = [];
-      if (!isAvgField(fieldType)) {
-        body = body
-          .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
-          .setCustomFieldConfig('fillOpacity', 100)
-          .setCustomFieldConfig('lineWidth', 0)
-          .setCustomFieldConfig('pointSize', 0)
-          .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
-          .setOverrides(setLevelColorOverrides);
-        headerActions.push(new SelectLabelActionScene({ labelName: String(optionValue), fieldType: ValueSlugs.field }));
-      } else {
-        headerActions.push(
-          new SelectLabelActionScene({
-            labelName: String(optionValue),
-            hideValueDrilldown: true,
-            fieldType: ValueSlugs.field,
-          })
-        );
+      const child = this.buildChild(option, detectedFieldsFrame, panelType);
+      if (child) {
+        children.push(child);
       }
-      body.setHeaderActions(headerActions);
-
-      const viz = body.build();
-      const gridItem = new SceneCSSGridItem({
-        body: viz,
-      });
-
-      children.push(gridItem);
     }
     return children;
+  }
+
+  private buildChild(labelName: string, detectedFieldsFrame: DataFrame | undefined, panelType?: AvgFieldPanelType) {
+    if (labelName === ALL_VARIABLE_VALUE || !labelName) {
+      return;
+    }
+
+    const fieldType = getDetectedFieldType(labelName, detectedFieldsFrame);
+    const dataTransformer = this.getDataTransformerForPanel(labelName, detectedFieldsFrame, fieldType);
+    let body;
+
+    const headerActions = [];
+    if (!isAvgField(fieldType)) {
+      body = PanelBuilders.timeseries()
+        .setTitle(labelName)
+        .setData(dataTransformer)
+        .setMenu(new PanelMenu({ labelName: labelName }))
+        .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
+        .setCustomFieldConfig('fillOpacity', 100)
+        .setCustomFieldConfig('lineWidth', 0)
+        .setCustomFieldConfig('pointSize', 0)
+        .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+        .setOverrides(setLevelColorOverrides);
+      headerActions.push(new SelectLabelActionScene({ labelName: String(labelName), fieldType: ValueSlugs.field }));
+    } else {
+      if (panelType === 'histogram') {
+        body = PanelBuilders.histogram();
+      } else {
+        body = PanelBuilders.timeseries();
+      }
+      body
+        .setTitle(labelName)
+        .setData(dataTransformer)
+        .setMenu(new PanelMenu({ labelName: labelName, panelType }));
+      headerActions.push(
+        new SelectLabelActionScene({
+          labelName: String(labelName),
+          hideValueDrilldown: true,
+          fieldType: ValueSlugs.field,
+        })
+      );
+    }
+    body.setHeaderActions(headerActions);
+
+    const viz = body.build();
+    return new SceneCSSGridItem({
+      body: viz,
+    });
   }
 
   private getDataTransformerForPanel(
@@ -322,9 +372,14 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     });
   }
 
+  private getActiveGridLayouts() {
+    return (this.state.body?.state.layouts.find((l) => l.isActive) ?? this.state.body?.state.layouts[0]) as
+      | SceneCSSGridLayout
+      | undefined;
+  }
+
   private updateFieldCount() {
-    const activeLayout = (this.state.body?.state.layouts.find((l) => l.isActive) ??
-      this.state.body?.state.layouts[0]) as SceneCSSGridLayout | undefined;
+    const activeLayout = this.getActiveGridLayouts();
     const activeLayoutChildren = activeLayout?.state.children as SceneCSSGridItem[] | undefined;
     const activePanels = activeLayoutChildren?.filter((child) => !child.state.isHidden);
 

@@ -6,6 +6,7 @@ import { logger } from './logger';
 import { SERVICE_NAME } from './variables';
 import { Options } from '@grafana/schema/dist/esm/raw/composable/logs/panelcfg/x/LogsPanelCfg_types.gen';
 import { unknownToStrings } from './narrowing';
+import { AvgFieldPanelType } from '../Components/Panels/PanelMenu';
 
 const FAVORITE_PRIMARY_LABEL_VALUES_LOCALSTORAGE_KEY = `${pluginJson.id}.services.favorite`;
 const FAVORITE_PRIMARY_LABEL_NAME_LOCALSTORAGE_KEY = `${pluginJson.id}.primarylabels.tabs.favorite`;
@@ -181,20 +182,6 @@ export function setSortByPreference(target: string, sortBy: string, direction: s
   }
 }
 
-const LOG_OPTIONS_LOCALSTORAGE_KEY = `${pluginJson.id}.logs.option`;
-export function getLogOption<T>(option: keyof Options, defaultValue: T) {
-  const localStorageResult = localStorage.getItem(`${LOG_OPTIONS_LOCALSTORAGE_KEY}.${option}`);
-  return localStorageResult ? localStorageResult : defaultValue;
-}
-
-export function setLogOption(option: keyof Options, value: string | number | boolean) {
-  let storedValue = value.toString();
-  if (typeof value === 'boolean' && !value) {
-    storedValue = '';
-  }
-  localStorage.setItem(`${LOG_OPTIONS_LOCALSTORAGE_KEY}.${option}`, storedValue);
-}
-
 function getExplorationPrefix(sceneRef: SceneObject) {
   const ds = getDataSourceName(sceneRef);
   const serviceName = getServiceName(sceneRef);
@@ -215,6 +202,22 @@ export function setDisplayedFields(sceneRef: SceneObject, fields: string[]) {
   localStorage.setItem(`${pluginJson.id}.${PREFIX}.logs.fields`, JSON.stringify(fields));
 }
 
+// Log panel options
+const LOG_OPTIONS_LOCALSTORAGE_KEY = `${pluginJson.id}.logs.option`;
+export function getLogOption<T>(option: keyof Options, defaultValue: T) {
+  const localStorageResult = localStorage.getItem(`${LOG_OPTIONS_LOCALSTORAGE_KEY}.${option}`);
+  return localStorageResult ? localStorageResult : defaultValue;
+}
+
+export function setLogOption(option: keyof Options, value: string | number | boolean) {
+  let storedValue = value.toString();
+  if (typeof value === 'boolean' && !value) {
+    storedValue = '';
+  }
+  localStorage.setItem(`${LOG_OPTIONS_LOCALSTORAGE_KEY}.${option}`, storedValue);
+}
+
+// Log visualization options
 export type LogsVisualizationType = 'logs' | 'table';
 
 const VISUALIZATION_TYPE_LOCALSTORAGE_KEY = 'grafana.explore.logs.visualisationType';
@@ -231,4 +234,25 @@ export function getLogsVisualizationType(): LogsVisualizationType {
 
 export function setLogsVisualizationType(type: string) {
   localStorage.setItem(VISUALIZATION_TYPE_LOCALSTORAGE_KEY, type);
+}
+
+// Panel options
+const PANEL_OPTIONS_LOCALSTORAGE_KEY = `${pluginJson.id}.panel.option`;
+export interface PanelOptions {
+  panelType: AvgFieldPanelType;
+}
+export function getPanelOption<K extends keyof PanelOptions, V extends PanelOptions[K]>(
+  option: K,
+  values: V[]
+): V | null {
+  const result = localStorage.getItem(`${PANEL_OPTIONS_LOCALSTORAGE_KEY}.${option}`);
+  if (result !== null) {
+    return values.find((v) => result === v) ?? null;
+  }
+
+  return null;
+}
+
+export function setPanelOption<K extends keyof PanelOptions, V extends PanelOptions[K]>(option: K, value: V) {
+  localStorage.setItem(`${PANEL_OPTIONS_LOCALSTORAGE_KEY}.${option}`, value);
 }
