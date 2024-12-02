@@ -210,15 +210,10 @@ export function getVisibleRangeFrame(start: number, end: number) {
   const frame = arrayToDataFrame([
     {
       time: start,
-      timeEnd: start,
-      text: 'Time of the oldest log',
-      color: 'rgb(56, 113, 220, 0.7)',
-    },
-    {
-      time: end,
       timeEnd: end,
-      text: 'Time of the newest log',
-      color: 'rgb(56, 113, 220, 0.7)',
+      isRegion: true,
+      text: 'Range from oldest to newest logs in display',
+      color: 'rgba(58, 113, 255, 0.3)',
     },
   ]);
   frame.name = VISIBLE_RANGE_NAME;
