@@ -10,6 +10,7 @@ import { testIds } from 'services/testIds';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
 import { getDisplayedFields, getLogsVisualizationType } from 'services/store';
+import { unknownToStrings } from '../../services/narrowing';
 interface GoToExploreButtonState {
   exploration: IndexScene;
 }
@@ -69,7 +70,7 @@ function getUrlColumns() {
   const urlColumns = params.get('urlColumns');
   if (urlColumns) {
     try {
-      const columns: string[] = JSON.parse(urlColumns);
+      const columns = unknownToStrings(JSON.parse(urlColumns));
       let columnsParam: Record<number, string> = {};
       for (const key in columns) {
         columnsParam[key] = columns[key];

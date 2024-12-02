@@ -51,8 +51,6 @@ const defaultQueryParams = {
   supportingQueryType: PLUGIN_ID,
 };
 
-export const PLACEHOLDER_QUERY = '__placeholder__=""';
-
 export const buildVolumeQuery = (
   expr: string,
   resource: 'volume' | 'patterns' | 'detected_labels' | 'detected_fields' | 'labels',
@@ -89,10 +87,6 @@ export function renderLogQLLabelFilters(filters: AdHocFilterWithLabels[]) {
   const negativeFilters = negative.map((filter) => renderMetadata(filter)).join(', ');
 
   const result = trim(`${positiveFilters.join(', ')}, ${negativeFilters}`, ' ,');
-  // Since we use this variable after other non-interpolated labels in some queries, and on its own in others, we need to know that this expression can be preceded by a comma, so we output a placeholder value that shouldn't impact the query if the expression is empty, otherwise we'll output invalid logQL
-  if (!result) {
-    return PLACEHOLDER_QUERY;
-  }
 
   return result;
 }
@@ -226,4 +220,8 @@ export function unwrapWildcardSearch(input: string) {
     return input.slice(2).slice(0, -2);
   }
   return input;
+}
+
+export function sanitizeStreamSelector(expression: string) {
+  return expression.replace(/\s*,\s*}/, '}');
 }

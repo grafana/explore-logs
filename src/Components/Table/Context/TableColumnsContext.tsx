@@ -4,6 +4,7 @@ import { getBodyName, getTimeName, LogsFrame } from '../../../services/logsFrame
 import { logger } from '../../../services/logger';
 
 import { PLUGIN_ID } from '../../../services/plugin';
+import { NarrowingError, narrowRecordStringNumber } from '../../../services/narrowing';
 
 const tableColumnCustomWidths = `${PLUGIN_ID}.tableColumnWidths`;
 
@@ -70,12 +71,19 @@ function setDefaultColumns(
   handleSetColumns(pendingColumns);
 }
 
-function getColumnWidthsFromLocalStorage() {
+function getColumnWidthsFromLocalStorage(): Record<string, number> {
   let initialColumnWidths = {};
   const existingWidths = localStorage.getItem(tableColumnCustomWidths);
   if (existingWidths) {
     try {
-      initialColumnWidths = JSON.parse(existingWidths);
+      initialColumnWidths = narrowRecordStringNumber(JSON.parse(existingWidths));
+      if (initialColumnWidths === false) {
+        logger.error(
+          new NarrowingError('getColumnWidthsFromLocalStorage: unable to validate values in local storage'),
+          { msg: 'NarrowingError: error parsing table column widths from local storage' }
+        );
+      }
+      return initialColumnWidths;
     } catch (e) {
       logger.error(e, { msg: 'error parsing table column widths from local storage' });
     }
@@ -101,7 +109,6 @@ export const TableColumnContextProvider = ({
   const [filteredColumns, setFilteredColumns] = useState<FieldNameMetaStore | undefined>(undefined);
   const [visible, setVisible] = useState(false);
   const initialColumnWidths = getColumnWidthsFromLocalStorage();
-
   const [columnWidthMap, setColumnWidthMapState] = useState<Record<string, number>>(initialColumnWidths);
   const setColumnWidthMap = (map: Record<string, number>) => {
     localStorage.setItem(tableColumnCustomWidths, JSON.stringify(map));
