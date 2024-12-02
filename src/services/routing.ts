@@ -89,6 +89,7 @@ export const DRILLDOWN_URL_KEYS = [
   'visualizationType',
   'selectedLine',
   'displayedFields',
+  'panelState',
   VAR_PATTERNS,
   `var-${VAR_PATTERNS}`,
   `var-${VAR_DATASOURCE}`,
