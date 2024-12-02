@@ -90,6 +90,8 @@ function addHistogramItem(items: PanelMenuItem[], sceneRef: PanelMenu) {
       if (fieldsAggregatedBreakdownScene) {
         fieldsAggregatedBreakdownScene.rebuildAvgFields();
       }
+
+      onSwitchVizTypeTracking(newPanelType);
     },
   });
 }
@@ -188,6 +190,12 @@ const getExploreLink = (sceneRef: SceneObject) => {
 
 const onExploreLinkClickTracking = () => {
   reportAppInteraction(USER_EVENTS_PAGES.all, USER_EVENTS_ACTIONS.all.open_in_explore_menu_clicked);
+};
+
+const onSwitchVizTypeTracking = (newVizType: AvgFieldPanelType) => {
+  reportAppInteraction(USER_EVENTS_PAGES.service_details, USER_EVENTS_ACTIONS.service_details.change_viz_type, {
+    newVizType,
+  });
 };
 
 const getInvestigationLink = (addToExplorations: AddToExplorationButton) => {
