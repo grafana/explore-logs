@@ -119,11 +119,11 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         .setOption('sortOrder', getLogsPanelSortOrder())
         .setOption('wrapLogMessage', Boolean(getLogOption<boolean>('wrapLogMessage', false)))
         .setOption('showLogContextToggle', true)
-        // @ts-expect-error
+        // @ts-expect-error Requires Grafana 11.4
         .setOption('enableInfiniteScrolling', true)
-        // @ts-expect-error
+        // @ts-expect-error Grafana 11.4
         .setOption('onNewLogsReceived', this.updateVisibleRange)
-        // @ts-expect-error
+        // @ts-expect-error Grafana 11.4
         .setOption('logRowMenuIconsAfter', [<CopyLinkButton onClick={this.handleShareLogLineClick} key={0} />])
         .setHeaderActions(
           new LogOptionsScene({ visualizationType, onChangeVisualizationType: parentModel.setVisualizationType })
@@ -143,7 +143,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     if (row?.rowId && this.state.body) {
       const parent = this.getParentScene();
       const buttonRef = event.currentTarget instanceof HTMLButtonElement ? event.currentTarget : undefined;
-      const timeRange = resolveRowTimeRangeForSharing(sceneGraph.getTimeRange(this.state.body).state.value, row);
+      const timeRange = resolveRowTimeRangeForSharing(row);
       copyText(
         generateLogShortlink(
           'panelState',

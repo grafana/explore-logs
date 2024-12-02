@@ -72,10 +72,12 @@ export function truncateText(input: string, length: number, ellipsis: boolean) {
   return input.substring(0, length) + (ellipsis && input.length > length ? '…' : '');
 }
 
-export function resolveRowTimeRangeForSharing(timeRange: TimeRange, row: LogRowModel): TimeRange {
+export function resolveRowTimeRangeForSharing(row: LogRowModel): TimeRange {
+  // With infinite scrolling, we cannot rely on the time picker range, so we use a time range around the shared log line.
   const from = dateTime(row.timeEpochMs - 1);
   const to = dateTime(row.timeEpochMs + 1);
-  return {
+
+  const range = {
     from,
     to,
     raw: {
@@ -83,4 +85,6 @@ export function resolveRowTimeRangeForSharing(timeRange: TimeRange, row: LogRowM
       to,
     },
   };
+
+  return range;
 }
