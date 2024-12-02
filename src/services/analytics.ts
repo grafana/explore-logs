@@ -71,6 +71,7 @@ export const USER_EVENTS_ACTIONS = {
     value_breakdown_sort_change: 'value_breakdown_sort_change',
     // Wasm not supported
     wasm_not_supported: 'wasm_not_supported',
+    change_viz_type: 'change_viz_type',
   },
   [USER_EVENTS_PAGES.all]: {
     interval_too_long: 'interval_too_long',
