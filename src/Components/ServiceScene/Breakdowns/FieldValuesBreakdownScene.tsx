@@ -203,7 +203,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
               body: PanelBuilders.timeseries().setTitle(optionValue).setMenu(new PanelMenu({})).build(),
             }),
             new SceneReactObject({
-              reactNode: <FieldsBreakdownScene.FieldValueMenu model={fieldsBreakdownScene} />,
+              reactNode: <FieldsBreakdownScene.ValueMenu model={fieldsBreakdownScene} />,
             }),
             new ByFrameRepeater({
               body: new SceneCSSGridLayout({
@@ -244,7 +244,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
               body: PanelBuilders.timeseries().setTitle(optionValue).setMenu(new PanelMenu({})).build(),
             }),
             new SceneReactObject({
-              reactNode: <FieldsBreakdownScene.FieldValueMenu model={fieldsBreakdownScene} />,
+              reactNode: <FieldsBreakdownScene.ValueMenu model={fieldsBreakdownScene} />,
             }),
             new ByFrameRepeater({
               body: new SceneCSSGridLayout({

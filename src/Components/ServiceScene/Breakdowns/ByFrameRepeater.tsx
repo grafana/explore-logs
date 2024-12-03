@@ -135,7 +135,8 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     });
 
     if (newChildren.length === 0) {
-      this.state.body.setState({ children: [buildNoResultsScene(this.getFilter(), this.clearFilter)] });
+      const filter = this.getFilter();
+      this.state.body.setState({ children: [buildNoResultsScene(filter, this.clearFilter)] });
     } else {
       this.state.body.setState({ children: newChildren });
     }

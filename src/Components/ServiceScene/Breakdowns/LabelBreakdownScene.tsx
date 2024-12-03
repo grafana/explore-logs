@@ -63,7 +63,6 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
               name: VAR_LABEL_GROUP_BY,
               defaultToAll: false,
               includeAll: true,
-
               value: state.value ?? ALL_VARIABLE_VALUE,
               options: state.options ?? [],
             }),
@@ -176,11 +175,11 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     if (event.target !== 'labels') {
       return;
     }
-    if (this.state.body instanceof LabelValuesBreakdownScene) {
-      this.state.body?.state.body?.state.layouts.forEach((layout) => {
-        if (layout instanceof ByFrameRepeater) {
-          layout.sort(event.sortBy, event.direction);
-        }
+    const body = this.state.body;
+    if (body instanceof LabelValuesBreakdownScene) {
+      const byFrameRepeaters = sceneGraph.findDescendents(body, ByFrameRepeater);
+      byFrameRepeaters.forEach((layout) => {
+        layout.sort(event.sortBy, event.direction);
       });
     }
     reportAppInteraction(
@@ -273,33 +272,56 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     navigateToValueBreakdown(ValueSlugs.label, value, serviceScene);
   };
 
-  public static Component = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
-    const { body, loading, blockingMessage, error, search, sort } = model.useState();
+  public static ParentMenu = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
+    const { body, loading } = model.useState();
     const variable = getLabelGroupByVariable(model);
     const { options, value } = variable.useState();
     const styles = useStyles2(getStyles);
 
     return (
+      <div className={styles.controls}>
+        {body instanceof LabelValuesBreakdownScene && <LabelValuesBreakdownScene.Selector model={body} />}
+        {body instanceof LabelsAggregatedBreakdownScene && <LabelsAggregatedBreakdownScene.Selector model={body} />}
+
+        {!loading && options.length > 0 && (
+          <FieldSelector label="Label" options={options} value={String(value)} onChange={model.onChange} />
+        )}
+      </div>
+    );
+  };
+
+  public static ValueMenu = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
+    const { loading, search, sort } = model.useState();
+    const variable = getLabelGroupByVariable(model);
+    const { value } = variable.useState();
+    const styles = useStyles2(getStyles);
+
+    return (
+      <div className={styles.controls}>
+        {!loading && value !== ALL_VARIABLE_VALUE && (
+          <>
+            <sort.Component model={sort} />
+            <search.Component model={search} />
+          </>
+        )}
+      </div>
+    );
+  };
+
+  public static Component = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
+    const { body, loading, blockingMessage, error } = model.useState();
+    const styles = useStyles2(getStyles);
+
+    return (
       <div className={styles.container}>
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
-          <div className={styles.controls}>
-            {body instanceof LabelValuesBreakdownScene && <LabelValuesBreakdownScene.Selector model={body} />}
-            {body instanceof LabelsAggregatedBreakdownScene && <LabelsAggregatedBreakdownScene.Selector model={body} />}
-            {!loading && value !== ALL_VARIABLE_VALUE && (
-              <>
-                <sort.Component model={sort} />
-                <search.Component model={search} />
-              </>
-            )}
-            {!loading && options.length > 0 && (
-              <FieldSelector label="Label" options={options} value={String(value)} onChange={model.onChange} />
-            )}
-          </div>
           {error && (
             <Alert title="" severity="warning">
               The labels are not available at this moment. Try using a different time range or check again later.
             </Alert>
           )}
+
+          {body instanceof LabelsAggregatedBreakdownScene && model && <LabelBreakdownScene.ParentMenu model={model} />}
 
           <div className={styles.content}>{body && <body.Component model={body} />}</div>
         </StatusWrapper>

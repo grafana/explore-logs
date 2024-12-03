@@ -14,7 +14,7 @@ import {
 } from '@grafana/scenes';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { getLabelValue } from './SortByScene';
-import { Alert, DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
+import { DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
 import { getSortByPreference } from '../../../services/store';
 import { AppEvents, DataQueryError, LoadingState } from '@grafana/data';
@@ -30,14 +30,21 @@ import { AddFilterEvent } from './AddToFiltersButton';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { buildLabelsQuery, LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS } from '../../../services/labels';
 import { getAppEvents } from '@grafana/runtime';
-import { getLabelGroupByVariable } from '../../../services/variableGetters';
-import { PanelMenu, getPanelWrapperStyles } from '../../Panels/PanelMenu';
+import {
+  clearVariables,
+  getLabelGroupByVariable,
+  getVariablesThatCanBeCleared,
+} from '../../../services/variableGetters';
+import { getPanelWrapperStyles, PanelMenu } from '../../Panels/PanelMenu';
+import { ClearFiltersLayoutScene } from './ClearFiltersLayoutScene';
+import { EmptyLayoutScene } from './EmptyLayoutScene';
+import { IndexScene } from '../../IndexScene/IndexScene';
 
 type DisplayError = DataQueryError & { displayed: boolean };
 type DisplayErrors = Record<string, DisplayError>;
 
 export interface LabelValueBreakdownSceneState extends SceneObjectState {
-  body?: LayoutSwitcher & SceneObject;
+  body?: (LayoutSwitcher & SceneObject) | (ClearFiltersLayoutScene & SceneObject) | (EmptyLayoutScene & SceneObject);
   $data?: SceneDataProvider;
   lastFilterEvent?: AddFilterEvent;
   errors: DisplayErrors;
@@ -86,21 +93,17 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
   }
 
   private onValuesDataQueryChange(newState: SceneDataState, prevState: SceneDataState) {
-    if (newState?.data?.errors && newState.data?.state !== LoadingState.Done) {
-      const errors: DisplayErrors = this.state.errors;
-      newState?.data?.errors.forEach((err) => {
-        const errorIndex = `${err.status}_${err.traceId}_${err.message}`;
-        if (errors[errorIndex] === undefined) {
-          errors[errorIndex] = { ...err, displayed: false };
-        }
-      });
-      this.setState({
-        errors,
-      });
+    // Set empty states
+    this.setEmptyStates(newState);
 
-      this.showErrorToast(this.state.errors);
-    }
+    // Set error states
+    this.setErrorStates(newState);
 
+    // Navigate back to main page if user reduced cardinality to 1
+    this.navigateOnLastFilter(newState);
+  }
+
+  private navigateOnLastFilter(newState: SceneDataState) {
     if (newState.data?.state === LoadingState.Done || newState.data?.state === LoadingState.Streaming) {
       // No panels for the user to select, presumably because everything has been excluded
       const event = this.state.lastFilterEvent;
@@ -117,51 +120,72 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
         }
       }
     }
+  }
 
-    // If we're in an error state
-    if (newState.data?.state === LoadingState.Error && this.activeLayoutContainsNoPanels()) {
-      const activeLayout = this.getActiveLayout();
-      // And the active layout is grid or rows, and doesn't have any panels
-      if (activeLayout instanceof ByFrameRepeater) {
-        const errorState = this.getErrorStateAlert(newState.data.errors);
-        // Replace the loading or error state with new error
-        activeLayout.state.body.setState({
-          children: [errorState],
+  private setErrorStates(newState: SceneDataState) {
+    // If panels have errors
+    if (newState?.data?.errors && newState.data?.state !== LoadingState.Done) {
+      const errors: DisplayErrors = this.state.errors;
+      newState?.data?.errors.forEach((err) => {
+        const errorIndex = `${err.status}_${err.traceId}_${err.message}`;
+        if (errors[errorIndex] === undefined) {
+          errors[errorIndex] = { ...err, displayed: false };
+        }
+      });
+      this.setState({
+        errors,
+      });
+
+      this.showErrorToast(this.state.errors);
+    }
+  }
+
+  private setEmptyStates(newState: SceneDataState) {
+    if (newState.data?.state === LoadingState.Done) {
+      if (newState.data.series.length > 0 && !(this.state.body instanceof LayoutSwitcher)) {
+        this.setState({
+          body: this.build(),
         });
+      } else if (newState.data.series.length === 0) {
+        const indexScene = sceneGraph.getAncestor(this, IndexScene);
+        const variablesToClear = getVariablesThatCanBeCleared(indexScene);
+
+        if (variablesToClear.length > 1) {
+          this.setState({
+            body: new ClearFiltersLayoutScene({ clearCallback: () => clearVariables(this) }),
+          });
+        } else {
+          this.setState({
+            body: new EmptyLayoutScene({ type: 'fields' }),
+          });
+        }
       }
     }
   }
 
-  private getActiveLayout(): ByFrameRepeater | SceneFlexLayout | undefined {
+  private getActiveLayout(): SceneFlexLayout | undefined {
     const layoutSwitcher = this.state.body;
-    const activeLayout = layoutSwitcher?.state.layouts.find((layout) => layout.isActive);
-    if (activeLayout instanceof ByFrameRepeater || activeLayout instanceof SceneFlexLayout) {
-      return activeLayout;
+    if (layoutSwitcher instanceof LayoutSwitcher) {
+      const activeLayout = layoutSwitcher?.state.layouts.find((layout) => layout.isActive);
+      if (activeLayout instanceof SceneFlexLayout) {
+        return activeLayout;
+      }
     }
     return undefined;
   }
 
   private activeLayoutContainsNoPanels(): boolean {
     const activeLayout = this.getActiveLayout();
-
-    if (activeLayout instanceof ByFrameRepeater) {
-      const child = activeLayout.state.body.state.children[0];
-      if (child instanceof SceneFlexItem || child instanceof SceneReactObject) {
-        return true;
-      }
+    if (activeLayout) {
+      const byFrameRepeaters = sceneGraph.findDescendents(activeLayout, ByFrameRepeater);
+      return byFrameRepeaters.some((repeater) => {
+        const child = repeater.state.body.state.children[0];
+        console.log('child', child);
+        return child instanceof SceneFlexItem || child instanceof SceneReactObject;
+      });
     }
 
     return false;
-  }
-
-  private getErrorStateAlert(errors: DataQueryError[] | undefined) {
-    return new SceneReactObject({
-      reactNode: (
-        <Alert title={'Something went wrong with your request'} severity={'error'}>
-          {errors?.map((err, key) => this.renderError(key, err))}
-        </Alert>
-      ),
-    });
   }
 
   private navigateToLabels() {
@@ -204,58 +228,81 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
         new SceneFlexLayout({
           direction: 'column',
           children: [
+            new SceneReactObject({ reactNode: <LabelBreakdownScene.ParentMenu model={labelBreakdownScene} /> }),
             new SceneFlexItem({
               minHeight: 300,
               body,
             }),
           ],
         }),
-        new ByFrameRepeater({
-          body: new SceneCSSGridLayout({
-            isLazy: true,
-            templateColumns: LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS,
-            autoRows: '200px',
-            children: [
-              new SceneFlexItem({
-                body: new SceneReactObject({
-                  reactNode: <LoadingPlaceholder text="Loading..." />,
-                }),
+        new SceneFlexLayout({
+          direction: 'column',
+          children: [
+            new SceneReactObject({ reactNode: <LabelBreakdownScene.ParentMenu model={labelBreakdownScene} /> }),
+            new SceneFlexItem({
+              minHeight: 300,
+              body: body.clone(),
+            }),
+            new SceneReactObject({ reactNode: <LabelBreakdownScene.ValueMenu model={labelBreakdownScene} /> }),
+            new ByFrameRepeater({
+              body: new SceneCSSGridLayout({
+                isLazy: true,
+                templateColumns: LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS,
+                autoRows: '200px',
+                children: [
+                  new SceneFlexItem({
+                    body: new SceneReactObject({
+                      reactNode: <LoadingPlaceholder text="Loading..." />,
+                    }),
+                  }),
+                ],
               }),
-            ],
-          }),
-          getLayoutChild: getFilterBreakdownValueScene(
-            getLabelValue,
-            DrawStyle.Bars,
-            VAR_LABELS,
-            sceneGraph.getAncestor(this, LabelBreakdownScene).state.sort,
-            tagKey
-          ),
-          sortBy,
-          direction,
-          getFilter,
+              getLayoutChild: getFilterBreakdownValueScene(
+                getLabelValue,
+                DrawStyle.Bars,
+                VAR_LABELS,
+                sceneGraph.getAncestor(this, LabelBreakdownScene).state.sort,
+                tagKey
+              ),
+              sortBy,
+              direction,
+              getFilter,
+            }),
+          ],
         }),
-        new ByFrameRepeater({
-          body: new SceneCSSGridLayout({
-            templateColumns: '1fr',
-            autoRows: '200px',
-            children: [
-              new SceneFlexItem({
-                body: new SceneReactObject({
-                  reactNode: <LoadingPlaceholder text="Loading..." />,
-                }),
+        new SceneFlexLayout({
+          direction: 'column',
+          children: [
+            new SceneReactObject({ reactNode: <LabelBreakdownScene.ParentMenu model={labelBreakdownScene} /> }),
+            new SceneFlexItem({
+              minHeight: 300,
+              body: body.clone(),
+            }),
+            new SceneReactObject({ reactNode: <LabelBreakdownScene.ValueMenu model={labelBreakdownScene} /> }),
+            new ByFrameRepeater({
+              body: new SceneCSSGridLayout({
+                templateColumns: '1fr',
+                autoRows: '200px',
+                children: [
+                  new SceneFlexItem({
+                    body: new SceneReactObject({
+                      reactNode: <LoadingPlaceholder text="Loading..." />,
+                    }),
+                  }),
+                ],
               }),
-            ],
-          }),
-          getLayoutChild: getFilterBreakdownValueScene(
-            getLabelValue,
-            DrawStyle.Bars,
-            VAR_LABELS,
-            sceneGraph.getAncestor(this, LabelBreakdownScene).state.sort,
-            tagKey
-          ),
-          sortBy,
-          direction,
-          getFilter,
+              getLayoutChild: getFilterBreakdownValueScene(
+                getLabelValue,
+                DrawStyle.Bars,
+                VAR_LABELS,
+                sceneGraph.getAncestor(this, LabelBreakdownScene).state.sort,
+                tagKey
+              ),
+              sortBy,
+              direction,
+              getFilter,
+            }),
+          ],
         }),
       ],
     });
