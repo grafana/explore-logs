@@ -1,4 +1,4 @@
-import { SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
+import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import React, { ChangeEvent } from 'react';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { SearchInput } from './SearchInput';
@@ -60,8 +60,10 @@ export class BreakdownSearchScene extends SceneObjectBase<BreakdownSearchSceneSt
       recentFilters[this.cacheKey] = filter;
       const body = this.parent.state.body;
       if (body instanceof LabelValuesBreakdownScene || body instanceof FieldValuesBreakdownScene) {
-        body.state.body?.forEachChild((child) => {
-          if (child instanceof ByFrameRepeater && child.state.body.isActive) {
+        const byFrameRepeater = sceneGraph.findDescendents(body, ByFrameRepeater);
+
+        byFrameRepeater?.forEach((child) => {
+          if (child.state.body.isActive) {
             child.filterByString(filter);
           }
         });
