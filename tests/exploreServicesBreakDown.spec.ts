@@ -294,9 +294,11 @@ test.describe('explore services breakdown page', () => {
     await page.getByPlaceholder('Search for value').click();
     const panels = page.getByTestId(/data-testid Panel header/);
     await expect(panels.first()).toBeVisible();
-    await expect(panels).toHaveCount(4);
+
+    await explorePage.scrollToBottom();
+    await expect(panels).toHaveCount(5);
     await page.keyboard.type('errr');
-    await expect(panels).toHaveCount(1);
+    await expect(panels).toHaveCount(2);
   });
 
   test(`should search fields for ${fieldName}`, async ({ page }) => {
@@ -306,12 +308,14 @@ test.describe('explore services breakdown page', () => {
     await explorePage.click(page.getByPlaceholder('Search for value'));
     const panels = page.getByTestId(/data-testid Panel header/);
     await expect(panels.first()).toBeVisible();
-    expect(await panels.count()).toBeGreaterThan(1);
+    await explorePage.assertNotLoading();
+    // Assert there is at least 2 panels
+    await expect(panels.nth(1)).toBeVisible();
+    // expect(await panels.count()).toBeGreaterThan(1);
     await page.keyboard.type('brod');
-    await expect(panels).toHaveCount(1);
+    await expect(panels).toHaveCount(2);
   });
 
-  // Broken after latest loki update, all fields return both parsers
   test(`should exclude ${fieldName}, request should contain logfmt`, async ({ page }) => {
     let requests: PlaywrightRequest[] = [];
     explorePage.blockAllQueriesExcept({
@@ -325,7 +329,7 @@ test.describe('explore services breakdown page', () => {
     await page.getByTestId(`data-testid Panel header ${fieldName}`).getByRole('button', { name: 'Select' }).click();
 
     // Should see 8 panels after it's done loading
-    await expect(allPanels).toHaveCount(8);
+    await expect(allPanels).toHaveCount(9);
     // And we'll have 2 requests, one on the aggregation, one for the label values
     expect(requests).toHaveLength(2);
 
@@ -333,7 +337,7 @@ test.describe('explore services breakdown page', () => {
     await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
 
     // Should have removed a panel
-    await expect(allPanels).toHaveCount(7);
+    await expect(allPanels).toHaveCount(8);
     // Adhoc content filter should be added
     await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${fieldName}`)).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
