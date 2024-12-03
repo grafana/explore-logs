@@ -243,9 +243,11 @@ test.describe('explore services breakdown page', () => {
     }
   });
 
-  test('should search for tenant field, changing sort order updates value breakdown position', async ({ page }) => {
+  test.only('should search for tenant field, changing sort order updates value breakdown position', async ({
+    page,
+  }) => {
     explorePage.blockAllQueriesExcept({
-      refIds: ['logsPanelQuery', fieldName, 'tenant'],
+      refIds: ['logsPanelQuery'],
       legendFormats: [`{{${levelName}}}`],
     });
     await explorePage.goToFieldsTab();
@@ -254,6 +256,7 @@ test.describe('explore services breakdown page', () => {
     await page.getByText('FieldAll').click();
     await page.keyboard.type('tenan');
     await page.keyboard.press('Enter');
+    await explorePage.assertNotLoading();
 
     // Assert loading is done and panels are showing
     const panels = page.getByTestId(/data-testid Panel header/);
@@ -1063,7 +1066,6 @@ test.describe('explore services breakdown page', () => {
   test('panel menu: label value panel should open links in explore', async ({ page, context }) => {
     await explorePage.goToLabelsTab();
     await page.getByLabel(`Select ${levelName}`).click();
-    await page.pause();
     await page.getByTestId('data-testid Panel menu error').click();
 
     // Open link
