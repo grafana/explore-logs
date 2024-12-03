@@ -177,62 +177,100 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
       ],
       active: 'grid',
       layouts: [
+        // Single
         new SceneFlexLayout({
           direction: 'column',
           children: [
+            new SceneReactObject({
+              reactNode: <FieldsBreakdownScene.ParentMenu model={fieldsBreakdownScene} />,
+            }),
             new SceneFlexItem({
               minHeight: 300,
               body: PanelBuilders.timeseries().setTitle(optionValue).setMenu(new PanelMenu({})).build(),
             }),
           ],
         }),
-        new ByFrameRepeater({
-          body: new SceneCSSGridLayout({
-            templateColumns: FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS,
-            autoRows: '200px',
-            children: [
-              new SceneFlexItem({
-                body: new SceneReactObject({
-                  reactNode: <LoadingPlaceholder text="Loading..." />,
-                }),
+
+        // Grid
+        new SceneFlexLayout({
+          direction: 'column',
+          children: [
+            new SceneReactObject({
+              reactNode: <FieldsBreakdownScene.ParentMenu model={fieldsBreakdownScene} />,
+            }),
+            new SceneFlexItem({
+              minHeight: 300,
+              body: PanelBuilders.timeseries().setTitle(optionValue).setMenu(new PanelMenu({})).build(),
+            }),
+            new SceneReactObject({
+              reactNode: <FieldsBreakdownScene.FieldValueMenu model={fieldsBreakdownScene} />,
+            }),
+            new ByFrameRepeater({
+              body: new SceneCSSGridLayout({
+                templateColumns: FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS,
+                autoRows: '200px',
+                children: [
+                  new SceneFlexItem({
+                    body: new SceneReactObject({
+                      reactNode: <LoadingPlaceholder text="Loading..." />,
+                    }),
+                  }),
+                ],
+                isLazy: true,
               }),
-            ],
-            isLazy: true,
-          }),
-          getLayoutChild: getFilterBreakdownValueScene(
-            getLabelValue,
-            query?.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-            parserForThisField === 'structuredMetadata' ? VAR_METADATA : VAR_FIELDS,
-            sceneGraph.getAncestor(this, FieldsBreakdownScene).state.sort,
-            optionValue
-          ),
-          sortBy,
-          direction,
-          getFilter,
+              getLayoutChild: getFilterBreakdownValueScene(
+                getLabelValue,
+                query?.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
+                parserForThisField === 'structuredMetadata' ? VAR_METADATA : VAR_FIELDS,
+                sceneGraph.getAncestor(this, FieldsBreakdownScene).state.sort,
+                optionValue
+              ),
+              sortBy,
+              direction,
+              getFilter,
+            }),
+          ],
         }),
-        new ByFrameRepeater({
-          body: new SceneCSSGridLayout({
-            templateColumns: '1fr',
-            autoRows: '200px',
-            children: [
-              new SceneFlexItem({
-                body: new SceneReactObject({
-                  reactNode: <LoadingPlaceholder text="Loading..." />,
-                }),
+
+        // Rows
+        new SceneFlexLayout({
+          direction: 'column',
+          children: [
+            new SceneReactObject({
+              reactNode: <FieldsBreakdownScene.ParentMenu model={fieldsBreakdownScene} />,
+            }),
+            new SceneFlexItem({
+              minHeight: 300,
+              body: PanelBuilders.timeseries().setTitle(optionValue).setMenu(new PanelMenu({})).build(),
+            }),
+            new SceneReactObject({
+              reactNode: <FieldsBreakdownScene.FieldValueMenu model={fieldsBreakdownScene} />,
+            }),
+            new ByFrameRepeater({
+              body: new SceneCSSGridLayout({
+                templateColumns: '1fr',
+                autoRows: '200px',
+                children: [
+                  new SceneFlexItem({
+                    body: new SceneReactObject({
+                      reactNode: <LoadingPlaceholder text="Loading..." />,
+                    }),
+                  }),
+                ],
+                isLazy: true,
               }),
-            ],
-            isLazy: true,
-          }),
-          getLayoutChild: getFilterBreakdownValueScene(
-            getLabelValue,
-            query?.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-            parserForThisField === 'structuredMetadata' ? VAR_METADATA : VAR_FIELDS,
-            sceneGraph.getAncestor(this, FieldsBreakdownScene).state.sort,
-            optionValue
-          ),
-          sortBy,
-          direction,
-          getFilter,
+              getLayoutChild: getFilterBreakdownValueScene(
+                getLabelValue,
+                query?.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
+                parserForThisField === 'structuredMetadata' ? VAR_METADATA : VAR_FIELDS,
+                sceneGraph.getAncestor(this, FieldsBreakdownScene).state.sort,
+                optionValue
+              ),
+              sortBy,
+              direction,
+              getFilter,
+            }),
+          ],
         }),
       ],
     });

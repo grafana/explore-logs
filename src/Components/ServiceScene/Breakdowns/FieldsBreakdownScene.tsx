@@ -191,11 +191,12 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     if (event.target !== 'fields') {
       return;
     }
-    if (this.state.body instanceof FieldValuesBreakdownScene && this.state.body.state.body instanceof LayoutSwitcher) {
-      this.state.body.state.body?.state.layouts.forEach((layout) => {
-        if (layout instanceof ByFrameRepeater) {
-          layout.sort(event.sortBy, event.direction);
-        }
+
+    const body = this.state.body;
+    if (body instanceof FieldValuesBreakdownScene && body.state.body instanceof LayoutSwitcher) {
+      body.state.body?.state.layouts.forEach((layout) => {
+        const byFrameRepeater = sceneGraph.findDescendents(body, ByFrameRepeater);
+        byFrameRepeater.forEach((r) => r.sort(event.sortBy, event.direction));
       });
     }
     reportAppInteraction(
@@ -336,34 +337,46 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     navigateToValueBreakdown(ValueSlugs.field, value, serviceScene);
   };
 
-  public static Component = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
-    const { body, loading, blockingMessage, search, sort } = model.useState();
+  public static ParentMenu = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
+    const { body, loading } = model.useState();
+    const styles = useStyles2(getStyles);
     const variable = getFieldGroupByVariable(model);
     const { options, value } = variable.useState();
+    return (
+      <div className={styles.controls}>
+        {body instanceof FieldsAggregatedBreakdownScene && <FieldsAggregatedBreakdownScene.Selector model={body} />}
+        {body instanceof FieldValuesBreakdownScene && <FieldValuesBreakdownScene.Selector model={body} />}
+        {!loading && options.length > 1 && (
+          <FieldSelector label="Field" options={options} value={String(value)} onChange={model.onFieldSelectorChange} />
+        )}
+      </div>
+    );
+  };
+  public static FieldValueMenu = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
+    const { loading, search, sort } = model.useState();
+    const styles = useStyles2(getStyles);
+    const variable = getFieldGroupByVariable(model);
+    const { value } = variable.useState();
+    return (
+      <div className={styles.controls}>
+        {!loading && value !== ALL_VARIABLE_VALUE && (
+          <>
+            <sort.Component model={sort} />
+            <search.Component model={search} />
+          </>
+        )}
+      </div>
+    );
+  };
+
+  public static Component = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
+    const { body, loading, blockingMessage } = model.useState();
     const styles = useStyles2(getStyles);
 
     return (
       <div className={styles.container}>
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
-          <div className={styles.controls}>
-            {body instanceof FieldsAggregatedBreakdownScene && <FieldsAggregatedBreakdownScene.Selector model={body} />}
-            {body instanceof FieldValuesBreakdownScene && <FieldValuesBreakdownScene.Selector model={body} />}
-            {!loading && value !== ALL_VARIABLE_VALUE && (
-              <>
-                <sort.Component model={sort} />
-                <search.Component model={search} />
-              </>
-            )}
-            {!loading && options.length > 1 && (
-              <FieldSelector
-                label="Field"
-                options={options}
-                value={String(value)}
-                onChange={model.onFieldSelectorChange}
-              />
-            )}
-          </div>
-
+          {body instanceof FieldsAggregatedBreakdownScene && model && <FieldsBreakdownScene.ParentMenu model={model} />}
           <div className={styles.content}>{body && <body.Component model={body} />}</div>
         </StatusWrapper>
       </div>
