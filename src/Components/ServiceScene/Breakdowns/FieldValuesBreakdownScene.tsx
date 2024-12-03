@@ -4,6 +4,7 @@ import {
   SceneCSSGridLayout,
   SceneDataProvider,
   SceneDataState,
+  SceneDataTransformer,
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
@@ -38,6 +39,8 @@ export interface FieldValuesBreakdownSceneState extends SceneObjectState {
   $data?: SceneDataProvider;
   lastFilterEvent?: AddFilterEvent;
 }
+
+export const SINGLE_GRAPH_KEY = 'single_graph_key';
 
 export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakdownSceneState> {
   constructor(state: Partial<FieldValuesBreakdownSceneState>) {
@@ -75,7 +78,10 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
 
     this.setState({
       body: this.build(query),
-      $data: getQueryRunner([query]),
+      $data: new SceneDataTransformer({
+        $data: getQueryRunner([query]),
+        transformations: [],
+      }),
     });
 
     this._subs.add(
@@ -199,6 +205,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
               reactNode: <FieldsBreakdownScene.ParentMenu model={fieldsBreakdownScene} />,
             }),
             new SceneFlexItem({
+              key: SINGLE_GRAPH_KEY,
               minHeight: 300,
               body: PanelBuilders.timeseries().setTitle(optionValue).setMenu(new PanelMenu({})).build(),
             }),
@@ -240,6 +247,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
               reactNode: <FieldsBreakdownScene.ParentMenu model={fieldsBreakdownScene} />,
             }),
             new SceneFlexItem({
+              key: SINGLE_GRAPH_KEY,
               minHeight: 300,
               body: PanelBuilders.timeseries().setTitle(optionValue).setMenu(new PanelMenu({})).build(),
             }),

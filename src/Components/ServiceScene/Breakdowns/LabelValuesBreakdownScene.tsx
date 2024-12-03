@@ -36,6 +36,7 @@ import { ClearFiltersLayoutScene } from './ClearFiltersLayoutScene';
 import { EmptyLayoutScene } from './EmptyLayoutScene';
 import { IndexScene } from '../../IndexScene/IndexScene';
 import { clearVariables, getVariablesThatCanBeCleared } from '../../../services/variableHelpers';
+import { SINGLE_GRAPH_KEY } from './FieldValuesBreakdownScene';
 
 type DisplayError = DataQueryError & { displayed: boolean };
 type DisplayErrors = Record<string, DisplayError>;
@@ -177,7 +178,6 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       const byFrameRepeaters = sceneGraph.findDescendents(activeLayout, ByFrameRepeater);
       return byFrameRepeaters.some((repeater) => {
         const child = repeater.state.body.state.children[0];
-        console.log('child', child);
         return child instanceof SceneFlexItem || child instanceof SceneReactObject;
       });
     }
@@ -238,6 +238,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
             new SceneReactObject({ reactNode: <LabelBreakdownScene.ParentMenu model={labelBreakdownScene} /> }),
             new SceneFlexItem({
               minHeight: 300,
+              key: SINGLE_GRAPH_KEY,
               body: body.clone(),
             }),
             new SceneReactObject({ reactNode: <LabelBreakdownScene.ValueMenu model={labelBreakdownScene} /> }),
@@ -273,6 +274,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
             new SceneReactObject({ reactNode: <LabelBreakdownScene.ParentMenu model={labelBreakdownScene} /> }),
             new SceneFlexItem({
               minHeight: 300,
+              key: SINGLE_GRAPH_KEY,
               body: body.clone(),
             }),
             new SceneReactObject({ reactNode: <LabelBreakdownScene.ValueMenu model={labelBreakdownScene} /> }),

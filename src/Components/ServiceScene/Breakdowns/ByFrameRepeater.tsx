@@ -4,6 +4,7 @@ import { DataFrame, LoadingState, PanelData } from '@grafana/data';
 import {
   SceneByFrameRepeater,
   SceneComponentProps,
+  SceneDataTransformer,
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
@@ -11,6 +12,7 @@ import {
   SceneObjectBase,
   SceneObjectState,
   SceneReactObject,
+  VizPanel,
 } from '@grafana/scenes';
 import { sortSeries } from 'services/sorting';
 import { fuzzySearch } from '../../../services/search';
@@ -18,6 +20,9 @@ import { getLabelValue } from './SortByScene';
 import { Alert, Button } from '@grafana/ui';
 import { css } from '@emotion/css';
 import { BreakdownSearchReset } from './BreakdownSearchScene';
+import { SINGLE_GRAPH_KEY } from './FieldValuesBreakdownScene';
+import { map, Observable } from 'rxjs';
+import { LayoutSwitcher } from './LayoutSwitcher';
 
 interface ByFrameRepeaterState extends SceneObjectState {
   body: SceneLayout;
@@ -123,8 +128,36 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
         // reset search
         this.filterFrames(() => true);
       }
+
+      this.filterSummaryChart(data);
     });
   };
+
+  /**
+   * Filters the summary panel rendered above the breakdown panels by adding a transformation to the panel
+   * @param data
+   * @private
+   */
+  private filterSummaryChart(data: string[][]) {
+    const layoutSwitcher = sceneGraph.getAncestor(this, LayoutSwitcher);
+
+    if (layoutSwitcher) {
+      const singleGraphParent = sceneGraph.findAllObjects(
+        layoutSwitcher,
+        (obj) => obj.isActive && obj.state.key === SINGLE_GRAPH_KEY
+      );
+      if (singleGraphParent[0] instanceof SceneFlexItem) {
+        const panel = singleGraphParent[0].state.body;
+        if (panel instanceof VizPanel) {
+          panel.setState({
+            $data: new SceneDataTransformer({
+              transformations: [() => limitFramesByName(data[0])],
+            }),
+          });
+        }
+      }
+    }
+  }
 
   public filterFrames = (filterFn: FrameFilterCallback) => {
     const newChildren: SceneFlexItem[] = [];
@@ -189,3 +222,23 @@ const styles = {
     marginLeft: '1.5rem',
   }),
 };
+
+export function limitFramesByName(matches: string[]) {
+  return (source: Observable<DataFrame[]>) => {
+    return source.pipe(
+      map((frames) => {
+        if (!matches || !matches.length) {
+          return frames;
+        }
+        let newFrames: DataFrame[] = [];
+        frames.forEach((f) => {
+          const label = getLabelValue(f);
+          if (matches.includes(label)) {
+            newFrames.push(f);
+          }
+        });
+        return newFrames;
+      })
+    );
+  };
+}
