@@ -243,9 +243,7 @@ test.describe('explore services breakdown page', () => {
     }
   });
 
-  test.only('should search for tenant field, changing sort order updates value breakdown position', async ({
-    page,
-  }) => {
+  test('should search for tenant field, changing sort order updates value breakdown position', async ({ page }) => {
     explorePage.blockAllQueriesExcept({
       refIds: ['logsPanelQuery'],
       legendFormats: [`{{${levelName}}}`],
