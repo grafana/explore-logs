@@ -34,13 +34,9 @@ import { SortByScene, SortCriteriaChanged } from './SortByScene';
 import { StatusWrapper } from './StatusWrapper';
 import { getFieldOptions } from 'services/filters';
 import { EmptyLayoutScene } from './EmptyLayoutScene';
-import {
-  clearVariables,
-  getFieldGroupByVariable,
-  getLabelsVariable,
-  getVariablesThatCanBeCleared,
-} from '../../../services/variableGetters';
+import { getFieldGroupByVariable, getLabelsVariable } from '../../../services/variableGetters';
 import { ClearFiltersLayoutScene } from './ClearFiltersLayoutScene';
+import { clearVariables, getVariablesThatCanBeCleared } from '../../../services/variableHelpers';
 
 export const averageFields = ['duration', 'count', 'total', 'bytes'];
 export const FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(400px, 1fr))';

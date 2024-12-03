@@ -30,15 +30,12 @@ import { AddFilterEvent } from './AddToFiltersButton';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { buildLabelsQuery, LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS } from '../../../services/labels';
 import { getAppEvents } from '@grafana/runtime';
-import {
-  clearVariables,
-  getLabelGroupByVariable,
-  getVariablesThatCanBeCleared,
-} from '../../../services/variableGetters';
+import { getLabelGroupByVariable } from '../../../services/variableGetters';
 import { getPanelWrapperStyles, PanelMenu } from '../../Panels/PanelMenu';
 import { ClearFiltersLayoutScene } from './ClearFiltersLayoutScene';
 import { EmptyLayoutScene } from './EmptyLayoutScene';
 import { IndexScene } from '../../IndexScene/IndexScene';
+import { clearVariables, getVariablesThatCanBeCleared } from '../../../services/variableHelpers';
 
 type DisplayError = DataQueryError & { displayed: boolean };
 type DisplayErrors = Record<string, DisplayError>;

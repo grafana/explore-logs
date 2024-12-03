@@ -4,7 +4,6 @@ import {
   DataSourceVariable,
   sceneGraph,
   SceneObject,
-  SceneVariable,
   SceneVariableState,
 } from '@grafana/scenes';
 import { CustomConstantVariable } from './CustomConstantVariable';
@@ -15,8 +14,8 @@ import {
   LOGS_FORMAT_EXPR,
   LogsQueryOptions,
   MIXED_FORMAT_EXPR,
-  VAR_AGGREGATED_METRICS,
   SERVICE_NAME,
+  VAR_AGGREGATED_METRICS,
   VAR_DATASOURCE,
   VAR_FIELD_GROUP_BY,
   VAR_FIELDS,
@@ -24,24 +23,21 @@ import {
   VAR_LABEL_GROUP_BY,
   VAR_LABELS,
   VAR_LABELS_EXPR,
+  VAR_LABELS_REPLICA,
   VAR_LEVELS,
   VAR_LEVELS_EXPR,
   VAR_LINE_FILTER,
   VAR_LINE_FILTER_EXPR,
+  VAR_METADATA,
+  VAR_METADATA_EXPR,
   VAR_PATTERNS,
   VAR_PATTERNS_EXPR,
   VAR_PRIMARY_LABEL,
   VAR_PRIMARY_LABEL_SEARCH,
-  VAR_METADATA_EXPR,
-  VAR_METADATA,
-  VAR_LABELS_REPLICA,
-  SERVICE_UI_LABEL,
 } from './variables';
 import { AdHocVariableFilter } from '@grafana/data';
 import { logger } from './logger';
 import { narrowFieldValue, NarrowingError } from './narrowing';
-import { IndexScene } from '../Components/IndexScene/IndexScene';
-import { getPrimaryLabelFromUrl } from './routing';
 
 export function getLogsStreamSelector(options: LogsQueryOptions) {
   const {
@@ -240,51 +236,4 @@ export function getServiceNameFromVariableState(
 export function getDataSourceName(scene: SceneObject) {
   const dsVariable = getDataSourceVariable(scene);
   return dsVariable.getValue();
-}
-
-export function getVariablesThatCanBeCleared(indexScene: IndexScene) {
-  const variables = sceneGraph.getVariables(indexScene);
-  let variablesToClear: SceneVariable[] = [];
-
-  for (const variable of variables.state.variables) {
-    if (variable instanceof AdHocFiltersVariable && variable.state.filters.length) {
-      variablesToClear.push(variable);
-    }
-    if (variable instanceof CustomConstantVariable && variable.state.value && variable.state.name !== 'logsFormat') {
-      variablesToClear.push(variable);
-    }
-  }
-  return variablesToClear;
-}
-
-export function clearVariables(sceneRef: SceneObject) {
-  // clear patterns: needs to happen first, or it won't work as patterns is split into a variable and a state, and updating the variable triggers a state update
-  const indexScene = sceneGraph.getAncestor(sceneRef, IndexScene);
-  indexScene.setState({
-    patterns: [],
-  });
-
-  const variablesToClear = getVariablesThatCanBeCleared(indexScene);
-
-  variablesToClear.forEach((variable) => {
-    if (variable instanceof AdHocFiltersVariable && variable.state.key === 'adhoc_service_filter') {
-      let { labelName } = getPrimaryLabelFromUrl();
-      // getPrimaryLabelFromUrl returns the label name that exists in the URL, which is "service" not "service_name"
-      if (labelName === SERVICE_UI_LABEL) {
-        labelName = SERVICE_NAME;
-      }
-      variable.setState({
-        filters: variable.state.filters.filter((filter) => filter.key === labelName),
-      });
-    } else if (variable instanceof AdHocFiltersVariable) {
-      variable.setState({
-        filters: [],
-      });
-    } else if (variable instanceof CustomConstantVariable) {
-      variable.setState({
-        value: '',
-        text: '',
-      });
-    }
-  });
 }
