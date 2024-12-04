@@ -146,7 +146,7 @@ export function getFilterBreakdownValueScene(
           transformations: [() => selectFrameTransformation(frame)],
         })
       )
-      .setColor({ mode: 'fixed', fixedColor: getColorByIndex(frameIndex) })
+      // .setColor({ mode: 'fixed', fixedColor: getColorByIndex(frameIndex) })
       .setOverrides(setLevelColorOverrides)
       .setMenu(new PanelMenu({ frame, fieldName: getTitle(frame), labelName: labelKey }))
       .setHeaderActions([new AddToFiltersButton({ frame, variableName })]);
