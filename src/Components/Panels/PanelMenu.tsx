@@ -223,7 +223,7 @@ const getExploreLink = (sceneRef: SceneObject) => {
     if (queryProvider instanceof SceneQueryRunner) {
       queryRunner = queryProvider;
     } else {
-      logger.error(new Error('query provider not found!'));
+      queryRunner = sceneGraph.findDescendents(queryProvider, SceneQueryRunner)[0];
     }
   }
   const uninterpolatedExpr: string | undefined = queryRunner.state.queries[0].expr;
