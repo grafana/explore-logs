@@ -100,7 +100,7 @@ export function getColorByName(name: string, paletteSet: Set<number>) {
   const visTheme = config.theme2.visualization;
   const hash = Math.abs(getHash(name));
   const paletteSize = 57;
-  // There are 56 colors in the palette, if we use more of the palette we're less likely to get duplicates, but the colors are harder to differntiate
+  // There are 56 colors in the palette, if we use more of the palette we're less likely to get duplicates, but the colors are harder to differentiate
   // Also, it's possible that a panel with N series has the same color for each series
   // See the birthday problem for more: 8 series will have ~40% at least 2 series get the same color
   // Opposed to the previous implementation, we cycled between 8 series, so every panel with 8+ series was guaranteed to have 1 duplicate, but the color of each series would change depending on the sort order
