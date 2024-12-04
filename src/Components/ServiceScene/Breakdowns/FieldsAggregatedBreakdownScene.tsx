@@ -123,7 +123,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
         updatedChildren.sort(this.sortChildren(cardinalityMap));
 
         updatedChildren.map((child) => {
-          limitMaxNumberOfSeriesForPanel(child);
+          this.addLimitUIToChild(child);
           this.subscribeToPanel(child);
         });
 
@@ -134,6 +134,18 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
         logger.warn('Layout is not SceneCSSGridLayout');
       }
     });
+  }
+
+  private addLimitUIToChild(child: SceneCSSGridItem) {
+    const panel = child.state.body;
+    const dataTransformer = child.state.body?.state.$data;
+    if (panel instanceof VizPanel && dataTransformer instanceof SceneDataTransformer) {
+      limitMaxNumberOfSeriesForPanel(panel, dataTransformer);
+    } else {
+      logger.error(new Error('unable to locate VizPanel or transformer'), {
+        msg: 'unable to locate VizPanel or transformer',
+      });
+    }
   }
 
   private sortChildren(cardinalityMap: Map<string, number>) {
@@ -209,7 +221,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
 
     // We must subscribe to the data providers for all children after the clone, or we'll see bugs in the row layout
     [...children, ...childrenClones].map((child) => {
-      limitMaxNumberOfSeriesForPanel(child);
+      this.addLimitUIToChild(child);
       this.subscribeToPanel(child);
     });
 

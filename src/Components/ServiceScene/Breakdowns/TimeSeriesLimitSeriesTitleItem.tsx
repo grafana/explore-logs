@@ -4,13 +4,15 @@ import { GrafanaTheme2, LoadingState, PanelData } from '@grafana/data';
 import { css } from '@emotion/css';
 import {
   SceneComponentProps,
-  SceneCSSGridItem,
   SceneDataTransformer,
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
+  SceneQueryRunner,
   VizPanel,
 } from '@grafana/scenes';
+import { LabelValuesBreakdownScene } from './LabelValuesBreakdownScene';
+import { FieldValuesBreakdownScene } from './FieldValuesBreakdownScene';
 
 export const MAX_NUMBER_OF_TIME_SERIES = 20;
 
@@ -18,6 +20,7 @@ export interface TimeSeriesLimitSeriesTitleItemSceneState extends SceneObjectSta
   toggleShowAllSeries: (model: TimeSeriesLimitSeriesTitleItemScene) => void;
   showAllSeries: boolean;
   currentSeriesCount?: number;
+  defaultSeriesLimit: number;
 }
 
 export class TimeSeriesLimitSeriesTitleItemScene extends SceneObjectBase<TimeSeriesLimitSeriesTitleItemSceneState> {
@@ -28,10 +31,17 @@ export class TimeSeriesLimitSeriesTitleItemScene extends SceneObjectBase<TimeSer
   }
 
   private onActivate() {
-    const panel = sceneGraph.getAncestor(this, VizPanel);
+    const valueBreakdown = sceneGraph.findObject(
+      this,
+      (o) => o instanceof LabelValuesBreakdownScene || o instanceof FieldValuesBreakdownScene
+    );
+    const $data = sceneGraph.findDescendents(
+      valueBreakdown ?? sceneGraph.getAncestor(this, VizPanel),
+      SceneQueryRunner
+    )[0];
+
     this._subs.add(
-      panel.subscribeToState((newState, prevState) => {
-        const $data = sceneGraph.getData(this);
+      $data.subscribeToState((newState, prevState) => {
         if ($data.state.data?.state === LoadingState.Done) {
           this.setState({
             currentSeriesCount: $data.state.data?.series.length,
@@ -41,7 +51,7 @@ export class TimeSeriesLimitSeriesTitleItemScene extends SceneObjectBase<TimeSer
     );
   }
   public static Component = ({ model }: SceneComponentProps<TimeSeriesLimitSeriesTitleItemScene>) => {
-    const { toggleShowAllSeries, showAllSeries, currentSeriesCount } = model.useState();
+    const { toggleShowAllSeries, showAllSeries, currentSeriesCount, defaultSeriesLimit } = model.useState();
     const $data = sceneGraph.getData(model);
     const { data } = $data.useState();
     const styles = useStyles2(getStyles);
@@ -51,7 +61,7 @@ export class TimeSeriesLimitSeriesTitleItemScene extends SceneObjectBase<TimeSer
       showAllSeries ||
       data?.state !== LoadingState.Done ||
       !currentSeriesCount ||
-      data.series.length < MAX_NUMBER_OF_TIME_SERIES
+      data.series.length < defaultSeriesLimit
     ) {
       return null;
     }
@@ -64,11 +74,7 @@ export class TimeSeriesLimitSeriesTitleItemScene extends SceneObjectBase<TimeSer
       <div key="disclaimer" className={styles.timeSeriesDisclaimer}>
         <span className={styles.warningMessage}>
           <>
-            <Icon
-              title={`Showing only ${MAX_NUMBER_OF_TIME_SERIES} series`}
-              name="exclamation-triangle"
-              aria-hidden="true"
-            />
+            <Icon title={`Showing only ${defaultSeriesLimit} series`} name="exclamation-triangle" aria-hidden="true" />
           </>
         </span>
         <Tooltip
@@ -84,28 +90,28 @@ export class TimeSeriesLimitSeriesTitleItemScene extends SceneObjectBase<TimeSer
     );
   };
 }
-
-export function limitMaxNumberOfSeriesForPanel(child: SceneCSSGridItem) {
-  const panel = child.state.body as VizPanel | undefined;
-  const dataTransformer = child.state.body?.state.$data;
-  if (dataTransformer instanceof SceneDataTransformer) {
-    panel?.setState({
-      titleItems: [
-        new TimeSeriesLimitSeriesTitleItemScene({
-          showAllSeries: false,
-          toggleShowAllSeries: (timeSeriesLimiter) => {
-            dataTransformer.setState({
-              transformations: [],
-            });
-            timeSeriesLimiter.setState({
-              showAllSeries: true,
-            });
-            dataTransformer.reprocessTransformations();
-          },
-        }),
-      ],
-    });
-  }
+export function limitMaxNumberOfSeriesForPanel(
+  panel: VizPanel,
+  dataTransformer: SceneDataTransformer,
+  defaultSeriesLimit = MAX_NUMBER_OF_TIME_SERIES
+) {
+  panel?.setState({
+    titleItems: [
+      new TimeSeriesLimitSeriesTitleItemScene({
+        defaultSeriesLimit: defaultSeriesLimit,
+        showAllSeries: false,
+        toggleShowAllSeries: (timeSeriesLimiter) => {
+          dataTransformer.setState({
+            transformations: [],
+          });
+          timeSeriesLimiter.setState({
+            showAllSeries: true,
+          });
+          dataTransformer.reprocessTransformations();
+        },
+      }),
+    ],
+  });
 }
 
 const getStyles = (theme: GrafanaTheme2) => ({
