@@ -4,11 +4,11 @@ import { GrafanaTheme2, LoadingState, PanelData } from '@grafana/data';
 import { css } from '@emotion/css';
 import {
   SceneComponentProps,
-  SceneCSSGridItem,
   SceneDataTransformer,
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
+  SceneQueryRunner,
   VizPanel,
 } from '@grafana/scenes';
 
@@ -18,6 +18,8 @@ export interface TimeSeriesLimitSeriesTitleItemSceneState extends SceneObjectSta
   toggleShowAllSeries: (model: TimeSeriesLimitSeriesTitleItemScene) => void;
   showAllSeries: boolean;
   currentSeriesCount?: number;
+  defaultSeriesLimit: number;
+  dataTransformer: SceneDataTransformer;
 }
 
 export class TimeSeriesLimitSeriesTitleItemScene extends SceneObjectBase<TimeSeriesLimitSeriesTitleItemSceneState> {
@@ -41,8 +43,9 @@ export class TimeSeriesLimitSeriesTitleItemScene extends SceneObjectBase<TimeSer
     );
   }
   public static Component = ({ model }: SceneComponentProps<TimeSeriesLimitSeriesTitleItemScene>) => {
-    const { toggleShowAllSeries, showAllSeries, currentSeriesCount } = model.useState();
-    const $data = sceneGraph.getData(model);
+    const { toggleShowAllSeries, showAllSeries, currentSeriesCount, defaultSeriesLimit, dataTransformer } =
+      model.useState();
+    const $data = dataTransformer;
     const { data } = $data.useState();
     const styles = useStyles2(getStyles);
 
@@ -51,7 +54,7 @@ export class TimeSeriesLimitSeriesTitleItemScene extends SceneObjectBase<TimeSer
       showAllSeries ||
       data?.state !== LoadingState.Done ||
       !currentSeriesCount ||
-      data.series.length < MAX_NUMBER_OF_TIME_SERIES
+      data.series.length < defaultSeriesLimit
     ) {
       return null;
     }
@@ -64,11 +67,7 @@ export class TimeSeriesLimitSeriesTitleItemScene extends SceneObjectBase<TimeSer
       <div key="disclaimer" className={styles.timeSeriesDisclaimer}>
         <span className={styles.warningMessage}>
           <>
-            <Icon
-              title={`Showing only ${MAX_NUMBER_OF_TIME_SERIES} series`}
-              name="exclamation-triangle"
-              aria-hidden="true"
-            />
+            <Icon title={`Showing only ${defaultSeriesLimit} series`} name="exclamation-triangle" aria-hidden="true" />
           </>
         </span>
         <Tooltip
@@ -84,29 +83,52 @@ export class TimeSeriesLimitSeriesTitleItemScene extends SceneObjectBase<TimeSer
     );
   };
 }
-
-export function limitMaxNumberOfSeriesForPanel(child: SceneCSSGridItem) {
-  const panel = child.state.body as VizPanel | undefined;
-  const dataTransformer = child.state.body?.state.$data;
-  if (dataTransformer instanceof SceneDataTransformer) {
-    panel?.setState({
-      titleItems: [
-        new TimeSeriesLimitSeriesTitleItemScene({
-          showAllSeries: false,
-          toggleShowAllSeries: (timeSeriesLimiter) => {
-            dataTransformer.setState({
-              transformations: [],
-            });
-            timeSeriesLimiter.setState({
-              showAllSeries: true,
-            });
-            dataTransformer.reprocessTransformations();
-          },
-        }),
-      ],
-    });
-  }
+export function limitMaxNumberOfSeriesForPanel(
+  panel: VizPanel,
+  dataTransformer: SceneDataTransformer,
+  defaultSeriesLimit = MAX_NUMBER_OF_TIME_SERIES
+) {
+  panel?.setState({
+    titleItems: [
+      new TimeSeriesLimitSeriesTitleItemScene({
+        dataTransformer: dataTransformer,
+        defaultSeriesLimit: defaultSeriesLimit,
+        showAllSeries: false,
+        toggleShowAllSeries: (timeSeriesLimiter) => {
+          dataTransformer.setState({
+            transformations: [],
+          });
+          timeSeriesLimiter.setState({
+            showAllSeries: true,
+          });
+          dataTransformer.reprocessTransformations();
+        },
+      }),
+    ],
+  });
 }
+// export function limitMaxNumberOfSeriesForPanel(child: SceneCSSGridItem) {
+//   const panel = child.state.body as VizPanel | undefined;
+//   const dataTransformer = child.state.body?.state.$data;
+//   if (dataTransformer instanceof SceneDataTransformer) {
+//     panel?.setState({
+//       titleItems: [
+//         new TimeSeriesLimitSeriesTitleItemScene({
+//           showAllSeries: false,
+//           toggleShowAllSeries: (timeSeriesLimiter) => {
+//             dataTransformer.setState({
+//               transformations: [],
+//             });
+//             timeSeriesLimiter.setState({
+//               showAllSeries: true,
+//             });
+//             dataTransformer.reprocessTransformations();
+//           },
+//         }),
+//       ],
+//     });
+//   }
+// }
 
 const getStyles = (theme: GrafanaTheme2) => ({
   timeSeriesDisclaimer: css({

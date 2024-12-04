@@ -28,6 +28,7 @@ import { LokiQuery } from '../../../services/lokiQuery';
 import { ServiceScene } from '../ServiceScene';
 import { DataFrame, LoadingState } from '@grafana/data';
 import { PanelMenu, getPanelWrapperStyles } from '../../Panels/PanelMenu';
+import { logger } from '../../../services/logger';
 
 export interface LabelsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -143,13 +144,25 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
       const cardinalityMap = this.calculateCardinalityMap(detectedLabelsFrame);
       updatedChildren.sort(this.sortChildren(cardinalityMap));
       updatedChildren.map((child) => {
-        limitMaxNumberOfSeriesForPanel(child);
+        this.addLimitUIToChild(child);
       });
 
       layout.setState({
         children: updatedChildren,
       });
     });
+  }
+
+  private addLimitUIToChild(child: SceneCSSGridItem) {
+    const panel = child.state.body;
+    const dataTransformer = child.state.body?.state.$data;
+    if (panel instanceof VizPanel && dataTransformer instanceof SceneDataTransformer) {
+      limitMaxNumberOfSeriesForPanel(panel, dataTransformer);
+    } else {
+      logger.error(new Error('unable to locate VizPanel or transformer'), {
+        msg: 'unable to locate VizPanel or transformer',
+      });
+    }
   }
 
   private calculateCardinalityMap(detectedLabels?: DataFrame) {
@@ -182,7 +195,7 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
 
     // We must subscribe to the data providers for all children after the clone or we'll see bugs in the row layout
     [...children, ...childrenClones].map((child) => {
-      limitMaxNumberOfSeriesForPanel(child);
+      this.addLimitUIToChild(child);
     });
 
     return new LayoutSwitcher({

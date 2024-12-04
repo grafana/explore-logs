@@ -26,6 +26,8 @@ import { setLevelColorOverrides } from '../../services/panel';
 import { setPanelOption } from '../../services/store';
 import { FieldsAggregatedBreakdownScene } from '../ServiceScene/Breakdowns/FieldsAggregatedBreakdownScene';
 import { setValueSummaryHeight } from '../ServiceScene/Breakdowns/Panels/ValueSummary';
+import { FieldValuesBreakdownScene } from '../ServiceScene/Breakdowns/FieldValuesBreakdownScene';
+import { LabelValuesBreakdownScene } from '../ServiceScene/Breakdowns/LabelValuesBreakdownScene';
 
 const ADD_TO_INVESTIGATION_MENU_TEXT = 'Add to investigation';
 const ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT = 'Investigations';
@@ -151,8 +153,6 @@ function addCollapsableItem(items: PanelMenuItem[], menu: PanelMenu) {
           ? CollapsablePanelType.collapse
           : CollapsablePanelType.expand;
 
-      console.log('newCollapsableState', { newCollapsableState, currentState: menu.state.collapsable });
-
       // Update the viz
       const vizPanelFlexItem = sceneGraph.getAncestor(menu, SceneFlexItem);
       setValueSummaryHeight(vizPanelFlexItem, newCollapsableState);
@@ -217,13 +217,22 @@ const getExploreLink = (sceneRef: SceneObject) => {
 
   // If we don't have a query runner, then our panel is within a SceneCSSGridItem, we need to get the query runner from there
   if (!queryRunner) {
-    const sceneGridItem = sceneGraph.getAncestor(sceneRef, SceneCSSGridItem);
-    const queryProvider = sceneGraph.getData(sceneGridItem);
+    const breakdownScene = sceneGraph.findObject(
+      sceneRef,
+      (o) => o instanceof FieldValuesBreakdownScene || o instanceof LabelValuesBreakdownScene
+    );
+    if (breakdownScene) {
+      const queryProvider = sceneGraph.getData(breakdownScene);
 
-    if (queryProvider instanceof SceneQueryRunner) {
-      queryRunner = queryProvider;
+      if (queryProvider instanceof SceneQueryRunner) {
+        queryRunner = queryProvider;
+      } else {
+        queryRunner = getQueryRunnerFromChildren(queryProvider)[0];
+      }
     } else {
-      logger.error(new Error('query provider not found!'));
+      logger.error(new Error('Unable to locate query runner!'), {
+        msg: 'PanelMenu - getExploreLink: Unable to locate query runner!',
+      });
     }
   }
   const uninterpolatedExpr: string | undefined = queryRunner.state.queries[0].expr;

@@ -6,8 +6,6 @@ import { getPanelOption } from '../../../../services/store';
 import { Options } from '@grafana/schema/dist/esm/raw/composable/timeseries/panelcfg/x/TimeSeriesPanelCfg_types.gen';
 
 export function getValueSummaryPanel(title: string, options?: { levelColor?: boolean }) {
-  console.log('getValueSummaryPanel', title, options);
-
   const collapsable =
     getPanelOption('collapsable', [CollapsablePanelType.collapse, CollapsablePanelType.expand]) ??
     CollapsablePanelType.collapse;
