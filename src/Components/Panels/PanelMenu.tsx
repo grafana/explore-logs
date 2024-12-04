@@ -223,7 +223,7 @@ const getExploreLink = (sceneRef: SceneObject) => {
     if (queryProvider instanceof SceneQueryRunner) {
       queryRunner = queryProvider;
     } else {
-      queryRunner = sceneGraph.findDescendents(queryProvider, SceneQueryRunner)[0];
+      queryRunner = getQueryRunnerFromChildren(queryProvider)[0];
     }
   }
   const uninterpolatedExpr: string | undefined = queryRunner.state.queries[0].expr;
