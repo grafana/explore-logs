@@ -1,17 +1,26 @@
-import { PanelBuilders, SceneFlexItem, VizPanel } from '@grafana/scenes';
+import { PanelBuilders, SceneDataTransformer, SceneFlexItem, VizPanel } from '@grafana/scenes';
 import { CollapsablePanelType, PanelMenu } from '../../../Panels/PanelMenu';
 import { DrawStyle, StackingMode } from '@grafana/ui';
 import { setLevelColorOverrides } from '../../../../services/panel';
 import { getPanelOption } from '../../../../services/store';
 import { Options } from '@grafana/schema/dist/esm/raw/composable/timeseries/panelcfg/x/TimeSeriesPanelCfg_types.gen';
+import { limitMaxNumberOfSeriesForPanel } from '../TimeSeriesLimitSeriesTitleItem';
+import { limitFramesTransformation } from '../FieldsAggregatedBreakdownScene';
+
+const SUMMARY_PANEL_SERIES_LIMIT = 100;
 
 export function getValueSummaryPanel(title: string, options?: { levelColor?: boolean }) {
   const collapsable =
     getPanelOption('collapsable', [CollapsablePanelType.collapse, CollapsablePanelType.expand]) ??
     CollapsablePanelType.collapse;
 
+  const $data = new SceneDataTransformer({
+    transformations: [() => limitFramesTransformation(SUMMARY_PANEL_SERIES_LIMIT)],
+  });
+
   const body = PanelBuilders.timeseries()
     .setTitle(title)
+    .setData($data)
     .setMenu(
       new PanelMenu({
         collapsable,
@@ -27,6 +36,9 @@ export function getValueSummaryPanel(title: string, options?: { levelColor?: boo
     body.setOverrides(setLevelColorOverrides);
   }
   const build: VizPanel<Options> = body.build();
+  build.addActivationHandler(() => {
+    limitMaxNumberOfSeriesForPanel(build, $data, SUMMARY_PANEL_SERIES_LIMIT);
+  });
 
   return new SceneFlexItem({
     key: VALUE_SUMMARY_PANEL_KEY,
