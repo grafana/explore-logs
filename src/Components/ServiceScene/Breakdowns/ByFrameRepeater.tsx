@@ -20,9 +20,9 @@ import { getLabelValue } from './SortByScene';
 import { Alert, Button } from '@grafana/ui';
 import { css } from '@emotion/css';
 import { BreakdownSearchReset } from './BreakdownSearchScene';
-import { SINGLE_GRAPH_KEY } from './FieldValuesBreakdownScene';
 import { map, Observable } from 'rxjs';
 import { LayoutSwitcher } from './LayoutSwitcher';
+import { VALUE_SUMMARY_PANEL_KEY } from './Panels/ValueSummary';
 
 interface ByFrameRepeaterState extends SceneObjectState {
   body: SceneLayout;
@@ -144,7 +144,7 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     if (layoutSwitcher) {
       const singleGraphParent = sceneGraph.findAllObjects(
         layoutSwitcher,
-        (obj) => obj.isActive && obj.state.key === SINGLE_GRAPH_KEY
+        (obj) => obj.isActive && obj.state.key === VALUE_SUMMARY_PANEL_KEY
       );
       if (singleGraphParent[0] instanceof SceneFlexItem) {
         const panel = singleGraphParent[0].state.body;

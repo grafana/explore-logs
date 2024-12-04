@@ -33,14 +33,13 @@ import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { getFieldGroupByVariable, getFieldsVariable } from '../../../services/variableGetters';
 import { LokiQuery } from '../../../services/lokiQuery';
 import { PanelMenu, getPanelWrapperStyles } from '../../Panels/PanelMenu';
+import { getValueSummaryPanel } from './Panels/ValueSummary';
 
 export interface FieldValuesBreakdownSceneState extends SceneObjectState {
   body?: (LayoutSwitcher & SceneObject) | (SceneReactObject & SceneObject);
   $data?: SceneDataProvider;
   lastFilterEvent?: AddFilterEvent;
 }
-
-export const SINGLE_GRAPH_KEY = 'single_graph_key';
 
 export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakdownSceneState> {
   constructor(state: Partial<FieldValuesBreakdownSceneState>) {
@@ -204,11 +203,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
             new SceneReactObject({
               reactNode: <FieldsBreakdownScene.ParentMenu model={fieldsBreakdownScene} />,
             }),
-            new SceneFlexItem({
-              key: SINGLE_GRAPH_KEY,
-              minHeight: 300,
-              body: PanelBuilders.timeseries().setTitle(optionValue).setMenu(new PanelMenu({})).build(),
-            }),
+            getValueSummaryPanel(optionValue),
             new SceneReactObject({
               reactNode: <FieldsBreakdownScene.ValueMenu model={fieldsBreakdownScene} />,
             }),
@@ -246,11 +241,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
             new SceneReactObject({
               reactNode: <FieldsBreakdownScene.ParentMenu model={fieldsBreakdownScene} />,
             }),
-            new SceneFlexItem({
-              key: SINGLE_GRAPH_KEY,
-              minHeight: 300,
-              body: PanelBuilders.timeseries().setTitle(optionValue).setMenu(new PanelMenu({})).build(),
-            }),
+            getValueSummaryPanel(optionValue),
             new SceneReactObject({
               reactNode: <FieldsBreakdownScene.ValueMenu model={fieldsBreakdownScene} />,
             }),

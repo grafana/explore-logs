@@ -3,6 +3,7 @@ import {
   PanelBuilders,
   SceneComponentProps,
   SceneCSSGridItem,
+  SceneFlexItem,
   sceneGraph,
   SceneObject,
   SceneObjectBase,
@@ -24,6 +25,7 @@ import { ExtensionPoints } from '../../services/extensions/links';
 import { setLevelColorOverrides } from '../../services/panel';
 import { setPanelOption } from '../../services/store';
 import { FieldsAggregatedBreakdownScene } from '../ServiceScene/Breakdowns/FieldsAggregatedBreakdownScene';
+import { setValueSummaryHeight } from '../ServiceScene/Breakdowns/Panels/ValueSummary';
 
 const ADD_TO_INVESTIGATION_MENU_TEXT = 'Add to investigation';
 const ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT = 'Investigations';
@@ -33,6 +35,11 @@ export enum AvgFieldPanelType {
   'histogram' = 'histogram',
 }
 
+export enum CollapsablePanelType {
+  collapse = 'Collapse',
+  expand = 'Expand',
+}
+
 interface PanelMenuState extends SceneObjectState {
   body?: VizPanelMenu;
   frame?: DataFrame;
@@ -40,9 +47,90 @@ interface PanelMenuState extends SceneObjectState {
   fieldName?: string;
   addToExplorations?: AddToExplorationButton;
   panelType?: AvgFieldPanelType;
+  collapsable?: CollapsablePanelType;
 }
 
-function addHistogramItem(items: PanelMenuItem[], sceneRef: PanelMenu) {
+/**
+ * @todo the VizPanelMenu interface is overly restrictive, doesn't allow any member functions on this class, so everything is currently inlined
+ */
+export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPanelMenu, SceneObject {
+  constructor(state: Partial<PanelMenuState>) {
+    super(state);
+    this.addActivationHandler(() => {
+      this.setState({
+        addToExplorations: new AddToExplorationButton({
+          labelName: this.state.labelName,
+          fieldName: this.state.fieldName,
+          frame: this.state.frame,
+        }),
+      });
+
+      // @todo rewrite the AddToExplorationButton
+      // Manually activate scene
+      this.state.addToExplorations?.activate();
+
+      // Navigation options (all panels)
+      const items: PanelMenuItem[] = [
+        {
+          text: 'Navigation',
+          type: 'group',
+        },
+        {
+          text: 'Explore',
+          iconClassName: 'compass',
+          href: getExploreLink(this),
+          onClick: () => onExploreLinkClickTracking(),
+        },
+      ];
+
+      // Visualization options
+      if (this.state.panelType || this.state.collapsable) {
+        addVisualizationHeader(items, this);
+      }
+
+      if (this.state.collapsable) {
+        addCollapsableItem(items, this);
+      }
+
+      if (this.state.panelType) {
+        addHistogramItem(items, this);
+      }
+
+      this.setState({
+        body: new VizPanelMenu({
+          items,
+        }),
+      });
+
+      this.state.addToExplorations?.subscribeToState(() => {
+        subscribeToAddToExploration(this);
+      });
+    });
+  }
+
+  addItem(item: PanelMenuItem): void {
+    if (this.state.body) {
+      this.state.body.addItem(item);
+    }
+  }
+  setItems(items: PanelMenuItem[]): void {
+    if (this.state.body) {
+      this.state.body.setItems(items);
+    }
+  }
+
+  public static Component = ({ model }: SceneComponentProps<PanelMenu>) => {
+    const { body } = model.useState();
+
+    if (body) {
+      return <body.Component model={body} />;
+    }
+
+    return <></>;
+  };
+}
+
+function addVisualizationHeader(items: PanelMenuItem[], sceneRef: PanelMenu) {
   items.push({
     text: '',
     type: 'divider',
@@ -51,6 +139,32 @@ function addHistogramItem(items: PanelMenuItem[], sceneRef: PanelMenu) {
     text: 'Visualization',
     type: 'group',
   });
+}
+
+function addCollapsableItem(items: PanelMenuItem[], menu: PanelMenu) {
+  items.push({
+    text: menu.state.collapsable ?? CollapsablePanelType.expand,
+    iconClassName: menu.state.collapsable === CollapsablePanelType.collapse ? 'table-collapse-all' : 'table-expand-all',
+    onClick: () => {
+      const newCollapsableState =
+        menu.state.collapsable === CollapsablePanelType.expand
+          ? CollapsablePanelType.collapse
+          : CollapsablePanelType.expand;
+
+      console.log('newCollapsableState', { newCollapsableState, currentState: menu.state.collapsable });
+
+      // Update the viz
+      const vizPanelFlexItem = sceneGraph.getAncestor(menu, SceneFlexItem);
+      setValueSummaryHeight(vizPanelFlexItem, newCollapsableState);
+
+      // Set state and update local storage
+      menu.setState({ collapsable: newCollapsableState });
+      setPanelOption('collapsable', newCollapsableState);
+    },
+  });
+}
+
+function addHistogramItem(items: PanelMenuItem[], sceneRef: PanelMenu) {
   items.push({
     text: sceneRef.state.panelType !== AvgFieldPanelType.histogram ? 'Histogram' : 'Time series',
     iconClassName: sceneRef.state.panelType !== AvgFieldPanelType.histogram ? 'graph-bar' : 'chart-line',
@@ -94,76 +208,6 @@ function addHistogramItem(items: PanelMenuItem[], sceneRef: PanelMenu) {
       onSwitchVizTypeTracking(newPanelType);
     },
   });
-}
-
-/**
- * @todo the VizPanelMenu interface is overly restrictive, doesn't allow any member functions on this class, so everything is currently inlined
- */
-export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPanelMenu, SceneObject {
-  constructor(state: Partial<PanelMenuState>) {
-    super(state);
-    this.addActivationHandler(() => {
-      this.setState({
-        addToExplorations: new AddToExplorationButton({
-          labelName: this.state.labelName,
-          fieldName: this.state.fieldName,
-          frame: this.state.frame,
-        }),
-      });
-
-      // @todo rewrite the AddToExplorationButton
-      // Manually activate scene
-      this.state.addToExplorations?.activate();
-
-      const items: PanelMenuItem[] = [
-        {
-          text: 'Navigation',
-          type: 'group',
-        },
-        {
-          text: 'Explore',
-          iconClassName: 'compass',
-          href: getExploreLink(this),
-          onClick: () => onExploreLinkClickTracking(),
-        },
-      ];
-
-      if (this.state.panelType) {
-        addHistogramItem(items, this);
-      }
-
-      this.setState({
-        body: new VizPanelMenu({
-          items,
-        }),
-      });
-
-      this.state.addToExplorations?.subscribeToState(() => {
-        subscribeToAddToExploration(this);
-      });
-    });
-  }
-
-  addItem(item: PanelMenuItem): void {
-    if (this.state.body) {
-      this.state.body.addItem(item);
-    }
-  }
-  setItems(items: PanelMenuItem[]): void {
-    if (this.state.body) {
-      this.state.body.setItems(items);
-    }
-  }
-
-  public static Component = ({ model }: SceneComponentProps<PanelMenu>) => {
-    const { body } = model.useState();
-
-    if (body) {
-      return <body.Component model={body} />;
-    }
-
-    return <></>;
-  };
 }
 
 const getExploreLink = (sceneRef: SceneObject) => {
