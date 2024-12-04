@@ -8,7 +8,6 @@ import {
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
-  SceneQueryRunner,
   VizPanel,
 } from '@grafana/scenes';
 import { ALL_VARIABLE_VALUE, DetectedFieldType, ParserType } from '../../../services/variables';
