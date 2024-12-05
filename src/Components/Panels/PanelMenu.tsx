@@ -33,6 +33,11 @@ export enum AvgFieldPanelType {
   'histogram' = 'histogram',
 }
 
+export enum CollapsedType {
+  'collapsed' = 'collapsed',
+  'open' = 'open',
+}
+
 interface PanelMenuState extends SceneObjectState {
   body?: VizPanelMenu;
   frame?: DataFrame;

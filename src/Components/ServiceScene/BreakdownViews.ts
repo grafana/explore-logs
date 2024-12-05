@@ -7,6 +7,8 @@ import { PatternsBreakdownScene } from './Breakdowns/Patterns/PatternsBreakdownS
 import { SceneFlexItem, SceneFlexLayout, SceneObject } from '@grafana/scenes';
 import { LogsVolumePanel } from './LogsVolumePanel';
 import { buildLabelValuesBreakdownActionScene } from '../../services/labels';
+import { getPanelOption } from '../../services/store';
+import { CollapsedType } from '../Panels/PanelMenu';
 
 interface ValueBreakdownViewDefinition {
   displayName: string;
@@ -100,11 +102,13 @@ function buildFieldValuesBreakdownActionScene(value: string) {
 }
 
 function buildLogsListScene() {
+  const collapsed =
+    getPanelOption('logsVolumeCollapsed', [CollapsedType.collapsed, CollapsedType.open]) === CollapsedType.collapsed;
   return new SceneFlexLayout({
     direction: 'column',
     children: [
       new SceneFlexItem({
-        minHeight: 200,
+        height: collapsed ? 35 : 200,
         body: new LogsVolumePanel({}),
       }),
       new SceneFlexItem({

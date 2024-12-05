@@ -3,6 +3,7 @@ import React from 'react';
 import {
   PanelBuilders,
   SceneComponentProps,
+  SceneFlexItem,
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
@@ -18,9 +19,10 @@ import { toggleLevelFromFilter } from 'services/levels';
 import { DataFrame, LoadingState } from '@grafana/data';
 import { getFieldsVariable, getLabelsVariable, getLevelsVariable } from '../../services/variableGetters';
 import { areArraysEqual } from '../../services/comparison';
-import { PanelMenu, getPanelWrapperStyles } from '../Panels/PanelMenu';
+import { CollapsedType, getPanelWrapperStyles, PanelMenu } from '../Panels/PanelMenu';
 import { ServiceScene } from './ServiceScene';
 import { getSeriesVisibleRange, getVisibleRangeFrame } from 'services/logsFrame';
+import { getPanelOption, setPanelOption } from '../../services/store';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
@@ -66,18 +68,24 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
   }
 
   private getVizPanel() {
+    const collapsed =
+      getPanelOption('logsVolumeCollapsed', [CollapsedType.collapsed, CollapsedType.open]) === CollapsedType.collapsed;
     const viz = PanelBuilders.timeseries()
       .setTitle('Log volume')
       .setOption('legend', { showLegend: true, calcs: ['sum'], displayMode: LegendDisplayMode.List })
       .setUnit('short')
       .setMenu(new PanelMenu({}))
       .setData(
-        getQueryRunner([
-          buildDataQuery(getTimeSeriesExpr(this, LEVEL_VARIABLE_VALUE, false), {
-            legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`,
-          }),
-        ])
-      );
+        collapsed
+          ? undefined
+          : getQueryRunner([
+              buildDataQuery(getTimeSeriesExpr(this, LEVEL_VARIABLE_VALUE, false), {
+                legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`,
+              }),
+            ])
+      )
+      .setCollapsible(true)
+      .setCollapsed(collapsed);
 
     setLogsVolumeFieldConfigs(viz);
 
@@ -93,6 +101,29 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
         }
         this.displayVisibleRange();
         syncLogsPanelVisibleSeries(panel, newState.data.series, this);
+      })
+    );
+
+    this._subs.add(
+      panel.subscribeToState((newState, prevState) => {
+        if (newState.collapsed !== prevState.collapsed) {
+          setPanelOption('logsVolumeCollapsed', newState.collapsed ? CollapsedType.collapsed : CollapsedType.open);
+
+          panel.setState({
+            $data: newState.collapsed
+              ? undefined
+              : getQueryRunner([
+                  buildDataQuery(getTimeSeriesExpr(this, LEVEL_VARIABLE_VALUE, false), {
+                    legendFormat: `{{${LEVEL_VARIABLE_VALUE}}}`,
+                  }),
+                ]),
+          });
+
+          const flexItem = sceneGraph.getAncestor(panel, SceneFlexItem);
+          flexItem.setState({
+            height: newState.collapsed ? 35 : 200,
+          });
+        }
       })
     );
 

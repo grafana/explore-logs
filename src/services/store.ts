@@ -6,7 +6,7 @@ import { logger } from './logger';
 import { SERVICE_NAME } from './variables';
 import { Options } from '@grafana/schema/dist/esm/raw/composable/logs/panelcfg/x/LogsPanelCfg_types.gen';
 import { unknownToStrings } from './narrowing';
-import { AvgFieldPanelType } from '../Components/Panels/PanelMenu';
+import { AvgFieldPanelType, CollapsedType } from '../Components/Panels/PanelMenu';
 
 const FAVORITE_PRIMARY_LABEL_VALUES_LOCALSTORAGE_KEY = `${pluginJson.id}.services.favorite`;
 const FAVORITE_PRIMARY_LABEL_NAME_LOCALSTORAGE_KEY = `${pluginJson.id}.primarylabels.tabs.favorite`;
@@ -240,6 +240,7 @@ export function setLogsVisualizationType(type: string) {
 const PANEL_OPTIONS_LOCALSTORAGE_KEY = `${pluginJson.id}.panel.option`;
 export interface PanelOptions {
   panelType: AvgFieldPanelType;
+  logsVolumeCollapsed: CollapsedType;
 }
 export function getPanelOption<K extends keyof PanelOptions, V extends PanelOptions[K]>(
   option: K,
