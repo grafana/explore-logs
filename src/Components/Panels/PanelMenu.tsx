@@ -16,7 +16,7 @@ import React from 'react';
 import { css } from '@emotion/css';
 import { onExploreLinkClick } from '../ServiceScene/GoToExploreButton';
 import { IndexScene } from '../IndexScene/IndexScene';
-import { getQueryRunnerFromChildren } from '../../services/scenes';
+import { findObjectOfType, getQueryRunnerFromChildren } from '../../services/scenes';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { logger } from '../../services/logger';
 import { AddToExplorationButton } from '../ServiceScene/Breakdowns/AddToExplorationButton';
@@ -190,7 +190,6 @@ function addHistogramItem(items: PanelMenuItem[], sceneRef: PanelMenu) {
         body: body.setMenu(menu).setTitle(viz.state.title).setHeaderActions(headerActions).setData($data).build(),
       });
 
-      // @todo extend findObject and use templates to avoid type assertions
       const newPanelType =
         sceneRef.state.panelType !== AvgFieldPanelType.timeseries
           ? AvgFieldPanelType.timeseries
@@ -198,10 +197,11 @@ function addHistogramItem(items: PanelMenuItem[], sceneRef: PanelMenu) {
       setPanelOption('panelType', newPanelType);
       menu.setState({ panelType: newPanelType });
 
-      const fieldsAggregatedBreakdownScene = sceneGraph.findObject(
+      const fieldsAggregatedBreakdownScene = findObjectOfType(
         gridItem,
-        (o) => o instanceof FieldsAggregatedBreakdownScene
-      ) as FieldsAggregatedBreakdownScene | null;
+        (o) => o instanceof FieldsAggregatedBreakdownScene,
+        FieldsAggregatedBreakdownScene
+      );
       if (fieldsAggregatedBreakdownScene) {
         fieldsAggregatedBreakdownScene.rebuildAvgFields();
       }
