@@ -1,6 +1,6 @@
 import { AdHocVariableFilter, urlUtil } from '@grafana/data';
 import { config, DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
-import { sceneGraph, SceneObject, SceneObjectState, SceneObjectUrlValues, SceneQueryRunner } from '@grafana/scenes';
+import { sceneGraph, SceneObject, SceneObjectUrlValues, SceneQueryRunner } from '@grafana/scenes';
 import { LOG_STREAM_SELECTOR_EXPR, VAR_DATASOURCE_EXPR, VAR_LABELS_EXPR } from './variables';
 import { EXPLORATIONS_ROUTE } from './routing';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
