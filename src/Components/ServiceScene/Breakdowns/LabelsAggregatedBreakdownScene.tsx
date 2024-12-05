@@ -4,7 +4,6 @@ import {
   SceneCSSGridItem,
   SceneCSSGridLayout,
   SceneDataProvider,
-  SceneDataTransformer,
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
@@ -20,14 +19,12 @@ import React from 'react';
 import { LabelBreakdownScene } from './LabelBreakdownScene';
 import { SelectLabelActionScene } from './SelectLabelActionScene';
 import { ValueSlugs } from '../../../services/routing';
-import { limitMaxNumberOfSeriesForPanel, MAX_NUMBER_OF_TIME_SERIES } from './TimeSeriesLimitSeriesTitleItem';
-import { limitFramesTransformation } from './FieldsAggregatedBreakdownScene';
 import { buildLabelsQuery, LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS } from '../../../services/labels';
 import { getFieldsVariable, getLabelGroupByVariable } from '../../../services/variableGetters';
-import { LokiQuery } from '../../../services/lokiQuery';
 import { ServiceScene } from '../ServiceScene';
 import { DataFrame, LoadingState } from '@grafana/data';
-import { PanelMenu, getPanelWrapperStyles } from '../../Panels/PanelMenu';
+import { getPanelWrapperStyles, PanelMenu } from '../../Panels/PanelMenu';
+import { MAX_NUMBER_OF_TIME_SERIES } from './TimeSeriesLimit';
 import { logger } from '../../../services/logger';
 
 export interface LabelsAggregatedBreakdownSceneState extends SceneObjectState {
@@ -91,7 +88,7 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
         }
 
         panel.setState({
-          $data: this.getDataTransformer(query),
+          $data: getQueryRunner([query]),
         });
       }
     });
@@ -143,26 +140,11 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
 
       const cardinalityMap = this.calculateCardinalityMap(detectedLabelsFrame);
       updatedChildren.sort(this.sortChildren(cardinalityMap));
-      updatedChildren.map((child) => {
-        this.addLimitUIToChild(child);
-      });
 
       layout.setState({
         children: updatedChildren,
       });
     });
-  }
-
-  private addLimitUIToChild(child: SceneCSSGridItem) {
-    const panel = child.state.body;
-    const dataTransformer = child.state.body?.state.$data;
-    if (panel instanceof VizPanel && dataTransformer instanceof SceneDataTransformer) {
-      limitMaxNumberOfSeriesForPanel(panel, dataTransformer);
-    } else {
-      logger.error(new Error('unable to locate VizPanel or transformer'), {
-        msg: 'unable to locate VizPanel or transformer',
-      });
-    }
   }
 
   private calculateCardinalityMap(detectedLabels?: DataFrame) {
@@ -192,11 +174,6 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
     }
 
     const childrenClones = children.map((child) => child.clone());
-
-    // We must subscribe to the data providers for all children after the clone or we'll see bugs in the row layout
-    [...children, ...childrenClones].map((child) => {
-      this.addLimitUIToChild(child);
-    });
 
     return new LayoutSwitcher({
       options: [
@@ -230,13 +207,13 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
         continue;
       }
       const query = buildLabelsQuery(this, String(option.value), String(option.value));
-      const dataTransformer = this.getDataTransformer(query);
+      const queryRunner = getQueryRunner([query]);
 
       children.push(
         new SceneCSSGridItem({
           body: PanelBuilders.timeseries()
             .setTitle(optionValue)
-            .setData(dataTransformer)
+            .setData(queryRunner)
             .setHeaderActions([new SelectLabelActionScene({ labelName: optionValue, fieldType: ValueSlugs.label })])
             .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
             .setCustomFieldConfig('fillOpacity', 100)
@@ -246,6 +223,7 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
             .setHoverHeader(false)
             .setOverrides(setLevelColorOverrides)
             .setMenu(new PanelMenu({ labelName: optionValue }))
+            .setSeriesLimit(MAX_NUMBER_OF_TIME_SERIES)
             .build(),
         })
       );
@@ -267,14 +245,6 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
       const bCardinality = cardinalityMap.get(bPanel.state.title) ?? 0;
       return bCardinality - aCardinality;
     };
-  }
-
-  private getDataTransformer(query: LokiQuery) {
-    const queryRunner = getQueryRunner([query]);
-    return new SceneDataTransformer({
-      $data: queryRunner,
-      transformations: [() => limitFramesTransformation(MAX_NUMBER_OF_TIME_SERIES)],
-    });
   }
 
   public static Selector({ model }: SceneComponentProps<LabelsAggregatedBreakdownScene>) {
