@@ -36,7 +36,7 @@ import { ClearFiltersLayoutScene } from './ClearFiltersLayoutScene';
 import { EmptyLayoutScene } from './EmptyLayoutScene';
 import { IndexScene } from '../../IndexScene/IndexScene';
 import { clearVariables, getVariablesThatCanBeCleared } from '../../../services/variableHelpers';
-import { getValueSummaryPanel } from './Panels/ValueSummary';
+import { ValueSummaryPanelScene } from './Panels/ValueSummary';
 
 type DisplayError = DataQueryError & { displayed: boolean };
 type DisplayErrors = Record<string, DisplayError>;
@@ -236,7 +236,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
           direction: 'column',
           children: [
             new SceneReactObject({ reactNode: <LabelBreakdownScene.ParentMenu model={labelBreakdownScene} /> }),
-            getValueSummaryPanel(tagKey, { levelColor: true }),
+            new ValueSummaryPanelScene({ title: tagKey, levelColor: true }),
             new SceneReactObject({ reactNode: <LabelBreakdownScene.ValueMenu model={labelBreakdownScene} /> }),
             new ByFrameRepeater({
               body: new SceneCSSGridLayout({
@@ -268,7 +268,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
           direction: 'column',
           children: [
             new SceneReactObject({ reactNode: <LabelBreakdownScene.ParentMenu model={labelBreakdownScene} /> }),
-            getValueSummaryPanel(tagKey, { levelColor: true }),
+            new ValueSummaryPanelScene({ title: tagKey, levelColor: true }),
             new SceneReactObject({ reactNode: <LabelBreakdownScene.ValueMenu model={labelBreakdownScene} /> }),
             new ByFrameRepeater({
               body: new SceneCSSGridLayout({

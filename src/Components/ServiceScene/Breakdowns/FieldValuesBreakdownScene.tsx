@@ -33,7 +33,7 @@ import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { getFieldGroupByVariable, getFieldsVariable } from '../../../services/variableGetters';
 import { LokiQuery } from '../../../services/lokiQuery';
 import { PanelMenu, getPanelWrapperStyles } from '../../Panels/PanelMenu';
-import { getValueSummaryPanel } from './Panels/ValueSummary';
+import { ValueSummaryPanelScene } from './Panels/ValueSummary';
 
 export interface FieldValuesBreakdownSceneState extends SceneObjectState {
   body?: (LayoutSwitcher & SceneObject) | (SceneReactObject & SceneObject);
@@ -203,7 +203,8 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
             new SceneReactObject({
               reactNode: <FieldsBreakdownScene.ParentMenu model={fieldsBreakdownScene} />,
             }),
-            getValueSummaryPanel(optionValue),
+            new ValueSummaryPanelScene({ title: optionValue }),
+
             new SceneReactObject({
               reactNode: <FieldsBreakdownScene.ValueMenu model={fieldsBreakdownScene} />,
             }),
@@ -241,7 +242,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
             new SceneReactObject({
               reactNode: <FieldsBreakdownScene.ParentMenu model={fieldsBreakdownScene} />,
             }),
-            getValueSummaryPanel(optionValue),
+            new ValueSummaryPanelScene({ title: optionValue }),
             new SceneReactObject({
               reactNode: <FieldsBreakdownScene.ValueMenu model={fieldsBreakdownScene} />,
             }),

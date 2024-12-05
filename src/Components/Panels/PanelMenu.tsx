@@ -3,7 +3,7 @@ import {
   PanelBuilders,
   SceneComponentProps,
   SceneCSSGridItem,
-  SceneFlexItem,
+  SceneFlexLayout,
   sceneGraph,
   SceneObject,
   SceneObjectBase,
@@ -153,8 +153,8 @@ function addCollapsableItem(items: PanelMenuItem[], menu: PanelMenu) {
       const newCollapsableState = viz.state.collapsed ? CollapsablePanelType.expanded : CollapsablePanelType.collapsed;
 
       // Update the viz
-      const vizPanelFlexItem = sceneGraph.getAncestor(menu, SceneFlexItem);
-      setValueSummaryHeight(vizPanelFlexItem, newCollapsableState);
+      const vizPanelFlexLayout = sceneGraph.getAncestor(menu, SceneFlexLayout);
+      setValueSummaryHeight(vizPanelFlexLayout, newCollapsableState);
 
       // Set state and update local storage
       viz.setState({
