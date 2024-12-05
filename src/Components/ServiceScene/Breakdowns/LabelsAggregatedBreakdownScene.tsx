@@ -25,7 +25,6 @@ import { ServiceScene } from '../ServiceScene';
 import { DataFrame, LoadingState } from '@grafana/data';
 import { getPanelWrapperStyles, PanelMenu } from '../../Panels/PanelMenu';
 import { MAX_NUMBER_OF_TIME_SERIES } from './TimeSeriesLimit';
-import { logger } from '../../../services/logger';
 
 export interface LabelsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
