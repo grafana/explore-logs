@@ -336,6 +336,7 @@ function getStyles(theme: GrafanaTheme2) {
       display: 'flex',
       minHeight: '100%',
       flexDirection: 'column',
+      gap: theme.spacing(1),
     }),
     content: css({
       flexGrow: 1,
