@@ -11,7 +11,7 @@ import {
 import { CollapsablePanelType, PanelMenu } from '../../../Panels/PanelMenu';
 import { DrawStyle, StackingMode } from '@grafana/ui';
 import { setLevelColorOverrides } from '../../../../services/panel';
-import { getPanelOption } from '../../../../services/store';
+import { getPanelOption, setPanelOption } from '../../../../services/store';
 import React from 'react';
 
 const SUMMARY_PANEL_SERIES_LIMIT = 100;
@@ -30,7 +30,11 @@ export class ValueSummaryPanelScene extends SceneObjectBase<ValueSummaryPanelSce
   public static Component = ({ model }: SceneComponentProps<ValueSummaryPanelScene>) => {
     const { body } = model.useState();
     if (body) {
-      return <body.Component model={body} />;
+      return (
+        <div>
+          <body.Component model={body} />
+        </div>
+      );
     }
 
     return null;
@@ -39,7 +43,7 @@ export class ValueSummaryPanelScene extends SceneObjectBase<ValueSummaryPanelSce
   onActivate() {
     const collapsed =
       getPanelOption('collapsed', [CollapsablePanelType.collapsed, CollapsablePanelType.expanded]) ??
-      CollapsablePanelType.collapsed;
+      CollapsablePanelType.expanded;
     const viz = buildValueSummaryPanel(this.state.title, { levelColor: this.state.levelColor });
     const height = getValueSummaryHeight(collapsed);
 
@@ -47,6 +51,9 @@ export class ValueSummaryPanelScene extends SceneObjectBase<ValueSummaryPanelSce
       body: new SceneFlexLayout({
         key: VALUE_SUMMARY_PANEL_KEY,
         minHeight: height,
+        height: height,
+        maxHeight: height,
+        wrap: 'nowrap',
         children: [
           new SceneFlexItem({
             body: viz,
@@ -63,6 +70,10 @@ export class ValueSummaryPanelScene extends SceneObjectBase<ValueSummaryPanelSce
             vizPanelFlexLayout,
             newState.collapsed ? CollapsablePanelType.collapsed : CollapsablePanelType.expanded
           );
+          setPanelOption(
+            'collapsed',
+            newState.collapsed ? CollapsablePanelType.collapsed : CollapsablePanelType.expanded
+          );
         }
       })
     );
@@ -73,6 +84,8 @@ export function setValueSummaryHeight(vizPanelFlexLayout: SceneFlexLayout, colla
   const height = getValueSummaryHeight(collapsableState);
   vizPanelFlexLayout.setState({
     minHeight: height,
+    height: height,
+    maxHeight: height,
   });
 }
 
@@ -83,7 +96,7 @@ function getValueSummaryHeight(collapsableState: CollapsablePanelType) {
 function buildValueSummaryPanel(title: string, options?: { levelColor?: boolean }): VizPanel {
   const collapsed =
     getPanelOption('collapsed', [CollapsablePanelType.collapsed, CollapsablePanelType.expanded]) ??
-    CollapsablePanelType.collapsed;
+    CollapsablePanelType.expanded;
 
   const body = PanelBuilders.timeseries()
     .setTitle(title)
@@ -94,6 +107,7 @@ function buildValueSummaryPanel(title: string, options?: { levelColor?: boolean 
     .setCustomFieldConfig('fillOpacity', 100)
     .setCustomFieldConfig('lineWidth', 0)
     .setCustomFieldConfig('pointSize', 0)
+    .setShowMenuAlways(true)
     .setSeriesLimit(SUMMARY_PANEL_SERIES_LIMIT)
     .setCustomFieldConfig('drawStyle', DrawStyle.Bars);
 

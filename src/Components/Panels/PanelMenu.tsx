@@ -1,4 +1,4 @@
-import { DataFrame, GrafanaTheme2, PanelMenuItem } from '@grafana/data';
+import { DataFrame, PanelMenuItem } from '@grafana/data';
 import {
   PanelBuilders,
   SceneComponentProps,
@@ -13,7 +13,6 @@ import {
   VizPanelMenu,
 } from '@grafana/scenes';
 import React from 'react';
-import { css } from '@emotion/css';
 import { onExploreLinkClick } from '../ServiceScene/GoToExploreButton';
 import { IndexScene } from '../IndexScene/IndexScene';
 import { findObjectOfType, getQueryRunnerFromChildren } from '../../services/scenes';
@@ -105,9 +104,11 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
         }),
       });
 
-      this.state.addToExplorations?.subscribeToState(() => {
-        subscribeToAddToExploration(this);
-      });
+      this._subs.add(
+        this.state.addToExplorations?.subscribeToState(() => {
+          subscribeToAddToExploration(this);
+        })
+      );
     });
   }
 
@@ -305,26 +306,3 @@ function subscribeToAddToExploration(exploreLogsVizPanelMenu: PanelMenu) {
     }
   }
 }
-
-export const getPanelWrapperStyles = (theme: GrafanaTheme2) => {
-  return {
-    panelWrapper: css({
-      width: '100%',
-      height: '100%',
-      label: 'panel-wrapper',
-      position: 'absolute',
-      display: 'flex',
-
-      // @todo remove this wrapper and styles when core changes are introduced in ???
-      // Need more specificity to override core style
-      'button.show-on-hover': {
-        opacity: 1,
-        visibility: 'visible',
-        background: 'none',
-        '&:hover': {
-          background: theme.colors.secondary.shade,
-        },
-      },
-    }),
-  };
-};

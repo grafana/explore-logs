@@ -275,14 +275,15 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
   };
 
   public static ParentMenu = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
-    const { body, loading } = model.useState();
+    const { body, loading, search } = model.useState();
     const styles = useStyles2(getStyles);
     const variable = getFieldGroupByVariable(model);
     const { options, value } = variable.useState();
     return (
-      <div className={styles.controls}>
+      <div className={styles.parentMenuWrapper}>
         {body instanceof FieldsAggregatedBreakdownScene && <FieldsAggregatedBreakdownScene.Selector model={body} />}
         {body instanceof FieldValuesBreakdownScene && <FieldValuesBreakdownScene.Selector model={body} />}
+        <search.Component model={search} />
         {!loading && options.length > 1 && (
           <FieldSelector label="Field" options={options} value={String(value)} onChange={model.onFieldSelectorChange} />
         )}
@@ -290,16 +291,15 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     );
   };
   public static ValueMenu = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
-    const { loading, search, sort } = model.useState();
+    const { loading, sort } = model.useState();
     const styles = useStyles2(getStyles);
     const variable = getFieldGroupByVariable(model);
     const { value } = variable.useState();
     return (
-      <div className={styles.controls}>
+      <div className={styles.valueMenuWrapper}>
         {!loading && value !== ALL_VARIABLE_VALUE && (
           <>
             <sort.Component model={sort} />
-            <search.Component model={search} />
           </>
         )}
       </div>
@@ -343,13 +343,20 @@ function getStyles(theme: GrafanaTheme2) {
       display: 'flex',
       paddingTop: theme.spacing(0),
     }),
-    controls: css({
+    parentMenuWrapper: css({
       flexGrow: 0,
       display: 'flex',
       alignItems: 'top',
       justifyContent: 'space-between',
       flexDirection: 'row-reverse',
       gap: theme.spacing(2),
+    }),
+    valueMenuWrapper: css({
+      flexGrow: 0,
+      display: 'flex',
+      alignItems: 'top',
+      gap: theme.spacing(2),
+      flexDirection: 'row',
     }),
   };
 }

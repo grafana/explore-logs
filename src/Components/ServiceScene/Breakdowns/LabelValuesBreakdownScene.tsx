@@ -14,7 +14,7 @@ import {
 } from '@grafana/scenes';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { getLabelValue } from './SortByScene';
-import { DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
+import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
 import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
 import { getSortByPreference } from '../../../services/store';
 import { AppEvents, DataQueryError, LoadingState } from '@grafana/data';
@@ -31,7 +31,7 @@ import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { buildLabelsQuery, LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS } from '../../../services/labels';
 import { getAppEvents } from '@grafana/runtime';
 import { getLabelGroupByVariable } from '../../../services/variableGetters';
-import { getPanelWrapperStyles, PanelMenu } from '../../Panels/PanelMenu';
+import { PanelMenu } from '../../Panels/PanelMenu';
 import { ClearFiltersLayoutScene } from './ClearFiltersLayoutScene';
 import { EmptyLayoutScene } from './EmptyLayoutScene';
 import { IndexScene } from '../../IndexScene/IndexScene';
@@ -205,6 +205,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       .setCustomFieldConfig('lineWidth', 0)
       .setCustomFieldConfig('pointSize', 0)
       .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+      .setShowMenuAlways(true)
       .setOverrides(setLevelColorOverrides)
       .setMenu(new PanelMenu({}))
       .setTitle(tagKey);
@@ -350,14 +351,13 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
 
   public static Selector({ model }: SceneComponentProps<LabelValuesBreakdownScene>) {
     const { body } = model.useState();
-    return <>{body && body instanceof LayoutSwitcher && <body.Selector model={body} />}</>;
+    return <>{body && body instanceof LayoutSwitcher && <LayoutSwitcher.Selector model={body} />}</>;
   }
 
   public static Component = ({ model }: SceneComponentProps<LabelValuesBreakdownScene>) => {
     const { body } = model.useState();
-    const styles = useStyles2(getPanelWrapperStyles);
     if (body) {
-      return <span className={styles.panelWrapper}>{body && <body.Component model={body} />}</span>;
+      return <>{body && <body.Component model={body} />}</>;
     }
 
     return <LoadingPlaceholder text={'Loading...'} />;

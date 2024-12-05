@@ -8,7 +8,7 @@ import {
   SceneObjectState,
   VizPanel,
 } from '@grafana/scenes';
-import { LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode, useStyles2 } from '@grafana/ui';
+import { LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode } from '@grafana/ui';
 import { getQueryRunner, setLogsVolumeFieldConfigs, syncLogsPanelVisibleSeries } from 'services/panel';
 import { buildDataQuery } from 'services/query';
 import { LEVEL_VARIABLE_VALUE } from 'services/variables';
@@ -18,7 +18,7 @@ import { toggleLevelFromFilter } from 'services/levels';
 import { DataFrame, LoadingState } from '@grafana/data';
 import { getFieldsVariable, getLabelsVariable, getLevelsVariable } from '../../services/variableGetters';
 import { areArraysEqual } from '../../services/comparison';
-import { PanelMenu, getPanelWrapperStyles } from '../Panels/PanelMenu';
+import { PanelMenu } from '../Panels/PanelMenu';
 import { ServiceScene } from './ServiceScene';
 import { getSeriesVisibleRange, getVisibleRangeFrame } from 'services/logsFrame';
 
@@ -71,6 +71,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       .setOption('legend', { showLegend: true, calcs: ['sum'], displayMode: LegendDisplayMode.List })
       .setUnit('short')
       .setMenu(new PanelMenu({}))
+      .setShowMenuAlways(true)
       .setData(
         getQueryRunner([
           buildDataQuery(getTimeSeriesExpr(this, LEVEL_VARIABLE_VALUE, false), {
@@ -171,12 +172,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     if (!panel) {
       return;
     }
-    const styles = useStyles2(getPanelWrapperStyles);
 
-    return (
-      <span className={styles.panelWrapper}>
-        <panel.Component model={panel} />
-      </span>
-    );
+    return <panel.Component model={panel} />;
   };
 }

@@ -19,7 +19,7 @@ import { DataQueryError, LoadingState } from '@grafana/data';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { getQueryRunner } from '../../../services/panel';
 import { ByFrameRepeater } from './ByFrameRepeater';
-import { Alert, DrawStyle, LoadingPlaceholder, useStyles2 } from '@grafana/ui';
+import { Alert, DrawStyle, LoadingPlaceholder } from '@grafana/ui';
 import { buildFieldsQueryString, getFilterBreakdownValueScene, getParserForField } from '../../../services/fields';
 import { getLabelValue } from './SortByScene';
 import { VAR_FIELDS, VAR_METADATA } from '../../../services/variables';
@@ -32,7 +32,7 @@ import { getDetectedFieldsFrame, ServiceScene } from '../ServiceScene';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { getFieldGroupByVariable, getFieldsVariable } from '../../../services/variableGetters';
 import { LokiQuery } from '../../../services/lokiQuery';
-import { PanelMenu, getPanelWrapperStyles } from '../../Panels/PanelMenu';
+import { PanelMenu } from '../../Panels/PanelMenu';
 import { ValueSummaryPanelScene } from './Panels/ValueSummary';
 
 export interface FieldValuesBreakdownSceneState extends SceneObjectState {
@@ -50,7 +50,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
   public static Selector({ model }: SceneComponentProps<FieldValuesBreakdownScene>) {
     const { body } = model.useState();
     if (body instanceof LayoutSwitcher) {
-      return <>{body && <body.Selector model={body} />}</>;
+      return <>{body && <LayoutSwitcher.Selector model={body} />}</>;
     }
 
     return <></>;
@@ -58,9 +58,8 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
 
   public static Component = ({ model }: SceneComponentProps<FieldValuesBreakdownScene>) => {
     const { body } = model.useState();
-    const styles = useStyles2(getPanelWrapperStyles);
     if (body) {
-      return <span className={styles.panelWrapper}>{body && <body.Component model={body} />}</span>;
+      return <>{body && <body.Component model={body} />}</>;
     }
 
     return <LoadingPlaceholder text={'Loading...'} />;
@@ -191,7 +190,11 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
             }),
             new SceneFlexItem({
               minHeight: 300,
-              body: PanelBuilders.timeseries().setTitle(optionValue).setMenu(new PanelMenu({})).build(),
+              body: PanelBuilders.timeseries()
+                .setTitle(optionValue)
+                .setShowMenuAlways(true)
+                .setMenu(new PanelMenu({}))
+                .build(),
             }),
           ],
         }),
@@ -204,7 +207,6 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
               reactNode: <FieldsBreakdownScene.ParentMenu model={fieldsBreakdownScene} />,
             }),
             new ValueSummaryPanelScene({ title: optionValue }),
-
             new SceneReactObject({
               reactNode: <FieldsBreakdownScene.ValueMenu model={fieldsBreakdownScene} />,
             }),
