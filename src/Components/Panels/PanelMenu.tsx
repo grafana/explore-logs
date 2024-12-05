@@ -38,8 +38,8 @@ export enum AvgFieldPanelType {
 }
 
 export enum CollapsablePanelType {
-  collapse = 'Collapse',
-  expand = 'Expand',
+  collapsed = 'Collapse',
+  expanded = 'Expand',
 }
 
 interface PanelMenuState extends SceneObjectState {
@@ -49,7 +49,6 @@ interface PanelMenuState extends SceneObjectState {
   fieldName?: string;
   addToExplorations?: AddToExplorationButton;
   panelType?: AvgFieldPanelType;
-  collapsable?: CollapsablePanelType;
 }
 
 /**
@@ -59,6 +58,8 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
   constructor(state: Partial<PanelMenuState>) {
     super(state);
     this.addActivationHandler(() => {
+      const viz = sceneGraph.getAncestor(this, VizPanel);
+
       this.setState({
         addToExplorations: new AddToExplorationButton({
           labelName: this.state.labelName,
@@ -86,11 +87,11 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
       ];
 
       // Visualization options
-      if (this.state.panelType || this.state.collapsable) {
+      if (this.state.panelType || viz.state.collapsible) {
         addVisualizationHeader(items, this);
       }
 
-      if (this.state.collapsable) {
+      if (viz.state.collapsible) {
         addCollapsableItem(items, this);
       }
 
@@ -144,22 +145,22 @@ function addVisualizationHeader(items: PanelMenuItem[], sceneRef: PanelMenu) {
 }
 
 function addCollapsableItem(items: PanelMenuItem[], menu: PanelMenu) {
+  const viz = sceneGraph.getAncestor(menu, VizPanel);
   items.push({
-    text: menu.state.collapsable ?? CollapsablePanelType.expand,
-    iconClassName: menu.state.collapsable === CollapsablePanelType.collapse ? 'table-collapse-all' : 'table-expand-all',
+    text: viz.state.collapsed ? CollapsablePanelType.expanded : CollapsablePanelType.collapsed,
+    iconClassName: viz.state.collapsed ? 'table-collapse-all' : 'table-expand-all',
     onClick: () => {
-      const newCollapsableState =
-        menu.state.collapsable === CollapsablePanelType.expand
-          ? CollapsablePanelType.collapse
-          : CollapsablePanelType.expand;
+      const newCollapsableState = viz.state.collapsed ? CollapsablePanelType.expanded : CollapsablePanelType.collapsed;
 
       // Update the viz
       const vizPanelFlexItem = sceneGraph.getAncestor(menu, SceneFlexItem);
       setValueSummaryHeight(vizPanelFlexItem, newCollapsableState);
 
       // Set state and update local storage
-      menu.setState({ collapsable: newCollapsableState });
-      setPanelOption('collapsable', newCollapsableState);
+      viz.setState({
+        collapsed: !viz.state.collapsed,
+      });
+      setPanelOption('collapsed', newCollapsableState);
     },
   });
 }

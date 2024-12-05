@@ -1,4 +1,4 @@
-import { PanelBuilders, SceneFlexItem, VizPanel } from '@grafana/scenes';
+import { PanelBuilders, SceneFlexItem, sceneGraph, VizPanel } from '@grafana/scenes';
 import { CollapsablePanelType, PanelMenu } from '../../../Panels/PanelMenu';
 import { DrawStyle, StackingMode } from '@grafana/ui';
 import { setLevelColorOverrides } from '../../../../services/panel';
@@ -8,17 +8,15 @@ import { Options } from '@grafana/schema/dist/esm/raw/composable/timeseries/pane
 const SUMMARY_PANEL_SERIES_LIMIT = 100;
 
 export function getValueSummaryPanel(title: string, options?: { levelColor?: boolean }) {
-  const collapsable =
-    getPanelOption('collapsable', [CollapsablePanelType.collapse, CollapsablePanelType.expand]) ??
-    CollapsablePanelType.collapse;
+  const collapsed =
+    getPanelOption('collapsed', [CollapsablePanelType.collapsed, CollapsablePanelType.expanded]) ??
+    CollapsablePanelType.collapsed;
 
   const body = PanelBuilders.timeseries()
     .setTitle(title)
-    .setMenu(
-      new PanelMenu({
-        collapsable,
-      })
-    )
+    .setMenu(new PanelMenu({}))
+    .setCollapsible(true)
+    .setCollapsed(collapsed === CollapsablePanelType.collapsed)
     .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
     .setCustomFieldConfig('fillOpacity', 100)
     .setCustomFieldConfig('lineWidth', 0)
@@ -31,11 +29,26 @@ export function getValueSummaryPanel(title: string, options?: { levelColor?: boo
   }
   const build: VizPanel<Options> = body.build();
 
+  build.addActivationHandler(() => {
+    if (build.state.collapsible) {
+      // @todo handle unsub
+      build.subscribeToState((newState, prevState) => {
+        if (newState.collapsed !== prevState.collapsed) {
+          const vizPanelFlexItem = sceneGraph.getAncestor(build, SceneFlexItem);
+          setValueSummaryHeight(
+            vizPanelFlexItem,
+            newState.collapsed ? CollapsablePanelType.collapsed : CollapsablePanelType.expanded
+          );
+        }
+      });
+    }
+  });
+
   return new SceneFlexItem({
     key: VALUE_SUMMARY_PANEL_KEY,
-    minHeight: getValueSummaryHeight(collapsable),
-    height: getValueSummaryHeight(collapsable),
-    maxHeight: getValueSummaryHeight(collapsable),
+    minHeight: getValueSummaryHeight(collapsed),
+    height: getValueSummaryHeight(collapsed),
+    maxHeight: getValueSummaryHeight(collapsed),
     body: build,
   });
 }
@@ -49,7 +62,7 @@ export function setValueSummaryHeight(vizPanelFlexItem: SceneFlexItem, collapsab
 }
 
 function getValueSummaryHeight(collapsableState: CollapsablePanelType) {
-  return collapsableState === CollapsablePanelType.collapse ? 300 : 35;
+  return collapsableState === CollapsablePanelType.collapsed ? 35 : 300;
 }
 
 export const VALUE_SUMMARY_PANEL_KEY = 'value_summary_panel';
