@@ -283,7 +283,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       <div className={styles.parentMenuWrapper}>
         {body instanceof FieldsAggregatedBreakdownScene && <FieldsAggregatedBreakdownScene.Selector model={body} />}
         {body instanceof FieldValuesBreakdownScene && <FieldValuesBreakdownScene.Selector model={body} />}
-        <search.Component model={search} />
+        {body instanceof FieldValuesBreakdownScene && <search.Component model={search} />}
         {!loading && options.length > 1 && (
           <FieldSelector label="Field" options={options} value={String(value)} onChange={model.onFieldSelectorChange} />
         )}

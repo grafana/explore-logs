@@ -23,6 +23,7 @@ import { BreakdownSearchReset } from './BreakdownSearchScene';
 import { map, Observable } from 'rxjs';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { VALUE_SUMMARY_PANEL_KEY } from './Panels/ValueSummary';
+import { logger } from '../../../services/logger';
 
 interface ByFrameRepeaterState extends SceneObjectState {
   body: SceneLayout;
@@ -146,15 +147,19 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
         layoutSwitcher,
         (obj) => obj.isActive && obj.state.key === VALUE_SUMMARY_PANEL_KEY
       );
-      if (singleGraphParent[0] instanceof SceneFlexItem) {
-        const panel = singleGraphParent[0].state.body;
+      if (singleGraphParent[0] instanceof SceneFlexLayout) {
+        const panel = sceneGraph.findDescendents(singleGraphParent[0], VizPanel)[0];
         if (panel instanceof VizPanel) {
           panel.setState({
             $data: new SceneDataTransformer({
               transformations: [() => limitFramesByName(data[0])],
             }),
           });
+        } else {
+          logger.warn('filterSummaryChart: VizPanel not found', { typeofPanel: typeof panel });
         }
+      } else {
+        logger.warn('filterSummaryChart: SceneFlexItem not found', { typeofGraphParent: typeof singleGraphParent });
       }
     }
   }
