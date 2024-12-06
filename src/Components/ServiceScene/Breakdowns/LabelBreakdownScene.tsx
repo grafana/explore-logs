@@ -273,16 +273,16 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   };
 
   public static ParentMenu = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
-    const { body, loading } = model.useState();
+    const { body, loading, search } = model.useState();
     const variable = getLabelGroupByVariable(model);
     const { options, value } = variable.useState();
     const styles = useStyles2(getStyles);
 
     return (
-      <div className={styles.controls}>
+      <div className={styles.parentMenuWrapper}>
         {body instanceof LabelValuesBreakdownScene && <LabelValuesBreakdownScene.Selector model={body} />}
         {body instanceof LabelsAggregatedBreakdownScene && <LabelsAggregatedBreakdownScene.Selector model={body} />}
-
+        {body instanceof LabelValuesBreakdownScene && <search.Component model={search} />}
         {!loading && options.length > 0 && (
           <FieldSelector label="Label" options={options} value={String(value)} onChange={model.onChange} />
         )}
@@ -291,17 +291,16 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
   };
 
   public static ValueMenu = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
-    const { loading, search, sort } = model.useState();
+    const { loading, sort } = model.useState();
     const variable = getLabelGroupByVariable(model);
     const { value } = variable.useState();
     const styles = useStyles2(getStyles);
 
     return (
-      <div className={styles.controls}>
+      <div className={styles.valueMenuWrapper}>
         {!loading && value !== ALL_VARIABLE_VALUE && (
           <>
             <sort.Component model={sort} />
-            <search.Component model={search} />
           </>
         )}
       </div>
@@ -337,19 +336,27 @@ function getStyles(theme: GrafanaTheme2) {
       display: 'flex',
       minHeight: '100%',
       flexDirection: 'column',
+      gap: theme.spacing(1),
     }),
     content: css({
       flexGrow: 1,
       display: 'flex',
       paddingTop: theme.spacing(0),
     }),
-    controls: css({
+    parentMenuWrapper: css({
       flexGrow: 0,
       display: 'flex',
       alignItems: 'top',
       justifyContent: 'space-between',
       flexDirection: 'row-reverse',
       gap: theme.spacing(2),
+    }),
+    valueMenuWrapper: css({
+      flexGrow: 0,
+      display: 'flex',
+      alignItems: 'top',
+      gap: theme.spacing(2),
+      flexDirection: 'row',
     }),
   };
 }

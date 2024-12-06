@@ -36,7 +36,7 @@ import { ClearFiltersLayoutScene } from './ClearFiltersLayoutScene';
 import { EmptyLayoutScene } from './EmptyLayoutScene';
 import { IndexScene } from '../../IndexScene/IndexScene';
 import { clearVariables, getVariablesThatCanBeCleared } from '../../../services/variableHelpers';
-import { getValueSummaryPanel } from './Panels/ValueSummary';
+import { ValueSummaryPanelScene } from './Panels/ValueSummary';
 
 type DisplayError = DataQueryError & { displayed: boolean };
 type DisplayErrors = Record<string, DisplayError>;
@@ -205,6 +205,8 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       .setCustomFieldConfig('lineWidth', 0)
       .setCustomFieldConfig('pointSize', 0)
       .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+      // Waiting for 11.5
+      // .setShowMenuAlways(true)
       .setOverrides(setLevelColorOverrides)
       .setMenu(new PanelMenu({}))
       .setTitle(tagKey);
@@ -236,7 +238,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
           direction: 'column',
           children: [
             new SceneReactObject({ reactNode: <LabelBreakdownScene.ParentMenu model={labelBreakdownScene} /> }),
-            getValueSummaryPanel(tagKey, { levelColor: true }),
+            new ValueSummaryPanelScene({ title: tagKey, levelColor: true }),
             new SceneReactObject({ reactNode: <LabelBreakdownScene.ValueMenu model={labelBreakdownScene} /> }),
             new ByFrameRepeater({
               body: new SceneCSSGridLayout({
@@ -268,7 +270,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
           direction: 'column',
           children: [
             new SceneReactObject({ reactNode: <LabelBreakdownScene.ParentMenu model={labelBreakdownScene} /> }),
-            getValueSummaryPanel(tagKey, { levelColor: true }),
+            new ValueSummaryPanelScene({ title: tagKey, levelColor: true }),
             new SceneReactObject({ reactNode: <LabelBreakdownScene.ValueMenu model={labelBreakdownScene} /> }),
             new ByFrameRepeater({
               body: new SceneCSSGridLayout({
@@ -350,7 +352,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
 
   public static Selector({ model }: SceneComponentProps<LabelValuesBreakdownScene>) {
     const { body } = model.useState();
-    return <>{body && body instanceof LayoutSwitcher && <body.Selector model={body} />}</>;
+    return <>{body && body instanceof LayoutSwitcher && <LayoutSwitcher.Selector model={body} />}</>;
   }
 
   public static Component = ({ model }: SceneComponentProps<LabelValuesBreakdownScene>) => {

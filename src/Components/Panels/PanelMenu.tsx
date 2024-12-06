@@ -3,7 +3,7 @@ import {
   PanelBuilders,
   SceneComponentProps,
   SceneCSSGridItem,
-  SceneFlexItem,
+  SceneFlexLayout,
   sceneGraph,
   SceneObject,
   SceneObjectBase,
@@ -13,10 +13,9 @@ import {
   VizPanelMenu,
 } from '@grafana/scenes';
 import React from 'react';
-import { css } from '@emotion/css';
 import { onExploreLinkClick } from '../ServiceScene/GoToExploreButton';
 import { IndexScene } from '../IndexScene/IndexScene';
-import { getQueryRunnerFromChildren } from '../../services/scenes';
+import { findObjectOfType, getQueryRunnerFromChildren } from '../../services/scenes';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { logger } from '../../services/logger';
 import { AddToExplorationButton } from '../ServiceScene/Breakdowns/AddToExplorationButton';
@@ -28,6 +27,7 @@ import { FieldsAggregatedBreakdownScene } from '../ServiceScene/Breakdowns/Field
 import { setValueSummaryHeight } from '../ServiceScene/Breakdowns/Panels/ValueSummary';
 import { FieldValuesBreakdownScene } from '../ServiceScene/Breakdowns/FieldValuesBreakdownScene';
 import { LabelValuesBreakdownScene } from '../ServiceScene/Breakdowns/LabelValuesBreakdownScene';
+import { css } from '@emotion/css';
 
 const ADD_TO_INVESTIGATION_MENU_TEXT = 'Add to investigation';
 const ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT = 'Investigations';
@@ -38,8 +38,8 @@ export enum AvgFieldPanelType {
 }
 
 export enum CollapsablePanelType {
-  collapse = 'Collapse',
-  expand = 'Expand',
+  collapsed = 'Collapse',
+  expanded = 'Expand',
 }
 
 interface PanelMenuState extends SceneObjectState {
@@ -49,7 +49,6 @@ interface PanelMenuState extends SceneObjectState {
   fieldName?: string;
   addToExplorations?: AddToExplorationButton;
   panelType?: AvgFieldPanelType;
-  collapsable?: CollapsablePanelType;
 }
 
 /**
@@ -59,6 +58,8 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
   constructor(state: Partial<PanelMenuState>) {
     super(state);
     this.addActivationHandler(() => {
+      const viz = sceneGraph.getAncestor(this, VizPanel);
+
       this.setState({
         addToExplorations: new AddToExplorationButton({
           labelName: this.state.labelName,
@@ -86,11 +87,11 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
       ];
 
       // Visualization options
-      if (this.state.panelType || this.state.collapsable) {
+      if (this.state.panelType || viz.state.collapsible) {
         addVisualizationHeader(items, this);
       }
 
-      if (this.state.collapsable) {
+      if (viz.state.collapsible) {
         addCollapsableItem(items, this);
       }
 
@@ -104,9 +105,11 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
         }),
       });
 
-      this.state.addToExplorations?.subscribeToState(() => {
-        subscribeToAddToExploration(this);
-      });
+      this._subs.add(
+        this.state.addToExplorations?.subscribeToState(() => {
+          subscribeToAddToExploration(this);
+        })
+      );
     });
   }
 
@@ -144,22 +147,22 @@ function addVisualizationHeader(items: PanelMenuItem[], sceneRef: PanelMenu) {
 }
 
 function addCollapsableItem(items: PanelMenuItem[], menu: PanelMenu) {
+  const viz = sceneGraph.getAncestor(menu, VizPanel);
   items.push({
-    text: menu.state.collapsable ?? CollapsablePanelType.expand,
-    iconClassName: menu.state.collapsable === CollapsablePanelType.collapse ? 'table-collapse-all' : 'table-expand-all',
+    text: viz.state.collapsed ? CollapsablePanelType.expanded : CollapsablePanelType.collapsed,
+    iconClassName: viz.state.collapsed ? 'table-collapse-all' : 'table-expand-all',
     onClick: () => {
-      const newCollapsableState =
-        menu.state.collapsable === CollapsablePanelType.expand
-          ? CollapsablePanelType.collapse
-          : CollapsablePanelType.expand;
+      const newCollapsableState = viz.state.collapsed ? CollapsablePanelType.expanded : CollapsablePanelType.collapsed;
 
       // Update the viz
-      const vizPanelFlexItem = sceneGraph.getAncestor(menu, SceneFlexItem);
-      setValueSummaryHeight(vizPanelFlexItem, newCollapsableState);
+      const vizPanelFlexLayout = sceneGraph.getAncestor(menu, SceneFlexLayout);
+      setValueSummaryHeight(vizPanelFlexLayout, newCollapsableState);
 
       // Set state and update local storage
-      menu.setState({ collapsable: newCollapsableState });
-      setPanelOption('collapsable', newCollapsableState);
+      viz.setState({
+        collapsed: !viz.state.collapsed,
+      });
+      setPanelOption('collapsed', newCollapsableState);
     },
   });
 }
@@ -189,7 +192,6 @@ function addHistogramItem(items: PanelMenuItem[], sceneRef: PanelMenu) {
         body: body.setMenu(menu).setTitle(viz.state.title).setHeaderActions(headerActions).setData($data).build(),
       });
 
-      // @todo extend findObject and use templates to avoid type assertions
       const newPanelType =
         sceneRef.state.panelType !== AvgFieldPanelType.timeseries
           ? AvgFieldPanelType.timeseries
@@ -197,10 +199,11 @@ function addHistogramItem(items: PanelMenuItem[], sceneRef: PanelMenu) {
       setPanelOption('panelType', newPanelType);
       menu.setState({ panelType: newPanelType });
 
-      const fieldsAggregatedBreakdownScene = sceneGraph.findObject(
+      const fieldsAggregatedBreakdownScene = findObjectOfType(
         gridItem,
-        (o) => o instanceof FieldsAggregatedBreakdownScene
-      ) as FieldsAggregatedBreakdownScene | null;
+        (o) => o instanceof FieldsAggregatedBreakdownScene,
+        FieldsAggregatedBreakdownScene
+      );
       if (fieldsAggregatedBreakdownScene) {
         fieldsAggregatedBreakdownScene.rebuildAvgFields();
       }
@@ -314,7 +317,7 @@ export const getPanelWrapperStyles = (theme: GrafanaTheme2) => {
       position: 'absolute',
       display: 'flex',
 
-      // @todo remove this wrapper and styles when core changes are introduced in ???
+      // @todo remove this wrapper and styles when core changes are introduced in 11.5
       // Need more specificity to override core style
       'button.show-on-hover': {
         opacity: 1,

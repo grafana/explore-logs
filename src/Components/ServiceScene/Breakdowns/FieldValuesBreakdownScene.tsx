@@ -32,8 +32,8 @@ import { getDetectedFieldsFrame, ServiceScene } from '../ServiceScene';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { getFieldGroupByVariable, getFieldsVariable } from '../../../services/variableGetters';
 import { LokiQuery } from '../../../services/lokiQuery';
-import { PanelMenu, getPanelWrapperStyles } from '../../Panels/PanelMenu';
-import { getValueSummaryPanel } from './Panels/ValueSummary';
+import { getPanelWrapperStyles, PanelMenu } from '../../Panels/PanelMenu';
+import { ValueSummaryPanelScene } from './Panels/ValueSummary';
 
 export interface FieldValuesBreakdownSceneState extends SceneObjectState {
   body?: (LayoutSwitcher & SceneObject) | (SceneReactObject & SceneObject);
@@ -50,7 +50,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
   public static Selector({ model }: SceneComponentProps<FieldValuesBreakdownScene>) {
     const { body } = model.useState();
     if (body instanceof LayoutSwitcher) {
-      return <>{body && <body.Selector model={body} />}</>;
+      return <>{body && <LayoutSwitcher.Selector model={body} />}</>;
     }
 
     return <></>;
@@ -191,7 +191,12 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
             }),
             new SceneFlexItem({
               minHeight: 300,
-              body: PanelBuilders.timeseries().setTitle(optionValue).setMenu(new PanelMenu({})).build(),
+              body: PanelBuilders.timeseries()
+                .setTitle(optionValue)
+                // 11.5
+                // .setShowMenuAlways(true)
+                .setMenu(new PanelMenu({}))
+                .build(),
             }),
           ],
         }),
@@ -203,7 +208,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
             new SceneReactObject({
               reactNode: <FieldsBreakdownScene.ParentMenu model={fieldsBreakdownScene} />,
             }),
-            getValueSummaryPanel(optionValue),
+            new ValueSummaryPanelScene({ title: optionValue }),
             new SceneReactObject({
               reactNode: <FieldsBreakdownScene.ValueMenu model={fieldsBreakdownScene} />,
             }),
@@ -241,7 +246,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
             new SceneReactObject({
               reactNode: <FieldsBreakdownScene.ParentMenu model={fieldsBreakdownScene} />,
             }),
-            getValueSummaryPanel(optionValue),
+            new ValueSummaryPanelScene({ title: optionValue }),
             new SceneReactObject({
               reactNode: <FieldsBreakdownScene.ValueMenu model={fieldsBreakdownScene} />,
             }),

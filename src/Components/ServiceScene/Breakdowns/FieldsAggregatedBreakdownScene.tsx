@@ -4,7 +4,6 @@ import {
   SceneComponentProps,
   SceneCSSGridItem,
   SceneCSSGridLayout,
-  SceneDataTransformer,
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
@@ -27,8 +26,6 @@ import React from 'react';
 import { SelectLabelActionScene } from './SelectLabelActionScene';
 import { ValueSlugs } from '../../../services/routing';
 import { DataFrame, LoadingState } from '@grafana/data';
-import { limitMaxNumberOfSeriesForPanel, MAX_NUMBER_OF_TIME_SERIES } from './TimeSeriesLimitSeriesTitleItem';
-import { map, Observable } from 'rxjs';
 import {
   buildFieldsQueryString,
   extractParserFromArray,
@@ -43,6 +40,7 @@ import {
 import { AvgFieldPanelType, getPanelWrapperStyles, PanelMenu } from '../../Panels/PanelMenu';
 import { logger } from '../../../services/logger';
 import { getPanelOption } from '../../../services/store';
+import { MAX_NUMBER_OF_TIME_SERIES } from './TimeSeriesLimit';
 
 export interface FieldsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -88,7 +86,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
                 // If a new field filter was added that updated the parsers, we'll need to rebuild the query
                 if (existingParser !== newParser) {
                   const fieldType = getDetectedFieldType(panel.state.title, detectedFieldsFrame);
-                  const dataTransformer = this.getDataTransformerForPanel(
+                  const dataTransformer = this.getQueryRunnerForPanel(
                     panel.state.title,
                     detectedFieldsFrame,
                     fieldType
@@ -123,7 +121,6 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
         updatedChildren.sort(this.sortChildren(cardinalityMap));
 
         updatedChildren.map((child) => {
-          this.addLimitUIToChild(child);
           this.subscribeToPanel(child);
         });
 
@@ -134,18 +131,6 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
         logger.warn('Layout is not SceneCSSGridLayout');
       }
     });
-  }
-
-  private addLimitUIToChild(child: SceneCSSGridItem) {
-    const panel = child.state.body;
-    const dataTransformer = child.state.body?.state.$data;
-    if (panel instanceof VizPanel && dataTransformer instanceof SceneDataTransformer) {
-      limitMaxNumberOfSeriesForPanel(panel, dataTransformer);
-    } else {
-      logger.error(new Error('unable to locate VizPanel or transformer'), {
-        msg: 'unable to locate VizPanel or transformer',
-      });
-    }
   }
 
   private sortChildren(cardinalityMap: Map<string, number>) {
@@ -221,7 +206,6 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
 
     // We must subscribe to the data providers for all children after the clone, or we'll see bugs in the row layout
     [...children, ...childrenClones].map((child) => {
-      this.addLimitUIToChild(child);
       this.subscribeToPanel(child);
     });
 
@@ -322,7 +306,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     }
 
     const fieldType = getDetectedFieldType(labelName, detectedFieldsFrame);
-    const dataTransformer = this.getDataTransformerForPanel(labelName, detectedFieldsFrame, fieldType);
+    const dataTransformer = this.getQueryRunnerForPanel(labelName, detectedFieldsFrame, fieldType);
     let body;
 
     const headerActions = [];
@@ -357,6 +341,9 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
       );
     }
     body.setHeaderActions(headerActions);
+    body.setSeriesLimit(MAX_NUMBER_OF_TIME_SERIES);
+    // 11.5
+    // body.setShowMenuAlways(true);
 
     const viz = body.build();
     return new SceneCSSGridItem({
@@ -364,7 +351,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     });
   }
 
-  private getDataTransformerForPanel(
+  private getQueryRunnerForPanel(
     optionValue: string,
     detectedFieldsFrame: DataFrame | undefined,
     fieldType?: DetectedFieldType
@@ -376,12 +363,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
       refId: optionValue,
     });
 
-    const queryRunner = getQueryRunner([query]);
-
-    return new SceneDataTransformer({
-      $data: queryRunner,
-      transformations: [() => limitFramesTransformation(MAX_NUMBER_OF_TIME_SERIES)],
-    });
+    return getQueryRunner([query]);
   }
 
   private getActiveGridLayouts() {
@@ -401,7 +383,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
 
   public static Selector({ model }: SceneComponentProps<FieldsAggregatedBreakdownScene>) {
     const { body } = model.useState();
-    return <>{body && <body.Selector model={body} />}</>;
+    return <>{body && <LayoutSwitcher.Selector model={body} />}</>;
   }
 
   public static Component = ({ model }: SceneComponentProps<FieldsAggregatedBreakdownScene>) => {
@@ -412,15 +394,5 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     }
 
     return <LoadingPlaceholder text={'Loading...'} />;
-  };
-}
-
-export function limitFramesTransformation(limit: number) {
-  return (source: Observable<DataFrame[]>) => {
-    return source.pipe(
-      map((frames) => {
-        return frames.slice(0, limit);
-      })
-    );
   };
 }

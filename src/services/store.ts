@@ -240,7 +240,7 @@ export function setLogsVisualizationType(type: string) {
 const PANEL_OPTIONS_LOCALSTORAGE_KEY = `${pluginJson.id}.panel.option`;
 export interface PanelOptions {
   panelType: AvgFieldPanelType;
-  collapsable: CollapsablePanelType;
+  collapsed: CollapsablePanelType;
 }
 export function getPanelOption<K extends keyof PanelOptions, V extends PanelOptions[K]>(
   option: K,
