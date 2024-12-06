@@ -107,7 +107,8 @@ function buildValueSummaryPanel(title: string, options?: { levelColor?: boolean 
     .setCustomFieldConfig('fillOpacity', 100)
     .setCustomFieldConfig('lineWidth', 0)
     .setCustomFieldConfig('pointSize', 0)
-    .setShowMenuAlways(true)
+    // 11.5
+    // .setShowMenuAlways(true)
     .setSeriesLimit(SUMMARY_PANEL_SERIES_LIMIT)
     .setCustomFieldConfig('drawStyle', DrawStyle.Bars);
 

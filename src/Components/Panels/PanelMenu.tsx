@@ -1,4 +1,4 @@
-import { DataFrame, PanelMenuItem } from '@grafana/data';
+import { DataFrame, GrafanaTheme2, PanelMenuItem } from '@grafana/data';
 import {
   PanelBuilders,
   SceneComponentProps,
@@ -27,6 +27,7 @@ import { FieldsAggregatedBreakdownScene } from '../ServiceScene/Breakdowns/Field
 import { setValueSummaryHeight } from '../ServiceScene/Breakdowns/Panels/ValueSummary';
 import { FieldValuesBreakdownScene } from '../ServiceScene/Breakdowns/FieldValuesBreakdownScene';
 import { LabelValuesBreakdownScene } from '../ServiceScene/Breakdowns/LabelValuesBreakdownScene';
+import { css } from '@emotion/css';
 
 const ADD_TO_INVESTIGATION_MENU_TEXT = 'Add to investigation';
 const ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT = 'Investigations';
@@ -306,3 +307,26 @@ function subscribeToAddToExploration(exploreLogsVizPanelMenu: PanelMenu) {
     }
   }
 }
+
+export const getPanelWrapperStyles = (theme: GrafanaTheme2) => {
+  return {
+    panelWrapper: css({
+      width: '100%',
+      height: '100%',
+      label: 'panel-wrapper',
+      position: 'absolute',
+      display: 'flex',
+
+      // @todo remove this wrapper and styles when core changes are introduced in 11.5
+      // Need more specificity to override core style
+      'button.show-on-hover': {
+        opacity: 1,
+        visibility: 'visible',
+        background: 'none',
+        '&:hover': {
+          background: theme.colors.secondary.shade,
+        },
+      },
+    }),
+  };
+};

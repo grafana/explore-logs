@@ -12,7 +12,7 @@ import {
 import { ALL_VARIABLE_VALUE, DetectedFieldType, ParserType } from '../../../services/variables';
 import { buildDataQuery } from '../../../services/query';
 import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
-import { DrawStyle, LoadingPlaceholder, StackingMode } from '@grafana/ui';
+import { DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
 import { LayoutSwitcher } from './LayoutSwitcher';
 import { FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS, FieldsBreakdownScene } from './FieldsBreakdownScene';
 import {
@@ -37,7 +37,7 @@ import {
   getFieldsVariable,
   getValueFromFieldsFilter,
 } from '../../../services/variableGetters';
-import { AvgFieldPanelType, PanelMenu } from '../../Panels/PanelMenu';
+import { AvgFieldPanelType, getPanelWrapperStyles, PanelMenu } from '../../Panels/PanelMenu';
 import { logger } from '../../../services/logger';
 import { getPanelOption } from '../../../services/store';
 import { MAX_NUMBER_OF_TIME_SERIES } from './TimeSeriesLimit';
@@ -342,7 +342,8 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     }
     body.setHeaderActions(headerActions);
     body.setSeriesLimit(MAX_NUMBER_OF_TIME_SERIES);
-    body.setShowMenuAlways(true);
+    // 11.5
+    // body.setShowMenuAlways(true);
 
     const viz = body.build();
     return new SceneCSSGridItem({
@@ -387,8 +388,9 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
 
   public static Component = ({ model }: SceneComponentProps<FieldsAggregatedBreakdownScene>) => {
     const { body } = model.useState();
+    const styles = useStyles2(getPanelWrapperStyles);
     if (body) {
-      return <>{body && <body.Component model={body} />}</>;
+      return <span className={styles.panelWrapper}>{body && <body.Component model={body} />}</span>;
     }
 
     return <LoadingPlaceholder text={'Loading...'} />;
