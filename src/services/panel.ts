@@ -25,7 +25,6 @@ import { LogsSceneQueryRunner } from './LogsSceneQueryRunner';
 import { DrawStyle, StackingMode } from '@grafana/ui';
 import { getLabelsFromSeries, getVisibleLevels } from './levels';
 import { LokiQuery } from './lokiQuery';
-import { config } from '@grafana/runtime';
 import { LOGS_PANEL_QUERY_REFID } from '../Components/ServiceScene/ServiceScene';
 
 const UNKNOWN_LEVEL_LOGS = 'logs';
