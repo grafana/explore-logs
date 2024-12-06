@@ -1,4 +1,11 @@
-import { DataFrame, FieldConfig, FieldMatcherID, FieldType, getFieldDisplayName } from '@grafana/data';
+import {
+  DataFrame,
+  FieldColorModeId,
+  FieldConfig,
+  FieldMatcherID,
+  FieldType,
+  getFieldDisplayName,
+} from '@grafana/data';
 import {
   FieldConfigBuilder,
   FieldConfigBuilders,
@@ -95,59 +102,10 @@ export function syncLogsPanelVisibleSeries(panel: VizPanel, series: DataFrame[],
     }
   }
 }
-
-export function getColorByName(name: string, paletteSet: Set<number>) {
-  const visTheme = config.theme2.visualization;
-  const hash = Math.abs(getHash(name));
-  const paletteSize = 57;
-  // There are 56 colors in the palette, if we use more of the palette we're less likely to get duplicates, but the colors are harder to differentiate
-  // Also, it's possible that a panel with N series has the same color for each series
-  // See the birthday problem for more: 8 series will have ~40% at least 2 series get the same color
-  // Opposed to the previous implementation, we cycled between 8 series, so every panel with 8+ series was guaranteed to have 1 duplicate, but the color of each series would change depending on the sort order
-  // Also the first 8 colors in the palette are visually dissimilar, but some of the full set of 56 are pretty hard to differentiate visually
-  // If the color is out of bounds (i.e. 57) we get a gray color, which looks different enough from the others
-  let paletteIndex = hash % paletteSize;
-  // const initialPaletteIndex = paletteIndex
-
-  // function grabNextBucket(index: number) {
-  //     // console.log('grabNextBucket', {index, size: paletteSet.size})
-  //     if (paletteSet.has(index)) {
-  //         return true
-  //     } else {
-  //         paletteSet.add(index)
-  //         return false
-  //     }
-  // }
-  //
-  // while(grabNextBucket(paletteIndex) && paletteSet.size < paletteSize){
-  //     paletteIndex = paletteIndex + 1 % paletteSize
-  // }
-  // if(paletteSet.size === paletteSize){
-  //     // console.log('clear palette index set')
-  //     paletteSet.clear()
-  // }
-
-  return visTheme.getColorByName(visTheme.palette[paletteIndex]);
-}
-
-function getHash(input: string) {
-  let hash = 0,
-    len = input.length;
-  for (let i = 0; i < len; i++) {
-    hash = (hash << 5) - hash + input.charCodeAt(i);
-    hash |= 0; // to 32bit integer
-  }
-  return hash;
-}
-
-export function setFixedColorByDisplayNameTransformation() {
+function setColorByDisplayNameTransformation() {
   return (source: Observable<DataFrame[]>) => {
     return source.pipe(
       map((data: DataFrame[]) => {
-        if (data?.[0]?.refId === LOGS_PANEL_QUERY_REFID) {
-          return data;
-        }
-        const paletteSet = new Set<number>();
         return data.map((frame, frameIndex) => {
           return {
             ...frame,
@@ -161,9 +119,9 @@ export function setFixedColorByDisplayNameTransformation() {
                 ...f,
                 config: {
                   ...f.config,
+                  displayName,
                   color: {
-                    fixedColor: getColorByName(displayName, paletteSet),
-                    mode: 'fixed',
+                    mode: FieldColorModeId.PaletteClassicByName,
                   },
                 },
               };
@@ -218,6 +176,7 @@ export function getQueryRunner(queries: LokiQuery[], queryRunnerOptions?: Partia
   // `level` label.
 
   const hasLevel = queries.find((query) => query.legendFormat?.toLowerCase().includes('level'));
+  const isLogPanelQuery = queries.find((query) => query.refId === LOGS_PANEL_QUERY_REFID);
 
   if (hasLevel) {
     return new SceneDataTransformer({
@@ -230,13 +189,21 @@ export function getQueryRunner(queries: LokiQuery[], queryRunnerOptions?: Partia
     });
   }
 
-  return new SceneDataTransformer({
-    $data: getSceneQueryRunner({
-      datasource: { uid: WRAPPED_LOKI_DS_UID },
-      queries: queries,
-      ...queryRunnerOptions,
-    }),
-    transformations: [setFixedColorByDisplayNameTransformation],
+  if (!isLogPanelQuery) {
+    return new SceneDataTransformer({
+      $data: getSceneQueryRunner({
+        datasource: { uid: WRAPPED_LOKI_DS_UID },
+        queries: queries,
+        ...queryRunnerOptions,
+      }),
+      transformations: [setColorByDisplayNameTransformation],
+    });
+  }
+
+  return getSceneQueryRunner({
+    datasource: { uid: WRAPPED_LOKI_DS_UID },
+    queries: queries,
+    ...queryRunnerOptions,
   });
 }
 
