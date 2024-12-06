@@ -18,7 +18,7 @@ import { toggleLevelFromFilter } from 'services/levels';
 import { DataFrame, LoadingState } from '@grafana/data';
 import { getFieldsVariable, getLabelsVariable, getLevelsVariable } from '../../services/variableGetters';
 import { areArraysEqual } from '../../services/comparison';
-import { PanelMenu, getPanelWrapperStyles } from '../Panels/PanelMenu';
+import { getPanelWrapperStyles, PanelMenu } from '../Panels/PanelMenu';
 import { ServiceScene } from './ServiceScene';
 import { getSeriesVisibleRange, getVisibleRangeFrame } from 'services/logsFrame';
 
@@ -71,6 +71,8 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       .setOption('legend', { showLegend: true, calcs: ['sum'], displayMode: LegendDisplayMode.List })
       .setUnit('short')
       .setMenu(new PanelMenu({}))
+      // 11.5
+      // .setShowMenuAlways(true)
       .setData(
         getQueryRunner([
           buildDataQuery(getTimeSeriesExpr(this, LEVEL_VARIABLE_VALUE, false), {

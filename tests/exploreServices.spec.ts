@@ -146,10 +146,11 @@ test.describe('explore services page', () => {
 
     test('should clear filters and levels when navigating back to previously activated service', async ({ page }) => {
       await explorePage.addServiceName();
-
       // Add detected_level filter
       await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
       await page.getByLabel('Select detected_level').click();
+      await explorePage.assertNotLoading();
+      await explorePage.scrollToBottom();
       await page.getByTestId(testIds.exploreServiceDetails.buttonFilterInclude).nth(1).click();
 
       await expect(page.getByTestId('AdHocFilter-detected_level')).toBeVisible();

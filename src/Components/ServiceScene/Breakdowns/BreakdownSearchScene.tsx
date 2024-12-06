@@ -1,12 +1,10 @@
-import { SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
+import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import React, { ChangeEvent } from 'react';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { SearchInput } from './SearchInput';
 import { LabelBreakdownScene } from './LabelBreakdownScene';
 import { FieldsBreakdownScene } from './FieldsBreakdownScene';
 import { BusEventBase } from '@grafana/data';
-import { LabelValuesBreakdownScene } from './LabelValuesBreakdownScene';
-import { FieldValuesBreakdownScene } from './FieldValuesBreakdownScene';
 import { logger } from '../../../services/logger';
 
 export class BreakdownSearchReset extends BusEventBase {
@@ -56,21 +54,23 @@ export class BreakdownSearchScene extends SceneObjectBase<BreakdownSearchSceneSt
   };
 
   private filterValues(filter: string) {
-    if (this.parent instanceof LabelBreakdownScene || this.parent instanceof FieldsBreakdownScene) {
+    const breakdownScene = sceneGraph.findObject(
+      this,
+      (o) => o instanceof LabelBreakdownScene || o instanceof FieldsBreakdownScene
+    );
+    if (breakdownScene instanceof LabelBreakdownScene || breakdownScene instanceof FieldsBreakdownScene) {
       recentFilters[this.cacheKey] = filter;
-      const body = this.parent.state.body;
-      if (body instanceof LabelValuesBreakdownScene || body instanceof FieldValuesBreakdownScene) {
-        body.state.body?.forEachChild((child) => {
-          if (child instanceof ByFrameRepeater && child.state.body.isActive) {
-            child.filterByString(filter);
-          }
-        });
-      } else {
-        logger.warn('invalid parent for search', {
-          typeofBody: typeof body,
-          filter,
-        });
-      }
+      const byFrameRepeater = sceneGraph.findDescendents(breakdownScene, ByFrameRepeater);
+      byFrameRepeater?.forEach((child) => {
+        if (child.state.body.isActive) {
+          child.filterByString(filter);
+        }
+      });
+    } else {
+      logger.warn('unable to find Breakdown scene', {
+        typeofBody: typeof breakdownScene,
+        filter,
+      });
     }
   }
 }

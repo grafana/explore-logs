@@ -119,11 +119,11 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         .setOption('sortOrder', getLogsPanelSortOrder())
         .setOption('wrapLogMessage', Boolean(getLogOption<boolean>('wrapLogMessage', false)))
         .setOption('showLogContextToggle', true)
-        // @ts-expect-error Requires Grafana 11.4
+        // @ts-expect-error Requires Grafana 11.5
         .setOption('enableInfiniteScrolling', true)
-        // @ts-expect-error Grafana 11.4
+        // @ts-expect-error Grafana 11.5
         .setOption('onNewLogsReceived', this.updateVisibleRange)
-        // @ts-expect-error Grafana 11.4
+        // @ts-expect-error Grafana 11.5
         .setOption('logRowMenuIconsAfter', [<CopyLinkButton onClick={this.handleShareLogLineClick} key={0} />])
         .setHeaderActions(
           new LogOptionsScene({ visualizationType, onChangeVisualizationType: parentModel.setVisualizationType })

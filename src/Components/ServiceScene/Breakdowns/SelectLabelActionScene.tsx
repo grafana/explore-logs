@@ -30,6 +30,7 @@ import { NumericFilterPopoverScene } from './NumericFilterPopoverScene';
 import { getDetectedFieldType } from '../../../services/fields';
 import { logger } from '../../../services/logger';
 import { testIds } from '../../../services/testIds';
+import { findObjectOfType } from '../../../services/scenes';
 
 interface SelectLabelActionSceneState extends SceneObjectState {
   labelName: string;
@@ -311,7 +312,7 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
     const labels: Field<Labels> | undefined = logsPanelData?.fields.find((field) => field.name === 'labels');
 
     const data = sceneGraph.getData(this);
-    const queryRunner = sceneGraph.findObject(data, (o) => o instanceof SceneQueryRunner) as SceneQueryRunner;
+    const queryRunner = findObjectOfType(data, (o) => o instanceof SceneQueryRunner, SceneQueryRunner);
     if (queryRunner) {
       const queries = queryRunner.state.queries;
       const query = queries[0] as LokiQuery | undefined;

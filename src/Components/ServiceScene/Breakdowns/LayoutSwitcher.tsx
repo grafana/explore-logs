@@ -1,10 +1,11 @@
 import React from 'react';
 
-import { SelectableValue } from '@grafana/data';
+import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import { SceneComponentProps, SceneObject, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
-import { Field, RadioButtonGroup } from '@grafana/ui';
-import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
+import { Field, RadioButtonGroup, useStyles2 } from '@grafana/ui';
+import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getDrilldownSlug } from '../../../services/routing';
+import { css } from '@emotion/css';
 
 export interface LayoutSwitcherState extends SceneObjectState {
   active: LayoutType;
@@ -15,15 +16,7 @@ export interface LayoutSwitcherState extends SceneObjectState {
 export type LayoutType = 'single' | 'grid' | 'rows';
 
 export class LayoutSwitcher extends SceneObjectBase<LayoutSwitcherState> {
-  public Selector({ model }: { model: LayoutSwitcher }) {
-    const { active, options } = model.useState();
-
-    return (
-      <Field>
-        <RadioButtonGroup options={options} value={active} onChange={model.onLayoutChange} />
-      </Field>
-    );
-  }
+  public static Selector = LayoutSwitcherComponent;
 
   public onLayoutChange = (active: LayoutType) => {
     reportAppInteraction(USER_EVENTS_PAGES.service_details, USER_EVENTS_ACTIONS.service_details.layout_type_changed, {
@@ -46,3 +39,22 @@ export class LayoutSwitcher extends SceneObjectBase<LayoutSwitcherState> {
     return <layout.Component model={layout} />;
   };
 }
+
+function LayoutSwitcherComponent({ model }: { model: LayoutSwitcher }) {
+  const { active, options } = model.useState();
+  const styles = useStyles2(getStyles);
+
+  return (
+    <Field className={styles.field}>
+      <RadioButtonGroup options={options} value={active} onChange={model.onLayoutChange} />
+    </Field>
+  );
+}
+
+const getStyles = (theme: GrafanaTheme2) => {
+  return {
+    field: css({
+      marginBottom: 0,
+    }),
+  };
+};
