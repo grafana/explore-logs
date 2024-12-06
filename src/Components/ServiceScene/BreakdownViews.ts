@@ -104,7 +104,6 @@ function buildFieldValuesBreakdownActionScene(value: string) {
 function buildLogsListScene() {
   return new SceneFlexLayout({
     direction: 'column',
-    $behaviors: [new behaviors.CursorSync({ key: 'sync', sync: DashboardCursorSync.Crosshair })],
     children: [
       new SceneFlexItem({
         minHeight: 200,
