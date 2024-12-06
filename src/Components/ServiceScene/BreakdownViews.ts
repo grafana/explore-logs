@@ -4,9 +4,9 @@ import { testIds } from '../../services/testIds';
 import { LabelBreakdownScene } from './Breakdowns/LabelBreakdownScene';
 import { FieldsBreakdownScene } from './Breakdowns/FieldsBreakdownScene';
 import { PatternsBreakdownScene } from './Breakdowns/Patterns/PatternsBreakdownScene';
-import { SceneFlexItem, SceneFlexLayout, SceneObject } from '@grafana/scenes';
+import { behaviors, SceneFlexItem, SceneFlexLayout, SceneObject } from '@grafana/scenes';
 import { LogsVolumePanel } from './LogsVolumePanel';
-import { buildLabelValuesBreakdownActionScene } from '../../services/labels';
+import { DashboardCursorSync } from '@grafana/schema';
 
 interface ValueBreakdownViewDefinition {
   displayName: string;
@@ -81,6 +81,7 @@ function buildPatternsScene() {
 
 function buildFieldsBreakdownActionScene(changeFieldNumber: (n: number) => void) {
   return new SceneFlexLayout({
+    $behaviors: [new behaviors.CursorSync({ key: 'sync', sync: DashboardCursorSync.Crosshair })],
     children: [
       new SceneFlexItem({
         body: new FieldsBreakdownScene({ changeFieldCount: changeFieldNumber }),
@@ -91,9 +92,21 @@ function buildFieldsBreakdownActionScene(changeFieldNumber: (n: number) => void)
 
 function buildFieldValuesBreakdownActionScene(value: string) {
   return new SceneFlexLayout({
+    $behaviors: [new behaviors.CursorSync({ key: 'sync', sync: DashboardCursorSync.Crosshair })],
     children: [
       new SceneFlexItem({
         body: new FieldsBreakdownScene({ value }),
+      }),
+    ],
+  });
+}
+
+function buildLabelValuesBreakdownActionScene(value: string) {
+  return new SceneFlexLayout({
+    $behaviors: [new behaviors.CursorSync({ key: 'sync', sync: DashboardCursorSync.Crosshair })],
+    children: [
+      new SceneFlexItem({
+        body: new LabelBreakdownScene({ value }),
       }),
     ],
   });
@@ -118,6 +131,7 @@ function buildLogsListScene() {
 
 function buildLabelBreakdownActionScene() {
   return new SceneFlexLayout({
+    $behaviors: [new behaviors.CursorSync({ key: 'sync', sync: DashboardCursorSync.Crosshair })],
     children: [
       new SceneFlexItem({
         body: new LabelBreakdownScene({}),
