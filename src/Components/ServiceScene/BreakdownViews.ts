@@ -6,7 +6,6 @@ import { FieldsBreakdownScene } from './Breakdowns/FieldsBreakdownScene';
 import { PatternsBreakdownScene } from './Breakdowns/Patterns/PatternsBreakdownScene';
 import { behaviors, SceneFlexItem, SceneFlexLayout, SceneObject } from '@grafana/scenes';
 import { LogsVolumePanel } from './LogsVolumePanel';
-import { buildLabelValuesBreakdownActionScene } from '../../services/labels';
 import { DashboardCursorSync } from '@grafana/schema';
 
 interface ValueBreakdownViewDefinition {
@@ -93,9 +92,21 @@ function buildFieldsBreakdownActionScene(changeFieldNumber: (n: number) => void)
 
 function buildFieldValuesBreakdownActionScene(value: string) {
   return new SceneFlexLayout({
+    $behaviors: [new behaviors.CursorSync({ key: 'sync', sync: DashboardCursorSync.Crosshair })],
     children: [
       new SceneFlexItem({
         body: new FieldsBreakdownScene({ value }),
+      }),
+    ],
+  });
+}
+
+function buildLabelValuesBreakdownActionScene(value: string) {
+  return new SceneFlexLayout({
+    $behaviors: [new behaviors.CursorSync({ key: 'sync', sync: DashboardCursorSync.Crosshair })],
+    children: [
+      new SceneFlexItem({
+        body: new LabelBreakdownScene({ value }),
       }),
     ],
   });
