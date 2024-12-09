@@ -56,7 +56,7 @@ import {
 import { replaceSlash } from '../../services/extensions/links';
 import { ShowLogsButtonScene } from '../IndexScene/ShowLogsButtonScene';
 
-const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
+export const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 const PATTERNS_QUERY_REFID = 'patterns';
 const DETECTED_LABELS_QUERY_REFID = 'detectedLabels';
 const DETECTED_FIELDS_QUERY_REFID = 'detectedFields';
