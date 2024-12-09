@@ -36,13 +36,13 @@ test.describe('explore nginx-json breakdown pages ', () => {
     await page.getByTestId(`data-testid Panel header ${fieldName}`).getByRole('button', { name: 'Select' }).click();
     const allPanels = explorePage.getAllPanelsLocator();
     // We should have 6 panels
-    await expect(allPanels).toHaveCount(6);
+    await expect(allPanels).toHaveCount(7);
     // Should have 2 queries by now
     expect(requests).toHaveLength(2);
     // Exclude a panel
     await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
     // Should be removed from the UI, and also lets us know when the query is done loading
-    await expect(allPanels).toHaveCount(5);
+    await expect(allPanels).toHaveCount(6);
 
     // Adhoc content filter should be added
     await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${fieldName}`)).toBeVisible();

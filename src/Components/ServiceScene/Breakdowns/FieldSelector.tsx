@@ -32,7 +32,7 @@ export function FieldSelector<T>({ options, value, onChange, label }: Props<T>) 
     };
   });
   return (
-    <InlineField label={label}>
+    <InlineField className={styles.selectWrapper} label={label}>
       <Select
         {...{ options: selectableOptions, value }}
         onOpenMenu={() => setSelected(true)}
@@ -72,7 +72,7 @@ export function ServiceFieldSelector({
   const selectedOption = allOptions?.find((opt) => opt.value === value);
 
   return (
-    <InlineField className={styles.selectWrapper} grow={true} label={label}>
+    <InlineField className={styles.serviceSceneSelectWrapper} label={label}>
       <Select
         isLoading={isLoading}
         data-testid={testIds.exploreServiceSearch.search}
@@ -136,6 +136,14 @@ function getStyles(theme: GrafanaTheme2) {
       minWidth: theme.spacing(20),
     }),
     selectWrapper: css({
+      label: 'field-selector-select-wrapper',
+      maxWidth: theme.spacing(62.5),
+      minWidth: theme.spacing(20),
+      marginRight: theme.spacing.x1,
+      marginBottom: 0,
+    }),
+    serviceSceneSelectWrapper: css({
+      label: 'service-select-wrapper',
       maxWidth: theme.spacing(62.5),
       minWidth: theme.spacing(20),
       marginRight: theme.spacing.x1,

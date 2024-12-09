@@ -107,6 +107,22 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
     );
     return (
       <>
+        <InlineField
+          label="Sort by"
+          htmlFor="sort-by-criteria"
+          tooltip="Calculate a derived quantity from the values in your time series and sort by this criteria. Defaults to standard deviation."
+        >
+          <Select
+            data-testid={testIds.breakdowns.common.sortByFunction}
+            value={sortByValue}
+            width={20}
+            isSearchable={true}
+            options={model.sortingOptions}
+            placeholder={'Choose criteria'}
+            onChange={model.onCriteriaChange}
+            inputId="sort-by-criteria"
+          />
+        </InlineField>
         <InlineField>
           <Select
             data-testid={testIds.breakdowns.common.sortByDirection}
@@ -125,22 +141,6 @@ export class SortByScene extends SceneObjectBase<SortBySceneState> {
               },
             ]}
           ></Select>
-        </InlineField>
-        <InlineField
-          label="Sort by"
-          htmlFor="sort-by-criteria"
-          tooltip="Calculate a derived quantity from the values in your time series and sort by this criteria. Defaults to standard deviation."
-        >
-          <Select
-            data-testid={testIds.breakdowns.common.sortByFunction}
-            value={sortByValue}
-            width={20}
-            isSearchable={true}
-            options={model.sortingOptions}
-            placeholder={'Choose criteria'}
-            onChange={model.onCriteriaChange}
-            inputId="sort-by-criteria"
-          />
         </InlineField>
       </>
     );
