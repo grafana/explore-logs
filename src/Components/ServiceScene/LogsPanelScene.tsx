@@ -11,7 +11,7 @@ import { DataFrame, LogRowModel } from '@grafana/data';
 import { getLogOption, setDisplayedFields } from '../../services/store';
 import React, { MouseEvent } from 'react';
 import { LogsListScene } from './LogsListScene';
-import { LoadingPlaceholder } from '@grafana/ui';
+import { LoadingPlaceholder, useStyles2 } from '@grafana/ui';
 import { addToFilters, FilterType } from './Breakdowns/AddToFiltersButton';
 import { getVariableForLabel } from '../../services/fields';
 import { VAR_FIELDS, VAR_LABELS, VAR_LEVELS, VAR_METADATA } from '../../services/variables';
@@ -21,6 +21,7 @@ import { copyText, generateLogShortlink, resolveRowTimeRangeForSharing } from 's
 import { CopyLinkButton } from './CopyLinkButton';
 import { getLogsPanelSortOrder, LogOptionsScene } from './LogOptionsScene';
 import { LogsVolumePanel, logsVolumePanelKey } from './LogsVolumePanel';
+import { getPanelWrapperStyles, PanelMenu } from '../Panels/PanelMenu';
 
 interface LogsPanelSceneState extends SceneObjectState {
   body?: VizPanel;
@@ -118,6 +119,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         .setOption('displayedFields', parentModel.state.displayedFields)
         .setOption('sortOrder', getLogsPanelSortOrder())
         .setOption('wrapLogMessage', Boolean(getLogOption<boolean>('wrapLogMessage', false)))
+        .setMenu(new PanelMenu({}))
         .setOption('showLogContextToggle', true)
         // @ts-expect-error Requires Grafana 11.5
         .setOption('enableInfiniteScrolling', true)
@@ -234,8 +236,13 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
 
   public static Component = ({ model }: SceneComponentProps<LogsPanelScene>) => {
     const { body } = model.useState();
+    const styles = useStyles2(getPanelWrapperStyles);
     if (body) {
-      return <body.Component model={body} />;
+      return (
+        <span className={styles.panelWrapper}>
+          <body.Component model={body} />
+        </span>
+      );
     }
     return <LoadingPlaceholder text={'Loading...'} />;
   };

@@ -58,7 +58,7 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
   constructor(state: Partial<PanelMenuState>) {
     super(state);
     this.addActivationHandler(() => {
-      const viz = sceneGraph.getAncestor(this, VizPanel);
+      const viz = findObjectOfType(this, (o) => o instanceof VizPanel, VizPanel);
 
       this.setState({
         addToExplorations: new AddToExplorationButton({
@@ -87,11 +87,11 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
       ];
 
       // Visualization options
-      if (this.state.panelType || viz.state.collapsible) {
+      if (this.state.panelType || viz?.state.collapsible) {
         addVisualizationHeader(items, this);
       }
 
-      if (viz.state.collapsible) {
+      if (viz?.state.collapsible) {
         addCollapsableItem(items, this);
       }
 

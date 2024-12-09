@@ -1,23 +1,39 @@
-import { SceneComponentProps, sceneGraph, SceneObjectBase } from '@grafana/scenes';
+import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { LogsListScene } from './LogsListScene';
-import { AdHocVariableFilter } from '@grafana/data';
+import { AdHocVariableFilter, GrafanaTheme2 } from '@grafana/data';
 import { TableProvider } from '../Table/TableProvider';
 import React, { useRef } from 'react';
-import { PanelChrome } from '@grafana/ui';
+import { PanelChrome, useStyles2 } from '@grafana/ui';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 import { css } from '@emotion/css';
 import { addAdHocFilter } from './Breakdowns/AddToFiltersButton';
 import { areArraysEqual } from '../../services/comparison';
 import { getLogsPanelFrame } from './ServiceScene';
 import { getVariableForLabel } from '../../services/fields';
+import { PanelMenu } from '../Panels/PanelMenu';
 
-export class LogsTableScene extends SceneObjectBase {
+interface LogsTableSceneState extends SceneObjectState {
+  menu?: PanelMenu;
+}
+export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
+  constructor(state: Partial<LogsTableSceneState>) {
+    super(state);
+
+    this.addActivationHandler(this.onActivate.bind(this));
+  }
+
+  public onActivate() {
+    this.setState({
+      menu: new PanelMenu({}),
+    });
+  }
   public static Component = ({ model }: SceneComponentProps<LogsTableScene>) => {
-    const styles = getStyles();
+    const styles = useStyles2(getStyles);
     // Get state from parent model
     const parentModel = sceneGraph.getAncestor(model, LogsListScene);
     const { data } = sceneGraph.getData(model).useState();
     const { selectedLine, urlColumns, visualizationType } = parentModel.useState();
+    const { menu: Menu } = model.useState();
 
     // Get time range
     const timeRange = sceneGraph.getTimeRange(model);
@@ -52,6 +68,7 @@ export class LogsTableScene extends SceneObjectBase {
         <PanelChrome
           loadingState={data?.state}
           title={'Logs'}
+          menu={Menu ? <Menu.Component model={Menu} /> : undefined}
           actions={<LogsPanelHeaderActions vizType={visualizationType} onChange={parentModel.setVisualizationType} />}
         >
           {dataFrame && (
@@ -72,8 +89,21 @@ export class LogsTableScene extends SceneObjectBase {
   };
 }
 
-const getStyles = () => ({
+const getStyles = (theme: GrafanaTheme2) => ({
   panelWrapper: css({
+    width: '100%',
     height: '100%',
+    label: 'panel-wrapper-table',
+
+    // @todo remove this wrapper and styles when core changes are introduced in 11.5
+    // Need more specificity to override core style
+    'button.show-on-hover': {
+      opacity: 1,
+      visibility: 'visible',
+      background: 'none',
+      '&:hover': {
+        background: theme.colors.secondary.shade,
+      },
+    },
   }),
 });
