@@ -1,5 +1,4 @@
 import {
-  FieldConfigOverridesBuilder,
   PanelBuilders,
   QueryRunnerState,
   SceneComponentProps,
@@ -9,7 +8,6 @@ import {
   SceneObjectBase,
   SceneObjectState,
   VizPanel,
-  VizPanelBuilder,
 } from '@grafana/scenes';
 import { ALL_VARIABLE_VALUE, DetectedFieldType, ParserType } from '../../../services/variables';
 import { buildDataQuery } from '../../../services/query';
@@ -27,7 +25,7 @@ import {
 import React from 'react';
 import { SelectLabelActionScene } from './SelectLabelActionScene';
 import { ValueSlugs } from '../../../services/routing';
-import { DataFrame, FieldConfig, LoadingState } from '@grafana/data';
+import { DataFrame, LoadingState } from '@grafana/data';
 import {
   buildFieldsQueryString,
   extractParserFromArray,
@@ -43,14 +41,6 @@ import { AvgFieldPanelType, getPanelWrapperStyles, PanelMenu } from '../../Panel
 import { logger } from '../../../services/logger';
 import { getPanelOption } from '../../../services/store';
 import { MAX_NUMBER_OF_TIME_SERIES } from './TimeSeriesLimit';
-import {
-  FieldConfig as TimeSeriesFieldConfig,
-  Options as TimeSeriesOptions,
-} from '@grafana/schema/dist/esm/raw/composable/timeseries/panelcfg/x/TimeSeriesPanelCfg_types.gen';
-import {
-  FieldConfig as HistogramFieldConfig,
-  Options as HistogramOptions,
-} from '@grafana/schema/dist/esm/raw/composable/histogram/panelcfg/x/HistogramPanelCfg_types.gen';
 
 export interface FieldsAggregatedBreakdownSceneState extends SceneObjectState {
   body?: LayoutSwitcher;
@@ -317,8 +307,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
 
     const fieldType = getDetectedFieldType(labelName, detectedFieldsFrame);
     const dataTransformer = this.getQueryRunnerForPanel(labelName, detectedFieldsFrame, fieldType);
-
-    let body: VizPanelBuilder<TimeSeriesOptions | HistogramOptions, TimeSeriesFieldConfig | HistogramFieldConfig>;
+    let body;
 
     const headerActions = [];
     if (!isAvgField(fieldType)) {
@@ -351,8 +340,6 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
         })
       );
     }
-    body.setOverrides((overrides: FieldConfigOverridesBuilder<FieldConfig>) => overrides);
-    body.setOption('legend', { showLegend: true });
     body.setHeaderActions(headerActions);
     body.setSeriesLimit(MAX_NUMBER_OF_TIME_SERIES);
 

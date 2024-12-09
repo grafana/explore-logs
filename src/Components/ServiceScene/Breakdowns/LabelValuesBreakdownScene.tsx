@@ -185,7 +185,6 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       .setCustomFieldConfig('pointSize', 0)
       .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
       .setOverrides(setLevelColorOverrides)
-      .setOption('legend', { showLegend: true })
       .setMenu(new PanelMenu({}))
       .setTitle(tagKey);
 
