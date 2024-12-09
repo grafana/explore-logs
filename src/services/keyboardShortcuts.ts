@@ -5,6 +5,7 @@ import { SetPanelAttentionEvent } from '@grafana/data';
 import { sceneGraph, VizPanel } from '@grafana/scenes';
 import { getExploreLink } from '../Components/Panels/PanelMenu';
 import { getTimePicker } from './scenes';
+import { OptionsWithLegend } from '@grafana/ui';
 
 const appEvents = getAppEvents();
 
@@ -20,13 +21,36 @@ export function setupKeyboardShortcuts(scene: IndexScene) {
 
   function withFocusedPanel(scene: IndexScene, fn: (vizPanel: VizPanel) => void) {
     return () => {
-      const vizPanel = sceneGraph.findObject(scene, (o) => o.state.key === vizPanelKey);
+      const vizPanel = sceneGraph.findObject(scene, (o) => o.state.key === vizPanelKey && o.isActive);
       if (vizPanel && vizPanel instanceof VizPanel) {
         fn(vizPanel);
         return;
       }
     };
   }
+
+  function withAllPanels(scene: IndexScene, fn: (vizPanel: VizPanel) => void) {
+    return () => {
+      const vizPanels = sceneGraph.findAllObjects(scene, (o) => o instanceof VizPanel && o.isActive);
+      vizPanels.forEach((vizPanel) => {
+        if (vizPanel && vizPanel instanceof VizPanel) {
+          fn(vizPanel);
+        }
+      });
+    };
+  }
+
+  // Toggle legend
+  keybindings.addBinding({
+    key: 'p l',
+    onTrigger: withFocusedPanel(scene, toggleVizPanelLegend),
+  });
+
+  // Toggle all legend
+  keybindings.addBinding({
+    key: 'a l',
+    onTrigger: withAllPanels(scene, toggleVizPanelLegend),
+  });
 
   // Go to Explore for panel
   keybindings.addBinding({
@@ -106,4 +130,19 @@ function handleTimeRangeShift(scene: IndexScene, direction: 'left' | 'right') {
   if (direction === 'right') {
     timePicker.onMoveForward();
   }
+}
+
+export function toggleVizPanelLegend(vizPanel: VizPanel): void {
+  const options = vizPanel.state.options;
+  if (hasLegendOptions(options) && typeof options.legend.showLegend === 'boolean') {
+    vizPanel.onOptionsChange({
+      legend: {
+        showLegend: options.legend.showLegend ? false : true,
+      },
+    });
+  }
+}
+
+function hasLegendOptions(optionsWithLegend: unknown): optionsWithLegend is OptionsWithLegend {
+  return optionsWithLegend != null && typeof optionsWithLegend === 'object' && 'legend' in optionsWithLegend;
 }

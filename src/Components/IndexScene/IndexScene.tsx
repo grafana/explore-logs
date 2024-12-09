@@ -181,7 +181,11 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
     this._subs.add(timeRange.subscribeToState(this.limitMaxInterval(timeRange)));
 
-    setupKeyboardShortcuts(this);
+    const clearKeyBindings = setupKeyboardShortcuts(this);
+
+    return () => {
+      clearKeyBindings();
+    };
   }
 
   private setVariableOperators() {
