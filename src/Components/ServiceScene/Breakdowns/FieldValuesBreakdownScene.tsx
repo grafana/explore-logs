@@ -182,7 +182,11 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
           children: [
             new SceneFlexItem({
               minHeight: 300,
-              body: PanelBuilders.timeseries().setTitle(optionValue).setMenu(new PanelMenu({})).build(),
+              body: PanelBuilders.timeseries()
+                .setTitle(optionValue)
+                .setMenu(new PanelMenu({}))
+                .setOption('legend', { showLegend: true })
+                .build(),
             }),
           ],
         }),

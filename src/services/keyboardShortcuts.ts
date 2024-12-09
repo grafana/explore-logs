@@ -5,6 +5,7 @@ import { SetPanelAttentionEvent } from '@grafana/data';
 import { sceneGraph, VizPanel } from '@grafana/scenes';
 import { getExploreLink } from '../Components/Panels/PanelMenu';
 import { getTimePicker } from './scenes';
+import { OptionsWithLegend } from '@grafana/ui';
 
 const appEvents = getAppEvents();
 
@@ -27,6 +28,12 @@ export function setupKeyboardShortcuts(scene: IndexScene) {
       }
     };
   }
+
+  // Toggle legend
+  keybindings.addBinding({
+    key: 'p l',
+    onTrigger: withFocusedPanel(scene, toggleVizPanelLegend),
+  });
 
   // Go to Explore for panel
   keybindings.addBinding({
@@ -106,4 +113,21 @@ function handleTimeRangeShift(scene: IndexScene, direction: 'left' | 'right') {
   if (direction === 'right') {
     timePicker.onMoveForward();
   }
+}
+
+export function toggleVizPanelLegend(vizPanel: VizPanel): void {
+  const options = vizPanel.state.options;
+  console.log('toggleVizPanelLegend', options);
+  if (hasLegendOptions(options) && typeof options.legend.showLegend === 'boolean') {
+    vizPanel.onOptionsChange({
+      legend: {
+        showLegend: options.legend.showLegend ? false : true,
+      },
+    });
+  }
+}
+
+function hasLegendOptions(optionsWithLegend: unknown): optionsWithLegend is OptionsWithLegend {
+  console.log('hasLegendOptions', optionsWithLegend, typeof optionsWithLegend);
+  return optionsWithLegend != null && typeof optionsWithLegend === 'object' && 'legend' in optionsWithLegend;
 }

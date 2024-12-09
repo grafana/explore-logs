@@ -223,6 +223,7 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
             .setOverrides(setLevelColorOverrides)
             .setMenu(new PanelMenu({ labelName: optionValue }))
             .setSeriesLimit(MAX_NUMBER_OF_TIME_SERIES)
+            .setOption('legend', { showLegend: true })
             .build(),
         })
       );
