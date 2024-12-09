@@ -28,7 +28,7 @@ export function setupKeyboardShortcuts(scene: IndexScene) {
     };
   }
 
-  // Got to Explore for panel
+  // Go to Explore for panel
   keybindings.addBinding({
     key: 'p x',
     onTrigger: withFocusedPanel(scene, async (vizPanel: VizPanel) => {
