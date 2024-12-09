@@ -125,6 +125,7 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
           iconClassName: 'compass',
           href: getExploreLink(this),
           onClick: () => onExploreLinkClickTracking(),
+          shortcut: 'p x',
         },
       ];
 
@@ -166,10 +167,10 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
   };
 }
 
-const getExploreLink = (sceneRef: SceneObject) => {
+export const getExploreLink = (sceneRef: SceneObject) => {
   const indexScene = sceneGraph.getAncestor(sceneRef, IndexScene);
   const $data = sceneGraph.getData(sceneRef);
-  let queryRunner = getQueryRunnerFromChildren($data)[0];
+  let queryRunner = $data instanceof SceneQueryRunner ? $data : getQueryRunnerFromChildren($data)[0];
 
   // If we don't have a query runner, then our panel is within a SceneCSSGridItem, we need to get the query runner from there
   if (!queryRunner) {
