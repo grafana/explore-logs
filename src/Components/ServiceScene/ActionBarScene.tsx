@@ -1,8 +1,6 @@
 import { SceneComponentProps, sceneGraph, SceneObject, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { Box, Dropdown, Menu, Stack, Tab, TabsBar, ToolbarButton, useStyles2 } from '@grafana/ui';
-import { getExplorationFor } from '../../services/scenes';
 import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, ValueSlugs } from '../../services/routing';
-import { GoToExploreButton } from './GoToExploreButton';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { navigateToDrilldownPage } from '../../services/navigate';
 import React, { useEffect, useState } from 'react';
@@ -18,7 +16,6 @@ export interface ActionBarSceneState extends SceneObjectState {}
 export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
   public static Component = ({ model }: SceneComponentProps<ActionBarScene>) => {
     const styles = useStyles2(getStyles);
-    const exploration = getExplorationFor(model);
     let currentBreakdownViewSlug = getDrilldownSlug();
     let allowNavToParent = false;
 

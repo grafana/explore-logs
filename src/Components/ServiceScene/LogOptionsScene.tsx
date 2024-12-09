@@ -33,6 +33,7 @@ export class LogOptionsScene extends SceneObjectBase<LogOptionsState> {
     this.setState({ wrapLogMessage: type });
     setLogOption('wrapLogMessage', type);
     this.getParentScene().setLogsVizOption({ wrapLogMessage: type });
+    this.getParentScene().setLogsVizOption({ prettifyLogMessage: type });
   };
 
   onChangeLogsSortOrder = (sortOrder: LogsSortOrder) => {
