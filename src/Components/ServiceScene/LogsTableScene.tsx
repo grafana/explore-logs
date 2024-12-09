@@ -91,7 +91,7 @@ export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
 
 const getStyles = (theme: GrafanaTheme2) => ({
   panelWrapper: css({
-    // width: '100%',
+    width: '100%',
     height: '100%',
     label: 'panel-wrapper-table',
 

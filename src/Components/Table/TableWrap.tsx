@@ -39,17 +39,10 @@ export const TableWrap = (props: TableWrapProps) => {
   // Table needs to be positioned absolutely, passing in reference wrapping panelChrome from parent
   useResizeObserver({
     ref: props.panelWrap,
-    box: 'content-box',
     onResize: () => {
       const element = props.panelWrap.current;
-
       if (element) {
         if (panelWrapSize.width !== element.clientWidth || panelWrapSize.height !== element.clientHeight) {
-          console.log('onresize', {
-            width: element.clientWidth,
-            height: element.clientHeight,
-            element,
-          });
           setPanelWrapSize({
             width: element.clientWidth,
             height: element.clientHeight,
