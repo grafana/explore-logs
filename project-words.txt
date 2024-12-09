@@ -493,3 +493,9 @@ Retriable
 Descendents
 combobox
 panelcfg
+falsey
+keypresses
+keycombo
+capslock
+pageup
+pagedown

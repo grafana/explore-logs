@@ -75,6 +75,7 @@ import { AdHocFilterWithLabels } from '../../services/scenes';
 import { FilterOp } from '../../services/filterTypes';
 import { ShowLogsButtonScene } from './ShowLogsButtonScene';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
+import { setupKeyboardShortcuts } from '../../services/keyboardShortcuts';
 
 export const showLogsButtonSceneKey = 'showLogsButtonScene';
 export interface AppliedPattern {
@@ -179,6 +180,12 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     const timeRange = sceneGraph.getTimeRange(this);
 
     this._subs.add(timeRange.subscribeToState(this.limitMaxInterval(timeRange)));
+
+    const clearKeyBindings = setupKeyboardShortcuts(this);
+
+    return () => {
+      clearKeyBindings();
+    };
   }
 
   private setVariableOperators() {
