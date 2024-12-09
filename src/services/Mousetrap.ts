@@ -117,7 +117,7 @@ let KEYCODE_MAP: Record<string, string> = {
 
 /**
  * this is a mapping of keys that require shift on a US keypad
- * back to the non shift equivelents
+ * back to the non shift equivalents
  *
  * this is so you can use keyup events with these keys
  *
@@ -167,7 +167,7 @@ let REVERSE_MAP: Record<string, string> | null = null;
 
 /**
  * loop through the f keys, f1 to f19 and add them to the map
- * programatically
+ * programmatically
  */
 for (let i = 1; i < 20; ++i) {
   MAP[111 + i] = 'f' + i;
@@ -271,7 +271,7 @@ function preventDefault(event: KeyboardEvent): void {
 }
 
 /**
- * stops propogation for this event
+ * stops propagation for this event
  */
 function stopPropagation(event: KeyboardEvent): void {
   if (event.stopPropagation) {
@@ -566,7 +566,7 @@ export class Mousetrap {
    * actually calls the callback function
    *
    * if your callback function returns false this will use the jquery
-   * convention - prevent default and stop propogation on the event
+   * convention - prevent default and stop propagation on the event
    *
    * @param combo Is the key binding that triggered this callback. When a sequence is triggered, this is the whole sequence. Otherwise, it's the intermediate keys
    * @param sequence Is the 'parent sequence' of the combo. When the whole sequence is triggered, this is undefined.
