@@ -21,7 +21,7 @@ export function setupKeyboardShortcuts(scene: IndexScene) {
 
   function withFocusedPanel(scene: IndexScene, fn: (vizPanel: VizPanel) => void) {
     return () => {
-      const vizPanel = sceneGraph.findObject(scene, (o) => o.state.key === vizPanelKey);
+      const vizPanel = sceneGraph.findObject(scene, (o) => o.state.key === vizPanelKey && o.isActive);
       if (vizPanel && vizPanel instanceof VizPanel) {
         fn(vizPanel);
         return;
@@ -29,10 +29,27 @@ export function setupKeyboardShortcuts(scene: IndexScene) {
     };
   }
 
+  function withAllPanels(scene: IndexScene, fn: (vizPanel: VizPanel) => void) {
+    return () => {
+      const vizPanels = sceneGraph.findAllObjects(scene, (o) => o instanceof VizPanel && o.isActive);
+      vizPanels.forEach((vizPanel) => {
+        if (vizPanel && vizPanel instanceof VizPanel) {
+          fn(vizPanel);
+        }
+      });
+    };
+  }
+
   // Toggle legend
   keybindings.addBinding({
     key: 'p l',
     onTrigger: withFocusedPanel(scene, toggleVizPanelLegend),
+  });
+
+  // Toggle all legend
+  keybindings.addBinding({
+    key: 'a l',
+    onTrigger: withAllPanels(scene, toggleVizPanelLegend),
   });
 
   // Go to Explore for panel
@@ -117,7 +134,6 @@ function handleTimeRangeShift(scene: IndexScene, direction: 'left' | 'right') {
 
 export function toggleVizPanelLegend(vizPanel: VizPanel): void {
   const options = vizPanel.state.options;
-  console.log('toggleVizPanelLegend', options);
   if (hasLegendOptions(options) && typeof options.legend.showLegend === 'boolean') {
     vizPanel.onOptionsChange({
       legend: {
@@ -128,6 +144,5 @@ export function toggleVizPanelLegend(vizPanel: VizPanel): void {
 }
 
 function hasLegendOptions(optionsWithLegend: unknown): optionsWithLegend is OptionsWithLegend {
-  console.log('hasLegendOptions', optionsWithLegend, typeof optionsWithLegend);
   return optionsWithLegend != null && typeof optionsWithLegend === 'object' && 'legend' in optionsWithLegend;
 }
