@@ -47,7 +47,8 @@ interface PanelMenuState extends SceneObjectState {
   frame?: DataFrame;
   labelName?: string;
   fieldName?: string;
-  addToExplorations?: AddToExplorationButton;
+  addExplorationsLink?: boolean;
+  explorationsButton?: AddToExplorationButton;
   panelType?: AvgFieldPanelType;
 }
 
@@ -56,21 +57,23 @@ interface PanelMenuState extends SceneObjectState {
  */
 export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPanelMenu, SceneObject {
   constructor(state: Partial<PanelMenuState>) {
-    super(state);
+    super({ ...state, addExplorationsLink: state.addExplorationsLink ?? true });
     this.addActivationHandler(() => {
       const viz = findObjectOfType(this, (o) => o instanceof VizPanel, VizPanel);
 
       this.setState({
-        addToExplorations: new AddToExplorationButton({
+        explorationsButton: new AddToExplorationButton({
           labelName: this.state.labelName,
           fieldName: this.state.fieldName,
           frame: this.state.frame,
         }),
       });
 
-      // @todo rewrite the AddToExplorationButton
-      // Manually activate scene
-      this.state.addToExplorations?.activate();
+      if (this.state.addExplorationsLink) {
+        // @todo rewrite the AddToExplorationButton
+        // Manually activate scene
+        this.state.explorationsButton?.activate();
+      }
 
       // Navigation options (all panels)
       const items: PanelMenuItem[] = [
@@ -106,7 +109,7 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
       });
 
       this._subs.add(
-        this.state.addToExplorations?.subscribeToState(() => {
+        this.state.explorationsButton?.subscribeToState(() => {
           subscribeToAddToExploration(this);
         })
       );
@@ -271,7 +274,7 @@ const onAddToInvestigationClick = (event: React.MouseEvent, addToExplorations: A
 };
 
 function subscribeToAddToExploration(exploreLogsVizPanelMenu: PanelMenu) {
-  const addToExplorationButton = exploreLogsVizPanelMenu.state.addToExplorations;
+  const addToExplorationButton = exploreLogsVizPanelMenu.state.explorationsButton;
   if (addToExplorationButton) {
     const link = getInvestigationLink(addToExplorationButton);
 
