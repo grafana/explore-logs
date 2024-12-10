@@ -128,18 +128,21 @@ test.describe('explore services breakdown page', () => {
   });
 
   test(`should select label ${levelName}, update filters, open in explore`, async ({ page }) => {
+    await explorePage.assertTabsNotLoading();
     const valueName = 'info';
     await explorePage.goToLabelsTab();
     await page.getByLabel(`Select ${levelName}`).click();
     await page.getByTestId(`data-testid Panel header ${valueName}`).getByRole('button', { name: 'Include' }).click();
+
     await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${levelName}`)).toBeVisible();
-    const page1Promise = page.waitForEvent('popup');
-    await explorePage.serviceBreakdownOpenExplore.click();
-    const page1 = await page1Promise;
-    await expect(page1.getByText(`{service_name=\`tempo-distributor\`} | ${levelName}=\`${valueName}\``)).toBeVisible();
+    await explorePage.goToLogsTab();
+    await page.getByTestId('data-testid Panel menu Logs').click();
+    await page.getByTestId('data-testid Panel menu item Explore').click();
+    await expect(page.getByText(`{service_name=\`tempo-distributor\`} | ${levelName}=\`${valueName}\``)).toBeVisible();
   });
 
   test(`should select label ${labelName}, update filters, open in explore`, async ({ page, browser }) => {
+    await explorePage.assertTabsNotLoading();
     explorePage.blockAllQueriesExcept({
       refIds: [],
       legendFormats: [`{{${labelName}}}`],
@@ -149,29 +152,31 @@ test.describe('explore services breakdown page', () => {
     await page.getByLabel(`Select ${labelName}`).click();
     await page.getByTestId(`data-testid Panel header ${valueName}`).getByRole('button', { name: 'Include' }).click();
     await expect(page.getByLabel(`Edit filter with key ${labelName}`)).toBeVisible();
-    const page1Promise = page.waitForEvent('popup');
-    await explorePage.serviceBreakdownOpenExplore.click();
-    const page1 = await page1Promise;
-    // Assert logQL string is as expected
+
+    // Navigate to logs query
+    await explorePage.goToLogsTab();
+    await page.getByTestId('data-testid Panel menu Logs').click();
+    await page.getByTestId('data-testid Panel menu item Explore').click();
+
     await expect(
-      page1.getByText(
+      page.getByText(
         `{service_name=\`tempo-distributor\`, ${labelName}=\`${valueName}\`} | json | logfmt | drop __error__, __error_details__`
       )
     ).toBeVisible();
 
-    const toolBar = page1.getByLabel('Explore toolbar');
+    const toolBar = page.getByLabel('Explore toolbar');
     // Assert toolbar is visible before proceeding
     await expect(toolBar).toBeVisible();
-    const extensionsButton = page1.getByLabel('Add', { exact: true });
+    const extensionsButton = page.getByLabel('Add', { exact: true });
     await expect(extensionsButton).toHaveCount(1);
     // Click on extensions button
     await extensionsButton.click();
-    const openInExploreLocator = page1.getByLabel('Open in Explore Logs');
+    const openInExploreLocator = page.getByLabel('Open in Explore Logs');
     await expect(openInExploreLocator).toBeVisible();
     // Click on open in logs explore
     await openInExploreLocator.click();
 
-    const openInThisTabButtonLoc = page1.getByRole('button', { name: 'Open', exact: true });
+    const openInThisTabButtonLoc = page.getByRole('button', { name: 'Open', exact: true });
     await expect(openInThisTabButtonLoc).toBeVisible();
     // Click to open in this tab
     await openInThisTabButtonLoc.click();
@@ -245,7 +250,7 @@ test.describe('explore services breakdown page', () => {
 
   test('should search for tenant field, changing sort order updates value breakdown position', async ({ page }) => {
     explorePage.blockAllQueriesExcept({
-      refIds: ['logsPanelQuery', fieldName, 'tenant'],
+      refIds: ['logsPanelQuery'],
       legendFormats: [`{{${levelName}}}`],
     });
     await explorePage.goToFieldsTab();
@@ -254,6 +259,7 @@ test.describe('explore services breakdown page', () => {
     await page.getByText('FieldAll').click();
     await page.keyboard.type('tenan');
     await page.keyboard.press('Enter');
+    await explorePage.assertNotLoading();
 
     // Assert loading is done and panels are showing
     const panels = page.getByTestId(/data-testid Panel header/);
@@ -294,9 +300,11 @@ test.describe('explore services breakdown page', () => {
     await page.getByPlaceholder('Search for value').click();
     const panels = page.getByTestId(/data-testid Panel header/);
     await expect(panels.first()).toBeVisible();
-    await expect(panels).toHaveCount(4);
+
+    await explorePage.scrollToBottom();
+    await expect(panels).toHaveCount(5);
     await page.keyboard.type('errr');
-    await expect(panels).toHaveCount(1);
+    await expect(panels).toHaveCount(2);
   });
 
   test(`should search fields for ${fieldName}`, async ({ page }) => {
@@ -306,12 +314,14 @@ test.describe('explore services breakdown page', () => {
     await explorePage.click(page.getByPlaceholder('Search for value'));
     const panels = page.getByTestId(/data-testid Panel header/);
     await expect(panels.first()).toBeVisible();
-    expect(await panels.count()).toBeGreaterThan(1);
+    await explorePage.assertNotLoading();
+    // Assert there is at least 2 panels
+    await expect(panels.nth(1)).toBeVisible();
+    // expect(await panels.count()).toBeGreaterThan(1);
     await page.keyboard.type('brod');
-    await expect(panels).toHaveCount(1);
+    await expect(panels).toHaveCount(2);
   });
 
-  // Broken after latest loki update, all fields return both parsers
   test(`should exclude ${fieldName}, request should contain logfmt`, async ({ page }) => {
     let requests: PlaywrightRequest[] = [];
     explorePage.blockAllQueriesExcept({
@@ -325,7 +335,7 @@ test.describe('explore services breakdown page', () => {
     await page.getByTestId(`data-testid Panel header ${fieldName}`).getByRole('button', { name: 'Select' }).click();
 
     // Should see 8 panels after it's done loading
-    await expect(allPanels).toHaveCount(8);
+    await expect(allPanels).toHaveCount(9);
     // And we'll have 2 requests, one on the aggregation, one for the label values
     expect(requests).toHaveLength(2);
 
@@ -333,7 +343,7 @@ test.describe('explore services breakdown page', () => {
     await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
 
     // Should have removed a panel
-    await expect(allPanels).toHaveCount(7);
+    await expect(allPanels).toHaveCount(8);
     // Adhoc content filter should be added
     await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${fieldName}`)).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
@@ -1059,7 +1069,6 @@ test.describe('explore services breakdown page', () => {
   test('panel menu: label value panel should open links in explore', async ({ page, context }) => {
     await explorePage.goToLabelsTab();
     await page.getByLabel(`Select ${levelName}`).click();
-    await page.pause();
     await page.getByTestId('data-testid Panel menu error').click();
 
     // Open link
@@ -1071,5 +1080,160 @@ test.describe('explore services breakdown page', () => {
     await expect(newPageCodeEditor).toContainText(
       'sum(count_over_time({service_name=`tempo-distributor`} | detected_level != "" [$__auto])) by (detected_level)'
     );
+  });
+
+  test('panel menu: field name panel should open links in explore', async ({ page, context }) => {
+    await explorePage.goToFieldsTab();
+    await page.getByTestId(`data-testid Panel menu ${fieldName}`).click();
+
+    // Open link
+    await expect(page.getByTestId('data-testid Panel menu item Explore')).toHaveAttribute('href');
+    await page.getByTestId('data-testid Panel menu item Explore').click();
+
+    const newPageCodeEditor = page
+      .getByRole('code')
+      .locator('div')
+      .filter({ hasText: `sum by (${fieldName}) (count_over_time({` })
+      .nth(4);
+    await expect(newPageCodeEditor).toBeInViewport();
+    await expect(newPageCodeEditor).toContainText(
+      `sum by (${fieldName}) (count_over_time({service_name=\`tempo-distributor\`} | logfmt | ${fieldName}!="" [$__auto]))`
+    );
+  });
+
+  test('panel menu: field value panel should open links in explore', async ({ page, context }) => {
+    await explorePage.goToFieldsTab();
+    await page.getByLabel('Select caller').click();
+
+    // Assert we've navigated to the sub page
+    await expect(page.getByTestId('data-testid Panel menu poller.go:133')).toHaveCount(1);
+    await page.getByTestId('data-testid Panel menu poller.go:133').click();
+
+    // Open link
+    await expect(page.getByTestId('data-testid Panel menu item Explore')).toHaveAttribute('href');
+    await page.getByTestId('data-testid Panel menu item Explore').click();
+
+    const newPageCodeEditor = page
+      .getByRole('code')
+      .locator('div')
+      .filter({ hasText: `sum by (${fieldName}) (count_over_time({` })
+      .nth(4);
+    await expect(newPageCodeEditor).toBeInViewport();
+    await expect(newPageCodeEditor).toContainText(
+      `sum by (${fieldName}) (count_over_time({service_name=\`tempo-distributor\`} | logfmt | ${fieldName}!="" [$__auto]))`
+    );
+  });
+
+  test('label value summary panel: text search', async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: [],
+      legendFormats: [`{{${levelName}}}`],
+    });
+    await explorePage.goToLabelsTab();
+    await page.getByLabel(`Select ${levelName}`).click();
+
+    const summaryPanel = page.getByTestId('data-testid Panel header detected_level');
+    const summaryPanelBody = summaryPanel.getByTestId('data-testid panel content');
+    const labelValueTextSearch = page.getByPlaceholder('Search for value');
+
+    const debugPanel = page.getByTestId('data-testid Panel header debug');
+    const warnPanel = page.getByTestId('data-testid Panel header warn');
+    const infoPanel = page.getByTestId('data-testid Panel header info');
+    const errorPanel = page.getByTestId('data-testid Panel header error');
+
+    const debugLegend = page.getByTestId('data-testid VizLegend series debug').getByRole('button', { name: 'debug' });
+    const warnLegend = page.getByTestId('data-testid VizLegend series warn').getByRole('button', { name: 'warn' });
+    const infoLegend = page.getByTestId('data-testid VizLegend series info').getByRole('button', { name: 'info' });
+    const errorLegend = page.getByTestId('data-testid VizLegend series error').getByRole('button', { name: 'error' });
+
+    async function assertAllLevelsAreVisible() {
+      // Assert the value panels are visible
+      await expect(errorPanel).toBeVisible();
+      await expect(warnPanel).toBeVisible();
+      await expect(infoPanel).toBeVisible();
+      await expect(debugPanel).toBeVisible();
+
+      // Assert the legend options are visible
+      await expect(errorLegend).toBeVisible();
+      await expect(warnLegend).toBeVisible();
+      await expect(infoLegend).toBeVisible();
+      await expect(debugLegend).toBeVisible();
+    }
+
+    // assert by default, the summary panel is expanded
+    await expect(summaryPanel).toBeVisible();
+    await expect(summaryPanelBody).toBeVisible();
+
+    await assertAllLevelsAreVisible();
+
+    // Add text search
+    await labelValueTextSearch.pressSequentially('wa');
+
+    // Assert the value panels are not visible (except warn)
+    await expect(errorPanel).not.toBeVisible();
+    await expect(warnPanel).toBeVisible();
+    await expect(infoPanel).not.toBeVisible();
+    await expect(debugPanel).not.toBeVisible();
+
+    // Assert the legend options are visible (except warn)
+    await expect(errorLegend).not.toBeVisible();
+    await expect(warnLegend).toBeVisible();
+    await expect(infoLegend).not.toBeVisible();
+    await expect(debugLegend).not.toBeVisible();
+
+    // Clear the text search
+    await page.getByRole('img', { name: 'Clear search' }).click();
+
+    // Assert the value panels are visible
+    await assertAllLevelsAreVisible();
+  });
+
+  test('field value summary panel: collapsable', async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: [fieldName],
+    });
+
+    await explorePage.goToFieldsTab();
+    await explorePage.assertNotLoading();
+    await explorePage.click(page.getByLabel(`Select ${fieldName}`));
+
+    const summaryPanel = page.getByTestId(`data-testid Panel header ${fieldName}`);
+    const summaryPanelBody = summaryPanel.getByTestId('data-testid panel content');
+    const summaryPanelCollapseButton = page.getByRole('button', { name: fieldName, exact: true });
+
+    const vizPanelMenu = page.getByTestId(`data-testid Panel menu ${fieldName}`);
+    const vizPanelMenuExpandOption = page.getByTestId('data-testid Panel menu item Expand');
+
+    // assert by default, the summary panel is expanded
+    await expect(summaryPanel).toBeVisible();
+    await expect(summaryPanelBody).toBeVisible();
+
+    // Collapse
+    await summaryPanelCollapseButton.click();
+
+    // assert panel is collapsed
+    await expect(summaryPanel).toBeVisible();
+    await expect(summaryPanelBody).not.toBeVisible();
+
+    // Reload the page
+    await page.reload();
+    await explorePage.assertNotLoading();
+
+    // Assert the collapse state was saved to local storage and set as default
+    await expect(summaryPanel).toBeVisible();
+    await expect(summaryPanelBody).not.toBeVisible();
+
+    // Open viz panel menu and toggle collapse state that way
+    await vizPanelMenu.click();
+
+    // Assert the "expand" option is visible in the menu
+    await expect(vizPanelMenuExpandOption).toBeVisible();
+
+    // Expand the panel
+    await vizPanelMenuExpandOption.click();
+
+    // Assert the panel body is visible again
+    await expect(summaryPanel).toBeVisible();
+    await expect(summaryPanelBody).toBeVisible();
   });
 });

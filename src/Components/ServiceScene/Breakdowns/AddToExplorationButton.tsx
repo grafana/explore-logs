@@ -5,7 +5,7 @@ import { DataQuery, DataSourceRef } from '@grafana/schema';
 import { IconButton } from '@grafana/ui';
 import React from 'react';
 import { ExtensionPoints } from 'services/extensions/links';
-import { getLokiDatasource } from 'services/scenes';
+import { findObjectOfType, getLokiDatasource } from 'services/scenes';
 
 import LokiLogo from '../../../img/logo.svg';
 
@@ -59,7 +59,7 @@ export class AddToExplorationButton extends SceneObjectBase<AddToExplorationButt
 
   private getQueries = () => {
     const data = sceneGraph.getData(this);
-    const queryRunner = sceneGraph.findObject(data, (o) => o instanceof SceneQueryRunner) as SceneQueryRunner;
+    const queryRunner = findObjectOfType(data, (o) => o instanceof SceneQueryRunner, SceneQueryRunner);
     if (queryRunner) {
       const filter = this.state.frame ? getFilter(this.state.frame) : null;
       const queries = queryRunner.state.queries.map((q) => ({
