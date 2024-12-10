@@ -7,7 +7,6 @@ import {
   SceneDataTransformer,
   SceneObject,
 } from '@grafana/scenes';
-import { getColorByIndex } from './scenes';
 import { AddToFiltersButton, VariableFilterType } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import {
   DetectedFieldType,
@@ -137,16 +136,17 @@ export function getFilterBreakdownValueScene(
 ) {
   return (frame: DataFrame, frameIndex: number) => {
     const reducerID = getReducerId(sortByScene.state.sortBy);
-    const panel = PanelBuilders.timeseries() //
+    const panel = PanelBuilders.timeseries()
       .setOption('legend', { showLegend: false })
       .setCustomFieldConfig('fillOpacity', 9)
       .setTitle(getTitle(frame))
+      // 11.5
+      // .setShowMenuAlways(true)
       .setData(
         new SceneDataTransformer({
           transformations: [() => selectFrameTransformation(frame)],
         })
       )
-      .setColor({ mode: 'fixed', fixedColor: getColorByIndex(frameIndex) })
       .setOverrides(setLevelColorOverrides)
       .setMenu(new PanelMenu({ frame, fieldName: getTitle(frame), labelName: labelKey }))
       .setHeaderActions([new AddToFiltersButton({ frame, variableName })]);

@@ -4,6 +4,7 @@ import { sceneGraph, SceneObject, SceneObjectUrlValues, SceneQueryRunner, SceneT
 import { LOG_STREAM_SELECTOR_EXPR, VAR_DATASOURCE_EXPR, VAR_LABELS_EXPR } from './variables';
 import { EXPLORATIONS_ROUTE } from './routing';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
+import { logger } from './logger';
 
 export function getExplorationFor(model: SceneObject): IndexScene {
   return sceneGraph.getAncestor(model, IndexScene);
@@ -49,6 +50,25 @@ export function getQueryRunnerFromChildren(sceneObject: SceneObject) {
 export interface AdHocFilterWithLabels extends AdHocVariableFilter {
   keyLabel?: string;
   valueLabels?: string[];
+}
+
+interface SceneType<T> extends Function {
+  new (...args: never[]): T;
+}
+
+export function findObjectOfType<T extends SceneObject>(
+  scene: SceneObject,
+  check: (obj: SceneObject) => boolean,
+  returnType: SceneType<T>
+) {
+  const obj = sceneGraph.findObject(scene, check);
+  if (obj instanceof returnType) {
+    return obj;
+  } else if (obj !== null) {
+    logger.warn(`invalid return type: ${returnType.toString()}`);
+  }
+
+  return null;
 }
 
 export function getTimePicker(scene: IndexScene) {
