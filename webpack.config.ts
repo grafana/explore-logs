@@ -1,3 +1,4 @@
+import LiveReloadPlugin from 'webpack-livereload-plugin';
 import type { Configuration } from 'webpack';
 import { merge } from 'webpack-merge';
 import grafanaConfig from './.config/webpack/webpack.config';
@@ -12,7 +13,14 @@ const config = async (env: any): Promise<Configuration> => {
     },
     plugins: [
       // new BundleAnalyzerPlugin()
-    ]
+      new LiveReloadPlugin({
+        port: 35828,
+        protocol: 'http',
+        hostname: 'localhost',
+        delay: 1000,
+        appendScriptTag: true,
+      }),
+    ],
   });
 };
 
