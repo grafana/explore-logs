@@ -1,4 +1,11 @@
-import { DataFrame, FieldConfig, FieldMatcherID } from '@grafana/data';
+import {
+  DataFrame,
+  FieldColorModeId,
+  FieldConfig,
+  FieldMatcherID,
+  FieldType,
+  getFieldDisplayName,
+} from '@grafana/data';
 import {
   FieldConfigBuilder,
   FieldConfigBuilders,
@@ -18,6 +25,7 @@ import { LogsSceneQueryRunner } from './LogsSceneQueryRunner';
 import { DrawStyle, StackingMode } from '@grafana/ui';
 import { getLabelsFromSeries, getVisibleLevels } from './levels';
 import { LokiQuery } from './lokiQuery';
+import { LOGS_PANEL_QUERY_REFID } from '../Components/ServiceScene/ServiceScene';
 
 const UNKNOWN_LEVEL_LOGS = 'logs';
 export function setLevelColorOverrides(overrides: FieldConfigOverridesBuilder<FieldConfig>) {
@@ -93,6 +101,36 @@ export function syncLogsPanelVisibleSeries(panel: VizPanel, series: DataFrame[],
     }
   }
 }
+function setColorByDisplayNameTransformation() {
+  return (source: Observable<DataFrame[]>) => {
+    return source.pipe(
+      map((data: DataFrame[]) => {
+        return data.map((frame, frameIndex) => {
+          return {
+            ...frame,
+            fields: frame.fields.map((f, fieldIndex) => {
+              // Time fields do not have color config
+              if (f.type === FieldType.time) {
+                return f;
+              }
+              const displayName = getFieldDisplayName(f, frame, data);
+              return {
+                ...f,
+                config: {
+                  ...f.config,
+                  displayName,
+                  color: {
+                    mode: FieldColorModeId.PaletteClassicByName,
+                  },
+                },
+              };
+            }),
+          };
+        });
+      })
+    );
+  };
+}
 
 export function sortLevelTransformation() {
   return (source: Observable<DataFrame[]>) => {
@@ -137,6 +175,7 @@ export function getQueryRunner(queries: LokiQuery[], queryRunnerOptions?: Partia
   // `level` label.
 
   const hasLevel = queries.find((query) => query.legendFormat?.toLowerCase().includes('level'));
+  const isLogPanelQuery = queries.find((query) => query.refId === LOGS_PANEL_QUERY_REFID);
 
   if (hasLevel) {
     return new SceneDataTransformer({
@@ -149,7 +188,19 @@ export function getQueryRunner(queries: LokiQuery[], queryRunnerOptions?: Partia
     });
   }
 
+  if (!isLogPanelQuery) {
+    return new SceneDataTransformer({
+      $data: getSceneQueryRunner({
+        datasource: { uid: WRAPPED_LOKI_DS_UID },
+        queries: queries,
+        ...queryRunnerOptions,
+      }),
+      transformations: [setColorByDisplayNameTransformation],
+    });
+  }
+
   return getSceneQueryRunner({
+    datasource: { uid: WRAPPED_LOKI_DS_UID },
     queries: queries,
     ...queryRunnerOptions,
   });
