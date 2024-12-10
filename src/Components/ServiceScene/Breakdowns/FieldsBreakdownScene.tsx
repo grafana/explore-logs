@@ -35,7 +35,7 @@ import { StatusWrapper } from './StatusWrapper';
 import { getFieldOptions } from 'services/filters';
 import { EmptyLayoutScene } from './EmptyLayoutScene';
 import { getFieldGroupByVariable, getLabelsVariable } from '../../../services/variableGetters';
-import { ClearFiltersLayoutScene } from './ClearFiltersLayoutScene';
+import { NoMatchingLabelsScene } from './NoMatchingLabelsScene';
 import { clearVariables, getVariablesThatCanBeCleared } from '../../../services/variableHelpers';
 
 export const averageFields = ['duration', 'count', 'total', 'bytes'];
@@ -43,7 +43,7 @@ export const FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(4
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?:
-    | (ClearFiltersLayoutScene & SceneObject)
+    | (NoMatchingLabelsScene & SceneObject)
     | (FieldsAggregatedBreakdownScene & SceneObject)
     | (FieldValuesBreakdownScene & SceneObject)
     | (EmptyLayoutScene & SceneObject);
@@ -148,7 +148,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       !areArraysEqual(newState.options, oldState.options) ||
       this.state.body === undefined ||
       this.state.body instanceof EmptyLayoutScene ||
-      this.state.body instanceof ClearFiltersLayoutScene
+      this.state.body instanceof NoMatchingLabelsScene
     ) {
       this.updateBody(newState);
     }
@@ -162,7 +162,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       let body;
       if (variablesToClear.length > 1) {
         this.state.changeFieldCount?.(0);
-        body = new ClearFiltersLayoutScene({ clearCallback: () => clearVariables(this) });
+        body = new NoMatchingLabelsScene({ clearCallback: () => clearVariables(this) });
       } else {
         body = new EmptyLayoutScene({ type: 'fields' });
       }
@@ -225,7 +225,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
       if (variablesToClear.length > 1) {
         this.state.changeFieldCount?.(0);
-        stateUpdate.body = new ClearFiltersLayoutScene({ clearCallback: () => clearVariables(this) });
+        stateUpdate.body = new NoMatchingLabelsScene({ clearCallback: () => clearVariables(this) });
       } else {
         stateUpdate.body = new EmptyLayoutScene({ type: 'fields' });
       }
@@ -239,7 +239,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         // If the body hasn't been created, or the no-data views are active, we want to replace and render the correct scene
         this.state.body === undefined ||
         this.state.body instanceof EmptyLayoutScene ||
-        this.state.body instanceof ClearFiltersLayoutScene
+        this.state.body instanceof NoMatchingLabelsScene
       ) {
         stateUpdate.body =
           newState.value === ALL_VARIABLE_VALUE
