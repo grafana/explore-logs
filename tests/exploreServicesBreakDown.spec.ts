@@ -128,18 +128,21 @@ test.describe('explore services breakdown page', () => {
   });
 
   test(`should select label ${levelName}, update filters, open in explore`, async ({ page }) => {
+    await explorePage.assertTabsNotLoading();
     const valueName = 'info';
     await explorePage.goToLabelsTab();
     await page.getByLabel(`Select ${levelName}`).click();
     await page.getByTestId(`data-testid Panel header ${valueName}`).getByRole('button', { name: 'Include' }).click();
+
     await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${levelName}`)).toBeVisible();
-    const page1Promise = page.waitForEvent('popup');
-    await explorePage.serviceBreakdownOpenExplore.click();
-    const page1 = await page1Promise;
-    await expect(page1.getByText(`{service_name=\`tempo-distributor\`} | ${levelName}=\`${valueName}\``)).toBeVisible();
+    await explorePage.goToLogsTab();
+    await page.getByTestId('data-testid Panel menu Logs').click();
+    await page.getByTestId('data-testid Panel menu item Explore').click();
+    await expect(page.getByText(`{service_name=\`tempo-distributor\`} | ${levelName}=\`${valueName}\``)).toBeVisible();
   });
 
   test(`should select label ${labelName}, update filters, open in explore`, async ({ page, browser }) => {
+    await explorePage.assertTabsNotLoading();
     explorePage.blockAllQueriesExcept({
       refIds: [],
       legendFormats: [`{{${labelName}}}`],
@@ -149,32 +152,36 @@ test.describe('explore services breakdown page', () => {
     await page.getByLabel(`Select ${labelName}`).click();
     await page.getByTestId(`data-testid Panel header ${valueName}`).getByRole('button', { name: 'Include' }).click();
     await expect(page.getByLabel(`Edit filter with key ${labelName}`)).toBeVisible();
-    const page1Promise = page.waitForEvent('popup');
-    await explorePage.serviceBreakdownOpenExplore.click();
-    const page1 = await page1Promise;
-    // Assert logQL string is as expected
+
+    // Navigate to logs query
+    await explorePage.goToLogsTab();
+    await page.getByTestId('data-testid Panel menu Logs').click();
+    await page.getByTestId('data-testid Panel menu item Explore').click();
+
     await expect(
-      page1.getByText(
+      page.getByText(
         `{service_name=\`tempo-distributor\`, ${labelName}=\`${valueName}\`} | json | logfmt | drop __error__, __error_details__`
       )
     ).toBeVisible();
 
-    const toolBar = page1.getByLabel('Explore toolbar');
+    const toolBar = page.getByLabel('Explore toolbar');
     // Assert toolbar is visible before proceeding
     await expect(toolBar).toBeVisible();
-    const extensionsButton = page1.getByLabel('Add', { exact: true });
+    const extensionsButton = page.getByLabel('Add', { exact: true });
     await expect(extensionsButton).toHaveCount(1);
     // Click on extensions button
     await extensionsButton.click();
-    const openInExploreLocator = page1.getByLabel('Open in Explore Logs');
+    const openInExploreLocator = page.getByLabel('Open in Explore Logs');
     await expect(openInExploreLocator).toBeVisible();
     // Click on open in logs explore
     await openInExploreLocator.click();
 
-    const openInThisTabButtonLoc = page1.getByRole('button', { name: 'Open', exact: true });
+    const openInThisTabButtonLoc = page.getByRole('button', { name: 'Open', exact: true });
     await expect(openInThisTabButtonLoc).toBeVisible();
     // Click to open in this tab
     await openInThisTabButtonLoc.click();
+
+    await page.pause();
 
     // Assert the variables are visible
     await expect(page.getByLabel(`Edit filter with key ${labelName}`)).toBeVisible();
