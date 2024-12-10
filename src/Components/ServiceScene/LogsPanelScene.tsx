@@ -118,6 +118,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         .setOption('displayedFields', parentModel.state.displayedFields)
         .setOption('sortOrder', getLogsPanelSortOrder())
         .setOption('wrapLogMessage', Boolean(getLogOption<boolean>('wrapLogMessage', false)))
+        .setOption('prettifyLogMessage', Boolean(getLogOption<boolean>('wrapLogMessage', false)))
         .setOption('showLogContextToggle', true)
         // @ts-expect-error Requires Grafana 11.5
         .setOption('enableInfiniteScrolling', true)

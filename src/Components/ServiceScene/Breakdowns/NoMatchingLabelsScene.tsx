@@ -7,8 +7,8 @@ import { emptyStateStyles } from './FieldsBreakdownScene';
 export interface ClearFiltersLayoutSceneState extends SceneObjectState {
   clearCallback: () => void;
 }
-export class ClearFiltersLayoutScene extends SceneObjectBase<ClearFiltersLayoutSceneState> {
-  public static Component = ({ model }: SceneComponentProps<ClearFiltersLayoutScene>) => {
+export class NoMatchingLabelsScene extends SceneObjectBase<ClearFiltersLayoutSceneState> {
+  public static Component = ({ model }: SceneComponentProps<NoMatchingLabelsScene>) => {
     const { clearCallback } = model.useState();
     return (
       <GrotError>
