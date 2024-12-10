@@ -32,7 +32,7 @@ import { buildLabelsQuery, LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS } from '../../.
 import { getAppEvents } from '@grafana/runtime';
 import { getLabelGroupByVariable } from '../../../services/variableGetters';
 import { getPanelWrapperStyles, PanelMenu } from '../../Panels/PanelMenu';
-import { ClearFiltersLayoutScene } from './ClearFiltersLayoutScene';
+import { NoMatchingLabelsScene } from './NoMatchingLabelsScene';
 import { EmptyLayoutScene } from './EmptyLayoutScene';
 import { IndexScene } from '../../IndexScene/IndexScene';
 import { clearVariables, getVariablesThatCanBeCleared } from '../../../services/variableHelpers';
@@ -42,7 +42,7 @@ type DisplayError = DataQueryError & { displayed: boolean };
 type DisplayErrors = Record<string, DisplayError>;
 
 export interface LabelValueBreakdownSceneState extends SceneObjectState {
-  body?: (LayoutSwitcher & SceneObject) | (ClearFiltersLayoutScene & SceneObject) | (EmptyLayoutScene & SceneObject);
+  body?: (LayoutSwitcher & SceneObject) | (NoMatchingLabelsScene & SceneObject) | (EmptyLayoutScene & SceneObject);
   $data?: SceneDataProvider;
   lastFilterEvent?: AddFilterEvent;
   errors: DisplayErrors;
@@ -150,7 +150,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
 
         if (variablesToClear.length > 1) {
           this.setState({
-            body: new ClearFiltersLayoutScene({ clearCallback: () => clearVariables(this) }),
+            body: new NoMatchingLabelsScene({ clearCallback: () => clearVariables(this) }),
           });
         } else {
           this.setState({
@@ -227,7 +227,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
         new SceneFlexLayout({
           direction: 'column',
           children: [
-            new SceneReactObject({ reactNode: <LabelBreakdownScene.ParentMenu model={labelBreakdownScene} /> }),
+            new SceneReactObject({ reactNode: <LabelBreakdownScene.LabelsMenu model={labelBreakdownScene} /> }),
             new SceneFlexItem({
               minHeight: 300,
               body,
@@ -237,9 +237,9 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
         new SceneFlexLayout({
           direction: 'column',
           children: [
-            new SceneReactObject({ reactNode: <LabelBreakdownScene.ParentMenu model={labelBreakdownScene} /> }),
+            new SceneReactObject({ reactNode: <LabelBreakdownScene.LabelsMenu model={labelBreakdownScene} /> }),
             new ValueSummaryPanelScene({ title: tagKey, levelColor: true }),
-            new SceneReactObject({ reactNode: <LabelBreakdownScene.ValueMenu model={labelBreakdownScene} /> }),
+            new SceneReactObject({ reactNode: <LabelBreakdownScene.ValuesMenu model={labelBreakdownScene} /> }),
             new ByFrameRepeater({
               body: new SceneCSSGridLayout({
                 isLazy: true,
@@ -269,9 +269,9 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
         new SceneFlexLayout({
           direction: 'column',
           children: [
-            new SceneReactObject({ reactNode: <LabelBreakdownScene.ParentMenu model={labelBreakdownScene} /> }),
+            new SceneReactObject({ reactNode: <LabelBreakdownScene.LabelsMenu model={labelBreakdownScene} /> }),
             new ValueSummaryPanelScene({ title: tagKey, levelColor: true }),
-            new SceneReactObject({ reactNode: <LabelBreakdownScene.ValueMenu model={labelBreakdownScene} /> }),
+            new SceneReactObject({ reactNode: <LabelBreakdownScene.ValuesMenu model={labelBreakdownScene} /> }),
             new ByFrameRepeater({
               body: new SceneCSSGridLayout({
                 templateColumns: '1fr',

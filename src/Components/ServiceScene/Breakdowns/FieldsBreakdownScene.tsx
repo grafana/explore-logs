@@ -35,7 +35,7 @@ import { StatusWrapper } from './StatusWrapper';
 import { getFieldOptions } from 'services/filters';
 import { EmptyLayoutScene } from './EmptyLayoutScene';
 import { getFieldGroupByVariable, getLabelsVariable } from '../../../services/variableGetters';
-import { ClearFiltersLayoutScene } from './ClearFiltersLayoutScene';
+import { NoMatchingLabelsScene } from './NoMatchingLabelsScene';
 import { clearVariables, getVariablesThatCanBeCleared } from '../../../services/variableHelpers';
 
 export const averageFields = ['duration', 'count', 'total', 'bytes'];
@@ -43,7 +43,7 @@ export const FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS = 'repeat(auto-fit, minmax(4
 
 export interface FieldsBreakdownSceneState extends SceneObjectState {
   body?:
-    | (ClearFiltersLayoutScene & SceneObject)
+    | (NoMatchingLabelsScene & SceneObject)
     | (FieldsAggregatedBreakdownScene & SceneObject)
     | (FieldValuesBreakdownScene & SceneObject)
     | (EmptyLayoutScene & SceneObject);
@@ -148,7 +148,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       !areArraysEqual(newState.options, oldState.options) ||
       this.state.body === undefined ||
       this.state.body instanceof EmptyLayoutScene ||
-      this.state.body instanceof ClearFiltersLayoutScene
+      this.state.body instanceof NoMatchingLabelsScene
     ) {
       this.updateBody(newState);
     }
@@ -162,7 +162,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       let body;
       if (variablesToClear.length > 1) {
         this.state.changeFieldCount?.(0);
-        body = new ClearFiltersLayoutScene({ clearCallback: () => clearVariables(this) });
+        body = new NoMatchingLabelsScene({ clearCallback: () => clearVariables(this) });
       } else {
         body = new EmptyLayoutScene({ type: 'fields' });
       }
@@ -225,7 +225,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
 
       if (variablesToClear.length > 1) {
         this.state.changeFieldCount?.(0);
-        stateUpdate.body = new ClearFiltersLayoutScene({ clearCallback: () => clearVariables(this) });
+        stateUpdate.body = new NoMatchingLabelsScene({ clearCallback: () => clearVariables(this) });
       } else {
         stateUpdate.body = new EmptyLayoutScene({ type: 'fields' });
       }
@@ -239,7 +239,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
         // If the body hasn't been created, or the no-data views are active, we want to replace and render the correct scene
         this.state.body === undefined ||
         this.state.body instanceof EmptyLayoutScene ||
-        this.state.body instanceof ClearFiltersLayoutScene
+        this.state.body instanceof NoMatchingLabelsScene
       ) {
         stateUpdate.body =
           newState.value === ALL_VARIABLE_VALUE
@@ -274,13 +274,13 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     navigateToValueBreakdown(ValueSlugs.field, value, serviceScene);
   };
 
-  public static ParentMenu = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
+  public static LabelsMenu = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
     const { body, loading, search } = model.useState();
     const styles = useStyles2(getStyles);
     const variable = getFieldGroupByVariable(model);
     const { options, value } = variable.useState();
     return (
-      <div className={styles.parentMenuWrapper}>
+      <div className={styles.labelsMenuWrapper}>
         {body instanceof FieldsAggregatedBreakdownScene && <FieldsAggregatedBreakdownScene.Selector model={body} />}
         {body instanceof FieldValuesBreakdownScene && <FieldValuesBreakdownScene.Selector model={body} />}
         {body instanceof FieldValuesBreakdownScene && <search.Component model={search} />}
@@ -290,13 +290,13 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
       </div>
     );
   };
-  public static ValueMenu = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
+  public static ValuesMenu = ({ model }: SceneComponentProps<FieldsBreakdownScene>) => {
     const { loading, sort } = model.useState();
     const styles = useStyles2(getStyles);
     const variable = getFieldGroupByVariable(model);
     const { value } = variable.useState();
     return (
-      <div className={styles.valueMenuWrapper}>
+      <div className={styles.valuesMenuWrapper}>
         {!loading && value !== ALL_VARIABLE_VALUE && (
           <>
             <sort.Component model={sort} />
@@ -313,7 +313,7 @@ export class FieldsBreakdownScene extends SceneObjectBase<FieldsBreakdownSceneSt
     return (
       <div className={styles.container}>
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
-          {body instanceof FieldsAggregatedBreakdownScene && model && <FieldsBreakdownScene.ParentMenu model={model} />}
+          {body instanceof FieldsAggregatedBreakdownScene && model && <FieldsBreakdownScene.LabelsMenu model={model} />}
           <div className={styles.content}>{body && <body.Component model={body} />}</div>
         </StatusWrapper>
       </div>
@@ -344,7 +344,7 @@ function getStyles(theme: GrafanaTheme2) {
       display: 'flex',
       paddingTop: theme.spacing(0),
     }),
-    parentMenuWrapper: css({
+    labelsMenuWrapper: css({
       flexGrow: 0,
       display: 'flex',
       alignItems: 'top',
@@ -352,7 +352,7 @@ function getStyles(theme: GrafanaTheme2) {
       flexDirection: 'row-reverse',
       gap: theme.spacing(2),
     }),
-    valueMenuWrapper: css({
+    valuesMenuWrapper: css({
       flexGrow: 0,
       display: 'flex',
       alignItems: 'top',

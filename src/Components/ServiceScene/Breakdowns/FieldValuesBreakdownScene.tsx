@@ -187,7 +187,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
           direction: 'column',
           children: [
             new SceneReactObject({
-              reactNode: <FieldsBreakdownScene.ParentMenu model={fieldsBreakdownScene} />,
+              reactNode: <FieldsBreakdownScene.LabelsMenu model={fieldsBreakdownScene} />,
             }),
             new SceneFlexItem({
               minHeight: 300,
@@ -206,11 +206,11 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
           direction: 'column',
           children: [
             new SceneReactObject({
-              reactNode: <FieldsBreakdownScene.ParentMenu model={fieldsBreakdownScene} />,
+              reactNode: <FieldsBreakdownScene.LabelsMenu model={fieldsBreakdownScene} />,
             }),
             new ValueSummaryPanelScene({ title: optionValue }),
             new SceneReactObject({
-              reactNode: <FieldsBreakdownScene.ValueMenu model={fieldsBreakdownScene} />,
+              reactNode: <FieldsBreakdownScene.ValuesMenu model={fieldsBreakdownScene} />,
             }),
             new ByFrameRepeater({
               body: new SceneCSSGridLayout({
@@ -244,11 +244,11 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
           direction: 'column',
           children: [
             new SceneReactObject({
-              reactNode: <FieldsBreakdownScene.ParentMenu model={fieldsBreakdownScene} />,
+              reactNode: <FieldsBreakdownScene.LabelsMenu model={fieldsBreakdownScene} />,
             }),
             new ValueSummaryPanelScene({ title: optionValue }),
             new SceneReactObject({
-              reactNode: <FieldsBreakdownScene.ValueMenu model={fieldsBreakdownScene} />,
+              reactNode: <FieldsBreakdownScene.ValuesMenu model={fieldsBreakdownScene} />,
             }),
             new ByFrameRepeater({
               body: new SceneCSSGridLayout({

@@ -8,7 +8,7 @@ import {
   SceneObjectState,
   VizPanel,
 } from '@grafana/scenes';
-import { CollapsablePanelType, PanelMenu } from '../../../Panels/PanelMenu';
+import { CollapsablePanelText, PanelMenu } from '../../../Panels/PanelMenu';
 import { DrawStyle, StackingMode } from '@grafana/ui';
 import { setLevelColorOverrides } from '../../../../services/panel';
 import { getPanelOption, setPanelOption } from '../../../../services/store';
@@ -42,8 +42,8 @@ export class ValueSummaryPanelScene extends SceneObjectBase<ValueSummaryPanelSce
 
   onActivate() {
     const collapsed =
-      getPanelOption('collapsed', [CollapsablePanelType.collapsed, CollapsablePanelType.expanded]) ??
-      CollapsablePanelType.expanded;
+      getPanelOption('collapsed', [CollapsablePanelText.collapsed, CollapsablePanelText.expanded]) ??
+      CollapsablePanelText.expanded;
     const viz = buildValueSummaryPanel(this.state.title, { levelColor: this.state.levelColor });
     const height = getValueSummaryHeight(collapsed);
 
@@ -68,11 +68,11 @@ export class ValueSummaryPanelScene extends SceneObjectBase<ValueSummaryPanelSce
           const vizPanelFlexLayout = sceneGraph.getAncestor(viz, SceneFlexLayout);
           setValueSummaryHeight(
             vizPanelFlexLayout,
-            newState.collapsed ? CollapsablePanelType.collapsed : CollapsablePanelType.expanded
+            newState.collapsed ? CollapsablePanelText.collapsed : CollapsablePanelText.expanded
           );
           setPanelOption(
             'collapsed',
-            newState.collapsed ? CollapsablePanelType.collapsed : CollapsablePanelType.expanded
+            newState.collapsed ? CollapsablePanelText.collapsed : CollapsablePanelText.expanded
           );
         }
       })
@@ -80,7 +80,7 @@ export class ValueSummaryPanelScene extends SceneObjectBase<ValueSummaryPanelSce
   }
 }
 
-export function setValueSummaryHeight(vizPanelFlexLayout: SceneFlexLayout, collapsableState: CollapsablePanelType) {
+export function setValueSummaryHeight(vizPanelFlexLayout: SceneFlexLayout, collapsableState: CollapsablePanelText) {
   const height = getValueSummaryHeight(collapsableState);
   vizPanelFlexLayout.setState({
     minHeight: height,
@@ -89,20 +89,20 @@ export function setValueSummaryHeight(vizPanelFlexLayout: SceneFlexLayout, colla
   });
 }
 
-function getValueSummaryHeight(collapsableState: CollapsablePanelType) {
-  return collapsableState === CollapsablePanelType.collapsed ? 35 : 300;
+function getValueSummaryHeight(collapsableState: CollapsablePanelText) {
+  return collapsableState === CollapsablePanelText.collapsed ? 35 : 300;
 }
 
 function buildValueSummaryPanel(title: string, options?: { levelColor?: boolean }): VizPanel {
   const collapsed =
-    getPanelOption('collapsed', [CollapsablePanelType.collapsed, CollapsablePanelType.expanded]) ??
-    CollapsablePanelType.expanded;
+    getPanelOption('collapsed', [CollapsablePanelText.collapsed, CollapsablePanelText.expanded]) ??
+    CollapsablePanelText.expanded;
 
   const body = PanelBuilders.timeseries()
     .setTitle(title)
     .setMenu(new PanelMenu({}))
     .setCollapsible(true)
-    .setCollapsed(collapsed === CollapsablePanelType.collapsed)
+    .setCollapsed(collapsed === CollapsablePanelText.collapsed)
     .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
     .setCustomFieldConfig('fillOpacity', 100)
     .setCustomFieldConfig('lineWidth', 0)

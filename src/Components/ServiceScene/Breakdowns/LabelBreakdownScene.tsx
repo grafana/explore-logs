@@ -272,14 +272,14 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     navigateToValueBreakdown(ValueSlugs.label, value, serviceScene);
   };
 
-  public static ParentMenu = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
+  public static LabelsMenu = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
     const { body, loading, search } = model.useState();
     const variable = getLabelGroupByVariable(model);
     const { options, value } = variable.useState();
     const styles = useStyles2(getStyles);
 
     return (
-      <div className={styles.parentMenuWrapper}>
+      <div className={styles.labelsMenuWrapper}>
         {body instanceof LabelValuesBreakdownScene && <LabelValuesBreakdownScene.Selector model={body} />}
         {body instanceof LabelsAggregatedBreakdownScene && <LabelsAggregatedBreakdownScene.Selector model={body} />}
         {body instanceof LabelValuesBreakdownScene && <search.Component model={search} />}
@@ -290,14 +290,14 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
     );
   };
 
-  public static ValueMenu = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
+  public static ValuesMenu = ({ model }: SceneComponentProps<LabelBreakdownScene>) => {
     const { loading, sort } = model.useState();
     const variable = getLabelGroupByVariable(model);
     const { value } = variable.useState();
     const styles = useStyles2(getStyles);
 
     return (
-      <div className={styles.valueMenuWrapper}>
+      <div className={styles.valuesMenuWrapper}>
         {!loading && value !== ALL_VARIABLE_VALUE && (
           <>
             <sort.Component model={sort} />
@@ -320,7 +320,7 @@ export class LabelBreakdownScene extends SceneObjectBase<LabelBreakdownSceneStat
             </Alert>
           )}
 
-          {body instanceof LabelsAggregatedBreakdownScene && model && <LabelBreakdownScene.ParentMenu model={model} />}
+          {body instanceof LabelsAggregatedBreakdownScene && model && <LabelBreakdownScene.LabelsMenu model={model} />}
 
           <div className={styles.content}>{body && <body.Component model={body} />}</div>
         </StatusWrapper>
@@ -343,7 +343,7 @@ function getStyles(theme: GrafanaTheme2) {
       display: 'flex',
       paddingTop: theme.spacing(0),
     }),
-    parentMenuWrapper: css({
+    labelsMenuWrapper: css({
       flexGrow: 0,
       display: 'flex',
       alignItems: 'top',
@@ -351,7 +351,7 @@ function getStyles(theme: GrafanaTheme2) {
       flexDirection: 'row-reverse',
       gap: theme.spacing(2),
     }),
-    valueMenuWrapper: css({
+    valuesMenuWrapper: css({
       flexGrow: 0,
       display: 'flex',
       alignItems: 'top',
