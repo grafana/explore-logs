@@ -417,7 +417,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       this.updateLoadingState(newState, TabNames.logs);
       if (newState.data?.state === LoadingState.Done || newState.data?.state === LoadingState.Streaming) {
         const resultCount = newState.data.series[0].length;
-        console.log('logs count', resultCount);
         this.setState({
           logsCount: resultCount,
         });
@@ -429,7 +428,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     return this.state.$logsCount?.subscribeToState((newState) => {
       if (newState.data?.state === LoadingState.Done) {
         const value: number | undefined = newState.data.series[0]?.fields?.[1]?.values?.[0];
-        console.log('total logs count', value, newState);
         if (value !== undefined) {
           this.setState({
             totalLogsCount: value,
