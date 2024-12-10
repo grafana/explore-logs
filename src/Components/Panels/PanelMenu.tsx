@@ -37,7 +37,7 @@ export enum AvgFieldPanelType {
   'histogram' = 'histogram',
 }
 
-export enum CollapsablePanelType {
+export enum CollapsablePanelText {
   collapsed = 'Collapse',
   expanded = 'Expand',
 }
@@ -149,10 +149,10 @@ function addVisualizationHeader(items: PanelMenuItem[], sceneRef: PanelMenu) {
 function addCollapsableItem(items: PanelMenuItem[], menu: PanelMenu) {
   const viz = sceneGraph.getAncestor(menu, VizPanel);
   items.push({
-    text: viz.state.collapsed ? CollapsablePanelType.expanded : CollapsablePanelType.collapsed,
+    text: viz.state.collapsed ? CollapsablePanelText.expanded : CollapsablePanelText.collapsed,
     iconClassName: viz.state.collapsed ? 'table-collapse-all' : 'table-expand-all',
     onClick: () => {
-      const newCollapsableState = viz.state.collapsed ? CollapsablePanelType.expanded : CollapsablePanelType.collapsed;
+      const newCollapsableState = viz.state.collapsed ? CollapsablePanelText.expanded : CollapsablePanelText.collapsed;
 
       // Update the viz
       const vizPanelFlexLayout = sceneGraph.getAncestor(menu, SceneFlexLayout);
