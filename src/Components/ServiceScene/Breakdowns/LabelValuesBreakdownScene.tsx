@@ -227,7 +227,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
         new SceneFlexLayout({
           direction: 'column',
           children: [
-            new SceneReactObject({ reactNode: <LabelBreakdownScene.ParentMenu model={labelBreakdownScene} /> }),
+            new SceneReactObject({ reactNode: <LabelBreakdownScene.LabelsMenu model={labelBreakdownScene} /> }),
             new SceneFlexItem({
               minHeight: 300,
               body,
@@ -237,9 +237,9 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
         new SceneFlexLayout({
           direction: 'column',
           children: [
-            new SceneReactObject({ reactNode: <LabelBreakdownScene.ParentMenu model={labelBreakdownScene} /> }),
+            new SceneReactObject({ reactNode: <LabelBreakdownScene.LabelsMenu model={labelBreakdownScene} /> }),
             new ValueSummaryPanelScene({ title: tagKey, levelColor: true }),
-            new SceneReactObject({ reactNode: <LabelBreakdownScene.ValueMenu model={labelBreakdownScene} /> }),
+            new SceneReactObject({ reactNode: <LabelBreakdownScene.ValuesMenu model={labelBreakdownScene} /> }),
             new ByFrameRepeater({
               body: new SceneCSSGridLayout({
                 isLazy: true,
@@ -269,9 +269,9 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
         new SceneFlexLayout({
           direction: 'column',
           children: [
-            new SceneReactObject({ reactNode: <LabelBreakdownScene.ParentMenu model={labelBreakdownScene} /> }),
+            new SceneReactObject({ reactNode: <LabelBreakdownScene.LabelsMenu model={labelBreakdownScene} /> }),
             new ValueSummaryPanelScene({ title: tagKey, levelColor: true }),
-            new SceneReactObject({ reactNode: <LabelBreakdownScene.ValueMenu model={labelBreakdownScene} /> }),
+            new SceneReactObject({ reactNode: <LabelBreakdownScene.ValuesMenu model={labelBreakdownScene} /> }),
             new ByFrameRepeater({
               body: new SceneCSSGridLayout({
                 templateColumns: '1fr',
