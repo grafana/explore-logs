@@ -220,6 +220,8 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
             .setCustomFieldConfig('pointSize', 0)
             .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
             .setHoverHeader(false)
+            // 11.5
+            // .setShowMenuAlways(true)
             .setOverrides(setLevelColorOverrides)
             .setMenu(new PanelMenu({ labelName: optionValue }))
             .setSeriesLimit(MAX_NUMBER_OF_TIME_SERIES)
@@ -248,7 +250,7 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
 
   public static Selector({ model }: SceneComponentProps<LabelsAggregatedBreakdownScene>) {
     const { body } = model.useState();
-    return <>{body && <body.Selector model={body} />}</>;
+    return <>{body && <LayoutSwitcher.Selector model={body} />}</>;
   }
 
   public static Component = ({ model }: SceneComponentProps<LabelsAggregatedBreakdownScene>) => {

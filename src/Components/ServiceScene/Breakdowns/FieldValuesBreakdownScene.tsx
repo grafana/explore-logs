@@ -4,6 +4,7 @@ import {
   SceneCSSGridLayout,
   SceneDataProvider,
   SceneDataState,
+  SceneDataTransformer,
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
@@ -31,7 +32,8 @@ import { getDetectedFieldsFrame, ServiceScene } from '../ServiceScene';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { getFieldGroupByVariable, getFieldsVariable } from '../../../services/variableGetters';
 import { LokiQuery } from '../../../services/lokiQuery';
-import { PanelMenu, getPanelWrapperStyles } from '../../Panels/PanelMenu';
+import { getPanelWrapperStyles, PanelMenu } from '../../Panels/PanelMenu';
+import { ValueSummaryPanelScene } from './Panels/ValueSummary';
 
 export interface FieldValuesBreakdownSceneState extends SceneObjectState {
   body?: (LayoutSwitcher & SceneObject) | (SceneReactObject & SceneObject);
@@ -48,7 +50,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
   public static Selector({ model }: SceneComponentProps<FieldValuesBreakdownScene>) {
     const { body } = model.useState();
     if (body instanceof LayoutSwitcher) {
-      return <>{body && <body.Selector model={body} />}</>;
+      return <>{body && <LayoutSwitcher.Selector model={body} />}</>;
     }
 
     return <></>;
@@ -75,7 +77,10 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
 
     this.setState({
       body: this.build(query),
-      $data: getQueryRunner([query]),
+      $data: new SceneDataTransformer({
+        $data: getQueryRunner([query]),
+        transformations: [],
+      }),
     });
 
     this._subs.add(
@@ -177,62 +182,99 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
       ],
       active: 'grid',
       layouts: [
+        // Single
         new SceneFlexLayout({
           direction: 'column',
           children: [
+            new SceneReactObject({
+              reactNode: <FieldsBreakdownScene.LabelsMenu model={fieldsBreakdownScene} />,
+            }),
             new SceneFlexItem({
               minHeight: 300,
-              body: PanelBuilders.timeseries().setTitle(optionValue).setMenu(new PanelMenu({})).build(),
+              body: PanelBuilders.timeseries()
+                .setTitle(optionValue)
+                // 11.5
+                // .setShowMenuAlways(true)
+                .setMenu(new PanelMenu({}))
+                .build(),
             }),
           ],
         }),
-        new ByFrameRepeater({
-          body: new SceneCSSGridLayout({
-            templateColumns: FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS,
-            autoRows: '200px',
-            children: [
-              new SceneFlexItem({
-                body: new SceneReactObject({
-                  reactNode: <LoadingPlaceholder text="Loading..." />,
-                }),
+
+        // Grid
+        new SceneFlexLayout({
+          direction: 'column',
+          children: [
+            new SceneReactObject({
+              reactNode: <FieldsBreakdownScene.LabelsMenu model={fieldsBreakdownScene} />,
+            }),
+            new ValueSummaryPanelScene({ title: optionValue }),
+            new SceneReactObject({
+              reactNode: <FieldsBreakdownScene.ValuesMenu model={fieldsBreakdownScene} />,
+            }),
+            new ByFrameRepeater({
+              body: new SceneCSSGridLayout({
+                templateColumns: FIELDS_BREAKDOWN_GRID_TEMPLATE_COLUMNS,
+                autoRows: '200px',
+                children: [
+                  new SceneFlexItem({
+                    body: new SceneReactObject({
+                      reactNode: <LoadingPlaceholder text="Loading..." />,
+                    }),
+                  }),
+                ],
+                isLazy: true,
               }),
-            ],
-            isLazy: true,
-          }),
-          getLayoutChild: getFilterBreakdownValueScene(
-            getLabelValue,
-            query?.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-            parserForThisField === 'structuredMetadata' ? VAR_METADATA : VAR_FIELDS,
-            sceneGraph.getAncestor(this, FieldsBreakdownScene).state.sort,
-            optionValue
-          ),
-          sortBy,
-          direction,
-          getFilter,
+              getLayoutChild: getFilterBreakdownValueScene(
+                getLabelValue,
+                query?.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
+                parserForThisField === 'structuredMetadata' ? VAR_METADATA : VAR_FIELDS,
+                sceneGraph.getAncestor(this, FieldsBreakdownScene).state.sort,
+                optionValue
+              ),
+              sortBy,
+              direction,
+              getFilter,
+            }),
+          ],
         }),
-        new ByFrameRepeater({
-          body: new SceneCSSGridLayout({
-            templateColumns: '1fr',
-            autoRows: '200px',
-            children: [
-              new SceneFlexItem({
-                body: new SceneReactObject({
-                  reactNode: <LoadingPlaceholder text="Loading..." />,
-                }),
+
+        // Rows
+        new SceneFlexLayout({
+          direction: 'column',
+          children: [
+            new SceneReactObject({
+              reactNode: <FieldsBreakdownScene.LabelsMenu model={fieldsBreakdownScene} />,
+            }),
+            new ValueSummaryPanelScene({ title: optionValue }),
+            new SceneReactObject({
+              reactNode: <FieldsBreakdownScene.ValuesMenu model={fieldsBreakdownScene} />,
+            }),
+            new ByFrameRepeater({
+              body: new SceneCSSGridLayout({
+                templateColumns: '1fr',
+                autoRows: '200px',
+                children: [
+                  new SceneFlexItem({
+                    body: new SceneReactObject({
+                      reactNode: <LoadingPlaceholder text="Loading..." />,
+                    }),
+                  }),
+                ],
+                isLazy: true,
               }),
-            ],
-            isLazy: true,
-          }),
-          getLayoutChild: getFilterBreakdownValueScene(
-            getLabelValue,
-            query?.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-            parserForThisField === 'structuredMetadata' ? VAR_METADATA : VAR_FIELDS,
-            sceneGraph.getAncestor(this, FieldsBreakdownScene).state.sort,
-            optionValue
-          ),
-          sortBy,
-          direction,
-          getFilter,
+              getLayoutChild: getFilterBreakdownValueScene(
+                getLabelValue,
+                query?.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
+                parserForThisField === 'structuredMetadata' ? VAR_METADATA : VAR_FIELDS,
+                sceneGraph.getAncestor(this, FieldsBreakdownScene).state.sort,
+                optionValue
+              ),
+              sortBy,
+              direction,
+              getFilter,
+            }),
+          ],
         }),
       ],
     });

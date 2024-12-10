@@ -3,6 +3,7 @@ import {
   PanelBuilders,
   SceneComponentProps,
   SceneCSSGridItem,
+  SceneFlexLayout,
   sceneGraph,
   SceneObject,
   SceneObjectBase,
@@ -12,10 +13,9 @@ import {
   VizPanelMenu,
 } from '@grafana/scenes';
 import React from 'react';
-import { css } from '@emotion/css';
 import { onExploreLinkClick } from '../ServiceScene/GoToExploreButton';
 import { IndexScene } from '../IndexScene/IndexScene';
-import { getQueryRunnerFromChildren } from '../../services/scenes';
+import { findObjectOfType, getQueryRunnerFromChildren } from '../../services/scenes';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { logger } from '../../services/logger';
 import { AddToExplorationButton } from '../ServiceScene/Breakdowns/AddToExplorationButton';
@@ -24,6 +24,10 @@ import { ExtensionPoints } from '../../services/extensions/links';
 import { setLevelColorOverrides } from '../../services/panel';
 import { setPanelOption } from '../../services/store';
 import { FieldsAggregatedBreakdownScene } from '../ServiceScene/Breakdowns/FieldsAggregatedBreakdownScene';
+import { setValueSummaryHeight } from '../ServiceScene/Breakdowns/Panels/ValueSummary';
+import { FieldValuesBreakdownScene } from '../ServiceScene/Breakdowns/FieldValuesBreakdownScene';
+import { LabelValuesBreakdownScene } from '../ServiceScene/Breakdowns/LabelValuesBreakdownScene';
+import { css } from '@emotion/css';
 
 const ADD_TO_INVESTIGATION_MENU_TEXT = 'Add to investigation';
 const ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT = 'Investigations';
@@ -31,6 +35,11 @@ const ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT = 'Investigations';
 export enum AvgFieldPanelType {
   'timeseries' = 'timeseries',
   'histogram' = 'histogram',
+}
+
+export enum CollapsablePanelText {
+  collapsed = 'Collapse',
+  expanded = 'Expand',
 }
 
 interface PanelMenuState extends SceneObjectState {
@@ -42,60 +51,6 @@ interface PanelMenuState extends SceneObjectState {
   panelType?: AvgFieldPanelType;
 }
 
-function addHistogramItem(items: PanelMenuItem[], sceneRef: PanelMenu) {
-  items.push({
-    text: '',
-    type: 'divider',
-  });
-  items.push({
-    text: 'Visualization',
-    type: 'group',
-  });
-  items.push({
-    text: sceneRef.state.panelType !== AvgFieldPanelType.histogram ? 'Histogram' : 'Time series',
-    iconClassName: sceneRef.state.panelType !== AvgFieldPanelType.histogram ? 'graph-bar' : 'chart-line',
-
-    onClick: () => {
-      const gridItem = sceneGraph.getAncestor(sceneRef, SceneCSSGridItem);
-      const viz = sceneGraph.getAncestor(sceneRef, VizPanel).clone();
-      const $data = sceneGraph.getData(sceneRef).clone();
-      const menu = sceneRef.clone();
-      const headerActions = Array.isArray(viz.state.headerActions)
-        ? viz.state.headerActions.map((o) => o.clone())
-        : viz.state.headerActions;
-      let body;
-
-      if (sceneRef.state.panelType !== AvgFieldPanelType.histogram) {
-        body = PanelBuilders.timeseries().setOverrides(setLevelColorOverrides);
-      } else {
-        body = PanelBuilders.histogram();
-      }
-
-      gridItem.setState({
-        body: body.setMenu(menu).setTitle(viz.state.title).setHeaderActions(headerActions).setData($data).build(),
-      });
-
-      // @todo extend findObject and use templates to avoid type assertions
-      const newPanelType =
-        sceneRef.state.panelType !== AvgFieldPanelType.timeseries
-          ? AvgFieldPanelType.timeseries
-          : AvgFieldPanelType.histogram;
-      setPanelOption('panelType', newPanelType);
-      menu.setState({ panelType: newPanelType });
-
-      const fieldsAggregatedBreakdownScene = sceneGraph.findObject(
-        gridItem,
-        (o) => o instanceof FieldsAggregatedBreakdownScene
-      ) as FieldsAggregatedBreakdownScene | null;
-      if (fieldsAggregatedBreakdownScene) {
-        fieldsAggregatedBreakdownScene.rebuildAvgFields();
-      }
-
-      onSwitchVizTypeTracking(newPanelType);
-    },
-  });
-}
-
 /**
  * @todo the VizPanelMenu interface is overly restrictive, doesn't allow any member functions on this class, so everything is currently inlined
  */
@@ -103,6 +58,8 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
   constructor(state: Partial<PanelMenuState>) {
     super(state);
     this.addActivationHandler(() => {
+      const viz = sceneGraph.getAncestor(this, VizPanel);
+
       this.setState({
         addToExplorations: new AddToExplorationButton({
           labelName: this.state.labelName,
@@ -115,6 +72,7 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
       // Manually activate scene
       this.state.addToExplorations?.activate();
 
+      // Navigation options (all panels)
       const items: PanelMenuItem[] = [
         {
           text: 'Navigation',
@@ -128,6 +86,15 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
         },
       ];
 
+      // Visualization options
+      if (this.state.panelType || viz.state.collapsible) {
+        addVisualizationHeader(items, this);
+      }
+
+      if (viz.state.collapsible) {
+        addCollapsableItem(items, this);
+      }
+
       if (this.state.panelType) {
         addHistogramItem(items, this);
       }
@@ -138,9 +105,11 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
         }),
       });
 
-      this.state.addToExplorations?.subscribeToState(() => {
-        subscribeToAddToExploration(this);
-      });
+      this._subs.add(
+        this.state.addToExplorations?.subscribeToState(() => {
+          subscribeToAddToExploration(this);
+        })
+      );
     });
   }
 
@@ -166,20 +135,107 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
   };
 }
 
+function addVisualizationHeader(items: PanelMenuItem[], sceneRef: PanelMenu) {
+  items.push({
+    text: '',
+    type: 'divider',
+  });
+  items.push({
+    text: 'Visualization',
+    type: 'group',
+  });
+}
+
+function addCollapsableItem(items: PanelMenuItem[], menu: PanelMenu) {
+  const viz = sceneGraph.getAncestor(menu, VizPanel);
+  items.push({
+    text: viz.state.collapsed ? CollapsablePanelText.expanded : CollapsablePanelText.collapsed,
+    iconClassName: viz.state.collapsed ? 'table-collapse-all' : 'table-expand-all',
+    onClick: () => {
+      const newCollapsableState = viz.state.collapsed ? CollapsablePanelText.expanded : CollapsablePanelText.collapsed;
+
+      // Update the viz
+      const vizPanelFlexLayout = sceneGraph.getAncestor(menu, SceneFlexLayout);
+      setValueSummaryHeight(vizPanelFlexLayout, newCollapsableState);
+
+      // Set state and update local storage
+      viz.setState({
+        collapsed: !viz.state.collapsed,
+      });
+      setPanelOption('collapsed', newCollapsableState);
+    },
+  });
+}
+
+function addHistogramItem(items: PanelMenuItem[], sceneRef: PanelMenu) {
+  items.push({
+    text: sceneRef.state.panelType !== AvgFieldPanelType.histogram ? 'Histogram' : 'Time series',
+    iconClassName: sceneRef.state.panelType !== AvgFieldPanelType.histogram ? 'graph-bar' : 'chart-line',
+
+    onClick: () => {
+      const gridItem = sceneGraph.getAncestor(sceneRef, SceneCSSGridItem);
+      const viz = sceneGraph.getAncestor(sceneRef, VizPanel).clone();
+      const $data = sceneGraph.getData(sceneRef).clone();
+      const menu = sceneRef.clone();
+      const headerActions = Array.isArray(viz.state.headerActions)
+        ? viz.state.headerActions.map((o) => o.clone())
+        : viz.state.headerActions;
+      let body;
+
+      if (sceneRef.state.panelType !== AvgFieldPanelType.histogram) {
+        body = PanelBuilders.timeseries().setOverrides(setLevelColorOverrides);
+      } else {
+        body = PanelBuilders.histogram();
+      }
+
+      gridItem.setState({
+        body: body.setMenu(menu).setTitle(viz.state.title).setHeaderActions(headerActions).setData($data).build(),
+      });
+
+      const newPanelType =
+        sceneRef.state.panelType !== AvgFieldPanelType.timeseries
+          ? AvgFieldPanelType.timeseries
+          : AvgFieldPanelType.histogram;
+      setPanelOption('panelType', newPanelType);
+      menu.setState({ panelType: newPanelType });
+
+      const fieldsAggregatedBreakdownScene = findObjectOfType(
+        gridItem,
+        (o) => o instanceof FieldsAggregatedBreakdownScene,
+        FieldsAggregatedBreakdownScene
+      );
+      if (fieldsAggregatedBreakdownScene) {
+        fieldsAggregatedBreakdownScene.rebuildAvgFields();
+      }
+
+      onSwitchVizTypeTracking(newPanelType);
+    },
+  });
+}
+
 const getExploreLink = (sceneRef: SceneObject) => {
   const indexScene = sceneGraph.getAncestor(sceneRef, IndexScene);
   const $data = sceneGraph.getData(sceneRef);
-  let queryRunner = getQueryRunnerFromChildren($data)[0];
+  let queryRunner = $data instanceof SceneQueryRunner ? $data : getQueryRunnerFromChildren($data)[0];
 
   // If we don't have a query runner, then our panel is within a SceneCSSGridItem, we need to get the query runner from there
   if (!queryRunner) {
-    const sceneGridItem = sceneGraph.getAncestor(sceneRef, SceneCSSGridItem);
-    const queryProvider = sceneGraph.getData(sceneGridItem);
+    const breakdownScene = sceneGraph.findObject(
+      sceneRef,
+      (o) => o instanceof FieldValuesBreakdownScene || o instanceof LabelValuesBreakdownScene
+    );
+    if (breakdownScene) {
+      const queryProvider = sceneGraph.getData(breakdownScene);
 
-    if (queryProvider instanceof SceneQueryRunner) {
-      queryRunner = queryProvider;
+      if (queryProvider instanceof SceneQueryRunner) {
+        queryRunner = queryProvider;
+      } else {
+        queryRunner = getQueryRunnerFromChildren(queryProvider)[0];
+      }
     } else {
-      logger.error(new Error('query provider not found!'));
+      logger.error(new Error('Unable to locate query runner!'), {
+        msg: 'PanelMenu - getExploreLink: Unable to locate query runner!',
+      });
     }
   }
   const uninterpolatedExpr: string | undefined = queryRunner.state.queries[0].expr;
@@ -261,7 +317,7 @@ export const getPanelWrapperStyles = (theme: GrafanaTheme2) => {
       position: 'absolute',
       display: 'flex',
 
-      // @todo remove this wrapper and styles when core changes are introduced in ???
+      // @todo remove this wrapper and styles when core changes are introduced in 11.5
       // Need more specificity to override core style
       'button.show-on-hover': {
         opacity: 1,
