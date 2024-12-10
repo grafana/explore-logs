@@ -86,6 +86,7 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
           iconClassName: 'compass',
           href: getExploreLink(this),
           onClick: () => onExploreLinkClickTracking(),
+          shortcut: 'p x',
         },
       ];
 
@@ -216,7 +217,7 @@ function addHistogramItem(items: PanelMenuItem[], sceneRef: PanelMenu) {
   });
 }
 
-const getExploreLink = (sceneRef: SceneObject) => {
+export const getExploreLink = (sceneRef: SceneObject) => {
   const indexScene = sceneGraph.getAncestor(sceneRef, IndexScene);
   const $data = sceneGraph.getData(sceneRef);
   let queryRunner = $data instanceof SceneQueryRunner ? $data : getQueryRunnerFromChildren($data)[0];
