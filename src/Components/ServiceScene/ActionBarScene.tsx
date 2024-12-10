@@ -4,12 +4,13 @@ import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, ValueSlugs } from '
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { navigateToDrilldownPage } from '../../services/navigate';
 import React, { useEffect, useState } from 'react';
-import { ServiceScene, ServiceSceneState } from './ServiceScene';
-import { GrafanaTheme2 } from '@grafana/data';
-import { css } from '@emotion/css';
-import { BreakdownViewDefinition, breakdownViewsDefinitions } from './BreakdownViews';
+import { ServiceScene, ServiceSceneCustomState } from './ServiceScene';
+import { getValueFormat, GrafanaTheme2 } from '@grafana/data';
+import { css, cx } from '@emotion/css';
+import { BreakdownViewDefinition, breakdownViewsDefinitions, TabNames } from './BreakdownViews';
 import { config, usePluginLinks } from '@grafana/runtime';
 import { getLabelsVariable } from '../../services/variableGetters';
+import { LINE_LIMIT } from './Breakdowns/Patterns/PatternNameLabel';
 
 export interface ActionBarSceneState extends SceneObjectState {}
 
@@ -31,7 +32,8 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
     }
 
     const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
-    const { loading, $data, ...state } = serviceScene.useState();
+    const { loading, $data, logsCount, totalLogsCount, ...state } = serviceScene.useState();
+
     const loadingStates = state.loadingStates;
 
     return (
@@ -50,7 +52,12 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
                 key={index}
                 label={tab.displayName}
                 active={currentBreakdownViewSlug === tab.value}
-                counter={loadingStates[tab.displayName] ? undefined : getCounter(tab, { ...state, $data })}
+                counter={loadingStates[tab.displayName] ? undefined : getCounter(tab, { ...state })}
+                suffix={
+                  tab.displayName === TabNames.logs
+                    ? ({ className }) => LogsCount(className, logsCount, totalLogsCount)
+                    : undefined
+                }
                 icon={loadingStates[tab.displayName] ? 'spinner' : undefined}
                 onChangeTab={() => {
                   if ((tab.value && tab.value !== currentBreakdownViewSlug) || allowNavToParent) {
@@ -75,7 +82,7 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
     );
   };
 }
-const getCounter = (tab: BreakdownViewDefinition, state: ServiceSceneState) => {
+const getCounter = (tab: BreakdownViewDefinition, state: ServiceSceneCustomState) => {
   switch (tab.value) {
     case 'fields':
       return state.fieldsCount;
@@ -83,6 +90,8 @@ const getCounter = (tab: BreakdownViewDefinition, state: ServiceSceneState) => {
       return state.patternsCount;
     case 'labels':
       return state.labelsCount;
+    case 'logs':
+      return state.totalLogsCount;
     default:
       return undefined;
   }
@@ -167,4 +176,56 @@ function ToolbarExtensionsRenderer(props: { serviceScene: SceneObject }) {
       </ToolbarButton>
     </Dropdown>
   );
+}
+
+function LogsCount(className: string | undefined, logsCount: number | undefined, totalCount: number | undefined) {
+  const styles = useStyles2(getLogsCountStyles);
+
+  if (logsCount !== undefined) {
+    const valueFormatter = getValueFormat('short');
+
+    const formattedLogsCount = valueFormatter(logsCount, 0);
+
+    if (logsCount < LINE_LIMIT || totalCount === undefined) {
+      return (
+        <span className={cx(className, styles.logsCountStyles)}>
+          {formattedLogsCount.text}
+          {formattedLogsCount.suffix?.trim()}
+        </span>
+      );
+    }
+
+    const formattedTotalCount = valueFormatter(totalCount, 0);
+    return (
+      <span className={cx(className, styles.logsCountStyles)}>
+        {formattedLogsCount.text}
+        {formattedLogsCount.suffix?.trim()} of {formattedTotalCount.text}
+        {formattedTotalCount.suffix?.trim()}
+      </span>
+    );
+  }
+
+  return <span className={cx(className, styles.emptyCountStyles)}></span>;
+}
+
+function getLogsCountStyles(theme: GrafanaTheme2) {
+  return {
+    emptyCountStyles: css({
+      display: 'inline-block',
+      fontSize: theme.typography.bodySmall.fontSize,
+      minWidth: '1em',
+      marginLeft: theme.spacing(1),
+      padding: theme.spacing(0.25, 1),
+    }),
+    logsCountStyles: css({
+      fontSize: theme.typography.bodySmall.fontSize,
+      label: 'counter',
+      marginLeft: theme.spacing(1),
+      borderRadius: theme.spacing(3),
+      backgroundColor: theme.colors.action.hover,
+      padding: theme.spacing(0.25, 1),
+      color: theme.colors.text.secondary,
+      fontWeight: theme.typography.fontWeightMedium,
+    }),
+  };
 }

@@ -55,8 +55,10 @@ import {
 } from '../../services/routing';
 import { replaceSlash } from '../../services/extensions/links';
 import { ShowLogsButtonScene } from '../IndexScene/ShowLogsButtonScene';
+import { LokiQueryType } from '../../services/lokiQuery';
 
 export const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
+export const LOGS_COUNT_QUERY_REFID = 'logsCountQuery';
 const PATTERNS_QUERY_REFID = 'patterns';
 const DETECTED_LABELS_QUERY_REFID = 'detectedLabels';
 const DETECTED_FIELDS_QUERY_REFID = 'detectedFields';
@@ -72,12 +74,15 @@ export interface ServiceSceneCustomState {
   patternsCount?: number;
   fieldsCount?: number;
   loading?: boolean;
+  totalLogsCount?: number;
+  logsCount?: number;
 }
 
 export interface ServiceSceneState extends SceneObjectState, ServiceSceneCustomState {
   body: SceneFlexLayout | undefined;
   drillDownLabel?: string;
   $data: SceneDataProvider | undefined;
+  $logsCount: SceneDataProvider | undefined;
   $patternsData: SceneQueryRunner | undefined;
   $detectedLabelsData: SceneQueryRunner | undefined;
   $detectedFieldsData: SceneQueryRunner | undefined;
@@ -121,7 +126,13 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   public constructor(
     state: MakeOptional<
       ServiceSceneState,
-      'body' | '$data' | '$patternsData' | '$detectedLabelsData' | '$detectedFieldsData' | 'loadingStates'
+      | 'body'
+      | '$data'
+      | '$patternsData'
+      | '$detectedLabelsData'
+      | '$detectedFieldsData'
+      | 'loadingStates'
+      | '$logsCount'
     >
   ) {
     super({
@@ -137,6 +148,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       $patternsData: getPatternsQueryRunner(),
       $detectedLabelsData: getDetectedLabelsQueryRunner(),
       $detectedFieldsData: getDetectedFieldsQueryRunner(),
+      $logsCount: getLogCountQueryRunner(),
       ...state,
     });
 
@@ -205,6 +217,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     // Clear ongoing queries
     this.setState({
       $data: undefined,
+      $logsCount: undefined,
       body: undefined,
       $patternsData: undefined,
       $detectedLabelsData: undefined,
@@ -263,6 +276,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     // Run queries on activate
     this.runQueries();
 
+    this.state.$logsCount?.activate();
+
     // Query Subscriptions
     this._subs.add(this.subscribeToPatternsQuery());
     this._subs.add(this.subscribeToDetectedLabelsQuery());
@@ -270,6 +285,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     // Fields tab will update its own count, and update count when a query fails
     this._subs.add(this.subscribeToDetectedFieldsQuery(getDrilldownSlug() !== PageSlugs.fields));
     this._subs.add(this.subscribeToLogsQuery());
+    this._subs.add(this.subscribeToLogsCountQuery());
 
     // Variable subscriptions
     this.setSubscribeToLabelsVariable();
@@ -399,6 +415,27 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   private subscribeToLogsQuery() {
     return this.state.$data?.subscribeToState((newState) => {
       this.updateLoadingState(newState, TabNames.logs);
+      if (newState.data?.state === LoadingState.Done || newState.data?.state === LoadingState.Streaming) {
+        const resultCount = newState.data.series[0].length;
+        console.log('logs count', resultCount);
+        this.setState({
+          logsCount: resultCount,
+        });
+      }
+    });
+  }
+
+  private subscribeToLogsCountQuery() {
+    return this.state.$logsCount?.subscribeToState((newState) => {
+      if (newState.data?.state === LoadingState.Done) {
+        const value: number | undefined = newState.data.series[0]?.fields?.[1]?.values?.[0];
+        console.log('total logs count', value, newState);
+        if (value !== undefined) {
+          this.setState({
+            totalLogsCount: value,
+          });
+        }
+      }
     });
   }
 
@@ -445,6 +482,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     if (!this.state.$detectedFieldsData) {
       stateUpdate.$detectedFieldsData = getDetectedFieldsQueryRunner();
     }
+
+    stateUpdate.$logsCount = getLogCountQueryRunner();
 
     if (!this.state.body) {
       stateUpdate.body = buildGraphScene();
@@ -533,4 +572,13 @@ function getDetectedFieldsQueryRunner() {
 
 function getServiceSceneQueryRunner() {
   return getQueryRunner([buildDataQuery(LOG_STREAM_SELECTOR_EXPR, { refId: LOGS_PANEL_QUERY_REFID })]);
+}
+
+function getLogCountQueryRunner() {
+  return getQueryRunner([
+    buildDataQuery(`sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR}[$__auto]))`, {
+      refId: LOGS_COUNT_QUERY_REFID,
+      queryType: LokiQueryType.Instant,
+    }),
+  ]);
 }

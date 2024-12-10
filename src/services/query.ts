@@ -28,7 +28,7 @@ export const buildResourceQuery = (
     ...queryParamsOverrides,
     datasource: { uid: VAR_DATASOURCE_EXPR },
     expr,
-  };
+  } as LokiQuery & SceneDataQueryResourceRequest;
 };
 /**
  * Builds a loki data query
@@ -36,12 +36,12 @@ export const buildResourceQuery = (
  * @param queryParamsOverrides
  * @returns LokiQuery
  */
-export const buildDataQuery = (expr: string, queryParamsOverrides?: Record<string, unknown>): LokiQuery => {
+export const buildDataQuery = (expr: string, queryParamsOverrides?: Partial<LokiQuery>): LokiQuery => {
   return {
     ...defaultQueryParams,
     ...queryParamsOverrides,
     expr,
-  };
+  } as LokiQuery;
 };
 
 const defaultQueryParams = {
