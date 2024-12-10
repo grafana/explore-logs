@@ -342,6 +342,8 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
     }
     body.setHeaderActions(headerActions);
     body.setSeriesLimit(MAX_NUMBER_OF_TIME_SERIES);
+    // 11.5
+    // body.setShowMenuAlways(true);
 
     const viz = body.build();
     return new SceneCSSGridItem({
@@ -381,7 +383,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
 
   public static Selector({ model }: SceneComponentProps<FieldsAggregatedBreakdownScene>) {
     const { body } = model.useState();
-    return <>{body && <body.Selector model={body} />}</>;
+    return <>{body && <LayoutSwitcher.Selector model={body} />}</>;
   }
 
   public static Component = ({ model }: SceneComponentProps<FieldsAggregatedBreakdownScene>) => {

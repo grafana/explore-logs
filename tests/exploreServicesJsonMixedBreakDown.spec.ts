@@ -42,13 +42,13 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
       .click();
     const allPanels = explorePage.getAllPanelsLocator();
     // We should have 6 panels
-    await expect(allPanels).toHaveCount(6);
+    await expect(allPanels).toHaveCount(7);
     // Should have 2 queries by now
     expect(requests).toHaveLength(2);
     // Exclude a panel
     await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
     // Should be removed from the UI, and also lets us know when the query is done loading
-    await expect(allPanels).toHaveCount(5);
+    await expect(allPanels).toHaveCount(6);
 
     // Adhoc content filter should be added
     await expect(
@@ -85,8 +85,8 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
       .getByRole('button', { name: 'Select' })
       .click();
 
-    // We should have 1 panel for 1 field value
-    await expect(allPanels).toHaveCount(1);
+    // We should have 2 panels for 1 field value
+    await expect(allPanels).toHaveCount(2);
     // Should have 2 queries by now
     expect(requests).toHaveLength(2);
     // Exclude a panel
@@ -134,14 +134,14 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
       .getByRole('button', { name: 'Select' })
       .click();
     const allPanels = explorePage.getAllPanelsLocator();
-    // We should have 6 panels
-    await expect(allPanels).toHaveCount(3);
+    // We should have 4 panels
+    await expect(allPanels).toHaveCount(4);
     // Should have 2 queries by now
     expect(requests).toHaveLength(2);
     // Exclude a panel
     await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
     // Should be removed from the UI, and also lets us know when the query is done loading
-    await expect(allPanels).toHaveCount(2);
+    await expect(allPanels).toHaveCount(3);
 
     // Adhoc content filter should be added
     await expect(

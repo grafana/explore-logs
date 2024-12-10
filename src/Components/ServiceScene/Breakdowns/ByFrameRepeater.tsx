@@ -4,6 +4,7 @@ import { DataFrame, LoadingState, PanelData } from '@grafana/data';
 import {
   SceneByFrameRepeater,
   SceneComponentProps,
+  SceneDataTransformer,
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
@@ -11,6 +12,7 @@ import {
   SceneObjectBase,
   SceneObjectState,
   SceneReactObject,
+  VizPanel,
 } from '@grafana/scenes';
 import { sortSeries } from 'services/sorting';
 import { fuzzySearch } from '../../../services/search';
@@ -18,6 +20,10 @@ import { getLabelValue } from './SortByScene';
 import { Alert, Button } from '@grafana/ui';
 import { css } from '@emotion/css';
 import { BreakdownSearchReset } from './BreakdownSearchScene';
+import { map, Observable } from 'rxjs';
+import { LayoutSwitcher } from './LayoutSwitcher';
+import { VALUE_SUMMARY_PANEL_KEY } from './Panels/ValueSummary';
+import { logger } from '../../../services/logger';
 
 interface ByFrameRepeaterState extends SceneObjectState {
   body: SceneLayout;
@@ -123,8 +129,40 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
         // reset search
         this.filterFrames(() => true);
       }
+
+      this.filterSummaryChart(data);
     });
   };
+
+  /**
+   * Filters the summary panel rendered above the breakdown panels by adding a transformation to the panel
+   * @param data
+   * @private
+   */
+  private filterSummaryChart(data: string[][]) {
+    const layoutSwitcher = sceneGraph.getAncestor(this, LayoutSwitcher);
+
+    if (layoutSwitcher) {
+      const singleGraphParent = sceneGraph.findAllObjects(
+        layoutSwitcher,
+        (obj) => obj.isActive && obj.state.key === VALUE_SUMMARY_PANEL_KEY
+      );
+      if (singleGraphParent[0] instanceof SceneFlexLayout) {
+        const panel = sceneGraph.findDescendents(singleGraphParent[0], VizPanel)[0];
+        if (panel instanceof VizPanel) {
+          panel.setState({
+            $data: new SceneDataTransformer({
+              transformations: [() => limitFramesByName(data[0])],
+            }),
+          });
+        } else {
+          logger.warn('filterSummaryChart: VizPanel not found', { typeofPanel: typeof panel });
+        }
+      } else {
+        logger.warn('filterSummaryChart: SceneFlexItem not found', { typeofGraphParent: typeof singleGraphParent });
+      }
+    }
+  }
 
   public filterFrames = (filterFn: FrameFilterCallback) => {
     const newChildren: SceneFlexItem[] = [];
@@ -135,7 +173,8 @@ export class ByFrameRepeater extends SceneObjectBase<ByFrameRepeaterState> {
     });
 
     if (newChildren.length === 0) {
-      this.state.body.setState({ children: [buildNoResultsScene(this.getFilter(), this.clearFilter)] });
+      const filter = this.getFilter();
+      this.state.body.setState({ children: [buildNoResultsScene(filter, this.clearFilter)] });
     } else {
       this.state.body.setState({ children: newChildren });
     }
@@ -188,3 +227,23 @@ const styles = {
     marginLeft: '1.5rem',
   }),
 };
+
+export function limitFramesByName(matches: string[]) {
+  return (source: Observable<DataFrame[]>) => {
+    return source.pipe(
+      map((frames) => {
+        if (!matches || !matches.length) {
+          return frames;
+        }
+        let newFrames: DataFrame[] = [];
+        frames.forEach((f) => {
+          const label = getLabelValue(f);
+          if (matches.includes(label)) {
+            newFrames.push(f);
+          }
+        });
+        return newFrames;
+      })
+    );
+  };
+}
