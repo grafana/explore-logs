@@ -225,6 +225,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       patternsCount: undefined,
       labelsCount: undefined,
       fieldsCount: undefined,
+      logsCount: undefined,
+      totalLogsCount: undefined,
     });
     getMetadataService().setServiceSceneState(this.state);
     this._subs.unsubscribe();
