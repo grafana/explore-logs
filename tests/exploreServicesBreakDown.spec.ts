@@ -372,9 +372,10 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByText('=').nth(1)).toBeVisible();
   });
 
-  test('should only load fields that are in the viewport', async ({ page }) => {
+  test.only('should only load fields that are in the viewport', async ({ page }) => {
     await explorePage.setDefaultViewportSize();
-    let requestCount = 0;
+    let requestCount = 0,
+      logsCountQueryCount = 0;
 
     // We don't need to mock the response, but it speeds up the test
     await page.route('**/api/ds/query*', async (route, request) => {
@@ -386,11 +387,14 @@ test.describe('explore services breakdown page', () => {
         const postData = JSON.parse(rawPostData);
         const refId = postData.queries[0].refId;
         // Field subqueries have a refId of the field name
-        if (refId !== 'logsPanelQuery' && refId !== 'A') {
+        if (refId !== 'logsPanelQuery' && refId !== 'A' && refId !== 'logsCountQuery') {
           requestCount++;
           // simulate the query taking some time
           await page.waitForTimeout(100);
           return await route.fulfill({ json: mockResponse });
+        }
+        if (refId === 'logsCountQuery') {
+          logsCountQueryCount++;
         }
       }
 
@@ -407,6 +411,8 @@ test.describe('explore services breakdown page', () => {
     await explorePage.assertTabsNotLoading();
     // Fields on top should be loaded
     expect(requestCount).toEqual(6);
+    expect(logsCountQueryCount).toEqual(2);
+
     await explorePage.scrollToBottom();
     // Panel on the bottom should be visible
     await expect(page.getByTestId(/data-testid Panel header/).last()).toBeInViewport();
@@ -416,6 +422,7 @@ test.describe('explore services breakdown page', () => {
     await page.waitForTimeout(250);
     // if this flakes we could just assert that it's greater then 3
     expect(requestCount).toEqual(17);
+    expect(logsCountQueryCount).toEqual(2);
   });
 
   test(`should select field ${fieldName}, update filters, open log panel`, async ({ page }) => {
