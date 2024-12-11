@@ -52,7 +52,7 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
                 key={index}
                 label={tab.displayName}
                 active={currentBreakdownViewSlug === tab.value}
-                counter={loadingStates[tab.displayName] ? undefined : getCounter(tab, { ...state })}
+                counter={loadingStates[tab.displayName] ? undefined : getCounter(tab, state)}
                 suffix={
                   tab.displayName === TabNames.logs
                     ? ({ className }) => LogsCount(className, logsCount, totalLogsCount)
@@ -90,8 +90,6 @@ const getCounter = (tab: BreakdownViewDefinition, state: ServiceSceneCustomState
       return state.patternsCount;
     case 'labels':
       return state.labelsCount;
-    case 'logs':
-      return state.totalLogsCount;
     default:
       return undefined;
   }
