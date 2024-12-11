@@ -88,22 +88,25 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       extendPanelContext: (_, context) => this.extendTimeSeriesLegendBus(context),
     });
 
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     this._subs.add(
       panel.state.$data?.subscribeToState((newState) => {
         if (newState.data?.state !== LoadingState.Done) {
           return;
         }
-        this.displayVisibleRange();
+        if (serviceScene.state.$data?.state.data?.state === LoadingState.Done && !newState.data.annotations?.length) {
+          this.updateVisibleRange(serviceScene.state.$data?.state.data?.series);
+        } else {
+          this.displayVisibleRange();
+        }
         syncLogsPanelVisibleSeries(panel, newState.data.series, this);
       })
     );
 
-    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     this._subs.add(
-      serviceScene.subscribeToState((newState) => {
-        if (newState.$data?.state.data?.state === LoadingState.Done) {
-          this.updatedLogSeries = newState.$data?.state.data.series;
-          this.displayVisibleRange();
+      serviceScene.state.$data?.subscribeToState((newState) => {
+        if (newState.data?.state === LoadingState.Done) {
+          this.updateVisibleRange(newState.data.series);
         }
       })
     );
@@ -111,7 +114,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     return panel;
   }
 
-  public updateVisibleRange(data: DataFrame[]) {
+  public updateVisibleRange(data: DataFrame[] = []) {
     this.updatedLogSeries = data;
     this.displayVisibleRange();
   }
