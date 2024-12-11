@@ -1,5 +1,5 @@
 import { MetricExpr, parser, Selector } from '@grafana/lezer-logql';
-import { LokiQuery, LokiQueryType } from './lokiQuery';
+import { LokiQuery } from './lokiQuery';
 import { getNodesFromQuery } from './logqlMatchers';
 import { SceneDataQueryRequest } from './datasourceTypes';
 
@@ -27,7 +27,7 @@ export function isLogsRequest(request: SceneDataQueryRequest) {
 }
 
 export function isInstantQuery(request: SceneDataQueryRequest) {
-  return request.targets.find((query) => query.queryType === LokiQueryType.Instant);
+  return request.targets.find((query) => query.queryType === 'instant');
 }
 
 export function requestSupportsSharding(request: SceneDataQueryRequest) {

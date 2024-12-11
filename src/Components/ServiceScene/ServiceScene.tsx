@@ -56,7 +56,6 @@ import {
 } from '../../services/routing';
 import { replaceSlash } from '../../services/extensions/links';
 import { ShowLogsButtonScene } from '../IndexScene/ShowLogsButtonScene';
-import { LokiQueryType } from '../../services/lokiQuery';
 
 export const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 export const LOGS_COUNT_QUERY_REFID = 'logsCountQuery';
@@ -600,7 +599,7 @@ function getLogCountQueryRunner() {
     [
       buildDataQuery(`sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR}[$__auto]))`, {
         refId: LOGS_COUNT_QUERY_REFID,
-        queryType: LokiQueryType.Instant,
+        queryType: 'instant',
       }),
     ],
     { runQueriesMode: 'manual' } // for some reason when this query is set to auto, it doesn't run on time range update, looks like there is different behavior with data providers not in the special $data prop

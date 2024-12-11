@@ -4,7 +4,7 @@ import { EMPTY_VARIABLE_VALUE, VAR_DATASOURCE_EXPR } from './variables';
 import { groupBy, trim } from 'lodash';
 import { getValueFromFieldsFilter } from './variableGetters';
 import { LokiQuery } from './lokiQuery';
-import { SceneDataQueryResourceRequest } from './datasourceTypes';
+import { SceneDataQueryResourceRequest, SceneDataQueryResourceRequestOptions } from './datasourceTypes';
 import { AdHocFilterWithLabels } from './scenes';
 import { PLUGIN_ID } from './plugin';
 import { AdHocFiltersVariable } from '@grafana/scenes';
@@ -15,12 +15,14 @@ import { FilterOp } from './filterTypes';
  * @param expr string to be interpolated and executed in the resource request
  * @param resource
  * @param queryParamsOverrides
+ * @param primaryLabel
  */
 export const buildResourceQuery = (
   expr: string,
-  resource: 'volume' | 'patterns' | 'detected_labels' | 'detected_fields' | 'labels',
-  queryParamsOverrides?: Record<string, unknown>
-): LokiQuery & SceneDataQueryResourceRequest => {
+  resource: SceneDataQueryResourceRequestOptions,
+  queryParamsOverrides?: Partial<LokiQuery>,
+  primaryLabel?: string
+): LokiQuery & SceneDataQueryResourceRequest & { primaryLabel?: string } => {
   return {
     ...defaultQueryParams,
     resource,
@@ -28,7 +30,8 @@ export const buildResourceQuery = (
     ...queryParamsOverrides,
     datasource: { uid: VAR_DATASOURCE_EXPR },
     expr,
-  } as LokiQuery & SceneDataQueryResourceRequest;
+    primaryLabel,
+  };
 };
 /**
  * Builds a loki data query
@@ -41,7 +44,7 @@ export const buildDataQuery = (expr: string, queryParamsOverrides?: Partial<Loki
     ...defaultQueryParams,
     ...queryParamsOverrides,
     expr,
-  } as LokiQuery;
+  };
 };
 
 const defaultQueryParams = {
@@ -57,7 +60,7 @@ export const buildVolumeQuery = (
   primaryLabel: string,
   queryParamsOverrides?: Record<string, unknown>
 ): LokiQuery & SceneDataQueryResourceRequest => {
-  return buildResourceQuery(expr, resource, { ...queryParamsOverrides, primaryLabel });
+  return buildResourceQuery(expr, resource, { ...queryParamsOverrides }, primaryLabel);
 };
 
 export function getLogQLLabelGroups(filters: AdHocVariableFilter[]) {

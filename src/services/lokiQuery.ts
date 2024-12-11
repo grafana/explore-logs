@@ -3,9 +3,9 @@ import { DataSourceRef } from '@grafana/schema';
 
 export type LokiQuery = {
   refId: string;
-  queryType: LokiQueryType;
-  editorMode: string;
-  supportingQueryType: string;
+  queryType?: LokiQueryType;
+  editorMode?: string;
+  supportingQueryType?: string;
   expr: string;
   legendFormat?: string;
   splitDuration?: string;
@@ -13,8 +13,4 @@ export type LokiQuery = {
   maxLines?: number;
 };
 
-export enum LokiQueryType {
-  Instant = 'instant',
-  Range = 'range',
-  Stream = 'stream',
-}
+export type LokiQueryType = 'instant' | 'range' | 'stream' | string;
