@@ -181,8 +181,6 @@ test.describe('explore services breakdown page', () => {
     // Click to open in this tab
     await openInThisTabButtonLoc.click();
 
-    await page.pause();
-
     // Assert the variables are visible
     await expect(page.getByLabel(`Edit filter with key ${labelName}`)).toBeVisible();
     await expect(page.getByLabel(`Edit filter with key service_name`)).toBeVisible();
@@ -1088,6 +1086,48 @@ test.describe('explore services breakdown page', () => {
     await expect(newPageCodeEditor).toBeInViewport();
     await expect(newPageCodeEditor).toContainText(
       'sum(count_over_time({service_name=`tempo-distributor`} | detected_level != "" [$__auto])) by (detected_level)'
+    );
+  });
+
+  test('panel menu: field name panel should open links in explore', async ({ page, context }) => {
+    await explorePage.goToFieldsTab();
+    await page.getByTestId(`data-testid Panel menu ${fieldName}`).click();
+
+    // Open link
+    await expect(page.getByTestId('data-testid Panel menu item Explore')).toHaveAttribute('href');
+    await page.getByTestId('data-testid Panel menu item Explore').click();
+
+    const newPageCodeEditor = page
+      .getByRole('code')
+      .locator('div')
+      .filter({ hasText: `sum by (${fieldName}) (count_over_time({` })
+      .nth(4);
+    await expect(newPageCodeEditor).toBeInViewport();
+    await expect(newPageCodeEditor).toContainText(
+      `sum by (${fieldName}) (count_over_time({service_name=\`tempo-distributor\`} | logfmt | ${fieldName}!="" [$__auto]))`
+    );
+  });
+
+  test('panel menu: field value panel should open links in explore', async ({ page, context }) => {
+    await explorePage.goToFieldsTab();
+    await page.getByLabel('Select caller').click();
+
+    // Assert we've navigated to the sub page
+    await expect(page.getByTestId('data-testid Panel menu poller.go:133')).toHaveCount(1);
+    await page.getByTestId('data-testid Panel menu poller.go:133').click();
+
+    // Open link
+    await expect(page.getByTestId('data-testid Panel menu item Explore')).toHaveAttribute('href');
+    await page.getByTestId('data-testid Panel menu item Explore').click();
+
+    const newPageCodeEditor = page
+      .getByRole('code')
+      .locator('div')
+      .filter({ hasText: `sum by (${fieldName}) (count_over_time({` })
+      .nth(4);
+    await expect(newPageCodeEditor).toBeInViewport();
+    await expect(newPageCodeEditor).toContainText(
+      `sum by (${fieldName}) (count_over_time({service_name=\`tempo-distributor\`} | logfmt | ${fieldName}!="" [$__auto]))`
     );
   });
 
