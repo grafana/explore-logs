@@ -15,7 +15,7 @@ interface PatternNameLabelProps {
   pattern: string;
 }
 
-const LINE_LIMIT = 1000;
+export const LINE_LIMIT = 1000;
 
 export const PatternNameLabel = ({ exploration, pattern }: PatternNameLabelProps) => {
   const patternIndices = extractPatternIndices(pattern);
