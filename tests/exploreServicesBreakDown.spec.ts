@@ -370,7 +370,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByText('=').nth(1)).toBeVisible();
   });
 
-  test.only('should only load fields that are in the viewport', async ({ page }) => {
+  test('should only load fields that are in the viewport', async ({ page }) => {
     await explorePage.setDefaultViewportSize();
     let requestCount = 0,
       logsCountQueryCount = 0;
