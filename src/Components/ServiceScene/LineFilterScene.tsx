@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import { SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { Field } from '@grafana/ui';
-import { debounce, escapeRegExp } from 'lodash';
+import { debounce, escape, escapeRegExp } from 'lodash';
 import React, { ChangeEvent, KeyboardEvent } from 'react';
 import { testIds } from 'services/testIds';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
@@ -10,6 +10,7 @@ import { LineFilterIcon } from './LineFilterIcon';
 import { getLineFilterVariable } from '../../services/variableGetters';
 import { getLineFilterCase, getLineFilterRegex, setLineFilterCase, setLineFilterRegex } from '../../services/store';
 import { RegexIcon, RegexInputValue } from './RegexIcon';
+import { logger } from '../../services/logger';
 
 interface LineFilterState extends SceneObjectState {
   lineFilter: string;
@@ -22,7 +23,6 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
 
   constructor(state?: Partial<LineFilterState>) {
     const caseSensitive = getLineFilterCase(false);
-    console.log('constructor', caseSensitive);
     super({
       lineFilter: state?.lineFilter || '',
       caseSensitive,
@@ -39,15 +39,42 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
       return;
     }
     const caseSensitive = lineFilterString.includes('|=');
-    const matches = caseSensitive ? lineFilterString.match(/\|=.`(.+?)`/) : lineFilterString.match(/`\(\?i\)(.+)`/);
 
-    if (!matches || matches.length !== 2) {
+    const caseSensitiveMatches = caseSensitive
+      ? lineFilterString.match(/\|=.`(.+?)`/)
+      : lineFilterString.match(/`\(\?i\)(.+)`/);
+    const regexMatches = lineFilterString.match(/\|~.+\`(.*?)\`/);
+
+    // If the existing query is case sensitive, overwrite the users options for case sensitivity
+    if (caseSensitiveMatches && caseSensitiveMatches.length === 2) {
+      // If the current state is not regex, remove escape chars
+      if (!this.state.regex) {
+        this.setState({
+          lineFilter: caseSensitiveMatches[1].replace(/\\(.)/g, '$1'),
+          caseSensitive,
+        });
+        return;
+      } else {
+        // If regex, don't remove escape chars
+        this.setState({
+          lineFilter: caseSensitiveMatches[1],
+          caseSensitive,
+        });
+      }
       return;
     }
-    this.setState({
-      lineFilter: matches[1].replace(/\\(.)/g, '$1'),
-      caseSensitive,
-    });
+
+    if (regexMatches?.length === 2) {
+      this.setState({
+        lineFilter: regexMatches[1],
+      });
+
+      return;
+    } else {
+      const error = new Error(`Unable to parse line filter: ${lineFilterString}`);
+      logger.error(error, { msg: `Unable to parse line filter: ${lineFilterString}` });
+      throw error;
+    }
   };
 
   updateFilter(lineFilter: string, debounced = true) {
@@ -108,8 +135,12 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
     if (search === '') {
       variable.changeValueTo('');
     } else {
-      if (this.state.caseSensitive) {
+      if (this.state.caseSensitive && !this.state.regex) {
         variable.changeValueTo(`|= \`${escapeRegExp(search)}\``);
+      } else if (this.state.caseSensitive && this.state.regex) {
+        variable.changeValueTo(`|~ \`${escape(search)}\``);
+      } else if (!this.state.caseSensitive && this.state.regex) {
+        variable.changeValueTo(`|~ \`(?i)${escape(search)}\``);
       } else {
         variable.changeValueTo(`|~ \`(?i)${escapeRegExp(search)}\``);
       }
