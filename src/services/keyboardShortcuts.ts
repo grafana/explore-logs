@@ -165,14 +165,21 @@ export function toggleVizPanelLegend(vizPanel: VizPanel): void {
 function hasLegendOptions(optionsWithLegend: unknown): optionsWithLegend is OptionsWithLegend {
   return optionsWithLegend != null && typeof optionsWithLegend === 'object' && 'legend' in optionsWithLegend;
 }
+
+// Copied from https://github.com/grafana/grafana/blob/main/public/app/types/events.ts
+// @todo export from core grafana
 export class CopyTimeEvent extends BusEventBase {
   static type = 'copy-time';
 }
 
+// Copied from https://github.com/grafana/grafana/blob/main/public/app/types/events.ts
+// @todo export from core grafana
 interface PasteTimeEventPayload {
   updateUrl?: boolean;
 }
 
+// Copied from https://github.com/grafana/grafana/blob/main/public/app/types/events.ts
+// @todo export from core grafana
 export class PasteTimeEvent extends BusEventWithPayload<PasteTimeEventPayload> {
   static type = 'paste-time';
 }
