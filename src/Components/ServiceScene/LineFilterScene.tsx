@@ -8,8 +8,8 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'se
 import { SearchInput } from './Breakdowns/SearchInput';
 import { LineFilterIcon } from './LineFilterIcon';
 import { getLineFilterVariable } from '../../services/variableGetters';
-import {getLineFilterCase, getLineFilterRegex, setLineFilterCase, setLineFilterRegex} from '../../services/store';
-import {RegexIcon, RegexInputValue} from "./RegexIcon";
+import { getLineFilterCase, getLineFilterRegex, setLineFilterCase, setLineFilterRegex } from '../../services/store';
+import { RegexIcon, RegexInputValue } from './RegexIcon';
 
 interface LineFilterState extends SceneObjectState {
   lineFilter: string;
@@ -22,7 +22,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
 
   constructor(state?: Partial<LineFilterState>) {
     const caseSensitive = getLineFilterCase(false);
-    console.log('constructor', caseSensitive)
+    console.log('constructor', caseSensitive);
     super({
       lineFilter: state?.lineFilter || '',
       caseSensitive,
@@ -80,11 +80,9 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
     });
 
     // Set value in local storage
-    console.log('caseSensitive', caseSensitive)
     setLineFilterCase(caseSensitive);
 
-
-    this.updateFilter(this.state.lineFilter);
+    this.updateFilter(this.state.lineFilter, false);
   };
 
   onRegexToggle = (newState: RegexInputValue) => {
@@ -98,7 +96,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
     // Set value in local storage
     setLineFilterRegex(regex);
 
-    this.updateFilter(this.state.lineFilter);
+    this.updateFilter(this.state.lineFilter, false);
   };
 
   updateVariableDebounced = debounce((search: string) => {
@@ -137,10 +135,12 @@ function LineFilterRenderer({ model }: SceneComponentProps<LineFilterScene>) {
         value={lineFilter}
         className={styles.input}
         onChange={model.handleChange}
-        suffix={<>
-          <LineFilterIcon caseSensitive={caseSensitive} onCaseSensitiveToggle={model.onCaseSensitiveToggle} />
-          <RegexIcon regex={regex} onRegexToggle={model.onRegexToggle} />
-        </>}
+        suffix={
+          <>
+            <LineFilterIcon caseSensitive={caseSensitive} onCaseSensitiveToggle={model.onCaseSensitiveToggle} />
+            <RegexIcon regex={regex} onRegexToggle={model.onRegexToggle} />
+          </>
+        }
         placeholder="Search in log lines"
         onClear={() => {
           model.updateFilter('', false);
