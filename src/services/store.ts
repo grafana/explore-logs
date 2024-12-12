@@ -258,7 +258,6 @@ export function setLineFilterRegex(regex: boolean) {
 
 export function getLineFilterCase(defaultValue: boolean): boolean {
   const storedValue = localStorage.getItem(`${LINE_FILTER_OPTIONS_LOCALSTORAGE_KEY}.caseSensitive`);
-  console.log('getLineFilterCase storedValue', storedValue)
   return storedValue === 'true' ? true : defaultValue;
 }
 
