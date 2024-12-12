@@ -77,7 +77,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
     // Set value in local storage
     setLineFilterCase(caseSensitive);
 
-    this.updateFilter(this.state.lineFilter);
+    this.updateFilter(this.state.lineFilter, false);
   };
 
   updateVariableDebounced = debounce((search: string) => {
