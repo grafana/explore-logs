@@ -237,7 +237,7 @@ export function setLogsVisualizationType(type: string) {
 }
 
 // Line filter options
-const LINE_FILTER_OPTIONS_LOCALSTORAGE_KEY = `${pluginJson.id}.logs.option`;
+const LINE_FILTER_OPTIONS_LOCALSTORAGE_KEY = `${pluginJson.id}.linefilter.option`;
 export function setLineFilterCase(caseSensitive: boolean) {
   let storedValue = caseSensitive.toString();
   if (typeof caseSensitive === 'boolean' && !caseSensitive) {
@@ -247,8 +247,23 @@ export function setLineFilterCase(caseSensitive: boolean) {
   localStorage.setItem(`${LINE_FILTER_OPTIONS_LOCALSTORAGE_KEY}.caseSensitive`, storedValue);
 }
 
+export function setLineFilterRegex(regex: boolean) {
+  let storedValue = regex.toString();
+  if (typeof regex === 'boolean' && !regex) {
+    storedValue = '';
+  }
+
+  localStorage.setItem(`${LINE_FILTER_OPTIONS_LOCALSTORAGE_KEY}.regex`, storedValue);
+}
+
 export function getLineFilterCase(defaultValue: boolean): boolean {
   const storedValue = localStorage.getItem(`${LINE_FILTER_OPTIONS_LOCALSTORAGE_KEY}.caseSensitive`);
+  console.log('getLineFilterCase storedValue', storedValue)
+  return storedValue === 'true' ? true : defaultValue;
+}
+
+export function getLineFilterRegex(defaultValue: boolean): boolean {
+  const storedValue = localStorage.getItem(`${LINE_FILTER_OPTIONS_LOCALSTORAGE_KEY}.regex`);
   return storedValue === 'true' ? true : defaultValue;
 }
 
