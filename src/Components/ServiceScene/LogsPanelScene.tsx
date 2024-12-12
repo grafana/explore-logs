@@ -22,6 +22,7 @@ import { CopyLinkButton } from './CopyLinkButton';
 import { getLogsPanelSortOrder, LogOptionsScene } from './LogOptionsScene';
 import { LogsVolumePanel, logsVolumePanelKey } from './LogsVolumePanel';
 import { getPanelWrapperStyles, PanelMenu } from '../Panels/PanelMenu';
+import { ServiceScene } from './ServiceScene';
 
 interface LogsPanelSceneState extends SceneObjectState {
   body?: VizPanel;
@@ -136,6 +137,12 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
   }
 
   private updateVisibleRange = (newLogs: DataFrame[]) => {
+    // Update logs count
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
+    serviceScene.setState({
+      logsCount: newLogs[0].length,
+    });
+
     const logsVolumeScene = sceneGraph.findByKeyAndType(this, logsVolumePanelKey, LogsVolumePanel);
     if (logsVolumeScene instanceof LogsVolumePanel) {
       logsVolumeScene.updateVisibleRange(newLogs);
