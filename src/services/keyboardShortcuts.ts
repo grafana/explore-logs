@@ -6,7 +6,7 @@ import { sceneGraph, SceneObject, VizPanel } from '@grafana/scenes';
 import { getExploreLink } from '../Components/Panels/PanelMenu';
 import { getTimePicker } from './scenes';
 import { OptionsWithLegend } from '@grafana/ui';
-import { hasProp, isObj, isString } from './narrowing';
+import { narrowTimeRange } from './narrowing';
 
 const appEvents = getAppEvents();
 
@@ -205,26 +205,17 @@ export function setWindowGrafanaSceneContext(activeScene: SceneObject) {
 
 // taken from /Users/galen/projects/grafana/grafana/public/app/core/utils/timePicker.ts
 type CopiedTimeRangeResult = { range: RawTimeRange; isError: false } | { range: string; isError: true };
-
 // modified to narrow types from clipboard
 export async function getCopiedTimeRange(): Promise<CopiedTimeRangeResult> {
   const raw = await navigator.clipboard.readText();
-  let unknownRange;
+  let unknownRange: unknown;
 
   try {
     unknownRange = JSON.parse(raw);
-
-    const range = isObj(unknownRange) && hasProp(unknownRange, 'to') && hasProp(unknownRange, 'from') && unknownRange;
+    const range = narrowTimeRange(unknownRange);
     if (range) {
-      const to = isString(range.to);
-      const from = isString(range.from);
-      if (to && from) {
-        return { range: { to, from }, isError: false };
-      }
+      return { isError: false, range };
     }
-
-    return { range: raw, isError: true };
-  } catch (e) {
-    return { range: raw, isError: true };
-  }
+  } catch (e) {}
+  return { range: raw, isError: true };
 }

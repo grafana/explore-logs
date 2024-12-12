@@ -1,13 +1,14 @@
 import { SelectedTableRow } from '../Components/Table/LogLineCellComponent';
 import { LogsVisualizationType } from './store';
 import { FieldValue, ParserType } from './variables';
-export const isObj = (o: unknown): o is object => typeof o === 'object' && o !== null;
+import { RawTimeRange } from '@grafana/data';
+const isObj = (o: unknown): o is object => typeof o === 'object' && o !== null;
 
-export function hasProp<K extends PropertyKey>(data: object, prop: K): data is Record<K, unknown> {
+function hasProp<K extends PropertyKey>(data: object, prop: K): data is Record<K, unknown> {
   return prop in data;
 }
 
-export const isString = (s: unknown) => (typeof s === 'string' && s) || '';
+const isString = (s: unknown) => (typeof s === 'string' && s) || '';
 
 export const isRecord = (obj: unknown): obj is Record<string, unknown> => typeof obj === 'object';
 
@@ -78,6 +79,19 @@ export function narrowRecordStringNumber(o: unknown): Record<string, number> | f
   }
 
   return false;
+}
+
+export function narrowTimeRange(unknownRange: unknown): RawTimeRange | undefined {
+  const range = isObj(unknownRange) && hasProp(unknownRange, 'to') && hasProp(unknownRange, 'from') && unknownRange;
+  if (range) {
+    const to = isString(range.to);
+    const from = isString(range.from);
+    if (to && from) {
+      return { to, from };
+    }
+  }
+
+  return undefined;
 }
 
 export class NarrowingError extends Error {}
