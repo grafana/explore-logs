@@ -1,8 +1,8 @@
 import { IndexScene } from '../Components/IndexScene/IndexScene';
 import { KeybindingSet } from './KeybindingSet';
 import { getAppEvents, locationService } from '@grafana/runtime';
-import { SetPanelAttentionEvent } from '@grafana/data';
-import { sceneGraph, VizPanel } from '@grafana/scenes';
+import { BusEventBase, BusEventWithPayload, SetPanelAttentionEvent } from '@grafana/data';
+import { sceneGraph, SceneObject, sceneUtils, VizPanel } from '@grafana/scenes';
 import { getExploreLink } from '../Components/Panels/PanelMenu';
 import { getTimePicker } from './scenes';
 import { OptionsWithLegend } from '@grafana/ui';
@@ -61,6 +61,25 @@ export function setupKeyboardShortcuts(scene: IndexScene) {
         locationService.push(url);
       }
     }),
+  });
+
+  // Copy time range
+  keybindings.addBinding({
+    key: 't c',
+    onTrigger: () => {
+      const timeRange = sceneGraph.getTimeRange(scene);
+      //
+      setWindowGrafanaSceneContext(timeRange);
+      appEvents.publish(new CopyTimeEvent());
+    },
+  });
+
+  // Paste time range
+  keybindings.addBinding({
+    key: 't v',
+    onTrigger: () => {
+      appEvents.publish(new PasteTimeEvent({ updateUrl: true }));
+    },
   });
 
   // Refresh
@@ -145,4 +164,31 @@ export function toggleVizPanelLegend(vizPanel: VizPanel): void {
 
 function hasLegendOptions(optionsWithLegend: unknown): optionsWithLegend is OptionsWithLegend {
   return optionsWithLegend != null && typeof optionsWithLegend === 'object' && 'legend' in optionsWithLegend;
+}
+export class CopyTimeEvent extends BusEventBase {
+  static type = 'copy-time';
+}
+
+interface PasteTimeEventPayload {
+  updateUrl?: boolean;
+}
+
+export class PasteTimeEvent extends BusEventWithPayload<PasteTimeEventPayload> {
+  static type = 'paste-time';
+}
+
+/**
+ * @todo delete after https://github.com/grafana/scenes/pull/999 is available
+ * @param activeScene
+ */
+export function setWindowGrafanaSceneContext(activeScene: SceneObject) {
+  const prevScene = (window as any).__grafanaSceneContext;
+
+  (window as any).__grafanaSceneContext = activeScene;
+
+  return () => {
+    if ((window as any).__grafanaSceneContext === activeScene) {
+      (window as any).__grafanaSceneContext = prevScene;
+    }
+  };
 }
