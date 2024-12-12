@@ -68,7 +68,6 @@ export function setupKeyboardShortcuts(scene: IndexScene) {
     key: 't c',
     onTrigger: () => {
       const timeRange = sceneGraph.getTimeRange(scene);
-      //
       setWindowGrafanaSceneContext(timeRange);
       appEvents.publish(new CopyTimeEvent());
     },
