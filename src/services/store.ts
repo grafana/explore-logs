@@ -237,7 +237,6 @@ export function setLogsVisualizationType(type: string) {
 }
 
 // Line filter options
-
 const LINE_FILTER_OPTIONS_LOCALSTORAGE_KEY = `${pluginJson.id}.logs.option`;
 export function setLineFilterCase(caseSensitive: boolean) {
   let storedValue = caseSensitive.toString();
