@@ -1,11 +1,12 @@
 import { IndexScene } from '../Components/IndexScene/IndexScene';
 import { KeybindingSet } from './KeybindingSet';
 import { getAppEvents, locationService } from '@grafana/runtime';
-import { BusEventBase, BusEventWithPayload, SetPanelAttentionEvent } from '@grafana/data';
-import { sceneGraph, SceneObject, sceneUtils, VizPanel } from '@grafana/scenes';
+import { BusEventBase, BusEventWithPayload, RawTimeRange, SetPanelAttentionEvent } from '@grafana/data';
+import { sceneGraph, SceneObject, VizPanel } from '@grafana/scenes';
 import { getExploreLink } from '../Components/Panels/PanelMenu';
 import { getTimePicker } from './scenes';
 import { OptionsWithLegend } from '@grafana/ui';
+import { hasProp, isObj, isString } from './narrowing';
 
 const appEvents = getAppEvents();
 
@@ -77,7 +78,9 @@ export function setupKeyboardShortcuts(scene: IndexScene) {
   keybindings.addBinding({
     key: 't v',
     onTrigger: () => {
-      appEvents.publish(new PasteTimeEvent({ updateUrl: true }));
+      const event = new PasteTimeEvent({ updateUrl: false });
+      scene.publishEvent(event);
+      appEvents.publish(event);
     },
   });
 
@@ -175,6 +178,7 @@ export class CopyTimeEvent extends BusEventBase {
 // @todo export from core grafana
 interface PasteTimeEventPayload {
   updateUrl?: boolean;
+  timeRange?: string;
 }
 
 // Copied from https://github.com/grafana/grafana/blob/main/public/app/types/events.ts
@@ -197,4 +201,30 @@ export function setWindowGrafanaSceneContext(activeScene: SceneObject) {
       (window as any).__grafanaSceneContext = prevScene;
     }
   };
+}
+
+// taken from /Users/galen/projects/grafana/grafana/public/app/core/utils/timePicker.ts
+type CopiedTimeRangeResult = { range: RawTimeRange; isError: false } | { range: string; isError: true };
+
+// modified to narrow types from clipboard
+export async function getCopiedTimeRange(): Promise<CopiedTimeRangeResult> {
+  const raw = await navigator.clipboard.readText();
+  let unknownRange;
+
+  try {
+    unknownRange = JSON.parse(raw);
+
+    const range = isObj(unknownRange) && hasProp(unknownRange, 'to') && hasProp(unknownRange, 'from') && unknownRange;
+    if (range) {
+      const to = isString(range.to);
+      const from = isString(range.from);
+      if (to && from) {
+        return { range: { to, from }, isError: false };
+      }
+    }
+
+    return { range: raw, isError: true };
+  } catch (e) {
+    return { range: raw, isError: true };
+  }
 }

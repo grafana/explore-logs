@@ -1,13 +1,13 @@
 import { SelectedTableRow } from '../Components/Table/LogLineCellComponent';
 import { LogsVisualizationType } from './store';
 import { FieldValue, ParserType } from './variables';
-const isObj = (o: unknown): o is object => typeof o === 'object' && o !== null;
+export const isObj = (o: unknown): o is object => typeof o === 'object' && o !== null;
 
-function hasProp<K extends PropertyKey>(data: object, prop: K): data is Record<K, unknown> {
+export function hasProp<K extends PropertyKey>(data: object, prop: K): data is Record<K, unknown> {
   return prop in data;
 }
 
-const isString = (s: unknown) => (typeof s === 'string' && s) || '';
+export const isString = (s: unknown) => (typeof s === 'string' && s) || '';
 
 export const isRecord = (obj: unknown): obj is Record<string, unknown> => typeof obj === 'object';
 
