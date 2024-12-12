@@ -13,7 +13,6 @@ import { getLineFilterCase, setLineFilterCase } from '../../services/store';
 interface LineFilterState extends SceneObjectState {
   lineFilter: string;
   caseSensitive: boolean;
-  regex: boolean;
 }
 
 export class LineFilterScene extends SceneObjectBase<LineFilterState> {
@@ -23,7 +22,6 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
     super({
       lineFilter: state?.lineFilter || '',
       caseSensitive: getLineFilterCase(false),
-      regex: false,
       ...state,
     });
     this.addActivationHandler(this.onActivate);
