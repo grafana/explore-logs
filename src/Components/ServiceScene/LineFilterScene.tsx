@@ -43,7 +43,6 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
     const caseSensitiveMatches = caseSensitive
       ? lineFilterString.match(/\|=.`(.+?)`/)
       : lineFilterString.match(/`\(\?i\)(.+)`/);
-    const regexMatches = lineFilterString.match(/\|~.+\`(.*?)\`/);
 
     // If the existing query is case sensitive, overwrite the users options for case sensitivity
     if (caseSensitiveMatches && caseSensitiveMatches.length === 2) {
@@ -64,6 +63,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
       return;
     }
 
+    const regexMatches = lineFilterString.match(/\|~.+\`(.*?)\`/);
     if (regexMatches?.length === 2) {
       this.setState({
         lineFilter: regexMatches[1],
