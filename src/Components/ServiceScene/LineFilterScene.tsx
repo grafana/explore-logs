@@ -8,6 +8,7 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'se
 import { SearchInput } from './Breakdowns/SearchInput';
 import { LineFilterIcon } from './LineFilterIcon';
 import { getLineFilterVariable } from '../../services/variableGetters';
+import { getLineFilterCase, setLineFilterCase } from '../../services/store';
 
 interface LineFilterState extends SceneObjectState {
   lineFilter: string;
@@ -20,7 +21,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   constructor(state?: Partial<LineFilterState>) {
     super({
       lineFilter: state?.lineFilter || '',
-      caseSensitive: false,
+      caseSensitive: getLineFilterCase(false),
       ...state,
     });
     this.addActivationHandler(this.onActivate);
@@ -66,11 +67,17 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   };
 
   onCaseSensitiveToggle = (newState: 'sensitive' | 'insensitive') => {
+    const caseSensitive = newState === 'sensitive';
+
+    // Set value to scene state
     this.setState({
-      caseSensitive: newState === 'sensitive',
+      caseSensitive,
     });
 
-    this.updateFilter(this.state.lineFilter);
+    // Set value in local storage
+    setLineFilterCase(caseSensitive);
+
+    this.updateFilter(this.state.lineFilter, false);
   };
 
   updateVariableDebounced = debounce((search: string) => {

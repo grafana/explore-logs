@@ -75,7 +75,7 @@ import { AdHocFilterWithLabels, getLokiDatasource } from '../../services/scenes'
 import { FilterOp } from '../../services/filterTypes';
 import { ShowLogsButtonScene } from './ShowLogsButtonScene';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
-import { setupKeyboardShortcuts } from '../../services/keyboardShortcuts';
+import { getCopiedTimeRange, PasteTimeEvent, setupKeyboardShortcuts } from '../../services/keyboardShortcuts';
 import { LokiDatasource } from '../../services/lokiQuery';
 
 export const showLogsButtonSceneKey = 'showLogsButtonScene';
@@ -186,6 +186,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     const timeRange = sceneGraph.getTimeRange(this);
 
     this._subs.add(timeRange.subscribeToState(this.limitMaxInterval(timeRange)));
+    this._subs.add(this.subscribeToEvent(PasteTimeEvent, this.subscribeToPasteTimeEvent));
 
     const clearKeyBindings = setupKeyboardShortcuts(this);
 
@@ -226,6 +227,34 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       getTagValuesProvider: getLabelsTagValuesProvider,
     });
   }
+
+  private subscribeToPasteTimeEvent = async () => {
+    const copiedRange = await getCopiedTimeRange();
+
+    if (copiedRange.isError) {
+      return;
+    }
+
+    const timeRange = sceneGraph.getTimeRange(this);
+    const to = typeof copiedRange.range.to === 'string' ? copiedRange.range.to : undefined;
+    const from = typeof copiedRange.range.from === 'string' ? copiedRange.range.from : undefined;
+    const newRange = rangeUtil.convertRawToRange(copiedRange.range);
+
+    if (timeRange && newRange) {
+      timeRange.setState({
+        value: newRange,
+        to,
+        from,
+      });
+    } else {
+      logger.error(new Error('Invalid time range from clipboard'), {
+        msg: 'Invalid time range from clipboard',
+        sceneTimeRange: typeof timeRange,
+        to: to ?? '',
+        from: from ?? '',
+      });
+    }
+  };
 
   /**
    * If user selects a time range longer then the max configured interval, show toast and set the previous time range.
