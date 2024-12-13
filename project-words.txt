@@ -504,3 +504,4 @@ keycombo
 capslock
 pageup
 pagedown
+linefilter
