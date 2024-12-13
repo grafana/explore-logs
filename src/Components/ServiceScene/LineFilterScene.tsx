@@ -34,6 +34,7 @@ interface LineFilterState extends SceneObjectState {
  * * Duplicate queries
  * * Testing
  * * Nothing is escaped right now
+ * * Discuss serializing case sensitivity option
  * *
  */
 export class LineFilterScene extends SceneObjectBase<LineFilterState> {
