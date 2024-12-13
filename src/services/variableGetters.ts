@@ -27,6 +27,7 @@ import {
   VAR_LEVELS,
   VAR_LEVELS_EXPR,
   VAR_LINE_FILTER,
+  VAR_LINE_FILTER_AD_HOC,
   VAR_LINE_FILTER_EXPR,
   VAR_METADATA,
   VAR_METADATA_EXPR,
@@ -89,7 +90,7 @@ export function getLevelsVariable(scene: SceneObject) {
 
 export function getLineFilterVariable(scene: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_LINE_FILTER, scene);
-  if (!(variable instanceof CustomVariable)) {
+  if (!(variable instanceof AdHocFiltersVariable)) {
     throw new Error('VAR_LINE_FILTER not found');
   }
   return variable;
@@ -123,6 +124,14 @@ export function getDataSourceVariable(scene: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_DATASOURCE, scene);
   if (!(variable instanceof DataSourceVariable)) {
     throw new Error('VAR_DATASOURCE not found');
+  }
+  return variable;
+}
+
+export function getLineFiltersVariable(scene: SceneObject): AdHocFiltersVariable {
+  const variable = sceneGraph.lookupVariable(VAR_LINE_FILTER_AD_HOC, scene);
+  if (!(variable instanceof AdHocFiltersVariable)) {
+    throw new Error('VAR_LINE_FILTER_AD_HOC not found');
   }
   return variable;
 }

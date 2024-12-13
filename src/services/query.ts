@@ -115,6 +115,15 @@ export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
   return `${positiveFilters} ${negativeFilters} ${numericFilters}`.trim();
 }
 
+export function renderLogQLLineFilter(filters: AdHocVariableFilter[]) {
+  const result = filters
+    .map((f) => {
+      return `${f.operator} \`${f.value}\``;
+    })
+    .join(' ');
+  console.log('renderLogQLLineFilter', result);
+  return result;
+}
 export function renderLogQLMetadataFilters(filters: AdHocVariableFilter[]) {
   const positive = filters.filter((filter) => filter.operator === FilterOp.Equal);
   const negative = filters.filter((filter) => filter.operator === FilterOp.NotEqual);

@@ -256,6 +256,15 @@ export function setLineFilterRegex(regex: boolean) {
   localStorage.setItem(`${LINE_FILTER_OPTIONS_LOCALSTORAGE_KEY}.regex`, storedValue);
 }
 
+export function setLineFilterExclusive(exclusive: boolean) {
+  let storedValue = exclusive.toString();
+  if (!exclusive) {
+    storedValue = '';
+  }
+
+  localStorage.setItem(`${LINE_FILTER_OPTIONS_LOCALSTORAGE_KEY}.exclusive`, storedValue);
+}
+
 export function getLineFilterCase(defaultValue: boolean): boolean {
   const storedValue = localStorage.getItem(`${LINE_FILTER_OPTIONS_LOCALSTORAGE_KEY}.caseSensitive`);
   return storedValue === 'true' ? true : defaultValue;
@@ -263,6 +272,11 @@ export function getLineFilterCase(defaultValue: boolean): boolean {
 
 export function getLineFilterRegex(defaultValue: boolean): boolean {
   const storedValue = localStorage.getItem(`${LINE_FILTER_OPTIONS_LOCALSTORAGE_KEY}.regex`);
+  return storedValue === 'true' ? true : defaultValue;
+}
+
+export function getLineFilterExclusive(defaultValue: boolean): boolean {
+  const storedValue = localStorage.getItem(`${LINE_FILTER_OPTIONS_LOCALSTORAGE_KEY}.exclusive`);
   return storedValue === 'true' ? true : defaultValue;
 }
 
