@@ -225,7 +225,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   private subscribeToPasteTimeEvent = async () => {
     const copiedRange = await getCopiedTimeRange();
 
-    if (!copiedRange.isError) {
+    if (copiedRange.isError) {
       return;
     }
 
