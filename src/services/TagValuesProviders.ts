@@ -3,7 +3,7 @@ import { DataSourceGetTagValuesOptions, GetTagResponse, MetricFindValue, ScopedV
 import { BackendSrvRequest, DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
 import { AdHocFilterWithLabels, getDataSource } from './scenes';
 import { logger } from './logger';
-import { LokiQuery } from './lokiQuery';
+import { LokiDatasource, LokiQuery } from './lokiQuery';
 import { getDataSourceVariable, getValueFromFieldsFilter } from './variableGetters';
 import { VAR_FIELDS, VAR_LEVELS, VAR_METADATA } from './variables';
 import { isArray } from 'lodash';
@@ -45,7 +45,7 @@ export const getDetectedFieldValuesTagValuesProvider = async (
   }
 
   // Assert datasource is Loki
-  const lokiDatasource = datasourceUnknownType as DataSourceWithBackend<LokiQuery>;
+  const lokiDatasource = datasourceUnknownType as LokiDatasource;
   // Assert language provider is LokiLanguageProvider
   const languageProvider = lokiDatasource.languageProvider as LokiLanguageProviderWithDetectedLabelValues;
 
@@ -114,7 +114,7 @@ export async function getLabelsTagValuesProvider(
     logger.error(new Error('getTagValuesProvider: Invalid datasource!'));
     throw new Error('Invalid datasource!');
   }
-  const datasource = datasource_ as DataSourceWithBackend<LokiQuery>;
+  const datasource = datasource_ as LokiDatasource;
 
   if (datasource && datasource.getTagValues) {
     // Filter out other values for this key so users can include other values for this label

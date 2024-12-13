@@ -228,3 +228,5 @@ export function unwrapWildcardSearch(input: string) {
 export function sanitizeStreamSelector(expression: string) {
   return expression.replace(/\s*,\s*}/, '}');
 }
+
+export const LINE_LIMIT = 1000;

@@ -67,7 +67,7 @@ describe('PatternNameLabel', () => {
   });
 
   it('calls data source query correctly', async () => {
-    render(<PatternNameLabel exploration={explorationMock} pattern="test <_> pattern" />);
+    render(<PatternNameLabel exploration={explorationMock} pattern="test <_> pattern" maxLines={1000} />);
 
     const patternElement = screen.getByText('<_>');
     userEvent.click(patternElement);
@@ -86,7 +86,7 @@ describe('PatternNameLabel', () => {
   });
 
   it('calls datasource query', async () => {
-    render(<PatternNameLabel exploration={explorationMock} pattern="test <_> pattern" />);
+    render(<PatternNameLabel exploration={explorationMock} pattern="test <_> pattern" maxLines={1000} />);
 
     const patternElement = screen.getByText('<_>');
     userEvent.click(patternElement);
@@ -98,7 +98,7 @@ describe('PatternNameLabel', () => {
   });
 
   it('avoids duplicate queries for the same pattern and time range', async () => {
-    render(<PatternNameLabel exploration={explorationMock} pattern="test <_> pattern" />);
+    render(<PatternNameLabel exploration={explorationMock} pattern="test <_> pattern" maxLines={1000} />);
 
     const patternElement = screen.getByText('<_>');
     userEvent.click(patternElement);

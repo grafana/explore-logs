@@ -10,15 +10,34 @@ import { css, cx } from '@emotion/css';
 import { BreakdownViewDefinition, breakdownViewsDefinitions, TabNames } from './BreakdownViews';
 import { config, usePluginLinks } from '@grafana/runtime';
 import { getLabelsVariable } from '../../services/variableGetters';
-import { LINE_LIMIT } from './Breakdowns/Patterns/PatternNameLabel';
+import { IndexScene } from '../IndexScene/IndexScene';
+import { LINE_LIMIT } from '../../services/query';
 
-export interface ActionBarSceneState extends SceneObjectState {}
+export interface ActionBarSceneState extends SceneObjectState {
+  maxLines?: number;
+}
 
 export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
+  constructor(state: Partial<ActionBarSceneState>) {
+    super(state);
+
+    this.addActivationHandler(this.onActivate.bind(this));
+  }
+
+  onActivate() {
+    const indexScene = sceneGraph.getAncestor(this, IndexScene);
+    const dataSource = indexScene.state.ds;
+    if (dataSource?.maxLines !== undefined) {
+      this.setState({
+        maxLines: dataSource.maxLines,
+      });
+    }
+  }
   public static Component = ({ model }: SceneComponentProps<ActionBarScene>) => {
     const styles = useStyles2(getStyles);
     let currentBreakdownViewSlug = getDrilldownSlug();
     let allowNavToParent = false;
+    const { maxLines } = model.useState();
 
     if (!Object.values(PageSlugs).includes(currentBreakdownViewSlug)) {
       const drilldownValueSlug = getDrilldownValueSlug();
@@ -55,7 +74,7 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
                 counter={loadingStates[tab.displayName] ? undefined : getCounter(tab, state)}
                 suffix={
                   tab.displayName === TabNames.logs
-                    ? ({ className }) => LogsCount(className, logsCount, totalLogsCount)
+                    ? ({ className }) => LogsCount(className, logsCount, totalLogsCount, maxLines)
                     : undefined
                 }
                 icon={loadingStates[tab.displayName] ? 'spinner' : undefined}
@@ -176,15 +195,21 @@ function ToolbarExtensionsRenderer(props: { serviceScene: SceneObject }) {
   );
 }
 
-function LogsCount(className: string | undefined, logsCount: number | undefined, totalCount: number | undefined) {
+function LogsCount(
+  className: string | undefined,
+  logsCount: number | undefined,
+  totalCount: number | undefined,
+  maxLines?: number
+) {
   const styles = useStyles2(getLogsCountStyles);
 
   if (logsCount !== undefined) {
+    const lineLimit = maxLines ?? LINE_LIMIT;
     const valueFormatter = getValueFormat('short');
 
     const formattedLogsCount = valueFormatter(logsCount, 0);
 
-    if (logsCount < LINE_LIMIT || totalCount === undefined) {
+    if (logsCount < lineLimit || totalCount === undefined) {
       return (
         <span className={cx(className, styles.logsCountStyles)}>
           {formattedLogsCount.text}

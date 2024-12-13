@@ -19,7 +19,7 @@ import { FIELDS_TO_REMOVE, LABELS_TO_REMOVE, sortLabelsByCardinality } from './f
 import { SERVICE_NAME } from './variables';
 import { runShardSplitQuery } from './shardQuerySplitting';
 import { requestSupportsSharding } from './logql';
-import { LokiQuery } from './lokiQuery';
+import { LokiDatasource, LokiQuery } from './lokiQuery';
 import { SceneDataQueryRequest, SceneDataQueryResourceRequest, VolumeRequestProps } from './datasourceTypes';
 import { logger } from './logger';
 import { PLUGIN_ID } from './plugin';
@@ -136,11 +136,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     });
   }
 
-  private getData(
-    request: SceneDataQueryRequest,
-    ds: DataSourceWithBackend<LokiQuery>,
-    subscriber: Subscriber<DataQueryResponse>
-  ) {
+  private getData(request: SceneDataQueryRequest, ds: LokiDatasource, subscriber: Subscriber<DataQueryResponse>) {
     const shardingEnabled = config.featureToggles.exploreLogsShardSplitting;
 
     const updatedRequest = {
@@ -164,7 +160,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
   private async getPatterns(
     request: DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest>,
-    ds: DataSourceWithBackend<LokiQuery>,
+    ds: LokiDatasource,
     subscriber: Subscriber<DataQueryResponse>
   ) {
     const targets = request.targets.filter((target) => {
@@ -256,7 +252,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
   }
 
   private interpolate(
-    ds: DataSourceWithBackend<LokiQuery>,
+    ds: LokiDatasource,
     targets: Array<LokiQuery & SceneDataQueryResourceRequest>,
     request: DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest>
   ) {
@@ -271,7 +267,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
   private async getDetectedLabels(
     request: DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest>,
-    ds: DataSourceWithBackend<LokiQuery>,
+    ds: LokiDatasource,
     subscriber: Subscriber<DataQueryResponse>
   ) {
     const targets = request.targets.filter((target) => {
@@ -335,7 +331,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
   private async getDetectedFields(
     request: DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest>,
-    ds: DataSourceWithBackend<LokiQuery>,
+    ds: LokiDatasource,
     subscriber: Subscriber<DataQueryResponse>
   ) {
     const targets = request.targets.filter((target) => {
@@ -402,7 +398,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
   //@todo doesn't work with multiple queries
   private async getVolume(
     request: DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest & VolumeRequestProps>,
-    ds: DataSourceWithBackend<LokiQuery>,
+    ds: LokiDatasource,
     subscriber: Subscriber<DataQueryResponse>
   ) {
     if (request.targets.length !== 1) {
@@ -469,7 +465,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
   private async getLabels(
     request: DataQueryRequest<LokiQuery & SceneDataQueryResourceRequest>,
-    ds: DataSourceWithBackend<LokiQuery>,
+    ds: LokiDatasource,
     subscriber: Subscriber<DataQueryResponse>
   ) {
     if (request.targets.length !== 1) {

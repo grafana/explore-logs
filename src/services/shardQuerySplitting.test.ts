@@ -3,9 +3,8 @@ import { of } from 'rxjs';
 import { DataQueryRequest, DataQueryResponse, dateTime, LoadingState } from '@grafana/data';
 
 import { runShardSplitQuery } from './shardQuerySplitting';
-import { DataSourceWithBackend } from '@grafana/runtime';
 
-import { LokiQuery } from './lokiQuery';
+import { LokiDatasource, LokiQuery } from './lokiQuery';
 import { getMockFrames } from './combineResponses.test';
 
 jest.mock('uuid', () => ({
@@ -25,7 +24,7 @@ afterAll(() => {
 });
 
 describe('runShardSplitQuery()', () => {
-  let datasource: DataSourceWithBackend<LokiQuery>;
+  let datasource: LokiDatasource;
   const range = {
     from: dateTime('2023-02-08T04:00:00.000Z'),
     to: dateTime('2023-02-08T11:00:00.000Z'),
@@ -440,5 +439,5 @@ function createLokiDatasource() {
     languageProvider: {
       fetchLabelValues: jest.fn(),
     },
-  } as unknown as DataSourceWithBackend<LokiQuery>;
+  } as unknown as LokiDatasource;
 }

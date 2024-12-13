@@ -13,11 +13,10 @@ import { getLabelsVariable } from '../../../../services/variableGetters';
 interface PatternNameLabelProps {
   exploration: IndexScene;
   pattern: string;
+  maxLines: number;
 }
 
-export const LINE_LIMIT = 1000;
-
-export const PatternNameLabel = ({ exploration, pattern }: PatternNameLabelProps) => {
+export const PatternNameLabel = ({ exploration, pattern, maxLines }: PatternNameLabelProps) => {
   const patternIndices = extractPatternIndices(pattern);
   const [stats, setStats] = useState<LogLabelStatsModel[][] | undefined>(undefined);
   const [statsError, setStatsError] = useState(false);
@@ -49,14 +48,14 @@ export const PatternNameLabel = ({ exploration, pattern }: PatternNameLabelProps
         intervalMs: 0,
         scopedVars: {},
         range: currentTimeRange,
-        targets: [buildDataQuery(query, { maxLines: LINE_LIMIT })],
+        targets: [buildDataQuery(query, { maxLines })],
         timezone: '',
         app: '',
         startTime: 0,
       })
       .forEach((result) => {
         if (result.state === LoadingState.Done && !result.errors?.length) {
-          setStats(convertResultToStats(result, patternIndices.length));
+          setStats(convertResultToStats(result, patternIndices.length, maxLines));
           setStatsError(false);
         } else if (result.state === LoadingState.Error || result.errors?.length) {
           setStats(undefined);
@@ -114,7 +113,7 @@ function getStyles(theme: GrafanaTheme2) {
 }
 
 // Convert the result to statistics data structure
-function convertResultToStats(result: any, fieldCount: number): LogLabelStatsModel[][] {
+function convertResultToStats(result: any, fieldCount: number, maxLines: number): LogLabelStatsModel[][] {
   const fieldStatsMap = new Map<string, Map<string, number>>();
 
   // Populate the fieldStatsMap with values from the result
@@ -133,7 +132,7 @@ function convertResultToStats(result: any, fieldCount: number): LogLabelStatsMod
   for (let i = 0; i <= fieldCount; i++) {
     const fieldStats: LogLabelStatsModel[] = [];
     fieldStatsMap.get(`field_${i + 1}`)?.forEach((count, key) => {
-      fieldStats.push({ value: key, count, proportion: count / LINE_LIMIT });
+      fieldStats.push({ value: key, count, proportion: count / maxLines });
     });
     fieldStats.sort((a, b) => b.count - a.count);
     stats.push(fieldStats);
