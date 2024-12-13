@@ -226,26 +226,27 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     const copiedRange = await getCopiedTimeRange();
 
     if (!copiedRange.isError) {
-      const timeRange = sceneGraph.getTimeRange(this);
-      const to = typeof copiedRange.range.to === 'string' ? copiedRange.range.to : undefined;
-      const from = typeof copiedRange.range.from === 'string' ? copiedRange.range.from : undefined;
+      return;
+    }
 
-      const newRange = rangeUtil.convertRawToRange(copiedRange.range);
+    const timeRange = sceneGraph.getTimeRange(this);
+    const to = typeof copiedRange.range.to === 'string' ? copiedRange.range.to : undefined;
+    const from = typeof copiedRange.range.from === 'string' ? copiedRange.range.from : undefined;
+    const newRange = rangeUtil.convertRawToRange(copiedRange.range);
 
-      if (timeRange && newRange) {
-        timeRange.setState({
-          value: newRange,
-          to,
-          from,
-        });
-      } else {
-        logger.error(new Error('Invalid time range from clipboard'), {
-          msg: 'Invalid time range from clipboard',
-          sceneTimeRange: typeof timeRange,
-          to: to ?? '',
-          from: from ?? '',
-        });
-      }
+    if (timeRange && newRange) {
+      timeRange.setState({
+        value: newRange,
+        to,
+        from,
+      });
+    } else {
+      logger.error(new Error('Invalid time range from clipboard'), {
+        msg: 'Invalid time range from clipboard',
+        sceneTimeRange: typeof timeRange,
+        to: to ?? '',
+        from: from ?? '',
+      });
     }
   };
 
