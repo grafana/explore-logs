@@ -22,10 +22,9 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   static Component = LineFilterRenderer;
 
   constructor(state?: Partial<LineFilterState>) {
-    const caseSensitive = getLineFilterCase(false);
     super({
       lineFilter: state?.lineFilter || '',
-      caseSensitive,
+      caseSensitive: getLineFilterCase(false),
       regex: getLineFilterRegex(false),
       ...state,
     });
