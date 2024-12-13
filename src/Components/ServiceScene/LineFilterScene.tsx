@@ -6,10 +6,10 @@ import React, { ChangeEvent, KeyboardEvent } from 'react';
 import { testIds } from 'services/testIds';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { SearchInput } from './Breakdowns/SearchInput';
-import { LineFilterIcon } from './LineFilterIcon';
+import { LineFilterIconButton } from './LineFilterIconButton';
 import { getLineFilterVariable } from '../../services/variableGetters';
 import { getLineFilterCase, getLineFilterRegex, setLineFilterCase, setLineFilterRegex } from '../../services/store';
-import { RegexIcon, RegexInputValue } from './RegexIcon';
+import { RegexIconButton, RegexInputValue } from './RegexIconButton';
 import { logger } from '../../services/logger';
 
 interface LineFilterState extends SceneObjectState {
@@ -168,8 +168,8 @@ function LineFilterRenderer({ model }: SceneComponentProps<LineFilterScene>) {
         onChange={model.handleChange}
         suffix={
           <>
-            <LineFilterIcon caseSensitive={caseSensitive} onCaseSensitiveToggle={model.onCaseSensitiveToggle} />
-            <RegexIcon regex={regex} onRegexToggle={model.onRegexToggle} />
+            <LineFilterIconButton caseSensitive={caseSensitive} onCaseSensitiveToggle={model.onCaseSensitiveToggle} />
+            <RegexIconButton regex={regex} onRegexToggle={model.onRegexToggle} />
           </>
         }
         placeholder="Search in log lines"
