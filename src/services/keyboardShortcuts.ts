@@ -1,11 +1,12 @@
 import { IndexScene } from '../Components/IndexScene/IndexScene';
 import { KeybindingSet } from './KeybindingSet';
 import { getAppEvents, locationService } from '@grafana/runtime';
-import { SetPanelAttentionEvent } from '@grafana/data';
-import { sceneGraph, VizPanel } from '@grafana/scenes';
+import { BusEventBase, BusEventWithPayload, RawTimeRange, SetPanelAttentionEvent } from '@grafana/data';
+import { sceneGraph, SceneObject, VizPanel } from '@grafana/scenes';
 import { getExploreLink } from '../Components/Panels/PanelMenu';
 import { getTimePicker } from './scenes';
 import { OptionsWithLegend } from '@grafana/ui';
+import { narrowTimeRange } from './narrowing';
 
 const appEvents = getAppEvents();
 
@@ -61,6 +62,26 @@ export function setupKeyboardShortcuts(scene: IndexScene) {
         locationService.push(url);
       }
     }),
+  });
+
+  // Copy time range
+  keybindings.addBinding({
+    key: 't c',
+    onTrigger: () => {
+      const timeRange = sceneGraph.getTimeRange(scene);
+      setWindowGrafanaSceneContext(timeRange);
+      appEvents.publish(new CopyTimeEvent());
+    },
+  });
+
+  // Paste time range
+  keybindings.addBinding({
+    key: 't v',
+    onTrigger: () => {
+      const event = new PasteTimeEvent({ updateUrl: false });
+      scene.publishEvent(event);
+      appEvents.publish(event);
+    },
   });
 
   // Refresh
@@ -145,4 +166,60 @@ export function toggleVizPanelLegend(vizPanel: VizPanel): void {
 
 function hasLegendOptions(optionsWithLegend: unknown): optionsWithLegend is OptionsWithLegend {
   return optionsWithLegend != null && typeof optionsWithLegend === 'object' && 'legend' in optionsWithLegend;
+}
+
+// Copied from https://github.com/grafana/grafana/blob/main/public/app/types/events.ts
+// @todo export from core grafana
+export class CopyTimeEvent extends BusEventBase {
+  static type = 'copy-time';
+}
+
+// Copied from https://github.com/grafana/grafana/blob/main/public/app/types/events.ts
+// @todo export from core grafana
+interface PasteTimeEventPayload {
+  updateUrl?: boolean;
+  timeRange?: string;
+}
+
+// Copied from https://github.com/grafana/grafana/blob/main/public/app/types/events.ts
+// @todo export from core grafana
+export class PasteTimeEvent extends BusEventWithPayload<PasteTimeEventPayload> {
+  static type = 'paste-time';
+}
+
+/**
+ * Adds the scene object to the global window state so that templateSrv in core can interpolate strings using the scene interpolation engine with the scene as scope.
+ * This is needed for old datasources that call templateSrv.replace without passing scopedVars. For example in DataSourceAPI.metricFindQuery.
+ *
+ * This is also used from TimeSrv to access scene time range.
+ *
+ * @todo delete after https://github.com/grafana/scenes/pull/999 is available
+ */
+export function setWindowGrafanaSceneContext(activeScene: SceneObject) {
+  const prevScene = (window as any).__grafanaSceneContext;
+
+  (window as any).__grafanaSceneContext = activeScene;
+
+  return () => {
+    if ((window as any).__grafanaSceneContext === activeScene) {
+      (window as any).__grafanaSceneContext = prevScene;
+    }
+  };
+}
+
+// taken from /Users/galen/projects/grafana/grafana/public/app/core/utils/timePicker.ts
+type CopiedTimeRangeResult = { range: RawTimeRange; isError: false } | { range: string; isError: true };
+// modified to narrow types from clipboard
+export async function getCopiedTimeRange(): Promise<CopiedTimeRangeResult> {
+  const raw = await navigator.clipboard.readText();
+  let unknownRange: unknown;
+
+  try {
+    unknownRange = JSON.parse(raw);
+    const range = narrowTimeRange(unknownRange);
+    if (range) {
+      return { isError: false, range };
+    }
+  } catch (e) {}
+  return { range: raw, isError: true };
 }
