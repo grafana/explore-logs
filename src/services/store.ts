@@ -249,7 +249,7 @@ export function setLineFilterCase(caseSensitive: boolean) {
 
 export function setLineFilterRegex(regex: boolean) {
   let storedValue = regex.toString();
-  if (typeof regex === 'boolean' && !regex) {
+  if (!regex) {
     storedValue = '';
   }
 
