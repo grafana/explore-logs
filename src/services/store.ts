@@ -236,6 +236,22 @@ export function setLogsVisualizationType(type: string) {
   localStorage.setItem(VISUALIZATION_TYPE_LOCALSTORAGE_KEY, type);
 }
 
+// Line filter options
+const LINE_FILTER_OPTIONS_LOCALSTORAGE_KEY = `${pluginJson.id}.linefilter.option`;
+export function setLineFilterCase(caseSensitive: boolean) {
+  let storedValue = caseSensitive.toString();
+  if (!caseSensitive) {
+    storedValue = '';
+  }
+
+  localStorage.setItem(`${LINE_FILTER_OPTIONS_LOCALSTORAGE_KEY}.caseSensitive`, storedValue);
+}
+
+export function getLineFilterCase(defaultValue: boolean): boolean {
+  const storedValue = localStorage.getItem(`${LINE_FILTER_OPTIONS_LOCALSTORAGE_KEY}.caseSensitive`);
+  return storedValue === 'true' ? true : defaultValue;
+}
+
 // Panel options
 const PANEL_OPTIONS_LOCALSTORAGE_KEY = `${pluginJson.id}.panel.option`;
 export interface PanelOptions {
