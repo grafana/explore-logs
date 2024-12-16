@@ -2,9 +2,10 @@ import { useTheme2 } from '@grafana/ui';
 import React from 'react';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
+import {LineFilterCaseSensitive} from "./LineFilterScene";
 
 interface Props {
-  onCaseSensitiveToggle: (state: 'sensitive' | 'insensitive') => void;
+  onCaseSensitiveToggle: (state: LineFilterCaseSensitive) => void;
   caseSensitive: boolean;
 }
 
@@ -15,7 +16,7 @@ export const LineFilterIconButton = (props: Props) => {
 
   return (
     <button
-      onClick={() => props.onCaseSensitiveToggle(props.caseSensitive ? 'insensitive' : 'sensitive')}
+      onClick={() => props.onCaseSensitiveToggle(props.caseSensitive ? LineFilterCaseSensitive.caseInsensitive : LineFilterCaseSensitive.caseSensitive)}
       className={styles.container}
       title={`Case ${props.caseSensitive ? 'insensitive' : 'sensitive'} search`}
     >

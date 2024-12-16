@@ -78,6 +78,7 @@ import { FilterOp, LineFilterOp } from '../../services/filterTypes';
 import { ShowLogsButtonScene } from './ShowLogsButtonScene';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
 import { getCopiedTimeRange, PasteTimeEvent, setupKeyboardShortcuts } from '../../services/keyboardShortcuts';
+import {LineFilterCaseSensitive} from "../ServiceScene/LineFilterScene";
 
 export const showLogsButtonSceneKey = 'showLogsButtonScene';
 export interface AppliedPattern {
@@ -502,12 +503,12 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
         replace: true,
         values: [
           {
-            value: 'caseSensitive',
-            text: 'caseSensitive',
+            value: LineFilterCaseSensitive.caseSensitive,
+            text: LineFilterCaseSensitive.caseSensitive,
           },
           {
-            value: 'caseInsensitive',
-            text: 'caseInsensitive',
+            value: LineFilterCaseSensitive.caseInsensitive,
+            text: LineFilterCaseSensitive.caseInsensitive,
           },
         ],
       }),

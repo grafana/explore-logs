@@ -47,7 +47,7 @@ describe('buildFieldsQueryString', () => {
 
     const result = buildFieldsQueryString('caller', filterVariable, detectedFieldsFrame);
     expect(result).toEqual(
-      `sum by (caller) (count_over_time({\${filters}}  \${metadata} \${levels} \${patterns} \${lineFilter} | logfmt | caller!="" \${fields} [$__auto]))`
+      `sum by (caller) (count_over_time({\${filters}}  \${metadata} \${levels} \${patterns} \${lineFilterV2} | logfmt | caller!="" \${fields} [$__auto]))`
     );
   });
   test('should build json-parser query', () => {
@@ -87,7 +87,7 @@ describe('buildFieldsQueryString', () => {
 
     const result = buildFieldsQueryString('caller', filterVariable, detectedFieldsFrame);
     expect(result).toEqual(
-      `sum by (caller) (count_over_time({\${filters}}  \${metadata} \${levels} \${patterns} \${lineFilter} | json | drop __error__, __error_details__ | caller!="" \${fields} [$__auto]))`
+      `sum by (caller) (count_over_time({\${filters}}  \${metadata} \${levels} \${patterns} \${lineFilterV2} | json | drop __error__, __error_details__ | caller!="" \${fields} [$__auto]))`
     );
   });
   test('should build mixed-parser query', () => {
@@ -127,7 +127,7 @@ describe('buildFieldsQueryString', () => {
 
     const result = buildFieldsQueryString('caller', filterVariable, detectedFieldsFrame);
     expect(result).toEqual(
-      `sum by (caller) (count_over_time({\${filters}}  \${metadata} \${levels} \${patterns} \${lineFilter} | json | logfmt | drop __error__, __error_details__ | caller!="" \${fields} [$__auto]))`
+      `sum by (caller) (count_over_time({\${filters}}  \${metadata} \${levels} \${patterns} \${lineFilterV2} | json | logfmt | drop __error__, __error_details__ | caller!="" \${fields} [$__auto]))`
     );
   });
   test('should build metadata query', () => {
@@ -167,7 +167,7 @@ describe('buildFieldsQueryString', () => {
 
     const result = buildFieldsQueryString('caller', metadataVariable, detectedFieldsFrame);
     expect(result).toEqual(
-      `sum by (caller) (count_over_time({\${filters}} | caller!="" \${metadata} \${levels} \${patterns} \${lineFilter}  \${fields} [$__auto]))`
+      `sum by (caller) (count_over_time({\${filters}} | caller!="" \${metadata} \${levels} \${patterns} \${lineFilterV2}  \${fields} [$__auto]))`
     );
   });
 });

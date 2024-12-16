@@ -26,6 +26,11 @@ interface LineFilterState extends SceneObjectState {
   exclusive: boolean;
 }
 
+export enum LineFilterCaseSensitive {
+  caseSensitive = 'caseSensitive',
+  caseInsensitive = 'caseInsensitive'
+}
+
 /**
  * TODO:
  * * UI needs love
@@ -43,9 +48,9 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   constructor(state?: Partial<LineFilterState>) {
     super({
       lineFilter: state?.lineFilter || '',
-      caseSensitive: getLineFilterCase(false),
-      regex: getLineFilterRegex(false),
-      exclusive: getLineFilterExclusive(false),
+      caseSensitive: state?.caseSensitive ?? getLineFilterCase(false),
+      regex: state?.regex ?? getLineFilterRegex(false),
+      exclusive: state?.exclusive ?? getLineFilterExclusive(false),
       ...state,
     });
     this.addActivationHandler(this.onActivate);
@@ -62,7 +67,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
     this.setState({
       lineFilter: filter.value,
       regex: filter.operator === LineFilterOp.regex || filter.operator === LineFilterOp.negativeRegex,
-      caseSensitive: filter.key === 'caseSensitive',
+      caseSensitive: filter.key === LineFilterCaseSensitive.caseSensitive,
       exclusive: filter.operator === LineFilterOp.negativeMatch || filter.operator === LineFilterOp.negativeRegex,
     });
   };
@@ -149,7 +154,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   }
 
   getFilterKey() {
-    return this.state.caseSensitive ? 'caseSensitive' : 'caseInsensitive';
+    return this.state.caseSensitive ? LineFilterCaseSensitive.caseSensitive : LineFilterCaseSensitive.caseInsensitive;
   }
   getFilterValue() {
     const filter = this.getFilter();
@@ -193,8 +198,8 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
     }
   };
 
-  onCaseSensitiveToggle = (newState: 'sensitive' | 'insensitive') => {
-    const caseSensitive = newState === 'sensitive';
+  onCaseSensitiveToggle = (newState: LineFilterCaseSensitive) => {
+    const caseSensitive = newState === LineFilterCaseSensitive.caseSensitive;
 
     // Set value to scene state
     this.setState({

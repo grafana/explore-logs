@@ -118,6 +118,7 @@ export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
 export function renderLogQLLineFilter(filters: AdHocVariableFilter[]) {
   const result = filters
     .map((f) => {
+      if(f.key === '')
       return `${f.operator} \`${f.value}\``;
     })
     .join(' ');
