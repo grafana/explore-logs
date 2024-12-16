@@ -433,7 +433,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     return this.state.$data?.subscribeToState((newState, prevState) => {
       this.updateLoadingState(newState, TabNames.logs);
       if (newState.data?.state === LoadingState.Done || newState.data?.state === LoadingState.Streaming) {
-        const resultCount = newState.data.series[0].length;
+        const resultCount = newState.data.series[0]?.length ?? 0;
         if (resultCount !== this.state.logsCount) {
           this.setState({
             logsCount: resultCount,
