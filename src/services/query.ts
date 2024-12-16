@@ -229,4 +229,5 @@ export function sanitizeStreamSelector(expression: string) {
   return expression.replace(/\s*,\s*}/, '}');
 }
 
+// default line limit; each data source can define it's own line limit too
 export const LINE_LIMIT = 1000;
