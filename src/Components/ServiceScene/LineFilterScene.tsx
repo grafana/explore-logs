@@ -18,6 +18,7 @@ import {
 } from '../../services/store';
 import { RegexIconButton, RegexInputValue } from './RegexIconButton';
 import { LineFilterOp } from '../../services/filterTypes';
+import { locationService } from '@grafana/runtime';
 
 interface LineFilterState extends SceneObjectState {
   lineFilter: string;
@@ -28,7 +29,7 @@ interface LineFilterState extends SceneObjectState {
 
 export enum LineFilterCaseSensitive {
   caseSensitive = 'caseSensitive',
-  caseInsensitive = 'caseInsensitive'
+  caseInsensitive = 'caseInsensitive',
 }
 
 /**
@@ -57,8 +58,8 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   }
 
   private onActivate = () => {
-    const filter = this.getFilter();
     this.migrateOldVariable();
+    const filter = this.getFilter();
 
     if (!filter) {
       return;
@@ -73,7 +74,8 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   };
 
   private migrateOldVariable() {
-    const search = new URLSearchParams(window.location.search);
+    const search = locationService.getSearch();
+
     const deprecatedLineFilter = search.get('var-lineFilter');
 
     if (!deprecatedLineFilter) {
@@ -111,9 +113,12 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
       ],
     });
 
-    // Will force a refresh
+    // Remove from url without refreshing
+    const newLocation = locationService.getLocation();
     search.delete('var-lineFilter');
-    window.location.search = search.toString();
+    newLocation.search = search.toString();
+    locationService.replace(newLocation.pathname + '?' + newLocation.search);
+    this.updateFilter(this.state.lineFilter, false);
   }
 
   updateFilter(lineFilter: string, debounced = true) {
@@ -229,18 +234,6 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   updateVariableDebounced = debounce((search: string) => {
     this.updateVariable(search);
   }, 1000);
-
-  /**
-   * @todo 🎵ALL YOU WANT TO DO IS USE ME 🎵
-   * @param value
-   */
-  escapeValue(value: string) {
-    if (this.state.regex) {
-      return `${this.getOperator()} \`${escape(value)}\``;
-    } else {
-      return `${this.getOperator()} \`${escapeRegExp(value)}\``;
-    }
-  }
 
   updateVariable = (search: string) => {
     const variable = getLineFilterVariable(this);

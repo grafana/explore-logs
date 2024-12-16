@@ -49,9 +49,12 @@ export const LOGS_FORMAT_EXPR = `| logfmt`;
 // This variable is hardcoded to the value of MIXED_FORMAT_EXPR. This is a hack to get logs context working, we don't want to use a variable for a value that doesn't change and cannot be updated by the user.
 export const VAR_LOGS_FORMAT = 'logsFormat';
 export const VAR_LOGS_FORMAT_EXPR = '${logsFormat}';
+// The deprecated line filter (custom variable)
 export const VAR_LINE_FILTER_DEPRECATED = 'lineFilter';
+// The new single value line filter (ad-hoc variable), results are added to VAR_LINE_FILTER_AD_HOC when "submitted"
 export const VAR_LINE_FILTER = 'lineFilterV2';
 export const VAR_LINE_FILTER_EXPR = '${lineFilterV2}';
+// The new multi value line filter (ad-hoc variable)
 export const VAR_LINE_FILTER_AD_HOC = 'lineFilters';
 export const VAR_LINE_FILTER_AD_HOC_EXPR = '${lineFilters}';
 export const LOG_STREAM_SELECTOR_EXPR = `{${VAR_LABELS_EXPR}} ${VAR_PATTERNS_EXPR} ${VAR_METADATA_EXPR} ${VAR_LINE_FILTER_EXPR} ${VAR_LINE_FILTER_AD_HOC_EXPR} ${VAR_LEVELS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_FIELDS_EXPR}`;
