@@ -447,11 +447,9 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     return this.state.$logsCount?.subscribeToState((newState) => {
       if (newState.data?.state === LoadingState.Done) {
         const value: number | undefined = newState.data.series[0]?.fields?.[1]?.values?.[0];
-        if (value !== undefined) {
-          this.setState({
-            totalLogsCount: value,
-          });
-        }
+        this.setState({
+          totalLogsCount: value,
+        });
       }
     });
   }
