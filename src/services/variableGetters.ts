@@ -39,6 +39,7 @@ import {
 import { AdHocVariableFilter } from '@grafana/data';
 import { logger } from './logger';
 import { narrowFieldValue, NarrowingError } from './narrowing';
+import { CustomAdHocFiltersVariable } from './CustomAdHocFiltersVariable';
 
 export function getLogsStreamSelector(options: LogsQueryOptions) {
   const {
@@ -90,7 +91,7 @@ export function getLevelsVariable(scene: SceneObject) {
 
 export function getLineFilterVariable(scene: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_LINE_FILTER, scene);
-  if (!(variable instanceof AdHocFiltersVariable)) {
+  if (!(variable instanceof CustomAdHocFiltersVariable)) {
     throw new Error('VAR_LINE_FILTER not found');
   }
   return variable;
@@ -128,9 +129,9 @@ export function getDataSourceVariable(scene: SceneObject) {
   return variable;
 }
 
-export function getLineFiltersVariable(scene: SceneObject): AdHocFiltersVariable {
+export function getLineFiltersVariable(scene: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_LINE_FILTER_AD_HOC, scene);
-  if (!(variable instanceof AdHocFiltersVariable)) {
+  if (!(variable instanceof CustomAdHocFiltersVariable)) {
     throw new Error('VAR_LINE_FILTER_AD_HOC not found');
   }
   return variable;

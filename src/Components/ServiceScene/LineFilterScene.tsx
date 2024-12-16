@@ -1,7 +1,7 @@
 import { css } from '@emotion/css';
 import { SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { Button, Field, IconButton } from '@grafana/ui';
-import { debounce, escape, escapeRegExp } from 'lodash';
+import { debounce } from 'lodash';
 import React, { ChangeEvent, KeyboardEvent } from 'react';
 import { testIds } from 'services/testIds';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
@@ -172,22 +172,32 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   }
 
   onSubmitLineFilter = () => {
-    // @todo this causes the logs panel query to run twice even though the interpolated expr will not change as we're just moving the filter from one variable to another.
-    // We either need to manually execute the logPanelQuery, find a way to only run queries when the interpolated output changes, or maybe there should be a flag on setState to keep a particular change from causing data providers to re-query?
+    // @todo this causes the logs panel & volume queries to run twice even though the interpolated expr will not change as we're just moving the filter from one variable to another.
+    // We either need to manually execute the logPanelQuery and logs Volume, find a way to only run queries when the interpolated output changes, or maybe there should be a flag on setState to keep a particular change from causing data providers to re-query?
     const lineFiltersVariable = getLineFiltersVariable(this);
     const existingFilters = lineFiltersVariable.state.filters;
+    console.log('before SUBMIT', lineFiltersVariable.state.filterExpression);
 
-    lineFiltersVariable.setState({
-      filters: [...existingFilters, this.getFilter()],
-    });
+    lineFiltersVariable.setState(
+      {
+        filters: [...existingFilters, this.getFilter()],
+      },
+      { skipPublish: true }
+    );
+    console.log('after SUBMIT', lineFiltersVariable.state.filterExpression);
     this.clearVariable();
   };
 
   private clearVariable() {
     const variable = getLineFilterVariable(this);
-    variable.setState({
-      filters: [],
-    });
+    variable.setState(
+      {
+        filters: [],
+      },
+      {
+        skipPublish: true,
+      }
+    );
     this.setState({
       lineFilter: '',
     });

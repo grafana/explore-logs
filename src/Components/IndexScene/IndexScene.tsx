@@ -78,7 +78,8 @@ import { FilterOp, LineFilterOp } from '../../services/filterTypes';
 import { ShowLogsButtonScene } from './ShowLogsButtonScene';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
 import { getCopiedTimeRange, PasteTimeEvent, setupKeyboardShortcuts } from '../../services/keyboardShortcuts';
-import {LineFilterCaseSensitive} from "../ServiceScene/LineFilterScene";
+import { LineFilterCaseSensitive } from '../ServiceScene/LineFilterScene';
+import { CustomAdHocFiltersVariable } from '../../services/CustomAdHocFiltersVariable';
 
 export const showLogsButtonSceneKey = 'showLogsButtonScene';
 export interface AppliedPattern {
@@ -494,7 +495,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     return operators;
   };
 
-  const lineFiltersVariable = new AdHocFiltersVariable({
+  const lineFiltersVariable = new CustomAdHocFiltersVariable({
     name: VAR_LINE_FILTER_AD_HOC,
     // @todo hide variable, create custom renderer
     hide: VariableHide.hideLabel,
@@ -546,7 +547,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
           value: '',
           hide: VariableHide.hideVariable,
         }),
-        new AdHocFiltersVariable({
+        new CustomAdHocFiltersVariable({
           name: VAR_LINE_FILTER,
           hide: VariableHide.hideVariable,
           expressionBuilder: renderLogQLLineFilter,
