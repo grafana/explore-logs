@@ -97,7 +97,7 @@ test.describe('explore services breakdown page', () => {
   test('logs panel should have panel-content class suffix', async ({ page }) => {
     await explorePage.serviceBreakdownSearch.click();
     await explorePage.serviceBreakdownSearch.fill('broadcast');
-    await expect(page.getByTestId('data-testid Panel header Logs').locator('[class$="panel-content"]')).toBeVisible();
+    await expect(explorePage.getLogsPanelLocator().locator('[class$="panel-content"]')).toBeVisible();
   });
 
   test(`should add ${levelName} filter on table click`, async ({ page }) => {
@@ -136,7 +136,7 @@ test.describe('explore services breakdown page', () => {
 
     await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${levelName}`)).toBeVisible();
     await explorePage.goToLogsTab();
-    await page.getByTestId('data-testid Panel menu Logs').click();
+    await explorePage.getLogsVolumePanelLocator().click();
     await page.getByTestId('data-testid Panel menu item Explore').click();
     await expect(page.getByText(`{service_name=\`tempo-distributor\`} | ${levelName}=\`${valueName}\``)).toBeVisible();
   });
@@ -155,7 +155,7 @@ test.describe('explore services breakdown page', () => {
 
     // Navigate to logs query
     await explorePage.goToLogsTab();
-    await page.getByTestId('data-testid Panel menu Logs').click();
+    await explorePage.getLogsVolumePanelLocator().click();
     await page.getByTestId('data-testid Panel menu item Explore').click();
 
     await expect(
@@ -637,9 +637,7 @@ test.describe('explore services breakdown page', () => {
     await page.getByTitle('See log details').nth(1).click();
 
     await explorePage.scrollToBottom();
-    const adHocLocator = page
-      .getByTestId('data-testid Panel header Logs')
-      .getByText('mimir-distributor', { exact: true });
+    const adHocLocator = explorePage.getLogsPanelLocator().getByText('mimir-distributor', { exact: true });
     await expect(adHocLocator).toHaveCount(1);
     // find text corresponding text to match adhoc filter
     await expect(adHocLocator).toBeVisible();
