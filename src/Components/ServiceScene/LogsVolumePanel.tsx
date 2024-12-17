@@ -10,7 +10,7 @@ import {
 } from '@grafana/scenes';
 import { LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode, useStyles2 } from '@grafana/ui';
 import { getQueryRunner, setLogsVolumeFieldConfigs, syncLogsPanelVisibleSeries } from 'services/panel';
-import { buildDataQuery } from 'services/query';
+import { buildDataQuery, LINE_LIMIT } from 'services/query';
 import { LEVEL_VARIABLE_VALUE } from 'services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getTimeSeriesExpr } from '../../services/expressions';
@@ -21,6 +21,7 @@ import { areArraysEqual } from '../../services/comparison';
 import { getPanelWrapperStyles, PanelMenu } from '../Panels/PanelMenu';
 import { ServiceScene } from './ServiceScene';
 import { getSeriesVisibleRange, getVisibleRangeFrame } from 'services/logsFrame';
+import { IndexScene } from '../IndexScene/IndexScene';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
@@ -65,9 +66,18 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     });
   }
 
-  private getTitle(logsCount: number | undefined) {
+  private getTitle(totalLogsCount: number | undefined, logsCount: number | undefined) {
+    const indexScene = sceneGraph.getAncestor(this, IndexScene);
+    const maxLines = indexScene.state.ds?.maxLines ?? LINE_LIMIT;
     const valueFormatter = getValueFormat('short');
-    const formattedTotalCount = logsCount !== undefined ? valueFormatter(logsCount, 0) : undefined;
+    const formattedTotalCount = totalLogsCount !== undefined ? valueFormatter(totalLogsCount, 0) : undefined;
+    // The instant query (totalLogsCount) doesn't return good results for small result sets, if we're below the max number of lines, use the logs query result instead.
+    if (totalLogsCount === undefined && logsCount !== undefined && logsCount < maxLines) {
+      const formattedCount = valueFormatter(logsCount, 0);
+      return formattedCount !== undefined
+        ? `Log volume (${formattedCount.text}${formattedCount.suffix?.trim()})`
+        : 'Log volume';
+    }
     return formattedTotalCount !== undefined
       ? `Log volume (${formattedTotalCount.text}${formattedTotalCount.suffix?.trim()})`
       : 'Log volume';
@@ -75,9 +85,8 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
 
   private getVizPanel() {
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
-    const totalLogsCount = serviceScene.state.totalLogsCount;
     const viz = PanelBuilders.timeseries()
-      .setTitle(this.getTitle(totalLogsCount))
+      .setTitle(this.getTitle(serviceScene.state.totalLogsCount, serviceScene.state.logsCount))
       .setOption('legend', { showLegend: true, calcs: ['sum'], displayMode: LegendDisplayMode.List })
       .setUnit('short')
       .setMenu(new PanelMenu({}))
@@ -122,14 +131,14 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
 
     this._subs.add(
       serviceScene.subscribeToState((newState, prevState) => {
-        if (newState.totalLogsCount !== prevState.totalLogsCount) {
+        if (newState.totalLogsCount !== prevState.totalLogsCount || newState.logsCount !== undefined) {
           if (!this.state.panel) {
             this.setState({
               panel: this.getVizPanel(),
             });
           } else {
             this.state.panel.setState({
-              title: this.getTitle(newState.totalLogsCount),
+              title: this.getTitle(newState.totalLogsCount, newState.logsCount),
             });
           }
         }

@@ -11,6 +11,7 @@ import { BreakdownViewDefinition, breakdownViewsDefinitions, TabNames } from './
 import { config, usePluginLinks } from '@grafana/runtime';
 import { getLabelsVariable } from '../../services/variableGetters';
 import { IndexScene } from '../IndexScene/IndexScene';
+import { LINE_LIMIT } from '../../services/query';
 
 export interface ActionBarSceneState extends SceneObjectState {
   maxLines?: number;
@@ -50,6 +51,7 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
 
     const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
     const { loading, $data, logsCount, totalLogsCount, ...state } = serviceScene.useState();
+    const { maxLines } = model.useState();
 
     const loadingStates = state.loadingStates;
 
@@ -72,7 +74,7 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
                 counter={loadingStates[tab.displayName] ? undefined : getCounter(tab, state)}
                 suffix={
                   tab.displayName === TabNames.logs
-                    ? ({ className }) => LogsCount(className, totalLogsCount)
+                    ? ({ className }) => LogsCount(className, totalLogsCount, logsCount, maxLines ?? LINE_LIMIT)
                     : undefined
                 }
                 icon={loadingStates[tab.displayName] ? 'spinner' : undefined}
@@ -195,11 +197,25 @@ function ToolbarExtensionsRenderer(props: { serviceScene: SceneObject }) {
   );
 }
 
-function LogsCount(className: string | undefined, totalCount: number | undefined) {
+function LogsCount(
+  className: string | undefined,
+  totalCount: number | undefined,
+  logsCount: number | undefined,
+  maxLines: number
+) {
   const styles = useStyles2(getLogsCountStyles);
+  const valueFormatter = getValueFormat('short');
 
-  if (totalCount !== undefined) {
-    const valueFormatter = getValueFormat('short');
+  // The instant query (totalCount) doesn't return good results for small result sets, if we're below the max number of lines, use the logs query result instead.
+  if (totalCount === undefined && logsCount !== undefined && logsCount < maxLines) {
+    const formattedCount = valueFormatter(logsCount, 0);
+    return (
+      <span className={cx(className, styles.logsCountStyles)}>
+        {formattedCount.text}
+        {formattedCount.suffix?.trim()}
+      </span>
+    );
+  } else if (totalCount !== undefined) {
     const formattedTotalCount = valueFormatter(totalCount, 0);
     return (
       <span className={cx(className, styles.logsCountStyles)}>
