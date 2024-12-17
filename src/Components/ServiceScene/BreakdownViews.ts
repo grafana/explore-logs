@@ -118,7 +118,6 @@ function buildLogsListScene() {
     children: [
       new SceneFlexItem({
         body: new LogsVolumePanel({}),
-        height: 100,
       }),
       new SceneFlexItem({
         minHeight: '470px',
