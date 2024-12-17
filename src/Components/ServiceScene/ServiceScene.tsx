@@ -166,6 +166,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         if (newState.filters.length === 0) {
           this.redirectToStart();
         }
+
         // If we remove the service name filter, we should redirect to the start
         let { labelName, labelValue, breakdownLabel } = getPrimaryLabelFromUrl();
 
@@ -177,7 +178,11 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         const prevRouteMatch = indexScene.state.routeMatch;
 
         // The "primary" label used in the URL is no longer active, pick a new one
-        if (!newState.filters.some((f) => f.key === labelName && f.operator === '=' && f.value === labelValue)) {
+        if (
+          !newState.filters.some(
+            (f) => f.key === labelName && f.operator === '=' && replaceSlash(f.value) === labelValue
+          )
+        ) {
           const newPrimaryLabel = newState.filters.find((f) => f.operator === '=' && f.value !== EMPTY_VARIABLE_VALUE);
           if (newPrimaryLabel) {
             indexScene.setState({

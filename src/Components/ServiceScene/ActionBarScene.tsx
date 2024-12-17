@@ -11,7 +11,6 @@ import { BreakdownViewDefinition, breakdownViewsDefinitions, TabNames } from './
 import { config, usePluginLinks } from '@grafana/runtime';
 import { getLabelsVariable } from '../../services/variableGetters';
 import { IndexScene } from '../IndexScene/IndexScene';
-import { LINE_LIMIT } from '../../services/query';
 
 export interface ActionBarSceneState extends SceneObjectState {
   maxLines?: number;
@@ -37,7 +36,6 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
     const styles = useStyles2(getStyles);
     let currentBreakdownViewSlug = getDrilldownSlug();
     let allowNavToParent = false;
-    const { maxLines } = model.useState();
 
     if (!Object.values(PageSlugs).includes(currentBreakdownViewSlug)) {
       const drilldownValueSlug = getDrilldownValueSlug();
@@ -74,7 +72,7 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
                 counter={loadingStates[tab.displayName] ? undefined : getCounter(tab, state)}
                 suffix={
                   tab.displayName === TabNames.logs
-                    ? ({ className }) => LogsCount(className, logsCount, totalLogsCount, maxLines)
+                    ? ({ className }) => LogsCount(className, totalLogsCount)
                     : undefined
                 }
                 icon={loadingStates[tab.displayName] ? 'spinner' : undefined}
@@ -109,6 +107,8 @@ const getCounter = (tab: BreakdownViewDefinition, state: ServiceSceneCustomState
       return state.patternsCount;
     case 'labels':
       return state.labelsCount;
+    // case 'logs':
+    //   return state.totalLogsCount
     default:
       return undefined;
   }
@@ -195,34 +195,15 @@ function ToolbarExtensionsRenderer(props: { serviceScene: SceneObject }) {
   );
 }
 
-function LogsCount(
-  className: string | undefined,
-  logsCount: number | undefined,
-  totalCount: number | undefined,
-  maxLines?: number
-) {
+function LogsCount(className: string | undefined, totalCount: number | undefined) {
   const styles = useStyles2(getLogsCountStyles);
 
-  if (logsCount !== undefined) {
-    const lineLimit = maxLines ?? LINE_LIMIT;
+  if (totalCount !== undefined) {
     const valueFormatter = getValueFormat('short');
-
-    const formattedLogsCount = valueFormatter(logsCount, 0);
-
-    if (logsCount < lineLimit || totalCount === undefined) {
-      return (
-        <span className={cx(className, styles.logsCountStyles)}>
-          {formattedLogsCount.text}
-          {formattedLogsCount.suffix?.trim()}
-        </span>
-      );
-    }
-
     const formattedTotalCount = valueFormatter(totalCount, 0);
     return (
       <span className={cx(className, styles.logsCountStyles)}>
-        {formattedLogsCount.text}
-        {formattedLogsCount.suffix?.trim()} of {formattedTotalCount.text}
+        {formattedTotalCount.text}
         {formattedTotalCount.suffix?.trim()}
       </span>
     );
