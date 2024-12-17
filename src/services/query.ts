@@ -116,6 +116,13 @@ export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
   return `${positiveFilters} ${negativeFilters} ${numericFilters}`.trim();
 }
 
+/**
+ * Converts line filter ad-hoc filters to LogQL
+ *
+ * the filter key is LineFilterCaseSensitive
+ * the filter operator is LineFilterOp
+ * the value is the user in put
+ */
 export function renderLogQLLineFilter(filters: AdHocVariableFilter[]) {
   return filters
     .map((f) => {
@@ -125,7 +132,7 @@ export function renderLogQLLineFilter(filters: AdHocVariableFilter[]) {
           : escapeRegExp(f.value);
 
       if (f.key === LineFilterCaseSensitive.caseInsensitive) {
-        if (f.operator === LineFilterOp.negativeMatch) {
+        if (f.operator === LineFilterOp.negativeRegex) {
           return `${LineFilterOp.negativeRegex} \`(?i)${value}\``;
         }
         return `${LineFilterOp.regex} \`(?i)${value}\``;
