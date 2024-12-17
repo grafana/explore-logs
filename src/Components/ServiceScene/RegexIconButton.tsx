@@ -1,4 +1,4 @@
-import { useTheme2 } from '@grafana/ui';
+import { Tooltip, useTheme2 } from '@grafana/ui';
 import React from 'react';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
@@ -18,13 +18,15 @@ export const RegexIconButton = (props: Props) => {
     <button
       onClick={() => props.onRegexToggle(props.regex ? 'match' : 'regex')}
       className={styles.container}
-      title={`${props.regex ? 'String comparison' : 'Regex matching'}`}
+      aria-label={`${props.regex ? 'String comparison' : 'Regex matching'}`}
     >
-      <svg fill={fill} width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-        <text fontSize="13" width="16" height="16" x="50%" y="50%" dominantBaseline="central" textAnchor="middle">
-          .*
-        </text>
-      </svg>
+      <Tooltip content={`Regex matching ${props.regex ? 'enabled' : 'disabled'}`}>
+        <svg fill={fill} width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+          <text fontSize="13" width="16" height="16" x="50%" y="50%" dominantBaseline="central" textAnchor="middle">
+            .*
+          </text>
+        </svg>
+      </Tooltip>
     </button>
   );
 };
