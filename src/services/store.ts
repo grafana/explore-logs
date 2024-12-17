@@ -217,6 +217,21 @@ export function setLogOption(option: keyof Options, value: string | number | boo
   localStorage.setItem(`${LOG_OPTIONS_LOCALSTORAGE_KEY}.${option}`, storedValue);
 }
 
+// Logs volume options
+const LOGS_VOLUME_LOCALSTORAGE_KEY = 'grafana.explore.logs.logsVolume';
+export function setLogsVolumeOption(option: 'collapsed', value: string | undefined) {
+  const key = `${LOGS_VOLUME_LOCALSTORAGE_KEY}.${option}`;
+  if (value === undefined) {
+    localStorage.removeItem(key);
+    return;
+  }
+  localStorage.setItem(key, value);
+}
+
+export function getLogsVolumeOption(option: 'collapsed') {
+  return localStorage.getItem(`${LOGS_VOLUME_LOCALSTORAGE_KEY}.${option}`);
+}
+
 // Log visualization options
 export type LogsVisualizationType = 'logs' | 'table';
 
