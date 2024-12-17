@@ -33,6 +33,7 @@ import {
   VAR_LABELS,
   VAR_LEVELS,
   VAR_LINE_FILTER,
+  VAR_LINE_FILTER_AD_HOC,
   VAR_LOGS_FORMAT,
   VAR_METADATA,
   VAR_PATTERNS,
@@ -48,6 +49,7 @@ import { config, getAppEvents, locationService } from '@grafana/runtime';
 import {
   renderLogQLFieldFilters,
   renderLogQLLabelFilters,
+  renderLogQLLineFilter,
   renderLogQLMetadataFilters,
   renderPatternFilters,
 } from 'services/query';
@@ -72,10 +74,12 @@ import { lokiRegularEscape } from '../../services/fields';
 import { logger } from '../../services/logger';
 import { getLabelsTagKeysProvider } from '../../services/TagKeysProviders';
 import { AdHocFilterWithLabels } from '../../services/scenes';
-import { FilterOp } from '../../services/filterTypes';
+import { FilterOp, LineFilterOp } from '../../services/filterTypes';
 import { ShowLogsButtonScene } from './ShowLogsButtonScene';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
 import { getCopiedTimeRange, PasteTimeEvent, setupKeyboardShortcuts } from '../../services/keyboardShortcuts';
+import { LineFilterCaseSensitive } from '../ServiceScene/LineFilterScene';
+import { CustomAdHocFiltersVariable } from '../../services/CustomAdHocFiltersVariable';
 
 export const showLogsButtonSceneKey = 'showLogsButtonScene';
 export interface AppliedPattern {
@@ -423,6 +427,13 @@ const numericOperators = numericOperatorArray.map<SelectableValue<string>>((valu
   value,
 }));
 
+const lineFilterOperators: SelectableValue[] = [
+  { label: 'match', value: LineFilterOp.match },
+  { label: 'negativeMatch', value: LineFilterOp.negativeMatch },
+  { label: 'regex', value: LineFilterOp.regex },
+  { label: 'negativeRegex', value: LineFilterOp.negativeRegex },
+];
+
 function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVariableFilter[]) {
   const labelVariable = new AdHocFiltersVariable({
     name: VAR_LABELS,
@@ -484,6 +495,33 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     return operators;
   };
 
+  const lineFiltersVariable = new CustomAdHocFiltersVariable({
+    name: VAR_LINE_FILTER_AD_HOC,
+    // @todo hide variable, create custom renderer
+    hide: VariableHide.hideLabel,
+    getTagKeysProvider: () =>
+      Promise.resolve({
+        replace: true,
+        values: [
+          {
+            value: LineFilterCaseSensitive.caseSensitive,
+            text: LineFilterCaseSensitive.caseSensitive,
+          },
+          {
+            value: LineFilterCaseSensitive.caseInsensitive,
+            text: LineFilterCaseSensitive.caseInsensitive,
+          },
+        ],
+      }),
+    getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
+    expressionBuilder: renderLogQLLineFilter,
+    layout: 'horizontal',
+  });
+
+  lineFiltersVariable._getOperators = () => {
+    return lineFilterOperators;
+  };
+
   const dsVariable = new DataSourceVariable({
     name: VAR_DATASOURCE,
     label: 'Data source',
@@ -509,7 +547,12 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
           value: '',
           hide: VariableHide.hideVariable,
         }),
-        new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable }),
+        new CustomAdHocFiltersVariable({
+          name: VAR_LINE_FILTER,
+          hide: VariableHide.hideVariable,
+          expressionBuilder: renderLogQLLineFilter,
+        }),
+        lineFiltersVariable,
 
         // This variable is a hack to get logs context working, this variable should never be used or updated
         new CustomConstantVariable({
