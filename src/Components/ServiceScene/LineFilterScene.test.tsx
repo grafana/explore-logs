@@ -82,7 +82,6 @@ describe('LineFilter', () => {
       expect(await screen.findByDisplayValue('(characters')).toBeInTheDocument();
     });
   });
-
   describe('case sensitive, no regex', () => {
     beforeEach(() => {
       // lineFilterVariable = new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable });
@@ -107,17 +106,16 @@ describe('LineFilter', () => {
       expect(lineFilterVariable.getValue()).toBe('|= `some text`');
     });
 
-    test('Escapes the regular expression in the variable', async () => {
+    test('Does not escape user input', async () => {
       render(<scene.Component model={scene} />);
 
-      await act(() => userEvent.type(screen.getByPlaceholderText('Search in log lines'), '(characters'));
+      await act(() => userEvent.type(screen.getByPlaceholderText('Search in log lines'), '.(characters'));
 
-      expect(await screen.findByDisplayValue('(characters')).toBeInTheDocument();
-      expect(lineFilterVariable.getValue()).toBe('|= `\\(characters`');
+      expect(await screen.findByDisplayValue('.(characters')).toBeInTheDocument();
+      expect(lineFilterVariable.getValue()).toBe('|= `.(characters`');
     });
 
     test('Unescapes the regular expression from the variable value', async () => {
-      // lineFilterVariable.changeValueTo('|~ `(?i)\\(characters`');
       lineFilterVariable.setState({
         filters: [
           {

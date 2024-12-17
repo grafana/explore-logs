@@ -127,9 +127,10 @@ export function renderLogQLLineFilter(filters: AdHocVariableFilter[]) {
   return filters
     .map((f) => {
       const value =
-        f.operator === LineFilterOp.regex || f.operator === LineFilterOp.negativeRegex
-          ? f.value
-          : escapeRegExp(f.value);
+        (f.operator === LineFilterOp.match || f.operator === LineFilterOp.negativeMatch) &&
+        f.key === LineFilterCaseSensitive.caseInsensitive
+          ? escapeRegExp(f.value)
+          : f.value;
 
       if (f.key === LineFilterCaseSensitive.caseInsensitive) {
         if (f.operator === LineFilterOp.negativeRegex) {
