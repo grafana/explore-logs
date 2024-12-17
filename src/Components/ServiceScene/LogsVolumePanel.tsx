@@ -3,6 +3,7 @@ import React from 'react';
 import {
   PanelBuilders,
   SceneComponentProps,
+  SceneFlexLayout,
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
@@ -21,6 +22,7 @@ import { areArraysEqual } from '../../services/comparison';
 import { getPanelWrapperStyles, PanelMenu } from '../Panels/PanelMenu';
 import { ServiceScene } from './ServiceScene';
 import { getSeriesVisibleRange, getVisibleRangeFrame } from 'services/logsFrame';
+import { getLogsVolumeOption, setLogsVolumeOption } from 'services/store';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
@@ -40,9 +42,11 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
 
   private onActivate() {
     if (!this.state.panel) {
+      const panel = this.getVizPanel();
       this.setState({
-        panel: this.getVizPanel(),
+        panel,
       });
+      this.updateContainerHeight(panel);
     }
 
     const labels = getLabelsVariable(this);
@@ -71,6 +75,8 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       .setOption('legend', { showLegend: true, calcs: ['sum'], displayMode: LegendDisplayMode.List })
       .setUnit('short')
       .setMenu(new PanelMenu({}))
+      .setCollapsible(true)
+      .setCollapsed(Boolean(getLogsVolumeOption('collapsed')))
       // 11.5
       // .setShowMenuAlways(true)
       .setData(
@@ -87,6 +93,15 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     panel.setState({
       extendPanelContext: (_, context) => this.extendTimeSeriesLegendBus(context),
     });
+
+    this._subs.add(
+      panel.subscribeToState((newState, prevState) => {
+        if (newState.collapsed !== prevState.collapsed) {
+          this.updateContainerHeight(panel);
+          setLogsVolumeOption('collapsed', newState.collapsed ? 'true' : undefined);
+        }
+      })
+    );
 
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     this._subs.add(
@@ -112,6 +127,16 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     );
 
     return panel;
+  }
+
+  public updateContainerHeight(panel: VizPanel) {
+    const containerLayout = sceneGraph.getAncestor(panel, SceneFlexLayout);
+    const height = panel.state.collapsed ? 35 : Math.max(Math.round(window.innerHeight * 0.2), 100);
+    containerLayout.setState({
+      minHeight: height,
+      height: height,
+      maxHeight: height,
+    });
   }
 
   public updateVisibleRange(data: DataFrame[] = []) {
