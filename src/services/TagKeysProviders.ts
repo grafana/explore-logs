@@ -1,5 +1,5 @@
 import { logger } from './logger';
-import { LokiQuery } from './lokiQuery';
+import { LokiDatasource, LokiQuery } from './lokiQuery';
 import { DataSourceGetTagKeysOptions, GetTagResponse, MetricFindValue } from '@grafana/data';
 import { AdHocFiltersVariable } from '@grafana/scenes';
 import { DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
@@ -16,7 +16,7 @@ export async function getLabelsTagKeysProvider(variable: AdHocFiltersVariable): 
     logger.error(new Error('getTagKeysProvider: Invalid datasource!'));
     throw new Error('Invalid datasource!');
   }
-  const datasource = datasource_ as DataSourceWithBackend<LokiQuery>;
+  const datasource = datasource_ as LokiDatasource;
 
   if (datasource && datasource.getTagKeys) {
     const filters = joinTagFilters(variable);

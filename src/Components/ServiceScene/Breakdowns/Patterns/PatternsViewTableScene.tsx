@@ -22,6 +22,7 @@ import { PatternsFrameScene } from './PatternsFrameScene';
 import { PatternNameLabel } from './PatternNameLabel';
 import { getExplorationFor } from 'services/scenes';
 import { PatternsTableExpandedRow } from './PatternsTableExpandedRow';
+import { LINE_LIMIT } from '../../../../services/query';
 
 // copied from from grafana repository packages/grafana-data/src/valueFormats/categories.ts
 // that is used in Grafana codebase for "short" units
@@ -33,6 +34,7 @@ export interface SingleViewTableSceneState extends SceneObjectState {
 
   // An array of patterns to exclude links
   patternsNotMatchingFilters?: string[];
+  maxLines?: number;
 }
 
 export interface PatternsTableCellData {
@@ -47,6 +49,13 @@ export interface PatternsTableCellData {
 export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableSceneState> {
   constructor(state: SingleViewTableSceneState) {
     super(state);
+
+    this.addActivationHandler(this.onActivate.bind(this));
+  }
+  onActivate() {
+    const indexScene = sceneGraph.getAncestor(this, IndexScene);
+    const maxLines = indexScene.state.ds?.maxLines;
+    this.setState({ maxLines });
   }
 
   public static Component = PatternTableViewSceneComponent;
@@ -63,6 +72,7 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
     total: number,
     appliedPatterns: AppliedPattern[] | undefined,
     theme: GrafanaTheme2,
+    maxLines: number,
     patternsNotMatchingFilters?: string[]
   ) {
     const styles = getColumnStyles(theme);
@@ -137,7 +147,11 @@ export class PatternsViewTableScene extends SceneObjectBase<SingleViewTableScene
         cell: (props: CellProps<PatternsTableCellData>) => {
           return (
             <div className={cx(getTablePatternTextStyles(), styles.tablePatternTextDefault)}>
-              <PatternNameLabel exploration={getExplorationFor(this)} pattern={props.cell.row.original.pattern} />
+              <PatternNameLabel
+                exploration={getExplorationFor(this)}
+                pattern={props.cell.row.original.pattern}
+                maxLines={maxLines}
+              />
             </div>
           );
         },
@@ -291,7 +305,13 @@ export function PatternTableViewSceneComponent({ model }: SceneComponentProps<Pa
   }, 0);
 
   const tableData = model.buildTableData(patternFrames, legendSyncPatterns);
-  const columns = model.buildColumns(total, appliedPatterns, theme, patternsNotMatchingFilters);
+  const columns = model.buildColumns(
+    total,
+    appliedPatterns,
+    theme,
+    model.state.maxLines ?? LINE_LIMIT,
+    patternsNotMatchingFilters
+  );
 
   return (
     <div data-testid={testIds.patterns.tableWrapper} className={styles.tableWrap}>

@@ -47,6 +47,8 @@ export class MetadataService {
       labelsCount: state.labelsCount,
       fieldsCount: state.fieldsCount,
       loading: state.loading,
+      logsCount: state.logsCount,
+      totalLogsCount: state.totalLogsCount,
     };
   }
 }

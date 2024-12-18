@@ -10,7 +10,7 @@ import {
 import { Observable } from 'rxjs';
 import { DataSourceWithBackend } from '@grafana/runtime';
 import { DetectedFieldsResponse } from './fields';
-import { LokiQuery } from './lokiQuery';
+import { LokiDatasource, LokiQuery } from './lokiQuery';
 import { SceneDataQueryResourceRequest } from './datasourceTypes';
 
 jest.mock('@grafana/runtime', () => ({
@@ -31,7 +31,7 @@ let datasource = new DataSourceWithBackend<LokiQuery>({
   meta: {} as DataSourcePluginMeta,
   readOnly: false,
   uid: '',
-}) as DataSourceWithBackend<LokiQuery>;
+}) as LokiDatasource;
 
 jest.mock('./scenes', () => ({
   ...jest.requireActual('./scenes'),

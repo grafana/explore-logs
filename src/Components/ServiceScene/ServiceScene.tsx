@@ -41,6 +41,7 @@ import {
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
+  getLineFilterVariable,
   getMetadataVariable,
   getPatternsVariable,
 } from '../../services/variableGetters';
@@ -57,6 +58,7 @@ import { replaceSlash } from '../../services/extensions/links';
 import { ShowLogsButtonScene } from '../IndexScene/ShowLogsButtonScene';
 
 export const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
+export const LOGS_COUNT_QUERY_REFID = 'logsCountQuery';
 const PATTERNS_QUERY_REFID = 'patterns';
 const DETECTED_LABELS_QUERY_REFID = 'detectedLabels';
 const DETECTED_FIELDS_QUERY_REFID = 'detectedFields';
@@ -72,12 +74,15 @@ export interface ServiceSceneCustomState {
   patternsCount?: number;
   fieldsCount?: number;
   loading?: boolean;
+  totalLogsCount?: number;
+  logsCount?: number;
 }
 
 export interface ServiceSceneState extends SceneObjectState, ServiceSceneCustomState {
   body: SceneFlexLayout | undefined;
   drillDownLabel?: string;
   $data: SceneDataProvider | undefined;
+  $logsCount: SceneQueryRunner | undefined;
   $patternsData: SceneQueryRunner | undefined;
   $detectedLabelsData: SceneQueryRunner | undefined;
   $detectedFieldsData: SceneQueryRunner | undefined;
@@ -121,7 +126,13 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   public constructor(
     state: MakeOptional<
       ServiceSceneState,
-      'body' | '$data' | '$patternsData' | '$detectedLabelsData' | '$detectedFieldsData' | 'loadingStates'
+      | 'body'
+      | '$data'
+      | '$patternsData'
+      | '$detectedLabelsData'
+      | '$detectedFieldsData'
+      | 'loadingStates'
+      | '$logsCount'
     >
   ) {
     super({
@@ -137,6 +148,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       $patternsData: getPatternsQueryRunner(),
       $detectedLabelsData: getDetectedLabelsQueryRunner(),
       $detectedFieldsData: getDetectedFieldsQueryRunner(),
+      $logsCount: getLogCountQueryRunner(),
       ...state,
     });
 
@@ -154,6 +166,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         if (newState.filters.length === 0) {
           this.redirectToStart();
         }
+
         // If we remove the service name filter, we should redirect to the start
         let { labelName, labelValue, breakdownLabel } = getPrimaryLabelFromUrl();
 
@@ -165,7 +178,11 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         const prevRouteMatch = indexScene.state.routeMatch;
 
         // The "primary" label used in the URL is no longer active, pick a new one
-        if (!newState.filters.some((f) => f.key === labelName && f.operator === '=' && f.value === labelValue)) {
+        if (
+          !newState.filters.some(
+            (f) => f.key === labelName && f.operator === '=' && replaceSlash(f.value) === labelValue
+          )
+        ) {
           const newPrimaryLabel = newState.filters.find((f) => f.operator === '=' && f.value !== EMPTY_VARIABLE_VALUE);
           if (newPrimaryLabel) {
             indexScene.setState({
@@ -196,6 +213,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
           this.state.$patternsData?.runQueries();
           this.state.$detectedLabelsData?.runQueries();
           this.state.$detectedFieldsData?.runQueries();
+          this.state.$logsCount?.runQueries();
         }
       })
     );
@@ -205,6 +223,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     // Clear ongoing queries
     this.setState({
       $data: undefined,
+      $logsCount: undefined,
       body: undefined,
       $patternsData: undefined,
       $detectedLabelsData: undefined,
@@ -212,6 +231,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       patternsCount: undefined,
       labelsCount: undefined,
       fieldsCount: undefined,
+      logsCount: undefined,
+      totalLogsCount: undefined,
     });
     getMetadataService().setServiceSceneState(this.state);
     this._subs.unsubscribe();
@@ -270,6 +291,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     // Fields tab will update its own count, and update count when a query fails
     this._subs.add(this.subscribeToDetectedFieldsQuery(getDrilldownSlug() !== PageSlugs.fields));
     this._subs.add(this.subscribeToLogsQuery());
+    this._subs.add(this.subscribeToLogsCountQuery());
 
     // Variable subscriptions
     this.setSubscribeToLabelsVariable();
@@ -278,6 +300,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this._subs.add(this.subscribeToLevelsVariable());
     this._subs.add(this.subscribeToDataSourceVariable());
     this._subs.add(this.subscribeToPatternsVariable());
+    this._subs.add(this.subscribeToLineFilterVariable());
 
     // Update query runner on manual time range change
     this._subs.add(this.subscribeToTimeRange());
@@ -287,6 +310,15 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     return getPatternsVariable(this).subscribeToState((newState, prevState) => {
       if (newState.value !== prevState.value) {
         this.state.$detectedFieldsData?.runQueries();
+        this.state.$logsCount?.runQueries();
+      }
+    });
+  }
+
+  private subscribeToLineFilterVariable() {
+    return getLineFilterVariable(this).subscribeToState((newState, prevState) => {
+      if (newState.value !== prevState.value) {
+        this.state.$logsCount?.runQueries();
       }
     });
   }
@@ -311,6 +343,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     return getFieldsVariable(this).subscribeToState((newState, prevState) => {
       if (!areArraysEqual(newState.filters, prevState.filters)) {
         this.state.$detectedFieldsData?.runQueries();
+        this.state.$logsCount?.runQueries();
       }
     });
   }
@@ -319,6 +352,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     return getMetadataVariable(this).subscribeToState((newState, prevState) => {
       if (!areArraysEqual(newState.filters, prevState.filters)) {
         this.state.$detectedFieldsData?.runQueries();
+        this.state.$logsCount?.runQueries();
       }
     });
   }
@@ -327,6 +361,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     return getLevelsVariable(this).subscribeToState((newState, prevState) => {
       if (!areArraysEqual(newState.filters, prevState.filters)) {
         this.state.$detectedFieldsData?.runQueries();
+        this.state.$logsCount?.runQueries();
       }
     });
   }
@@ -348,6 +383,9 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     // If we don't have a detected fields count, or we are activating the fields scene, run the detected fields query
     if (slug === PageSlugs.fields || parentSlug === ValueSlugs.field || this.state.fieldsCount === undefined) {
       this.state.$detectedFieldsData?.runQueries();
+    }
+    if (this.state.logsCount === undefined) {
+      this.state.$logsCount?.runQueries();
     }
   }
 
@@ -397,8 +435,27 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private subscribeToLogsQuery() {
-    return this.state.$data?.subscribeToState((newState) => {
+    return this.state.$data?.subscribeToState((newState, prevState) => {
       this.updateLoadingState(newState, TabNames.logs);
+      if (newState.data?.state === LoadingState.Done || newState.data?.state === LoadingState.Streaming) {
+        const resultCount = newState.data.series[0]?.length ?? 0;
+        if (resultCount !== this.state.logsCount) {
+          this.setState({
+            logsCount: resultCount,
+          });
+        }
+      }
+    });
+  }
+
+  private subscribeToLogsCountQuery() {
+    return this.state.$logsCount?.subscribeToState((newState) => {
+      if (newState.data?.state === LoadingState.Done) {
+        const value: number | undefined = newState.data.series[0]?.fields?.[1]?.values?.[0];
+        this.setState({
+          totalLogsCount: value,
+        });
+      }
     });
   }
 
@@ -424,6 +481,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       this.state.$patternsData?.runQueries();
       this.state.$detectedLabelsData?.runQueries();
       this.state.$detectedFieldsData?.runQueries();
+      this.state.$logsCount?.runQueries();
     });
   }
 
@@ -444,6 +502,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
     if (!this.state.$detectedFieldsData) {
       stateUpdate.$detectedFieldsData = getDetectedFieldsQueryRunner();
+    }
+
+    if (!this.state.$logsCount) {
+      stateUpdate.$logsCount = getLogCountQueryRunner();
     }
 
     if (!this.state.body) {
@@ -533,4 +595,23 @@ function getDetectedFieldsQueryRunner() {
 
 function getServiceSceneQueryRunner() {
   return getQueryRunner([buildDataQuery(LOG_STREAM_SELECTOR_EXPR, { refId: LOGS_PANEL_QUERY_REFID })]);
+}
+
+function getLogCountQueryRunner() {
+  const queryRunner = getQueryRunner(
+    [
+      buildDataQuery(`sum(count_over_time(${LOG_STREAM_SELECTOR_EXPR}[$__auto]))`, {
+        refId: LOGS_COUNT_QUERY_REFID,
+        queryType: 'instant',
+      }),
+    ],
+    { runQueriesMode: 'manual' } // for some reason when this query is set to auto, it doesn't run on time range update, looks like there is different behavior with data providers not in the special $data prop
+  );
+
+  if (queryRunner instanceof SceneQueryRunner) {
+    return queryRunner;
+  }
+  const error = new Error('log count query provider is not query runner!');
+  logger.error(error, { msg: 'getLogCountQueryRunner: invalid return type' });
+  throw error;
 }
