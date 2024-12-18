@@ -30,7 +30,8 @@ import { LabelValuesBreakdownScene } from '../ServiceScene/Breakdowns/LabelValue
 import { css } from '@emotion/css';
 
 const ADD_TO_INVESTIGATION_MENU_TEXT = 'Add to investigation';
-const ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT = 'Investigations';
+const ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT = 'investigations_divider'; // Text won't be visible
+const ADD_TO_INVESTIGATION_MENU_GROUP_TEXT = 'Investigations';
 
 export enum AvgFieldPanelType {
   'timeseries' = 'timeseries',
@@ -290,7 +291,7 @@ function subscribeToAddToExploration(exploreLogsVizPanelMenu: PanelMenu) {
           type: 'divider',
         });
         exploreLogsVizPanelMenu.state.body?.addItem({
-          text: ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT,
+          text: ADD_TO_INVESTIGATION_MENU_GROUP_TEXT,
           type: 'group',
         });
         exploreLogsVizPanelMenu.state.body?.addItem({
@@ -303,7 +304,11 @@ function subscribeToAddToExploration(exploreLogsVizPanelMenu: PanelMenu) {
           exploreLogsVizPanelMenu.state.body?.setItems(
             existingMenuItems.filter(
               (item) =>
-                item.text !== ADD_TO_INVESTIGATION_MENU_TEXT && item.text !== ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT
+                [
+                  ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT,
+                  ADD_TO_INVESTIGATION_MENU_GROUP_TEXT,
+                  ADD_TO_INVESTIGATION_MENU_TEXT,
+                ].includes(item.text) === false
             )
           );
         }
