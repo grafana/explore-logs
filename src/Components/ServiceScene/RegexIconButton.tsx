@@ -18,7 +18,7 @@ export const RegexIconButton = (props: Props) => {
     <button
       onClick={() => props.onRegexToggle(props.regex ? 'match' : 'regex')}
       className={styles.container}
-      aria-label={`${props.regex ? 'String comparison' : 'Regex matching'}`}
+      aria-label={`Regex matching ${props.regex ? 'enabled' : 'disabled'}`}
     >
       <Tooltip content={`Regex matching ${props.regex ? 'enabled' : 'disabled'}`}>
         <svg fill={fill} width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
