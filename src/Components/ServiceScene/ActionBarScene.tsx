@@ -109,8 +109,6 @@ const getCounter = (tab: BreakdownViewDefinition, state: ServiceSceneCustomState
       return state.patternsCount;
     case 'labels':
       return state.labelsCount;
-    // case 'logs':
-    //   return state.totalLogsCount
     default:
       return undefined;
   }
