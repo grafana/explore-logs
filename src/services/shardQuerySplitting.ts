@@ -2,11 +2,10 @@ import pluginJson from '../plugin.json';
 import { Observable, Subscriber, Subscription } from 'rxjs';
 import { v4 as uuidv4 } from 'uuid';
 
-import { DataQueryRequest, LoadingState, DataQueryResponse, QueryResultMetaStat } from '@grafana/data';
+import { DataQueryRequest, DataQueryResponse, LoadingState, QueryResultMetaStat } from '@grafana/data';
 import { addShardingPlaceholderSelector, getSelectorForShardValues, interpolateShardingSelector } from './logql';
 import { combineResponses } from './combineResponses';
-import { DataSourceWithBackend } from '@grafana/runtime';
-import { LokiQuery } from './lokiQuery';
+import { LokiDatasource, LokiQuery } from './lokiQuery';
 import { logger } from './logger';
 import { isValidQuery } from './logqlMatchers';
 
@@ -44,7 +43,7 @@ import { isValidQuery } from './logqlMatchers';
  * - Once all request groups have been executed, it will be done().
  */
 
-export function runShardSplitQuery(datasource: DataSourceWithBackend<LokiQuery>, request: DataQueryRequest<LokiQuery>) {
+export function runShardSplitQuery(datasource: LokiDatasource, request: DataQueryRequest<LokiQuery>) {
   const queries = datasource
     .interpolateVariablesInQueries(request.targets, request.scopedVars)
     .filter((query) => query.expr)
@@ -57,7 +56,7 @@ export function runShardSplitQuery(datasource: DataSourceWithBackend<LokiQuery>,
 }
 
 function splitQueriesByStreamShard(
-  datasource: DataSourceWithBackend<LokiQuery>,
+  datasource: LokiDatasource,
   request: DataQueryRequest<LokiQuery>,
   splittingTargets: LokiQuery[]
 ) {

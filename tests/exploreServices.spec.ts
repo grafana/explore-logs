@@ -239,30 +239,52 @@ test.describe('explore services page', () => {
     });
 
     test.describe('mock volume API calls', () => {
-      let logsVolumeCount: number, logsQueryCount: number, labelsQueryCount: number;
+      let logsVolumeCount: number, logsQueryCount: number, logCountQueryCount: number;
 
       test.beforeEach(async ({ page }) => {
         logsVolumeCount = 0;
         logsQueryCount = 0;
+        logCountQueryCount = 0;
 
         await page.route('**/index/volume*', async (route) => {
-          const volumeResponse = getMockVolumeApiResponse();
           logsVolumeCount++;
-          await page.waitForTimeout(15);
+          const volumeResponse = getMockVolumeApiResponse();
           await route.fulfill({ json: volumeResponse });
         });
 
-        await page.route('**/ds/query*', async (route) => {
-          logsQueryCount++;
-          await page.waitForTimeout(30);
+        await page.route('**/ds/query*', async (route, request) => {
+          const rawPostData = request.postData();
+
+          // We only want to mock the actual field requests, and not the initial request that returns us our list of fields
+          if (rawPostData) {
+            const postData = JSON.parse(rawPostData);
+            const refId: string = postData.queries[0].refId;
+            // Logs panel and timeseries queries on service selection, and logs panel on breakdowns
+            if (refId === 'logsPanelQuery' || refId.includes('ts-') || refId.includes('logs-')) {
+              logsQueryCount++;
+            }
+            if (refId === 'logsCountQuery') {
+              logCountQueryCount++;
+            }
+          }
           await route.fulfill({ json: {} });
         });
 
-        await Promise.all([
-          page.waitForResponse((resp) => resp.url().includes('index/volume')),
-          page.waitForResponse((resp) => resp.url().includes('ds/query')),
-        ]);
+        // Don't wait for a response if we've already got it!
+        if (logsVolumeCount === 0) {
+          await page.waitForResponse((resp) => {
+            return logsVolumeCount > 0 || resp.url().includes('index/volume');
+          });
+        }
+
+        // Don't wait for a response if we've already got it!
+        if (logsQueryCount === 0) {
+          await page.waitForResponse((resp) => {
+            return logsQueryCount > 0 || resp.url().includes('ds/query');
+          });
+        }
       });
+
       test.afterEach(async ({ page }) => {
         await explorePage.unroute();
         explorePage.echoConsoleLogsOnRetry();
@@ -286,6 +308,7 @@ test.describe('explore services page', () => {
         await page.waitForTimeout(50);
         expect(logsVolumeCount).toEqual(4);
         expect(logsQueryCount).toEqual(16);
+        expect(logCountQueryCount).toEqual(0);
       });
 
       // Since the addition of the runtime datasource, the query doesn't contain the datasource, and won't re-run when the datasource is changed, as such we need to manually re-run volume queries when the service selection scene is activated or users could be presented with an invalid set of services
@@ -328,7 +351,11 @@ test.describe('explore services page', () => {
         // We just need to wait a few ms for the query to get fired?
         await page.waitForTimeout(100);
 
+        // Volume should fire initially, after navigating back from breakdown x2
         expect(logsVolumeCount).toEqual(3);
+
+        // Should fire on breakdown x2
+        expect(logCountQueryCount).toEqual(2);
       });
 
       test('changing datasource will trigger new queries', async ({ page }) => {
@@ -339,6 +366,7 @@ test.describe('explore services page', () => {
         await explorePage.changeDatasource();
         await explorePage.assertPanelsNotLoading();
         expect(logsVolumeCount).toEqual(2);
+        expect(logCountQueryCount).toEqual(0);
       });
 
       test('should re-execute volume query after being redirected back to service selection', async ({ page }) => {
@@ -347,6 +375,7 @@ test.describe('explore services page', () => {
         await expect(explorePage.logVolumeGraph).toBeVisible();
         await explorePage.changeDatasource();
         expect(logsVolumeCount).toBe(2);
+        expect(logCountQueryCount).toEqual(1);
       });
     });
 

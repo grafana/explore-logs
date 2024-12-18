@@ -1,10 +1,11 @@
 import { AdHocVariableFilter, urlUtil } from '@grafana/data';
-import { config, DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
+import { config, getDataSourceSrv } from '@grafana/runtime';
 import { sceneGraph, SceneObject, SceneObjectUrlValues, SceneQueryRunner, SceneTimePicker } from '@grafana/scenes';
 import { LOG_STREAM_SELECTOR_EXPR, VAR_DATASOURCE_EXPR, VAR_LABELS_EXPR } from './variables';
 import { EXPLORATIONS_ROUTE } from './routing';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
 import { logger } from './logger';
+import { LokiDatasource } from './lokiQuery';
 
 export function getExplorationFor(model: SceneObject): IndexScene {
   return sceneGraph.getAncestor(model, IndexScene);
@@ -33,7 +34,7 @@ export function getColorByIndex(index: number) {
 
 export async function getLokiDatasource(sceneObject: SceneObject) {
   const ds = (await getDataSourceSrv().get(VAR_DATASOURCE_EXPR, { __sceneObject: { value: sceneObject } })) as
-    | DataSourceWithBackend
+    | LokiDatasource
     | undefined;
   return ds;
 }

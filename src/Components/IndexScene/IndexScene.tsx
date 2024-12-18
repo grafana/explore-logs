@@ -73,13 +73,14 @@ import { getDetectedFieldValuesTagValuesProvider, getLabelsTagValuesProvider } f
 import { lokiRegularEscape } from '../../services/fields';
 import { logger } from '../../services/logger';
 import { getLabelsTagKeysProvider } from '../../services/TagKeysProviders';
-import { AdHocFilterWithLabels } from '../../services/scenes';
+import { AdHocFilterWithLabels, getLokiDatasource } from '../../services/scenes';
 import { FilterOp, LineFilterOp } from '../../services/filterTypes';
 import { ShowLogsButtonScene } from './ShowLogsButtonScene';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
 import { getCopiedTimeRange, PasteTimeEvent, setupKeyboardShortcuts } from '../../services/keyboardShortcuts';
 import { LineFilterCaseSensitive } from '../ServiceScene/LineFilterScene';
 import { CustomAdHocFiltersVariable } from '../../services/CustomAdHocFiltersVariable';
+import { LokiDatasource } from '../../services/lokiQuery';
 
 export const showLogsButtonSceneKey = 'showLogsButtonScene';
 export interface AppliedPattern {
@@ -95,6 +96,7 @@ export interface IndexSceneState extends SceneObjectState {
   initialFilters?: AdHocVariableFilter[];
   patterns?: AppliedPattern[];
   routeMatch?: OptionalRouteMatch;
+  ds?: LokiDatasource;
 }
 
 export class IndexScene extends SceneObjectBase<IndexSceneState> {
@@ -144,6 +146,10 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
     this._subs.add(unsub);
     this.addActivationHandler(this.onActivate.bind(this));
+
+    getLokiDatasource(this).then((ds) => {
+      this.setState({ ds });
+    });
   }
 
   static Component = ({ model }: SceneComponentProps<IndexScene>) => {

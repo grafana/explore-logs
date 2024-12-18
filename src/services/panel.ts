@@ -25,7 +25,7 @@ import { LogsSceneQueryRunner } from './LogsSceneQueryRunner';
 import { DrawStyle, StackingMode } from '@grafana/ui';
 import { getLabelsFromSeries, getVisibleLevels } from './levels';
 import { LokiQuery } from './lokiQuery';
-import { LOGS_PANEL_QUERY_REFID } from '../Components/ServiceScene/ServiceScene';
+import { LOGS_COUNT_QUERY_REFID, LOGS_PANEL_QUERY_REFID } from '../Components/ServiceScene/ServiceScene';
 
 const UNKNOWN_LEVEL_LOGS = 'logs';
 export function setLevelColorOverrides(overrides: FieldConfigOverridesBuilder<FieldConfig>) {
@@ -175,7 +175,9 @@ export function getQueryRunner(queries: LokiQuery[], queryRunnerOptions?: Partia
   // `level` label.
 
   const hasLevel = queries.find((query) => query.legendFormat?.toLowerCase().includes('level'));
-  const isLogPanelQuery = queries.find((query) => query.refId === LOGS_PANEL_QUERY_REFID);
+  const isLogPanelQuery = queries.find(
+    (query) => query.refId === LOGS_PANEL_QUERY_REFID || query.refId === LOGS_COUNT_QUERY_REFID
+  );
 
   if (hasLevel) {
     return new SceneDataTransformer({
