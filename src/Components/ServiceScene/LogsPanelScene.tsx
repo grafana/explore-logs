@@ -169,7 +169,13 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
 
     if (serviceScene.state.$data?.state.data?.series) {
       // We need to update the state with the new data without triggering state-dependent changes.
-      serviceScene.state.$data.state.data.series = newLogs;
+      serviceScene.state.$data.setState({
+        ...serviceScene.state.$data.state,
+        data: {
+          ...serviceScene.state.$data.state.data,
+          series: newLogs,
+        },
+      });
     }
 
     const logsVolumeScene = sceneGraph.findByKeyAndType(this, logsVolumePanelKey, LogsVolumePanel);
