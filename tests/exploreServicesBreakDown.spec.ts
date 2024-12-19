@@ -1129,7 +1129,7 @@ test.describe('explore services breakdown page', () => {
     );
   });
 
-  test.only('label value summary panel: text search', async ({ page }) => {
+  test('label value summary panel: text search', async ({ page }) => {
     explorePage.blockAllQueriesExcept({
       refIds: [],
       legendFormats: [`{{${levelName}}}`],
