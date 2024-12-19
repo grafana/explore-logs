@@ -356,7 +356,7 @@ export function LineFilterEditor({
             className={styles.submit}
             variant={'primary'}
             fill={'outline'}
-            disabled={!lineFilter}
+            disabled={!lineFilter || loading}
           >
             Submit
           </Button>
