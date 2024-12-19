@@ -175,6 +175,8 @@ function getStyles(theme: GrafanaTheme2) {
     }),
     filters: css({
       label: 'filters',
+      display: 'flex',
+      gap: theme.spacing(2),
     }),
     filtersWrap: css({
       label: 'filtersWrap',
@@ -234,6 +236,7 @@ function getStyles(theme: GrafanaTheme2) {
     lineFiltersWrap: css({
       label: 'lineFiltersWrap',
       display: 'flex',
+      flexWrap: 'wrap',
       gap: theme.spacing(2),
     }),
     controlsWrapper: css({

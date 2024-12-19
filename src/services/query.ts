@@ -126,9 +126,14 @@ export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
  * the filter operator is LineFilterOp
  * the value is the user in put
  */
-export function renderLogQLLineFilter(filters: AdHocVariableFilter[]) {
+export function renderLogQLLineFilter(filters: AdHocFilterWithLabels[]) {
+  //@todo DRY
+  filters.sort((a, b) => parseInt(a.keyLabel ?? '0', 10) - parseInt(b.keyLabel ?? '0', 10));
   return filters
     .map((f) => {
+      if (f.value === '') {
+        return '';
+      }
       const value =
         (f.operator === LineFilterOp.match || f.operator === LineFilterOp.negativeMatch) &&
         f.key === LineFilterCaseSensitive.caseInsensitive

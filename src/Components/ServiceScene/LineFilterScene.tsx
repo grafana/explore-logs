@@ -1,6 +1,6 @@
 import { css } from '@emotion/css';
 import { SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
-import { Button, Field, IconButton } from '@grafana/ui';
+import { Button, Field, Select } from '@grafana/ui';
 import { debounce } from 'lodash';
 import React, { ChangeEvent, KeyboardEvent } from 'react';
 import { testIds } from 'services/testIds';
@@ -19,6 +19,7 @@ import {
 import { RegexIconButton, RegexInputValue } from './RegexIconButton';
 import { LineFilterOp } from '../../services/filterTypes';
 import { locationService } from '@grafana/runtime';
+import { AdHocFilterWithLabels } from '../../services/scenes';
 
 interface LineFilterState extends SceneObjectState {
   lineFilter: string;
@@ -66,7 +67,6 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
 
     return () => {
       // This won't clear the variable as the URL won't have time to sync, but it does prevent changes to the variable that haven't yet been synced with this scene state
-      // @todo, maybe rewriting this scene to use the filter AS the scene state (like the LineFilterVariablesScene) would prevent these race condition bugs introduced by the debounce
       this.clearFilter();
     };
   };
@@ -179,6 +179,9 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
     }
   }
 
+  /**
+   * @todo need to set loading state and set disabled when loading
+   */
   onSubmitLineFilter = () => {
     const lineFiltersVariable = getLineFiltersVariable(this);
     const existingFilters = lineFiltersVariable.state.filters;
@@ -246,23 +249,16 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   updateVariable = (search: string) => {
     const variable = getLineFilterVariable(this);
     const variables = getLineFiltersVariable(this);
-    if (search === '') {
-      variable.setState({
-        filters: [],
-      });
-    } else {
-      variable.setState({
-        filters: [
-          {
-            key: this.getFilterKey(),
-            keyLabel: variables.state.filters.length.toString(),
-            operator: this.getOperator(),
-            value: search,
-          },
-        ],
-      });
-    }
-
+    variable.setState({
+      filters: [
+        {
+          key: this.getFilterKey(),
+          keyLabel: variables.state.filters.length.toString(),
+          operator: this.getOperator(),
+          value: search,
+        },
+      ],
+    });
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.search_string_in_logs_changed,
@@ -275,6 +271,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
 }
 
 export interface LineFilterEditorProps {
+  filter?: AdHocFilterWithLabels;
   exclusive: boolean;
   lineFilter: string;
   caseSensitive: boolean;
@@ -287,10 +284,11 @@ export interface LineFilterEditorProps {
   handleEnter: (e: KeyboardEvent<HTMLInputElement>, lineFilter: string) => void;
   onSubmitLineFilter?: () => void;
   onRemoveLineFilter?: () => void;
-  onClearLineFilter: () => void;
+  onClearLineFilter?: () => void;
 }
 
 export function LineFilterEditor({
+  filter,
   exclusive,
   lineFilter,
   caseSensitive,
@@ -307,8 +305,25 @@ export function LineFilterEditor({
 }: LineFilterEditorProps) {
   return (
     <div className={styles.wrapper}>
+      <Select
+        prefix={null}
+        className={styles.select}
+        value={exclusive ? 'exclusive' : 'inclusive'}
+        options={[
+          {
+            value: 'exclusive',
+            label: 'Exclude',
+          },
+          {
+            value: 'inclusive',
+            label: 'Include',
+          },
+        ]}
+        onChange={onToggleExclusive}
+      />
       <Field className={styles.field}>
         <SearchInput
+          inputClassName={styles.input}
           data-testid={testIds.exploreServiceDetails.searchLogs}
           value={lineFilter}
           className={styles.input}
@@ -319,19 +334,7 @@ export function LineFilterEditor({
               <RegexIconButton regex={regex} onRegexToggle={onRegexToggle} />
             </span>
           }
-          prefix={
-            <>
-              {/* @todo these icons are not great, ! and = would be better? Ask Joan */}
-              <IconButton
-                className={styles.exclusiveBtn}
-                tooltip={exclusive ? 'Include matches' : 'Exclude matches'}
-                onClick={onToggleExclusive}
-                size={'md'}
-                name={exclusive ? 'minus' : 'plus'}
-                aria-label={'Exclude'}
-              />
-            </>
-          }
+          prefix={null}
           placeholder="Search in log lines"
           onClear={onClearLineFilter}
           onKeyUp={(e) => handleEnter(e, lineFilter)}
@@ -350,16 +353,16 @@ export function LineFilterEditor({
       )}
 
       {onRemoveLineFilter && (
-        <IconButton
-          aria-label={''}
+        <Button
+          tooltip={'Remove filter'}
+          variant="secondary"
+          aria-label="Remove filter"
+          title="Remove filter"
+          className={styles.removeBtn}
+          icon="times"
+          data-testid={`AdHocFilter-remove-${filter?.keyLabel ?? ''}`}
           onClick={onRemoveLineFilter}
-          className={styles.submit}
-          variant={'secondary'}
-          name={'x'}
-          disabled={!lineFilter}
-        >
-          Submit
-        </IconButton>
+        />
       )}
     </div>
   );
@@ -387,15 +390,41 @@ const styles = {
   suffix: css({
     display: 'inline-flex',
   }),
+  removeBtn: css({
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
+  }),
+  submit: css({
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
+  }),
+  select: css({
+    label: 'line-filter-exclusion',
+    marginLeft: 0,
+    paddingLeft: 0,
+    height: 'auto',
+    borderBottomRightRadius: '0',
+    borderTopRightRadius: '0',
+    borderRight: 'none',
+    minHeight: '30px',
+    width: '100px',
+    maxWidth: '95px',
+    outline: 'none',
+  }),
   wrapper: css({
     display: 'flex',
     width: '100%',
   }),
-  submit: css({
-    marginLeft: '1rem',
-  }),
   input: css({
+    label: 'line-filter-input-wrapper',
     width: '100%',
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
+
+    input: {
+      borderRadius: 0,
+      borderRight: 'none',
+    },
   }),
   exclusiveBtn: css({
     marginRight: '1rem',

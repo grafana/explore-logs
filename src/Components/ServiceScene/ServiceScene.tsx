@@ -13,6 +13,7 @@ import {
   SceneObjectBase,
   SceneObjectState,
   SceneQueryRunner,
+  SceneVariableValueChangedEvent,
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { LoadingPlaceholder } from '@grafana/ui';
@@ -301,11 +302,12 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this._subs.add(this.subscribeToLevelsVariable());
     this._subs.add(this.subscribeToDataSourceVariable());
     this._subs.add(this.subscribeToPatternsVariable());
-    this._subs.add(this.subscribeToLineFilterVariable());
+    this._subs.add(this.subscribeToLineFiltersVariable());
 
     if (getDrilldownSlug() !== PageSlugs.logs) {
-      this._subs.add(this.subscribeToLineFiltersVariable());
       this.resetPendingLineFilter();
+    } else {
+      this._subs.add(this.subscribeToLineFilterVariable());
     }
 
     // Update query runner on manual time range change
@@ -333,18 +335,14 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private subscribeToLineFilterVariable() {
-    return getLineFilterVariable(this).subscribeToState((newState, prevState) => {
-      if (!areArraysEqual(newState.filters, prevState.filters)) {
-        this.state.$logsCount?.runQueries();
-      }
+    return getLineFilterVariable(this).subscribeToEvent(SceneVariableValueChangedEvent, () => {
+      this.state.$logsCount?.runQueries();
     });
   }
 
   private subscribeToLineFiltersVariable() {
-    return getLineFiltersVariable(this).subscribeToState((newState, prevState) => {
-      if (!areArraysEqual(newState.filters, prevState.filters)) {
-        this.state.$logsCount?.runQueries();
-      }
+    return getLineFiltersVariable(this).subscribeToEvent(SceneVariableValueChangedEvent, () => {
+      this.state.$logsCount?.runQueries();
     });
   }
 

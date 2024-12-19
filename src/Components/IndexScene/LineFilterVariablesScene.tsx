@@ -30,24 +30,20 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
       (f) => f.keyLabel !== undefined && f.keyLabel !== existingFilter.keyLabel
     );
 
-    if (filterUpdate.value === '') {
-      variable.updateFilters({ filters: otherFilters }, { skipPublish, forcePublish });
-    } else {
-      variable.updateFilters(
-        {
-          filters: [
-            {
-              keyLabel: existingFilter.keyLabel,
-              key: filterUpdate.key,
-              operator: filterUpdate.operator,
-              value: filterUpdate.value,
-            },
-            ...otherFilters,
-          ],
-        },
-        { skipPublish, forcePublish }
-      );
-    }
+    variable.updateFilters(
+      {
+        filters: [
+          {
+            keyLabel: existingFilter.keyLabel,
+            key: filterUpdate.key,
+            operator: filterUpdate.operator,
+            value: filterUpdate.value,
+          },
+          ...otherFilters,
+        ],
+      },
+      { skipPublish, forcePublish }
+    );
 
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
@@ -129,7 +125,7 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
       // We want to update the UI right away, which uses the filter state as the UI state, but we don't want to execute the query immediately
       this.updateVariableLineFilter(existingFilter, filterUpdate, true);
       // Run the debounce to force the event emit, as the prior setState will have already set the filterExpression, which will otherwise prevent the emit of the event which will trigger the query
-      this.updateVariableDebounced(existingFilter, filterUpdate, true, false);
+      this.updateVariableDebounced(existingFilter, filterUpdate, false, true);
     } else {
       this.updateVariableLineFilter(existingFilter, filterUpdate);
     }
@@ -151,6 +147,20 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
     this.updateFilter(filter, { ...filter, value: e.target.value }, true);
   };
 
+  /**
+   * Remove a filter, will trigger query
+   */
+  removeFilter = (filter: AdHocFilterWithLabels) => {
+    const variable = getLineFiltersVariable(this);
+    const otherFilters = variable.state.filters.filter(
+      (f) => f.keyLabel !== undefined && f.keyLabel !== filter.keyLabel
+    );
+
+    variable.setState({
+      filters: otherFilters,
+    });
+  };
+
   onCaseSensitiveToggle = (filter: AdHocFilterWithLabels) => {
     const caseSensitive =
       filter.key === LineFilterCaseSensitive.caseSensitive
@@ -167,6 +177,7 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
 
     return filters.map((f, index) => {
       const props: LineFilterEditorProps = {
+        filter: f,
         lineFilter: f.value,
         regex: f.operator === LineFilterOp.regex || f.operator === LineFilterOp.negativeRegex,
         caseSensitive: f.key === LineFilterCaseSensitive.caseSensitive,
@@ -177,7 +188,7 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
         onRegexToggle: () => model.onRegexToggle(f),
         onInputChange: (e) => model.onInputChange(e, f),
         onCaseSensitiveToggle: () => model.onCaseSensitiveToggle(f),
-        onClearLineFilter: () => model.updateFilter(f, { ...f, value: '' }, false),
+        onRemoveLineFilter: () => model.removeFilter(f),
       };
       return (
         <span key={f.keyLabel} className={styles.wrapper}>
@@ -191,7 +202,7 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
 function getStyles(theme: GrafanaTheme2) {
   return {
     wrapper: css({
-      maxWidth: '250px',
+      maxWidth: '300px',
     }),
   };
 }
