@@ -503,8 +503,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
 
   const lineFiltersVariable = new CustomAdHocFiltersVariable({
     name: VAR_LINE_FILTER_AD_HOC,
-    // @todo hide variable, create custom renderer
-    hide: VariableHide.hideLabel,
+    hide: VariableHide.hideVariable,
     getTagKeysProvider: () =>
       Promise.resolve({
         replace: true,
