@@ -278,6 +278,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     showLogsButton.setState({ hidden: true });
     this.getMetadata();
     this.resetBodyAndData();
+    this.resetPendingLineFilter();
 
     this.setBreakdownView();
 
@@ -304,6 +305,19 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
     // Update query runner on manual time range change
     this._subs.add(this.subscribeToTimeRange());
+  }
+
+  /**
+   * If the user navigates away from the logs scene, but has a pending filter that hasn't been submitted, clear it out
+   */
+  private resetPendingLineFilter() {
+    if (getDrilldownSlug() !== PageSlugs.logs) {
+      // Clear line filters variable
+      const variable = getLineFilterVariable(this);
+      variable.setState({
+        filters: [],
+      });
+    }
   }
 
   private subscribeToPatternsVariable() {
