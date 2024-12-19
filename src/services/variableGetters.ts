@@ -28,14 +28,13 @@ import {
   VAR_LEVELS_EXPR,
   VAR_LINE_FILTER,
   VAR_LINE_FILTERS,
-  VAR_LINE_FILTER_EXPR,
+  VAR_LINE_FILTERS_EXPR,
   VAR_METADATA,
   VAR_METADATA_EXPR,
   VAR_PATTERNS,
   VAR_PATTERNS_EXPR,
   VAR_PRIMARY_LABEL,
   VAR_PRIMARY_LABEL_SEARCH,
-  VAR_LINE_FILTERS_EXPR,
 } from './variables';
 import { AdHocVariableFilter } from '@grafana/data';
 import { logger } from './logger';
