@@ -30,7 +30,7 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
       (f) => f.keyLabel !== undefined && f.keyLabel !== existingFilter.keyLabel
     );
 
-    if (existingFilter.value === '') {
+    if (filterUpdate.value === '') {
       variable.updateFilters({ filters: otherFilters }, { skipPublish, forcePublish });
     } else {
       variable.updateFilters(

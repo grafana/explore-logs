@@ -63,6 +63,12 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
       caseSensitive: filter.key === LineFilterCaseSensitive.caseSensitive,
       exclusive: filter.operator === LineFilterOp.negativeMatch || filter.operator === LineFilterOp.negativeRegex,
     });
+
+    return () => {
+      // This won't clear the variable as the URL won't have time to sync, but it does prevent changes to the variable that haven't yet been synced with this scene state
+      // @todo, maybe rewriting this scene to use the filter AS the scene state (like the LineFilterVariablesScene) would prevent these race condition bugs introduced by the debounce
+      this.clearFilter();
+    };
   };
 
   private migrateOldVariable() {
