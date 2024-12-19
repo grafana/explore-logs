@@ -33,7 +33,7 @@ export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
     const parentModel = sceneGraph.getAncestor(model, LogsListScene);
     const { data } = sceneGraph.getData(model).useState();
     const { selectedLine, urlColumns, visualizationType } = parentModel.useState();
-    const { menu: Menu } = model.useState();
+    const { menu } = model.useState();
 
     // Get time range
     const timeRange = sceneGraph.getTimeRange(model);
@@ -68,7 +68,7 @@ export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
         <PanelChrome
           loadingState={data?.state}
           title={'Logs'}
-          menu={Menu ? <Menu.Component model={Menu} /> : undefined}
+          menu={menu ? <menu.Component model={menu} /> : undefined}
           actions={<LogsPanelHeaderActions vizType={visualizationType} onChange={parentModel.setVisualizationType} />}
         >
           {dataFrame && (
