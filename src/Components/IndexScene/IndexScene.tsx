@@ -33,7 +33,7 @@ import {
   VAR_LABELS,
   VAR_LEVELS,
   VAR_LINE_FILTER,
-  VAR_LINE_FILTER_AD_HOC,
+  VAR_LINE_FILTERS,
   VAR_LOGS_FORMAT,
   VAR_METADATA,
   VAR_PATTERNS,
@@ -502,7 +502,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
   };
 
   const lineFiltersVariable = new CustomAdHocFiltersVariable({
-    name: VAR_LINE_FILTER_AD_HOC,
+    name: VAR_LINE_FILTERS,
     hide: VariableHide.hideVariable,
     getTagKeysProvider: () =>
       Promise.resolve({

@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { LineFilterCaseSensitive, LineFilterScene } from './LineFilterScene';
 import userEvent from '@testing-library/user-event';
 import { SceneVariableSet } from '@grafana/scenes';
-import { VAR_LINE_FILTER, VAR_LINE_FILTER_AD_HOC } from 'services/variables';
+import { VAR_LINE_FILTER, VAR_LINE_FILTERS } from 'services/variables';
 import { LineFilterOp } from '../../services/filterTypes';
 import { renderLogQLLineFilter } from '../../services/query';
 import { CustomAdHocFiltersVariable } from '../../services/CustomAdHocFiltersVariable';
@@ -35,7 +35,7 @@ describe('LineFilter', () => {
         expressionBuilder: renderLogQLLineFilter,
       });
       lineFiltersVariable = new CustomAdHocFiltersVariable({
-        name: VAR_LINE_FILTER_AD_HOC,
+        name: VAR_LINE_FILTERS,
         expressionBuilder: renderLogQLLineFilter,
       });
       scene = new LineFilterScene({
@@ -96,7 +96,7 @@ describe('LineFilter', () => {
         expressionBuilder: renderLogQLLineFilter,
       });
       lineFiltersVariable = new CustomAdHocFiltersVariable({
-        name: VAR_LINE_FILTER_AD_HOC,
+        name: VAR_LINE_FILTERS,
         expressionBuilder: renderLogQLLineFilter,
       });
       scene = new LineFilterScene({
@@ -148,7 +148,7 @@ describe('LineFilter', () => {
         expressionBuilder: renderLogQLLineFilter,
       });
       lineFiltersVariable = new CustomAdHocFiltersVariable({
-        name: VAR_LINE_FILTER_AD_HOC,
+        name: VAR_LINE_FILTERS,
         expressionBuilder: renderLogQLLineFilter,
       });
       scene = new LineFilterScene({
@@ -207,7 +207,7 @@ describe('LineFilter', () => {
         expressionBuilder: renderLogQLLineFilter,
       });
       lineFiltersVariable = new CustomAdHocFiltersVariable({
-        name: VAR_LINE_FILTER_AD_HOC,
+        name: VAR_LINE_FILTERS,
         expressionBuilder: renderLogQLLineFilter,
       });
       scene = new LineFilterScene({
@@ -268,7 +268,7 @@ describe('LineFilter', () => {
         expressionBuilder: renderLogQLLineFilter,
       });
       lineFiltersVariable = new CustomAdHocFiltersVariable({
-        name: VAR_LINE_FILTER_AD_HOC,
+        name: VAR_LINE_FILTERS,
         expressionBuilder: renderLogQLLineFilter,
       });
       scene = new LineFilterScene({

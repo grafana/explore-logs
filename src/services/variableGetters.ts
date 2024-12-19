@@ -27,7 +27,7 @@ import {
   VAR_LEVELS,
   VAR_LEVELS_EXPR,
   VAR_LINE_FILTER,
-  VAR_LINE_FILTER_AD_HOC,
+  VAR_LINE_FILTERS,
   VAR_LINE_FILTER_EXPR,
   VAR_METADATA,
   VAR_METADATA_EXPR,
@@ -35,6 +35,7 @@ import {
   VAR_PATTERNS_EXPR,
   VAR_PRIMARY_LABEL,
   VAR_PRIMARY_LABEL_SEARCH,
+  VAR_LINE_FILTERS_EXPR,
 } from './variables';
 import { AdHocVariableFilter } from '@grafana/data';
 import { logger } from './logger';
@@ -51,13 +52,13 @@ export function getLogsStreamSelector(options: LogsQueryOptions) {
 
   switch (parser) {
     case 'structuredMetadata':
-      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_METADATA_EXPR} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTER_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
+      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_METADATA_EXPR} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTERS_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
     case 'json':
-      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_METADATA_EXPR} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTER_EXPR} ${JSON_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
+      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_METADATA_EXPR} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTERS_EXPR} ${JSON_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
     case 'logfmt':
-      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_METADATA_EXPR} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTER_EXPR} ${LOGS_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
+      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_METADATA_EXPR} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTERS_EXPR} ${LOGS_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
     default:
-      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_METADATA_EXPR} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTER_EXPR} ${MIXED_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
+      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_METADATA_EXPR} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTERS_EXPR} ${MIXED_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
   }
 }
 
@@ -130,9 +131,9 @@ export function getDataSourceVariable(scene: SceneObject) {
 }
 
 export function getLineFiltersVariable(scene: SceneObject) {
-  const variable = sceneGraph.lookupVariable(VAR_LINE_FILTER_AD_HOC, scene);
+  const variable = sceneGraph.lookupVariable(VAR_LINE_FILTERS, scene);
   if (!(variable instanceof CustomAdHocFiltersVariable)) {
-    throw new Error('VAR_LINE_FILTER_AD_HOC not found');
+    throw new Error('VAR_LINE_FILTERS not found');
   }
   return variable;
 }
