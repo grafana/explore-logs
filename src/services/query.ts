@@ -136,7 +136,7 @@ export function renderLogQLLineFilter(filters: AdHocVariableFilter[]) {
           : f.value;
 
       if (f.key === LineFilterCaseSensitive.caseInsensitive) {
-        if (f.operator === LineFilterOp.negativeRegex) {
+        if (f.operator === LineFilterOp.negativeRegex || f.operator === LineFilterOp.negativeMatch) {
           return `${LineFilterOp.negativeRegex} \`(?i)${value}\``;
         }
         return `${LineFilterOp.regex} \`(?i)${value}\``;

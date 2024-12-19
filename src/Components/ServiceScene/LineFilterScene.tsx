@@ -33,18 +33,10 @@ export enum LineFilterCaseSensitive {
 }
 
 /**
- * TODO:
- * * UI needs love
- * * * This component
- * * * Build custom renderer for ad hoc variables
- * * Duplicate queries
- * * Testing
- * * Nothing is escaped right now
- * * Discuss serializing case sensitivity option
- * *
+ * The line filter scene used in the logs tab
  */
 export class LineFilterScene extends SceneObjectBase<LineFilterState> {
-  static Component = LineFilterRenderer;
+  static Component = LineFilterComponent;
 
   constructor(state?: Partial<LineFilterState>) {
     super({
@@ -83,6 +75,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
     }
 
     const newVariable = getLineFilterVariable(this);
+    const existingVariables = getLineFiltersVariable(this);
     const caseSensitiveMatches = deprecatedLineFilter?.match(/\|=.`(.+?)`/);
 
     if (caseSensitiveMatches && caseSensitiveMatches.length === 2) {
@@ -107,6 +100,8 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
       filters: [
         {
           key: this.getFilterKey(),
+          // This should always be 0, since migrated urls won't have the new values, but better safe than sorry?
+          keyLabel: existingVariables.state.filters.length.toString(),
           operator: this.getOperator(),
           value: this.state.lineFilter,
         },
@@ -131,6 +126,10 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
       this.updateVariable(lineFilter);
     }
   }
+
+  clearFilter = () => {
+    this.updateFilter('', false);
+  };
 
   onToggleExclusive = () => {
     setLineFilterExclusive(!this.state.exclusive);
@@ -161,39 +160,32 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   getFilterKey() {
     return this.state.caseSensitive ? LineFilterCaseSensitive.caseSensitive : LineFilterCaseSensitive.caseInsensitive;
   }
-  getFilterValue() {
-    const filter = this.getFilter();
-    return filter.value;
-  }
 
   getFilter() {
     const lineFilterVariable = getLineFilterVariable(this);
-    return lineFilterVariable.state.filters[0];
+
+    if (lineFilterVariable.state.filters.length) {
+      return lineFilterVariable.state.filters[0];
+    } else {
+      // if the user submits before the debounce, we need to set the current state to the variable
+      this.updateVariable(this.state.lineFilter);
+      return lineFilterVariable.state.filters[0];
+    }
   }
 
   onSubmitLineFilter = () => {
-    // @todo this causes the logs panel & volume queries to run twice even though the interpolated expr will not change as we're just moving the filter from one variable to another.
-    // We either need to manually execute the logPanelQuery and logs Volume, find a way to only run queries when the interpolated output changes, or maybe there should be a flag on setState to keep a particular change from causing data providers to re-query?
     const lineFiltersVariable = getLineFiltersVariable(this);
     const existingFilters = lineFiltersVariable.state.filters;
-    console.log('before SUBMIT', lineFiltersVariable.state.filterExpression);
+    const thisFilter = this.getFilter();
 
-    lineFiltersVariable.setState(
-      {
-        filters: [...existingFilters, this.getFilter()],
-      },
-      { skipPublish: true }
-    );
-    console.log('after SUBMIT', lineFiltersVariable.state.filterExpression);
+    lineFiltersVariable.updateFilters({ filters: [...existingFilters, thisFilter] }, { skipPublish: true });
     this.clearVariable();
   };
 
   private clearVariable() {
     const variable = getLineFilterVariable(this);
-    variable.setState(
-      {
-        filters: [],
-      },
+    variable.updateFilters(
+      { filters: [] },
       {
         skipPublish: true,
       }
@@ -247,6 +239,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
 
   updateVariable = (search: string) => {
     const variable = getLineFilterVariable(this);
+    const variables = getLineFiltersVariable(this);
     if (search === '') {
       variable.setState({
         filters: [],
@@ -256,6 +249,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
         filters: [
           {
             key: this.getFilterKey(),
+            keyLabel: variables.state.filters.length.toString(),
             operator: this.getOperator(),
             value: search,
           },
@@ -274,52 +268,119 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   };
 }
 
-function LineFilterRenderer({ model }: SceneComponentProps<LineFilterScene>) {
-  const { lineFilter, caseSensitive, regex, exclusive } = model.useState();
+export interface LineFilterEditorProps {
+  exclusive: boolean;
+  lineFilter: string;
+  caseSensitive: boolean;
+  regex: boolean;
+  onToggleExclusive: () => void;
+  onInputChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  onCaseSensitiveToggle: (caseSensitive: LineFilterCaseSensitive) => void;
+  onRegexToggle: (regex: RegexInputValue) => void;
+  updateFilter: (lineFilter: string, debounced: boolean) => void;
+  handleEnter: (e: KeyboardEvent<HTMLInputElement>, lineFilter: string) => void;
+  onSubmitLineFilter?: () => void;
+  onRemoveLineFilter?: () => void;
+  onClearLineFilter: () => void;
+}
+
+export function LineFilterEditor({
+  exclusive,
+  lineFilter,
+  caseSensitive,
+  onToggleExclusive,
+  regex,
+  onInputChange,
+  onCaseSensitiveToggle,
+  onRegexToggle,
+  updateFilter,
+  handleEnter,
+  onSubmitLineFilter,
+  onRemoveLineFilter,
+  onClearLineFilter,
+}: LineFilterEditorProps) {
   return (
     <div className={styles.wrapper}>
-      {/* @todo these icons are not great, ! and = would be better? Ask Joan */}
-      <IconButton
-        className={styles.exclusiveBtn}
-        tooltip={exclusive ? 'Exclude matching lines' : 'Include matching lines'}
-        onClick={model.onToggleExclusive}
-        size={'xl'}
-        name={exclusive ? 'minus' : 'plus'}
-        aria-label={'Exclude'}
-      />
       <Field className={styles.field}>
         <SearchInput
           data-testid={testIds.exploreServiceDetails.searchLogs}
           value={lineFilter}
           className={styles.input}
-          onChange={model.handleChange}
+          onChange={onInputChange}
           suffix={
+            <span className={`${styles.suffix} input-suffix`}>
+              <LineFilterIconButton caseSensitive={caseSensitive} onCaseSensitiveToggle={onCaseSensitiveToggle} />
+              <RegexIconButton regex={regex} onRegexToggle={onRegexToggle} />
+            </span>
+          }
+          prefix={
             <>
-              <LineFilterIconButton caseSensitive={caseSensitive} onCaseSensitiveToggle={model.onCaseSensitiveToggle} />
-              <RegexIconButton regex={regex} onRegexToggle={model.onRegexToggle} />
+              {/* @todo these icons are not great, ! and = would be better? Ask Joan */}
+              <IconButton
+                className={styles.exclusiveBtn}
+                tooltip={exclusive ? 'Include matches' : 'Exclude matches'}
+                onClick={onToggleExclusive}
+                size={'md'}
+                name={exclusive ? 'minus' : 'plus'}
+                aria-label={'Exclude'}
+              />
             </>
           }
           placeholder="Search in log lines"
-          onClear={() => {
-            model.updateFilter('', false);
-          }}
-          onKeyUp={model.handleEnter}
+          onClear={onClearLineFilter}
+          onKeyUp={(e) => handleEnter(e, lineFilter)}
         />
       </Field>
-      <Button
-        onClick={model.onSubmitLineFilter}
-        className={styles.submit}
-        variant={'primary'}
-        fill={'outline'}
-        disabled={!lineFilter}
-      >
-        Submit
-      </Button>
+      {onSubmitLineFilter && (
+        <Button
+          onClick={onSubmitLineFilter}
+          className={styles.submit}
+          variant={'primary'}
+          fill={'outline'}
+          disabled={!lineFilter}
+        >
+          Submit
+        </Button>
+      )}
+
+      {onRemoveLineFilter && (
+        <IconButton
+          aria-label={''}
+          onClick={onRemoveLineFilter}
+          className={styles.submit}
+          variant={'secondary'}
+          name={'x'}
+          disabled={!lineFilter}
+        >
+          Submit
+        </IconButton>
+      )}
     </div>
   );
 }
 
+function LineFilterComponent({ model }: SceneComponentProps<LineFilterScene>) {
+  const { lineFilter, caseSensitive, regex, exclusive } = model.useState();
+  return LineFilterEditor({
+    exclusive,
+    lineFilter,
+    caseSensitive,
+    regex,
+    onSubmitLineFilter: model.onSubmitLineFilter,
+    handleEnter: model.handleEnter,
+    onInputChange: model.handleChange,
+    updateFilter: model.updateFilter,
+    onCaseSensitiveToggle: model.onCaseSensitiveToggle,
+    onRegexToggle: model.onRegexToggle,
+    onToggleExclusive: model.onToggleExclusive,
+    onClearLineFilter: model.clearFilter,
+  });
+}
+
 const styles = {
+  suffix: css({
+    display: 'inline-flex',
+  }),
   wrapper: css({
     display: 'flex',
     width: '100%',

@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { LineFilterCaseSensitive, LineFilterScene } from './LineFilterScene';
 import userEvent from '@testing-library/user-event';
 import { SceneVariableSet } from '@grafana/scenes';
-import { VAR_LINE_FILTER } from 'services/variables';
+import { VAR_LINE_FILTER, VAR_LINE_FILTER_AD_HOC } from 'services/variables';
 import { LineFilterOp } from '../../services/filterTypes';
 import { renderLogQLLineFilter } from '../../services/query';
 import { CustomAdHocFiltersVariable } from '../../services/CustomAdHocFiltersVariable';
@@ -26,6 +26,7 @@ jest.mock('@grafana/runtime', () => ({
 describe('LineFilter', () => {
   let scene: LineFilterScene;
   let lineFilterVariable: CustomAdHocFiltersVariable;
+  let lineFiltersVariable: CustomAdHocFiltersVariable;
 
   describe('case insensitive, no regex', () => {
     beforeEach(() => {
@@ -33,11 +34,15 @@ describe('LineFilter', () => {
         name: VAR_LINE_FILTER,
         expressionBuilder: renderLogQLLineFilter,
       });
+      lineFiltersVariable = new CustomAdHocFiltersVariable({
+        name: VAR_LINE_FILTER_AD_HOC,
+        expressionBuilder: renderLogQLLineFilter,
+      });
       scene = new LineFilterScene({
         caseSensitive: false,
         regex: false,
         $variables: new SceneVariableSet({
-          variables: [lineFilterVariable],
+          variables: [lineFilterVariable, lineFiltersVariable],
         }),
       });
     });
@@ -49,6 +54,7 @@ describe('LineFilter', () => {
       expect(await screen.findByDisplayValue('some text')).toBeInTheDocument();
       expect(lineFilterVariable.state.filters).toEqual([
         {
+          keyLabel: '0',
           key: LineFilterCaseSensitive.caseInsensitive,
           operator: LineFilterOp.match,
           value: 'some text',
@@ -89,10 +95,14 @@ describe('LineFilter', () => {
         name: VAR_LINE_FILTER,
         expressionBuilder: renderLogQLLineFilter,
       });
+      lineFiltersVariable = new CustomAdHocFiltersVariable({
+        name: VAR_LINE_FILTER_AD_HOC,
+        expressionBuilder: renderLogQLLineFilter,
+      });
       scene = new LineFilterScene({
         caseSensitive: true,
         $variables: new SceneVariableSet({
-          variables: [lineFilterVariable],
+          variables: [lineFilterVariable, lineFiltersVariable],
         }),
       });
     });
@@ -137,11 +147,15 @@ describe('LineFilter', () => {
         name: VAR_LINE_FILTER,
         expressionBuilder: renderLogQLLineFilter,
       });
+      lineFiltersVariable = new CustomAdHocFiltersVariable({
+        name: VAR_LINE_FILTER_AD_HOC,
+        expressionBuilder: renderLogQLLineFilter,
+      });
       scene = new LineFilterScene({
         caseSensitive: false,
         regex: true,
         $variables: new SceneVariableSet({
-          variables: [lineFilterVariable],
+          variables: [lineFilterVariable, lineFiltersVariable],
         }),
       });
     });
@@ -192,11 +206,15 @@ describe('LineFilter', () => {
         name: VAR_LINE_FILTER,
         expressionBuilder: renderLogQLLineFilter,
       });
+      lineFiltersVariable = new CustomAdHocFiltersVariable({
+        name: VAR_LINE_FILTER_AD_HOC,
+        expressionBuilder: renderLogQLLineFilter,
+      });
       scene = new LineFilterScene({
         caseSensitive: true,
         regex: true,
         $variables: new SceneVariableSet({
-          variables: [lineFilterVariable],
+          variables: [lineFilterVariable, lineFiltersVariable],
         }),
       });
     });
@@ -249,11 +267,15 @@ describe('LineFilter', () => {
         name: VAR_LINE_FILTER,
         expressionBuilder: renderLogQLLineFilter,
       });
+      lineFiltersVariable = new CustomAdHocFiltersVariable({
+        name: VAR_LINE_FILTER_AD_HOC,
+        expressionBuilder: renderLogQLLineFilter,
+      });
       scene = new LineFilterScene({
         caseSensitive: false,
         regex: false,
         $variables: new SceneVariableSet({
-          variables: [lineFilterVariable],
+          variables: [lineFilterVariable, lineFiltersVariable],
         }),
       });
     });
@@ -262,9 +284,9 @@ describe('LineFilter', () => {
 
       render(<scene.Component model={scene} />);
       // Current case button state should be case-sensitive
-      expect(await screen.getByTitle('Case insensitive search')).toBeInTheDocument();
+      expect(await screen.getByLabelText('Disable case match')).toBeInTheDocument();
       // Current regex button state should be string matching
-      expect(await screen.getByTitle('Regex matching')).toBeInTheDocument();
+      expect(await screen.getByLabelText('Enable regex')).toBeInTheDocument();
       expect(await screen.findByDisplayValue('bodySize')).toBeInTheDocument();
     });
 
@@ -273,9 +295,9 @@ describe('LineFilter', () => {
 
       render(<scene.Component model={scene} />);
       // Current case button state should be case-insensitive
-      expect(await screen.getByTitle('Case sensitive search')).toBeInTheDocument();
+      expect(await screen.getByLabelText('Enable case match')).toBeInTheDocument();
       // Current regex button state should be string matching
-      expect(await screen.getByTitle('Regex matching')).toBeInTheDocument();
+      expect(await screen.getByLabelText('Enable regex')).toBeInTheDocument();
       expect(await screen.findByDisplayValue('post')).toBeInTheDocument();
       expect(await screen.queryByDisplayValue('(?i)post')).not.toBeInTheDocument();
     });

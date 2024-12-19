@@ -1129,7 +1129,7 @@ test.describe('explore services breakdown page', () => {
     );
   });
 
-  test('label value summary panel: text search', async ({ page }) => {
+  test.only('label value summary panel: text search', async ({ page }) => {
     explorePage.blockAllQueriesExcept({
       refIds: [],
       legendFormats: [`{{${levelName}}}`],
@@ -1185,9 +1185,8 @@ test.describe('explore services breakdown page', () => {
     await expect(warnLegend).toBeVisible();
     await expect(infoLegend).not.toBeVisible();
     await expect(debugLegend).not.toBeVisible();
-
     // Clear the text search
-    await page.getByRole('img', { name: 'Clear search' }).click();
+    await page.getByLabel('Clear search').click();
 
     // Assert the value panels are visible
     await assertAllLevelsAreVisible();

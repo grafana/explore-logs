@@ -317,7 +317,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
   private subscribeToLineFilterVariable() {
     return getLineFilterVariable(this).subscribeToState((newState, prevState) => {
-      if (newState.value !== prevState.value) {
+      if (!areArraysEqual(newState.filters, prevState.filters)) {
         this.state.$logsCount?.runQueries();
       }
     });

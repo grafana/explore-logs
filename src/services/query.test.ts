@@ -232,7 +232,7 @@ describe('renderLogQLLineFilter', () => {
       },
     ];
 
-    expect(renderLogQLLineFilter(filters)).toEqual('|~ `(?i)\\.\\(search`');
+    expect(renderLogQLLineFilter(filters)).toEqual('!~ `(?i)\\.\\(search`');
   });
   test('Renders negative case-sensitive string compare', () => {
     const filters: AdHocVariableFilter[] = [

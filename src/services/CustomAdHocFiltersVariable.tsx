@@ -13,7 +13,22 @@ function renderExpression(builder: AdHocVariableExpressionBuilderFn, filters: Ad
  * @todo remove if/when https://github.com/grafana/scenes/pull/1004 is included in core scenes
  */
 export class CustomAdHocFiltersVariable extends AdHocFiltersVariable {
-  public setState(update: Partial<AdHocFiltersVariable['state']>, options?: { skipPublish?: boolean }): void {
+  public setState(update: Partial<AdHocFiltersVariable['state']>): void {
+    this.updateFilters(update);
+  }
+
+  /**
+   * Updates the variable's `filters` and `filterExpression` state.
+   * If `skipPublish` option is true, this will not emit the `SceneVariableValueChangedEvent`,
+   * allowing consumers to update the filters without triggering dependent data providers.
+   */
+  public updateFilters(
+    update: Partial<AdHocFiltersVariable['state']>,
+    options?: {
+      skipPublish?: boolean;
+      forcePublish?: boolean;
+    }
+  ): void {
     let filterExpressionChanged = false;
 
     if (this.state.expressionBuilder === undefined) {
@@ -27,8 +42,37 @@ export class CustomAdHocFiltersVariable extends AdHocFiltersVariable {
 
     super.setState(update);
 
-    if (filterExpressionChanged && options?.skipPublish !== true) {
+    if ((filterExpressionChanged && options?.skipPublish !== true) || options?.forcePublish === true) {
       this.publishEvent(new SceneVariableValueChangedEvent(this), true);
     }
   }
+
+  // public updateFilters(
+  //     filters: AdHocFilterWithLabels[],
+  //     options?: {
+  //       skipPublish?: boolean;
+  //       forcePublish?: boolean;
+  //     }
+  // ): void {
+  //   let filterExpressionChanged = false;
+  //   let filterExpression = undefined;
+  //
+  //   if (this.state.expressionBuilder === undefined) {
+  //     throw new Error('CustomAdHocFiltersVariable requires expression builder is defined!');
+  //   }
+  //
+  //   if (filters && filters !== this.state.filters) {
+  //     filterExpression = renderExpression(this.state.expressionBuilder, filters);
+  //     filterExpressionChanged = filterExpression !== this.state.filterExpression;
+  //   }
+  //
+  //   super.setState({
+  //     filters,
+  //     filterExpression,
+  //   });
+  //
+  //   if (filterExpressionChanged && options?.skipPublish !== true || options?.forcePublish === true) {
+  //     this.publishEvent(new SceneVariableValueChangedEvent(this), true);
+  //   }
+  // }
 }
