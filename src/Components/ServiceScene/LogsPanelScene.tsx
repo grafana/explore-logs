@@ -169,6 +169,17 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
       logsCount: newLogs[0].length,
     });
 
+    if (serviceScene.state.$data?.state.data?.series) {
+      // We need to update the state with the new data without triggering state-dependent changes.
+      serviceScene.state.$data.setState({
+        ...serviceScene.state.$data.state,
+        data: {
+          ...serviceScene.state.$data.state.data,
+          series: newLogs,
+        },
+      });
+    }
+
     const logsVolumeScene = sceneGraph.findByKeyAndType(this, logsVolumePanelKey, LogsVolumePanel);
     if (logsVolumeScene instanceof LogsVolumePanel) {
       logsVolumeScene.updateVisibleRange(newLogs);

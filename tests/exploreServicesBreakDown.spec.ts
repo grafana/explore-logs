@@ -100,6 +100,18 @@ test.describe('explore services breakdown page', () => {
     await expect(explorePage.getLogsPanelLocator().locator('[class$="panel-content"]')).toBeVisible();
   });
 
+  test(`should show "Explore" on table panel menu`, async ({ page }) => {
+    await explorePage.goToLogsTab();
+    // Switch to table view
+    await explorePage.getTableToggleLocator().click();
+
+    const table = page.getByTestId(testIds.table.wrapper);
+    await page.getByTestId('data-testid Panel menu Logs').click();
+    await page.getByTestId('data-testid Panel menu item Explore').click();
+
+    await expect(page.getByText(`drop __error__, __error_details__`)).toBeVisible();
+  });
+
   test(`should add ${levelName} filter on table click`, async ({ page }) => {
     // Switch to table view
     await explorePage.getTableToggleLocator().click();
