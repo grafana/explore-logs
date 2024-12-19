@@ -16,3 +16,10 @@ export type Filter = {
   value: string;
   type?: LabelType;
 };
+
+export enum LineFilterOp {
+  match = '|=',
+  negativeMatch = `!=`,
+  regex = '|~',
+  negativeRegex = `!~`,
+}

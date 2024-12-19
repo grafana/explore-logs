@@ -1,14 +1,15 @@
 import { AdHocVariableFilter } from '@grafana/data';
 import { AppliedPattern, numericOperatorArray } from 'Components/IndexScene/IndexScene';
 import { EMPTY_VARIABLE_VALUE, VAR_DATASOURCE_EXPR } from './variables';
-import { groupBy, trim } from 'lodash';
+import { escapeRegExp, groupBy, trim } from 'lodash';
 import { getValueFromFieldsFilter } from './variableGetters';
 import { LokiQuery } from './lokiQuery';
 import { SceneDataQueryResourceRequest, SceneDataQueryResourceRequestOptions } from './datasourceTypes';
 import { AdHocFilterWithLabels } from './scenes';
 import { PLUGIN_ID } from './plugin';
 import { AdHocFiltersVariable } from '@grafana/scenes';
-import { FilterOp } from './filterTypes';
+import { FilterOp, LineFilterOp } from './filterTypes';
+import { LineFilterCaseSensitive } from '../Components/ServiceScene/LineFilterScene';
 
 /**
  * Builds the resource query
@@ -118,6 +119,33 @@ export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
   return `${positiveFilters} ${negativeFilters} ${numericFilters}`.trim();
 }
 
+/**
+ * Converts line filter ad-hoc filters to LogQL
+ *
+ * the filter key is LineFilterCaseSensitive
+ * the filter operator is LineFilterOp
+ * the value is the user in put
+ */
+export function renderLogQLLineFilter(filters: AdHocVariableFilter[]) {
+  return filters
+    .map((f) => {
+      const value =
+        (f.operator === LineFilterOp.match || f.operator === LineFilterOp.negativeMatch) &&
+        f.key === LineFilterCaseSensitive.caseInsensitive
+          ? escapeRegExp(f.value)
+          : f.value;
+
+      if (f.key === LineFilterCaseSensitive.caseInsensitive) {
+        if (f.operator === LineFilterOp.negativeRegex || f.operator === LineFilterOp.negativeMatch) {
+          return `${LineFilterOp.negativeRegex} \`(?i)${value}\``;
+        }
+        return `${LineFilterOp.regex} \`(?i)${value}\``;
+      }
+
+      return `${f.operator} \`${value}\``;
+    })
+    .join(' ');
+}
 export function renderLogQLMetadataFilters(filters: AdHocVariableFilter[]) {
   const positive = filters.filter((filter) => filter.operator === FilterOp.Equal);
   const negative = filters.filter((filter) => filter.operator === FilterOp.NotEqual);
