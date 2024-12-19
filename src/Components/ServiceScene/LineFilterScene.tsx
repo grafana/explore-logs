@@ -1,6 +1,6 @@
 import { css } from '@emotion/css';
 import { SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
-import { Button, Field, Select } from '@grafana/ui';
+import { Button, Field, Icon, Select } from '@grafana/ui';
 import { debounce } from 'lodash';
 import React, { ChangeEvent, KeyboardEvent } from 'react';
 import { testIds } from 'services/testIds';
@@ -26,6 +26,7 @@ interface LineFilterState extends SceneObjectState {
   caseSensitive: boolean;
   regex: boolean;
   exclusive: boolean;
+  loading: boolean;
 }
 
 export enum LineFilterCaseSensitive {
@@ -45,6 +46,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
       caseSensitive: state?.caseSensitive ?? getLineFilterCase(false),
       regex: state?.regex ?? getLineFilterRegex(false),
       exclusive: state?.exclusive ?? getLineFilterExclusive(false),
+      loading: false,
       ...state,
     });
     this.addActivationHandler(this.onActivate);
@@ -127,6 +129,9 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
       lineFilter,
     });
     if (debounced) {
+      this.setState({
+        loading: true,
+      });
       this.updateVariableDebounced(lineFilter);
     } else {
       this.updateVariable(lineFilter);
@@ -259,6 +264,9 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
         },
       ],
     });
+    this.setState({
+      loading: false,
+    });
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.search_string_in_logs_changed,
@@ -273,6 +281,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
 export interface LineFilterEditorProps {
   filter?: AdHocFilterWithLabels;
   exclusive: boolean;
+  loading?: boolean;
   lineFilter: string;
   caseSensitive: boolean;
   regex: boolean;
@@ -297,11 +306,11 @@ export function LineFilterEditor({
   onInputChange,
   onCaseSensitiveToggle,
   onRegexToggle,
-  updateFilter,
   handleEnter,
   onSubmitLineFilter,
   onRemoveLineFilter,
   onClearLineFilter,
+  loading,
 }: LineFilterEditorProps) {
   return (
     <div className={styles.wrapper}>
@@ -341,15 +350,18 @@ export function LineFilterEditor({
         />
       </Field>
       {onSubmitLineFilter && (
-        <Button
-          onClick={onSubmitLineFilter}
-          className={styles.submit}
-          variant={'primary'}
-          fill={'outline'}
-          disabled={!lineFilter}
-        >
-          Submit
-        </Button>
+        <>
+          <Button
+            onClick={onSubmitLineFilter}
+            className={styles.submit}
+            variant={'primary'}
+            fill={'outline'}
+            disabled={!lineFilter}
+          >
+            Submit
+          </Button>
+          <div className={styles.submitLoading}>{loading ? <Icon name={'spinner'} /> : null}</div>
+        </>
       )}
 
       {onRemoveLineFilter && (
@@ -369,8 +381,9 @@ export function LineFilterEditor({
 }
 
 function LineFilterComponent({ model }: SceneComponentProps<LineFilterScene>) {
-  const { lineFilter, caseSensitive, regex, exclusive } = model.useState();
+  const { lineFilter, caseSensitive, regex, exclusive, loading } = model.useState();
   return LineFilterEditor({
+    loading,
     exclusive,
     lineFilter,
     caseSensitive,
@@ -394,6 +407,12 @@ const styles = {
     borderTopLeftRadius: 0,
     borderBottomLeftRadius: 0,
   }),
+  submitLoading: css({
+    width: '40px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  }),
   submit: css({
     borderTopLeftRadius: 0,
     borderBottomLeftRadius: 0,
@@ -414,6 +433,7 @@ const styles = {
   wrapper: css({
     display: 'flex',
     width: '100%',
+    maxWidth: '600px',
   }),
   input: css({
     label: 'line-filter-input-wrapper',
