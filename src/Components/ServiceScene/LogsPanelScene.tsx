@@ -5,6 +5,7 @@ import {
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
+  SceneQueryRunner,
   VizPanel,
 } from '@grafana/scenes';
 import { DataFrame, getValueFormat, LogRowModel } from '@grafana/data';
@@ -22,7 +23,7 @@ import { CopyLinkButton } from './CopyLinkButton';
 import { getLogsPanelSortOrder, LogOptionsScene } from './LogOptionsScene';
 import { LogsVolumePanel, logsVolumePanelKey } from './LogsVolumePanel';
 import { getPanelWrapperStyles, PanelMenu } from '../Panels/PanelMenu';
-import { ServiceScene } from './ServiceScene';
+import { LOGS_PANEL_QUERY_REFID, ServiceScene } from './ServiceScene';
 
 interface LogsPanelSceneState extends SceneObjectState {
   body?: VizPanel;
@@ -103,6 +104,15 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
   setLogsVizOption(options = {}) {
     if (!this.state.body) {
       return;
+    }
+    if ('sortOrder' in options) {
+      const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
+      const runners = sceneGraph.findDescendents(serviceScene, SceneQueryRunner);
+      runners.forEach((runner) => {
+        if (runner.isActive && runner.state.queries[0]?.refId === LOGS_PANEL_QUERY_REFID) {
+          runner.runQueries();
+        }
+      });
     }
     this.state.body.onOptionsChange(options);
   }
