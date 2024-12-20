@@ -2,11 +2,10 @@ import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { LineFilterCaseSensitive, LineFilterScene } from './LineFilterScene';
 import userEvent from '@testing-library/user-event';
-import { SceneVariableSet } from '@grafana/scenes';
+import { AdHocFiltersVariable, SceneVariableSet } from '@grafana/scenes';
 import { VAR_LINE_FILTER, VAR_LINE_FILTERS } from 'services/variables';
 import { LineFilterOp } from '../../services/filterTypes';
 import { renderLogQLLineFilter } from '../../services/query';
-import { CustomAdHocFiltersVariable } from '../../services/CustomAdHocFiltersVariable';
 
 let location = {} as Location;
 jest.mock('lodash/debounce', () => (fn: { cancel: jest.Mock<any, any, any> }) => {
@@ -24,16 +23,16 @@ jest.mock('@grafana/runtime', () => ({
 
 describe('LineFilter', () => {
   let scene: LineFilterScene;
-  let lineFilterVariable: CustomAdHocFiltersVariable;
-  let lineFiltersVariable: CustomAdHocFiltersVariable;
+  let lineFilterVariable: AdHocFiltersVariable;
+  let lineFiltersVariable: AdHocFiltersVariable;
 
   describe('case insensitive, no regex', () => {
     beforeEach(() => {
-      lineFilterVariable = new CustomAdHocFiltersVariable({
+      lineFilterVariable = new AdHocFiltersVariable({
         name: VAR_LINE_FILTER,
         expressionBuilder: renderLogQLLineFilter,
       });
-      lineFiltersVariable = new CustomAdHocFiltersVariable({
+      lineFiltersVariable = new AdHocFiltersVariable({
         name: VAR_LINE_FILTERS,
         expressionBuilder: renderLogQLLineFilter,
       });
@@ -90,11 +89,11 @@ describe('LineFilter', () => {
   describe('case sensitive, no regex', () => {
     beforeEach(() => {
       // lineFilterVariable = new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable });
-      lineFilterVariable = new CustomAdHocFiltersVariable({
+      lineFilterVariable = new AdHocFiltersVariable({
         name: VAR_LINE_FILTER,
         expressionBuilder: renderLogQLLineFilter,
       });
-      lineFiltersVariable = new CustomAdHocFiltersVariable({
+      lineFiltersVariable = new AdHocFiltersVariable({
         name: VAR_LINE_FILTERS,
         expressionBuilder: renderLogQLLineFilter,
       });
@@ -142,11 +141,11 @@ describe('LineFilter', () => {
   });
   describe('case insensitive, regex', () => {
     beforeEach(() => {
-      lineFilterVariable = new CustomAdHocFiltersVariable({
+      lineFilterVariable = new AdHocFiltersVariable({
         name: VAR_LINE_FILTER,
         expressionBuilder: renderLogQLLineFilter,
       });
-      lineFiltersVariable = new CustomAdHocFiltersVariable({
+      lineFiltersVariable = new AdHocFiltersVariable({
         name: VAR_LINE_FILTERS,
         expressionBuilder: renderLogQLLineFilter,
       });
@@ -201,11 +200,11 @@ describe('LineFilter', () => {
   });
   describe('case sensitive, regex', () => {
     beforeEach(() => {
-      lineFilterVariable = new CustomAdHocFiltersVariable({
+      lineFilterVariable = new AdHocFiltersVariable({
         name: VAR_LINE_FILTER,
         expressionBuilder: renderLogQLLineFilter,
       });
-      lineFiltersVariable = new CustomAdHocFiltersVariable({
+      lineFiltersVariable = new AdHocFiltersVariable({
         name: VAR_LINE_FILTERS,
         expressionBuilder: renderLogQLLineFilter,
       });
@@ -262,11 +261,11 @@ describe('LineFilter', () => {
   });
   describe('should migrate old urls', () => {
     beforeEach(() => {
-      lineFilterVariable = new CustomAdHocFiltersVariable({
+      lineFilterVariable = new AdHocFiltersVariable({
         name: VAR_LINE_FILTER,
         expressionBuilder: renderLogQLLineFilter,
       });
-      lineFiltersVariable = new CustomAdHocFiltersVariable({
+      lineFiltersVariable = new AdHocFiltersVariable({
         name: VAR_LINE_FILTERS,
         expressionBuilder: renderLogQLLineFilter,
       });

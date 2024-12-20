@@ -87,7 +87,6 @@ import { ShowLogsButtonScene } from './ShowLogsButtonScene';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
 import { getCopiedTimeRange, PasteTimeEvent, setupKeyboardShortcuts } from '../../services/keyboardShortcuts';
 import { LineFilterCaseSensitive } from '../ServiceScene/LineFilterScene';
-import { CustomAdHocFiltersVariable } from '../../services/CustomAdHocFiltersVariable';
 import { LokiDatasource } from '../../services/lokiQuery';
 
 export const showLogsButtonSceneKey = 'showLogsButtonScene';
@@ -524,7 +523,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     return operators;
   };
 
-  const lineFiltersVariable = new CustomAdHocFiltersVariable({
+  const lineFiltersVariable = new AdHocFiltersVariable({
     name: VAR_LINE_FILTERS,
     hide: VariableHide.hideVariable,
     getTagKeysProvider: () =>
@@ -575,7 +574,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
           value: '',
           hide: VariableHide.hideVariable,
         }),
-        new CustomAdHocFiltersVariable({
+        new AdHocFiltersVariable({
           name: VAR_LINE_FILTER,
           hide: VariableHide.hideVariable,
           expressionBuilder: renderLogQLLineFilter,

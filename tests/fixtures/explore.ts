@@ -4,6 +4,7 @@ import { testIds } from '../../src/services/testIds';
 import { expect } from '@grafana/plugin-e2e';
 
 import { LokiQuery } from '../../src/services/lokiQuery';
+import { mockEmptyQueryApiResponse } from '../mocks/mockEmptyQueryApiResponse';
 
 export interface PlaywrightRequest {
   post: any;
@@ -233,6 +234,12 @@ export class ExplorePage {
   async gotoServicesBreakdownOldUrl(serviceName = 'tempo-distributor') {
     await this.page.goto(
       `/a/${pluginJson.id}/explore/service/tempo-distributor/logs?mode=service_details&patterns=[]&var-filters=service_name|=|${serviceName}&var-logsFormat= | logfmt`
+    );
+  }
+
+  async gotoServicesOldUrlLineFilters(serviceName = 'tempo-distributor') {
+    await this.page.goto(
+      `/a/${pluginJson.id}/explore/service/tempo-distributor/logs?mode=service_details&patterns=[]&var-lineFilter=|~ \`(?i)debug\`&var-filters=service_name|=|${serviceName}&var-logsFormat= | logfmt`
     );
   }
 

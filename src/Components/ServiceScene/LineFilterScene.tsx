@@ -188,7 +188,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
     const lineFiltersVariable = getLineFiltersVariable(this);
     const existingFilters = lineFiltersVariable.state.filters;
     const thisFilter = this.getFilter();
-    this.updateVariableDebounced.cancel();
+    this.updateVariableDebounced.flush();
 
     lineFiltersVariable.updateFilters([...existingFilters, thisFilter], { skipPublish: true });
     this.clearVariable();
@@ -210,7 +210,6 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
 
   handleEnter = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      this.updateVariable(this.state.lineFilter);
       if (this.state.lineFilter) {
         this.onSubmitLineFilter();
       }
@@ -250,19 +249,17 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   }, 1000);
 
   updateVariable = (search: string) => {
-    this.updateVariableDebounced.cancel();
+    this.updateVariableDebounced.flush();
     const variable = getLineFilterVariable(this);
     const variables = getLineFiltersVariable(this);
-    variable.setState({
-      filters: [
-        {
-          key: this.getFilterKey(),
-          keyLabel: variables.state.filters.length.toString(),
-          operator: this.getOperator(),
-          value: search,
-        },
-      ],
-    });
+    const filter = {
+      key: this.getFilterKey(),
+      keyLabel: variables.state.filters.length.toString(),
+      operator: this.getOperator(),
+      value: search,
+    };
+
+    variable.updateFilters([filter]);
 
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
