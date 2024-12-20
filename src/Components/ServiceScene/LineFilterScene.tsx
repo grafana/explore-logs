@@ -138,7 +138,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   }
 
   clearFilter = () => {
-    this.updateVariableDebounced.cancel();
+    this.updateVariableDebounced.flush();
     this.updateFilter('', false);
   };
 
@@ -179,7 +179,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
       return lineFilterVariable.state.filters[0];
     } else {
       // if the user submits before the debounce, we need to set the current state to the variable
-      this.updateVariable(this.state.lineFilter);
+      this.updateVariableDebounced.flush();
       return lineFilterVariable.state.filters[0];
     }
   }

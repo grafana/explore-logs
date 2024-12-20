@@ -10,6 +10,7 @@ import { renderLogQLLineFilter } from '../../services/query';
 let location = {} as Location;
 jest.mock('lodash/debounce', () => (fn: { cancel: jest.Mock<any, any, any> }) => {
   fn.cancel = jest.fn();
+  fn.flush = jest.fn();
   return fn;
 });
 jest.mock('@grafana/runtime', () => ({
