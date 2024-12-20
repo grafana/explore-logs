@@ -20,6 +20,13 @@ interface LayoutSceneState extends SceneObjectState {
 
 const interceptBannerStorageKey = `${PLUGIN_ID}.interceptBannerStorageKey`;
 
+export const CONTROLS_VARS_FIRST_ROW_KEY = 'vars-row__datasource-labels-timepicker-button';
+export const CONTROLS_VARS_METADATA_ROW_KEY = 'vars-metadata';
+export const CONTROLS_VARS_FIELDS_ELSE_KEY = 'vars-all-else';
+export const CONTROLS_VARS_TIMEPICKER = 'vars-timepicker';
+export const CONTROLS_VARS_REFRESH = 'vars-refresh';
+export const CONTROLS_VARS_TOOLBAR = 'vars-toolbar';
+
 export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
   constructor(state: Partial<LayoutSceneState>) {
     super({
@@ -28,19 +35,6 @@ export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
     });
 
     this.addActivationHandler(this.onActivate.bind(this));
-  }
-
-  public onActivate() {
-    this.setState({
-      lineFilterRenderer: new LineFilterVariablesScene({}),
-    });
-  }
-
-  public dismiss() {
-    this.setState({
-      interceptDismissed: true,
-    });
-    localStorage.setItem(interceptBannerStorageKey, 'true');
   }
 
   static Component = ({ model }: SceneComponentProps<LayoutScene>) => {
@@ -64,58 +58,102 @@ export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
               }}
             />
           )}
-          {controls && (
-            <div className={styles.controlsContainer}>
-              <div className={styles.controlsFirstRowContainer}>
-                <div className={styles.filtersWrap}>
-                  <div className={cx(styles.filters, styles.firstRowWrapper)}>
-                    {controls.map((control) => {
-                      return control instanceof SceneFlexLayout ? (
-                        <control.Component key={control.state.key} model={control} />
-                      ) : null;
-                    })}
+          <div className={styles.controlsContainer}>
+            <>
+              {/* First row - datasource, timepicker, refresh, labels, button */}
+              {controls && (
+                <div className={styles.controlsFirstRowContainer}>
+                  <div className={styles.filtersWrap}>
+                    <div className={cx(styles.filters, styles.firstRowWrapper)}>
+                      {controls.map((control) => {
+                        return control instanceof SceneFlexLayout ? (
+                          <control.Component key={control.state.key} model={control} />
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                  <div className={styles.controlsWrapper}>
+                    <GiveFeedbackButton />
+                    <div className={styles.controls}>
+                      {controls.map((control) => {
+                        return !(control instanceof CustomVariableValueSelectors) &&
+                          !(control instanceof SceneFlexLayout) ? (
+                          <control.Component key={control.state.key} model={control} />
+                        ) : null;
+                      })}
+                    </div>
                   </div>
                 </div>
-                <div className={styles.controlsWrapper}>
-                  <GiveFeedbackButton />
-                  <div className={styles.controls}>
-                    {controls.map((control) => {
-                      return !(control instanceof CustomVariableValueSelectors) &&
-                        !(control instanceof SceneFlexLayout) ? (
-                        <control.Component key={control.state.key} model={control} />
-                      ) : null;
-                    })}
-                  </div>
-                </div>
-              </div>
-              <div className={styles.controlsSecondRowContainer}>
-                <div className={styles.filtersWrap}>
-                  <div className={styles.filters}>
-                    {controls.map((control) => {
-                      return control instanceof CustomVariableValueSelectors ? (
-                        <control.Component key={control.state.key} model={control} />
-                      ) : null;
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          <PatternControls
-            patterns={patterns}
-            onRemove={(patterns: AppliedPattern[]) => model.parent?.setState({ patterns } as IndexSceneState)}
-          />
+              )}
 
-          {lineFilterRenderer && (
-            <div className={styles.lineFiltersWrap}>
-              <lineFilterRenderer.Component model={lineFilterRenderer} />
-            </div>
-          )}
+              {/* Second row - Metadata  */}
+              <div className={styles.controlsRowContainer}>
+                {controls && (
+                  <div className={styles.filtersWrap}>
+                    <div className={styles.filters}>
+                      {controls.map((control) => {
+                        return control.state.key === CONTROLS_VARS_METADATA_ROW_KEY ? (
+                          <control.Component key={control.state.key} model={control} />
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 3rd row - Patterns */}
+              <div className={styles.controlsRowContainer}>
+                <PatternControls
+                  patterns={patterns}
+                  onRemove={(patterns: AppliedPattern[]) => model.parent?.setState({ patterns } as IndexSceneState)}
+                />
+              </div>
+
+              {/* 4th row - line filters */}
+              <div className={styles.controlsRowContainer}>
+                {lineFilterRenderer && (
+                  <div className={styles.lineFiltersWrap}>
+                    <lineFilterRenderer.Component model={lineFilterRenderer} />
+                  </div>
+                )}
+              </div>
+
+              {/* 5th row - Fields  */}
+              <div className={styles.controlsRowContainer}>
+                {controls && (
+                  <div className={styles.filtersWrap}>
+                    <div className={styles.filters}>
+                      {controls.map((control) => {
+                        return control.state.key === CONTROLS_VARS_FIELDS_ELSE_KEY ? (
+                          <control.Component key={control.state.key} model={control} />
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          </div>
+
+          {/* Final "row" - body */}
           <div className={styles.body}>{contentScene && <contentScene.Component model={contentScene} />}</div>
         </div>
       </div>
     );
   };
+
+  public onActivate() {
+    this.setState({
+      lineFilterRenderer: new LineFilterVariablesScene({}),
+    });
+  }
+
+  public dismiss() {
+    this.setState({
+      interceptDismissed: true,
+    });
+    localStorage.setItem(interceptBannerStorageKey, 'true');
+  }
 }
 
 function getStyles(theme: GrafanaTheme2) {
@@ -158,17 +196,21 @@ function getStyles(theme: GrafanaTheme2) {
       gap: theme.spacing(1),
     }),
     controlsFirstRowContainer: css({
+      label: 'controls-first-row',
       display: 'flex',
       gap: theme.spacing(2),
       justifyContent: 'space-between',
       alignItems: 'flex-start',
-      marginBottom: theme.spacing(2),
+      marginBottom: theme.spacing(1),
     }),
-    controlsSecondRowContainer: css({
+    controlsRowContainer: css({
+      label: 'controls-row',
       display: 'flex',
-      gap: theme.spacing(2),
+      gap: theme.spacing(1),
       justifyContent: 'space-between',
       alignItems: 'flex-start',
+      paddingLeft: theme.spacing(2),
+      marginBottom: theme.spacing(1),
     }),
     controlsContainer: css({
       label: 'controlsContainer',

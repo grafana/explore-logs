@@ -41,7 +41,15 @@ import {
 
 import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
 import { ServiceScene } from '../ServiceScene/ServiceScene';
-import { LayoutScene } from './LayoutScene';
+import {
+  LayoutScene,
+  CONTROLS_VARS_FIRST_ROW_KEY,
+  CONTROLS_VARS_METADATA_ROW_KEY,
+  CONTROLS_VARS_FIELDS_ELSE_KEY,
+  CONTROLS_VARS_TIMEPICKER,
+  CONTROLS_VARS_REFRESH,
+  CONTROLS_VARS_TOOLBAR,
+} from './LayoutScene';
 import { getDrilldownSlug, PageSlugs } from '../../services/routing';
 import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LoadingPlaceholder } from '@grafana/ui';
@@ -110,10 +118,15 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
     const controls: SceneObject[] = [
       new SceneFlexLayout({
+        key: CONTROLS_VARS_FIRST_ROW_KEY,
         direction: 'row',
         children: [
           new SceneFlexItem({
-            body: new CustomVariableValueSelectors({ layout: 'vertical', include: [VAR_LABELS, VAR_DATASOURCE] }),
+            body: new CustomVariableValueSelectors({
+              key: 'vars-labels-ds',
+              layout: 'vertical',
+              include: [VAR_LABELS, VAR_DATASOURCE],
+            }),
           }),
           new ShowLogsButtonScene({
             key: showLogsButtonSceneKey,
@@ -121,14 +134,24 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
           }),
         ],
       }),
-      new CustomVariableValueSelectors({ layout: 'vertical', exclude: [VAR_LABELS, VAR_DATASOURCE] }),
-      new SceneTimePicker({}),
-      new SceneRefreshPicker({}),
+      new CustomVariableValueSelectors({
+        key: CONTROLS_VARS_METADATA_ROW_KEY,
+        layout: 'vertical',
+        include: [VAR_METADATA, VAR_LEVELS],
+      }),
+      new CustomVariableValueSelectors({
+        key: CONTROLS_VARS_FIELDS_ELSE_KEY,
+        layout: 'vertical',
+        exclude: [VAR_LABELS, VAR_DATASOURCE, VAR_METADATA, VAR_LEVELS],
+      }),
+      new SceneTimePicker({ key: CONTROLS_VARS_TIMEPICKER }),
+      new SceneRefreshPicker({ key: CONTROLS_VARS_REFRESH }),
     ];
 
     if (getDrilldownSlug() === 'explore' && config.featureToggles.exploreLogsAggregatedMetrics) {
       controls.push(
         new ToolbarScene({
+          key: CONTROLS_VARS_TOOLBAR,
           isOpen: false,
         })
       );
