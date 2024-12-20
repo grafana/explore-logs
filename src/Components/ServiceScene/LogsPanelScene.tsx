@@ -23,7 +23,7 @@ import { CopyLinkButton } from './CopyLinkButton';
 import { getLogsPanelSortOrder, LogOptionsScene } from './LogOptionsScene';
 import { LogsVolumePanel, logsVolumePanelKey } from './LogsVolumePanel';
 import { getPanelWrapperStyles, PanelMenu } from '../Panels/PanelMenu';
-import { LOGS_PANEL_QUERY_REFID, ServiceScene } from './ServiceScene';
+import { ServiceScene } from './ServiceScene';
 
 interface LogsPanelSceneState extends SceneObjectState {
   body?: VizPanel;
@@ -106,13 +106,12 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
       return;
     }
     if ('sortOrder' in options) {
-      const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
-      const runners = sceneGraph.findDescendents(serviceScene, SceneQueryRunner);
-      runners.forEach((runner) => {
-        if (runner.isActive && runner.state.queries[0]?.refId === LOGS_PANEL_QUERY_REFID) {
-          runner.runQueries();
-        }
-      });
+      const $data = sceneGraph.getData(this);
+      const queryRunner =
+        $data instanceof SceneQueryRunner ? $data : sceneGraph.findDescendents($data, SceneQueryRunner)[0];
+      if (queryRunner) {
+        queryRunner.runQueries();
+      }
     }
     this.state.body.onOptionsChange(options);
   }
