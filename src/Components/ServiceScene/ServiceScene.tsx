@@ -583,9 +583,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   /**
-   * This only adds to the local state, not to the global variable,
-   * Since the previous iteration was "global", this could lead to unexpecte results
-   * @private
+   * Migrates the old line filter urls
    */
   private migrateOldVariable() {
     const search = locationService.getSearch();
