@@ -7,7 +7,7 @@ import {
   SceneObjectState,
   VizPanel,
 } from '@grafana/scenes';
-import { DataFrame, LogRowModel } from '@grafana/data';
+import { DataFrame, getValueFormat, LogRowModel } from '@grafana/data';
 import { getLogOption, setDisplayedFields } from '../../services/store';
 import React, { MouseEvent } from 'react';
 import { LogsListScene } from './LogsListScene';
@@ -22,6 +22,7 @@ import { CopyLinkButton } from './CopyLinkButton';
 import { getLogsPanelSortOrder, LogOptionsScene } from './LogOptionsScene';
 import { LogsVolumePanel, logsVolumePanelKey } from './LogsVolumePanel';
 import { getPanelWrapperStyles, PanelMenu } from '../Panels/PanelMenu';
+import { ServiceScene } from './ServiceScene';
 
 interface LogsPanelSceneState extends SceneObjectState {
   body?: VizPanel;
@@ -42,6 +43,23 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         body: this.getLogsPanel(),
       });
     }
+
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
+    this._subs.add(
+      serviceScene.subscribeToState((newState, prevState) => {
+        if (newState.logsCount !== prevState.logsCount) {
+          if (!this.state.body) {
+            this.setState({
+              body: this.getLogsPanel(),
+            });
+          } else {
+            this.state.body.setState({
+              title: this.getTitle(newState.logsCount),
+            });
+          }
+        }
+      })
+    );
   }
 
   onClickShowField = (field: string) => {
@@ -103,12 +121,19 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     return sceneGraph.getAncestor(this, LogsListScene);
   }
 
+  private getTitle(logsCount: number | undefined) {
+    const valueFormatter = getValueFormat('short');
+    const formattedCount = logsCount !== undefined ? valueFormatter(logsCount, 0) : undefined;
+    return formattedCount !== undefined ? `Logs (${formattedCount.text}${formattedCount.suffix?.trim()})` : 'Logs';
+  }
+
   private getLogsPanel() {
     const parentModel = this.getParentScene();
     const visualizationType = parentModel.state.visualizationType;
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     return (
       PanelBuilders.logs()
-        .setTitle('Logs')
+        .setTitle(this.getTitle(serviceScene.state.logsCount))
         .setOption('showTime', true)
         .setOption('onClickFilterLabel', this.handleLabelFilterClick)
         .setOption('onClickFilterOutLabel', this.handleLabelFilterOutClick)
@@ -136,6 +161,23 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
   }
 
   private updateVisibleRange = (newLogs: DataFrame[]) => {
+    // Update logs count
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
+    serviceScene.setState({
+      logsCount: newLogs[0].length,
+    });
+
+    if (serviceScene.state.$data?.state.data?.series) {
+      // We need to update the state with the new data without triggering state-dependent changes.
+      serviceScene.state.$data.setState({
+        ...serviceScene.state.$data.state,
+        data: {
+          ...serviceScene.state.$data.state.data,
+          series: newLogs,
+        },
+      });
+    }
+
     const logsVolumeScene = sceneGraph.findByKeyAndType(this, logsVolumePanelKey, LogsVolumePanel);
     if (logsVolumeScene instanceof LogsVolumePanel) {
       logsVolumeScene.updateVisibleRange(newLogs);

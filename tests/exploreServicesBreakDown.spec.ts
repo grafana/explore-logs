@@ -97,7 +97,19 @@ test.describe('explore services breakdown page', () => {
   test('logs panel should have panel-content class suffix', async ({ page }) => {
     await explorePage.serviceBreakdownSearch.click();
     await explorePage.serviceBreakdownSearch.fill('broadcast');
-    await expect(page.getByTestId('data-testid Panel header Logs').locator('[class$="panel-content"]')).toBeVisible();
+    await expect(explorePage.getLogsPanelLocator().locator('[class$="panel-content"]')).toBeVisible();
+  });
+
+  test(`should show "Explore" on table panel menu`, async ({ page }) => {
+    await explorePage.goToLogsTab();
+    // Switch to table view
+    await explorePage.getTableToggleLocator().click();
+
+    const table = page.getByTestId(testIds.table.wrapper);
+    await page.getByTestId('data-testid Panel menu Logs').click();
+    await page.getByTestId('data-testid Panel menu item Explore').click();
+
+    await expect(page.getByText(`drop __error__, __error_details__`)).toBeVisible();
   });
 
   test(`should add ${levelName} filter on table click`, async ({ page }) => {
@@ -136,7 +148,7 @@ test.describe('explore services breakdown page', () => {
 
     await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${levelName}`)).toBeVisible();
     await explorePage.goToLogsTab();
-    await page.getByTestId('data-testid Panel menu Logs').click();
+    await explorePage.getLogsVolumePanelLocator().click();
     await page.getByTestId('data-testid Panel menu item Explore').click();
     await expect(page.getByText(`{service_name=\`tempo-distributor\`} | ${levelName}=\`${valueName}\``)).toBeVisible();
   });
@@ -155,7 +167,7 @@ test.describe('explore services breakdown page', () => {
 
     // Navigate to logs query
     await explorePage.goToLogsTab();
-    await page.getByTestId('data-testid Panel menu Logs').click();
+    await explorePage.getLogsVolumePanelLocator().click();
     await page.getByTestId('data-testid Panel menu item Explore').click();
 
     await expect(
@@ -372,7 +384,8 @@ test.describe('explore services breakdown page', () => {
 
   test('should only load fields that are in the viewport', async ({ page }) => {
     await explorePage.setDefaultViewportSize();
-    let requestCount = 0;
+    let requestCount = 0,
+      logsCountQueryCount = 0;
 
     // We don't need to mock the response, but it speeds up the test
     await page.route('**/api/ds/query*', async (route, request) => {
@@ -384,11 +397,14 @@ test.describe('explore services breakdown page', () => {
         const postData = JSON.parse(rawPostData);
         const refId = postData.queries[0].refId;
         // Field subqueries have a refId of the field name
-        if (refId !== 'logsPanelQuery' && refId !== 'A') {
+        if (refId !== 'logsPanelQuery' && refId !== 'A' && refId !== 'logsCountQuery') {
           requestCount++;
           // simulate the query taking some time
           await page.waitForTimeout(100);
           return await route.fulfill({ json: mockResponse });
+        }
+        if (refId === 'logsCountQuery') {
+          logsCountQueryCount++;
         }
       }
 
@@ -405,6 +421,8 @@ test.describe('explore services breakdown page', () => {
     await explorePage.assertTabsNotLoading();
     // Fields on top should be loaded
     expect(requestCount).toEqual(6);
+    expect(logsCountQueryCount).toEqual(2);
+
     await explorePage.scrollToBottom();
     // Panel on the bottom should be visible
     await expect(page.getByTestId(/data-testid Panel header/).last()).toBeInViewport();
@@ -414,6 +432,7 @@ test.describe('explore services breakdown page', () => {
     await page.waitForTimeout(250);
     // if this flakes we could just assert that it's greater then 3
     expect(requestCount).toEqual(17);
+    expect(logsCountQueryCount).toEqual(2);
   });
 
   test(`should select field ${fieldName}, update filters, open log panel`, async ({ page }) => {
@@ -630,9 +649,7 @@ test.describe('explore services breakdown page', () => {
     await page.getByTitle('See log details').nth(1).click();
 
     await explorePage.scrollToBottom();
-    const adHocLocator = page
-      .getByTestId('data-testid Panel header Logs')
-      .getByText('mimir-distributor', { exact: true });
+    const adHocLocator = explorePage.getLogsPanelLocator().getByText('mimir-distributor', { exact: true });
     await expect(adHocLocator).toHaveCount(1);
     // find text corresponding text to match adhoc filter
     await expect(adHocLocator).toBeVisible();

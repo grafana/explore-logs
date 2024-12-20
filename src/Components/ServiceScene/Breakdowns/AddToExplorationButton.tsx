@@ -1,28 +1,27 @@
-import { DataFrame, DataSourceJsonData, TimeRange } from '@grafana/data';
-import { DataSourceWithBackend, usePluginLinks } from '@grafana/runtime';
+import { DataFrame, TimeRange } from '@grafana/data';
+import { usePluginLinks } from '@grafana/runtime';
 import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState, SceneQueryRunner } from '@grafana/scenes';
-import { DataQuery, DataSourceRef } from '@grafana/schema';
+import { DataSourceRef } from '@grafana/schema';
 import { IconButton } from '@grafana/ui';
 import React from 'react';
 import { ExtensionPoints } from 'services/extensions/links';
 import { findObjectOfType, getLokiDatasource } from 'services/scenes';
 
 import LokiLogo from '../../../img/logo.svg';
+import { LokiDatasource, LokiQuery } from '../../../services/lokiQuery';
 
 export interface AddToExplorationButtonState extends SceneObjectState {
   frame?: DataFrame;
   labelName?: string;
   fieldName?: string;
-
-  ds?: DataSourceWithBackend<DataQuery, DataSourceJsonData>;
+  ds?: LokiDatasource;
   context?: ExtensionContext;
-
-  queries: DataQuery[];
+  queries: LokiQuery[];
 }
 
 type ExtensionContext = {
   timeRange: TimeRange;
-  queries: DataQuery[];
+  queries: LokiQuery[];
   datasource: DataSourceRef;
   origin: string;
   url: string;
@@ -66,6 +65,7 @@ export class AddToExplorationButton extends SceneObjectBase<AddToExplorationButt
         ...q,
         expr: sceneGraph.interpolate(queryRunner, q.expr),
         legendFormat: filter?.name ? `{{ ${filter.name} }}` : sceneGraph.interpolate(queryRunner, q.legendFormat),
+        datasource: q.datasource ?? undefined,
       }));
       if (JSON.stringify(queries) !== JSON.stringify(this.state.queries)) {
         this.setState({ queries });

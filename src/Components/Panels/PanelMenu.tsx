@@ -60,22 +60,6 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
   constructor(state: Partial<PanelMenuState>) {
     super({ ...state, addExplorationsLink: state.addExplorationsLink ?? true });
     this.addActivationHandler(() => {
-      const viz = findObjectOfType(this, (o) => o instanceof VizPanel, VizPanel);
-
-      this.setState({
-        explorationsButton: new AddToExplorationButton({
-          labelName: this.state.labelName,
-          fieldName: this.state.fieldName,
-          frame: this.state.frame,
-        }),
-      });
-
-      if (this.state.addExplorationsLink) {
-        // @todo rewrite the AddToExplorationButton
-        // Manually activate scene
-        this.state.explorationsButton?.activate();
-      }
-
       // Navigation options (all panels)
       const items: PanelMenuItem[] = [
         {
@@ -90,6 +74,33 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
           shortcut: 'p x',
         },
       ];
+
+      let viz;
+      try {
+        viz = sceneGraph.getAncestor(this, VizPanel);
+      } catch (e) {
+        // If we can't find the viz panel, we can't add the Explore item. Currently the case for logs table.
+        this.setState({
+          body: new VizPanelMenu({
+            items,
+          }),
+        });
+        return;
+      }
+
+      this.setState({
+        explorationsButton: new AddToExplorationButton({
+          labelName: this.state.labelName,
+          fieldName: this.state.fieldName,
+          frame: this.state.frame,
+        }),
+      });
+
+      if (this.state.addExplorationsLink) {
+        // @todo rewrite the AddToExplorationButton
+        // Manually activate scene
+        this.state.explorationsButton?.activate();
+      }
 
       // Visualization options
       if (this.state.panelType || viz?.state.collapsible) {

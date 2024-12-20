@@ -6,8 +6,15 @@ export type SceneDataQueryRequest = DataQueryRequest<LokiQuery & SceneDataQueryR
   scopedVars?: { __sceneObject?: { valueOf: () => SceneObject } };
 };
 export type SceneDataQueryResourceRequest = {
-  resource: 'volume' | 'patterns' | 'detected_labels' | 'detected_fields' | 'labels' | undefined;
+  resource?: SceneDataQueryResourceRequestOptions;
 };
+
+export type SceneDataQueryResourceRequestOptions =
+  | 'volume'
+  | 'patterns'
+  | 'detected_labels'
+  | 'detected_fields'
+  | 'labels';
 
 export type VolumeRequestProps = {
   primaryLabel?: string;

@@ -4,16 +4,35 @@ import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, ValueSlugs } from '
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { navigateToDrilldownPage } from '../../services/navigate';
 import React, { useEffect, useState } from 'react';
-import { ServiceScene, ServiceSceneState } from './ServiceScene';
-import { GrafanaTheme2 } from '@grafana/data';
-import { css } from '@emotion/css';
-import { BreakdownViewDefinition, breakdownViewsDefinitions } from './BreakdownViews';
+import { ServiceScene, ServiceSceneCustomState } from './ServiceScene';
+import { getValueFormat, GrafanaTheme2 } from '@grafana/data';
+import { css, cx } from '@emotion/css';
+import { BreakdownViewDefinition, breakdownViewsDefinitions, TabNames } from './BreakdownViews';
 import { config, usePluginLinks } from '@grafana/runtime';
 import { getLabelsVariable } from '../../services/variableGetters';
+import { IndexScene } from '../IndexScene/IndexScene';
+import { LINE_LIMIT } from '../../services/query';
 
-export interface ActionBarSceneState extends SceneObjectState {}
+export interface ActionBarSceneState extends SceneObjectState {
+  maxLines?: number;
+}
 
 export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
+  constructor(state: Partial<ActionBarSceneState>) {
+    super(state);
+
+    this.addActivationHandler(this.onActivate.bind(this));
+  }
+
+  onActivate() {
+    const indexScene = sceneGraph.getAncestor(this, IndexScene);
+    const dataSource = indexScene.state.ds;
+    if (dataSource?.maxLines !== undefined) {
+      this.setState({
+        maxLines: dataSource.maxLines,
+      });
+    }
+  }
   public static Component = ({ model }: SceneComponentProps<ActionBarScene>) => {
     const styles = useStyles2(getStyles);
     let currentBreakdownViewSlug = getDrilldownSlug();
@@ -31,7 +50,9 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
     }
 
     const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
-    const { loading, $data, ...state } = serviceScene.useState();
+    const { loading, $data, logsCount, totalLogsCount, ...state } = serviceScene.useState();
+    const { maxLines } = model.useState();
+
     const loadingStates = state.loadingStates;
 
     return (
@@ -50,7 +71,12 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
                 key={index}
                 label={tab.displayName}
                 active={currentBreakdownViewSlug === tab.value}
-                counter={loadingStates[tab.displayName] ? undefined : getCounter(tab, { ...state, $data })}
+                counter={loadingStates[tab.displayName] ? undefined : getCounter(tab, state)}
+                suffix={
+                  tab.displayName === TabNames.logs
+                    ? ({ className }) => LogsCount(className, totalLogsCount, logsCount, maxLines ?? LINE_LIMIT)
+                    : undefined
+                }
                 icon={loadingStates[tab.displayName] ? 'spinner' : undefined}
                 onChangeTab={() => {
                   if ((tab.value && tab.value !== currentBreakdownViewSlug) || allowNavToParent) {
@@ -75,7 +101,7 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
     );
   };
 }
-const getCounter = (tab: BreakdownViewDefinition, state: ServiceSceneState) => {
+const getCounter = (tab: BreakdownViewDefinition, state: ServiceSceneCustomState) => {
   switch (tab.value) {
     case 'fields':
       return state.fieldsCount;
@@ -167,4 +193,57 @@ function ToolbarExtensionsRenderer(props: { serviceScene: SceneObject }) {
       </ToolbarButton>
     </Dropdown>
   );
+}
+
+function LogsCount(
+  className: string | undefined,
+  totalCount: number | undefined,
+  logsCount: number | undefined,
+  maxLines: number
+) {
+  const styles = useStyles2(getLogsCountStyles);
+  const valueFormatter = getValueFormat('short');
+
+  // The instant query (totalCount) doesn't return good results for small result sets, if we're below the max number of lines, use the logs query result instead.
+  if (totalCount === undefined && logsCount !== undefined && logsCount < maxLines) {
+    const formattedCount = valueFormatter(logsCount, 0);
+    return (
+      <span className={cx(className, styles.logsCountStyles)}>
+        {formattedCount.text}
+        {formattedCount.suffix?.trim()}
+      </span>
+    );
+  } else if (totalCount !== undefined) {
+    const formattedTotalCount = valueFormatter(totalCount, 0);
+    return (
+      <span className={cx(className, styles.logsCountStyles)}>
+        {formattedTotalCount.text}
+        {formattedTotalCount.suffix?.trim()}
+      </span>
+    );
+  }
+
+  return <span className={cx(className, styles.emptyCountStyles)}></span>;
+}
+
+function getLogsCountStyles(theme: GrafanaTheme2) {
+  return {
+    emptyCountStyles: css({
+      display: 'inline-block',
+      fontSize: theme.typography.bodySmall.fontSize,
+      minWidth: '1em',
+      marginLeft: theme.spacing(1),
+      padding: theme.spacing(0.25, 1),
+    }),
+    logsCountStyles: css({
+      fontSize: theme.typography.bodySmall.fontSize,
+      label: 'counter',
+      marginLeft: theme.spacing(1),
+      borderRadius: theme.spacing(3),
+      backgroundColor: theme.colors.action.hover,
+      padding: theme.spacing(0.25, 1),
+      color: theme.colors.text.secondary,
+      fontWeight: theme.typography.fontWeightMedium,
+    }),
+  };
 }
