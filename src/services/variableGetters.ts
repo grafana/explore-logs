@@ -27,7 +27,8 @@ import {
   VAR_LEVELS,
   VAR_LEVELS_EXPR,
   VAR_LINE_FILTER,
-  VAR_LINE_FILTER_EXPR,
+  VAR_LINE_FILTERS,
+  VAR_LINE_FILTERS_EXPR,
   VAR_METADATA,
   VAR_METADATA_EXPR,
   VAR_PATTERNS,
@@ -49,13 +50,13 @@ export function getLogsStreamSelector(options: LogsQueryOptions) {
 
   switch (parser) {
     case 'structuredMetadata':
-      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_METADATA_EXPR} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTER_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
+      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_LEVELS_EXPR} ${VAR_METADATA_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTERS_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
     case 'json':
-      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_METADATA_EXPR} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTER_EXPR} ${JSON_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
+      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_LEVELS_EXPR} ${VAR_METADATA_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTERS_EXPR} ${JSON_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
     case 'logfmt':
-      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_METADATA_EXPR} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTER_EXPR} ${LOGS_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
+      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_LEVELS_EXPR} ${VAR_METADATA_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTERS_EXPR} ${LOGS_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
     default:
-      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_METADATA_EXPR} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTER_EXPR} ${MIXED_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
+      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_LEVELS_EXPR} ${VAR_METADATA_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTERS_EXPR} ${MIXED_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
   }
 }
 
@@ -89,7 +90,7 @@ export function getLevelsVariable(scene: SceneObject) {
 
 export function getLineFilterVariable(scene: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_LINE_FILTER, scene);
-  if (!(variable instanceof CustomVariable)) {
+  if (!(variable instanceof AdHocFiltersVariable)) {
     throw new Error('VAR_LINE_FILTER not found');
   }
   return variable;
@@ -123,6 +124,14 @@ export function getDataSourceVariable(scene: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_DATASOURCE, scene);
   if (!(variable instanceof DataSourceVariable)) {
     throw new Error('VAR_DATASOURCE not found');
+  }
+  return variable;
+}
+
+export function getLineFiltersVariable(scene: SceneObject) {
+  const variable = sceneGraph.lookupVariable(VAR_LINE_FILTERS, scene);
+  if (!(variable instanceof AdHocFiltersVariable)) {
+    throw new Error('VAR_LINE_FILTERS not found');
   }
   return variable;
 }
