@@ -1,7 +1,7 @@
-import { css, cx } from '@emotion/css';
+import { css } from '@emotion/css';
 import { SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
-import { Button, Field, Icon, Select } from '@grafana/ui';
-import { debounce } from 'lodash';
+import { Button, Field, Select } from '@grafana/ui';
+import debounce from 'lodash/debounce';
 import React, { ChangeEvent, KeyboardEvent } from 'react';
 import { testIds } from 'services/testIds';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';

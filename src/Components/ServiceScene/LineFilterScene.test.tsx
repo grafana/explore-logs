@@ -9,11 +9,10 @@ import { renderLogQLLineFilter } from '../../services/query';
 import { CustomAdHocFiltersVariable } from '../../services/CustomAdHocFiltersVariable';
 
 let location = {} as Location;
-jest.mock('lodash', () => ({
-  ...jest.requireActual('lodash'),
-  debounce: (fn: unknown) => fn,
-}));
-
+jest.mock('lodash/debounce', () => (fn: { cancel: jest.Mock<any, any, any> }) => {
+  fn.cancel = jest.fn();
+  return fn;
+});
 jest.mock('@grafana/runtime', () => ({
   ...jest.requireActual('@grafana/runtime'),
   locationService: {
