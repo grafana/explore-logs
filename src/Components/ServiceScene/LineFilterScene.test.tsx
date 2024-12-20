@@ -8,7 +8,7 @@ import { LineFilterOp } from '../../services/filterTypes';
 import { renderLogQLLineFilter } from '../../services/query';
 
 let location = {} as Location;
-jest.mock('lodash/debounce', () => (fn: { cancel: jest.Mock<any, any, any> }) => {
+jest.mock('lodash/debounce', () => (fn: { cancel: jest.Mock<any, any, any>; flush: jest.Mock<any, any, any> }) => {
   fn.cancel = jest.fn();
   fn.flush = jest.fn();
   return fn;
@@ -258,47 +258,6 @@ describe('LineFilter', () => {
       render(<scene.Component model={scene} />);
 
       expect(await screen.findByDisplayValue(string)).toBeInTheDocument();
-    });
-  });
-  describe('should migrate old urls', () => {
-    beforeEach(() => {
-      lineFilterVariable = new AdHocFiltersVariable({
-        name: VAR_LINE_FILTER,
-        expressionBuilder: renderLogQLLineFilter,
-      });
-      lineFiltersVariable = new AdHocFiltersVariable({
-        name: VAR_LINE_FILTERS,
-        expressionBuilder: renderLogQLLineFilter,
-      });
-      scene = new LineFilterScene({
-        caseSensitive: false,
-        regex: false,
-        $variables: new SceneVariableSet({
-          variables: [lineFilterVariable, lineFiltersVariable],
-        }),
-      });
-    });
-    test('it should populate input from case sensitive filter', async () => {
-      location.search = '?param=value&var-lineFilter=|= `bodySize`';
-
-      render(<scene.Component model={scene} />);
-      // Current case button state should be case-sensitive
-      expect(await screen.getByLabelText('Disable case match')).toBeInTheDocument();
-      // Current regex button state should be string matching
-      expect(await screen.getByLabelText('Enable regex')).toBeInTheDocument();
-      expect(await screen.findByDisplayValue('bodySize')).toBeInTheDocument();
-    });
-
-    test('it should populate input from case insensitive filter', async () => {
-      location.search = '?param=value&var-lineFilter=|~ `(?i)post`';
-
-      render(<scene.Component model={scene} />);
-      // Current case button state should be case-insensitive
-      expect(await screen.getByLabelText('Enable case match')).toBeInTheDocument();
-      // Current regex button state should be string matching
-      expect(await screen.getByLabelText('Enable regex')).toBeInTheDocument();
-      expect(await screen.findByDisplayValue('post')).toBeInTheDocument();
-      expect(await screen.queryByDisplayValue('(?i)post')).not.toBeInTheDocument();
     });
   });
 });

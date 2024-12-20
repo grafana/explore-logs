@@ -1253,129 +1253,145 @@ test.describe('explore services breakdown page', () => {
     await expect(summaryPanelBody).toBeVisible();
   });
 
-  test('line filter', async ({ page }) => {
-    let requestCount = 0,
-      logsCountQueryCount = 0,
+  test.describe('line filters', () => {
+    test('line filter', async ({ page }) => {
+      let requestCount = 0,
+        logsCountQueryCount = 0,
+        logsPanelQueryCount = 0;
+
+      explorePage.blockAllQueriesExcept({
+        refIds: ['logsPanelQuery'],
+        legendFormats: [],
+      });
+
+      // We don't need to mock the response, but it speeds up the test
+      await page.route('**/api/ds/query*', async (route, request) => {
+        const mockResponse = mockEmptyQueryApiResponse;
+        const rawPostData = request.postData();
+
+        // We only want to mock the actual field requests, and not the initial request that returns us our list of fields
+        if (rawPostData) {
+          const postData = JSON.parse(rawPostData);
+          const refId = postData.queries[0].refId;
+          // Field subqueries have a refId of the field name
+          if (refId !== 'logsPanelQuery' && refId !== 'A' && refId !== 'logsCountQuery') {
+            requestCount++;
+            return await route.fulfill({ json: mockResponse });
+          }
+          if (refId === 'logsCountQuery') {
+            logsCountQueryCount++;
+          }
+          if (refId === 'logsPanelQuery') {
+            logsPanelQueryCount++;
+          }
+        }
+
+        // Otherwise let the request go through normally
+        const response = await route.fetch();
+        const json = await response.json();
+        return route.fulfill({ response, json });
+      });
+
+      requestCount = 0;
+      logsCountQueryCount = 0;
       logsPanelQueryCount = 0;
 
-    explorePage.blockAllQueriesExcept({
-      refIds: ['logsPanelQuery'],
-      legendFormats: [],
+      // Locators
+      const lastLineFilterLoc = page.getByTestId(testIds.exploreServiceDetails.searchLogs).last();
+      const firstLineFilterLoc = page.getByTestId(testIds.exploreServiceDetails.searchLogs).first();
+      // const lineFilters = page.getByTestId(testIds.exploreServiceDetails.searchLogs)
+      const logsPanelContent = explorePage.getLogsPanelLocator().getByTestId('data-testid panel content');
+      const rows = logsPanelContent.getByRole('row');
+      const firstRow = rows.nth(0);
+      const highlightedMatchesInFirstRow = firstRow.locator('mark');
+
+      await explorePage.goToLogsTab();
+      await expect(lastLineFilterLoc).toHaveCount(1);
+      await expect(logsPanelContent).toHaveCount(1);
+      await expect(firstRow).toHaveCount(1);
+      await expect(highlightedMatchesInFirstRow).toHaveCount(0);
+
+      // One logs panel query should have fired
+      expect(logsCountQueryCount).toEqual(1);
+      expect(logsPanelQueryCount).toEqual(1);
+
+      await lastLineFilterLoc.click();
+      await page.keyboard.type('Debug');
+      await expect(highlightedMatchesInFirstRow).toHaveCount(1);
+
+      // Now 2 queries should have fired
+      expect(logsCountQueryCount).toEqual(2);
+      expect(logsPanelQueryCount).toEqual(2);
+
+      // switch to case sensitive
+      await page.getByLabel('Enable case match').click();
+      await expect(rows).toHaveCount(0);
+      expect(logsCountQueryCount).toEqual(3);
+      expect(logsPanelQueryCount).toEqual(3);
+
+      // Clear the text - should trigger query
+      await page.getByLabel('Clear search').click();
+      // Enable regex - should not trigger empty query
+      await page.getByLabel('Enable regex').click();
+      // Disable case - should not trigger empty query
+      await page.getByLabel('Disable case match').click();
+      await expect(firstRow).toHaveCount(1);
+      expect(logsCountQueryCount).toEqual(4);
+      expect(logsPanelQueryCount).toEqual(4);
+
+      // Add regex string
+      await lastLineFilterLoc.click();
+      await page.keyboard.type('[dD]ebug');
+      await expect(highlightedMatchesInFirstRow).toHaveCount(1);
+      expect(logsCountQueryCount).toEqual(5);
+      expect(logsPanelQueryCount).toEqual(5);
+
+      // Disable regex - expect no results show
+      await page.getByLabel('Disable regex').click();
+      await expect(rows).toHaveCount(0);
+      expect(logsCountQueryCount).toEqual(6);
+      expect(logsPanelQueryCount).toEqual(6);
+
+      // Re-enable regex - results should show
+      await page.getByLabel('Enable regex').click();
+      await expect(highlightedMatchesInFirstRow).toHaveCount(1);
+      expect(logsCountQueryCount).toEqual(7);
+      expect(logsPanelQueryCount).toEqual(7);
+
+      // Change the search to something that will return results and immediately submit before the debounce ends
+      await page.getByRole('button', { name: 'Submit' }).click();
+      await lastLineFilterLoc.click();
+      await page.keyboard.type('caller');
+      await expect(highlightedMatchesInFirstRow).toHaveCount(2);
+      expect(logsCountQueryCount).toEqual(8);
+      expect(logsPanelQueryCount).toEqual(8);
+
+      // Change the filter in the "saved" variable that will return 0 results
+      await firstLineFilterLoc.click();
+      await page.keyboard.type('__');
+      await expect(rows).toHaveCount(0);
+      expect(logsCountQueryCount).toEqual(9);
+      expect(logsPanelQueryCount).toEqual(9);
     });
 
-    // We don't need to mock the response, but it speeds up the test
-    await page.route('**/api/ds/query*', async (route, request) => {
-      const mockResponse = mockEmptyQueryApiResponse;
-      const rawPostData = request.postData();
+    test('line filter migration case sensitive', async ({ page }) => {
+      await explorePage.gotoServicesOldUrlLineFilters('tempo-distributor', true);
+      const firstLineFilterLoc = page.getByTestId(testIds.exploreServiceDetails.searchLogs).first();
 
-      // We only want to mock the actual field requests, and not the initial request that returns us our list of fields
-      if (rawPostData) {
-        const postData = JSON.parse(rawPostData);
-        const refId = postData.queries[0].refId;
-        // Field subqueries have a refId of the field name
-        if (refId !== 'logsPanelQuery' && refId !== 'A' && refId !== 'logsCountQuery') {
-          requestCount++;
-          return await route.fulfill({ json: mockResponse });
-        }
-        if (refId === 'logsCountQuery') {
-          logsCountQueryCount++;
-        }
-        if (refId === 'logsPanelQuery') {
-          logsPanelQueryCount++;
-        }
-      }
-
-      // Otherwise let the request go through normally
-      const response = await route.fetch();
-      const json = await response.json();
-      return route.fulfill({ response, json });
+      await expect(firstLineFilterLoc).toHaveCount(1);
+      await expect(page.getByLabel('Enable case match').nth(0)).toHaveCount(1);
+      await expect(page.getByLabel('Disable case match')).toHaveCount(0);
+      await expect(firstLineFilterLoc).toHaveValue('debug');
     });
 
-    requestCount = 0;
-    logsCountQueryCount = 0;
-    logsPanelQueryCount = 0;
+    test('line filter migration case insensitive', async ({ page }) => {
+      await explorePage.gotoServicesOldUrlLineFilters('tempo-distributor', false);
+      const firstLineFilterLoc = page.getByTestId(testIds.exploreServiceDetails.searchLogs).first();
 
-    // Locators
-    const lastLineFilterLoc = page.getByTestId(testIds.exploreServiceDetails.searchLogs).last();
-    const firstLineFilterLoc = page.getByTestId(testIds.exploreServiceDetails.searchLogs).last();
-    // const lineFilters = page.getByTestId(testIds.exploreServiceDetails.searchLogs)
-    const logsPanelContent = explorePage.getLogsPanelLocator().getByTestId('data-testid panel content');
-    const rows = logsPanelContent.getByRole('row');
-    const firstRow = rows.nth(0);
-    const highlightedMatchesInFirstRow = firstRow.locator('mark');
-
-    await explorePage.goToLogsTab();
-    await expect(lastLineFilterLoc).toHaveCount(1);
-    await expect(logsPanelContent).toHaveCount(1);
-    await expect(firstRow).toHaveCount(1);
-    await expect(highlightedMatchesInFirstRow).toHaveCount(0);
-
-    // One logs panel query should have fired
-    expect(logsCountQueryCount).toEqual(1);
-    expect(logsPanelQueryCount).toEqual(1);
-
-    await lastLineFilterLoc.click();
-    await page.keyboard.type('Debug');
-    await expect(highlightedMatchesInFirstRow).toHaveCount(1);
-
-    // Now 2 queries should have fired
-    expect(logsCountQueryCount).toEqual(2);
-    expect(logsPanelQueryCount).toEqual(2);
-
-    // switch to case sensitive
-    await page.getByLabel('Enable case match').click();
-    await expect(rows).toHaveCount(0);
-    expect(logsCountQueryCount).toEqual(3);
-    expect(logsPanelQueryCount).toEqual(3);
-
-    // Clear the text - should trigger query
-    await page.getByLabel('Clear search').click();
-    // Enable regex - should not trigger empty query
-    await page.getByLabel('Enable regex').click();
-    // Disable case - should not trigger empty query
-    await page.getByLabel('Disable case match').click();
-    await expect(firstRow).toHaveCount(1);
-    expect(logsCountQueryCount).toEqual(4);
-    expect(logsPanelQueryCount).toEqual(4);
-
-    // Add regex string
-    await lastLineFilterLoc.click();
-    await page.keyboard.type('[dD]ebug');
-    await expect(highlightedMatchesInFirstRow).toHaveCount(1);
-    expect(logsCountQueryCount).toEqual(5);
-    expect(logsPanelQueryCount).toEqual(5);
-
-    // Disable regex - expect no results show
-    await page.getByLabel('Disable regex').click();
-    await expect(rows).toHaveCount(0);
-    expect(logsCountQueryCount).toEqual(6);
-    expect(logsPanelQueryCount).toEqual(6);
-
-    // Re-enable regex - results should show
-    await page.getByLabel('Enable regex').click();
-    await expect(highlightedMatchesInFirstRow).toHaveCount(1);
-    expect(logsCountQueryCount).toEqual(7);
-    expect(logsPanelQueryCount).toEqual(7);
-
-    // Change the search to something that will return results and immediately submit before the debounce ends
-    await page.getByRole('button', { name: 'Submit' }).click();
-    await lastLineFilterLoc.click();
-    await page.keyboard.type('caller');
-    await expect(highlightedMatchesInFirstRow).toHaveCount(2);
-    expect(logsCountQueryCount).toEqual(8);
-    expect(logsPanelQueryCount).toEqual(8);
-
-    // Change the filter in the "saved" variable that will return 0 results
-    await firstLineFilterLoc.click();
-    await page.keyboard.type('__');
-    await expect(rows).toHaveCount(0);
-    expect(logsCountQueryCount).toEqual(9);
-    expect(logsPanelQueryCount).toEqual(9);
+      await expect(firstLineFilterLoc).toHaveCount(1);
+      await expect(page.getByLabel('Disable case match')).toHaveCount(1);
+      await expect(page.getByLabel('Enable case match')).toHaveCount(1);
+      await expect(firstLineFilterLoc).toHaveValue('debug');
+    });
   });
-
-  // test.only('line filter migration', async({page}) => {
-  //   await explorePage.gotoServicesOldUrlLineFilters()
-  //   await page.pause();
-  //
-  // })
 });

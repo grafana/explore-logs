@@ -18,7 +18,6 @@ import {
 } from '../../services/store';
 import { RegexIconButton, RegexInputValue } from './RegexIconButton';
 import { LineFilterOp } from '../../services/filterTypes';
-import { locationService } from '@grafana/runtime';
 
 interface LineFilterState extends SceneObjectState {
   lineFilter: string;
@@ -52,7 +51,6 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   }
 
   private onActivate = () => {
-    this.migrateOldVariable();
     const filter = this.getFilter();
 
     if (!filter) {
@@ -71,57 +69,6 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
       this.clearFilter();
     };
   };
-
-  private migrateOldVariable() {
-    const search = locationService.getSearch();
-
-    const deprecatedLineFilter = search.get('var-lineFilter');
-
-    if (!deprecatedLineFilter) {
-      return;
-    }
-
-    const newVariable = getLineFilterVariable(this);
-    const existingVariables = getLineFiltersVariable(this);
-    const caseSensitiveMatches = deprecatedLineFilter?.match(/\|=.`(.+?)`/);
-
-    if (caseSensitiveMatches && caseSensitiveMatches.length === 2) {
-      this.setState({
-        caseSensitive: true,
-        exclusive: false,
-        regex: false,
-        lineFilter: caseSensitiveMatches[1],
-      });
-    }
-    const caseInsensitiveMatches = deprecatedLineFilter?.match(/`\(\?i\)(.+)`/);
-    if (caseInsensitiveMatches && caseInsensitiveMatches.length === 2) {
-      this.setState({
-        caseSensitive: false,
-        regex: false,
-        exclusive: false,
-        lineFilter: caseInsensitiveMatches[1],
-      });
-    }
-
-    newVariable.setState({
-      filters: [
-        {
-          key: this.getFilterKey(),
-          // This should always be 0, since migrated urls won't have the new values, but better safe than sorry?
-          keyLabel: existingVariables.state.filters.length.toString(),
-          operator: this.getOperator(),
-          value: this.state.lineFilter,
-        },
-      ],
-    });
-
-    // Remove from url without refreshing
-    const newLocation = locationService.getLocation();
-    search.delete('var-lineFilter');
-    newLocation.search = search.toString();
-    locationService.replace(newLocation.pathname + '?' + newLocation.search);
-    this.updateFilter(this.state.lineFilter, false);
-  }
 
   updateFilter(lineFilter: string, debounced = true) {
     this.setState({
