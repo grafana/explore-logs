@@ -85,7 +85,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   }
 
   clearFilter = () => {
-    this.updateVariableDebounced.flush();
+    this.updateVariableDebounced.cancel();
     this.updateFilter('', false);
   };
 
@@ -142,6 +142,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   };
 
   private clearVariable() {
+    this.updateVariableDebounced.cancel();
     const variable = getLineFilterVariable(this);
     variable.updateFilters([], {
       skipPublish: true,
