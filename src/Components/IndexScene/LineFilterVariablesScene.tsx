@@ -31,17 +31,15 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
     );
 
     variable.updateFilters(
-      {
-        filters: [
-          {
-            keyLabel: existingFilter.keyLabel,
-            key: filterUpdate.key,
-            operator: filterUpdate.operator,
-            value: filterUpdate.value,
-          },
-          ...otherFilters,
-        ],
-      },
+      [
+        {
+          keyLabel: existingFilter.keyLabel,
+          key: filterUpdate.key,
+          operator: filterUpdate.operator,
+          value: filterUpdate.value,
+        },
+        ...otherFilters,
+      ],
       { skipPublish, forcePublish }
     );
 

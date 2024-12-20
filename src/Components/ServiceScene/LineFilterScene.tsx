@@ -1,4 +1,4 @@
-import { css } from '@emotion/css';
+import { css, cx } from '@emotion/css';
 import { SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { Button, Field, Icon, Select } from '@grafana/ui';
 import { debounce } from 'lodash';
@@ -139,6 +139,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   }
 
   clearFilter = () => {
+    this.updateVariableDebounced.cancel();
     this.updateFilter('', false);
   };
 
@@ -184,26 +185,21 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
     }
   }
 
-  /**
-   * @todo need to set loading state and set disabled when loading
-   */
   onSubmitLineFilter = () => {
     const lineFiltersVariable = getLineFiltersVariable(this);
     const existingFilters = lineFiltersVariable.state.filters;
     const thisFilter = this.getFilter();
+    this.updateVariableDebounced.cancel();
 
-    lineFiltersVariable.updateFilters({ filters: [...existingFilters, thisFilter] }, { skipPublish: true });
+    lineFiltersVariable.updateFilters([...existingFilters, thisFilter], { skipPublish: true });
     this.clearVariable();
   };
 
   private clearVariable() {
     const variable = getLineFilterVariable(this);
-    variable.updateFilters(
-      { filters: [] },
-      {
-        skipPublish: true,
-      }
-    );
+    variable.updateFilters([], {
+      skipPublish: true,
+    });
     this.setState({
       lineFilter: '',
     });
@@ -216,6 +212,9 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   handleEnter = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       this.updateVariable(this.state.lineFilter);
+      if (this.state.lineFilter) {
+        this.onSubmitLineFilter();
+      }
     }
   };
 
@@ -252,6 +251,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   }, 1000);
 
   updateVariable = (search: string) => {
+    this.updateVariableDebounced.cancel();
     const variable = getLineFilterVariable(this);
     const variables = getLineFiltersVariable(this);
     variable.setState({
@@ -264,9 +264,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
         },
       ],
     });
-    this.setState({
-      loading: false,
-    });
+
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.search_string_in_logs_changed,
@@ -281,7 +279,6 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
 export interface LineFilterEditorProps {
   filter?: AdHocFilterWithLabels;
   exclusive: boolean;
-  loading?: boolean;
   lineFilter: string;
   caseSensitive: boolean;
   regex: boolean;
@@ -310,7 +307,6 @@ export function LineFilterEditor({
   onSubmitLineFilter,
   onRemoveLineFilter,
   onClearLineFilter,
-  loading,
 }: LineFilterEditorProps) {
   return (
     <div className={styles.wrapper}>
@@ -356,11 +352,10 @@ export function LineFilterEditor({
             className={styles.submit}
             variant={'primary'}
             fill={'outline'}
-            disabled={!lineFilter || loading}
+            disabled={!lineFilter}
           >
             Submit
           </Button>
-          <div className={styles.submitLoading}>{loading ? <Icon name={'spinner'} /> : null}</div>
         </>
       )}
 
@@ -381,9 +376,8 @@ export function LineFilterEditor({
 }
 
 function LineFilterComponent({ model }: SceneComponentProps<LineFilterScene>) {
-  const { lineFilter, caseSensitive, regex, exclusive, loading } = model.useState();
+  const { lineFilter, caseSensitive, regex, exclusive } = model.useState();
   return LineFilterEditor({
-    loading,
     exclusive,
     lineFilter,
     caseSensitive,
@@ -406,12 +400,6 @@ const styles = {
   removeBtn: css({
     borderTopLeftRadius: 0,
     borderBottomLeftRadius: 0,
-  }),
-  submitLoading: css({
-    width: '40px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
   }),
   submit: css({
     borderTopLeftRadius: 0,
@@ -451,6 +439,7 @@ const styles = {
   }),
   field: css({
     label: 'field',
+    flex: '0 1 auto',
     width: '100%',
     marginBottom: 0,
   }),

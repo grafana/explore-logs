@@ -19,26 +19,30 @@ export class CustomAdHocFiltersVariable extends AdHocFiltersVariable {
    * allowing consumers to update the filters without triggering dependent data providers.
    */
   public updateFilters(
-    update: Partial<AdHocFiltersVariable['state']>,
+    filters: AdHocFilterWithLabels[],
     options?: {
       skipPublish?: boolean;
       forcePublish?: boolean;
     }
   ): void {
     let filterExpressionChanged = false;
+    let filterExpression = undefined;
 
     if (this.state.expressionBuilder === undefined) {
       throw new Error('CustomAdHocFiltersVariable requires expression builder is defined!');
     }
 
-    if (update.filters && update.filters !== this.state.filters && !update.filterExpression) {
-      update.filterExpression = renderExpression(this.state.expressionBuilder, update.filters);
-      filterExpressionChanged = update.filterExpression !== this.state.filterExpression;
+    if (filters && filters !== this.state.filters) {
+      filterExpression = renderExpression(this.state.expressionBuilder, filters);
+      filterExpressionChanged = filterExpression !== this.state.filterExpression;
     }
 
-    super.setState(update);
+    super.setState({
+      filters,
+      filterExpression,
+    });
 
-    if ((filterExpressionChanged && options?.skipPublish !== true) || options?.forcePublish === true) {
+    if ((filterExpressionChanged && options?.skipPublish !== true) || options?.forcePublish) {
       this.publishEvent(new SceneVariableValueChangedEvent(this), true);
     }
   }
