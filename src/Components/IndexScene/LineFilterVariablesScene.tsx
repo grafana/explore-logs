@@ -8,7 +8,7 @@ import { AdHocFilterWithLabels } from '../../services/scenes';
 import { debounce } from 'lodash';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
-import { useStyles2 } from '@grafana/ui';
+import { IconButton, useStyles2 } from '@grafana/ui';
 
 interface LineFilterRendererState extends SceneObjectState {}
 
@@ -17,6 +17,59 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
     super(state);
     this.addActivationHandler(this.onActivate.bind(this));
   }
+
+  static Component = ({ model }: SceneComponentProps<LineFilterVariablesScene>) => {
+    const lineFilterVar = getLineFiltersVariable(model);
+    const { filters } = lineFilterVar.useState();
+    const styles = useStyles2(getStyles);
+    filters.sort((a, b) => parseInt(a.keyLabel ?? '0', 10) - parseInt(b.keyLabel ?? '0', 10));
+
+    if (!filters.length) {
+      return null;
+    }
+
+    return (
+      <div className={styles.lineFiltersWrap}>
+        {filters.map((f, index) => {
+          const props: LineFilterEditorProps = {
+            lineFilter: f.value,
+            regex: f.operator === LineFilterOp.regex || f.operator === LineFilterOp.negativeRegex,
+            caseSensitive: f.key === LineFilterCaseSensitive.caseSensitive,
+            exclusive: model.isFilterExclusive(f),
+            handleEnter: (e, lineFilter) => model.handleEnter(e, f.value, f),
+            onToggleExclusive: () => model.onToggleExclusive(f),
+            updateFilter: (lineFilter, debounced) =>
+              model.updateFilter(
+                f,
+                {
+                  ...f,
+                  value: lineFilter,
+                },
+                debounced
+              ),
+            onRegexToggle: () => model.onRegexToggle(f),
+            onInputChange: (e) => model.onInputChange(e, f),
+            onCaseSensitiveToggle: () => model.onCaseSensitiveToggle(f),
+          };
+          return (
+            <span key={f.keyLabel} className={styles.wrapper}>
+              <div className={styles.titleWrap}>
+                <span>Line filter</span>
+                <IconButton
+                  onClick={() => model.removeFilter(f)}
+                  name={'times'}
+                  size={'xs'}
+                  aria-label={'Line filter variable'}
+                />{' '}
+              </div>
+              <LineFilterEditor {...props} />
+            </span>
+          );
+        })}
+      </div>
+    );
+  };
+
   onActivate() {}
 
   updateVariableLineFilter = (
@@ -52,6 +105,18 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
       }
     );
   };
+
+  updateVariableDebounced = debounce(
+    (
+      existingFilter: AdHocFilterWithLabels,
+      filterUpdate: AdHocFilterWithLabels,
+      skipPublish = false,
+      forcePublish = false
+    ) => {
+      this.updateVariableLineFilter(existingFilter, filterUpdate, skipPublish, forcePublish);
+    },
+    1000
+  );
 
   handleEnter = (e: KeyboardEvent<HTMLInputElement>, lineFilter: string, filter: AdHocFilterWithLabels) => {
     if (e.key === 'Enter') {
@@ -129,18 +194,6 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
     }
   }
 
-  updateVariableDebounced = debounce(
-    (
-      existingFilter: AdHocFilterWithLabels,
-      filterUpdate: AdHocFilterWithLabels,
-      skipPublish = false,
-      forcePublish = false
-    ) => {
-      this.updateVariableLineFilter(existingFilter, filterUpdate, skipPublish, forcePublish);
-    },
-    1000
-  );
-
   onInputChange = (e: ChangeEvent<HTMLInputElement>, filter: AdHocFilterWithLabels) => {
     this.updateFilter(filter, { ...filter, value: e.target.value }, true);
   };
@@ -166,41 +219,24 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
         : LineFilterCaseSensitive.caseSensitive;
     this.updateFilter(filter, { ...filter, key: caseSensitive }, false);
   };
-
-  static Component = ({ model }: SceneComponentProps<LineFilterVariablesScene>) => {
-    const lineFilterVar = getLineFiltersVariable(model);
-    const { filters } = lineFilterVar.useState();
-    const styles = useStyles2(getStyles);
-    filters.sort((a, b) => parseInt(a.keyLabel ?? '0', 10) - parseInt(b.keyLabel ?? '0', 10));
-
-    return filters.map((f, index) => {
-      const props: LineFilterEditorProps = {
-        filter: f,
-        lineFilter: f.value,
-        regex: f.operator === LineFilterOp.regex || f.operator === LineFilterOp.negativeRegex,
-        caseSensitive: f.key === LineFilterCaseSensitive.caseSensitive,
-        exclusive: model.isFilterExclusive(f),
-        handleEnter: (e, lineFilter) => model.handleEnter(e, f.value, f),
-        onToggleExclusive: () => model.onToggleExclusive(f),
-        updateFilter: (lineFilter, debounced) => model.updateFilter(f, { ...f, value: lineFilter }, debounced),
-        onRegexToggle: () => model.onRegexToggle(f),
-        onInputChange: (e) => model.onInputChange(e, f),
-        onCaseSensitiveToggle: () => model.onCaseSensitiveToggle(f),
-        onRemoveLineFilter: () => model.removeFilter(f),
-      };
-      return (
-        <span key={f.keyLabel} className={styles.wrapper}>
-          <LineFilterEditor {...props} />
-        </span>
-      );
-    });
-  };
 }
 
 function getStyles(theme: GrafanaTheme2) {
   return {
+    lineFiltersWrap: css({
+      label: 'lineFiltersWrap',
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: `${theme.spacing(0.25)} ${theme.spacing(2)}`,
+    }),
     wrapper: css({
       maxWidth: '300px',
+    }),
+    titleWrap: css({
+      display: 'flex',
+      fontSize: theme.typography.bodySmall.fontSize,
+      marginBottom: theme.spacing(0.5),
+      gap: theme.spacing(1),
     }),
   };
 }

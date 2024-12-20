@@ -88,17 +88,16 @@ export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
 
               {/* Second row - Metadata  */}
               <div className={styles.controlsRowContainer}>
-                {controls && (
-                  <div className={styles.filtersWrap}>
-                    <div className={styles.filters}>
-                      {controls.map((control) => {
-                        return control.state.key === CONTROLS_VARS_METADATA_ROW_KEY ? (
+                {controls &&
+                  controls.map((control) => {
+                    return control.state.key === CONTROLS_VARS_METADATA_ROW_KEY ? (
+                      <div className={styles.filtersWrap}>
+                        <div className={styles.filters}>
                           <control.Component key={control.state.key} model={control} />
-                        ) : null;
-                      })}
-                    </div>
-                  </div>
-                )}
+                        </div>
+                      </div>
+                    ) : null;
+                  })}
               </div>
 
               {/* 3rd row - Patterns */}
@@ -111,11 +110,7 @@ export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
 
               {/* 4th row - line filters */}
               <div className={styles.controlsRowContainer}>
-                {lineFilterRenderer && (
-                  <div className={styles.lineFiltersWrap}>
-                    <lineFilterRenderer.Component model={lineFilterRenderer} />
-                  </div>
-                )}
+                {lineFilterRenderer && <lineFilterRenderer.Component model={lineFilterRenderer} />}
               </div>
 
               {/* 5th row - Fields  */}
@@ -201,7 +196,6 @@ function getStyles(theme: GrafanaTheme2) {
       gap: theme.spacing(2),
       justifyContent: 'space-between',
       alignItems: 'flex-start',
-      marginBottom: theme.spacing(1),
     }),
     controlsRowContainer: css({
       label: 'controls-row',
@@ -210,10 +204,12 @@ function getStyles(theme: GrafanaTheme2) {
       justifyContent: 'space-between',
       alignItems: 'flex-start',
       paddingLeft: theme.spacing(2),
-      marginBottom: theme.spacing(1),
     }),
     controlsContainer: css({
       label: 'controlsContainer',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: theme.spacing(2),
     }),
     filters: css({
       label: 'filters',
@@ -274,12 +270,6 @@ function getStyles(theme: GrafanaTheme2) {
         padding: 0,
         margin: 0,
       },
-    }),
-    lineFiltersWrap: css({
-      label: 'lineFiltersWrap',
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: theme.spacing(2),
     }),
     controlsWrapper: css({
       label: 'controlsWrapper',

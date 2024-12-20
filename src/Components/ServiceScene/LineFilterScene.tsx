@@ -1,4 +1,4 @@
-import { css } from '@emotion/css';
+import { css, cx } from '@emotion/css';
 import { SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { Button, Field, Select } from '@grafana/ui';
 import debounce from 'lodash/debounce';
@@ -19,7 +19,6 @@ import {
 import { RegexIconButton, RegexInputValue } from './RegexIconButton';
 import { LineFilterOp } from '../../services/filterTypes';
 import { locationService } from '@grafana/runtime';
-import { AdHocFilterWithLabels } from '../../services/scenes';
 
 interface LineFilterState extends SceneObjectState {
   lineFilter: string;
@@ -277,7 +276,6 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
 }
 
 export interface LineFilterEditorProps {
-  filter?: AdHocFilterWithLabels;
   exclusive: boolean;
   lineFilter: string;
   caseSensitive: boolean;
@@ -289,12 +287,10 @@ export interface LineFilterEditorProps {
   updateFilter: (lineFilter: string, debounced: boolean) => void;
   handleEnter: (e: KeyboardEvent<HTMLInputElement>, lineFilter: string) => void;
   onSubmitLineFilter?: () => void;
-  onRemoveLineFilter?: () => void;
   onClearLineFilter?: () => void;
 }
 
 export function LineFilterEditor({
-  filter,
   exclusive,
   lineFilter,
   caseSensitive,
@@ -305,7 +301,6 @@ export function LineFilterEditor({
   onRegexToggle,
   handleEnter,
   onSubmitLineFilter,
-  onRemoveLineFilter,
   onClearLineFilter,
 }: LineFilterEditorProps) {
   return (
@@ -328,10 +323,9 @@ export function LineFilterEditor({
       />
       <Field className={styles.field}>
         <SearchInput
-          inputClassName={styles.input}
           data-testid={testIds.exploreServiceDetails.searchLogs}
           value={lineFilter}
-          className={styles.input}
+          className={cx(onSubmitLineFilter ? styles.inputNoBorderRight : undefined, styles.input)}
           onChange={onInputChange}
           suffix={
             <span className={`${styles.suffix} input-suffix`}>
@@ -358,19 +352,6 @@ export function LineFilterEditor({
           </Button>
         </>
       )}
-
-      {onRemoveLineFilter && (
-        <Button
-          tooltip={'Remove filter'}
-          variant="secondary"
-          aria-label="Remove filter"
-          title="Remove filter"
-          className={styles.removeBtn}
-          icon="times"
-          data-testid={`AdHocFilter-remove-${filter?.keyLabel ?? ''}`}
-          onClick={onRemoveLineFilter}
-        />
-      )}
     </div>
   );
 }
@@ -394,6 +375,13 @@ function LineFilterComponent({ model }: SceneComponentProps<LineFilterScene>) {
 }
 
 const styles = {
+  inputNoBorderRight: css({
+    input: {
+      borderRight: 'none',
+      borderTopRightRadius: 0,
+      borderBottomRightRadius: 0,
+    },
+  }),
   suffix: css({
     display: 'inline-flex',
   }),
@@ -426,12 +414,9 @@ const styles = {
   input: css({
     label: 'line-filter-input-wrapper',
     width: '100%',
-    borderTopLeftRadius: 0,
-    borderBottomLeftRadius: 0,
-
     input: {
-      borderRadius: 0,
-      borderRight: 'none',
+      borderTopLeftRadius: 0,
+      borderBottomLeftRadius: 0,
     },
   }),
   exclusiveBtn: css({
