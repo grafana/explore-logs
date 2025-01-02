@@ -505,3 +505,4 @@ capslock
 pageup
 pagedown
 linefilter
+queryfrontend
