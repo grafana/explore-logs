@@ -31,7 +31,7 @@ COPY <<EOF /start.sh
 sleep 2
 
 # Start the log generator
-/generator
+/generator \$@
 EOF
 
 RUN chmod +x /start.sh
