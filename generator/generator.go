@@ -91,25 +91,43 @@ var generators = map[model.LabelValue]map[model.LabelValue]LogGenerator{
 		"tempo-distributor": noisyTempo,
 	},
 	"loki-otel": {
-		"loki-ingester-otel": lokiPod,
+		"loki-ingester-otel":      lokiOtelPod("loki-ingester-otel"),
+		"loki-querier-otel":       lokiOtelPod("loki-querier-otel"),
+		"loki-queryfrontend-otel": lokiOtelPod("loki-queryfrontend-otel"),
+		"loki-distributor-otel":   lokiOtelPod("loki-distributor-otel"),
 	},
 }
 
-var lokiPod = func(ctx context.Context, logger *log.AppLogger, metadata push.LabelsAdapter) {
-	go func() {
-		for ctx.Err() == nil {
-			t := time.Now()
-			logger.LogWithMetadata(log.ERROR, t, lokiGRPCLog("connection refused to object store", "/loki.Ingester/Push"), log.RandStructuredMetadata("loki-ingester"))
-			time.Sleep(time.Duration(rand.Intn(10000)) * time.Millisecond)
+func lokiOtelPod(svc string) LogGenerator {
+	logs := map[string]map[model.LabelValue]string{
+		"loki-ingester-otel": {
+			log.ERROR: lokiGRPCLog("connection refused to object store", "/loki.Ingester/Push"),
+			log.INFO:  lokiGRPCLog("", "/loki.Ingester/Push"),
+		},
+		"loki-querier-otel": {
+			log.INFO:  lokiGRPCLog("caller=engine.go:263 component=querier org_id=29 traceID=<_> msg=\"executing query\" query=<_> query_hash=1182293200 type=range length=20s step=4 token_id=123", "loki.Query/Engine"),
+			log.DEBUG: lokiGRPCLog("caller=scheduler_processor.go:135 component=querier msg=\"received query\" worker=<_> wait_time_sec=20s", "loki.Query/SchedulerProcessor"),
+		},
+		"loki-queryfrontend-otel": {
+			log.INFO: lokiGRPCLog("caller=roundtrip.go:419 org_id=29 traceID=213098 msg=\"executing query\" type=instant query=\"abc\" query_hash=120938", "loki.Query/QueryRange"),
+		},
+		"loki-distributor-otel": {
+			log.DEBUG: lokiGRPCLog("caller=push.go:165 org_id=29 traceID=192382 msg=\"push request parsed\" path=push.go contentType=application/x-protobuf contentEncoding= bodySize=129KB streams=12938 entries=81902398 streamLabelsSize=2KB entriesSize=2MB structuredMetadataSize=200KB totalSize=20MB mostRecentLagMs=10s", "loki.Distributor/Push"),
+			log.INFO:  lokiGRPCLog("caller=tee_service.go:273 msg=\"prepared Tee batches for tenant\" tenant=29 stream_count=100 avg_logs_slice_cap_start=120 avg_logs_slice_cap_end=123992 avg_logs_slice_len_end=10200 avg_log_lines_count=122300 avg_log_line_length=10s", "loki.Distributor/Tee"),
+		},
+	}
+	return func(ctx context.Context, logger *log.AppLogger, metadata push.LabelsAdapter) {
+		serviceLogs := logs[svc]
+		for k, v := range serviceLogs {
+			go func() {
+				for ctx.Err() == nil {
+					t := time.Now()
+					logger.LogWithMetadata(k, t, v, log.RandStructuredMetadata("loki-ingester"))
+					time.Sleep(time.Duration(rand.Intn(5000)) * time.Millisecond)
+				}
+			}()
 		}
-	}()
-	go func() {
-		for ctx.Err() == nil {
-			t := time.Now()
-			logger.LogWithMetadata(log.INFO, t, lokiGRPCLog("", "/loki.Ingester/Push"), log.RandStructuredMetadata("loki-ingester"))
-			time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
-		}
-	}()
+	}
 }
 
 var noisyTempo = func(ctx context.Context, logger *log.AppLogger, metadata push.LabelsAdapter) {
