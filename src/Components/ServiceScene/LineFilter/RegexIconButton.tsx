@@ -1,7 +1,7 @@
 import { IconButtonVariant, Tooltip, useTheme2 } from '@grafana/ui';
 import React from 'react';
 import { colorManipulator, GrafanaTheme2 } from '@grafana/data';
-import { css } from '@emotion/css';
+import { css, cx } from '@emotion/css';
 import { getFocusStyles, getIconButtonBefore, getMouseFocusStyles } from '../../../services/mixins';
 
 export type RegexInputValue = 'regex' | 'match';
@@ -20,7 +20,7 @@ export const RegexIconButton = (props: Props) => {
     <Tooltip content={description}>
       <button
         onClick={() => props.onRegexToggle(props.regex ? 'match' : 'regex')}
-        className={styles.button}
+        className={cx(styles.button, props.regex ? styles.active : null)}
         aria-label={description}
       >
         <svg fill={fill} width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
@@ -67,6 +67,19 @@ const getStyles = (theme: GrafanaTheme2, variant: IconButtonVariant = 'secondary
 
       '&:focus, &:focus-visible': getFocusStyles(theme),
       '&:focus:not(:focus-visible)': getMouseFocusStyles(theme),
+    }),
+    active: css({
+      '&:before': {
+        backgroundColor:
+          variant === 'secondary' ? theme.colors.action.hover : colorManipulator.alpha(theme.colors.text.primary, 0.12),
+        opacity: 1,
+      },
+      '&:hover': {
+        '&:before': {
+          backgroundColor: 'none',
+          opacity: 0,
+        },
+      },
     }),
   };
 };

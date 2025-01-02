@@ -1,11 +1,12 @@
 import React, { ChangeEvent, KeyboardEvent } from 'react';
 import { RegexIconButton, RegexInputValue } from './RegexIconButton';
-import { Button, Field, Select } from '@grafana/ui';
+import { Button, Field, Select, useStyles2 } from '@grafana/ui';
 import { SearchInput } from '../Breakdowns/SearchInput';
 import { testIds } from '../../../services/testIds';
 import { css, cx } from '@emotion/css';
 import { LineFilterCaseSensitivityButton } from './LineFilterCaseSensitivityButton';
 import { LineFilterCaseSensitive } from './LineFilterScene';
+import { GrafanaTheme2 } from '@grafana/data';
 
 export interface LineFilterEditorProps {
   exclusive: boolean;
@@ -35,6 +36,7 @@ export function LineFilterEditor({
   onSubmitLineFilter,
   onClearLineFilter,
 }: LineFilterEditorProps) {
+  const styles = useStyles2(getStyles);
   return (
     <div className={styles.wrapper}>
       <Select
@@ -91,7 +93,7 @@ export function LineFilterEditor({
   );
 }
 
-const styles = {
+const getStyles = (theme: GrafanaTheme2) => ({
   inputNoBorderRight: css({
     input: {
       borderRight: 'none',
@@ -101,6 +103,7 @@ const styles = {
   }),
   suffix: css({
     display: 'inline-flex',
+    gap: theme.spacing(0.5),
   }),
   removeBtn: css({
     borderTopLeftRadius: 0,
@@ -145,4 +148,4 @@ const styles = {
     width: '100%',
     marginBottom: 0,
   }),
-};
+});
