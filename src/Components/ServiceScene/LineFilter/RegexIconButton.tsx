@@ -2,7 +2,7 @@ import { IconButtonVariant, Tooltip, useTheme2 } from '@grafana/ui';
 import React from 'react';
 import { colorManipulator, GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
-import { getFocusStyles, getIconButtonBefore, getMouseFocusStyles } from '../../services/mixins';
+import { getFocusStyles, getIconButtonBefore, getMouseFocusStyles } from '../../../services/mixins';
 
 export type RegexInputValue = 'regex' | 'match';
 interface Props {

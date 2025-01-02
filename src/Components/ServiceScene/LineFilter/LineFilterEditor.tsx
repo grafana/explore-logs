@@ -1,5 +1,5 @@
 import React, { ChangeEvent, KeyboardEvent } from 'react';
-import { RegexIconButton, RegexInputValue } from '../RegexIconButton';
+import { RegexIconButton, RegexInputValue } from './RegexIconButton';
 import { Button, Field, Select } from '@grafana/ui';
 import { SearchInput } from '../Breakdowns/SearchInput';
 import { testIds } from '../../../services/testIds';

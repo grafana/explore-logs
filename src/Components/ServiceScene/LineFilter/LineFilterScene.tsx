@@ -11,7 +11,7 @@ import {
   setLineFilterExclusive,
   setLineFilterRegex,
 } from '../../../services/store';
-import { RegexInputValue } from '../RegexIconButton';
+import { RegexInputValue } from './RegexIconButton';
 import { LineFilterOp } from '../../../services/filterTypes';
 import { LineFilterEditor } from './LineFilterEditor';
 

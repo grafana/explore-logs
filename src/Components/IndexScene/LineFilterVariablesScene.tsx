@@ -227,6 +227,8 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
       {
         searchQueryLength: existingFilter.value.length,
         containsLevel: existingFilter.value.toLowerCase().includes('level'),
+        operator: filterUpdate.operator,
+        caseSensitive: filterUpdate.key,
       }
     );
   };
