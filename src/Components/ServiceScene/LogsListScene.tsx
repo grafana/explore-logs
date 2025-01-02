@@ -10,7 +10,6 @@ import {
   SceneObjectUrlValues,
   SceneTimeRangeLike,
 } from '@grafana/scenes';
-import { LineFilterScene } from './LineFilterScene';
 import { SelectedTableRow } from '../Table/LogLineCellComponent';
 import { LogsTableScene } from './LogsTableScene';
 import { css } from '@emotion/css';
@@ -26,6 +25,7 @@ import {
 import { logger } from '../../services/logger';
 import { Options } from '@grafana/schema/dist/esm/raw/composable/logs/panelcfg/x/LogsPanelCfg_types.gen';
 import { narrowLogsVisualizationType, narrowSelectedTableRow, unknownToStrings } from '../../services/narrowing';
+import { LineFilterScene } from './LineFilter/LineFilterScene';
 
 export interface LogsListSceneState extends SceneObjectState {
   loading?: boolean;

@@ -68,7 +68,6 @@ export const PatternControls = ({ patterns, onRemove }: Props) => {
 function getStyles(theme: GrafanaTheme2) {
   return {
     patternsContainer: css({
-      paddingBottom: theme.spacing(1),
       overflow: 'hidden',
     }),
     patterns: css({

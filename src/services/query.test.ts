@@ -1,9 +1,16 @@
 import { AdHocVariableFilter } from '@grafana/data';
-import { buildDataQuery, joinTagFilters, renderLogQLFieldFilters, renderLogQLLabelFilters } from './query';
+import {
+  buildDataQuery,
+  joinTagFilters,
+  renderLogQLFieldFilters,
+  renderLogQLLabelFilters,
+  renderLogQLLineFilter,
+} from './query';
 
 import { FieldValue } from './variables';
 import { AdHocFiltersVariable } from '@grafana/scenes';
-import { FilterOp } from './filterTypes';
+import { FilterOp, LineFilterOp } from './filterTypes';
+import { LineFilterCaseSensitive } from '../Components/ServiceScene/LineFilter/LineFilterScene';
 
 describe('buildDataQuery', () => {
   test('Given an expression outputs a Loki query', () => {
@@ -144,6 +151,99 @@ describe('renderLogQLFieldFilters', () => {
     expect(renderLogQLFieldFilters(filters)).toEqual(
       '| level=`info` or level=`error` | cluster=`lil-cluster` | component!=`comp1` | pod!=`pod1`'
     );
+  });
+});
+describe('renderLogQLLineFilter', () => {
+  // REGEXP ops
+  test('Renders positive case-insensitive regex', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: LineFilterCaseSensitive.caseInsensitive,
+        operator: LineFilterOp.regex,
+        value: '.(search',
+      },
+    ];
+
+    expect(renderLogQLLineFilter(filters)).toEqual('|~ `(?i).(search`');
+  });
+  test('Renders positive case-sensitive regex', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: LineFilterCaseSensitive.caseSensitive,
+        operator: LineFilterOp.regex,
+        value: '\\w+',
+      },
+    ];
+
+    expect(renderLogQLLineFilter(filters)).toEqual('|~ `\\w+`');
+  });
+  test('Renders negative case-sensitive regex', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: LineFilterCaseSensitive.caseSensitive,
+        operator: LineFilterOp.negativeRegex,
+        value: '\\w+',
+      },
+    ];
+
+    expect(renderLogQLLineFilter(filters)).toEqual('!~ `\\w+`');
+  });
+  test('Renders negative case-insensitive regex', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: LineFilterCaseSensitive.caseInsensitive,
+        operator: LineFilterOp.negativeRegex,
+        value: '\\w+',
+      },
+    ];
+
+    expect(renderLogQLLineFilter(filters)).toEqual('!~ `(?i)\\w+`');
+  });
+
+  // String contains ops
+  test('Renders positive case-insensitive string compare', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: LineFilterCaseSensitive.caseInsensitive,
+        operator: LineFilterOp.match,
+        value: '.(search',
+      },
+    ];
+
+    expect(renderLogQLLineFilter(filters)).toEqual('|~ `(?i)\\.\\(search`');
+  });
+  test('Renders positive case-sensitive string compare', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: LineFilterCaseSensitive.caseSensitive,
+        operator: LineFilterOp.match,
+        value: '.(search',
+      },
+    ];
+
+    expect(renderLogQLLineFilter(filters)).toEqual('|= `.(search`');
+  });
+  test('Renders negative case-insensitive string compare', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: LineFilterCaseSensitive.caseInsensitive,
+        operator: LineFilterOp.negativeMatch,
+        value: '.(search',
+      },
+    ];
+
+    expect(renderLogQLLineFilter(filters)).toEqual('!~ `(?i)\\.\\(search`');
+  });
+  test('Renders negative case-sensitive string compare', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: LineFilterCaseSensitive.caseSensitive,
+        operator: LineFilterOp.negativeMatch,
+        value: '.(search',
+      },
+    ];
+
+    expect(renderLogQLLineFilter(filters)).toEqual('!= `.(search`');
   });
 });
 

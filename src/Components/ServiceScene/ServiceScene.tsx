@@ -13,6 +13,7 @@ import {
   SceneObjectBase,
   SceneObjectState,
   SceneQueryRunner,
+  SceneVariableValueChangedEvent,
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { LoadingPlaceholder } from '@grafana/ui';
@@ -41,6 +42,7 @@ import {
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
+  getLineFiltersVariable,
   getLineFilterVariable,
   getMetadataVariable,
   getPatternsVariable,
@@ -56,6 +58,9 @@ import {
 } from '../../services/routing';
 import { replaceSlash } from '../../services/extensions/links';
 import { ShowLogsButtonScene } from '../IndexScene/ShowLogsButtonScene';
+import { locationService } from '@grafana/runtime';
+import { LineFilterOp } from '../../services/filterTypes';
+import { LineFilterCaseSensitive } from './LineFilter/LineFilterScene';
 
 export const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 export const LOGS_COUNT_QUERY_REFID = 'logsCountQuery';
@@ -300,10 +305,30 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this._subs.add(this.subscribeToLevelsVariable());
     this._subs.add(this.subscribeToDataSourceVariable());
     this._subs.add(this.subscribeToPatternsVariable());
-    this._subs.add(this.subscribeToLineFilterVariable());
+    this._subs.add(this.subscribeToLineFiltersVariable());
+
+    if (getDrilldownSlug() !== PageSlugs.logs) {
+      this.resetPendingLineFilter();
+    } else {
+      this._subs.add(this.subscribeToLineFilterVariable());
+    }
 
     // Update query runner on manual time range change
     this._subs.add(this.subscribeToTimeRange());
+
+    // Migrations
+    this.migrateOldVariable();
+  }
+
+  /**
+   * If the user navigates away from the logs scene, but has a pending filter that hasn't been submitted, clear it out
+   */
+  private resetPendingLineFilter() {
+    // Clear line filters variable
+    const variable = getLineFilterVariable(this);
+    variable.setState({
+      filters: [],
+    });
   }
 
   private subscribeToPatternsVariable() {
@@ -316,10 +341,14 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private subscribeToLineFilterVariable() {
-    return getLineFilterVariable(this).subscribeToState((newState, prevState) => {
-      if (newState.value !== prevState.value) {
-        this.state.$logsCount?.runQueries();
-      }
+    return getLineFilterVariable(this).subscribeToEvent(SceneVariableValueChangedEvent, () => {
+      this.state.$logsCount?.runQueries();
+    });
+  }
+
+  private subscribeToLineFiltersVariable() {
+    return getLineFiltersVariable(this).subscribeToEvent(SceneVariableValueChangedEvent, () => {
+      this.state.$logsCount?.runQueries();
     });
   }
 
@@ -551,6 +580,57 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         logger.error(new Error('not setting breakdown view'), { msg: 'setBreakdownView error' });
       }
     }
+  }
+
+  /**
+   * Migrates the old line filter urls
+   */
+  private migrateOldVariable() {
+    const search = locationService.getSearch();
+
+    const deprecatedLineFilter = search.get('var-lineFilter');
+
+    if (!deprecatedLineFilter) {
+      return;
+    }
+
+    const globalLineFilterVars = getLineFiltersVariable(this);
+    const caseSensitiveMatches = deprecatedLineFilter?.match(/\|=.`(.+?)`/);
+
+    if (caseSensitiveMatches && caseSensitiveMatches.length === 2) {
+      globalLineFilterVars.addActivationHandler(() => {
+        globalLineFilterVars.setState({
+          filters: [
+            {
+              key: LineFilterCaseSensitive.caseSensitive,
+              operator: LineFilterOp.match,
+              value: caseSensitiveMatches[1],
+              keyLabel: '0',
+            },
+          ],
+        });
+      });
+    }
+
+    const caseInsensitiveMatches = deprecatedLineFilter?.match(/`\(\?i\)(.+)`/);
+    if (caseInsensitiveMatches && caseInsensitiveMatches.length === 2) {
+      globalLineFilterVars.addActivationHandler(() => {
+        globalLineFilterVars.updateFilters([
+          {
+            key: LineFilterCaseSensitive.caseInsensitive,
+            operator: LineFilterOp.match,
+            value: caseInsensitiveMatches[1],
+            keyLabel: '0',
+          },
+        ]);
+      });
+    }
+
+    // Remove from url without refreshing
+    const newLocation = locationService.getLocation();
+    search.delete('var-lineFilter');
+    newLocation.search = search.toString();
+    locationService.replace(newLocation.pathname + '?' + newLocation.search);
   }
 
   static Component = ({ model }: SceneComponentProps<ServiceScene>) => {

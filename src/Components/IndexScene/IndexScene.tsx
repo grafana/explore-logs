@@ -33,6 +33,7 @@ import {
   VAR_LABELS,
   VAR_LEVELS,
   VAR_LINE_FILTER,
+  VAR_LINE_FILTERS,
   VAR_LOGS_FORMAT,
   VAR_METADATA,
   VAR_PATTERNS,
@@ -40,7 +41,15 @@ import {
 
 import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
 import { ServiceScene } from '../ServiceScene/ServiceScene';
-import { LayoutScene } from './LayoutScene';
+import {
+  CONTROLS_VARS_FIELDS_ELSE_KEY,
+  CONTROLS_VARS_FIRST_ROW_KEY,
+  CONTROLS_VARS_METADATA_ROW_KEY,
+  CONTROLS_VARS_REFRESH,
+  CONTROLS_VARS_TIMEPICKER,
+  CONTROLS_VARS_TOOLBAR,
+  LayoutScene,
+} from './LayoutScene';
 import { getDrilldownSlug, PageSlugs } from '../../services/routing';
 import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
 import { LoadingPlaceholder } from '@grafana/ui';
@@ -48,6 +57,7 @@ import { config, getAppEvents, locationService } from '@grafana/runtime';
 import {
   renderLogQLFieldFilters,
   renderLogQLLabelFilters,
+  renderLogQLLineFilter,
   renderLogQLMetadataFilters,
   renderPatternFilters,
 } from 'services/query';
@@ -72,7 +82,7 @@ import { lokiRegularEscape } from '../../services/fields';
 import { logger } from '../../services/logger';
 import { getLabelsTagKeysProvider } from '../../services/TagKeysProviders';
 import { AdHocFilterWithLabels, getLokiDatasource } from '../../services/scenes';
-import { FilterOp } from '../../services/filterTypes';
+import { FilterOp, LineFilterOp } from '../../services/filterTypes';
 import { ShowLogsButtonScene } from './ShowLogsButtonScene';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
 import { getCopiedTimeRange, PasteTimeEvent, setupKeyboardShortcuts } from '../../services/keyboardShortcuts';
@@ -106,10 +116,15 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
     const controls: SceneObject[] = [
       new SceneFlexLayout({
+        key: CONTROLS_VARS_FIRST_ROW_KEY,
         direction: 'row',
         children: [
           new SceneFlexItem({
-            body: new CustomVariableValueSelectors({ layout: 'vertical', include: [VAR_LABELS, VAR_DATASOURCE] }),
+            body: new CustomVariableValueSelectors({
+              key: 'vars-labels-ds',
+              layout: 'vertical',
+              include: [VAR_LABELS, VAR_DATASOURCE],
+            }),
           }),
           new ShowLogsButtonScene({
             key: showLogsButtonSceneKey,
@@ -117,14 +132,24 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
           }),
         ],
       }),
-      new CustomVariableValueSelectors({ layout: 'vertical', exclude: [VAR_LABELS, VAR_DATASOURCE] }),
-      new SceneTimePicker({}),
-      new SceneRefreshPicker({}),
+      new CustomVariableValueSelectors({
+        key: CONTROLS_VARS_METADATA_ROW_KEY,
+        layout: 'vertical',
+        include: [VAR_METADATA, VAR_LEVELS],
+      }),
+      new CustomVariableValueSelectors({
+        key: CONTROLS_VARS_FIELDS_ELSE_KEY,
+        layout: 'vertical',
+        exclude: [VAR_LABELS, VAR_DATASOURCE, VAR_METADATA, VAR_LEVELS],
+      }),
+      new SceneTimePicker({ key: CONTROLS_VARS_TIMEPICKER }),
+      new SceneRefreshPicker({ key: CONTROLS_VARS_REFRESH }),
     ];
 
     if (getDrilldownSlug() === 'explore' && config.featureToggles.exploreLogsAggregatedMetrics) {
       controls.push(
         new ToolbarScene({
+          key: CONTROLS_VARS_TOOLBAR,
           isOpen: false,
         })
       );
@@ -429,6 +454,13 @@ const numericOperators = numericOperatorArray.map<SelectableValue<string>>((valu
   value,
 }));
 
+const lineFilterOperators: SelectableValue[] = [
+  { label: 'match', value: LineFilterOp.match },
+  { label: 'negativeMatch', value: LineFilterOp.negativeMatch },
+  { label: 'regex', value: LineFilterOp.regex },
+  { label: 'negativeRegex', value: LineFilterOp.negativeRegex },
+];
+
 function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVariableFilter[]) {
   const labelVariable = new AdHocFiltersVariable({
     name: VAR_LABELS,
@@ -490,6 +522,19 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     return operators;
   };
 
+  const lineFiltersVariable = new AdHocFiltersVariable({
+    name: VAR_LINE_FILTERS,
+    hide: VariableHide.hideVariable,
+    getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
+    getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
+    expressionBuilder: renderLogQLLineFilter,
+    layout: 'horizontal',
+  });
+
+  lineFiltersVariable._getOperators = () => {
+    return lineFilterOperators;
+  };
+
   const dsVariable = new DataSourceVariable({
     name: VAR_DATASOURCE,
     label: 'Data source',
@@ -515,7 +560,12 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
           value: '',
           hide: VariableHide.hideVariable,
         }),
-        new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable }),
+        new AdHocFiltersVariable({
+          name: VAR_LINE_FILTER,
+          hide: VariableHide.hideVariable,
+          expressionBuilder: renderLogQLLineFilter,
+        }),
+        lineFiltersVariable,
 
         // This variable is a hack to get logs context working, this variable should never be used or updated
         new CustomConstantVariable({

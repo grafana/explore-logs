@@ -9,6 +9,7 @@ import {
   VAR_LABELS,
   VAR_LEVELS,
   VAR_LINE_FILTER,
+  VAR_LINE_FILTERS,
   VAR_METADATA,
   VAR_PATTERNS,
 } from './variables';
@@ -101,6 +102,7 @@ export const DRILLDOWN_URL_KEYS = [
   `var-${VAR_DATASOURCE}`,
   `var-${VAR_LINE_FILTER}`,
   `var-${VAR_METADATA}`,
+  `var-${VAR_LINE_FILTERS}`,
 ];
 
 export function getDrilldownSlug() {

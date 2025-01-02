@@ -139,6 +139,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         .setOption('onClickFilterOutLabel', this.handleLabelFilterOutClick)
         .setOption('isFilterLabelActive', this.handleIsFilterLabelActive)
         .setOption('onClickFilterString', this.handleFilterStringClick)
+        .setOption('onClickFilterOutString', this.handleFilterOutStringClick)
         .setOption('onClickShowField', this.onClickShowField)
         .setOption('onClickHideField', this.onClickHideField)
         .setOption('displayedFields', parentModel.state.displayedFields)
@@ -153,6 +154,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         .setOption('onNewLogsReceived', this.updateVisibleRange)
         // @ts-expect-error Grafana 11.5
         .setOption('logRowMenuIconsAfter', [<CopyLinkButton onClick={this.handleShareLogLineClick} key={0} />])
+
         .setHeaderActions(
           new LogOptionsScene({ visualizationType, onChangeVisualizationType: parentModel.setVisualizationType })
         )
@@ -246,10 +248,35 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     );
   };
 
+  private handleFilterOutStringClick = (value: string) => {
+    const parentModel = sceneGraph.getAncestor(this, LogsListScene);
+    const lineFilterScene = parentModel.getLineFilterScene();
+    if (lineFilterScene) {
+      lineFilterScene.setState({
+        caseSensitive: true,
+        exclusive: true,
+        regex: false,
+      });
+      lineFilterScene.updateFilter(value, false);
+      reportAppInteraction(
+        USER_EVENTS_PAGES.service_details,
+        USER_EVENTS_ACTIONS.service_details.logs_popover_line_filter,
+        {
+          selectionLength: value.length,
+        }
+      );
+    }
+  };
+
   private handleFilterStringClick = (value: string) => {
     const parentModel = sceneGraph.getAncestor(this, LogsListScene);
     const lineFilterScene = parentModel.getLineFilterScene();
     if (lineFilterScene) {
+      lineFilterScene.setState({
+        caseSensitive: true,
+        exclusive: false,
+        regex: false,
+      });
       lineFilterScene.updateFilter(value, false);
       reportAppInteraction(
         USER_EVENTS_PAGES.service_details,

@@ -51,6 +51,8 @@ export function getQueryRunnerFromChildren(sceneObject: SceneObject) {
 export interface AdHocFilterWithLabels extends AdHocVariableFilter {
   keyLabel?: string;
   valueLabels?: string[];
+  // this is used to externally trigger edit mode in combobox filter UI
+  forceEdit?: boolean;
 }
 
 interface SceneType<T> extends Function {
