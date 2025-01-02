@@ -26,8 +26,7 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
     const lineFilterVar = getLineFiltersVariable(model);
     const { filters } = lineFilterVar.useState();
     const styles = useStyles2(getStyles);
-    // Sort filters by order added
-    filters.sort((a, b) => parseInt(a.keyLabel ?? '0', 10) - parseInt(b.keyLabel ?? '0', 10));
+    sortLineFilters(filters);
 
     if (!filters.length) {
       return null;
@@ -247,6 +246,13 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
     },
     1000
   );
+}
+
+/**
+ * Sort line filters by keyLabel, i.e. the order the line filter was added
+ */
+export function sortLineFilters(filters: AdHocFilterWithLabels[]) {
+  filters.sort((a, b) => parseInt(a.keyLabel ?? '0', 10) - parseInt(b.keyLabel ?? '0', 10));
 }
 
 function getStyles(theme: GrafanaTheme2) {

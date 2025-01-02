@@ -10,6 +10,7 @@ import { PLUGIN_ID } from './plugin';
 import { AdHocFiltersVariable } from '@grafana/scenes';
 import { FilterOp, LineFilterOp } from './filterTypes';
 import { LineFilterCaseSensitive } from '../Components/ServiceScene/LineFilter/LineFilterScene';
+import { sortLineFilters } from '../Components/IndexScene/LineFilterVariablesScene';
 
 /**
  * Builds the resource query
@@ -127,8 +128,7 @@ export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
  * the value is the user in put
  */
 export function renderLogQLLineFilter(filters: AdHocFilterWithLabels[]) {
-  //@todo DRY
-  filters.sort((a, b) => parseInt(a.keyLabel ?? '0', 10) - parseInt(b.keyLabel ?? '0', 10));
+  sortLineFilters(filters);
   return filters
     .map((f) => {
       if (f.value === '') {
