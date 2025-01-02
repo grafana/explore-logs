@@ -4,8 +4,8 @@ import { LineFilterCaseSensitive, LineFilterScene } from './LineFilterScene';
 import userEvent from '@testing-library/user-event';
 import { AdHocFiltersVariable, SceneVariableSet } from '@grafana/scenes';
 import { VAR_LINE_FILTER, VAR_LINE_FILTERS } from 'services/variables';
-import { LineFilterOp } from '../../services/filterTypes';
-import { renderLogQLLineFilter } from '../../services/query';
+import { LineFilterOp } from '../../../services/filterTypes';
+import { renderLogQLLineFilter } from '../../../services/query';
 
 let location = {} as Location;
 jest.mock('lodash/debounce', () => (fn: { cancel: jest.Mock<any, any, any>; flush: jest.Mock<any, any, any> }) => {

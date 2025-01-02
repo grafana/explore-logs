@@ -42,13 +42,13 @@ import {
 import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
 import { ServiceScene } from '../ServiceScene/ServiceScene';
 import {
-  LayoutScene,
+  CONTROLS_VARS_FIELDS_ELSE_KEY,
   CONTROLS_VARS_FIRST_ROW_KEY,
   CONTROLS_VARS_METADATA_ROW_KEY,
-  CONTROLS_VARS_FIELDS_ELSE_KEY,
-  CONTROLS_VARS_TIMEPICKER,
   CONTROLS_VARS_REFRESH,
+  CONTROLS_VARS_TIMEPICKER,
   CONTROLS_VARS_TOOLBAR,
+  LayoutScene,
 } from './LayoutScene';
 import { getDrilldownSlug, PageSlugs } from '../../services/routing';
 import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
@@ -86,7 +86,6 @@ import { FilterOp, LineFilterOp } from '../../services/filterTypes';
 import { ShowLogsButtonScene } from './ShowLogsButtonScene';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
 import { getCopiedTimeRange, PasteTimeEvent, setupKeyboardShortcuts } from '../../services/keyboardShortcuts';
-import { LineFilterCaseSensitive } from '../ServiceScene/LineFilterScene';
 import { LokiDatasource } from '../../services/lokiQuery';
 
 export const showLogsButtonSceneKey = 'showLogsButtonScene';
@@ -526,20 +525,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
   const lineFiltersVariable = new AdHocFiltersVariable({
     name: VAR_LINE_FILTERS,
     hide: VariableHide.hideVariable,
-    getTagKeysProvider: () =>
-      Promise.resolve({
-        replace: true,
-        values: [
-          {
-            value: LineFilterCaseSensitive.caseSensitive,
-            text: LineFilterCaseSensitive.caseSensitive,
-          },
-          {
-            value: LineFilterCaseSensitive.caseInsensitive,
-            text: LineFilterCaseSensitive.caseInsensitive,
-          },
-        ],
-      }),
+    getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
     getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
     expressionBuilder: renderLogQLLineFilter,
     layout: 'horizontal',

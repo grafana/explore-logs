@@ -59,8 +59,8 @@ import {
 import { replaceSlash } from '../../services/extensions/links';
 import { ShowLogsButtonScene } from '../IndexScene/ShowLogsButtonScene';
 import { locationService } from '@grafana/runtime';
-import { LineFilterCaseSensitive } from './LineFilterScene';
 import { LineFilterOp } from '../../services/filterTypes';
+import { LineFilterCaseSensitive } from './LineFilter/LineFilterScene';
 
 export const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 export const LOGS_COUNT_QUERY_REFID = 'logsCountQuery';
