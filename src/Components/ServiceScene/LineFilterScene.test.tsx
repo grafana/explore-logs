@@ -89,7 +89,6 @@ describe('LineFilter', () => {
   });
   describe('case sensitive, no regex', () => {
     beforeEach(() => {
-      // lineFilterVariable = new CustomVariable({ name: VAR_LINE_FILTER, value: '', hide: VariableHide.hideVariable });
       lineFilterVariable = new AdHocFiltersVariable({
         name: VAR_LINE_FILTER,
         expressionBuilder: renderLogQLLineFilter,
@@ -244,7 +243,6 @@ describe('LineFilter', () => {
 
     test('Unescapes the regular expression from the variable value', async () => {
       const string = `((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}`;
-      // lineFilterVariable.changeValueTo(`|~ \`${string}\``);
       lineFilterVariable.setState({
         filters: [
           {

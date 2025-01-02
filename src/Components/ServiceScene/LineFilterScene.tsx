@@ -24,7 +24,6 @@ interface LineFilterState extends SceneObjectState {
   caseSensitive: boolean;
   regex: boolean;
   exclusive: boolean;
-  loading: boolean;
 }
 
 export enum LineFilterCaseSensitive {
@@ -38,18 +37,23 @@ export enum LineFilterCaseSensitive {
 export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   static Component = LineFilterComponent;
 
+  /**
+   * Sets default regex/sensitivity/exclusivity state from local storage
+   */
   constructor(state?: Partial<LineFilterState>) {
     super({
       lineFilter: state?.lineFilter || '',
       caseSensitive: state?.caseSensitive ?? getLineFilterCase(false),
       regex: state?.regex ?? getLineFilterRegex(false),
       exclusive: state?.exclusive ?? getLineFilterExclusive(false),
-      loading: false,
       ...state,
     });
     this.addActivationHandler(this.onActivate);
   }
 
+  /**
+   * Set initial state on activation
+   */
   private onActivate = () => {
     const filter = this.getFilter();
 
@@ -70,35 +74,22 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
     };
   };
 
-  updateFilter(lineFilter: string, debounced = true) {
-    this.setState({
-      lineFilter,
+  /**
+   * Clear filter variable
+   */
+  private clearVariable() {
+    const variable = getLineFilterVariable(this);
+    variable.updateFilters([], {
+      skipPublish: true,
     });
-    if (debounced) {
-      this.setState({
-        loading: true,
-      });
-      this.updateVariableDebounced(lineFilter);
-    } else {
-      this.updateVariable(lineFilter);
-    }
+    this.setState({
+      lineFilter: '',
+    });
   }
-
-  clearFilter = () => {
-    this.updateVariableDebounced.cancel();
-    this.updateFilter('', false);
-  };
-
-  onToggleExclusive = () => {
-    setLineFilterExclusive(!this.state.exclusive);
-    this.setState({
-      exclusive: !this.state.exclusive,
-    });
-
-    this.updateFilter(this.state.lineFilter, false);
-  };
-
-  getOperator(): LineFilterOp {
+  /**
+   * Returns operator from current state
+   */
+  private getOperator(): LineFilterOp {
     if (this.state.regex && this.state.exclusive) {
       return LineFilterOp.negativeRegex;
     }
@@ -115,47 +106,84 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
     throw new Error('getOperator: failed to determine operation');
   }
 
-  getFilterKey() {
+  /**
+   * Since there is no "key" for line-filters in logQL that will map to the key of the ad-hoc filter, we currently use the key to store the case sensitivity state
+   * Note: This is technically a non-standard implementation (hack) of the ad-hoc variable, we should look into adding metadata to the ad-hoc variables in scenes
+   * However the behavior of the ad-hoc variable lines up well with our use-case, we want case sensitivity state to be saved in the URL and to trigger query updates.
+   * Since we use a custom renderer, this should be fine, but a source of tech-debt nonetheless.
+   */
+  private getFilterKey() {
     return this.state.caseSensitive ? LineFilterCaseSensitive.caseSensitive : LineFilterCaseSensitive.caseInsensitive;
   }
 
-  getFilter() {
+  /**
+   * Returns the current ad-hoc variable filter
+   */
+  private getFilter() {
     const lineFilterVariable = getLineFilterVariable(this);
+    return lineFilterVariable.state.filters[0];
+  }
 
-    if (lineFilterVariable.state.filters.length) {
-      return lineFilterVariable.state.filters[0];
+  /**
+   * Clears filter input and clears debounce queue
+   */
+  clearFilter = () => {
+    this.updateVariableDebounced.cancel();
+    this.updateFilter('', false);
+  };
+
+  /**
+   * Updates line filter state
+   */
+  updateFilter(lineFilter: string, debounced = true) {
+    this.setState({
+      lineFilter,
+    });
+    if (debounced) {
+      this.updateVariableDebounced(lineFilter);
     } else {
-      // if the user submits before the debounce, we need to set the current state to the variable
-      this.updateVariableDebounced.flush();
-      return lineFilterVariable.state.filters[0];
+      this.updateVariable(lineFilter);
     }
   }
 
+  /**
+   * Update exclusive state, triggers re-query without debounce
+   */
+  onToggleExclusive = () => {
+    setLineFilterExclusive(!this.state.exclusive);
+    this.setState({
+      exclusive: !this.state.exclusive,
+    });
+
+    this.updateFilter(this.state.lineFilter, false);
+  };
+
+  /**
+   * Moves the filter to the "global" line-filter ad-hoc variable after flushing the debounce queue.
+   * Clears the state of the local ad-hoc variable.
+   */
   onSubmitLineFilter = () => {
+    // Flush any debounced updates before grabbing the filter. Important that this happens before getFilter is called!
+    this.updateVariableDebounced.flush();
+
     const lineFiltersVariable = getLineFiltersVariable(this);
     const existingFilters = lineFiltersVariable.state.filters;
     const thisFilter = this.getFilter();
-    this.updateVariableDebounced.flush();
 
     lineFiltersVariable.updateFilters([...existingFilters, thisFilter], { skipPublish: true });
     this.clearVariable();
   };
 
-  private clearVariable() {
-    this.updateVariableDebounced.cancel();
-    const variable = getLineFilterVariable(this);
-    variable.updateFilters([], {
-      skipPublish: true,
-    });
-    this.setState({
-      lineFilter: '',
-    });
-  }
-
+  /**
+   * Passes the input value to the updateFilter method
+   */
   handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     this.updateFilter(e.target.value);
   };
 
+  /**
+   * Submits on enter
+   */
   handleEnter = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       if (this.state.lineFilter) {
@@ -164,6 +192,9 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
     }
   };
 
+  /**
+   * Sets local state and triggers query on case sensitivity toggle
+   */
   onCaseSensitiveToggle = (newState: LineFilterCaseSensitive) => {
     const caseSensitive = newState === LineFilterCaseSensitive.caseSensitive;
 
@@ -178,6 +209,9 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
     this.updateFilter(this.state.lineFilter, false);
   };
 
+  /**
+   * Sets local state and triggers query on regex toggle
+   */
   onRegexToggle = (newState: RegexInputValue) => {
     const regex = newState === 'regex';
 
@@ -192,16 +226,24 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
     this.updateFilter(this.state.lineFilter, false);
   };
 
+  /**
+   * Instance variable reference to debounced update method
+   */
   updateVariableDebounced = debounce((search: string) => {
     this.updateVariable(search);
   }, 1000);
 
+  /**
+   * Updates the ad-hoc variable from local state and triggers a query.
+   * Sends analytics event.
+   */
   updateVariable = (search: string) => {
     this.updateVariableDebounced.flush();
     const variable = getLineFilterVariable(this);
     const variables = getLineFiltersVariable(this);
     const filter = {
       key: this.getFilterKey(),
+      // The keyLabel is used to sort line filters by order added.
       keyLabel: variables.state.filters.length.toString(),
       operator: this.getOperator(),
       value: search,
@@ -215,6 +257,8 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
       {
         searchQueryLength: search.length,
         containsLevel: search.toLowerCase().includes('level'),
+        operator: filter.operator,
+        caseSensitive: filter.key,
       }
     );
   };

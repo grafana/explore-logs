@@ -12,16 +12,19 @@ import { IconButton, useStyles2 } from '@grafana/ui';
 
 interface LineFilterRendererState extends SceneObjectState {}
 
+/**
+ * The scene for the submitted line filter that is rendered up top with the other variables.
+ */
 export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRendererState> {
   constructor(state: Partial<LineFilterRendererState>) {
     super(state);
-    this.addActivationHandler(this.onActivate.bind(this));
   }
 
   static Component = ({ model }: SceneComponentProps<LineFilterVariablesScene>) => {
     const lineFilterVar = getLineFiltersVariable(model);
     const { filters } = lineFilterVar.useState();
     const styles = useStyles2(getStyles);
+    // Sort filters by order added
     filters.sort((a, b) => parseInt(a.keyLabel ?? '0', 10) - parseInt(b.keyLabel ?? '0', 10));
 
     if (!filters.length) {
@@ -69,10 +72,130 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
       </div>
     );
   };
+  /**
+   * Submit on enter
+   */
+  handleEnter = (e: KeyboardEvent<HTMLInputElement>, lineFilter: string, filter: AdHocFilterWithLabels) => {
+    if (e.key === 'Enter') {
+      this.updateVariableLineFilter(filter, { ...filter, value: lineFilter });
+    }
+  };
 
-  onActivate() {}
+  isFilterExclusive(f: AdHocFilterWithLabels): boolean {
+    return f.operator === LineFilterOp.negativeMatch || f.operator === LineFilterOp.negativeRegex;
+  }
 
-  updateVariableLineFilter = (
+  /**
+   * Updates filter operator when user toggles regex
+   */
+  onRegexToggle = (filter: AdHocFilterWithLabels) => {
+    let newOperator: LineFilterOp;
+    // Set value to scene state
+    switch (filter.operator) {
+      case LineFilterOp.match: {
+        newOperator = LineFilterOp.regex;
+        break;
+      }
+      case LineFilterOp.negativeMatch: {
+        newOperator = LineFilterOp.negativeRegex;
+        break;
+      }
+      case LineFilterOp.regex: {
+        newOperator = LineFilterOp.match;
+        break;
+      }
+      case LineFilterOp.negativeRegex: {
+        newOperator = LineFilterOp.negativeMatch;
+        break;
+      }
+      default: {
+        throw new Error('Invalid operator!');
+      }
+    }
+
+    this.updateFilter(filter, { ...filter, operator: newOperator }, false);
+  };
+
+  /**
+   * Updates filter operator when user toggles exclusion
+   */
+  onToggleExclusive = (filter: AdHocFilterWithLabels) => {
+    let newOperator: string;
+    switch (filter.operator) {
+      case LineFilterOp.match: {
+        newOperator = LineFilterOp.negativeMatch;
+        break;
+      }
+      case LineFilterOp.negativeMatch: {
+        newOperator = LineFilterOp.match;
+        break;
+      }
+      case LineFilterOp.regex: {
+        newOperator = LineFilterOp.negativeRegex;
+        break;
+      }
+      case LineFilterOp.negativeRegex: {
+        newOperator = LineFilterOp.regex;
+        break;
+      }
+      default: {
+        throw new Error('Invalid operator!');
+      }
+    }
+
+    this.updateFilter(filter, { ...filter, operator: newOperator }, false);
+  };
+
+  /**
+   * Updates filter key when user toggles case sensitivity
+   */
+  onCaseSensitiveToggle = (filter: AdHocFilterWithLabels) => {
+    const caseSensitive =
+      filter.key === LineFilterCaseSensitive.caseSensitive
+        ? LineFilterCaseSensitive.caseInsensitive
+        : LineFilterCaseSensitive.caseSensitive;
+    this.updateFilter(filter, { ...filter, key: caseSensitive }, false);
+  };
+
+  /**
+   * Updates existing line filter ad-hoc variable filter
+   */
+  updateFilter(existingFilter: AdHocFilterWithLabels, filterUpdate: AdHocFilterWithLabels, debounced = true) {
+    if (debounced) {
+      // We want to update the UI right away, which uses the filter state as the UI state, but we don't want to execute the query immediately
+      this.updateVariableLineFilter(existingFilter, filterUpdate, true);
+      // Run the debounce to force the event emit, as the prior setState will have already set the filterExpression, which will otherwise prevent the emit of the event which will trigger the query
+      this.updateVariableDebounced(existingFilter, filterUpdate, false, true);
+    } else {
+      this.updateVariableLineFilter(existingFilter, filterUpdate);
+    }
+  }
+
+  /**
+   * Line filter input onChange helper method
+   */
+  onInputChange = (e: ChangeEvent<HTMLInputElement>, filter: AdHocFilterWithLabels) => {
+    this.updateFilter(filter, { ...filter, value: e.target.value }, true);
+  };
+
+  /**
+   * Remove a filter, will trigger query
+   */
+  removeFilter = (filter: AdHocFilterWithLabels) => {
+    const variable = getLineFiltersVariable(this);
+    const otherFilters = variable.state.filters.filter(
+      (f) => f.keyLabel !== undefined && f.keyLabel !== filter.keyLabel
+    );
+
+    variable.setState({
+      filters: otherFilters,
+    });
+  };
+
+  /**
+   * Update existing line filter ad-hoc variable
+   */
+  private updateVariableLineFilter = (
     existingFilter: AdHocFilterWithLabels,
     filterUpdate: AdHocFilterWithLabels,
     skipPublish = false,
@@ -106,7 +229,10 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
     );
   };
 
-  updateVariableDebounced = debounce(
+  /**
+   * Debounce line-filter ad-hoc variable update
+   */
+  private updateVariableDebounced = debounce(
     (
       existingFilter: AdHocFilterWithLabels,
       filterUpdate: AdHocFilterWithLabels,
@@ -117,108 +243,6 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
     },
     1000
   );
-
-  handleEnter = (e: KeyboardEvent<HTMLInputElement>, lineFilter: string, filter: AdHocFilterWithLabels) => {
-    if (e.key === 'Enter') {
-      this.updateVariableLineFilter(filter, { ...filter, value: lineFilter });
-    }
-  };
-
-  isFilterExclusive(f: AdHocFilterWithLabels): boolean {
-    return f.operator === LineFilterOp.negativeMatch || f.operator === LineFilterOp.negativeRegex;
-  }
-
-  onRegexToggle = (filter: AdHocFilterWithLabels) => {
-    let newOperator: LineFilterOp;
-    // Set value to scene state
-    switch (filter.operator) {
-      case LineFilterOp.match: {
-        newOperator = LineFilterOp.regex;
-        break;
-      }
-      case LineFilterOp.negativeMatch: {
-        newOperator = LineFilterOp.negativeRegex;
-        break;
-      }
-      case LineFilterOp.regex: {
-        newOperator = LineFilterOp.match;
-        break;
-      }
-      case LineFilterOp.negativeRegex: {
-        newOperator = LineFilterOp.negativeMatch;
-        break;
-      }
-      default: {
-        throw new Error('Invalid operator!');
-      }
-    }
-
-    this.updateFilter(filter, { ...filter, operator: newOperator }, false);
-  };
-
-  onToggleExclusive = (filter: AdHocFilterWithLabels) => {
-    let newOperator: string;
-    switch (filter.operator) {
-      case LineFilterOp.match: {
-        newOperator = LineFilterOp.negativeMatch;
-        break;
-      }
-      case LineFilterOp.negativeMatch: {
-        newOperator = LineFilterOp.match;
-        break;
-      }
-      case LineFilterOp.regex: {
-        newOperator = LineFilterOp.negativeRegex;
-        break;
-      }
-      case LineFilterOp.negativeRegex: {
-        newOperator = LineFilterOp.regex;
-        break;
-      }
-      default: {
-        throw new Error('Invalid operator!');
-      }
-    }
-
-    this.updateFilter(filter, { ...filter, operator: newOperator }, false);
-  };
-
-  updateFilter(existingFilter: AdHocFilterWithLabels, filterUpdate: AdHocFilterWithLabels, debounced = true) {
-    if (debounced) {
-      // We want to update the UI right away, which uses the filter state as the UI state, but we don't want to execute the query immediately
-      this.updateVariableLineFilter(existingFilter, filterUpdate, true);
-      // Run the debounce to force the event emit, as the prior setState will have already set the filterExpression, which will otherwise prevent the emit of the event which will trigger the query
-      this.updateVariableDebounced(existingFilter, filterUpdate, false, true);
-    } else {
-      this.updateVariableLineFilter(existingFilter, filterUpdate);
-    }
-  }
-
-  onInputChange = (e: ChangeEvent<HTMLInputElement>, filter: AdHocFilterWithLabels) => {
-    this.updateFilter(filter, { ...filter, value: e.target.value }, true);
-  };
-
-  /**
-   * Remove a filter, will trigger query
-   */
-  removeFilter = (filter: AdHocFilterWithLabels) => {
-    const variable = getLineFiltersVariable(this);
-    const otherFilters = variable.state.filters.filter(
-      (f) => f.keyLabel !== undefined && f.keyLabel !== filter.keyLabel
-    );
-
-    variable.setState({
-      filters: otherFilters,
-    });
-  };
-
-  onCaseSensitiveToggle = (filter: AdHocFilterWithLabels) => {
-    const caseSensitive =
-      filter.key === LineFilterCaseSensitive.caseSensitive
-        ? LineFilterCaseSensitive.caseInsensitive
-        : LineFilterCaseSensitive.caseSensitive;
-    this.updateFilter(filter, { ...filter, key: caseSensitive }, false);
-  };
 }
 
 function getStyles(theme: GrafanaTheme2) {
