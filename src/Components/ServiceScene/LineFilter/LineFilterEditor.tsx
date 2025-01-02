@@ -4,7 +4,7 @@ import { Button, Field, Select } from '@grafana/ui';
 import { SearchInput } from '../Breakdowns/SearchInput';
 import { testIds } from '../../../services/testIds';
 import { css, cx } from '@emotion/css';
-import { LineFilterIconButton } from './LineFilterIconButton';
+import { LineFilterCaseSensitivityButton } from './LineFilterCaseSensitivityButton';
 import { LineFilterCaseSensitive } from './LineFilterScene';
 
 export interface LineFilterEditorProps {
@@ -61,7 +61,10 @@ export function LineFilterEditor({
           onChange={onInputChange}
           suffix={
             <span className={`${styles.suffix} input-suffix`}>
-              <LineFilterIconButton caseSensitive={caseSensitive} onCaseSensitiveToggle={onCaseSensitiveToggle} />
+              <LineFilterCaseSensitivityButton
+                caseSensitive={caseSensitive}
+                onCaseSensitiveToggle={onCaseSensitiveToggle}
+              />
               <RegexIconButton regex={regex} onRegexToggle={onRegexToggle} />
             </span>
           }

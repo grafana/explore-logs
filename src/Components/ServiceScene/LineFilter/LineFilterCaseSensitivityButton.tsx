@@ -10,7 +10,7 @@ interface Props {
   caseSensitive: boolean;
 }
 
-export const LineFilterIconButton = (props: Props) => {
+export const LineFilterCaseSensitivityButton = (props: Props) => {
   const theme = useTheme2();
   const fill = props.caseSensitive ? theme.colors.text.maxContrast : theme.colors.text.disabled;
   const styles = getStyles(theme);
