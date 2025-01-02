@@ -233,7 +233,7 @@ export function getLogsVolumeOption(option: 'collapsed') {
 }
 
 // Log visualization options
-export type LogsVisualizationType = 'logs' | 'table';
+export type LogsVisualizationType = 'logs' | 'table' | 'json';
 
 const VISUALIZATION_TYPE_LOCALSTORAGE_KEY = 'grafana.explore.logs.visualisationType';
 export function getLogsVisualizationType(): LogsVisualizationType {
@@ -242,6 +242,8 @@ export function getLogsVisualizationType(): LogsVisualizationType {
     case 'table':
     case 'logs':
       return storedType;
+    case 'json':
+      return 'json'
     default:
       return 'logs';
   }
