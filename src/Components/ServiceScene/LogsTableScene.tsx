@@ -43,6 +43,7 @@ export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
 
     // Define callback function to update filters in react
     const addFilter = (filter: AdHocVariableFilter) => {
+      console.log('addFilter', filter);
       const variableType = getVariableForLabel(dataFrame, filter.key, model);
       addAdHocFilter(filter, parentModel, variableType);
     };
