@@ -97,15 +97,19 @@ export const TableColumnContextProvider = ({
   logsFrame,
   setUrlColumns,
   clearSelectedLine,
+  setUrlTableBodyState,
+  urlTableBodyState,
 }: {
   children: ReactNode;
   initialColumns: FieldNameMetaStore;
   logsFrame: LogsFrame;
   setUrlColumns: (columns: string[]) => void;
   clearSelectedLine: () => void;
+  setUrlTableBodyState: (logLineState: LogLineState) => void;
+  urlTableBodyState?: LogLineState;
 }) => {
   const [columns, setColumns] = useState<FieldNameMetaStore>(removeExtraColumns(initialColumns));
-  const [bodyState, setBodyState] = useState<LogLineState>(LogLineState.auto);
+  const [bodyState, setBodyState] = useState<LogLineState>(urlTableBodyState ?? LogLineState.auto);
   const [filteredColumns, setFilteredColumns] = useState<FieldNameMetaStore | undefined>(undefined);
   const [visible, setVisible] = useState(false);
   const initialColumnWidths = getColumnWidthsFromLocalStorage();
@@ -145,6 +149,16 @@ export const TableColumnContextProvider = ({
     [setUrlColumns]
   );
 
+  const handleSetBodyState = useCallback(
+    (logLineState: LogLineState) => {
+      setBodyState(logLineState);
+
+      // Sync change with url state
+      setUrlTableBodyState(logLineState);
+    },
+    [setUrlTableBodyState]
+  );
+
   const handleClearSelectedLine = () => {
     clearSelectedLine();
   };
@@ -182,7 +196,7 @@ export const TableColumnContextProvider = ({
         setColumnWidthMap,
         columnWidthMap,
         bodyState,
-        setBodyState,
+        setBodyState: handleSetBodyState,
         setFilteredColumns,
         filteredColumns,
         columns,

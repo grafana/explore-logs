@@ -2,12 +2,13 @@ import React from 'react';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 import { useTheme2 } from '@grafana/ui';
+import { testIds } from '../../services/testIds';
 
 export function RawLogLineText(props: { value: unknown }) {
   const theme = useTheme2();
   const styles = getStyles(theme);
   return (
-    <div className={styles.rawLogLine}>
+    <div data-testid={testIds.table.rawLogLine} className={styles.rawLogLine}>
       <>{props.value}</>
     </div>
   );

@@ -3,7 +3,7 @@ import { css } from '@emotion/css';
 
 import { DataFrame, FieldType, FieldWithIndex, getTimeZone, guessFieldTypeFromValue, Labels } from '@grafana/data';
 
-import { TableColumnContextProvider } from 'Components/Table/Context/TableColumnsContext';
+import { LogLineState, TableColumnContextProvider } from 'Components/Table/Context/TableColumnsContext';
 import { Table } from 'Components/Table/Table';
 import { FieldNameMeta, FieldNameMetaStore } from 'Components/Table/TableTypes';
 import { useQueryContext } from 'Components/Table/Context/QueryContext';
@@ -20,9 +20,11 @@ const iso8601Regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3,})?(?:Z|[-+]
 
 interface TableWrapProps {
   urlColumns: string[];
+  urlTableBodyState?: LogLineState;
   setUrlColumns: (columns: string[]) => void;
   panelWrap: React.RefObject<HTMLDivElement>;
   clearSelectedLine: () => void;
+  setUrlTableBodyState: (logLineState: LogLineState) => void;
 }
 
 const getStyles = () => ({
@@ -110,10 +112,12 @@ export const TableWrap = (props: TableWrapProps) => {
   return (
     <section className={styles.section}>
       <TableColumnContextProvider
+        setUrlTableBodyState={props.setUrlTableBodyState}
         logsFrame={logsFrame}
         initialColumns={pendingLabelState}
         setUrlColumns={props.setUrlColumns}
         clearSelectedLine={props.clearSelectedLine}
+        urlTableBodyState={props.urlTableBodyState}
       >
         <Table
           logsFrame={logsFrame}

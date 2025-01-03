@@ -11,6 +11,7 @@ import { areArraysEqual } from '../../services/comparison';
 import { getLogsPanelFrame } from './ServiceScene';
 import { getVariableForLabel } from '../../services/fields';
 import { PanelMenu } from '../Panels/PanelMenu';
+import { LogLineState } from '../Table/Context/TableColumnsContext';
 
 interface LogsTableSceneState extends SceneObjectState {
   menu?: PanelMenu;
@@ -32,7 +33,7 @@ export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
     // Get state from parent model
     const parentModel = sceneGraph.getAncestor(model, LogsListScene);
     const { data } = sceneGraph.getData(model).useState();
-    const { selectedLine, urlColumns, visualizationType } = parentModel.useState();
+    const { selectedLine, urlColumns, visualizationType, urlLogLineState } = parentModel.useState();
     const { menu } = model.useState();
 
     // Get time range
@@ -55,6 +56,10 @@ export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
       if (!areArraysEqual(urlColumns, parentModel.state.urlColumns)) {
         parentModel.setState({ urlColumns });
       }
+    };
+
+    const setUrlTableBodyState = (logLineState: LogLineState) => {
+      parentModel.setState({ urlLogLineState: logLineState });
     };
 
     const clearSelectedLine = () => {
@@ -81,6 +86,8 @@ export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
               setUrlColumns={setUrlColumns}
               dataFrame={dataFrame}
               clearSelectedLine={clearSelectedLine}
+              setUrlTableBodyState={setUrlTableBodyState}
+              urlTableBodyState={urlLogLineState}
             />
           )}
         </PanelChrome>

@@ -5,6 +5,7 @@ import { AdHocVariableFilter, DataFrame, TimeRange } from '@grafana/data';
 import { QueryContextProvider } from 'Components/Table/Context/QueryContext';
 import { parseLogsFrame } from '../../services/logsFrame';
 import { SelectedTableRow } from './LogLineCellComponent';
+import { LogLineState } from './Context/TableColumnsContext';
 
 interface TableProviderProps {
   dataFrame: DataFrame;
@@ -15,6 +16,8 @@ interface TableProviderProps {
   timeRange?: TimeRange;
   panelWrap: React.RefObject<HTMLDivElement>;
   clearSelectedLine: () => void;
+  setUrlTableBodyState: (logLineState: LogLineState) => void;
+  urlTableBodyState?: LogLineState;
 }
 
 export const TableProvider = ({
@@ -26,6 +29,8 @@ export const TableProvider = ({
   timeRange,
   panelWrap,
   clearSelectedLine,
+  setUrlTableBodyState,
+  urlTableBodyState,
 }: TableProviderProps) => {
   if (!dataFrame) {
     return null;
@@ -39,7 +44,9 @@ export const TableProvider = ({
   return (
     <QueryContextProvider addFilter={addFilter} selectedLine={selectedLine} timeRange={timeRange} logsFrame={logsFrame}>
       <TableWrap
+        urlTableBodyState={urlTableBodyState}
         setUrlColumns={setUrlColumns}
+        setUrlTableBodyState={setUrlTableBodyState}
         urlColumns={urlColumns}
         panelWrap={panelWrap}
         clearSelectedLine={clearSelectedLine}
