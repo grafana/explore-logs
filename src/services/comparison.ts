@@ -21,3 +21,7 @@ export const areArraysEqual = (arr1: any[] | undefined, arr2: any[] | undefined)
 
   return _.isEqual(set1, set2);
 };
+
+export const areArraysEqualAndHaveSameOrder = (arr1: any[] | undefined, arr2: any[] | undefined) => {
+  return _.isEqual(arr1, arr2);
+};
