@@ -62,8 +62,14 @@ export class LogsJsonScene extends SceneObjectBase<LogsJsonSceneState> {
       (field) => field.type === FieldType.string && (field.name === 'Line' || field.name === 'body')
     );
 
-    const addFilter = (filter: AdHocVariableFilter) => {
-      // console.log('addFilter json', filter)
+    const addFilter = (filter: AdHocVariableFilter, nodeType: NodeTypeLoc) => {
+      // @todo labels in JSON do not match labels from Loki
+      filter.key = filter.key.replace(/-/g, '_');
+      console.log('addFilter json', nodeType, filter);
+
+      // @todo when nodeType is `Object` we want to add the JSON fieldname to the VAR_JSON_FIELDS variable
+      // @todo also the VAR_JSON_FIELDS is not interpolating
+
       const variableType = getVariableForLabel(dataFrame, filter.key, model);
       addAdHocFilter(filter, parentModel, variableType);
     };
@@ -80,6 +86,7 @@ export class LogsJsonScene extends SceneObjectBase<LogsJsonSceneState> {
             <LoadingPlaceholder text={'Loading...'} />
           </>
         )}
+
         {lineField?.values && (
           <JSONTree
             data={lineField.values}
@@ -99,22 +106,76 @@ export class LogsJsonScene extends SceneObjectBase<LogsJsonSceneState> {
             shouldExpandNodeInitially={(keyPath, data, level) => level <= 2}
             labelRenderer={(keyPath, nodeType, expanded) => {
               const nodeTypeLoc = nodeType as NodeTypeLoc;
-              if (nodeTypeLoc !== 'Object' && keyPath[0] !== 'Time') {
+
+              if (nodeTypeLoc !== 'Object' && keyPath[0] !== 'Time' && keyPath[0] !== 'Line') {
                 return (
                   <span>
                     <IconButton
                       onClick={() =>
-                        addFilter({
-                          key: keyPath[0].toString(),
-                          value: model.getValue(keyPath, nodeTypeLoc, lineField.values).toString(),
-                          operator: FilterOp.Equal,
-                        })
+                        addFilter(
+                          {
+                            key: keyPath[0].toString(),
+                            value: model.getValue(keyPath, nodeTypeLoc, lineField.values).toString(),
+                            operator: FilterOp.Equal,
+                          },
+                          nodeTypeLoc
+                        )
                       }
                       size={'sm'}
                       name={'plus-circle'}
                       aria-label={'add filter'}
                     />
-                    <IconButton size={'sm'} name={'minus-circle'} aria-label={'remove filter'} />
+                    <IconButton
+                      onClick={() => {
+                        addFilter(
+                          {
+                            key: keyPath[0].toString(),
+                            value: model.getValue(keyPath, nodeTypeLoc, lineField.values).toString(),
+                            operator: FilterOp.NotEqual,
+                          },
+                          nodeTypeLoc
+                        );
+                      }}
+                      size={'sm'}
+                      name={'minus-circle'}
+                      aria-label={'remove filter'}
+                    />
+                    <strong>{keyPath[0]}</strong>
+                  </span>
+                );
+              } else if (nodeTypeLoc === 'Object' && keyPath[0] !== 'Line') {
+                return (
+                  <span>
+                    <IconButton
+                      onClick={() =>
+                        addFilter(
+                          {
+                            key: keyPath[0].toString(),
+                            value: '""',
+                            operator: FilterOp.NotEqual,
+                          },
+                          nodeTypeLoc
+                        )
+                      }
+                      size={'sm'}
+                      name={'plus-circle'}
+                      aria-label={'add filter'}
+                    />
+                    <IconButton
+                      onClick={() => {
+                        addFilter(
+                          {
+                            key: keyPath[0].toString(),
+                            value: '""',
+                            operator: FilterOp.Equal,
+                          },
+                          nodeTypeLoc
+                        );
+                      }}
+                      size={'sm'}
+                      name={'minus-circle'}
+                      aria-label={'remove filter'}
+                    />
                     <strong>{keyPath[0]}</strong>
                   </span>
                 );
@@ -192,7 +253,8 @@ export class LogsJsonScene extends SceneObjectBase<LogsJsonSceneState> {
     const dataFrame = getLogsPanelFrame(newState.data);
     const time = dataFrame?.fields.find((field) => field.type === FieldType.time);
     // const timeNs = dataFrame?.fields.find(field => field.type === FieldType.string && field.name === 'tsNs')
-    // const labels = dataFrame?.fields.find(field => field.type === FieldType.other && field.name === 'labels')
+    const labels = dataFrame?.fields.find((field) => field.type === FieldType.other && field.name === 'labels');
+    // const labelTypes = dataFrame?.fields.find(field => field.type === FieldType.other && field.name === 'labelTypes')
 
     const timeZone = getTimeZone();
     if (newState.data) {
@@ -218,7 +280,8 @@ export class LogsJsonScene extends SceneObjectBase<LogsJsonSceneState> {
                       Time: renderTimeStamp(time?.values?.[i], timeZone),
                       Line: parsed,
                       // @todo labels? Allow filtering when key has same name as label?
-                      // Labels: labels?.values[i],
+                      Labels: labels?.values[i],
+                      // LabelTypes: labelTypes?.values[i]
                     };
                     // return parsed;
                   }),

@@ -30,6 +30,7 @@ import {
   PENDING_FIELDS_EXPR,
   VAR_DATASOURCE,
   VAR_FIELDS,
+  VAR_JSON_FIELDS,
   VAR_LABELS,
   VAR_LEVELS,
   VAR_LINE_FILTER,
@@ -502,6 +503,25 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     newState.value && addLastUsedDataSourceToStorage(dsValue);
   });
 
+  const jsonFieldsVar = new AdHocFiltersVariable({
+    name: VAR_JSON_FIELDS,
+    applyMode: 'manual',
+
+    getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
+    getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
+    expressionBuilder: (filters: AdHocFilterWithLabels[]) => {
+      return filters?.[0]?.value ?? '';
+    },
+    filters: [
+      {
+        key: '',
+        operator: '',
+        value: 'user',
+      },
+    ],
+    // hide: VariableHide.hideVariable,
+  });
+
   return {
     variablesScene: new SceneVariableSet({
       variables: [
@@ -510,6 +530,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
         fieldsVariable,
         levelsVariable,
         metadataVariable,
+        jsonFieldsVar,
         new CustomVariable({
           name: VAR_PATTERNS,
           value: '',
