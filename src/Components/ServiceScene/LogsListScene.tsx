@@ -25,6 +25,7 @@ import {
 import { logger } from '../../services/logger';
 import { Options } from '@grafana/schema/dist/esm/raw/composable/logs/panelcfg/x/LogsPanelCfg_types.gen';
 import { narrowLogsVisualizationType, narrowSelectedTableRow, unknownToStrings } from '../../services/narrowing';
+import { LogLineState } from '../Table/Context/TableColumnsContext';
 import { LineFilterScene } from './LineFilter/LineFilterScene';
 
 export interface LogsListSceneState extends SceneObjectState {
@@ -32,6 +33,7 @@ export interface LogsListSceneState extends SceneObjectState {
   panel?: SceneFlexLayout;
   visualizationType: LogsVisualizationType;
   urlColumns?: string[];
+  tableLogLineState?: LogLineState;
   selectedLine?: SelectedTableRow;
   $timeRange?: SceneTimeRangeLike;
   displayedFields: string[];
@@ -39,7 +41,7 @@ export interface LogsListSceneState extends SceneObjectState {
 
 export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, {
-    keys: ['urlColumns', 'selectedLine', 'visualizationType', 'displayedFields'],
+    keys: ['urlColumns', 'selectedLine', 'visualizationType', 'displayedFields', 'tableLogLineState'],
   });
   private lineFilterScene?: LineFilterScene = undefined;
   private logsPanelScene?: LogsPanelScene = undefined;
@@ -63,6 +65,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       selectedLine: JSON.stringify(selectedLine),
       visualizationType: JSON.stringify(visualizationType),
       displayedFields: JSON.stringify(displayedFields),
+      tableLogLineState: JSON.stringify(this.state.tableLogLineState),
     };
   }
 
@@ -84,18 +87,22 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
           }
         }
       }
-
       if (typeof values.visualizationType === 'string') {
         const decodedVisualizationType = narrowLogsVisualizationType(JSON.parse(values.visualizationType));
         if (decodedVisualizationType && decodedVisualizationType !== this.state.visualizationType) {
           stateUpdate.visualizationType = decodedVisualizationType;
         }
       }
-
       if (typeof values.displayedFields === 'string') {
         const displayedFields = unknownToStrings(JSON.parse(values.displayedFields));
         if (displayedFields && displayedFields.length) {
           stateUpdate.displayedFields = displayedFields;
+        }
+      }
+      if (typeof values.tableLogLineState === 'string') {
+        const tableLogLineState = JSON.parse(values.tableLogLineState);
+        if (tableLogLineState === LogLineState.labels || tableLogLineState === LogLineState.text) {
+          stateUpdate.tableLogLineState = tableLogLineState;
         }
       }
     } catch (e) {
@@ -147,12 +154,14 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     const urlColumnsUrl = searchParams.get('urlColumns');
     const vizTypeUrl = searchParams.get('visualizationType');
     const displayedFieldsUrl = searchParams.get('displayedFields') ?? JSON.stringify(getDisplayedFields(this));
+    const tableLogLineState = searchParams.get('tableLogLineState');
 
     this.updateFromUrl({
       selectedLine: selectedLineUrl,
       urlColumns: urlColumnsUrl,
       vizType: vizTypeUrl,
       displayedFields: displayedFieldsUrl,
+      tableLogLineState,
     });
   }
 
