@@ -22,7 +22,7 @@ interface TableWrapProps {
   urlColumns: string[];
   urlTableBodyState?: LogLineState;
   setUrlColumns: (columns: string[]) => void;
-  panelWrap: React.RefObject<HTMLDivElement>;
+  panelWrap: React.RefObject<HTMLDivElement | null>;
   clearSelectedLine: () => void;
   setUrlTableBodyState: (logLineState: LogLineState) => void;
 }

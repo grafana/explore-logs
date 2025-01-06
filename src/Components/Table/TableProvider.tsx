@@ -14,7 +14,7 @@ interface TableProviderProps {
   addFilter: (filter: AdHocVariableFilter) => void;
   selectedLine?: SelectedTableRow;
   timeRange?: TimeRange;
-  panelWrap: React.RefObject<HTMLDivElement>;
+  panelWrap: React.RefObject<HTMLDivElement | null>;
   clearSelectedLine: () => void;
   setUrlTableBodyState: (logLineState: LogLineState) => void;
   urlTableBodyState?: LogLineState;
