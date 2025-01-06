@@ -21,3 +21,11 @@ export const areArraysEqual = (arr1: any[] | undefined, arr2: any[] | undefined)
 
   return _.isEqual(set1, set2);
 };
+
+export const areArraysStrictlyEqual = (arr1: any[] | undefined, arr2: any[] | undefined) => {
+  // If one array is undefined, and the other is empty, they will cast to the same set.
+  if (typeof arr1 !== typeof arr2) {
+    return false;
+  }
+  return _.isEqual(arr1, arr2);
+};

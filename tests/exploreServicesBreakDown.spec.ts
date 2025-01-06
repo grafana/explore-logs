@@ -111,6 +111,27 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByText(`drop __error__, __error_details__`)).toBeVisible();
   });
 
+  test(`should persist column ordering`, async ({ page }) => {
+    const table = page.getByTestId(testIds.table.wrapper);
+    await explorePage.goToLogsTab();
+    // Switch to table view
+    await explorePage.getTableToggleLocator().click();
+
+    // Assert table column order
+    await expect(table.getByRole('columnheader').nth(0)).toContainText('timestamp');
+    await expect(table.getByRole('columnheader').nth(0)).not.toContainText('body');
+    await expect(table.getByRole('columnheader').nth(1)).toContainText('body');
+
+    // Open the menu for "Line"
+    await page.getByRole('button', { name: 'Show menu' }).nth(1).click();
+    await page.getByText('Move left').click();
+    await expect(table.getByRole('columnheader').nth(0)).toContainText('body');
+
+    // Refresh the page to see if the columns were saved in the url state
+    await page.reload();
+    await expect(table.getByRole('columnheader').nth(0)).toContainText('body');
+  });
+
   test(`should add ${levelName} filter on table click`, async ({ page }) => {
     // Switch to table view
     await explorePage.getTableToggleLocator().click();
