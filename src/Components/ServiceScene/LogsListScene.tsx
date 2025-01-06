@@ -33,7 +33,7 @@ export interface LogsListSceneState extends SceneObjectState {
   panel?: SceneFlexLayout;
   visualizationType: LogsVisualizationType;
   urlColumns?: string[];
-  urlLogLineState?: LogLineState;
+  tableLogLineState?: LogLineState;
   selectedLine?: SelectedTableRow;
   $timeRange?: SceneTimeRangeLike;
   displayedFields: string[];
@@ -41,7 +41,7 @@ export interface LogsListSceneState extends SceneObjectState {
 
 export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, {
-    keys: ['urlColumns', 'selectedLine', 'visualizationType', 'displayedFields', 'urlLogLineState'],
+    keys: ['urlColumns', 'selectedLine', 'visualizationType', 'displayedFields', 'tableLogLineState'],
   });
   private lineFilterScene?: LineFilterScene = undefined;
   private logsPanelScene?: LogsPanelScene = undefined;
@@ -65,7 +65,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
       selectedLine: JSON.stringify(selectedLine),
       visualizationType: JSON.stringify(visualizationType),
       displayedFields: JSON.stringify(displayedFields),
-      urlLogLineState: JSON.stringify(this.state.urlLogLineState),
+      tableLogLineState: JSON.stringify(this.state.tableLogLineState),
     };
   }
 
@@ -99,10 +99,10 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
           stateUpdate.displayedFields = displayedFields;
         }
       }
-      if (typeof values.urlLogLineState === 'string') {
-        const urlLogLineState = JSON.parse(values.urlLogLineState);
-        if (urlLogLineState === LogLineState.labels || urlLogLineState === LogLineState.text) {
-          stateUpdate.urlLogLineState = urlLogLineState;
+      if (typeof values.tableLogLineState === 'string') {
+        const tableLogLineState = JSON.parse(values.tableLogLineState);
+        if (tableLogLineState === LogLineState.labels || tableLogLineState === LogLineState.text) {
+          stateUpdate.tableLogLineState = tableLogLineState;
         }
       }
     } catch (e) {
@@ -154,14 +154,14 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     const urlColumnsUrl = searchParams.get('urlColumns');
     const vizTypeUrl = searchParams.get('visualizationType');
     const displayedFieldsUrl = searchParams.get('displayedFields') ?? JSON.stringify(getDisplayedFields(this));
-    const urlLogLineState = searchParams.get('urlLogLineState');
+    const tableLogLineState = searchParams.get('tableLogLineState');
 
     this.updateFromUrl({
       selectedLine: selectedLineUrl,
       urlColumns: urlColumnsUrl,
       vizType: vizTypeUrl,
       displayedFields: displayedFieldsUrl,
-      urlLogLineState,
+      tableLogLineState,
     });
   }
 

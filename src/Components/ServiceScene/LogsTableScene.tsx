@@ -33,7 +33,7 @@ export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
     // Get state from parent model
     const parentModel = sceneGraph.getAncestor(model, LogsListScene);
     const { data } = sceneGraph.getData(model).useState();
-    const { selectedLine, urlColumns, visualizationType, urlLogLineState } = parentModel.useState();
+    const { selectedLine, urlColumns, visualizationType, tableLogLineState } = parentModel.useState();
     const { menu } = model.useState();
 
     // Get time range
@@ -59,7 +59,7 @@ export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
     };
 
     const setUrlTableBodyState = (logLineState: LogLineState) => {
-      parentModel.setState({ urlLogLineState: logLineState });
+      parentModel.setState({ tableLogLineState: logLineState });
     };
 
     const clearSelectedLine = () => {
@@ -87,7 +87,7 @@ export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
               dataFrame={dataFrame}
               clearSelectedLine={clearSelectedLine}
               setUrlTableBodyState={setUrlTableBodyState}
-              urlTableBodyState={urlLogLineState}
+              urlTableBodyState={tableLogLineState}
             />
           )}
         </PanelChrome>
