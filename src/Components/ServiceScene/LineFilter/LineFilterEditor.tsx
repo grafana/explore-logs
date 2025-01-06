@@ -85,7 +85,7 @@ export function LineFilterEditor({
             fill={'outline'}
             disabled={!lineFilter}
           >
-            Submit
+            Add to filter
           </Button>
         </>
       )}

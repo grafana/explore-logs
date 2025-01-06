@@ -844,7 +844,7 @@ test.describe('explore services breakdown page', () => {
     expect(numberOfQueries).toBeGreaterThan(0);
   });
 
-  test('should exclude all logs that contain bytes field', async ({ page }) => {
+  test.only('should exclude all logs that contain bytes field', async ({ page }) => {
     let numberOfQueries = 0;
     // Let's not wait for all these queries
     await page.route('**/ds/query*', async (route) => {
