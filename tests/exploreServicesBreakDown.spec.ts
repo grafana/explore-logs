@@ -1405,7 +1405,7 @@ test.describe('explore services breakdown page', () => {
       expect(logsPanelQueryCount).toEqual(7);
 
       // Change the search to something that will return results and immediately submit before the debounce ends
-      await page.getByRole('button', { name: 'Submit' }).click();
+      await page.getByRole('button', { name: 'Add to filter' }).click();
       await lastLineFilterLoc.click();
       await page.keyboard.type('caller');
       await expect(highlightedMatchesInFirstRow).toHaveCount(2);
