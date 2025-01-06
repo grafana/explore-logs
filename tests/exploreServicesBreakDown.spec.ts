@@ -105,7 +105,6 @@ test.describe('explore services breakdown page', () => {
     // Switch to table view
     await explorePage.getTableToggleLocator().click();
 
-    const table = page.getByTestId(testIds.table.wrapper);
     await page.getByTestId('data-testid Panel menu Logs').click();
     await page.getByTestId('data-testid Panel menu item Explore').click();
 
@@ -149,6 +148,32 @@ test.describe('explore services breakdown page', () => {
     await pillContextMenu.click();
     // New level filter should be added
     await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${levelName}`)).toBeVisible();
+  });
+
+  test('table log line state should persist in the url', async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: ['logsPanelQuery'],
+    });
+    await explorePage.getTableToggleLocator().click();
+    const table = page.getByTestId(testIds.table.wrapper);
+
+    // assert the table doesn't contain the raw log line option by default
+    await expect(table.getByTestId(testIds.table.rawLogLine)).toHaveCount(0);
+
+    // Open menu
+    await page.getByRole('button', { name: 'Show menu' }).nth(1).click();
+
+    // Show log text option should be visible by default
+    await expect(page.getByText('Show log text')).toBeVisible();
+
+    // Change the option
+    await page.getByText('Show log text').click();
+
+    // Assert the change was made to the table
+    await expect(table.getByTestId(testIds.table.rawLogLine).nth(0)).toBeVisible();
+
+    await page.reload();
+    await expect(table.getByTestId(testIds.table.rawLogLine).nth(0)).toBeVisible();
   });
 
   test('should show inspect modal', async ({ page }) => {
@@ -470,7 +495,7 @@ test.describe('explore services breakdown page', () => {
       refIds: ['A'],
     });
     await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
-    const key = page.getByText('<_>').last().click();
+    await page.getByText('<_>').last().click();
     // `From a sample of` is the indicator that the underlying query perfomed successfully
     await expect(page.getByText(`From a sample of`)).toBeVisible();
   });
