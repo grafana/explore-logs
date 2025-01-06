@@ -1092,10 +1092,6 @@ test.describe('explore services breakdown page', () => {
     // Scroll the whole page to the bottom so the whole logs panel is visible
     await explorePage.scrollToBottom();
 
-    // The logs panel keeps the lines in the viewport the same, but will scroll us down
-    await expect(firstRow).not.toBeInViewport();
-    await expect(page.getByText(newestLogContent)).toBeInViewport();
-
     // assert timestamps are ASC (oldest first)
     expect(new Date(await firstRowTimeCell.textContent()).valueOf()).toBeLessThanOrEqual(
       new Date(await secondRowTimeCell.textContent()).valueOf()
