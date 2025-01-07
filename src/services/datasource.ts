@@ -180,6 +180,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
           query: expression,
           start: request.range.from.utc().toISOString(),
           end: request.range.to.utc().toISOString(),
+          step: request.interval,
         },
         {
           requestId: request.requestId ?? 'patterns',

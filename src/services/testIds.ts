@@ -78,5 +78,6 @@ export const testIds = {
   table: {
     wrapper: 'data-testid table-wrapper',
     inspectLine: 'data-testid inspect',
+    rawLogLine: 'data-testid raw-log-line',
   },
 };
