@@ -500,3 +500,4 @@ capslock
 pageup
 pagedown
 linefilter
+timesync
