@@ -240,7 +240,7 @@ export class ExplorePage {
     sortOrder: 'Ascending' | 'Descending' = 'Descending',
     wrapLogMessage: 'true' | 'false' = 'false'
   ) {
-    const url = `/a/grafana-lokiexplore-app/explore/service/tempo-distributor/logs?from=now-5m&to=now&var-ds=gdev-loki&var-filters=service_name|=|tempo-distributor&visualizationType="logs"&displayedFields=[]&sortOrder="${sortOrder}"&wrapLogMessage=${wrapLogMessage}`;
+    const url = `/a/grafana-lokiexplore-app/explore/service/tempo-distributor/logs?patterns=[]&from=now-5m&to=now&var-ds=gdev-loki&var-filters=service_name|=|tempo-distributor&var-fields=&var-levels=&var-metadata=&var-patterns=&var-lineFilter=&timezone=utc&urlColumns=["Time","Line"]&visualizationType="logs"&displayedFields=[]&sortOrder="${sortOrder}"&wrapLogMessage=${wrapLogMessage}`;
     await this.page.goto(url);
   }
 
