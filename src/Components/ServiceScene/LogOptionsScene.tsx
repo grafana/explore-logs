@@ -15,8 +15,6 @@ import { logger } from '../../services/logger';
 interface LogOptionsState extends SceneObjectState {
   visualizationType: LogsVisualizationType;
   onChangeVisualizationType: (type: LogsVisualizationType) => void;
-  // sortOrder?: LogsSortOrder;
-  // wrapLogMessage?: boolean;
 }
 
 /**
