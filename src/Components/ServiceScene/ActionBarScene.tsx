@@ -12,9 +12,11 @@ import { config, usePluginLinks } from '@grafana/runtime';
 import { getLabelsVariable } from '../../services/variableGetters';
 import { IndexScene } from '../IndexScene/IndexScene';
 import { LINE_LIMIT } from '../../services/query';
+import { ShareButtonScene } from '../IndexScene/ShareButtonScene';
 
 export interface ActionBarSceneState extends SceneObjectState {
   maxLines?: number;
+  shareButtonScene?: ShareButtonScene;
 }
 
 export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
@@ -30,6 +32,12 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
     if (dataSource?.maxLines !== undefined) {
       this.setState({
         maxLines: dataSource.maxLines,
+      });
+    }
+
+    if (!this.state.shareButtonScene) {
+      this.setState({
+        shareButtonScene: new ShareButtonScene({}),
       });
     }
   }
@@ -60,6 +68,9 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
         <div className={styles.actions}>
           <Stack gap={1}>
             {config.featureToggles.appSidecar && <ToolbarExtensionsRenderer serviceScene={serviceScene} />}
+            {model.state.shareButtonScene && (
+              <model.state.shareButtonScene.Component model={model.state.shareButtonScene} />
+            )}
           </Stack>
         </div>
 
