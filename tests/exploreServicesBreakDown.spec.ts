@@ -1110,6 +1110,42 @@ test.describe('explore services breakdown page', () => {
     );
   });
 
+  test.only('logs panel options: url sync', async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: ['logsPanelQuery', 'A'],
+    });
+
+    // Check default values
+    await expect(explorePage.getLogsDirectionNewestFirstLocator()).toBeChecked();
+    await expect(explorePage.getLogsDirectionOldestFirstLocator()).not.toBeChecked();
+
+    await expect(explorePage.getNowrapLocator()).toBeChecked();
+    await expect(explorePage.getWrapLocator()).not.toBeChecked();
+
+    const viewportSize = page.viewportSize();
+
+    // Check annotation location
+    const boundingBoxDesc = await page.getByTestId('data-testid annotation-marker').boundingBox();
+
+    // Annotation should be on the right side of the viewport
+    expect(boundingBoxDesc.x).toBeGreaterThan(viewportSize.width / 2);
+
+    // Check non-default values
+    await explorePage.gotoLogsPanel('Ascending', 'true');
+
+    await expect(explorePage.getLogsDirectionNewestFirstLocator()).not.toBeChecked();
+    await expect(explorePage.getLogsDirectionOldestFirstLocator()).toBeChecked();
+
+    await expect(explorePage.getNowrapLocator()).not.toBeChecked();
+    await expect(explorePage.getWrapLocator()).toBeChecked();
+
+    // Check annotation location
+    const boundingBoxAsc = await page.getByTestId('data-testid annotation-marker').boundingBox();
+
+    // Annotation should be on the left side of the viewport
+    expect(boundingBoxAsc.x).toBeLessThan(viewportSize.width / 2);
+  });
+
   test('panel menu: label name panel should open links in explore', async ({ page, context }) => {
     await explorePage.goToLabelsTab();
     await page.getByTestId('data-testid Panel menu detected_level').click();

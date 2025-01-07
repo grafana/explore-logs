@@ -236,6 +236,14 @@ export class ExplorePage {
     );
   }
 
+  async gotoLogsPanel(
+    sortOrder: 'Ascending' | 'Descending' = 'Descending',
+    wrapLogMessage: 'true' | 'false' = 'false'
+  ) {
+    const url = `/a/grafana-lokiexplore-app/explore/service/tempo-distributor/logs?from=now-5m&to=now&var-ds=gdev-loki&var-filters=service_name|=|tempo-distributor&visualizationType="logs"&displayedFields=[]&sortOrder="${sortOrder}"&wrapLogMessage=${wrapLogMessage}`;
+    await this.page.goto(url);
+  }
+
   blockAllQueriesExcept(options: {
     refIds?: Array<string | RegExp>;
     legendFormats?: string[];
