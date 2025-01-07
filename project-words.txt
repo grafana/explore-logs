@@ -325,9 +325,14 @@ opencontainers
 opentracing
 openzipkin
 osext
+otelslog
+otlplog
+otlploggrpc
+semconv
 otelgrpc
 otelhttp
 oteltest
+otlphttp
 otlptrace
 otlptracegrpc
 otlptracehttp
@@ -500,4 +505,5 @@ capslock
 pageup
 pagedown
 linefilter
+queryfrontend
 timesync
