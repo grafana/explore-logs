@@ -506,3 +506,4 @@ pageup
 pagedown
 linefilter
 queryfrontend
+timesync
