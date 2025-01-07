@@ -1146,6 +1146,12 @@ test.describe('explore services breakdown page', () => {
     expect(boundingBoxAsc.x).toBeLessThan(viewportSize.width / 2);
   });
 
+  test('url sharing', async ({ page }) => {
+    explorePage.blockAllQueriesExcept({ refIds: ['NA'] });
+    await page.getByLabel('Copy shortened URL').click();
+    await expect(page.getByText('Shortened link copied to')).toBeVisible();
+  });
+
   test('panel menu: label name panel should open links in explore', async ({ page, context }) => {
     await explorePage.goToLabelsTab();
     await page.getByTestId('data-testid Panel menu detected_level').click();
