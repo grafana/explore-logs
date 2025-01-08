@@ -17,13 +17,19 @@ import { addToFilters, FilterType } from './Breakdowns/AddToFiltersButton';
 import { getVariableForLabel } from '../../services/fields';
 import { VAR_FIELDS, VAR_LABELS, VAR_LEVELS, VAR_METADATA } from '../../services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
-import { getAdHocFiltersVariable, getValueFromFieldsFilter } from '../../services/variableGetters';
+import {
+  getAdHocFiltersVariable,
+  getLineFiltersVariable,
+  getValueFromFieldsFilter,
+} from '../../services/variableGetters';
 import { copyText, generateLogShortlink, resolveRowTimeRangeForSharing } from 'services/text';
 import { CopyLinkButton } from './CopyLinkButton';
 import { getLogsPanelSortOrder, LogOptionsScene } from './LogOptionsScene';
 import { LogsVolumePanel, logsVolumePanelKey } from './LogsVolumePanel';
 import { getPanelWrapperStyles, PanelMenu } from '../Panels/PanelMenu';
 import { ServiceScene } from './ServiceScene';
+import { LineFilterOp } from '../../services/filterTypes';
+import { LineFilterCaseSensitive } from './LineFilter/LineFilterScene';
 
 interface LogsPanelSceneState extends SceneObjectState {
   body?: VizPanel;
@@ -256,15 +262,19 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
   };
 
   private handleFilterOutStringClick = (value: string) => {
-    const parentModel = sceneGraph.getAncestor(this, LogsListScene);
-    const lineFilterScene = parentModel.getLineFilterScene();
-    if (lineFilterScene) {
-      lineFilterScene.setState({
-        caseSensitive: true,
-        exclusive: true,
-        regex: false,
+    const lineFiltersVar = getLineFiltersVariable(this);
+    if (lineFiltersVar) {
+      lineFiltersVar.setState({
+        filters: [
+          ...lineFiltersVar.state.filters,
+          {
+            operator: LineFilterOp.negativeMatch,
+            value,
+            key: LineFilterCaseSensitive.caseSensitive,
+            keyLabel: lineFiltersVar.state.filters.length.toString(),
+          },
+        ],
       });
-      lineFilterScene.updateFilter(value, false);
       reportAppInteraction(
         USER_EVENTS_PAGES.service_details,
         USER_EVENTS_ACTIONS.service_details.logs_popover_line_filter,
@@ -276,15 +286,19 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
   };
 
   private handleFilterStringClick = (value: string) => {
-    const parentModel = sceneGraph.getAncestor(this, LogsListScene);
-    const lineFilterScene = parentModel.getLineFilterScene();
-    if (lineFilterScene) {
-      lineFilterScene.setState({
-        caseSensitive: true,
-        exclusive: false,
-        regex: false,
+    const lineFiltersVar = getLineFiltersVariable(this);
+    if (lineFiltersVar) {
+      lineFiltersVar.setState({
+        filters: [
+          ...lineFiltersVar.state.filters,
+          {
+            operator: LineFilterOp.match,
+            value,
+            key: LineFilterCaseSensitive.caseSensitive,
+            keyLabel: lineFiltersVar.state.filters.length.toString(),
+          },
+        ],
       });
-      lineFilterScene.updateFilter(value, false);
       reportAppInteraction(
         USER_EVENTS_PAGES.service_details,
         USER_EVENTS_ACTIONS.service_details.logs_popover_line_filter,
