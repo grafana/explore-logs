@@ -151,10 +151,10 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
   /**
    * Update exclusive state, triggers re-query without debounce
    */
-  onToggleExclusive = () => {
-    setLineFilterExclusive(!this.state.exclusive);
+  onToggleExclusive = (exclusive: boolean) => {
+    setLineFilterExclusive(exclusive);
     this.setState({
-      exclusive: !this.state.exclusive,
+      exclusive,
     });
 
     this.updateFilter(this.state.lineFilter, false);
@@ -278,7 +278,7 @@ function LineFilterComponent({ model }: SceneComponentProps<LineFilterScene>) {
     updateFilter: model.updateFilter,
     onCaseSensitiveToggle: model.onCaseSensitiveToggle,
     onRegexToggle: model.onRegexToggle,
-    onToggleExclusive: model.onToggleExclusive,
+    setExclusive: model.onToggleExclusive,
     onClearLineFilter: model.clearFilter,
   });
 }

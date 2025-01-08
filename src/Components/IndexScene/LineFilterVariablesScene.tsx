@@ -37,7 +37,7 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
             caseSensitive: filter.key === LineFilterCaseSensitive.caseSensitive,
             exclusive: model.isFilterExclusive(filter),
             handleEnter: (e, lineFilter) => model.handleEnter(e, filter.value, filter),
-            onToggleExclusive: () => model.onToggleExclusive(filter),
+            setExclusive: () => model.onToggleExclusive(filter),
             updateFilter: (lineFilter, debounced) =>
               model.updateFilter(
                 filter,

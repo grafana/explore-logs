@@ -13,7 +13,7 @@ export interface LineFilterEditorProps {
   lineFilter: string;
   caseSensitive: boolean;
   regex: boolean;
-  onToggleExclusive: () => void;
+  setExclusive: (exclusive: boolean) => void;
   onInputChange: (e: ChangeEvent<HTMLInputElement>) => void;
   onCaseSensitiveToggle: (caseSensitive: LineFilterCaseSensitive) => void;
   onRegexToggle: (regex: RegexInputValue) => void;
@@ -27,7 +27,7 @@ export function LineFilterEditor({
   exclusive,
   lineFilter,
   caseSensitive,
-  onToggleExclusive,
+  setExclusive,
   regex,
   onInputChange,
   onCaseSensitiveToggle,
@@ -39,22 +39,24 @@ export function LineFilterEditor({
   const styles = useStyles2(getStyles);
   return (
     <div className={styles.wrapper}>
-      <Select
-        prefix={null}
-        className={styles.select}
-        value={exclusive ? 'exclusive' : 'inclusive'}
-        options={[
-          {
-            value: 'exclusive',
-            label: 'Exclude',
-          },
-          {
-            value: 'inclusive',
-            label: 'Include',
-          },
-        ]}
-        onChange={onToggleExclusive}
-      />
+      {!onSubmitLineFilter && (
+        <Select
+          prefix={null}
+          className={styles.select}
+          value={exclusive ? 'exclusive' : 'inclusive'}
+          options={[
+            {
+              value: 'exclusive',
+              label: 'Exclude',
+            },
+            {
+              value: 'inclusive',
+              label: 'Include',
+            },
+          ]}
+          onChange={() => setExclusive(!exclusive)}
+        />
+      )}
       <Field className={styles.field}>
         <SearchInput
           data-testid={testIds.exploreServiceDetails.searchLogs}
@@ -77,17 +79,32 @@ export function LineFilterEditor({
         />
       </Field>
       {onSubmitLineFilter && (
-        <>
+        <span className={styles.buttonWrap}>
           <Button
-            onClick={onSubmitLineFilter}
-            className={styles.submit}
-            variant={'primary'}
+            onClick={() => {
+              setExclusive(false);
+              onSubmitLineFilter();
+            }}
+            className={styles.includeButton}
+            variant={'secondary'}
             fill={'outline'}
             disabled={!lineFilter}
           >
-            Add filter
+            Include
           </Button>
-        </>
+          <Button
+            onClick={() => {
+              setExclusive(true);
+              onSubmitLineFilter();
+            }}
+            className={styles.excludeButton}
+            variant={'secondary'}
+            fill={'outline'}
+            disabled={!lineFilter}
+          >
+            Exclude
+          </Button>
+        </span>
       )}
     </div>
   );
@@ -108,6 +125,24 @@ const getStyles = (theme: GrafanaTheme2) => ({
   removeBtn: css({
     borderTopLeftRadius: 0,
     borderBottomLeftRadius: 0,
+  }),
+  buttonWrap: css({
+    display: 'flex',
+    justifyContent: 'center',
+  }),
+  includeButton: css({
+    borderRadius: 0,
+    borderRight: 'none',
+    '&[disabled]': {
+      borderRight: 'none',
+    },
+  }),
+  excludeButton: css({
+    borderRadius: `0 ${theme.shape.radius.default} ${theme.shape.radius.default} 0`,
+    borderLeft: 'none',
+    '&[disabled]': {
+      borderLeft: 'none',
+    },
   }),
   submit: css({
     borderTopLeftRadius: 0,

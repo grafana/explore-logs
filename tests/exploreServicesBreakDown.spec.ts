@@ -32,7 +32,7 @@ test.describe('explore services breakdown page', () => {
     await explorePage.serviceBreakdownSearch.click();
     await explorePage.serviceBreakdownSearch.fill('broadcast');
     // Submit filter
-    await page.getByRole('button', { name: 'Add filter' }).click();
+    await page.getByRole('button', { name: 'Include' }).click();
     await expect(page.getByRole('table').locator('tr').first().getByText('broadcast').first()).toBeVisible();
     await expect(page).toHaveURL(/broadcast/);
   });
@@ -1403,7 +1403,7 @@ test.describe('explore services breakdown page', () => {
 
       await lastLineFilterLoc.click();
       await page.keyboard.type('Debug');
-      await page.getByRole('button', { name: 'Add filter' }).click();
+      await page.getByRole('button', { name: 'Include' }).click();
       await expect(highlightedMatchesInFirstRow).toHaveCount(1);
 
       // Now 2 queries should have fired
@@ -1429,7 +1429,7 @@ test.describe('explore services breakdown page', () => {
       // Add regex string
       await lastLineFilterLoc.click();
       await page.keyboard.type('[dD]ebug');
-      await page.getByRole('button', { name: 'Add filter' }).click();
+      await page.getByRole('button', { name: 'Include' }).click();
       await expect(highlightedMatchesInFirstRow).toHaveCount(1);
       expect(logsCountQueryCount).toEqual(5);
       expect(logsPanelQueryCount).toEqual(5);
