@@ -18,10 +18,6 @@ interface LineFilterRendererState extends SceneObjectState {}
  * @todo refactor into new directory with other custom variable renderers and/or layout scenes
  */
 export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRendererState> {
-  constructor(state: Partial<LineFilterRendererState>) {
-    super(state);
-  }
-
   static Component = ({ model }: SceneComponentProps<LineFilterVariablesScene>) => {
     const lineFilterVar = getLineFiltersVariable(model);
     const { filters } = lineFilterVar.useState();
@@ -34,33 +30,33 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
 
     return (
       <div className={styles.lineFiltersWrap}>
-        {filters.map((f, index) => {
+        {filters.map((filter) => {
           const props: LineFilterEditorProps = {
-            lineFilter: f.value,
-            regex: f.operator === LineFilterOp.regex || f.operator === LineFilterOp.negativeRegex,
-            caseSensitive: f.key === LineFilterCaseSensitive.caseSensitive,
-            exclusive: model.isFilterExclusive(f),
-            handleEnter: (e, lineFilter) => model.handleEnter(e, f.value, f),
-            onToggleExclusive: () => model.onToggleExclusive(f),
+            lineFilter: filter.value,
+            regex: filter.operator === LineFilterOp.regex || filter.operator === LineFilterOp.negativeRegex,
+            caseSensitive: filter.key === LineFilterCaseSensitive.caseSensitive,
+            exclusive: model.isFilterExclusive(filter),
+            handleEnter: (e, lineFilter) => model.handleEnter(e, filter.value, filter),
+            onToggleExclusive: () => model.onToggleExclusive(filter),
             updateFilter: (lineFilter, debounced) =>
               model.updateFilter(
-                f,
+                filter,
                 {
-                  ...f,
+                  ...filter,
                   value: lineFilter,
                 },
                 debounced
               ),
-            onRegexToggle: () => model.onRegexToggle(f),
-            onInputChange: (e) => model.onInputChange(e, f),
-            onCaseSensitiveToggle: () => model.onCaseSensitiveToggle(f),
+            onRegexToggle: () => model.onRegexToggle(filter),
+            onInputChange: (e) => model.onInputChange(e, filter),
+            onCaseSensitiveToggle: () => model.onCaseSensitiveToggle(filter),
           };
           return (
-            <span key={f.keyLabel} className={styles.wrapper}>
+            <span key={filter.keyLabel} className={styles.wrapper}>
               <div className={styles.titleWrap}>
                 <span>Line filter</span>
                 <IconButton
-                  onClick={() => model.removeFilter(f)}
+                  onClick={() => model.removeFilter(filter)}
                   name={'times'}
                   size={'xs'}
                   aria-label={'Line filter variable'}
@@ -82,8 +78,8 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
     }
   };
 
-  isFilterExclusive(f: AdHocFilterWithLabels): boolean {
-    return f.operator === LineFilterOp.negativeMatch || f.operator === LineFilterOp.negativeRegex;
+  isFilterExclusive({ operator }: AdHocFilterWithLabels): boolean {
+    return operator === LineFilterOp.negativeMatch || operator === LineFilterOp.negativeRegex;
   }
 
   /**

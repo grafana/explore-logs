@@ -58,9 +58,7 @@ import {
 } from '../../services/routing';
 import { replaceSlash } from '../../services/extensions/links';
 import { ShowLogsButtonScene } from '../IndexScene/ShowLogsButtonScene';
-import { locationService } from '@grafana/runtime';
-import { LineFilterOp } from '../../services/filterTypes';
-import { LineFilterCaseSensitive } from './LineFilter/LineFilterScene';
+import { migrateLineFilterV1 } from '../../services/migrations';
 
 export const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 export const LOGS_COUNT_QUERY_REFID = 'logsCountQuery';
@@ -317,7 +315,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this._subs.add(this.subscribeToTimeRange());
 
     // Migrations
-    this.migrateOldVariable();
+    migrateLineFilterV1(this);
   }
 
   /**
@@ -580,57 +578,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         logger.error(new Error('not setting breakdown view'), { msg: 'setBreakdownView error' });
       }
     }
-  }
-
-  /**
-   * Migrates the old line filter urls
-   */
-  private migrateOldVariable() {
-    const search = locationService.getSearch();
-
-    const deprecatedLineFilter = search.get('var-lineFilter');
-
-    if (!deprecatedLineFilter) {
-      return;
-    }
-
-    const globalLineFilterVars = getLineFiltersVariable(this);
-    const caseSensitiveMatches = deprecatedLineFilter?.match(/\|=.`(.+?)`/);
-
-    if (caseSensitiveMatches && caseSensitiveMatches.length === 2) {
-      globalLineFilterVars.addActivationHandler(() => {
-        globalLineFilterVars.setState({
-          filters: [
-            {
-              key: LineFilterCaseSensitive.caseSensitive,
-              operator: LineFilterOp.match,
-              value: caseSensitiveMatches[1],
-              keyLabel: '0',
-            },
-          ],
-        });
-      });
-    }
-
-    const caseInsensitiveMatches = deprecatedLineFilter?.match(/`\(\?i\)(.+)`/);
-    if (caseInsensitiveMatches && caseInsensitiveMatches.length === 2) {
-      globalLineFilterVars.addActivationHandler(() => {
-        globalLineFilterVars.updateFilters([
-          {
-            key: LineFilterCaseSensitive.caseInsensitive,
-            operator: LineFilterOp.match,
-            value: caseInsensitiveMatches[1],
-            keyLabel: '0',
-          },
-        ]);
-      });
-    }
-
-    // Remove from url without refreshing
-    const newLocation = locationService.getLocation();
-    search.delete('var-lineFilter');
-    newLocation.search = search.toString();
-    locationService.replace(newLocation.pathname + '?' + newLocation.search);
   }
 
   static Component = ({ model }: SceneComponentProps<ServiceScene>) => {

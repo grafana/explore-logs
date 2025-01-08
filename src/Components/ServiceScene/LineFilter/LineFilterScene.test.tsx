@@ -163,7 +163,6 @@ describe('LineFilter', () => {
 
       const string = `((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}`;
       const input = screen.getByPlaceholderText('Search in log lines');
-      // Jest can't type regex apparently
       await act(() => fireEvent.change(input, { target: { value: string } }));
 
       expect(await screen.findByDisplayValue(string)).toBeInTheDocument();
@@ -175,7 +174,6 @@ describe('LineFilter', () => {
 
       const string = `((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}`;
       const input = screen.getByPlaceholderText('Search in log lines');
-      // Jest can't type regex apparently
       await act(() => fireEvent.change(input, { target: { value: string } }));
 
       expect(await screen.findByDisplayValue(string)).toBeInTheDocument();
@@ -222,7 +220,6 @@ describe('LineFilter', () => {
 
       const string = `((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}`;
       const input = screen.getByPlaceholderText('Search in log lines');
-      // Jest can't type regex apparently
       await act(() => fireEvent.change(input, { target: { value: string } }));
 
       expect(await screen.findByDisplayValue(string)).toBeInTheDocument();
@@ -234,7 +231,6 @@ describe('LineFilter', () => {
 
       const string = `((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}`;
       const input = screen.getByPlaceholderText('Search in log lines');
-      // Jest can't type regex apparently
       await act(() => fireEvent.change(input, { target: { value: string } }));
 
       expect(await screen.findByDisplayValue(string)).toBeInTheDocument();

@@ -181,10 +181,8 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
    * Submits on enter
    */
   handleEnter = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      if (this.state.lineFilter) {
-        this.onSubmitLineFilter();
-      }
+    if (e.key === 'Enter' && this.state.lineFilter) {
+      this.onSubmitLineFilter();
     }
   };
 
