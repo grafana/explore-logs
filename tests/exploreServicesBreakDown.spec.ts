@@ -31,6 +31,8 @@ test.describe('explore services breakdown page', () => {
   test('should filter logs panel on search for broadcast field', async ({ page }) => {
     await explorePage.serviceBreakdownSearch.click();
     await explorePage.serviceBreakdownSearch.fill('broadcast');
+    // Submit filter
+    await page.getByRole('button', { name: 'Add filter' }).click();
     await expect(page.getByRole('table').locator('tr').first().getByText('broadcast').first()).toBeVisible();
     await expect(page).toHaveURL(/broadcast/);
   });
@@ -1401,24 +1403,25 @@ test.describe('explore services breakdown page', () => {
 
       await lastLineFilterLoc.click();
       await page.keyboard.type('Debug');
+      await page.getByRole('button', { name: 'Add filter' }).click();
       await expect(highlightedMatchesInFirstRow).toHaveCount(1);
 
       // Now 2 queries should have fired
       expect(logsCountQueryCount).toEqual(2);
       expect(logsPanelQueryCount).toEqual(2);
 
-      // switch to case sensitive
-      await page.getByLabel('Enable case match').click();
+      // switch to case-sensitive in the global variable
+      await page.getByLabel('Enable case match').nth(0).click();
       await expect(rows).toHaveCount(0);
       expect(logsCountQueryCount).toEqual(3);
       expect(logsPanelQueryCount).toEqual(3);
 
       // Clear the text - should trigger query
-      await page.getByLabel('Clear search').click();
+      await page.getByLabel('Line filter variable').click();
       // Enable regex - should not trigger empty query
       await page.getByLabel('Enable regex').click();
-      // Disable case - should not trigger empty query
-      await page.getByLabel('Disable case match').click();
+      // Enable case - should not trigger empty query
+      await page.getByLabel('Enable case match').click();
       await expect(firstRow).toHaveCount(1);
       expect(logsCountQueryCount).toEqual(4);
       expect(logsPanelQueryCount).toEqual(4);
@@ -1426,12 +1429,13 @@ test.describe('explore services breakdown page', () => {
       // Add regex string
       await lastLineFilterLoc.click();
       await page.keyboard.type('[dD]ebug');
+      await page.getByRole('button', { name: 'Add filter' }).click();
       await expect(highlightedMatchesInFirstRow).toHaveCount(1);
       expect(logsCountQueryCount).toEqual(5);
       expect(logsPanelQueryCount).toEqual(5);
 
       // Disable regex - expect no results show
-      await page.getByLabel('Disable regex').click();
+      await page.getByLabel('Disable regex').nth(0).click();
       await expect(rows).toHaveCount(0);
       expect(logsCountQueryCount).toEqual(6);
       expect(logsPanelQueryCount).toEqual(6);
@@ -1442,20 +1446,12 @@ test.describe('explore services breakdown page', () => {
       expect(logsCountQueryCount).toEqual(7);
       expect(logsPanelQueryCount).toEqual(7);
 
-      // Change the search to something that will return results and immediately submit before the debounce ends
-      await page.getByRole('button', { name: 'Add to filter' }).click();
-      await lastLineFilterLoc.click();
-      await page.keyboard.type('caller');
-      await expect(highlightedMatchesInFirstRow).toHaveCount(2);
-      expect(logsCountQueryCount).toEqual(8);
-      expect(logsPanelQueryCount).toEqual(8);
-
       // Change the filter in the "saved" variable that will return 0 results
       await firstLineFilterLoc.click();
       await page.keyboard.type('__');
       await expect(rows).toHaveCount(0);
-      expect(logsCountQueryCount).toEqual(9);
-      expect(logsPanelQueryCount).toEqual(9);
+      expect(logsCountQueryCount).toEqual(8);
+      expect(logsPanelQueryCount).toEqual(8);
     });
 
     test('line filter migration case sensitive', async ({ page }) => {

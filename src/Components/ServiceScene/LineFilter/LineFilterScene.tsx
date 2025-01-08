@@ -130,16 +130,22 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
 
   /**
    * Updates line filter state
+   * Note: Updating/debouncing the queries onChange was removed to prevent people from accidentally hammering loki while writing line filters (particularly regex)
+   * The code has been left in for now as we discussed adding an "edit" mode with a dedicated logs panel with a smaller line limit to let users debug the results as they type
    */
   updateFilter(lineFilter: string, debounced = true) {
-    this.setState({
-      lineFilter,
-    });
+    this.updateInputState(lineFilter);
     if (debounced) {
       this.updateVariableDebounced(lineFilter);
     } else {
       this.updateVariable(lineFilter);
     }
+  }
+
+  updateInputState(lineFilter: string) {
+    this.setState({
+      lineFilter,
+    });
   }
 
   /**
@@ -159,6 +165,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
    * Clears the state of the local ad-hoc variable.
    */
   onSubmitLineFilter = () => {
+    this.updateFilter(this.state.lineFilter, false);
     // Flush any debounced updates before grabbing the filter. Important that this happens before getFilter is called!
     this.updateVariableDebounced.flush();
 
@@ -166,7 +173,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
     const existingFilters = lineFiltersVariable.state.filters;
     const thisFilter = this.getFilter();
 
-    lineFiltersVariable.updateFilters([...existingFilters, thisFilter], { skipPublish: true });
+    lineFiltersVariable.updateFilters([...existingFilters, thisFilter]);
     this.clearVariable();
   };
 
@@ -174,7 +181,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
    * Passes the input value to the updateFilter method
    */
   handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    this.updateFilter(e.target.value);
+    this.updateInputState(e.target.value);
   };
 
   /**

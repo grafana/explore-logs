@@ -4,6 +4,7 @@ import {
   SceneComponentProps,
   SceneFlexItem,
   SceneFlexLayout,
+  sceneGraph,
   SceneObjectBase,
   SceneObjectState,
   SceneObjectUrlSyncConfig,
@@ -37,13 +38,13 @@ export interface LogsListSceneState extends SceneObjectState {
   selectedLine?: SelectedTableRow;
   $timeRange?: SceneTimeRangeLike;
   displayedFields: string[];
+  lineFilter?: string;
 }
 
 export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   protected _urlSync = new SceneObjectUrlSyncConfig(this, {
     keys: ['urlColumns', 'selectedLine', 'visualizationType', 'displayedFields', 'tableLogLineState'],
   });
-  private lineFilterScene?: LineFilterScene = undefined;
   private logsPanelScene?: LogsPanelScene = undefined;
   constructor(state: Partial<LogsListSceneState>) {
     super({
@@ -145,10 +146,6 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     );
   }
 
-  public getLineFilterScene() {
-    return this.lineFilterScene;
-  }
-
   private setStateFromUrl(searchParams: URLSearchParams) {
     const selectedLineUrl = searchParams.get('selectedLine');
     const urlColumnsUrl = searchParams.get('urlColumns');
@@ -175,6 +172,24 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
     this.setState({
       panel: this.getVizPanel(),
     });
+
+    // Subscribe to line filter state so we can pass the current filter between different viz
+    if (this.state.panel) {
+      const lineFilterScenes = sceneGraph.findDescendents(this.state.panel, LineFilterScene);
+      if (lineFilterScenes.length) {
+        const lineFilterScene = lineFilterScenes[0];
+        this._subs.add(
+          lineFilterScene.subscribeToState((newState, prevState) => {
+            if (newState.lineFilter !== prevState.lineFilter) {
+              console.log('setting the damn state', newState.lineFilter);
+              this.setState({
+                lineFilter: newState.lineFilter,
+              });
+            }
+          })
+        );
+      }
+    }
   };
 
   public setVisualizationType = (type: LogsVisualizationType) => {
@@ -193,7 +208,6 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
   };
 
   private getVizPanel() {
-    this.lineFilterScene = new LineFilterScene();
     this.logsPanelScene = new LogsPanelScene({});
 
     return new SceneFlexLayout({
@@ -204,7 +218,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
               new SceneFlexLayout({
                 children: [
                   new SceneFlexItem({
-                    body: this.lineFilterScene,
+                    body: new LineFilterScene({ lineFilter: this.state.lineFilter }),
                     xSizing: 'fill',
                   }),
                 ],
@@ -216,7 +230,7 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
             ]
           : [
               new SceneFlexItem({
-                body: this.lineFilterScene,
+                body: new LineFilterScene({ lineFilter: this.state.lineFilter }),
                 xSizing: 'fill',
               }),
               new SceneFlexItem({

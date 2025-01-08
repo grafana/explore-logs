@@ -78,7 +78,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
   updateFromUrl(values: SceneObjectUrlValues) {
     const stateUpdate: Partial<LogsPanelSceneState> = {};
     try {
-      if (typeof values.sortOrder === 'string') {
+      if (typeof values.sortOrder === 'string' && values.sortOrder) {
         const decodedSortOrder = narrowLogsSortOrder(JSON.parse(values.sortOrder));
         if (decodedSortOrder) {
           stateUpdate.sortOrder = decodedSortOrder;
@@ -86,7 +86,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         }
       }
 
-      if (typeof values.wrapLogMessage === 'string') {
+      if (typeof values.wrapLogMessage === 'string' && values.wrapLogMessage) {
         const decodedWrapLogMessage = JSON.parse(values.wrapLogMessage);
         if (typeof decodedWrapLogMessage === 'boolean') {
           stateUpdate.wrapLogMessage = decodedWrapLogMessage;

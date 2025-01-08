@@ -43,7 +43,6 @@ import {
   getLabelsVariable,
   getLevelsVariable,
   getLineFiltersVariable,
-  getLineFilterVariable,
   getMetadataVariable,
   getPatternsVariable,
 } from '../../services/variableGetters';
@@ -305,28 +304,11 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this._subs.add(this.subscribeToPatternsVariable());
     this._subs.add(this.subscribeToLineFiltersVariable());
 
-    if (getDrilldownSlug() !== PageSlugs.logs) {
-      this.resetPendingLineFilter();
-    } else {
-      this._subs.add(this.subscribeToLineFilterVariable());
-    }
-
     // Update query runner on manual time range change
     this._subs.add(this.subscribeToTimeRange());
 
     // Migrations
     migrateLineFilterV1(this);
-  }
-
-  /**
-   * If the user navigates away from the logs scene, but has a pending filter that hasn't been submitted, clear it out
-   */
-  private resetPendingLineFilter() {
-    // Clear line filters variable
-    const variable = getLineFilterVariable(this);
-    variable.setState({
-      filters: [],
-    });
   }
 
   private subscribeToPatternsVariable() {
@@ -335,12 +317,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         this.state.$detectedFieldsData?.runQueries();
         this.state.$logsCount?.runQueries();
       }
-    });
-  }
-
-  private subscribeToLineFilterVariable() {
-    return getLineFilterVariable(this).subscribeToEvent(SceneVariableValueChangedEvent, () => {
-      this.state.$logsCount?.runQueries();
     });
   }
 
