@@ -2,29 +2,16 @@ import { locationService } from '@grafana/runtime';
 import { logger } from './logger';
 import { dateTime, LogRowModel, TimeRange } from '@grafana/data';
 
-export const copyText = async (
-  text: string,
-  buttonRef?: React.MutableRefObject<HTMLButtonElement | null> | HTMLButtonElement
-) => {
+export const copyText = (string: string) => {
   if (navigator.clipboard && window.isSecureContext) {
-    return navigator.clipboard.writeText(text);
-    // eslint-disable-next-line deprecation/deprecation
-  } else if (document.execCommand && buttonRef) {
-    // Use a fallback method for browsers/contexts that don't support the Clipboard API.
-    // See https://web.dev/async-clipboard/#feature-detection.
-    // Use textarea so the user can copy multi-line content.
-    const textarea = document.createElement('textarea');
-    // Normally we'd append this to the body. However if we're inside a focus manager
-    // from react-aria, we can't focus anything outside of the managed area.
-    // Instead, let's append it to the button. Then we're guaranteed to be able to focus + copy.
-    const buttonElement = buttonRef instanceof HTMLButtonElement ? buttonRef : buttonRef?.current;
-    buttonElement?.appendChild(textarea);
-    textarea.value = text;
-    textarea.focus();
-    textarea.select();
-    // eslint-disable-next-line deprecation/deprecation
+    navigator.clipboard.writeText(string);
+  } else {
+    const el = document.createElement('textarea');
+    el.value = string;
+    document.body.appendChild(el);
+    el.select();
     document.execCommand('copy');
-    textarea.remove();
+    document.body.removeChild(el);
   }
 };
 
