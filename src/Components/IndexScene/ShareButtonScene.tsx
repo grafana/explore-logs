@@ -9,6 +9,7 @@ import { ButtonGroup, Dropdown, IconName, Menu, MenuGroup, ToolbarButton } from 
 import React from 'react';
 import { config, getAppEvents, getBackendSrv, locationService, reportInteraction } from '@grafana/runtime';
 import { AppEvents, toUtc } from '@grafana/data';
+import { copyText } from '../../services/text';
 
 interface ShortLinkMenuItemData {
   key: string;
@@ -52,7 +53,7 @@ export class ShareButtonScene extends SceneObjectBase<ShareButtonSceneState> {
       createAndCopyShortLink(url || global.location.href);
       reportInteraction('grafana_explore_shortened_link_clicked', { isAbsoluteTime: absTime });
     } else {
-      copyStringToClipboard(
+      copyText(
         url !== undefined
           ? `${window.location.protocol}//${window.location.host}${config.appSubUrl}${url}`
           : global.location.href
@@ -222,7 +223,7 @@ export const createAndCopyShortLink = async (path: string) => {
   const appEvents = getAppEvents();
   const shortLink = await createShortLink(path);
   if (shortLink) {
-    copyStringToClipboard(shortLink);
+    copyText(shortLink);
     appEvents.publish({
       type: AppEvents.alertSuccess.name,
       payload: ['Shortened link copied to clipboard'],
@@ -232,19 +233,6 @@ export const createAndCopyShortLink = async (path: string) => {
       type: AppEvents.alertError.name,
       payload: ['Error generating shortened link'],
     });
-  }
-};
-
-export const copyStringToClipboard = (string: string) => {
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(string);
-  } else {
-    const el = document.createElement('textarea');
-    el.value = string;
-    document.body.appendChild(el);
-    el.select();
-    document.execCommand('copy');
-    document.body.removeChild(el);
   }
 };
 
