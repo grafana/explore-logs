@@ -1110,7 +1110,7 @@ test.describe('explore services breakdown page', () => {
     );
   });
 
-  test.only('logs panel options: url sync', async ({ page }) => {
+  test('logs panel options: url sync', async ({ page }) => {
     explorePage.blockAllQueriesExcept({
       refIds: ['logsPanelQuery', 'A'],
     });
