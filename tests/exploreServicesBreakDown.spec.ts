@@ -1038,7 +1038,7 @@ test.describe('explore services breakdown page', () => {
     const viewportSize = page.viewportSize();
 
     // Assert that the row has more width then the viewport (can scroll horizontally)
-    expect((await firstRow.boundingBox()).width).toBeGreaterThanOrEqual(viewportSize.width);
+    expect((await firstRow.boundingBox())?.width).toBeGreaterThanOrEqual(viewportSize?.width ?? -1);
 
     // Change line wrap
     await explorePage.getWrapLocator().click();
@@ -1047,13 +1047,13 @@ test.describe('explore services breakdown page', () => {
     await expect(explorePage.getWrapLocator()).toBeChecked();
 
     // Assert that the width is less than or equal to the window width (cannot scroll horizontally)
-    expect((await firstRow.boundingBox()).width).toBeLessThanOrEqual(viewportSize.width);
+    expect((await firstRow.boundingBox())?.width).toBeLessThanOrEqual(viewportSize?.width ?? Infinity);
 
     // Reload the page and verify the setting in local storage is applied to the panel
     await page.reload();
     await expect(explorePage.getNowrapLocator()).not.toBeChecked();
     await expect(explorePage.getWrapLocator()).toBeChecked();
-    expect((await firstRow.boundingBox()).width).toBeLessThanOrEqual(viewportSize.width);
+    expect((await firstRow.boundingBox())?.width).toBeLessThanOrEqual(viewportSize?.width ?? Infinity);
   });
 
   test('logs panel options: sortOrder', async ({ page }) => {
@@ -1108,6 +1108,48 @@ test.describe('explore services breakdown page', () => {
     expect(new Date(await firstRowTimeCell.textContent()).valueOf()).toBeLessThanOrEqual(
       new Date(await secondRowTimeCell.textContent()).valueOf()
     );
+  });
+
+  test.only('logs panel options: url sync', async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: ['logsPanelQuery', 'A'],
+    });
+
+    // Check default values
+    await expect(explorePage.getLogsDirectionNewestFirstLocator()).toBeChecked();
+    await expect(explorePage.getLogsDirectionOldestFirstLocator()).not.toBeChecked();
+
+    await expect(explorePage.getNowrapLocator()).toBeChecked();
+    await expect(explorePage.getWrapLocator()).not.toBeChecked();
+
+    const viewportSize = page.viewportSize();
+
+    // Check annotation location
+    const boundingBoxDesc = await page.getByTestId('data-testid annotation-marker').boundingBox();
+
+    // Annotation should be on the right side of the viewport
+    expect(boundingBoxDesc?.x).toBeGreaterThan((viewportSize?.width ?? -1) / 2);
+
+    // Check non-default values
+    await explorePage.gotoLogsPanel('Ascending', 'true');
+
+    await expect(explorePage.getLogsDirectionNewestFirstLocator()).not.toBeChecked();
+    await expect(explorePage.getLogsDirectionOldestFirstLocator()).toBeChecked();
+
+    await expect(explorePage.getNowrapLocator()).not.toBeChecked();
+    await expect(explorePage.getWrapLocator()).toBeChecked();
+
+    // Check annotation location
+    const boundingBoxAsc = await page.getByTestId('data-testid annotation-marker').boundingBox();
+
+    // Annotation should be on the left side of the viewport
+    expect(boundingBoxAsc?.x).toBeLessThan((viewportSize?.width ?? Infinity) / 2);
+  });
+
+  test('url sharing', async ({ page }) => {
+    explorePage.blockAllQueriesExcept({ refIds: ['NA'] });
+    await page.getByLabel('Copy shortened URL').click();
+    await expect(page.getByText('Shortened link copied to')).toBeVisible();
   });
 
   test('panel menu: label name panel should open links in explore', async ({ page, context }) => {
