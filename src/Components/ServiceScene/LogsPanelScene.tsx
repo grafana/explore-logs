@@ -5,6 +5,7 @@ import {
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
+  SceneQueryRunner,
   VizPanel,
 } from '@grafana/scenes';
 import { DataFrame, getValueFormat, LogRowModel } from '@grafana/data';
@@ -104,6 +105,14 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     if (!this.state.body) {
       return;
     }
+    if ('sortOrder' in options) {
+      const $data = sceneGraph.getData(this);
+      const queryRunner =
+        $data instanceof SceneQueryRunner ? $data : sceneGraph.findDescendents($data, SceneQueryRunner)[0];
+      if (queryRunner) {
+        queryRunner.runQueries();
+      }
+    }
     this.state.body.onOptionsChange(options);
   }
 
@@ -189,7 +198,6 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
   private handleShareLogLineClick = (event: MouseEvent<HTMLElement>, row?: LogRowModel) => {
     if (row?.rowId && this.state.body) {
       const parent = this.getParentScene();
-      const buttonRef = event.currentTarget instanceof HTMLButtonElement ? event.currentTarget : undefined;
       const timeRange = resolveRowTimeRangeForSharing(row);
       copyText(
         generateLogShortlink(
@@ -198,8 +206,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
             logs: { id: row.uid, displayedFields: parent.state.displayedFields },
           },
           timeRange
-        ),
-        buttonRef
+        )
       );
     }
   };

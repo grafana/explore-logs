@@ -3,6 +3,12 @@ import { DataSourceRef } from '@grafana/schema';
 import { DataSourceWithBackend } from '@grafana/runtime';
 import { DataSourceJsonData } from '@grafana/data';
 
+export enum LokiQueryDirection {
+  Backward = 'backward',
+  Forward = 'forward',
+  Scan = 'scan',
+}
+
 export type LokiQuery = {
   refId: string;
   queryType?: LokiQueryType;
@@ -13,6 +19,7 @@ export type LokiQuery = {
   splitDuration?: string;
   datasource?: DataSourceRef;
   maxLines?: number;
+  direction?: LokiQueryDirection;
 };
 
 export type LokiQueryType = 'instant' | 'range' | 'stream' | string;
