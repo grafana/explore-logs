@@ -5,6 +5,8 @@ import {
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
+  SceneObjectUrlSyncConfig,
+  SceneObjectUrlValues,
   SceneQueryRunner,
   VizPanel,
 } from '@grafana/scenes';
@@ -20,28 +22,93 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '..
 import { getAdHocFiltersVariable, getValueFromFieldsFilter } from '../../services/variableGetters';
 import { copyText, generateLogShortlink, resolveRowTimeRangeForSharing } from 'services/text';
 import { CopyLinkButton } from './CopyLinkButton';
-import { getLogsPanelSortOrder, LogOptionsScene } from './LogOptionsScene';
+import { getLogsPanelSortOrderFromStore, LogOptionsScene } from './LogOptionsScene';
 import { LogsVolumePanel, logsVolumePanelKey } from './LogsVolumePanel';
 import { getPanelWrapperStyles, PanelMenu } from '../Panels/PanelMenu';
 import { ServiceScene } from './ServiceScene';
+import { Options } from '@grafana/schema/dist/esm/raw/composable/logs/panelcfg/x/LogsPanelCfg_types.gen';
+import { locationService } from '@grafana/runtime';
+import { narrowLogsSortOrder } from '../../services/narrowing';
+import { logger } from '../../services/logger';
+import { LogsSortOrder } from '@grafana/schema';
 
 interface LogsPanelSceneState extends SceneObjectState {
-  body?: VizPanel;
+  body?: VizPanel<Options>;
+  sortOrder?: LogsSortOrder;
+  wrapLogMessage?: boolean;
 }
 
 export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
+  protected _urlSync = new SceneObjectUrlSyncConfig(this, {
+    keys: ['sortOrder', 'wrapLogMessage'],
+  });
+
   constructor(state: Partial<LogsPanelSceneState>) {
     super({
+      sortOrder: getLogsPanelSortOrderFromStore(),
+      wrapLogMessage: Boolean(getLogOption<boolean>('wrapLogMessage', false)),
       ...state,
     });
 
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
+  private setStateFromUrl() {
+    const searchParams = new URLSearchParams(locationService.getLocation().search);
+
+    this.updateFromUrl({
+      sortOrder: searchParams.get('sortOrder'),
+      wrapLogMessage: searchParams.get('wrapLogMessage'),
+    });
+  }
+
+  getUrlState() {
+    return {
+      sortOrder: JSON.stringify(this.state.sortOrder),
+      wrapLogMessage: JSON.stringify(this.state.wrapLogMessage),
+    };
+  }
+
+  updateFromUrl(values: SceneObjectUrlValues) {
+    const stateUpdate: Partial<LogsPanelSceneState> = {};
+    try {
+      if (typeof values.sortOrder === 'string') {
+        const decodedSortOrder = narrowLogsSortOrder(JSON.parse(values.sortOrder));
+        if (decodedSortOrder) {
+          stateUpdate.sortOrder = decodedSortOrder;
+          this.setLogsVizOption({ sortOrder: decodedSortOrder });
+        }
+      }
+
+      if (typeof values.wrapLogMessage === 'string') {
+        const decodedWrapLogMessage = JSON.parse(values.wrapLogMessage);
+        if (typeof decodedWrapLogMessage === 'boolean') {
+          stateUpdate.wrapLogMessage = decodedWrapLogMessage;
+          this.setLogsVizOption({ wrapLogMessage: decodedWrapLogMessage });
+          this.setLogsVizOption({ prettifyLogMessage: decodedWrapLogMessage });
+        }
+      }
+    } catch (e) {
+      // URL Params can be manually changed and it will make JSON.parse() fail.
+      logger.error(e, { msg: 'LogOptionsScene: updateFromUrl unexpected error' });
+    }
+
+    if (Object.keys(stateUpdate).length) {
+      this.setState({ ...stateUpdate });
+    }
+  }
+
   public onActivate() {
+    // Need viz to set options, but setting options will trigger query
+    this.setStateFromUrl();
+
     if (!this.state.body) {
       this.setState({
-        body: this.getLogsPanel(),
+        body: this.getLogsPanel({
+          wrapLogMessage: this.state.wrapLogMessage,
+          prettifyLogMessage: this.state.wrapLogMessage,
+          sortOrder: this.state.sortOrder,
+        }),
       });
     }
 
@@ -51,7 +118,11 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         if (newState.logsCount !== prevState.logsCount) {
           if (!this.state.body) {
             this.setState({
-              body: this.getLogsPanel(),
+              body: this.getLogsPanel({
+                wrapLogMessage: this.state.wrapLogMessage,
+                prettifyLogMessage: this.state.wrapLogMessage,
+                sortOrder: this.state.sortOrder,
+              }),
             });
           } else {
             this.state.body.setState({
@@ -101,11 +172,11 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     }
   };
 
-  setLogsVizOption(options = {}) {
+  setLogsVizOption(options: Partial<Options> = {}) {
     if (!this.state.body) {
       return;
     }
-    if ('sortOrder' in options) {
+    if ('sortOrder' in options && options.sortOrder !== this.state.body.state.options.sortOrder) {
       const $data = sceneGraph.getData(this);
       const queryRunner =
         $data instanceof SceneQueryRunner ? $data : sceneGraph.findDescendents($data, SceneQueryRunner)[0];
@@ -136,7 +207,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     return formattedCount !== undefined ? `Logs (${formattedCount.text}${formattedCount.suffix?.trim()})` : 'Logs';
   }
 
-  private getLogsPanel() {
+  private getLogsPanel(options: Partial<Options>) {
     const parentModel = this.getParentScene();
     const visualizationType = parentModel.state.visualizationType;
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
@@ -151,9 +222,12 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         .setOption('onClickShowField', this.onClickShowField)
         .setOption('onClickHideField', this.onClickHideField)
         .setOption('displayedFields', parentModel.state.displayedFields)
-        .setOption('sortOrder', getLogsPanelSortOrder())
-        .setOption('wrapLogMessage', Boolean(getLogOption<boolean>('wrapLogMessage', false)))
-        .setOption('prettifyLogMessage', Boolean(getLogOption<boolean>('wrapLogMessage', false)))
+        .setOption('sortOrder', options.sortOrder ?? getLogsPanelSortOrderFromStore())
+        .setOption('wrapLogMessage', options.wrapLogMessage ?? Boolean(getLogOption<boolean>('wrapLogMessage', false)))
+        .setOption(
+          'prettifyLogMessage',
+          options.prettifyLogMessage ?? Boolean(getLogOption<boolean>('wrapLogMessage', false))
+        )
         .setMenu(new PanelMenu({ addExplorationsLink: false }))
         .setOption('showLogContextToggle', true)
         // @ts-expect-error Requires Grafana 11.5
@@ -188,9 +262,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     }
 
     const logsVolumeScene = sceneGraph.findByKeyAndType(this, logsVolumePanelKey, LogsVolumePanel);
-    if (logsVolumeScene instanceof LogsVolumePanel) {
-      logsVolumeScene.updateVisibleRange(newLogs);
-    }
+    logsVolumeScene.updateVisibleRange(newLogs);
   };
 
   private handleShareLogLineClick = (event: MouseEvent<HTMLElement>, row?: LogRowModel) => {

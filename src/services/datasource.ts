@@ -25,7 +25,7 @@ import { logger } from './logger';
 import { PLUGIN_ID } from './plugin';
 import { sanitizeStreamSelector } from './query';
 import { LOGS_PANEL_QUERY_REFID } from 'Components/ServiceScene/ServiceScene';
-import { getLogsPanelSortOrder } from 'Components/ServiceScene/LogOptionsScene';
+import { getLogsPanelSortOrderFromStore, getLogsPanelSortOrderFromURL } from 'Components/ServiceScene/LogOptionsScene';
 
 export const WRAPPED_LOKI_DS_UID = 'wrapped-loki-ds-uid';
 
@@ -271,7 +271,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
   }
 
   private applyQueryDirection(targets: LokiQuery[]) {
-    const sortOrder = getLogsPanelSortOrder();
+    const sortOrder = getLogsPanelSortOrderFromURL() || getLogsPanelSortOrderFromStore();
     return targets.map((target) => {
       if (target.refId !== LOGS_PANEL_QUERY_REFID) {
         return target;

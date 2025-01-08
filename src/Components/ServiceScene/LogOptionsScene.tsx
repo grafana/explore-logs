@@ -7,12 +7,14 @@ import { LogsListScene } from './LogsListScene';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 import { GrafanaTheme2, LogsSortOrder } from '@grafana/data';
+import { LogsPanelScene } from './LogsPanelScene';
+import { locationService } from '@grafana/runtime';
+import { narrowLogsSortOrder } from '../../services/narrowing';
+import { logger } from '../../services/logger';
 
 interface LogOptionsState extends SceneObjectState {
-  wrapLogMessage?: boolean;
   visualizationType: LogsVisualizationType;
   onChangeVisualizationType: (type: LogsVisualizationType) => void;
-  sortOrder?: LogsSortOrder;
 }
 
 /**
@@ -24,30 +26,32 @@ export class LogOptionsScene extends SceneObjectBase<LogOptionsState> {
   constructor(state: LogOptionsState) {
     super({
       ...state,
-      sortOrder: getLogsPanelSortOrder(),
-      wrapLogMessage: Boolean(getLogOption<boolean>('wrapLogMessage', false)),
     });
   }
 
   handleWrapLinesChange = (type: boolean) => {
-    this.setState({ wrapLogMessage: type });
+    this.getLogsPanelScene().setState({ wrapLogMessage: type });
     setLogOption('wrapLogMessage', type);
-    this.getParentScene().setLogsVizOption({ wrapLogMessage: type });
-    this.getParentScene().setLogsVizOption({ prettifyLogMessage: type });
+    this.getLogsListScene().setLogsVizOption({ wrapLogMessage: type });
+    this.getLogsListScene().setLogsVizOption({ prettifyLogMessage: type });
   };
 
   onChangeLogsSortOrder = (sortOrder: LogsSortOrder) => {
-    this.setState({ sortOrder: sortOrder });
+    this.getLogsPanelScene().setState({ sortOrder: sortOrder });
     setLogOption('sortOrder', sortOrder);
-    this.getParentScene().setLogsVizOption({ sortOrder: sortOrder });
+    this.getLogsListScene().setLogsVizOption({ sortOrder: sortOrder });
   };
 
-  getParentScene = () => {
+  getLogsListScene = () => {
     return sceneGraph.getAncestor(this, LogsListScene);
   };
 
+  getLogsPanelScene = () => {
+    return sceneGraph.getAncestor(this, LogsPanelScene);
+  };
+
   clearDisplayedFields = () => {
-    const parentScene = this.getParentScene();
+    const parentScene = this.getLogsListScene();
     parentScene.clearDisplayedFields();
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
@@ -57,8 +61,9 @@ export class LogOptionsScene extends SceneObjectBase<LogOptionsState> {
 }
 
 function LogOptionsRenderer({ model }: SceneComponentProps<LogOptionsScene>) {
-  const { wrapLogMessage, onChangeVisualizationType, visualizationType, sortOrder } = model.useState();
-  const { displayedFields } = model.getParentScene().useState();
+  const { onChangeVisualizationType, visualizationType } = model.useState();
+  const { wrapLogMessage, sortOrder } = model.getLogsPanelScene().useState();
+  const { displayedFields } = model.getLogsListScene().useState();
   const styles = useStyles2(getStyles);
   const wrapLines = wrapLogMessage ?? false;
 
@@ -115,8 +120,30 @@ function LogOptionsRenderer({ model }: SceneComponentProps<LogOptionsScene>) {
   );
 }
 
-export function getLogsPanelSortOrder() {
+export function getLogsPanelSortOrderFromStore() {
   return getLogOption<LogsSortOrder>('sortOrder', LogsSortOrder.Descending) as LogsSortOrder;
+}
+
+export function getLogsPanelSortOrderFromURL() {
+  // Since sort order is used to execute queries before the logs panel is instantiated, the scene url state will never influence the query
+  // Hacking this for now to manually check the URL search params to override local storage state if set
+  const location = locationService.getLocation();
+  const search = new URLSearchParams(location.search);
+  const sortOrder = search.get('sortOrder');
+
+  try {
+    if (typeof sortOrder === 'string') {
+      const decodedSortOrder = narrowLogsSortOrder(JSON.parse(sortOrder));
+      if (decodedSortOrder) {
+        return decodedSortOrder;
+      }
+    }
+  } catch (e) {
+    // URL Params can be manually changed and it will make JSON.parse() fail.
+    logger.error(e, { msg: 'LogOptionsScene(getLogsPanelSortOrderFromURL): unable to parse sortOrder' });
+  }
+
+  return false;
 }
 
 const getStyles = (theme: GrafanaTheme2) => ({

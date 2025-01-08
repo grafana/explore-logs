@@ -1,7 +1,7 @@
 import { SelectedTableRow } from '../Components/Table/LogLineCellComponent';
 import { LogsVisualizationType } from './store';
 import { FieldValue, ParserType } from './variables';
-import { RawTimeRange } from '@grafana/data';
+import { LogsSortOrder, RawTimeRange } from '@grafana/data';
 const isObj = (o: unknown): o is object => typeof o === 'object' && o !== null;
 
 function hasProp<K extends PropertyKey>(data: object, prop: K): data is Record<K, unknown> {
@@ -38,6 +38,17 @@ export function narrowSelectedTableRow(o: unknown): SelectedTableRow | false {
 
 export function narrowLogsVisualizationType(o: unknown): LogsVisualizationType | false {
   return typeof o === 'string' && (o === 'logs' || o === 'table') && o;
+}
+export function narrowLogsSortOrder(o: unknown): LogsSortOrder | false {
+  if (typeof o === 'string' && o === LogsSortOrder.Ascending.toString()) {
+    return LogsSortOrder.Ascending;
+  }
+
+  if (typeof o === 'string' && o === LogsSortOrder.Descending.toString()) {
+    return LogsSortOrder.Descending;
+  }
+
+  return false;
 }
 
 export function narrowFieldValue(o: unknown): FieldValue | false {
