@@ -323,6 +323,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   private subscribeToLineFiltersVariable() {
     return getLineFiltersVariable(this).subscribeToEvent(SceneVariableValueChangedEvent, () => {
       this.state.$logsCount?.runQueries();
+      this.state.$detectedFieldsData?.runQueries();
     });
   }
 
