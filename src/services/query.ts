@@ -120,34 +120,67 @@ export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
   return `${positiveFilters} ${negativeFilters} ${numericFilters}`.trim();
 }
 
+export function escapeBacktickQuotedLineFilter(filter: AdHocVariableFilter) {
+  return (filter.operator === LineFilterOp.match || filter.operator === LineFilterOp.negativeMatch) &&
+    filter.key === LineFilterCaseSensitive.caseInsensitive
+    ? escapeRegExp(filter.value)
+    : filter.value;
+}
+export function escapeDoubleQuotedLineFilter(filter: AdHocFilterWithLabels) {
+  // Is not regex
+  if (filter.operator === LineFilterOp.match || filter.operator === LineFilterOp.negativeMatch) {
+    if (filter.key === LineFilterCaseSensitive.caseInsensitive) {
+      return escapeLabelValueInRegexSelector(filter.value);
+    } else {
+      return escapeLabelValueInExactSelector(filter.value);
+    }
+  } else {
+    return escapeLabelValueInExactSelector(filter.value);
+  }
+}
+
+function buildLogQlLineFilter(filter: AdHocFilterWithLabels, quote: string, value: string) {
+  // Change operator if needed and insert caseInsensitive flag
+  if (filter.key === LineFilterCaseSensitive.caseInsensitive) {
+    if (filter.operator === LineFilterOp.negativeRegex || filter.operator === LineFilterOp.negativeMatch) {
+      return `${LineFilterOp.negativeRegex} ${quote}(?i)${value}${quote}`;
+    }
+    return `${LineFilterOp.regex} ${quote}(?i)${value}${quote}`;
+  }
+
+  return `${filter.operator} ${quote}${value}${quote}`;
+}
+
 /**
  * Converts line filter ad-hoc filters to LogQL
  *
  * the filter key is LineFilterCaseSensitive
  * the filter operator is LineFilterOp
- * the value is the user in put
+ * the value is the user input
  */
 export function renderLogQLLineFilter(filters: AdHocFilterWithLabels[]) {
   sortLineFilters(filters);
   return filters
-    .map((f) => {
-      if (f.value === '') {
+    .map((filter) => {
+      if (filter.value === '') {
         return '';
       }
-      const value =
-        (f.operator === LineFilterOp.match || f.operator === LineFilterOp.negativeMatch) &&
-        f.key === LineFilterCaseSensitive.caseInsensitive
-          ? escapeRegExp(f.value)
-          : f.value;
 
-      if (f.key === LineFilterCaseSensitive.caseInsensitive) {
-        if (f.operator === LineFilterOp.negativeRegex || f.operator === LineFilterOp.negativeMatch) {
-          return `${LineFilterOp.negativeRegex} \`(?i)${value}\``;
-        }
-        return `${LineFilterOp.regex} \`(?i)${value}\``;
+      let value, quote;
+      if (filter.value.includes('`')) {
+        value = escapeDoubleQuotedLineFilter(filter);
+        quote = `"`;
+      } else {
+        value = escapeBacktickQuotedLineFilter(filter);
+        quote = '`';
       }
 
-      return `${f.operator} \`${value}\``;
+      console.log('value', {
+        value,
+        func: buildLogQlLineFilter(filter, quote, value),
+      });
+
+      return buildLogQlLineFilter(filter, quote, value);
     })
     .join(' ');
 }
@@ -264,3 +297,25 @@ export function sanitizeStreamSelector(expression: string) {
 
 // default line limit; each data source can define it's own line limit too
 export const LINE_LIMIT = 1000;
+
+// Taken from /grafana/grafana/public/app/plugins/datasource/loki/languageUtils.ts
+
+// based on the openmetrics-documentation, the 3 symbols we have to handle are:
+// - \n ... the newline character
+// - \  ... the backslash character
+// - "  ... the double-quote character
+export function escapeLabelValueInExactSelector(labelValue: string): string {
+  return labelValue.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/"/g, '\\"');
+}
+
+// Loki regular-expressions use the RE2 syntax (https://github.com/google/re2/wiki/Syntax),
+// so every character that matches something in that list has to be escaped.
+// the list of meta characters is: *+?()|\.[]{}^$
+// we make a javascript regular expression that matches those characters:
+const RE2_METACHARACTERS = /[*+?()|\\.\[\]{}^$]/g;
+function escapeLokiRegexp(value: string): string {
+  return value.replace(RE2_METACHARACTERS, '\\$&');
+}
+export function escapeLabelValueInRegexSelector(labelValue: string): string {
+  return escapeLabelValueInExactSelector(escapeLokiRegexp(labelValue));
+}
