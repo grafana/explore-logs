@@ -175,11 +175,6 @@ export function renderLogQLLineFilter(filters: AdHocFilterWithLabels[]) {
         quote = '`';
       }
 
-      console.log('value', {
-        value,
-        func: buildLogQlLineFilter(filter, quote, value),
-      });
-
       return buildLogQlLineFilter(filter, quote, value);
     })
     .join(' ');
