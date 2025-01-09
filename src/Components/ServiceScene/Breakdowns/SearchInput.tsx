@@ -7,6 +7,7 @@ interface Props extends Omit<HTMLProps<HTMLInputElement>, 'width' | 'prefix'> {
   onClear?: () => void;
   suffix?: React.ReactNode;
   prefix?: React.ReactNode;
+  invalid?: boolean;
 }
 
 export const SearchInput = ({ value, onChange, placeholder, onClear, suffix, ...rest }: Props) => {

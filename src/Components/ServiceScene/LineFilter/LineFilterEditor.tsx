@@ -23,6 +23,22 @@ export interface LineFilterEditorProps {
   onClearLineFilter?: () => void;
 }
 
+function isRegexInvalid(lineFilter: string, regex: boolean) {
+  if (lineFilter?.includes('`')) {
+    return true;
+  }
+
+  if (regex) {
+    try {
+      new RegExp(lineFilter);
+    } catch (e) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 export function LineFilterEditor({
   exclusive,
   lineFilter,
@@ -59,6 +75,7 @@ export function LineFilterEditor({
       )}
       <Field className={styles.field}>
         <SearchInput
+          invalid={isRegexInvalid(lineFilter, regex)}
           data-testid={testIds.exploreServiceDetails.searchLogs}
           value={lineFilter}
           className={cx(onSubmitLineFilter ? styles.inputNoBorderRight : undefined, styles.input)}
@@ -113,7 +130,7 @@ export function LineFilterEditor({
 const getStyles = (theme: GrafanaTheme2) => ({
   inputNoBorderRight: css({
     input: {
-      borderRight: 'none',
+      // borderRight: 'none',
       borderTopRightRadius: 0,
       borderBottomRightRadius: 0,
     },
@@ -131,6 +148,7 @@ const getStyles = (theme: GrafanaTheme2) => ({
     justifyContent: 'center',
   }),
   includeButton: css({
+    borderLeft: 'none',
     borderRadius: 0,
     borderRight: 'none',
     '&[disabled]': {
