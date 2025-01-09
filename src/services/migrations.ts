@@ -3,16 +3,21 @@ import { getLineFiltersVariable } from './variableGetters';
 import { LineFilterCaseSensitive } from '../Components/ServiceScene/LineFilter/LineFilterScene';
 import { LineFilterOp } from './filterTypes';
 import { ServiceScene } from '../Components/ServiceScene/ServiceScene';
+import { urlUtil } from '@grafana/data';
 
 /**
  * Migrates old line filter to new variables
  */
 export function migrateLineFilterV1(serviceScene: ServiceScene) {
-  const search = locationService.getSearch();
+  const search = urlUtil.getUrlSearchParams();
 
-  const deprecatedLineFilter = search.get('var-lineFilter');
-
-  if (!deprecatedLineFilter) {
+  const deprecatedLineFilterArray = search['var-lineFilter'];
+  console.log('deprecatedLineFilter', deprecatedLineFilterArray);
+  if (!Array.isArray(deprecatedLineFilterArray) || !deprecatedLineFilterArray.length) {
+    return;
+  }
+  const deprecatedLineFilter = deprecatedLineFilterArray[0];
+  if (typeof deprecatedLineFilter !== 'string') {
     return;
   }
 
@@ -49,8 +54,6 @@ export function migrateLineFilterV1(serviceScene: ServiceScene) {
   }
 
   // Remove from url without refreshing
-  const newLocation = locationService.getLocation();
-  search.delete('var-lineFilter');
-  newLocation.search = search.toString();
-  locationService.replace(newLocation.pathname + '?' + newLocation.search);
+  delete search['var-lineFilter'];
+  locationService.replace(urlUtil.renderUrl(location.pathname, search));
 }
