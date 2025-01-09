@@ -130,7 +130,6 @@ export function LineFilterEditor({
 const getStyles = (theme: GrafanaTheme2) => ({
   inputNoBorderRight: css({
     input: {
-      // borderRight: 'none',
       borderTopRightRadius: 0,
       borderBottomRightRadius: 0,
     },
