@@ -507,3 +507,4 @@ pagedown
 linefilter
 queryfrontend
 timesync
+openmetrics
