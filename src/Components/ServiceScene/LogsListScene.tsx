@@ -181,7 +181,6 @@ export class LogsListScene extends SceneObjectBase<LogsListSceneState> {
         this._subs.add(
           lineFilterScene.subscribeToState((newState, prevState) => {
             if (newState.lineFilter !== prevState.lineFilter) {
-              console.log('setting the damn state', newState.lineFilter);
               this.setState({
                 lineFilter: newState.lineFilter,
               });
