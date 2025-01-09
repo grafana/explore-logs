@@ -1,21 +1,31 @@
 import { GrafanaTheme2 } from '@grafana/data';
-import { SceneComponentProps, SceneFlexLayout, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
+import { SceneComponentProps, SceneFlexLayout, sceneGraph, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { useStyles2 } from '@grafana/ui';
 import React from 'react';
 import { PatternControls } from './PatternControls';
-import { AppliedPattern, IndexSceneState } from './IndexScene';
+import { AppliedPattern, IndexScene, IndexSceneState } from './IndexScene';
 import { css, cx } from '@emotion/css';
 import { GiveFeedbackButton } from './GiveFeedbackButton';
 import { InterceptBanner } from './InterceptBanner';
 
 import { PLUGIN_ID } from '../../services/plugin';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
+import { logger } from '../../services/logger';
+import { LineFilterVariablesScene } from './LineFilterVariablesScene';
 
 interface LayoutSceneState extends SceneObjectState {
   interceptDismissed: boolean;
+  lineFilterRenderer?: LineFilterVariablesScene;
 }
 
 const interceptBannerStorageKey = `${PLUGIN_ID}.interceptBannerStorageKey`;
+
+export const CONTROLS_VARS_FIRST_ROW_KEY = 'vars-row__datasource-labels-timepicker-button';
+export const CONTROLS_VARS_METADATA_ROW_KEY = 'vars-metadata';
+export const CONTROLS_VARS_FIELDS_ELSE_KEY = 'vars-all-else';
+export const CONTROLS_VARS_TIMEPICKER = 'vars-timepicker';
+export const CONTROLS_VARS_REFRESH = 'vars-refresh';
+export const CONTROLS_VARS_TOOLBAR = 'vars-toolbar';
 
 export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
   constructor(state: Partial<LayoutSceneState>) {
@@ -23,23 +33,17 @@ export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
       ...state,
       interceptDismissed: !!localStorage.getItem(interceptBannerStorageKey),
     });
-  }
 
-  public dismiss() {
-    this.setState({
-      interceptDismissed: true,
-    });
-    localStorage.setItem(interceptBannerStorageKey, 'true');
+    this.addActivationHandler(this.onActivate.bind(this));
   }
 
   static Component = ({ model }: SceneComponentProps<LayoutScene>) => {
-    if (!model.parent) {
-      return null;
-    }
+    const indexScene = sceneGraph.getAncestor(model, IndexScene);
+    const { controls, contentScene, patterns } = indexScene.useState();
+    const { interceptDismissed, lineFilterRenderer } = model.useState();
 
-    const { controls, contentScene, patterns } = model.parent.useState() as IndexSceneState;
-    const { interceptDismissed } = model.useState();
     if (!contentScene) {
+      logger.warn('content scene not defined');
       return null;
     }
 
@@ -54,52 +58,97 @@ export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
               }}
             />
           )}
-          {controls && (
-            <div className={styles.controlsContainer}>
-              <div className={styles.controlsFirstRowContainer}>
-                <div className={styles.filtersWrap}>
-                  <div className={cx(styles.filters, styles.firstRowWrapper)}>
-                    {controls.map((control) => {
-                      return control instanceof SceneFlexLayout ? (
-                        <control.Component key={control.state.key} model={control} />
-                      ) : null;
-                    })}
+          <div className={styles.controlsContainer}>
+            <>
+              {/* First row - datasource, timepicker, refresh, labels, button */}
+              {controls && (
+                <div className={styles.controlsFirstRowContainer}>
+                  <div className={styles.filtersWrap}>
+                    <div className={cx(styles.filters, styles.firstRowWrapper)}>
+                      {controls.map((control) => {
+                        return control instanceof SceneFlexLayout ? (
+                          <control.Component key={control.state.key} model={control} />
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                  <div className={styles.controlsWrapper}>
+                    <GiveFeedbackButton />
+                    <div className={styles.controls}>
+                      {controls.map((control) => {
+                        return !(control instanceof CustomVariableValueSelectors) &&
+                          !(control instanceof SceneFlexLayout) ? (
+                          <control.Component key={control.state.key} model={control} />
+                        ) : null;
+                      })}
+                    </div>
                   </div>
                 </div>
-                <div className={styles.controlsWrapper}>
-                  <GiveFeedbackButton />
-                  <div className={styles.controls}>
-                    {controls.map((control) => {
-                      return !(control instanceof CustomVariableValueSelectors) &&
-                        !(control instanceof SceneFlexLayout) ? (
-                        <control.Component key={control.state.key} model={control} />
-                      ) : null;
-                    })}
-                  </div>
-                </div>
+              )}
+
+              {/* Second row - Metadata  */}
+              <div className={styles.controlsRowContainer}>
+                {controls &&
+                  controls.map((control) => {
+                    return control.state.key === CONTROLS_VARS_METADATA_ROW_KEY ? (
+                      <div className={styles.filtersWrap}>
+                        <div className={styles.filters}>
+                          <control.Component key={control.state.key} model={control} />
+                        </div>
+                      </div>
+                    ) : null;
+                  })}
               </div>
-              <div className={styles.controlsSecondRowContainer}>
-                <div className={styles.filtersWrap}>
-                  <div className={styles.filters}>
-                    {controls.map((control) => {
-                      return control instanceof CustomVariableValueSelectors ? (
-                        <control.Component key={control.state.key} model={control} />
-                      ) : null;
-                    })}
-                  </div>
-                </div>
+
+              {/* 3rd row - Patterns */}
+              <div className={styles.controlsRowContainer}>
+                <PatternControls
+                  patterns={patterns}
+                  onRemove={(patterns: AppliedPattern[]) => model.parent?.setState({ patterns } as IndexSceneState)}
+                />
               </div>
-            </div>
-          )}
-          <PatternControls
-            patterns={patterns}
-            onRemove={(patterns: AppliedPattern[]) => model.parent?.setState({ patterns } as IndexSceneState)}
-          />
+
+              {/* 4th row - line filters */}
+              <div className={styles.controlsRowContainer}>
+                {lineFilterRenderer && <lineFilterRenderer.Component model={lineFilterRenderer} />}
+              </div>
+
+              {/* 5th row - Fields  */}
+              <div className={styles.controlsRowContainer}>
+                {controls && (
+                  <div className={styles.filtersWrap}>
+                    <div className={styles.filters}>
+                      {controls.map((control) => {
+                        return control.state.key === CONTROLS_VARS_FIELDS_ELSE_KEY ? (
+                          <control.Component key={control.state.key} model={control} />
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          </div>
+
+          {/* Final "row" - body */}
           <div className={styles.body}>{contentScene && <contentScene.Component model={contentScene} />}</div>
         </div>
       </div>
     );
   };
+
+  public onActivate() {
+    this.setState({
+      lineFilterRenderer: new LineFilterVariablesScene({}),
+    });
+  }
+
+  public dismiss() {
+    this.setState({
+      interceptDismissed: true,
+    });
+    localStorage.setItem(interceptBannerStorageKey, 'true');
+  }
 }
 
 function getStyles(theme: GrafanaTheme2) {
@@ -129,7 +178,6 @@ function getStyles(theme: GrafanaTheme2) {
     container: css({
       flexGrow: 1,
       display: 'flex',
-      gap: theme.spacing(1),
       minHeight: '100%',
       flexDirection: 'column',
       padding: theme.spacing(2),
@@ -142,23 +190,33 @@ function getStyles(theme: GrafanaTheme2) {
       gap: theme.spacing(1),
     }),
     controlsFirstRowContainer: css({
+      label: 'controls-first-row',
       display: 'flex',
       gap: theme.spacing(2),
       justifyContent: 'space-between',
       alignItems: 'flex-start',
-      marginBottom: theme.spacing(2),
     }),
-    controlsSecondRowContainer: css({
+    controlsRowContainer: css({
+      '&:empty': {
+        display: 'none',
+      },
+      label: 'controls-row',
       display: 'flex',
-      gap: theme.spacing(2),
+      // @todo add custom renderers for all variables, this currently results in 2 "empty" rows that always take up space
+      gap: theme.spacing(1),
       justifyContent: 'space-between',
       alignItems: 'flex-start',
+      paddingLeft: theme.spacing(2),
     }),
     controlsContainer: css({
       label: 'controlsContainer',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: theme.spacing(1),
     }),
     filters: css({
       label: 'filters',
+      display: 'flex',
     }),
     filtersWrap: css({
       label: 'filtersWrap',

@@ -13,6 +13,7 @@ import {
   SceneObjectBase,
   SceneObjectState,
   SceneQueryRunner,
+  SceneVariableValueChangedEvent,
   VariableDependencyConfig,
 } from '@grafana/scenes';
 import { LoadingPlaceholder } from '@grafana/ui';
@@ -41,7 +42,7 @@ import {
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
-  getLineFilterVariable,
+  getLineFiltersVariable,
   getMetadataVariable,
   getPatternsVariable,
 } from '../../services/variableGetters';
@@ -56,6 +57,7 @@ import {
 } from '../../services/routing';
 import { replaceSlash } from '../../services/extensions/links';
 import { ShowLogsButtonScene } from '../IndexScene/ShowLogsButtonScene';
+import { migrateLineFilterV1 } from '../../services/migrations';
 
 export const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 export const LOGS_COUNT_QUERY_REFID = 'logsCountQuery';
@@ -300,10 +302,13 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this._subs.add(this.subscribeToLevelsVariable());
     this._subs.add(this.subscribeToDataSourceVariable());
     this._subs.add(this.subscribeToPatternsVariable());
-    this._subs.add(this.subscribeToLineFilterVariable());
+    this._subs.add(this.subscribeToLineFiltersVariable());
 
     // Update query runner on manual time range change
     this._subs.add(this.subscribeToTimeRange());
+
+    // Migrations
+    migrateLineFilterV1(this);
   }
 
   private subscribeToPatternsVariable() {
@@ -315,11 +320,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     });
   }
 
-  private subscribeToLineFilterVariable() {
-    return getLineFilterVariable(this).subscribeToState((newState, prevState) => {
-      if (newState.value !== prevState.value) {
-        this.state.$logsCount?.runQueries();
-      }
+  private subscribeToLineFiltersVariable() {
+    return getLineFiltersVariable(this).subscribeToEvent(SceneVariableValueChangedEvent, () => {
+      this.state.$logsCount?.runQueries();
+      this.state.$detectedFieldsData?.runQueries();
     });
   }
 

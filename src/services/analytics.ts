@@ -51,6 +51,7 @@ export const USER_EVENTS_ACTIONS = {
     layout_type_changed: 'layout_type_changed',
     // Changing search string in logs. Props: searchQuery
     search_string_in_logs_changed: 'search_string_in_logs_changed',
+    search_string_in_variables_changed: 'search_string_in_variables_changed',
     // Removing a pattern (e.g. include/exclude) from the list. Props: includePatternsLength, excludePatternsLength, type
     pattern_removed: 'pattern_removed',
     // Selecting a pattern (e.g. include/exclude) from the list. Props: includePatternsLength, excludePatternsLength, type

@@ -31,6 +31,8 @@ test.describe('explore services breakdown page', () => {
   test('should filter logs panel on search for broadcast field', async ({ page }) => {
     await explorePage.serviceBreakdownSearch.click();
     await explorePage.serviceBreakdownSearch.fill('broadcast');
+    // Submit filter
+    await page.getByRole('button', { name: 'Include' }).click();
     await expect(page.getByRole('table').locator('tr').first().getByText('broadcast').first()).toBeVisible();
     await expect(page).toHaveURL(/broadcast/);
   });
@@ -1038,7 +1040,7 @@ test.describe('explore services breakdown page', () => {
     const viewportSize = page.viewportSize();
 
     // Assert that the row has more width then the viewport (can scroll horizontally)
-    expect((await firstRow.boundingBox()).width).toBeGreaterThanOrEqual(viewportSize.width);
+    expect((await firstRow.boundingBox())?.width).toBeGreaterThanOrEqual(viewportSize?.width ?? -1);
 
     // Change line wrap
     await explorePage.getWrapLocator().click();
@@ -1047,13 +1049,13 @@ test.describe('explore services breakdown page', () => {
     await expect(explorePage.getWrapLocator()).toBeChecked();
 
     // Assert that the width is less than or equal to the window width (cannot scroll horizontally)
-    expect((await firstRow.boundingBox()).width).toBeLessThanOrEqual(viewportSize.width);
+    expect((await firstRow.boundingBox())?.width).toBeLessThanOrEqual(viewportSize?.width ?? Infinity);
 
     // Reload the page and verify the setting in local storage is applied to the panel
     await page.reload();
     await expect(explorePage.getNowrapLocator()).not.toBeChecked();
     await expect(explorePage.getWrapLocator()).toBeChecked();
-    expect((await firstRow.boundingBox()).width).toBeLessThanOrEqual(viewportSize.width);
+    expect((await firstRow.boundingBox())?.width).toBeLessThanOrEqual(viewportSize?.width ?? Infinity);
   });
 
   test('logs panel options: sortOrder', async ({ page }) => {
@@ -1128,7 +1130,7 @@ test.describe('explore services breakdown page', () => {
     const boundingBoxDesc = await page.getByTestId('data-testid annotation-marker').boundingBox();
 
     // Annotation should be on the right side of the viewport
-    expect(boundingBoxDesc.x).toBeGreaterThan(viewportSize.width / 2);
+    expect(boundingBoxDesc?.x).toBeGreaterThan((viewportSize?.width ?? -1) / 2);
 
     // Check non-default values
     await explorePage.gotoLogsPanel('Ascending', 'true');
@@ -1143,7 +1145,7 @@ test.describe('explore services breakdown page', () => {
     const boundingBoxAsc = await page.getByTestId('data-testid annotation-marker').boundingBox();
 
     // Annotation should be on the left side of the viewport
-    expect(boundingBoxAsc.x).toBeLessThan(viewportSize.width / 2);
+    expect(boundingBoxAsc?.x).toBeLessThan((viewportSize?.width ?? Infinity) / 2);
   });
 
   test('url sharing', async ({ page }) => {
@@ -1281,9 +1283,8 @@ test.describe('explore services breakdown page', () => {
     await expect(warnLegend).toBeVisible();
     await expect(infoLegend).not.toBeVisible();
     await expect(debugLegend).not.toBeVisible();
-
     // Clear the text search
-    await page.getByRole('img', { name: 'Clear search' }).click();
+    await page.getByLabel('Clear search').click();
 
     // Assert the value panels are visible
     await assertAllLevelsAreVisible();
@@ -1336,5 +1337,141 @@ test.describe('explore services breakdown page', () => {
     // Assert the panel body is visible again
     await expect(summaryPanel).toBeVisible();
     await expect(summaryPanelBody).toBeVisible();
+  });
+
+  test.describe('line filters', () => {
+    test('line filter', async ({ page }) => {
+      let requestCount = 0,
+        logsCountQueryCount = 0,
+        logsPanelQueryCount = 0;
+
+      explorePage.blockAllQueriesExcept({
+        refIds: ['logsPanelQuery'],
+        legendFormats: [],
+      });
+
+      // We don't need to mock the response, but it speeds up the test
+      await page.route('**/api/ds/query*', async (route, request) => {
+        const mockResponse = mockEmptyQueryApiResponse;
+        const rawPostData = request.postData();
+
+        // We only want to mock the actual field requests, and not the initial request that returns us our list of fields
+        if (rawPostData) {
+          const postData = JSON.parse(rawPostData);
+          const refId = postData.queries[0].refId;
+          // Field subqueries have a refId of the field name
+          if (refId !== 'logsPanelQuery' && refId !== 'A' && refId !== 'logsCountQuery') {
+            requestCount++;
+            return await route.fulfill({ json: mockResponse });
+          }
+          if (refId === 'logsCountQuery') {
+            logsCountQueryCount++;
+          }
+          if (refId === 'logsPanelQuery') {
+            logsPanelQueryCount++;
+          }
+        }
+
+        // Otherwise let the request go through normally
+        const response = await route.fetch();
+        const json = await response.json();
+        return route.fulfill({ response, json });
+      });
+
+      requestCount = 0;
+      logsCountQueryCount = 0;
+      logsPanelQueryCount = 0;
+
+      // Locators
+      const lastLineFilterLoc = page.getByTestId(testIds.exploreServiceDetails.searchLogs).last();
+      const firstLineFilterLoc = page.getByTestId(testIds.exploreServiceDetails.searchLogs).first();
+      // const lineFilters = page.getByTestId(testIds.exploreServiceDetails.searchLogs)
+      const logsPanelContent = explorePage.getLogsPanelLocator().getByTestId('data-testid panel content');
+      const rows = logsPanelContent.getByRole('row');
+      const firstRow = rows.nth(0);
+      const highlightedMatchesInFirstRow = firstRow.locator('mark');
+
+      await explorePage.goToLogsTab();
+      await expect(lastLineFilterLoc).toHaveCount(1);
+      await expect(logsPanelContent).toHaveCount(1);
+      await expect(firstRow).toHaveCount(1);
+      await expect(highlightedMatchesInFirstRow).toHaveCount(0);
+
+      // One logs panel query should have fired
+      expect(logsCountQueryCount).toEqual(1);
+      expect(logsPanelQueryCount).toEqual(1);
+
+      await lastLineFilterLoc.click();
+      await page.keyboard.type('Debug');
+      await page.getByRole('button', { name: 'Include' }).click();
+      await expect(highlightedMatchesInFirstRow).toHaveCount(1);
+
+      // Now 2 queries should have fired
+      expect(logsCountQueryCount).toEqual(2);
+      expect(logsPanelQueryCount).toEqual(2);
+
+      // switch to case-sensitive in the global variable
+      await page.getByLabel('Enable case match').nth(0).click();
+      await expect(rows).toHaveCount(0);
+      expect(logsCountQueryCount).toEqual(3);
+      expect(logsPanelQueryCount).toEqual(3);
+
+      // Clear the text - should trigger query
+      await page.getByLabel('Line filter variable').click();
+      // Enable regex - should not trigger empty query
+      await page.getByLabel('Enable regex').click();
+      // Enable case - should not trigger empty query
+      await page.getByLabel('Enable case match').click();
+      await expect(firstRow).toHaveCount(1);
+      expect(logsCountQueryCount).toEqual(4);
+      expect(logsPanelQueryCount).toEqual(4);
+
+      // Add regex string
+      await lastLineFilterLoc.click();
+      await page.keyboard.type('[dD]ebug');
+      await page.getByRole('button', { name: 'Include' }).click();
+      await expect(highlightedMatchesInFirstRow).toHaveCount(1);
+      expect(logsCountQueryCount).toEqual(5);
+      expect(logsPanelQueryCount).toEqual(5);
+
+      // Disable regex - expect no results show
+      await page.getByLabel('Disable regex').nth(0).click();
+      await expect(rows).toHaveCount(0);
+      expect(logsCountQueryCount).toEqual(6);
+      expect(logsPanelQueryCount).toEqual(6);
+
+      // Re-enable regex - results should show
+      await page.getByLabel('Enable regex').click();
+      await expect(highlightedMatchesInFirstRow).toHaveCount(1);
+      expect(logsCountQueryCount).toEqual(7);
+      expect(logsPanelQueryCount).toEqual(7);
+
+      // Change the filter in the "saved" variable that will return 0 results
+      await firstLineFilterLoc.click();
+      await page.keyboard.type('__');
+      await expect(rows).toHaveCount(0);
+      expect(logsCountQueryCount).toEqual(8);
+      expect(logsPanelQueryCount).toEqual(8);
+    });
+
+    test('line filter migration case sensitive', async ({ page }) => {
+      await explorePage.gotoServicesOldUrlLineFilters('tempo-distributor', true);
+      const firstLineFilterLoc = page.getByTestId(testIds.exploreServiceDetails.searchLogs).first();
+
+      await expect(firstLineFilterLoc).toHaveCount(1);
+      await expect(page.getByLabel('Enable case match').nth(0)).toHaveCount(1);
+      await expect(page.getByLabel('Disable case match')).toHaveCount(0);
+      await expect(firstLineFilterLoc).toHaveValue('debug');
+    });
+
+    test('line filter migration case insensitive', async ({ page }) => {
+      await explorePage.gotoServicesOldUrlLineFilters('tempo-distributor', false);
+      const firstLineFilterLoc = page.getByTestId(testIds.exploreServiceDetails.searchLogs).first();
+
+      await expect(firstLineFilterLoc).toHaveCount(1);
+      await expect(page.getByLabel('Disable case match')).toHaveCount(1);
+      await expect(page.getByLabel('Enable case match')).toHaveCount(1);
+      await expect(firstLineFilterLoc).toHaveValue('debug');
+    });
   });
 });

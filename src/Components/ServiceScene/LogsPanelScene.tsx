@@ -19,13 +19,19 @@ import { addToFilters, FilterType } from './Breakdowns/AddToFiltersButton';
 import { getVariableForLabel } from '../../services/fields';
 import { VAR_FIELDS, VAR_LABELS, VAR_LEVELS, VAR_METADATA } from '../../services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
-import { getAdHocFiltersVariable, getValueFromFieldsFilter } from '../../services/variableGetters';
+import {
+  getAdHocFiltersVariable,
+  getLineFiltersVariable,
+  getValueFromFieldsFilter,
+} from '../../services/variableGetters';
 import { copyText, generateLogShortlink, resolveRowTimeRangeForSharing } from 'services/text';
 import { CopyLinkButton } from './CopyLinkButton';
 import { getLogsPanelSortOrderFromStore, LogOptionsScene } from './LogOptionsScene';
 import { LogsVolumePanel, logsVolumePanelKey } from './LogsVolumePanel';
 import { getPanelWrapperStyles, PanelMenu } from '../Panels/PanelMenu';
 import { ServiceScene } from './ServiceScene';
+import { LineFilterOp } from '../../services/filterTypes';
+import { LineFilterCaseSensitive } from './LineFilter/LineFilterScene';
 import { Options } from '@grafana/schema/dist/esm/raw/composable/logs/panelcfg/x/LogsPanelCfg_types.gen';
 import { locationService } from '@grafana/runtime';
 import { narrowLogsSortOrder } from '../../services/narrowing';
@@ -72,7 +78,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
   updateFromUrl(values: SceneObjectUrlValues) {
     const stateUpdate: Partial<LogsPanelSceneState> = {};
     try {
-      if (typeof values.sortOrder === 'string') {
+      if (typeof values.sortOrder === 'string' && values.sortOrder) {
         const decodedSortOrder = narrowLogsSortOrder(JSON.parse(values.sortOrder));
         if (decodedSortOrder) {
           stateUpdate.sortOrder = decodedSortOrder;
@@ -80,7 +86,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         }
       }
 
-      if (typeof values.wrapLogMessage === 'string') {
+      if (typeof values.wrapLogMessage === 'string' && values.wrapLogMessage) {
         const decodedWrapLogMessage = JSON.parse(values.wrapLogMessage);
         if (typeof decodedWrapLogMessage === 'boolean') {
           stateUpdate.wrapLogMessage = decodedWrapLogMessage;
@@ -219,6 +225,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         .setOption('onClickFilterOutLabel', this.handleLabelFilterOutClick)
         .setOption('isFilterLabelActive', this.handleIsFilterLabelActive)
         .setOption('onClickFilterString', this.handleFilterStringClick)
+        .setOption('onClickFilterOutString', this.handleFilterOutStringClick)
         .setOption('onClickShowField', this.onClickShowField)
         .setOption('onClickHideField', this.onClickHideField)
         .setOption('displayedFields', parentModel.state.displayedFields)
@@ -236,6 +243,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         .setOption('onNewLogsReceived', this.updateVisibleRange)
         // @ts-expect-error Grafana 11.5
         .setOption('logRowMenuIconsAfter', [<CopyLinkButton onClick={this.handleShareLogLineClick} key={0} />])
+
         .setHeaderActions(
           new LogOptionsScene({ visualizationType, onChangeVisualizationType: parentModel.setVisualizationType })
         )
@@ -325,11 +333,44 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     );
   };
 
+  private handleFilterOutStringClick = (value: string) => {
+    const lineFiltersVar = getLineFiltersVariable(this);
+    if (lineFiltersVar) {
+      lineFiltersVar.setState({
+        filters: [
+          ...lineFiltersVar.state.filters,
+          {
+            operator: LineFilterOp.negativeMatch,
+            value,
+            key: LineFilterCaseSensitive.caseSensitive,
+            keyLabel: lineFiltersVar.state.filters.length.toString(),
+          },
+        ],
+      });
+      reportAppInteraction(
+        USER_EVENTS_PAGES.service_details,
+        USER_EVENTS_ACTIONS.service_details.logs_popover_line_filter,
+        {
+          selectionLength: value.length,
+        }
+      );
+    }
+  };
+
   private handleFilterStringClick = (value: string) => {
-    const parentModel = sceneGraph.getAncestor(this, LogsListScene);
-    const lineFilterScene = parentModel.getLineFilterScene();
-    if (lineFilterScene) {
-      lineFilterScene.updateFilter(value, false);
+    const lineFiltersVar = getLineFiltersVariable(this);
+    if (lineFiltersVar) {
+      lineFiltersVar.setState({
+        filters: [
+          ...lineFiltersVar.state.filters,
+          {
+            operator: LineFilterOp.match,
+            value,
+            key: LineFilterCaseSensitive.caseSensitive,
+            keyLabel: lineFiltersVar.state.filters.length.toString(),
+          },
+        ],
+      });
       reportAppInteraction(
         USER_EVENTS_PAGES.service_details,
         USER_EVENTS_ACTIONS.service_details.logs_popover_line_filter,

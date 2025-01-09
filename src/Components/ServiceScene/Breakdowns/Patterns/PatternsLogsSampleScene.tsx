@@ -24,7 +24,7 @@ import { getQueryRunner } from '../../../../services/panel';
 import { AppliedPattern } from '../../../IndexScene/IndexScene';
 import { PatternsViewTableScene } from './PatternsViewTableScene';
 import { emptyStateStyles } from '../FieldsBreakdownScene';
-import { getFieldsVariable, getLevelsVariable, getLineFilterVariable } from '../../../../services/variableGetters';
+import { getFieldsVariable, getLevelsVariable, getLineFiltersVariable } from '../../../../services/variableGetters';
 import { LokiQuery } from '../../../../services/lokiQuery';
 import { logger } from '../../../../services/logger';
 
@@ -89,7 +89,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
 
   private clearFilters = () => {
     const filterVariable = getFieldsVariable(this);
-    const lineFilterVariable = getLineFilterVariable(this);
+    const lineFiltersVariable = getLineFiltersVariable(this);
     const levelsVariable = getLevelsVariable(this);
     filterVariable.setState({
       filters: [],
@@ -97,8 +97,10 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
     levelsVariable.setState({
       filters: [],
     });
-    if (lineFilterVariable.state.value) {
-      lineFilterVariable.changeValueTo('');
+    if (lineFiltersVariable.state.filters.length) {
+      lineFiltersVariable.setState({
+        filters: [],
+      });
 
       const noticeFlexItem = this.getNoticeFlexItem();
 
