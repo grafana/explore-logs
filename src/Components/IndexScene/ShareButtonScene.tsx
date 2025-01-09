@@ -8,7 +8,7 @@ import {
 import { ButtonGroup, Dropdown, IconName, Menu, MenuGroup, ToolbarButton } from '@grafana/ui';
 import React from 'react';
 import { config, getAppEvents, getBackendSrv, locationService, reportInteraction } from '@grafana/runtime';
-import { AppEvents, toUtc } from '@grafana/data';
+import { AppEvents, toUtc, urlUtil } from '@grafana/data';
 import { copyText } from '../../services/text';
 
 interface ShortLinkMenuItemData {
@@ -244,9 +244,8 @@ const constructAbsoluteUrl = (timeRange: SceneTimeRangeLike): string => {
   const from = toUtc(timeRange.state.value.from);
   const to = toUtc(timeRange.state.value.to);
   const location = locationService.getLocation();
-  const searchParams = new URLSearchParams(location.search);
-  searchParams.set('from', from.toISOString());
-  searchParams.set('to', to.toISOString());
-
-  return `${location.pathname}?${searchParams.toString()}`;
+  const searchParams = urlUtil.getUrlSearchParams();
+  searchParams['from'] = from.toISOString();
+  searchParams['to'] = to.toISOString();
+  return urlUtil.renderUrl(location.pathname, searchParams);
 };
