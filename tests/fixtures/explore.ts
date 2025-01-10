@@ -244,7 +244,7 @@ export class ExplorePage {
     if (caseSensitive) {
       await this.page.goto(
         // case insensitive
-        `/a/${pluginJson.id}/explore/service/tempo-distributor/logs?mode=service_details&patterns=[]&var-lineFilter=%7C~%20%60%28%3Fi%29${lineFilterValue}%60&var-filters=service_name|=|${serviceName}&var-logsFormat= | logfmt`
+        `/a/${pluginJson.id}/explore/service/tempo-distributor/logs?mode=service_details&patterns=[]&var-lineFilter=%7C~%20%60%28%3Fi%29%60${lineFilterValue}%60&var-filters=service_name|=|${serviceName}&var-logsFormat= | logfmt`
       );
     } else {
       await this.page.goto(
