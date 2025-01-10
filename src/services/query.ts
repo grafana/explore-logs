@@ -123,7 +123,7 @@ export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
 export function escapeBacktickQuotedLineFilter(filter: AdHocVariableFilter) {
   return (filter.operator === LineFilterOp.match || filter.operator === LineFilterOp.negativeMatch) &&
     filter.key === LineFilterCaseSensitive.caseInsensitive
-    ? escapeRegExp(filter.value)
+    ? escapeLokiRegexp(filter.value)
     : filter.value;
 }
 export function escapeDoubleQuotedLineFilter(filter: AdHocFilterWithLabels) {
