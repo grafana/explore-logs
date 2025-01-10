@@ -18,6 +18,7 @@ import (
 func main() {
 	url := flag.String("url", "http://localhost:3100/loki/api/v1/push", "Loki URL")
 	dry := flag.Bool("dry", false, "Dry run: log to stdout instead of Loki")
+	tenantId := flag.String("tenant-id", "", "Loki tenant ID")
 	flag.Parse()
 
 	cfg, err := loki.NewDefaultConfig(*url)
@@ -27,6 +28,11 @@ func main() {
 	cfg.BackoffConfig.MaxRetries = 1
 	cfg.BackoffConfig.MinBackoff = 100 * time.Millisecond
 	cfg.BackoffConfig.MaxBackoff = 100 * time.Millisecond
+
+	if *tenantId != "" {
+		cfg.TenantID = *tenantId
+	}
+
 	client, err := loki.New(cfg)
 	if err != nil {
 		panic(err)
