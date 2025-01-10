@@ -126,6 +126,7 @@ export function escapeBacktickQuotedLineFilter(filter: AdHocVariableFilter) {
     ? escapeLokiRegexp(filter.value)
     : filter.value;
 }
+
 export function escapeDoubleQuotedLineFilter(filter: AdHocFilterWithLabels) {
   // Is not regex
   if (filter.operator === LineFilterOp.match || filter.operator === LineFilterOp.negativeMatch) {
