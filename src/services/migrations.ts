@@ -5,6 +5,13 @@ import { LineFilterOp } from './filterTypes';
 import { ServiceScene } from '../Components/ServiceScene/ServiceScene';
 import { urlUtil } from '@grafana/data';
 
+function removeEscapeChar(value: string) {
+  return value
+    .split('')
+    .filter((char) => char !== '\\')
+    .join('');
+}
+
 /**
  * Migrates old line filter to new variables
  */
@@ -12,12 +19,11 @@ export function migrateLineFilterV1(serviceScene: ServiceScene) {
   const search = urlUtil.getUrlSearchParams();
 
   const deprecatedLineFilterArray = search['var-lineFilter'];
-  console.log('deprecatedLineFilter', deprecatedLineFilterArray);
   if (!Array.isArray(deprecatedLineFilterArray) || !deprecatedLineFilterArray.length) {
     return;
   }
   const deprecatedLineFilter = deprecatedLineFilterArray[0];
-  if (typeof deprecatedLineFilter !== 'string') {
+  if (typeof deprecatedLineFilter !== 'string' || !deprecatedLineFilter) {
     return;
   }
 
@@ -31,7 +37,7 @@ export function migrateLineFilterV1(serviceScene: ServiceScene) {
           {
             key: LineFilterCaseSensitive.caseSensitive,
             operator: LineFilterOp.match,
-            value: caseSensitiveMatches[1],
+            value: removeEscapeChar(caseSensitiveMatches[1]),
             keyLabel: '0',
           },
         ],
@@ -46,7 +52,7 @@ export function migrateLineFilterV1(serviceScene: ServiceScene) {
         {
           key: LineFilterCaseSensitive.caseInsensitive,
           operator: LineFilterOp.match,
-          value: caseInsensitiveMatches[1],
+          value: removeEscapeChar(caseInsensitiveMatches[1]),
           keyLabel: '0',
         },
       ]);

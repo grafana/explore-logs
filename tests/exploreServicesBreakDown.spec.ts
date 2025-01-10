@@ -1455,23 +1455,31 @@ test.describe('explore services breakdown page', () => {
     });
 
     test('line filter migration case sensitive', async ({ page }) => {
-      await explorePage.gotoServicesOldUrlLineFilters('tempo-distributor', true);
+      const urlEncodedAndEscaped =
+        'page_url%3D%22https:%2F%2Fgrafana%5C.net%2Fexplore%5C%3Fleft%3D%5C%7B%22datasource%22:%22grafanacloud-prom%22,%22queries%22:%5C%5B%5C%7B%22datasource%22:%5C%7B%22type%22:%22prometheus%22,%22uid%22:%22grafanacloud-prom%22%5C%7D,%22expr%22:%22max%20by%20%5C%28kube_cluster_name,%20kube_namespace%5C%29%20%5C%28quantile_over_time%5C%280%5C.85,%20kubernetes_state_pod_age%5C%7Bplatform%3D%22data%22,kube_namespace%21~%22data-dev%5C%7Cdata-stg-%5C.%5C%2B%22,pod_phase%3D%22pending%22%5C%7D%5C%5B5m%5C%5D%5C%29%5C%29%20%3E%20600%22,%22refId%22:%22A%22%5C%7D%5C%5D,%22range%22:%5C%7B%22from%22:%22now-1h%22,%22to%22:%22now%22%5C%7D%5C%7D%22';
+      const decodedAndUnescaped =
+        'page_url="https://grafana.net/explore?left={"datasource":"grafanacloud-prom","queries":[{"datasource":{"type":"prometheus","uid":"grafanacloud-prom"},"expr":"max by (kube_cluster_name, kube_namespace) (quantile_over_time(0.85, kubernetes_state_pod_age{platform="data",kube_namespace!~"data-dev|data-stg-.+",pod_phase="pending"}[5m])) > 600","refId":"A"}],"range":{"from":"now-1h","to":"now"}}"';
+      await explorePage.gotoServicesOldUrlLineFilters('tempo-distributor', true, urlEncodedAndEscaped);
       const firstLineFilterLoc = page.getByTestId(testIds.exploreServiceDetails.searchLogs).first();
 
       await expect(firstLineFilterLoc).toHaveCount(1);
       await expect(page.getByLabel('Enable case match').nth(0)).toHaveCount(1);
       await expect(page.getByLabel('Disable case match')).toHaveCount(0);
-      await expect(firstLineFilterLoc).toHaveValue('debug');
+      await expect(firstLineFilterLoc).toHaveValue(decodedAndUnescaped);
     });
 
     test('line filter migration case insensitive', async ({ page }) => {
-      await explorePage.gotoServicesOldUrlLineFilters('tempo-distributor', false);
+      const urlEncodedAndEscaped =
+        'page_url%3D%22https:%2F%2Fgrafana%5C.net%2Fexplore%5C%3Fleft%3D%5C%7B%22datasource%22:%22grafanacloud-prom%22,%22queries%22:%5C%5B%5C%7B%22datasource%22:%5C%7B%22type%22:%22prometheus%22,%22uid%22:%22grafanacloud-prom%22%5C%7D,%22expr%22:%22max%20by%20%5C%28kube_cluster_name,%20kube_namespace%5C%29%20%5C%28quantile_over_time%5C%280%5C.85,%20kubernetes_state_pod_age%5C%7Bplatform%3D%22data%22,kube_namespace%21~%22data-dev%5C%7Cdata-stg%22,pod_phase%3D%22pending%22%5C%7D%5C%5B5m%5C%5D%5C%29%5C%29%20%3E%20600%22,%22refId%22:%22A%22%5C%7D%5C%5D,%22range%22:%5C%7B%22from%22:%22now-1h%22,%22to%22:%22now%22%5C%7D%5C%7D%22%60';
+      const decodedAndUnescaped =
+        'page_url="https://grafana.net/explore?left={"datasource":"grafanacloud-prom","queries":[{"datasource":{"type":"prometheus","uid":"grafanacloud-prom"},"expr":"max by (kube_cluster_name, kube_namespace) (quantile_over_time(0.85, kubernetes_state_pod_age{platform="data",kube_namespace!~"data-dev|data-stg",pod_phase="pending"}[5m])) > 600","refId":"A"}],"range":{"from":"now-1h","to":"now"}}"';
+      await explorePage.gotoServicesOldUrlLineFilters('tempo-distributor', false, urlEncodedAndEscaped);
       const firstLineFilterLoc = page.getByTestId(testIds.exploreServiceDetails.searchLogs).first();
 
       await expect(firstLineFilterLoc).toHaveCount(1);
       await expect(page.getByLabel('Disable case match')).toHaveCount(1);
       await expect(page.getByLabel('Enable case match')).toHaveCount(1);
-      await expect(firstLineFilterLoc).toHaveValue('debug');
+      await expect(firstLineFilterLoc).toHaveValue(decodedAndUnescaped);
     });
   });
 });
