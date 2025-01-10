@@ -153,7 +153,7 @@ describe('renderLogQLFieldFilters', () => {
     );
   });
 });
-describe('renderLogQLLineFilter', () => {
+describe('renderLogQLLineFilter not containing backticks', () => {
   // REGEXP ops
   test('Renders positive case-insensitive regex', () => {
     const filters: AdHocVariableFilter[] = [
@@ -164,7 +164,18 @@ describe('renderLogQLLineFilter', () => {
       },
     ];
 
-    expect(renderLogQLLineFilter(filters)).toEqual('|~ `(?i).(search`');
+    expect(renderLogQLLineFilter(filters)).toEqual('|~ "(?i).(search"');
+  });
+  test('Renders positive case-insensitive regex with newline', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: LineFilterCaseSensitive.caseInsensitive,
+        operator: LineFilterOp.regex,
+        value: '\nThe "key" field',
+      },
+    ];
+
+    expect(renderLogQLLineFilter(filters)).toEqual('|~ "(?i)\\nThe \\"key\\" field"');
   });
   test('Renders positive case-sensitive regex', () => {
     const filters: AdHocVariableFilter[] = [
@@ -175,7 +186,7 @@ describe('renderLogQLLineFilter', () => {
       },
     ];
 
-    expect(renderLogQLLineFilter(filters)).toEqual('|~ `\\w+`');
+    expect(renderLogQLLineFilter(filters)).toEqual('|~ "\\\\w+"');
   });
   test('Renders negative case-sensitive regex', () => {
     const filters: AdHocVariableFilter[] = [
@@ -186,7 +197,7 @@ describe('renderLogQLLineFilter', () => {
       },
     ];
 
-    expect(renderLogQLLineFilter(filters)).toEqual('!~ `\\w+`');
+    expect(renderLogQLLineFilter(filters)).toEqual('!~ "\\\\w+"');
   });
   test('Renders negative case-insensitive regex', () => {
     const filters: AdHocVariableFilter[] = [
@@ -197,7 +208,7 @@ describe('renderLogQLLineFilter', () => {
       },
     ];
 
-    expect(renderLogQLLineFilter(filters)).toEqual('!~ `(?i)\\w+`');
+    expect(renderLogQLLineFilter(filters)).toEqual('!~ "(?i)\\\\w+"');
   });
 
   // String contains ops
@@ -210,7 +221,7 @@ describe('renderLogQLLineFilter', () => {
       },
     ];
 
-    expect(renderLogQLLineFilter(filters)).toEqual('|~ `(?i)\\.\\(search`');
+    expect(renderLogQLLineFilter(filters)).toEqual('|~ "(?i)\\\\.\\\\(search"');
   });
   test('Renders positive case-sensitive string compare', () => {
     const filters: AdHocVariableFilter[] = [
@@ -221,7 +232,7 @@ describe('renderLogQLLineFilter', () => {
       },
     ];
 
-    expect(renderLogQLLineFilter(filters)).toEqual('|= `.(search`');
+    expect(renderLogQLLineFilter(filters)).toEqual('|= ".(search"');
   });
   test('Renders negative case-insensitive string compare', () => {
     const filters: AdHocVariableFilter[] = [
@@ -232,7 +243,7 @@ describe('renderLogQLLineFilter', () => {
       },
     ];
 
-    expect(renderLogQLLineFilter(filters)).toEqual('!~ `(?i)\\.\\(search`');
+    expect(renderLogQLLineFilter(filters)).toEqual('!~ "(?i)\\\\.\\\\(search"');
   });
   test('Renders negative case-sensitive string compare', () => {
     const filters: AdHocVariableFilter[] = [
@@ -243,10 +254,65 @@ describe('renderLogQLLineFilter', () => {
       },
     ];
 
-    expect(renderLogQLLineFilter(filters)).toEqual('!= `.(search`');
+    expect(renderLogQLLineFilter(filters)).toEqual('!= ".(search"');
   });
 });
-
+describe('renderLogQLLineFilter containing backticks', () => {
+  // Keep in mind we see twice as many escape chars in the test code as we do IRL
+  test('Renders positive case-insensitive regex with newline', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: LineFilterCaseSensitive.caseInsensitive,
+        operator: LineFilterOp.regex,
+        // If a log line contains a newline as a string, they will need to escape the escape char and type "\\n" in the field input, otherwise loki will match actual newlines with regex searches
+        value: '\\\\nThe `key` field', // the user enters: \\nThe `key` field
+      },
+    ];
+    expect(renderLogQLLineFilter(filters)).toEqual('|~ "(?i)\\\\\\\\nThe `key` field"');
+  });
+  test('Renders positive case-sensitive regex with newline', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: LineFilterCaseSensitive.caseSensitive,
+        operator: LineFilterOp.regex,
+        value: '\\\\nThe `key` field', // the user enters: \\nThe `key` field
+      },
+    ];
+    expect(renderLogQLLineFilter(filters)).toEqual('|~ "\\\\\\\\nThe `key` field"');
+  });
+  test('Renders positive case-insensitive match with newline', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: LineFilterCaseSensitive.caseInsensitive,
+        operator: LineFilterOp.match,
+        value: '\\nThe `key` field', // the user enters: \nThe `key` field
+      },
+    ];
+    expect(renderLogQLLineFilter(filters)).toEqual(`|~ "(?i)\\\\\\\\nThe \`key\` field"`);
+  });
+  test('Renders positive case-sensitive match with newline', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: LineFilterCaseSensitive.caseSensitive,
+        operator: LineFilterOp.match,
+        value: '\\nThe `key` field', // the user enters: \nThe `key` field
+      },
+    ];
+    expect(renderLogQLLineFilter(filters)).toEqual('|= "\\\\nThe `key` field"');
+  });
+  test('Renders positive case-insensitive regex', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: LineFilterCaseSensitive.caseInsensitive,
+        operator: LineFilterOp.regex,
+        value: `^level=[error|warning].+((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}:\\d{5}"$|\``, // the user enters ^level=[error|warning].+((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}:\d{5}"$|`
+      },
+    ];
+    expect(renderLogQLLineFilter(filters)).toEqual(
+      '|~ "(?i)^level=[error|warning].+((25[0-5]|(2[0-4]|1\\\\d|[1-9]|)\\\\d)\\\\.?\\\\b){4}:\\\\d{5}\\"$|`"'
+    );
+  });
+});
 describe('renderLogQLLabelFilters', () => {
   test('Renders positive filters', () => {
     const filters: AdHocVariableFilter[] = [
