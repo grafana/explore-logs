@@ -73,8 +73,8 @@ export function getMatcherFromQuery(query: string): Filter[] {
     const matcherPosition = NodePosition.fromNode(matcher);
     const identifierPosition = getAllPositionsInNodeByType(matcher, Identifier);
     const valuePosition = getAllPositionsInNodeByType(matcher, String);
-    const operation = query.substring(identifierPosition[0].to, valuePosition[0].from);
-    const op = operation === '=' ? FilterOp.Equal : FilterOp.NotEqual;
+    // @todo narrow the type to enum
+    const operator = query.substring(identifierPosition[0].to, valuePosition[0].from) as FilterOp;
     const key = identifierPosition[0].getExpression(query);
     const value = valuePosition.map((position) => query.substring(position.from + 1, position.to - 1))[0];
 
@@ -84,7 +84,7 @@ export function getMatcherFromQuery(query: string): Filter[] {
 
     filter.push({
       key,
-      operator: op,
+      operator,
       value,
       type: selectorPosition.contains(matcherPosition) ? LabelType.Indexed : undefined,
     });

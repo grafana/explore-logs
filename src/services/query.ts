@@ -253,7 +253,6 @@ export function joinTagFilters(variable: AdHocFiltersVariable) {
   }
 
   if (negative.length) {
-    console.log('filters', { filters, negative, positiveGroups });
     negative.forEach((filter) => {
       filters.push(filter);
     });

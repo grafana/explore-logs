@@ -7,6 +7,7 @@ import { LabelType } from '../fieldsTypes';
 import { getMatcherFromQuery } from '../logqlMatchers';
 import { LokiQuery } from '../lokiQuery';
 import { FilterOp } from '../filterTypes';
+import { isOperatorExclusive, isOperatorInclusive } from '../operators';
 
 const title = 'Open in Explore Logs';
 const description = 'Open current query in the Explore Logs view';
@@ -54,7 +55,7 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
   const expr = lokiQuery.expr;
   const labelFilters = getMatcherFromQuery(expr);
 
-  const labelSelector = labelFilters.find((selector) => selector.operator === FilterOp.Equal);
+  const labelSelector = labelFilters.find((selector) => isOperatorInclusive(selector.operator));
 
   if (!labelSelector) {
     return undefined;
@@ -81,6 +82,7 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
       params
     );
   }
+
   return {
     path: createAppUrl(`/explore/${labelName}/${labelValue}/logs`, params),
   };

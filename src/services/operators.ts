@@ -17,16 +17,14 @@ const getLabelForOperator = (op: FilterOp): string => {
   }
 };
 
-export const operators = [FilterOp.Equal, FilterOp.NotEqual, FilterOp.RegexEqual, FilterOp.RegexNotEqual].map<
-  SelectableValue<string>
->((value, index, array) => {
+export const operators = [FilterOp.Equal, FilterOp.NotEqual].map<SelectableValue<string>>((value, index, array) => {
   return {
     label: getLabelForOperator(value),
     value,
   };
 });
 
-export const includeOperators = [FilterOp.Equal, FilterOp.RegexEqual].map<SelectableValue<string>>((value) => ({
+export const includeOperators = [FilterOp.Equal].map<SelectableValue<string>>((value) => ({
   label: getLabelForOperator(value),
   value,
 }));
