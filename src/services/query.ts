@@ -11,6 +11,7 @@ import { AdHocFiltersVariable } from '@grafana/scenes';
 import { FilterOp, LineFilterOp } from './filterTypes';
 import { LineFilterCaseSensitive } from '../Components/ServiceScene/LineFilter/LineFilterScene';
 import { sortLineFilters } from '../Components/IndexScene/LineFilterVariablesScene';
+import { isOperatorExclusive, isOperatorInclusive } from './operators';
 
 /**
  * Builds the resource query
@@ -66,8 +67,8 @@ export const buildVolumeQuery = (
 };
 
 export function getLogQLLabelGroups(filters: AdHocVariableFilter[]) {
-  const positive = filters.filter((filter) => filter.operator === FilterOp.Equal);
-  const negative = filters.filter((filter) => filter.operator === FilterOp.NotEqual);
+  const positive = filters.filter((filter) => isOperatorInclusive(filter.operator));
+  const negative = filters.filter((filter) => isOperatorExclusive(filter.operator));
 
   const positiveGroups = groupBy(positive, (filter) => filter.key);
   return { negative, positiveGroups };
@@ -240,20 +241,24 @@ export function joinTagFilters(variable: AdHocFiltersVariable) {
       filters.push({
         key,
         value: positiveGroups[key][0].value,
-        operator: '=',
+        operator: positiveGroups[key][0].operator,
       });
     } else {
       filters.push({
         key,
         value: values.join('|'),
-        operator: '=~',
+        operator: positiveGroups[key][0].operator,
       });
     }
   }
 
-  negative.forEach((filter) => {
-    filters.push(filter);
-  });
+  if (negative.length) {
+    console.log('filters', { filters, negative, positiveGroups });
+    negative.forEach((filter) => {
+      filters.push(filter);
+    });
+  }
+
   return filters;
 }
 

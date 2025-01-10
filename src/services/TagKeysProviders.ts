@@ -25,6 +25,8 @@ export async function getLabelsTagKeysProvider(variable: AdHocFiltersVariable): 
       filters,
     };
 
+    // @todo currently having a regex-include will not allow regular include.
+    // Do we want to only have regex operations?
     const tagKeys = await datasource.getTagKeys(options);
     const result: MetricFindValue[] = Array.isArray(tagKeys) ? tagKeys : [];
     const filteredResult = result.filter((key) => !LABELS_TO_REMOVE.includes(key.text));

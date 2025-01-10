@@ -58,6 +58,8 @@ import {
 import { replaceSlash } from '../../services/extensions/links';
 import { ShowLogsButtonScene } from '../IndexScene/ShowLogsButtonScene';
 import { migrateLineFilterV1 } from '../../services/migrations';
+import { FilterOp } from '../../services/filterTypes';
+import { isOperatorInclusive } from '../../services/operators';
 
 export const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 export const LOGS_COUNT_QUERY_REFID = 'logsCountQuery';
@@ -182,10 +184,12 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
         // The "primary" label used in the URL is no longer active, pick a new one
         if (
           !newState.filters.some(
-            (f) => f.key === labelName && f.operator === '=' && replaceSlash(f.value) === labelValue
+            (f) => f.key === labelName && isOperatorInclusive(f.operator) && replaceSlash(f.value) === labelValue
           )
         ) {
-          const newPrimaryLabel = newState.filters.find((f) => f.operator === '=' && f.value !== EMPTY_VARIABLE_VALUE);
+          const newPrimaryLabel = newState.filters.find(
+            (f) => isOperatorInclusive(f.operator) && f.value !== EMPTY_VARIABLE_VALUE
+          );
           if (newPrimaryLabel) {
             indexScene.setState({
               routeMatch: {

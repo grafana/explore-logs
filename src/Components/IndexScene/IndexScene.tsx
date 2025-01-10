@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { AdHocVariableFilter, AppEvents, AppPluginMeta, rangeUtil, SelectableValue } from '@grafana/data';
+import { AdHocVariableFilter, AppEvents, AppPluginMeta, rangeUtil } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   CustomVariable,
@@ -82,11 +82,18 @@ import { lokiRegularEscape } from '../../services/fields';
 import { logger } from '../../services/logger';
 import { getLabelsTagKeysProvider } from '../../services/TagKeysProviders';
 import { AdHocFilterWithLabels, getLokiDatasource } from '../../services/scenes';
-import { FilterOp, LineFilterOp } from '../../services/filterTypes';
+import { FilterOp } from '../../services/filterTypes';
 import { ShowLogsButtonScene } from './ShowLogsButtonScene';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
 import { getCopiedTimeRange, PasteTimeEvent, setupKeyboardShortcuts } from '../../services/keyboardShortcuts';
 import { LokiDatasource } from '../../services/lokiQuery';
+import {
+  includeOperators,
+  lineFilterOperators,
+  numericOperatorArray,
+  numericOperators,
+  operators,
+} from '../../services/operators';
 
 export const showLogsButtonSceneKey = 'showLogsButtonScene';
 export interface AppliedPattern {
@@ -437,29 +444,6 @@ function getContentScene(drillDownLabel?: string) {
     drillDownLabel,
   });
 }
-const operators = [FilterOp.Equal, FilterOp.NotEqual].map<SelectableValue<string>>((value) => ({
-  label: value,
-  value,
-}));
-
-const includeOperators = [FilterOp.Equal].map<SelectableValue<string>>((value) => ({
-  label: value,
-  value,
-}));
-
-export const numericOperatorArray = [FilterOp.gt, FilterOp.gte, FilterOp.lt, FilterOp.lte];
-
-const numericOperators = numericOperatorArray.map<SelectableValue<string>>((value) => ({
-  label: value,
-  value,
-}));
-
-const lineFilterOperators: SelectableValue[] = [
-  { label: 'match', value: LineFilterOp.match },
-  { label: 'negativeMatch', value: LineFilterOp.negativeMatch },
-  { label: 'regex', value: LineFilterOp.regex },
-  { label: 'negativeRegex', value: LineFilterOp.negativeRegex },
-];
 
 function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVariableFilter[]) {
   const labelVariable = new AdHocFiltersVariable({
@@ -467,6 +451,8 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     datasource: EXPLORATION_DS,
     layout: 'combobox',
     label: 'Labels',
+    supportsMultiValueOperators: true,
+    allowCustomValue: true,
     filters: initialFilters ?? [],
     expressionBuilder: renderLogQLLabelFilters,
     hide: VariableHide.dontHide,

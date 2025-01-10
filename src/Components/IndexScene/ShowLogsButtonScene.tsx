@@ -5,8 +5,8 @@ import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 import { navigateToInitialPageAfterServiceSelection } from '../../services/navigate';
 import { getLabelsVariable } from '../../services/variableGetters';
-import { FilterOp } from '../../services/filterTypes';
 import { testIds } from '../../services/testIds';
+import { isOperatorInclusive } from '../../services/operators';
 
 export interface ShowLogsButtonSceneState extends SceneObjectState {
   disabled?: boolean;
@@ -23,13 +23,13 @@ export class ShowLogsButtonScene extends SceneObjectBase<ShowLogsButtonSceneStat
 
   onActivate() {
     const labelsVar = getLabelsVariable(this);
-    const hasPositiveFilter = labelsVar.state.filters.some((f) => f.operator === FilterOp.Equal);
+    const hasPositiveFilter = labelsVar.state.filters.some((f) => isOperatorInclusive(f.operator));
     this.setState({
       disabled: !hasPositiveFilter,
     });
 
     labelsVar.subscribeToState((newState) => {
-      const hasPositiveFilter = newState.filters.some((f) => f.operator === FilterOp.Equal);
+      const hasPositiveFilter = newState.filters.some((f) => isOperatorInclusive(f.operator));
       this.setState({
         disabled: !hasPositiveFilter,
       });
@@ -38,7 +38,7 @@ export class ShowLogsButtonScene extends SceneObjectBase<ShowLogsButtonSceneStat
 
   onClick = () => {
     const labelsVar = getLabelsVariable(this);
-    const positiveFilter = labelsVar.state.filters.find((f) => f.operator === FilterOp.Equal);
+    const positiveFilter = labelsVar.state.filters.find((f) => isOperatorInclusive(f.operator));
 
     if (positiveFilter) {
       navigateToInitialPageAfterServiceSelection(positiveFilter.key, positiveFilter.value);
