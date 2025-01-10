@@ -1,10 +1,10 @@
 // Warning: This file (and any imports) are included in the main bundle with Grafana in order to provide link extension support in Grafana core, in an effort to keep Grafana loading quickly, please do not add any unnecessary imports to this file and run the bundle analyzer before committing any changes!
-import { PluginExtensionLinkConfig, PluginExtensionPanelContext, PluginExtensionPoints } from '@grafana/data';
+import { PluginExtensionLinkConfig, PluginExtensionPanelContext, PluginExtensionPoints, urlUtil } from '@grafana/data';
 
-import { SERVICE_NAME, VAR_DATASOURCE, VAR_FIELDS, VAR_LABELS } from 'services/variables';
+import { SERVICE_NAME, VAR_DATASOURCE, VAR_FIELDS, VAR_LABELS, VAR_LINE_FILTERS } from 'services/variables';
 import pluginJson from '../../plugin.json';
 import { LabelType } from '../fieldsTypes';
-import { getMatcherFromQuery } from '../logqlMatchers';
+import { escapeUrlPipeDelimiters, getMatcherFromQuery } from '../logqlMatchers';
 import { LokiQuery } from '../lokiQuery';
 import { FilterOp } from '../filterTypes';
 
@@ -52,7 +52,7 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
   }
 
   const expr = lokiQuery.expr;
-  const labelFilters = getMatcherFromQuery(expr);
+  const { labelFilters: labelFilters, lineFilters } = getMatcherFromQuery(expr);
 
   const labelSelector = labelFilters.find((selector) => selector.operator === FilterOp.Equal);
 
@@ -72,6 +72,7 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
   for (const labelFilter of labelFilters) {
     // skip non-indexed filters for now
     if (labelFilter.type !== LabelType.Indexed) {
+      console.log('non index filter?', labelFilter);
       continue;
     }
 
@@ -81,6 +82,19 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
       params
     );
   }
+
+  if (lineFilters) {
+    for (const lineFilter of lineFilters) {
+      params = appendUrlParameter(
+        UrlParameters.LineFilters,
+        `${lineFilter.key}|${escapeUrlPipeDelimiters(lineFilter.operator)}|${lineFilter.value}`,
+        params
+      );
+    }
+  }
+
+  console.log('APP URL', createAppUrl(`/explore/${labelName}/${labelValue}/logs`, params));
+
   return {
     path: createAppUrl(`/explore/${labelName}/${labelValue}/logs`, params),
   };
@@ -96,6 +110,7 @@ export const UrlParameters = {
   TimeRangeTo: 'to',
   Labels: `var-${VAR_LABELS}`,
   Fields: `var-${VAR_FIELDS}`,
+  LineFilters: `var-${VAR_LINE_FILTERS}`,
 } as const;
 export type UrlParameterType = (typeof UrlParameters)[keyof typeof UrlParameters];
 

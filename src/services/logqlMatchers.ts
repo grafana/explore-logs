@@ -1,9 +1,23 @@
 // Warning: This file (and any imports) are included in the main bundle with Grafana in order to provide link extension support in Grafana core, in an effort to keep Grafana loading quickly, please do not add any unnecessary imports to this file and run the bundle analyzer before committing any changes!
 
-import { Identifier, Matcher, parser, Selector, String } from '@grafana/lezer-logql';
+import {
+  FilterOp,
+  Identifier,
+  LineFilter,
+  Matcher,
+  Neq,
+  Nre,
+  OrFilter,
+  parser,
+  PipeExact,
+  PipeMatch,
+  Selector,
+  String,
+} from '@grafana/lezer-logql';
 import { NodeType, SyntaxNode, Tree } from '@lezer/common';
 import { LabelType } from './fieldsTypes';
-import { Filter, FilterOp } from './filterTypes';
+import { Filter, FilterOp as FilterOperator, LineFilterOp, LineFilterType } from './filterTypes';
+import { LineFilterCaseSensitive } from '../Components/ServiceScene/LineFilter/LineFilterScene';
 
 export class NodePosition {
   from: number;
@@ -60,11 +74,12 @@ function getAllPositionsInNodeByType(node: SyntaxNode, type: number): NodePositi
   return positions;
 }
 
-export function getMatcherFromQuery(query: string): Filter[] {
+export function getMatcherFromQuery(query: string): { labelFilters: Filter[]; lineFilters?: LineFilterType[] } {
   const filter: Filter[] = [];
+  const lineFilters: LineFilterType[] = [];
   const selector = getNodesFromQuery(query, [Selector]);
   if (selector.length === 0) {
-    return filter;
+    return { labelFilters: filter };
   }
   const selectorPosition = NodePosition.fromNode(selector[0]);
 
@@ -74,7 +89,7 @@ export function getMatcherFromQuery(query: string): Filter[] {
     const identifierPosition = getAllPositionsInNodeByType(matcher, Identifier);
     const valuePosition = getAllPositionsInNodeByType(matcher, String);
     const operation = query.substring(identifierPosition[0].to, valuePosition[0].from);
-    const op = operation === '=' ? FilterOp.Equal : FilterOp.NotEqual;
+    const op = operation === '=' ? FilterOperator.Equal : FilterOperator.NotEqual;
     const key = identifierPosition[0].getExpression(query);
     const value = valuePosition.map((position) => query.substring(position.from + 1, position.to - 1))[0];
 
@@ -90,7 +105,42 @@ export function getMatcherFromQuery(query: string): Filter[] {
     });
   }
 
-  return filter;
+  const allLineFilters = getNodesFromQuery(query, [LineFilter]);
+  for (const [index, matcher] of allLineFilters.entries()) {
+    const equal = getAllPositionsInNodeByType(matcher, PipeExact);
+    const pipeRegExp = getAllPositionsInNodeByType(matcher, PipeMatch);
+    const notEqual = getAllPositionsInNodeByType(matcher, Neq);
+    const notEqualRegExp = getAllPositionsInNodeByType(matcher, Nre);
+
+    const lineFilterValueNode = getStringsFromLineFilter(matcher);
+    // Remove quotes
+    const lineFilterValue = query.substring(lineFilterValueNode[0]?.from + 1, lineFilterValueNode[0]?.to - 1);
+
+    if (lineFilterValue.length) {
+      let operator;
+      if (equal.length) {
+        operator = LineFilterOp.match;
+      } else if (notEqual.length) {
+        operator = LineFilterOp.negativeMatch;
+      } else if (notEqualRegExp.length) {
+        operator = LineFilterOp.negativeRegex;
+      } else if (pipeRegExp.length) {
+        operator = LineFilterOp.regex;
+      } else {
+        throw new Error('unknown line filter operator');
+      }
+
+      lineFilters.push({
+        key: lineFilterValue.includes('(?i)')
+          ? LineFilterCaseSensitive.caseInsensitive.toString()
+          : LineFilterCaseSensitive.caseSensitive.toString() + ',' + index.toString(),
+        operator: operator,
+        value: lineFilterValue.trim(),
+      });
+    }
+  }
+
+  return { labelFilters: filter, lineFilters };
 }
 
 export function isQueryWithNode(query: string, nodeType: number): boolean {
@@ -115,4 +165,28 @@ export function isQueryWithNode(query: string, nodeType: number): boolean {
 export const ErrorId = 0;
 export function isValidQuery(query: string): boolean {
   return isQueryWithNode(query, ErrorId) === false;
+}
+
+function getStringsFromLineFilter(filter: SyntaxNode): SyntaxNode[] {
+  const nodes: SyntaxNode[] = [];
+  let node: SyntaxNode | null = filter;
+  do {
+    const string = node.getChild(String);
+    if (string && !node.getChild(FilterOp)) {
+      nodes.push(string);
+    }
+    node = node.getChild(OrFilter);
+  } while (node != null);
+
+  return nodes;
+}
+
+// Taken from scenes/packages/scenes/src/variables/utils.ts
+export function escapeUrlPipeDelimiters(value: string | undefined): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  // Replace the pipe due to using it as a filter separator
+  return (value = /\|/g[Symbol.replace](value, '__gfp__'));
 }
