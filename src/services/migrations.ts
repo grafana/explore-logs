@@ -3,16 +3,37 @@ import { getLineFiltersVariable } from './variableGetters';
 import { LineFilterCaseSensitive } from '../Components/ServiceScene/LineFilter/LineFilterScene';
 import { LineFilterOp } from './filterTypes';
 import { ServiceScene } from '../Components/ServiceScene/ServiceScene';
+import { urlUtil } from '@grafana/data';
+
+function removeEscapeChar(value: string, caseSensitive: boolean) {
+  const charsEscapedByEscapeRegExp = ['^', '$', '.', '*', '+', '?', '(', ')', '[', ']', '{', '}', '|'];
+  if (!caseSensitive) {
+    charsEscapedByEscapeRegExp.push('\\');
+  }
+  return value
+    .split('')
+    .filter((char, index, stringArray) => {
+      // We need to differentiate between user entered escape chars, and escape chars added by lodash escapeRegExp to return the same query results in urls from before the line filter regex feature
+      // Since there is no reverse of the escapeRegExp method provided by lodash we're essentially building our own "unescapeRegExp"
+      const nextChar = stringArray[index + 1];
+      const isNextCharRegex = charsEscapedByEscapeRegExp.includes(nextChar);
+      return !(char === '\\' && isNextCharRegex);
+    })
+    .join('');
+}
 
 /**
  * Migrates old line filter to new variables
  */
 export function migrateLineFilterV1(serviceScene: ServiceScene) {
-  const search = locationService.getSearch();
+  const search = urlUtil.getUrlSearchParams();
 
-  const deprecatedLineFilter = search.get('var-lineFilter');
-
-  if (!deprecatedLineFilter) {
+  const deprecatedLineFilterArray = search['var-lineFilter'];
+  if (!Array.isArray(deprecatedLineFilterArray) || !deprecatedLineFilterArray.length) {
+    return;
+  }
+  const deprecatedLineFilter = deprecatedLineFilterArray[0];
+  if (typeof deprecatedLineFilter !== 'string' || !deprecatedLineFilter) {
     return;
   }
 
@@ -26,7 +47,7 @@ export function migrateLineFilterV1(serviceScene: ServiceScene) {
           {
             key: LineFilterCaseSensitive.caseSensitive,
             operator: LineFilterOp.match,
-            value: caseSensitiveMatches[1],
+            value: removeEscapeChar(caseSensitiveMatches[1], true),
             keyLabel: '0',
           },
         ],
@@ -41,7 +62,7 @@ export function migrateLineFilterV1(serviceScene: ServiceScene) {
         {
           key: LineFilterCaseSensitive.caseInsensitive,
           operator: LineFilterOp.match,
-          value: caseInsensitiveMatches[1],
+          value: removeEscapeChar(caseInsensitiveMatches[1], false),
           keyLabel: '0',
         },
       ]);
@@ -49,8 +70,6 @@ export function migrateLineFilterV1(serviceScene: ServiceScene) {
   }
 
   // Remove from url without refreshing
-  const newLocation = locationService.getLocation();
-  search.delete('var-lineFilter');
-  newLocation.search = search.toString();
-  locationService.replace(newLocation.pathname + '?' + newLocation.search);
+  delete search['var-lineFilter'];
+  locationService.replace(urlUtil.renderUrl(location.pathname, search));
 }
