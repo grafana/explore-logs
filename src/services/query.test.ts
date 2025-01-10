@@ -164,7 +164,7 @@ describe('renderLogQLLineFilter not containing backticks', () => {
       },
     ];
 
-    expect(renderLogQLLineFilter(filters)).toEqual('|~ `(?i).(search`');
+    expect(renderLogQLLineFilter(filters)).toEqual('|~ "(?i).(search"');
   });
   test('Renders positive case-insensitive regex with newline', () => {
     const filters: AdHocVariableFilter[] = [
@@ -175,7 +175,7 @@ describe('renderLogQLLineFilter not containing backticks', () => {
       },
     ];
 
-    expect(renderLogQLLineFilter(filters)).toEqual('|~ `(?i)\nThe "key" field`');
+    expect(renderLogQLLineFilter(filters)).toEqual('|~ "(?i)\\nThe \\"key\\" field"');
   });
   test('Renders positive case-sensitive regex', () => {
     const filters: AdHocVariableFilter[] = [
@@ -186,7 +186,7 @@ describe('renderLogQLLineFilter not containing backticks', () => {
       },
     ];
 
-    expect(renderLogQLLineFilter(filters)).toEqual('|~ `\\w+`');
+    expect(renderLogQLLineFilter(filters)).toEqual('|~ "\\\\w+"');
   });
   test('Renders negative case-sensitive regex', () => {
     const filters: AdHocVariableFilter[] = [
@@ -197,7 +197,7 @@ describe('renderLogQLLineFilter not containing backticks', () => {
       },
     ];
 
-    expect(renderLogQLLineFilter(filters)).toEqual('!~ `\\w+`');
+    expect(renderLogQLLineFilter(filters)).toEqual('!~ "\\\\w+"');
   });
   test('Renders negative case-insensitive regex', () => {
     const filters: AdHocVariableFilter[] = [
@@ -208,7 +208,7 @@ describe('renderLogQLLineFilter not containing backticks', () => {
       },
     ];
 
-    expect(renderLogQLLineFilter(filters)).toEqual('!~ `(?i)\\w+`');
+    expect(renderLogQLLineFilter(filters)).toEqual('!~ "(?i)\\\\w+"');
   });
 
   // String contains ops
@@ -221,7 +221,7 @@ describe('renderLogQLLineFilter not containing backticks', () => {
       },
     ];
 
-    expect(renderLogQLLineFilter(filters)).toEqual('|~ `(?i)\\.\\(search`');
+    expect(renderLogQLLineFilter(filters)).toEqual('|~ "(?i)\\\\.\\\\(search"');
   });
   test('Renders positive case-sensitive string compare', () => {
     const filters: AdHocVariableFilter[] = [
@@ -232,7 +232,7 @@ describe('renderLogQLLineFilter not containing backticks', () => {
       },
     ];
 
-    expect(renderLogQLLineFilter(filters)).toEqual('|= `.(search`');
+    expect(renderLogQLLineFilter(filters)).toEqual('|= ".(search"');
   });
   test('Renders negative case-insensitive string compare', () => {
     const filters: AdHocVariableFilter[] = [
@@ -243,7 +243,7 @@ describe('renderLogQLLineFilter not containing backticks', () => {
       },
     ];
 
-    expect(renderLogQLLineFilter(filters)).toEqual('!~ `(?i)\\.\\(search`');
+    expect(renderLogQLLineFilter(filters)).toEqual('!~ "(?i)\\\\.\\\\(search"');
   });
   test('Renders negative case-sensitive string compare', () => {
     const filters: AdHocVariableFilter[] = [
@@ -254,7 +254,7 @@ describe('renderLogQLLineFilter not containing backticks', () => {
       },
     ];
 
-    expect(renderLogQLLineFilter(filters)).toEqual('!= `.(search`');
+    expect(renderLogQLLineFilter(filters)).toEqual('!= ".(search"');
   });
 });
 describe('renderLogQLLineFilter containing backticks', () => {

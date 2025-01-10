@@ -120,13 +120,6 @@ export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
   return `${positiveFilters} ${negativeFilters} ${numericFilters}`.trim();
 }
 
-export function escapeBacktickQuotedLineFilter(filter: AdHocVariableFilter) {
-  return (filter.operator === LineFilterOp.match || filter.operator === LineFilterOp.negativeMatch) &&
-    filter.key === LineFilterCaseSensitive.caseInsensitive
-    ? escapeLokiRegexp(filter.value)
-    : filter.value;
-}
-
 export function escapeDoubleQuotedLineFilter(filter: AdHocFilterWithLabels) {
   // Is not regex
   if (filter.operator === LineFilterOp.match || filter.operator === LineFilterOp.negativeMatch) {
@@ -140,16 +133,16 @@ export function escapeDoubleQuotedLineFilter(filter: AdHocFilterWithLabels) {
   }
 }
 
-function buildLogQlLineFilter(filter: AdHocFilterWithLabels, quote: string, value: string) {
+function buildLogQlLineFilter(filter: AdHocFilterWithLabels, value: string) {
   // Change operator if needed and insert caseInsensitive flag
   if (filter.key === LineFilterCaseSensitive.caseInsensitive) {
     if (filter.operator === LineFilterOp.negativeRegex || filter.operator === LineFilterOp.negativeMatch) {
-      return `${LineFilterOp.negativeRegex} ${quote}(?i)${value}${quote}`;
+      return `${LineFilterOp.negativeRegex} "(?i)${value}"`;
     }
-    return `${LineFilterOp.regex} ${quote}(?i)${value}${quote}`;
+    return `${LineFilterOp.regex} "(?i)${value}"`;
   }
 
-  return `${filter.operator} ${quote}${value}${quote}`;
+  return `${filter.operator} "${value}"`;
 }
 
 /**
@@ -167,16 +160,8 @@ export function renderLogQLLineFilter(filters: AdHocFilterWithLabels[]) {
         return '';
       }
 
-      let value, quote;
-      if (filter.value.includes('`')) {
-        value = escapeDoubleQuotedLineFilter(filter);
-        quote = `"`;
-      } else {
-        value = escapeBacktickQuotedLineFilter(filter);
-        quote = '`';
-      }
-
-      return buildLogQlLineFilter(filter, quote, value);
+      const value = escapeDoubleQuotedLineFilter(filter);
+      return buildLogQlLineFilter(filter, value);
     })
     .join(' ');
 }
