@@ -1,7 +1,7 @@
 import { AdHocVariableFilter } from '@grafana/data';
 import { AppliedPattern, numericOperatorArray } from 'Components/IndexScene/IndexScene';
 import { EMPTY_VARIABLE_VALUE, VAR_DATASOURCE_EXPR } from './variables';
-import { escapeRegExp, groupBy, trim } from 'lodash';
+import { groupBy, trim } from 'lodash';
 import { getValueFromFieldsFilter } from './variableGetters';
 import { LokiQuery } from './lokiQuery';
 import { SceneDataQueryResourceRequest, SceneDataQueryResourceRequestOptions } from './datasourceTypes';
