@@ -17,16 +17,7 @@ function removeEscapeChar(value: string, caseSensitive: boolean) {
       // Since there is no reverse of the escapeRegExp method provided by lodash we're essentially building our own "unescapeRegExp"
       const nextChar = stringArray[index + 1];
       const isNextCharRegex = charsEscapedByEscapeRegExp.includes(nextChar);
-      const filterChar = !(char === '\\' && isNextCharRegex);
-
-      console.log('char', {
-        char,
-        nextChar,
-        isNextCharRegex,
-        filterChar,
-      });
-
-      return filterChar;
+      return !(char === '\\' && isNextCharRegex);
     })
     .join('');
 }
