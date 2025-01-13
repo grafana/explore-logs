@@ -29,3 +29,8 @@ export enum LineFilterOp {
   regex = '|~',
   negativeRegex = `!~`,
 }
+
+export enum LineFilterCaseSensitive {
+  caseSensitive = 'caseSensitive',
+  caseInsensitive = 'caseInsensitive',
+}

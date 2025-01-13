@@ -16,8 +16,13 @@ import {
 } from '@grafana/lezer-logql';
 import { NodeType, SyntaxNode, Tree } from '@lezer/common';
 import { LabelType } from './fieldsTypes';
-import { Filter, FilterOp as FilterOperator, LineFilterOp, LineFilterType } from './filterTypes';
-import { LineFilterCaseSensitive } from '../Components/ServiceScene/LineFilter/LineFilterScene';
+import {
+  Filter,
+  FilterOp as FilterOperator,
+  LineFilterCaseSensitive,
+  LineFilterOp,
+  LineFilterType,
+} from './filterTypes';
 
 export class NodePosition {
   from: number;
@@ -74,13 +79,7 @@ function getAllPositionsInNodeByType(node: SyntaxNode, type: number): NodePositi
   return positions;
 }
 
-export function getMatcherFromQuery(query: string): { labelFilters: Filter[]; lineFilters?: LineFilterType[] } {
-  const filter: Filter[] = [];
-  const lineFilters: LineFilterType[] = [];
-  const selector = getNodesFromQuery(query, [Selector]);
-  if (selector.length === 0) {
-    return { labelFilters: filter };
-  }
+function parseLabelFilters(selector: SyntaxNode[], query: string, filter: Filter[]) {
   const selectorPosition = NodePosition.fromNode(selector[0]);
 
   const allMatcher = getNodesFromQuery(query, [Matcher]);
@@ -104,7 +103,9 @@ export function getMatcherFromQuery(query: string): { labelFilters: Filter[]; li
       type: selectorPosition.contains(matcherPosition) ? LabelType.Indexed : undefined,
     });
   }
+}
 
+function parseLineFilters(query: string, lineFilters: LineFilterType[]) {
   const allLineFilters = getNodesFromQuery(query, [LineFilter]);
   for (const [index, matcher] of allLineFilters.entries()) {
     const equal = getAllPositionsInNodeByType(matcher, PipeExact);
@@ -139,6 +140,18 @@ export function getMatcherFromQuery(query: string): { labelFilters: Filter[]; li
       });
     }
   }
+}
+
+export function getMatcherFromQuery(query: string): { labelFilters: Filter[]; lineFilters?: LineFilterType[] } {
+  const filter: Filter[] = [];
+  const lineFilters: LineFilterType[] = [];
+  const selector = getNodesFromQuery(query, [Selector]);
+  if (selector.length === 0) {
+    return { labelFilters: filter };
+  }
+
+  parseLabelFilters(selector, query, filter);
+  parseLineFilters(query, lineFilters);
 
   return { labelFilters: filter, lineFilters };
 }

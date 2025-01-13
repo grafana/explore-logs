@@ -8,8 +8,7 @@ import { SceneDataQueryResourceRequest, SceneDataQueryResourceRequestOptions } f
 import { AdHocFilterWithLabels } from './scenes';
 import { PLUGIN_ID } from './plugin';
 import { AdHocFiltersVariable } from '@grafana/scenes';
-import { FilterOp, LineFilterOp } from './filterTypes';
-import { LineFilterCaseSensitive } from '../Components/ServiceScene/LineFilter/LineFilterScene';
+import { FilterOp, LineFilterCaseSensitive, LineFilterOp } from './filterTypes';
 import { sortLineFilters } from '../Components/IndexScene/LineFilterVariablesScene';
 
 /**

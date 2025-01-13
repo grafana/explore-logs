@@ -1,10 +1,10 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { LineFilterCaseSensitive, LineFilterScene } from './LineFilterScene';
+import { LineFilterScene } from './LineFilterScene';
 import userEvent from '@testing-library/user-event';
 import { AdHocFiltersVariable, SceneVariableSet } from '@grafana/scenes';
 import { VAR_LINE_FILTER, VAR_LINE_FILTERS } from 'services/variables';
-import { LineFilterOp } from '../../../services/filterTypes';
+import { LineFilterCaseSensitive, LineFilterOp } from '../../../services/filterTypes';
 import { renderLogQLLineFilter } from '../../../services/query';
 
 let location = {} as Location;

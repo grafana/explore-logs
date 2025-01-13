@@ -9,8 +9,7 @@ import {
 
 import { FieldValue } from './variables';
 import { AdHocFiltersVariable } from '@grafana/scenes';
-import { FilterOp, LineFilterOp } from './filterTypes';
-import { LineFilterCaseSensitive } from '../Components/ServiceScene/LineFilter/LineFilterScene';
+import { FilterOp, LineFilterCaseSensitive, LineFilterOp } from './filterTypes';
 
 describe('buildDataQuery', () => {
   test('Given an expression outputs a Loki query', () => {
