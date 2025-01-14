@@ -23,9 +23,9 @@ import { map, Observable } from 'rxjs';
 import { SortBy, SortByScene } from '../Components/ServiceScene/Breakdowns/SortByScene';
 import { getDetectedFieldsFrame } from '../Components/ServiceScene/ServiceScene';
 import { getLogsStreamSelector, getValueFromFieldsFilter } from './variableGetters';
-import { LabelType } from './fieldsTypes';
 import { logger } from './logger';
 import { PanelMenu } from '../Components/Panels/PanelMenu';
+import { getLabelTypeFromFrame, LabelType } from './lokiQuery';
 
 export type DetectedLabel = {
   label: string;
@@ -186,23 +186,6 @@ export function selectFrameTransformation(frame: DataFrame) {
   };
 }
 
-export function getLabelTypeFromFrame(labelKey: string, frame: DataFrame, index = 0): null | LabelType {
-  const typeField = frame.fields.find((field) => field.name === 'labelTypes')?.values[index];
-  if (!typeField) {
-    return null;
-  }
-  switch (typeField[labelKey]) {
-    case 'I':
-      return LabelType.Indexed;
-    case 'S':
-      return LabelType.StructuredMetadata;
-    case 'P':
-      return LabelType.Parsed;
-    default:
-      return null;
-  }
-}
-
 /**
  * Returns the variable to use when adding filters in a panel.
  * @param frame
@@ -218,7 +201,7 @@ export function getVariableForLabel(
 
   if (labelType) {
     // Use the labelType from the dataframe
-    return getFilterTypeFromLabelType(labelType, key, sceneRef);
+    return getFilterTypeFromLabelType(labelType, key);
   }
 
   // If the dataframe doesn't have labelTypes, check if the detected_fields response returned a parser.
@@ -235,7 +218,7 @@ export function getVariableForLabel(
   return VAR_FIELDS;
 }
 
-export function getFilterTypeFromLabelType(type: LabelType, key: string, sceneRef: SceneObject): VariableFilterType {
+export function getFilterTypeFromLabelType(type: LabelType, key: string): VariableFilterType {
   switch (type) {
     case LabelType.Indexed: {
       return VAR_LABELS;

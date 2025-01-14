@@ -1,11 +1,19 @@
 // Warning: This file (and any imports) are included in the main bundle with Grafana in order to provide link extension support in Grafana core, in an effort to keep Grafana loading quickly, please do not add any unnecessary imports to this file and run the bundle analyzer before committing any changes!
 import { PluginExtensionLinkConfig, PluginExtensionPanelContext, PluginExtensionPoints } from '@grafana/data';
 
-import { SERVICE_NAME, VAR_DATASOURCE, VAR_FIELDS, VAR_LABELS, VAR_LINE_FILTERS } from 'services/variables';
+import {
+  LEVEL_VARIABLE_VALUE,
+  SERVICE_NAME,
+  VAR_DATASOURCE,
+  VAR_FIELDS,
+  VAR_LABELS,
+  VAR_LEVELS,
+  VAR_LINE_FILTERS,
+  VAR_METADATA,
+} from 'services/variables';
 import pluginJson from '../../plugin.json';
-import { LabelType } from '../fieldsTypes';
 import { getMatcherFromQuery } from '../logqlMatchers';
-import { LokiQuery } from '../lokiQuery';
+import { LabelType, LokiQuery } from '../lokiQuery';
 import { FilterOp } from '../filterTypes';
 // import { sceneUtils } from '@grafana/scenes';
 
@@ -52,8 +60,13 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
     return undefined;
   }
 
+  console.log('contextToLink', {
+    context,
+    lokiQuery,
+  });
+
   const expr = lokiQuery.expr;
-  const { labelFilters: labelFilters, lineFilters } = getMatcherFromQuery(expr);
+  const { labelFilters: labelFilters, lineFilters, fields } = getMatcherFromQuery(expr, context, lokiQuery);
 
   const labelSelector = labelFilters.find((selector) => selector.operator === FilterOp.Equal);
 
@@ -92,6 +105,32 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
       );
     }
   }
+  if (fields?.length) {
+    for (const field of fields) {
+      if (field.type === LabelType.StructuredMetadata) {
+        if (field.key === LEVEL_VARIABLE_VALUE) {
+          params = appendUrlParameter(
+            UrlParameters.Fields,
+            `${field.key}|${field.operator}|${escapeURLDelimiters(field.value)}`,
+            params
+          );
+        } else {
+          params = appendUrlParameter(
+            UrlParameters.Metadata,
+            `${field.key}|${field.operator}|${escapeURLDelimiters(field.value)}`,
+            params
+          );
+        }
+      } else {
+        // @todo JSON encode field value
+        params = appendUrlParameter(
+          UrlParameters.Fields,
+          `${field.key}|${field.operator}|${escapeURLDelimiters(field.value)}`,
+          params
+        );
+      }
+    }
+  }
 
   return {
     path: createAppUrl(`/explore/${labelName}/${labelValue}/logs`, params),
@@ -108,6 +147,8 @@ export const UrlParameters = {
   TimeRangeTo: 'to',
   Labels: `var-${VAR_LABELS}`,
   Fields: `var-${VAR_FIELDS}`,
+  Metadata: `var-${VAR_METADATA}`,
+  Levels: `var-${VAR_LEVELS}`,
   LineFilters: `var-${VAR_LINE_FILTERS}`,
 } as const;
 export type UrlParameterType = (typeof UrlParameters)[keyof typeof UrlParameters];
