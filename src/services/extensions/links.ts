@@ -73,7 +73,6 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
   for (const labelFilter of labelFilters) {
     // skip non-indexed filters for now
     if (labelFilter.type !== LabelType.Indexed) {
-      console.log('non index filter?', labelFilter);
       continue;
     }
 
@@ -93,8 +92,6 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
       );
     }
   }
-
-  console.log('APP URL', createAppUrl(`/explore/${labelName}/${labelValue}/logs`, params));
 
   return {
     path: createAppUrl(`/explore/${labelName}/${labelValue}/logs`, params),

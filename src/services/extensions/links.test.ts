@@ -191,7 +191,79 @@ describe('contextToLink', () => {
     const expectedLineFiltersUrlString =
       '&var-lineFilters=caseSensitive%2C0%7C__gfp__%3D%7C%22+%28%3Fi%29caller%22' +
       // &var-lineFilters=caseSensitive,1|__gfp__=|+(?i)caller.+\\\\n
-      '&var-lineFilters=caseSensitive%2C1%7C__gfp__%3D%7C+%28%3Fi%29caller.%2B%5C%5C%5C%5Cn';
+      '&var-lineFilters=caseSensitive%2C1%7C__gfp__%3D%7C+%28%3Fi%29caller.%2B%5C%5Cn';
+
+    expect(config).toEqual({
+      path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedLineFiltersUrlString}`,
+    });
+  });
+  it('should parse case sensitive non-regex line-filter containing double quotes', () => {
+    const links = linkConfigs;
+    const target: { refId: string } & Partial<LokiQuery> = {
+      expr: '{cluster="eu-west-1"} |= "thread \\\\\\"main\\\\\\""',
+      datasource: {
+        type: 'loki',
+        uid: '123abc',
+      },
+      refId: 'A', // Ensure refId is defined
+    };
+    const config = links?.[0].configure?.({
+      timeRange: {
+        from: dateTime('2023-02-08T04:00:00.000Z'),
+        to: dateTime('2023-02-08T11:00:00.000Z'),
+      },
+      pluginId: 'grafana-lokiexplore-app',
+      timeZone: 'browser',
+      id: 0,
+      title: 'test',
+      dashboard: {
+        tags: [],
+        title: 'test',
+        uid: 'test',
+      },
+      targets: [target],
+    });
+
+    const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
+
+    // &var-lineFilters=caseSensitive,0|__gfp__=|thread \"main\"
+    const expectedLineFiltersUrlString = '&var-lineFilters=caseSensitive%2C0%7C__gfp__%3D%7Cthread+%5C%22main%5C%22';
+
+    expect(config).toEqual({
+      path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedLineFiltersUrlString}`,
+    });
+  });
+  it('should parse case sensitive non-regex line-filter containing newline match', () => {
+    const links = linkConfigs;
+    const target: { refId: string } & Partial<LokiQuery> = {
+      expr: '{cluster="eu-west-1"} |= "\\\\n" ',
+      datasource: {
+        type: 'loki',
+        uid: '123abc',
+      },
+      refId: 'A', // Ensure refId is defined
+    };
+    const config = links?.[0].configure?.({
+      timeRange: {
+        from: dateTime('2023-02-08T04:00:00.000Z'),
+        to: dateTime('2023-02-08T11:00:00.000Z'),
+      },
+      pluginId: 'grafana-lokiexplore-app',
+      timeZone: 'browser',
+      id: 0,
+      title: 'test',
+      dashboard: {
+        tags: [],
+        title: 'test',
+        uid: 'test',
+      },
+      targets: [target],
+    });
+
+    const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
+
+    // &var-lineFilters=caseSensitive,0|__gfp__=|\n
+    const expectedLineFiltersUrlString = '&var-lineFilters=caseSensitive%2C0%7C__gfp__%3D%7C%5Cn';
 
     expect(config).toEqual({
       path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedLineFiltersUrlString}`,

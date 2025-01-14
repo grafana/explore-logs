@@ -143,6 +143,12 @@ function parseLineFilters(query: string, lineFilters: LineFilterType[]) {
       if (quoteString === '"' && isRegexSelector) {
         const replaceDoubleEscape = new RegExp(/\\\\/, 'g');
         lineFilterValue = lineFilterValue.replace(replaceDoubleEscape, '\\');
+      } else if (quoteString === '"') {
+        const replaceDoubleQuoteEscape = new RegExp(/\\\\\"/, 'g');
+        lineFilterValue = lineFilterValue.replace(replaceDoubleQuoteEscape, '"');
+
+        const replaceDoubleEscape = new RegExp(/\\\\/, 'g');
+        lineFilterValue = lineFilterValue.replace(replaceDoubleEscape, '\\');
       }
 
       if (isCaseInsensitive) {
