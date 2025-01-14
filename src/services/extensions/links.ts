@@ -4,9 +4,10 @@ import { PluginExtensionLinkConfig, PluginExtensionPanelContext, PluginExtension
 import { SERVICE_NAME, VAR_DATASOURCE, VAR_FIELDS, VAR_LABELS, VAR_LINE_FILTERS } from 'services/variables';
 import pluginJson from '../../plugin.json';
 import { LabelType } from '../fieldsTypes';
-import { escapeUrlPipeDelimiters, getMatcherFromQuery } from '../logqlMatchers';
+import { getMatcherFromQuery } from '../logqlMatchers';
 import { LokiQuery } from '../lokiQuery';
 import { FilterOp } from '../filterTypes';
+import { sceneUtils } from '@grafana/scenes';
 
 const title = 'Open in Explore Logs';
 const description = 'Open current query in the Explore Logs view';
@@ -63,9 +64,9 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
   const labelValue = replaceSlash(labelSelector.value);
   let labelName = labelSelector.key === SERVICE_NAME ? 'service' : labelSelector.key;
   // sort `primary label` first
-  labelFilters.sort((a, b) => (a.key === labelName ? -1 : 1));
+  labelFilters.sort((a) => (a.key === labelName ? -1 : 1));
 
-  let params = setUrlParameter(UrlParameters.DatasourceId, lokiQuery.datasource?.uid);
+  let params = setUrlParameter(UrlParameters.DatasourceId, lokiQuery.datasource?.uid, new URLSearchParams());
   params = setUrlParameter(UrlParameters.TimeRangeFrom, context.timeRange.from.valueOf().toString(), params);
   params = setUrlParameter(UrlParameters.TimeRangeTo, context.timeRange.to.valueOf().toString(), params);
 
@@ -87,7 +88,9 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
     for (const lineFilter of lineFilters) {
       params = appendUrlParameter(
         UrlParameters.LineFilters,
-        `${lineFilter.key}|${escapeUrlPipeDelimiters(lineFilter.operator)}|${lineFilter.value}`,
+        `${lineFilter.key}|${sceneUtils.escapeURLDelimiters(lineFilter.operator)}|${sceneUtils.escapeURLDelimiters(
+          lineFilter.value
+        )}`,
         params
       );
     }

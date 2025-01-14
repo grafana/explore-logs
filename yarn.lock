@@ -1114,10 +1114,10 @@
     rxjs "7.8.1"
     tslib "2.7.0"
 
-"@grafana/scenes@5.36.0":
-  version "5.36.0"
-  resolved "https://registry.yarnpkg.com/@grafana/scenes/-/scenes-5.36.0.tgz#9719630712186e9e37dbc7de54e2c635e96deaec"
-  integrity sha512-RfYsxt1hapd3KdOBS3jHSVV+QBuQGlDWeUTG8Jb3qxmiG6gD3E2GPMSPVqeNgNWCI99qEvshUzwwrXV/7OKOPg==
+"@grafana/scenes@5.37.0":
+  version "5.37.0"
+  resolved "https://registry.yarnpkg.com/@grafana/scenes/-/scenes-5.37.0.tgz#c29ab740c017c4e82d5cc1e59bd0a73bb94e6afd"
+  integrity sha512-MJcpzONHsgs/VUbt0V4cVnqL1EoTtzQ0dWMWPrbMs357vZGimEGoZVmunNHmt5wMhkR/WggYH0p+QnJAQ9HQHA==
   dependencies:
     "@floating-ui/react" "^0.26.16"
     "@leeoniya/ufuzzy" "^1.0.16"

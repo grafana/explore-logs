@@ -114,8 +114,11 @@ function parseLineFilters(query: string, lineFilters: LineFilterType[]) {
     const notEqualRegExp = getAllPositionsInNodeByType(matcher, Nre);
 
     const lineFilterValueNode = getStringsFromLineFilter(matcher);
+
+    const quoteString = query.substring(lineFilterValueNode[0]?.from + 1, lineFilterValueNode[0]?.from);
+
     // Remove quotes
-    const lineFilterValue = query.substring(lineFilterValueNode[0]?.from + 1, lineFilterValueNode[0]?.to - 1);
+    let lineFilterValue = query.substring(lineFilterValueNode[0]?.from + 1, lineFilterValueNode[0]?.to - 1);
 
     if (lineFilterValue.length) {
       let operator;
@@ -131,12 +134,28 @@ function parseLineFilters(query: string, lineFilters: LineFilterType[]) {
         throw new Error('unknown line filter operator');
       }
 
+      const isRegexSelector = operator === LineFilterOp.regex || operator === LineFilterOp.negativeRegex;
+
+      const isCaseInsensitive = lineFilterValue.includes('(?i)') && isRegexSelector;
+
+      // If quoteString is `, we shouldn't need to un-escape anything
+      // But if the quoteString is ", we'll need to remove double escape chars, as these values are re-escaped when building the query expression (but not stored in the value/url)
+      if (quoteString === '"' && isRegexSelector) {
+        const replaceDoubleEscape = new RegExp(/\\\\/, 'g');
+        lineFilterValue = lineFilterValue.replace(replaceDoubleEscape, '\\');
+      }
+
+      if (isCaseInsensitive) {
+        // If `(?i)` exists in a regex it would need to be escaped to match log lines containing `(?i)`, so it should be safe to replace all instances of `(?i)` in the line filter?
+        lineFilterValue = lineFilterValue.replace('(?i)', '');
+      }
+
       lineFilters.push({
-        key: lineFilterValue.includes('(?i)')
+        key: isCaseInsensitive
           ? LineFilterCaseSensitive.caseInsensitive.toString()
           : LineFilterCaseSensitive.caseSensitive.toString() + ',' + index.toString(),
         operator: operator,
-        value: lineFilterValue.trim(),
+        value: lineFilterValue,
       });
     }
   }
