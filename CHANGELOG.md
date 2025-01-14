@@ -5,7 +5,7 @@ View [releases](https://github.com/grafana/explore-logs/releases/) on GitHub for
 ## 1.0.6
 * Line filters: Regex support by @gtk-grafana in https://github.com/grafana/explore-logs/pull/963
 * Line filters: Allow backticks5 by @gtk-grafana in https://github.com/grafana/explore-logs/pull/992
-* fix: use urlUtil instead of UrlSearchParams by @gtk-grafana in https://github.com/grafana/explore-logs/pull/994
+* Fix: use urlUtil instead of UrlSearchParams by @gtk-grafana in https://github.com/grafana/explore-logs/pull/994
 * fix(sorting): prevent sorting timeFields in place by @svennergr in https://github.com/grafana/explore-logs/pull/996
   
 ## 1.0.5
