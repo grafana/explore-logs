@@ -212,13 +212,3 @@ function getStringsFromLineFilter(filter: SyntaxNode): SyntaxNode[] {
 
   return nodes;
 }
-
-// Taken from scenes/packages/scenes/src/variables/utils.ts
-export function escapeUrlPipeDelimiters(value: string | undefined): string {
-  if (value === null || value === undefined) {
-    return '';
-  }
-
-  // Replace the pipe due to using it as a filter separator
-  return (value = /\|/g[Symbol.replace](value, '__gfp__'));
-}

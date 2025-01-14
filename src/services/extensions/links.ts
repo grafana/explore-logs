@@ -7,7 +7,7 @@ import { LabelType } from '../fieldsTypes';
 import { getMatcherFromQuery } from '../logqlMatchers';
 import { LokiQuery } from '../lokiQuery';
 import { FilterOp } from '../filterTypes';
-import { sceneUtils } from '@grafana/scenes';
+// import { sceneUtils } from '@grafana/scenes';
 
 const title = 'Open in Explore Logs';
 const description = 'Open current query in the Explore Logs view';
@@ -88,9 +88,7 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
     for (const lineFilter of lineFilters) {
       params = appendUrlParameter(
         UrlParameters.LineFilters,
-        `${lineFilter.key}|${sceneUtils.escapeURLDelimiters(lineFilter.operator)}|${sceneUtils.escapeURLDelimiters(
-          lineFilter.value
-        )}`,
+        `${lineFilter.key}|${escapeURLDelimiters(lineFilter.operator)}|${escapeURLDelimiters(lineFilter.value)}`,
         params
       );
     }
@@ -137,4 +135,27 @@ export function appendUrlParameter(
 
 export function replaceSlash(parameter: string): string {
   return parameter.replace(/\//g, '-');
+}
+
+// Manually copied over from @grafana/scenes so we don't need to import scenes to build links
+function escapeUrlCommaDelimiters(value: string | undefined): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  // Replace the comma due to using it as a value/label separator
+  return /,/g[Symbol.replace](value, '__gfc__');
+}
+
+function escapeUrlPipeDelimiters(value: string | undefined): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  // Replace the pipe due to using it as a filter separator
+  return (value = /\|/g[Symbol.replace](value, '__gfp__'));
+}
+
+function escapeURLDelimiters(value: string | undefined): string {
+  return escapeUrlCommaDelimiters(escapeUrlPipeDelimiters(value));
 }
