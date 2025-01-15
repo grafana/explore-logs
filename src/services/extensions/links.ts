@@ -16,7 +16,6 @@ import { getMatcherFromQuery } from '../logqlMatchers';
 import { LokiQuery } from '../lokiQuery';
 import { FilterOp } from '../filterTypes';
 import { LabelType } from '../fieldsTypes';
-// import { sceneUtils } from '@grafana/scenes';
 
 const title = 'Open in Explore Logs';
 const description = 'Open current query in the Explore Logs view';
@@ -26,14 +25,16 @@ export const ExtensionPoints = {
   MetricExploration: 'grafana-lokiexplore-app/metric-exploration/v1',
 } as const;
 
-// `plugin.addLink` requires these types; unfortunately, the correct `PluginExtensionAddedLinkConfig` type is not exported with 11.2.x
-// TODO: fix this type when we move to `@grafana/data` 11.3.x
-export const linkConfigs: Array<
+export type LinkConfigs = Array<
   {
     targets: string | string[];
     // eslint-disable-next-line deprecation/deprecation
   } & Omit<PluginExtensionLinkConfig<PluginExtensionPanelContext>, 'type' | 'extensionPointId'>
-> = [
+>;
+
+// `plugin.addLink` requires these types; unfortunately, the correct `PluginExtensionAddedLinkConfig` type is not exported with 11.2.x
+// TODO: fix this type when we move to `@grafana/data` 11.3.x
+export const linkConfigs: LinkConfigs = [
   {
     targets: PluginExtensionPoints.DashboardPanelMenu,
     title,
