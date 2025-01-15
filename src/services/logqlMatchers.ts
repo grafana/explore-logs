@@ -80,12 +80,9 @@ function getAllPositionsInNodeByType(node: SyntaxNode, type: number): NodePositi
 }
 
 function parseLabelFilters(query: string, filter: Filter[]) {
-  // const selectorPosition = NodePosition.fromNode(selector[0]);
-
   // `Matcher` will select field filters as well as indexed label filters
   const allMatcher = getNodesFromQuery(query, [Matcher]);
   for (const matcher of allMatcher) {
-    // const matcherPosition = NodePosition.fromNode(matcher);
     const identifierPosition = getAllPositionsInNodeByType(matcher, Identifier);
     const valuePosition = getAllPositionsInNodeByType(matcher, String);
     const operator = query.substring(identifierPosition[0].to, valuePosition[0].from);
