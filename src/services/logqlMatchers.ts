@@ -82,23 +82,23 @@ function getAllPositionsInNodeByType(node: SyntaxNode, type: number): NodePositi
 function parseLabelFilters(selector: SyntaxNode[], query: string, filter: Filter[]) {
   const selectorPosition = NodePosition.fromNode(selector[0]);
 
-  // `Matcher` will select field filters as well as indexed label filters
   const allMatcher = getNodesFromQuery(query, [Matcher]);
   for (const matcher of allMatcher) {
     const matcherPosition = NodePosition.fromNode(matcher);
     const identifierPosition = getAllPositionsInNodeByType(matcher, Identifier);
     const valuePosition = getAllPositionsInNodeByType(matcher, String);
-    const operator = query.substring(identifierPosition[0].to, valuePosition[0].from);
+    const operation = query.substring(identifierPosition[0].to, valuePosition[0].from);
+    const op = operation === '=' ? FilterOperator.Equal : FilterOperator.NotEqual;
     const key = identifierPosition[0].getExpression(query);
     const value = valuePosition.map((position) => query.substring(position.from + 1, position.to - 1))[0];
 
-    if (!key || !value || (operator !== FilterOperator.NotEqual && operator !== FilterOperator.Equal)) {
+    if (!key || !value) {
       continue;
     }
 
     filter.push({
       key,
-      operator,
+      operator: op,
       value,
       type: selectorPosition.contains(matcherPosition) ? LabelType.Indexed : undefined,
     });
@@ -171,15 +171,11 @@ export function getMatcherFromQuery(query: string): { labelFilters: Filter[]; li
   const filter: Filter[] = [];
   const lineFilters: LineFilterType[] = [];
   const selector = getNodesFromQuery(query, [Selector]);
-
   if (selector.length === 0) {
     return { labelFilters: filter };
   }
 
-  // Get the stream selector portion of the query
-  const selectorQuery = getAllPositionsInNodeByType(selector[0], Selector)[0].getExpression(query);
-
-  parseLabelFilters(selector, selectorQuery, filter);
+  parseLabelFilters(selector, query, filter);
   parseLineFilters(query, lineFilters);
 
   return { labelFilters: filter, lineFilters };
