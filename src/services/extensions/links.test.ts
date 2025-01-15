@@ -1,65 +1,54 @@
 import { dateTime } from '@grafana/data';
 import { LokiQuery } from '../lokiQuery';
-import { linkConfigs } from './links';
+import { LinkConfigs, linkConfigs } from './links';
+
+function getTestConfig(links: LinkConfigs, target: Partial<LokiQuery> & { refId: string }) {
+  return links?.[0].configure?.({
+    timeRange: {
+      from: dateTime('2023-02-08T04:00:00.000Z'),
+      to: dateTime('2023-02-08T11:00:00.000Z'),
+    },
+    pluginId: 'grafana-lokiexplore-app',
+    timeZone: 'browser',
+    id: 0,
+    title: 'test',
+    dashboard: {
+      tags: [],
+      title: 'test',
+      uid: 'test',
+    },
+    targets: [target],
+  });
+}
+
+function getTestTarget(lokiQuery?: Partial<LokiQuery>): Partial<LokiQuery> & { refId: string } {
+  return {
+    expr: '{cluster="eu-west-1"} |= "\\\\n" ',
+    datasource: {
+      type: 'loki',
+      uid: '123abc',
+    },
+    ...lokiQuery,
+    refId: lokiQuery?.refId ?? 'A', // Ensure refId is defined
+  };
+}
 
 describe('contextToLink', () => {
   it('should strip slashes', () => {
-    const links = linkConfigs;
-    const target: { refId: string } & Partial<LokiQuery> = {
+    const target = getTestTarget({
       expr: '{service_name=`cloud/gcp`, resource_type!=`gce_firewall_rule`} | json | logfmt | drop __error__, __error_details__',
-      datasource: {
-        type: 'loki',
-        uid: '123abc',
-      },
-      refId: 'A', // Ensure refId is defined
-    };
-    const config = links?.[0].configure?.({
-      timeRange: {
-        from: dateTime('2023-02-08T04:00:00.000Z'),
-        to: dateTime('2023-02-08T11:00:00.000Z'),
-      },
-      pluginId: 'grafana-lokiexplore-app',
-      timeZone: 'browser',
-      id: 0,
-      title: 'test',
-      dashboard: {
-        tags: [],
-        title: 'test',
-        uid: 'test',
-      },
-      targets: [target],
     });
+    const config = getTestConfig(linkConfigs, target);
 
     expect(config).toEqual({
       path: '/a/grafana-lokiexplore-app/explore/service/cloud-gcp/logs?var-ds=123abc&from=1675828800000&to=1675854000000&var-filters=service_name%7C%3D%7Ccloud%2Fgcp&var-filters=resource_type%7C%21%3D%7Cgce_firewall_rule',
     });
   });
   it('should parse case sensitive regex line-filters in double quotes and backticks', () => {
-    const links = linkConfigs;
-    const target: { refId: string } & Partial<LokiQuery> = {
+    const target = getTestTarget({
       expr: '{cluster="eu-west-1", resource_type!=`gce_firewall_rule`} |~ "((25[0-5]|(2[0-4]|1\\\\d|[1-9]|)\\\\d)\\\\.?\\\\b){4}" != ` ((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}`| json | logfmt | drop __error__, __error_details__',
-      datasource: {
-        type: 'loki',
-        uid: '123abc',
-      },
-      refId: 'A', // Ensure refId is defined
-    };
-    const config = links?.[0].configure?.({
-      timeRange: {
-        from: dateTime('2023-02-08T04:00:00.000Z'),
-        to: dateTime('2023-02-08T11:00:00.000Z'),
-      },
-      pluginId: 'grafana-lokiexplore-app',
-      timeZone: 'browser',
-      id: 0,
-      title: 'test',
-      dashboard: {
-        tags: [],
-        title: 'test',
-        uid: 'test',
-      },
-      targets: [target],
     });
+    const config = getTestConfig(linkConfigs, target);
 
     const expectedLabelFiltersUrlString =
       '&var-filters=cluster%7C%3D%7Ceu-west-1' + '&var-filters=resource_type%7C%21%3D%7Cgce_firewall_rule';
@@ -72,31 +61,10 @@ describe('contextToLink', () => {
     });
   });
   it('should parse case sensitive non-regex line-filters in double quotes and backticks', () => {
-    const links = linkConfigs;
-    const target: { refId: string } & Partial<LokiQuery> = {
+    const target = getTestTarget({
       expr: '{cluster="eu-west-1", resource_type!=`gce_firewall_rule`} |= " (?i)caller,__gfp__" |= ` (?i)caller,__gfc__` | json | logfmt | drop __error__, __error_details__',
-      datasource: {
-        type: 'loki',
-        uid: '123abc',
-      },
-      refId: 'A', // Ensure refId is defined
-    };
-    const config = links?.[0].configure?.({
-      timeRange: {
-        from: dateTime('2023-02-08T04:00:00.000Z'),
-        to: dateTime('2023-02-08T11:00:00.000Z'),
-      },
-      pluginId: 'grafana-lokiexplore-app',
-      timeZone: 'browser',
-      id: 0,
-      title: 'test',
-      dashboard: {
-        tags: [],
-        title: 'test',
-        uid: 'test',
-      },
-      targets: [target],
     });
+    const config = getTestConfig(linkConfigs, target);
 
     const expectedLabelFiltersUrlString =
       '&var-filters=cluster%7C%3D%7Ceu-west-1' + '&var-filters=resource_type%7C%21%3D%7Cgce_firewall_rule';
@@ -112,31 +80,10 @@ describe('contextToLink', () => {
     });
   });
   it('should parse case insensitive regex line-filters in double quotes and backticks', () => {
-    const links = linkConfigs;
-    const target: { refId: string } & Partial<LokiQuery> = {
+    const target = getTestTarget({
       expr: '{cluster="eu-west-1", resource_type!=`gce_firewall_rule`} |~ "(?i)((25[0-5]|(2[0-4]|1\\\\d|[1-9]|)\\\\d)\\\\.?\\\\b){4}" !~ `(?i) ((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}`| json | logfmt | drop __error__, __error_details__',
-      datasource: {
-        type: 'loki',
-        uid: '123abc',
-      },
-      refId: 'A', // Ensure refId is defined
-    };
-    const config = links?.[0].configure?.({
-      timeRange: {
-        from: dateTime('2023-02-08T04:00:00.000Z'),
-        to: dateTime('2023-02-08T11:00:00.000Z'),
-      },
-      pluginId: 'grafana-lokiexplore-app',
-      timeZone: 'browser',
-      id: 0,
-      title: 'test',
-      dashboard: {
-        tags: [],
-        title: 'test',
-        uid: 'test',
-      },
-      targets: [target],
     });
+    const config = getTestConfig(linkConfigs, target);
 
     // &var-filters=cluster|=|eu-west-1
     const expectedLabelFiltersUrlString =
@@ -155,31 +102,10 @@ describe('contextToLink', () => {
     });
   });
   it('should parse case sensitive non-regex line-filters in double quotes and backticks containing case insensitive string, newlines, and double quotes', () => {
-    const links = linkConfigs;
-    const target: { refId: string } & Partial<LokiQuery> = {
+    const target = getTestTarget({
       expr: '{cluster="eu-west-1", resource_type!=`gce_firewall_rule`} |= `" (?i)caller"` |=  " (?i)caller.+\\\\\\\\n" | json | logfmt | drop __error__, __error_details__',
-      datasource: {
-        type: 'loki',
-        uid: '123abc',
-      },
-      refId: 'A', // Ensure refId is defined
-    };
-    const config = links?.[0].configure?.({
-      timeRange: {
-        from: dateTime('2023-02-08T04:00:00.000Z'),
-        to: dateTime('2023-02-08T11:00:00.000Z'),
-      },
-      pluginId: 'grafana-lokiexplore-app',
-      timeZone: 'browser',
-      id: 0,
-      title: 'test',
-      dashboard: {
-        tags: [],
-        title: 'test',
-        uid: 'test',
-      },
-      targets: [target],
     });
+    const config = getTestConfig(linkConfigs, target);
 
     // &var-filters=cluster|=|eu-west-1
     const expectedLabelFiltersUrlString =
@@ -198,31 +124,8 @@ describe('contextToLink', () => {
     });
   });
   it('should parse case sensitive non-regex line-filter containing double quotes', () => {
-    const links = linkConfigs;
-    const target: { refId: string } & Partial<LokiQuery> = {
-      expr: '{cluster="eu-west-1"} |= "thread \\\\\\"main\\\\\\""',
-      datasource: {
-        type: 'loki',
-        uid: '123abc',
-      },
-      refId: 'A', // Ensure refId is defined
-    };
-    const config = links?.[0].configure?.({
-      timeRange: {
-        from: dateTime('2023-02-08T04:00:00.000Z'),
-        to: dateTime('2023-02-08T11:00:00.000Z'),
-      },
-      pluginId: 'grafana-lokiexplore-app',
-      timeZone: 'browser',
-      id: 0,
-      title: 'test',
-      dashboard: {
-        tags: [],
-        title: 'test',
-        uid: 'test',
-      },
-      targets: [target],
-    });
+    const target = getTestTarget({ expr: '{cluster="eu-west-1"} |= "thread \\\\\\"main\\\\\\""' });
+    const config = getTestConfig(linkConfigs, target);
 
     const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
 
@@ -234,31 +137,8 @@ describe('contextToLink', () => {
     });
   });
   it('should parse case sensitive non-regex line-filter containing newline match', () => {
-    const links = linkConfigs;
-    const target: { refId: string } & Partial<LokiQuery> = {
-      expr: '{cluster="eu-west-1"} |= "\\\\n" ',
-      datasource: {
-        type: 'loki',
-        uid: '123abc',
-      },
-      refId: 'A', // Ensure refId is defined
-    };
-    const config = links?.[0].configure?.({
-      timeRange: {
-        from: dateTime('2023-02-08T04:00:00.000Z'),
-        to: dateTime('2023-02-08T11:00:00.000Z'),
-      },
-      pluginId: 'grafana-lokiexplore-app',
-      timeZone: 'browser',
-      id: 0,
-      title: 'test',
-      dashboard: {
-        tags: [],
-        title: 'test',
-        uid: 'test',
-      },
-      targets: [target],
-    });
+    const target = getTestTarget({ expr: `{cluster="eu-west-1"} |= "\\\\n"` });
+    const config = getTestConfig(linkConfigs, target);
 
     const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
 
