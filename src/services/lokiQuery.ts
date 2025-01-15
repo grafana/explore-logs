@@ -2,6 +2,7 @@
 import { DataSourceRef } from '@grafana/schema';
 import { DataSourceWithBackend } from '@grafana/runtime';
 import { DataFrame, DataSourceJsonData } from '@grafana/data';
+import { LabelType } from './fieldsTypes';
 
 export enum LokiQueryDirection {
   Backward = 'backward',
@@ -25,13 +26,6 @@ export type LokiQuery = {
 export type LokiQueryType = 'instant' | 'range' | 'stream' | string;
 
 export type LokiDatasource = DataSourceWithBackend<LokiQuery, DataSourceJsonData> & { maxLines?: number };
-
-// copied from public/app/plugins/datasource/loki/types.ts
-export enum LabelType {
-  Indexed = 'I',
-  StructuredMetadata = 'S',
-  Parsed = 'P',
-}
 
 export function getLabelTypeFromFrame(labelKey: string, frame: DataFrame, index = 0): null | LabelType {
   const typeField = frame.fields.find((field) => field.name === 'labelTypes')?.values[index];

@@ -25,7 +25,8 @@ import { getDetectedFieldsFrame } from '../Components/ServiceScene/ServiceScene'
 import { getLogsStreamSelector, getValueFromFieldsFilter } from './variableGetters';
 import { logger } from './logger';
 import { PanelMenu } from '../Components/Panels/PanelMenu';
-import { getLabelTypeFromFrame, LabelType } from './lokiQuery';
+import { getLabelTypeFromFrame } from './lokiQuery';
+import { LabelType } from './fieldsTypes';
 
 export type DetectedLabel = {
   label: string;

@@ -32,7 +32,8 @@ import {
   LineFilterType,
 } from './filterTypes';
 import { FieldType, PluginExtensionPanelContext } from '@grafana/data';
-import { getLabelTypeFromFrame, LabelType, LokiQuery } from './lokiQuery';
+import { getLabelTypeFromFrame, LokiQuery } from './lokiQuery';
+import { LabelType } from './fieldsTypes';
 
 export class NodePosition {
   from: number;

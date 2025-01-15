@@ -13,8 +13,9 @@ import {
 } from 'services/variables';
 import pluginJson from '../../plugin.json';
 import { getMatcherFromQuery } from '../logqlMatchers';
-import { LabelType, LokiQuery } from '../lokiQuery';
+import { LokiQuery } from '../lokiQuery';
 import { FilterOp } from '../filterTypes';
+import { LabelType } from '../fieldsTypes';
 // import { sceneUtils } from '@grafana/scenes';
 
 const title = 'Open in Explore Logs';
