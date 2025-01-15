@@ -7,7 +7,6 @@ import { LabelType } from '../fieldsTypes';
 import { getMatcherFromQuery } from '../logqlMatchers';
 import { LokiQuery } from '../lokiQuery';
 import { FilterOp } from '../filterTypes';
-// import { sceneUtils } from '@grafana/scenes';
 
 const title = 'Open in Explore Logs';
 const description = 'Open current query in the Explore Logs view';
