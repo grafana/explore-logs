@@ -2,8 +2,8 @@ import { IconButtonVariant, Tooltip, useTheme2 } from '@grafana/ui';
 import React from 'react';
 import { colorManipulator, GrafanaTheme2 } from '@grafana/data';
 import { css, cx } from '@emotion/css';
-import { LineFilterCaseSensitive } from './LineFilterScene';
 import { getFocusStyles, getIconButtonBefore, getMouseFocusStyles } from '../../../services/mixins';
+import { LineFilterCaseSensitive } from '../../../services/filterTypes';
 
 interface Props {
   onCaseSensitiveToggle: (state: LineFilterCaseSensitive) => void;

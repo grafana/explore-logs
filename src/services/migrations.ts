@@ -1,7 +1,6 @@
 import { locationService } from '@grafana/runtime';
 import { getLineFiltersVariable } from './variableGetters';
-import { LineFilterCaseSensitive } from '../Components/ServiceScene/LineFilter/LineFilterScene';
-import { LineFilterOp } from './filterTypes';
+import { LineFilterCaseSensitive, LineFilterOp } from './filterTypes';
 import { ServiceScene } from '../Components/ServiceScene/ServiceScene';
 import { urlUtil } from '@grafana/data';
 

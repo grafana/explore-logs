@@ -1,7 +1,7 @@
 // Warning: This file (and any imports) are included in the main bundle with Grafana in order to provide link extension support in Grafana core, in an effort to keep Grafana loading quickly, please do not add any unnecessary imports to this file and run the bundle analyzer before committing any changes!
 import { PluginExtensionLinkConfig, PluginExtensionPanelContext, PluginExtensionPoints } from '@grafana/data';
 
-import { SERVICE_NAME, VAR_DATASOURCE, VAR_FIELDS, VAR_LABELS } from 'services/variables';
+import { SERVICE_NAME, VAR_DATASOURCE, VAR_FIELDS, VAR_LABELS, VAR_LINE_FILTERS } from 'services/variables';
 import pluginJson from '../../plugin.json';
 import { LabelType } from '../fieldsTypes';
 import { getMatcherFromQuery } from '../logqlMatchers';
@@ -16,14 +16,16 @@ export const ExtensionPoints = {
   MetricExploration: 'grafana-lokiexplore-app/metric-exploration/v1',
 } as const;
 
-// `plugin.addLink` requires these types; unfortunately, the correct `PluginExtensionAddedLinkConfig` type is not exported with 11.2.x
-// TODO: fix this type when we move to `@grafana/data` 11.3.x
-export const linkConfigs: Array<
+export type LinkConfigs = Array<
   {
     targets: string | string[];
     // eslint-disable-next-line deprecation/deprecation
   } & Omit<PluginExtensionLinkConfig<PluginExtensionPanelContext>, 'type' | 'extensionPointId'>
-> = [
+>;
+
+// `plugin.addLink` requires these types; unfortunately, the correct `PluginExtensionAddedLinkConfig` type is not exported with 11.2.x
+// TODO: fix this type when we move to `@grafana/data` 11.3.x
+export const linkConfigs: LinkConfigs = [
   {
     targets: PluginExtensionPoints.DashboardPanelMenu,
     title,
@@ -52,7 +54,7 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
   }
 
   const expr = lokiQuery.expr;
-  const labelFilters = getMatcherFromQuery(expr);
+  const { labelFilters: labelFilters, lineFilters } = getMatcherFromQuery(expr);
 
   const labelSelector = labelFilters.find((selector) => selector.operator === FilterOp.Equal);
 
@@ -63,9 +65,9 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
   const labelValue = replaceSlash(labelSelector.value);
   let labelName = labelSelector.key === SERVICE_NAME ? 'service' : labelSelector.key;
   // sort `primary label` first
-  labelFilters.sort((a, b) => (a.key === labelName ? -1 : 1));
+  labelFilters.sort((a) => (a.key === labelName ? -1 : 1));
 
-  let params = setUrlParameter(UrlParameters.DatasourceId, lokiQuery.datasource?.uid);
+  let params = setUrlParameter(UrlParameters.DatasourceId, lokiQuery.datasource?.uid, new URLSearchParams());
   params = setUrlParameter(UrlParameters.TimeRangeFrom, context.timeRange.from.valueOf().toString(), params);
   params = setUrlParameter(UrlParameters.TimeRangeTo, context.timeRange.to.valueOf().toString(), params);
 
@@ -81,6 +83,17 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
       params
     );
   }
+
+  if (lineFilters) {
+    for (const lineFilter of lineFilters) {
+      params = appendUrlParameter(
+        UrlParameters.LineFilters,
+        `${lineFilter.key}|${escapeURLDelimiters(lineFilter.operator)}|${escapeURLDelimiters(lineFilter.value)}`,
+        params
+      );
+    }
+  }
+
   return {
     path: createAppUrl(`/explore/${labelName}/${labelValue}/logs`, params),
   };
@@ -96,6 +109,7 @@ export const UrlParameters = {
   TimeRangeTo: 'to',
   Labels: `var-${VAR_LABELS}`,
   Fields: `var-${VAR_FIELDS}`,
+  LineFilters: `var-${VAR_LINE_FILTERS}`,
 } as const;
 export type UrlParameterType = (typeof UrlParameters)[keyof typeof UrlParameters];
 
@@ -119,4 +133,27 @@ export function appendUrlParameter(
 
 export function replaceSlash(parameter: string): string {
   return parameter.replace(/\//g, '-');
+}
+
+// Manually copied over from @grafana/scenes so we don't need to import scenes to build links
+function escapeUrlCommaDelimiters(value: string | undefined): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  // Replace the comma due to using it as a value/label separator
+  return /,/g[Symbol.replace](value, '__gfc__');
+}
+
+function escapeUrlPipeDelimiters(value: string | undefined): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  // Replace the pipe due to using it as a filter separator
+  return (value = /\|/g[Symbol.replace](value, '__gfp__'));
+}
+
+function escapeURLDelimiters(value: string | undefined): string {
+  return escapeUrlCommaDelimiters(escapeUrlPipeDelimiters(value));
 }

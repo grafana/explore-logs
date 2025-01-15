@@ -12,7 +12,7 @@ import {
   setLineFilterRegex,
 } from '../../../services/store';
 import { RegexInputValue } from './RegexIconButton';
-import { LineFilterOp } from '../../../services/filterTypes';
+import { LineFilterCaseSensitive, LineFilterOp } from '../../../services/filterTypes';
 import { LineFilterEditor } from './LineFilterEditor';
 
 interface LineFilterState extends SceneObjectState {
@@ -20,11 +20,6 @@ interface LineFilterState extends SceneObjectState {
   caseSensitive: boolean;
   regex: boolean;
   exclusive: boolean;
-}
-
-export enum LineFilterCaseSensitive {
-  caseSensitive = 'caseSensitive',
-  caseInsensitive = 'caseInsensitive',
 }
 
 /**

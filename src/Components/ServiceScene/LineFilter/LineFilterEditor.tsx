@@ -5,8 +5,8 @@ import { SearchInput } from '../Breakdowns/SearchInput';
 import { testIds } from '../../../services/testIds';
 import { css, cx } from '@emotion/css';
 import { LineFilterCaseSensitivityButton } from './LineFilterCaseSensitivityButton';
-import { LineFilterCaseSensitive } from './LineFilterScene';
 import { GrafanaTheme2 } from '@grafana/data';
+import { LineFilterCaseSensitive } from '../../../services/filterTypes';
 
 export interface LineFilterEditorProps {
   exclusive: boolean;

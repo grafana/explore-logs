@@ -17,9 +17,20 @@ export type Filter = {
   type?: LabelType;
 };
 
+export type LineFilterType = {
+  key: string;
+  operator: LineFilterOp;
+  value: string;
+};
+
 export enum LineFilterOp {
   match = '|=',
   negativeMatch = `!=`,
   regex = '|~',
   negativeRegex = `!~`,
+}
+
+export enum LineFilterCaseSensitive {
+  caseSensitive = 'caseSensitive',
+  caseInsensitive = 'caseInsensitive',
 }

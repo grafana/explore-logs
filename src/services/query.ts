@@ -7,9 +7,8 @@ import { LokiQuery } from './lokiQuery';
 import { SceneDataQueryResourceRequest, SceneDataQueryResourceRequestOptions } from './datasourceTypes';
 import { AdHocFilterWithLabels } from './scenes';
 import { PLUGIN_ID } from './plugin';
-import { AdHocFiltersVariable } from '@grafana/scenes';
-import { FilterOp, LineFilterOp } from './filterTypes';
-import { LineFilterCaseSensitive } from '../Components/ServiceScene/LineFilter/LineFilterScene';
+import { AdHocFiltersVariable, sceneUtils } from '@grafana/scenes';
+import { FilterOp, LineFilterCaseSensitive, LineFilterOp } from './filterTypes';
 import { sortLineFilters } from '../Components/IndexScene/LineFilterVariablesScene';
 
 /**
@@ -124,12 +123,12 @@ export function escapeDoubleQuotedLineFilter(filter: AdHocFilterWithLabels) {
   // Is not regex
   if (filter.operator === LineFilterOp.match || filter.operator === LineFilterOp.negativeMatch) {
     if (filter.key === LineFilterCaseSensitive.caseInsensitive) {
-      return escapeLabelValueInRegexSelector(filter.value);
+      return sceneUtils.escapeLabelValueInRegexSelector(filter.value);
     } else {
-      return escapeLabelValueInExactSelector(filter.value);
+      return sceneUtils.escapeLabelValueInExactSelector(filter.value);
     }
   } else {
-    return escapeLabelValueInExactSelector(filter.value);
+    return sceneUtils.escapeLabelValueInExactSelector(filter.value);
   }
 }
 
@@ -278,25 +277,3 @@ export function sanitizeStreamSelector(expression: string) {
 
 // default line limit; each data source can define it's own line limit too
 export const LINE_LIMIT = 1000;
-
-// Taken from /grafana/grafana/public/app/plugins/datasource/loki/languageUtils.ts
-
-// based on the openmetrics-documentation, the 3 symbols we have to handle are:
-// - \n ... the newline character
-// - \  ... the backslash character
-// - "  ... the double-quote character
-export function escapeLabelValueInExactSelector(labelValue: string): string {
-  return labelValue.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/"/g, '\\"');
-}
-
-// Loki regular-expressions use the RE2 syntax (https://github.com/google/re2/wiki/Syntax),
-// so every character that matches something in that list has to be escaped.
-// the list of meta characters is: *+?()|\.[]{}^$
-// we make a javascript regular expression that matches those characters:
-const RE2_METACHARACTERS = /[*+?()|\\.\[\]{}^$]/g;
-function escapeLokiRegexp(value: string): string {
-  return value.replace(RE2_METACHARACTERS, '\\$&');
-}
-export function escapeLabelValueInRegexSelector(labelValue: string): string {
-  return escapeLabelValueInExactSelector(escapeLokiRegexp(labelValue));
-}

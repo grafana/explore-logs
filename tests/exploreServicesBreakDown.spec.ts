@@ -1453,7 +1453,6 @@ test.describe('explore services breakdown page', () => {
       expect(logsCountQueryCount).toEqual(8);
       expect(logsPanelQueryCount).toEqual(8);
     });
-
     test('line filter migration case sensitive', async ({ page }) => {
       // Checks chars that are escaped on-behalf of the user and chars that are user-escaped, e.g. `\n` (`%5C%5Cn`) => \n, `%5C.` (\.) => .
       const urlEncodedAndEscaped =
@@ -1468,7 +1467,6 @@ test.describe('explore services breakdown page', () => {
       await expect(page.getByLabel('Disable case match')).toHaveCount(0);
       await expect(firstLineFilterLoc).toHaveValue(decodedAndUnescaped);
     });
-
     test('line filter migration case insensitive', async ({ page }) => {
       // The behavior for user entered escape chars differed between case sensitive/insensitive before the line filter regex feature, we want to preserve this bug in the migration so links from before this feature will return the same results
       const urlEncodedAndEscaped =
@@ -1482,6 +1480,59 @@ test.describe('explore services breakdown page', () => {
       await expect(page.getByLabel('Disable case match')).toHaveCount(1);
       await expect(page.getByLabel('Enable case match')).toHaveCount(1);
       await expect(firstLineFilterLoc).toHaveValue(decodedAndUnescaped);
+    });
+    test('line filter links', async ({ page }) => {
+      explorePage.blockAllQueriesExcept({
+        refIds: ['logsPanelQuery'],
+        legendFormats: [],
+      });
+
+      // raw logQL query: '{cluster=`us-west-1`} |~ "\\\\n" |= "\\n" |= "getBookTitles(Author.java:25)\\n" |~ "getBookTitles\\(Author\\.java:25\\)\\\\n" | json | logfmt | drop __error__, __error_details__'
+      const queryInUrl =
+        '{cluster=`us-west-1`} |~ \\"\\\\\\\\\\\\\\\\n\\" |= \\"\\\\\\\\n\\" |= \\"getBookTitles(Author.java:25)\\\\\\\\n\\" |~ \\"getBookTitles\\\\\\\\(Author\\\\\\\\.java:25\\\\\\\\)\\\\\\\\\\\\\\\\n\\" | json | logfmt | drop __error__, __error_details__';
+      await page.goto(
+        `/explore?schemaVersion=1&panes={"dx6":{"datasource":"gdev-loki","queries":[{"refId":"logsPanelQuery","expr":"${queryInUrl}","datasource":{"type":"loki","uid":"gdev-loki"}}],"range":{"from":"now-30m","to":"now"},"panelsState":{"logs":{"visualisationType":"logs"}}}}&orgId=1`
+      );
+
+      // Assert there are results
+      const firstExplorePanelRow = page.getByTestId('logRows').locator('tr').first();
+      await expect(firstExplorePanelRow).toHaveCount(1);
+      await expect(firstExplorePanelRow).toBeVisible();
+      const queryFieldText = await page.getByTestId('data-testid Query field').textContent();
+
+      // Open add menu (note will need to be changed after "queryless" button is released)
+      await page.getByLabel('Add', { exact: true }).click();
+
+      // Go to explore logs
+      await page.getByLabel('Open in Explore Logs').click();
+      await page.getByRole('button', { name: 'Open', exact: true }).click();
+
+      // Assert query returned results after nav
+      const firstExploreLogsRow = page
+        .getByTestId(/data-testid Panel header Logs/)
+        .getByTestId('data-testid panel content')
+        .locator('tr')
+        .first();
+      await expect(firstExploreLogsRow).toHaveCount(1);
+      await expect(firstExploreLogsRow).toBeVisible();
+
+      const lineFilters = page.getByTestId('data-testid search-logs');
+
+      // Assert the line filters have escaped the values correctly and are in the right order
+      await expect(lineFilters).toHaveCount(5);
+      await expect(lineFilters.nth(0)).toHaveValue('\\\\n');
+      await expect(lineFilters.nth(1)).toHaveValue('\\n');
+      await expect(lineFilters.nth(2)).toHaveValue('getBookTitles(Author.java:25)\\n');
+      await expect(lineFilters.nth(3)).toHaveValue('getBookTitles\\(Author\\.java:25\\)\\\\n');
+
+      // go back to explore
+      await page.getByTestId(/data-testid Panel menu Logs/).click();
+      await page.getByTestId('data-testid Panel menu item Explore').click();
+
+      // Explore query should be unchanged
+      expect(await page.getByTestId('data-testid Query field').textContent()).toContain(
+        queryFieldText?.replace('Enter to Rename, Shift+Enter to Preview', '')
+      );
     });
   });
 });
