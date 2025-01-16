@@ -149,4 +149,27 @@ describe('contextToLink', () => {
       path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedLineFiltersUrlString}`,
     });
   });
+  it('should return undefined when no non-regex include filters are present', () => {
+    const target = getTestTarget({
+      expr: `sort_desc(sum by (error) (count_over_time({service_name=~"grafana/.*", cluster=~"prod-eu-west-2"} | logfmt | level="error" | logger=~".*grafana-datasource.*|.*coreplugin" | statusSource!="downstream" | error!="" |~"Partial data response error|Plugin Request Completed" | endpoint="queryData" [$__auto])))`,
+    });
+    const config = getTestConfig(linkConfigs, target);
+    expect(config).toEqual(undefined);
+  });
+  it('should not confuse field filters with indexed label filters', () => {
+    const target = getTestTarget({
+      expr: `sort_desc(sum by (error) (count_over_time({service_name=~"grafana/.*", cluster="eu-west-1"} | logfmt | level="error" | logger=~".*grafana-datasource.*|.*coreplugin" | statusSource!="downstream" | error!="" |~"Partial data response error|Plugin Request Completed" | endpoint="queryData" [$__auto])))`,
+    });
+    const config = getTestConfig(linkConfigs, target);
+
+    const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
+
+    // var-lineFilters=caseSensitive,0|__gfp__~|Partial data response error__gfp__Plugin Request Completed
+    const expectedLineFiltersUrlString =
+      '&var-lineFilters=caseSensitive%2C0%7C__gfp__%7E%7CPartial+data+response+error__gfp__Plugin+Request+Completed';
+
+    expect(config).toEqual({
+      path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedLineFiltersUrlString}`,
+    });
+  });
 });
