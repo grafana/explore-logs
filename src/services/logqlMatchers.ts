@@ -121,28 +121,25 @@ function getAllPositionsInNodeByType(node: SyntaxNode, type: number): NodePositi
   return positions;
 }
 
-function parseLabelFilters(selector: SyntaxNode[], query: string, filter: IndexedLabelFilter[]) {
-  const selectorPosition = NodePosition.fromNode(selector[0]);
-
+function parseLabelFilters(query: string, filter: IndexedLabelFilter[]) {
+  // `Matcher` will select field filters as well as indexed label filters
   const allMatcher = getNodesFromQuery(query, [Matcher]);
   for (const matcher of allMatcher) {
-    const matcherPosition = NodePosition.fromNode(matcher);
     const identifierPosition = getAllPositionsInNodeByType(matcher, Identifier);
     const valuePosition = getAllPositionsInNodeByType(matcher, String);
-    const operation = query.substring(identifierPosition[0]?.to, valuePosition[0]?.from);
-    const op = operation === '=' ? FilterOperator.Equal : FilterOperator.NotEqual;
+    const operator = query.substring(identifierPosition[0]?.to, valuePosition[0]?.from);
     const key = identifierPosition[0].getExpression(query);
     const value = valuePosition.map((position) => query.substring(position.from + 1, position.to - 1))[0];
 
-    if (!key || !value) {
+    if (!key || !value || (operator !== FilterOperator.NotEqual && operator !== FilterOperator.Equal)) {
       continue;
     }
 
     filter.push({
       key,
-      operator: op,
+      operator,
       value,
-      type: selectorPosition.contains(matcherPosition) ? LabelType.Indexed : undefined,
+      type: LabelType.Indexed,
     });
   }
 }
@@ -327,11 +324,15 @@ export function getMatcherFromQuery(
   const lineFilters: LineFilterType[] = [];
   const fields: FieldFilter[] = [];
   const selector = getNodesFromQuery(query, [Selector]);
+
   if (selector.length === 0) {
     return { labelFilters: filter };
   }
 
-  parseLabelFilters(selector, query, filter);
+  // Get the stream selector portion of the query
+  const selectorQuery = getAllPositionsInNodeByType(selector[0], Selector)[0].getExpression(query);
+
+  parseLabelFilters(selectorQuery, filter);
   parseLineFilters(query, lineFilters);
   parseFields(query, fields, context, lokiQuery);
 
