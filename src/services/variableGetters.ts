@@ -186,7 +186,6 @@ export function getUrlParamNameForVariable(variableName: string) {
 }
 
 export function getValueFromFieldsFilter(filter: AdHocVariableFilter, variableName: string = VAR_FIELDS): FieldValue {
-  console.log('filter', filter);
   try {
     const fieldValue = narrowFieldValue(JSON.parse(filter.value));
     if (fieldValue !== false) {

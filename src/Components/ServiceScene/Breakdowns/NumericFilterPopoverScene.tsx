@@ -35,12 +35,36 @@ enum DisplayDurationUnits {
   h = 'h',
 }
 
+export const validDurationValues: { [key in DisplayDurationUnits]: string[] } = {
+  [DisplayDurationUnits.ns]: ['ns'],
+  [DisplayDurationUnits.us]: ['µs', 'us'],
+  [DisplayDurationUnits.ms]: ['ms'],
+  [DisplayDurationUnits.s]: ['s'],
+  [DisplayDurationUnits.m]: ['m'],
+  [DisplayDurationUnits.h]: ['h'],
+};
+
 enum DisplayByteUnits {
   B = 'B',
   KB = 'KB',
   MB = 'MB',
   GB = 'GB',
   TB = 'TB',
+}
+
+export enum ValidByteUnitValues {
+  B = 'B',
+  KB = 'KB',
+  MB = 'MB',
+  GB = 'GB',
+  TB = 'TB',
+
+  // Not selectable in the UI, but valid from link extensions
+  kB = 'kB',
+  KiB = 'KiB',
+  MiB = 'MiB',
+  GiB = 'GiB',
+  TiB = 'TiB',
 }
 
 interface FloatUnitTypes {

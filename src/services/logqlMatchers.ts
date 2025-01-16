@@ -240,23 +240,23 @@ function getStringFieldOperator(matcher: SyntaxNode) {
 }
 
 function parseFields(query: string, fields: FieldFilter[], context: PluginExtensionPanelContext, lokiQuery: LokiQuery) {
-  const frame = context.data?.series.find((frame) => frame.refId === lokiQuery.refId);
+  const dataFrame = context.data?.series.find((frame) => frame.refId === lokiQuery.refId);
   // We do not currently support "or" in Explore logs, so grab the left hand side LabelFilter leaf nodes as this will be the first filter expression in a given pipeline stage
   const allFields = getLHSLeafNodesFromQuery(query, [LabelFilter]);
-
-  // @todo it might be better to check for parsers before the current node instead of checking for parsers in the entire query?
-  // @todo we need to use detected_fields API to get the "right" parser for a specific field
-  const logFmtParser = getNodesFromQuery(query, [Logfmt]);
-  const jsonParser = getNodesFromQuery(query, [Json]);
 
   for (const matcher of allFields) {
     const position = NodePosition.fromNode(matcher);
     const expression = position.getExpression(query);
 
+    // Skip error expression, it will get added automatically when explore logs adds a parser
     if (expression.substring(0, 9) === `__error__`) {
-      console.log('skipping error expression');
       continue;
     }
+
+    // @todo we need to use detected_fields API to get the "right" parser for a specific field
+    // Currently we just check to see if there is a parser before the current node, this means that queries that are placing metadata filters after the parser will query the metadata field as a parsed field, which will lead to degraded performance
+    const logFmtParser = getNodesFromQuery(query.substring(0, matcher.node.to), [Logfmt]);
+    const jsonParser = getNodesFromQuery(query.substring(0, matcher.node.to), [Json]);
 
     // field filter key
     const fieldNameNode = getAllPositionsInNodeByType(matcher, Identifier);
@@ -283,16 +283,15 @@ function parseFields(query: string, fields: FieldFilter[], context: PluginExtens
       operator = getNumericFieldOperator(matcher);
       fieldValue = fieldBytesValue[0].getExpression(query);
     } else {
-      console.warn('Unknown field type');
       continue;
     }
 
     // Label type
     let labelType: LabelType | undefined;
-    if (frame) {
+    if (dataFrame) {
       // @todo if the field label is not in the first line, we'll always add this filter as a field filter
-      // Also negative filters that exclude all values of a field will always fail?
-      labelType = getLabelTypeFromFrame(fieldName, frame) ?? undefined;
+      // Also negative filters that exclude all values of a field will always fail to get a label type for that exclusion filter?
+      labelType = getLabelTypeFromFrame(fieldName, dataFrame) ?? undefined;
     }
 
     if (operator) {
@@ -304,9 +303,10 @@ function parseFields(query: string, fields: FieldFilter[], context: PluginExtens
       } else if (jsonParser.length) {
         parser = 'json';
       } else {
-        // If there is no parser in the query, the field would have to be metadata?
+        // If there is no parser in the query, the field would have to be metadata or an invalid query?
         labelType = LabelType.StructuredMetadata;
       }
+
       fields.push({
         key: fieldName,
         operator: operator,
