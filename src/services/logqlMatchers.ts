@@ -1,19 +1,23 @@
 // Warning: This file (and any imports) are included in the main bundle with Grafana in order to provide link extension support in Grafana core, in an effort to keep Grafana loading quickly, please do not add any unnecessary imports to this file and run the bundle analyzer before committing any changes!
 
 import {
+  Bytes,
+  Duration,
   Eq,
   FilterOp,
   Gte,
   Gtr,
   Identifier,
+  Json,
   LabelFilter,
   LineFilter,
+  Logfmt,
   Lss,
   Lte,
   Matcher,
   Neq,
   Nre,
-  NumberFilter,
+  Number,
   OrFilter,
   parser,
   PipeExact,
@@ -31,17 +35,18 @@ import {
   LineFilterOp,
   LineFilterType,
 } from './filterTypes';
-import { FieldType, PluginExtensionPanelContext } from '@grafana/data';
+import { PluginExtensionPanelContext } from '@grafana/data';
 import { getLabelTypeFromFrame, LokiQuery } from './lokiQuery';
 import { LabelType } from './fieldsTypes';
+import { ParserType } from './variables';
 
 export class NodePosition {
   from: number;
   to: number;
-  type: NodeType;
-  syntaxNode: SyntaxNode;
+  type?: NodeType;
+  syntaxNode?: SyntaxNode;
 
-  constructor(from: number, to: number, syntaxNode: SyntaxNode, type: NodeType) {
+  constructor(from: number, to: number, syntaxNode?: SyntaxNode, type?: NodeType) {
     this.from = from;
     this.to = to;
     this.type = type;
@@ -74,6 +79,32 @@ export function getNodesFromQuery(query: string, nodeTypes?: number[]): SyntaxNo
   return nodes;
 }
 
+/**
+ * Returns the leaf nodes on the left-hand-side matching nodeTypes
+ * @param query
+ * @param nodeTypes
+ */
+export function getLHSLeafNodesFromQuery(query: string, nodeTypes: number[]): SyntaxNode[] {
+  const nodes: SyntaxNode[] = [];
+  const tree: Tree = parser.parse(query);
+
+  tree.iterate({
+    enter: (node): false | void => {
+      if (nodeTypes.includes(node.type.id)) {
+        let leftChild: SyntaxNode | null;
+        while ((leftChild = node.node.firstChild) !== null) {
+          if (!nodeTypes.includes(leftChild.node.type.id)) {
+            nodes.push(node.node);
+            return false;
+          }
+          node = leftChild;
+        }
+      }
+    },
+  });
+  return nodes;
+}
+
 function getAllPositionsInNodeByType(node: SyntaxNode, type: number): NodePosition[] {
   if (node.type.id === type) {
     return [NodePosition.fromNode(node)];
@@ -98,7 +129,7 @@ function parseLabelFilters(selector: SyntaxNode[], query: string, filter: Indexe
     const matcherPosition = NodePosition.fromNode(matcher);
     const identifierPosition = getAllPositionsInNodeByType(matcher, Identifier);
     const valuePosition = getAllPositionsInNodeByType(matcher, String);
-    const operation = query.substring(identifierPosition[0].to, valuePosition[0].from);
+    const operation = query.substring(identifierPosition[0]?.to, valuePosition[0]?.from);
     const op = operation === '=' ? FilterOperator.Equal : FilterOperator.NotEqual;
     const key = identifierPosition[0].getExpression(query);
     const value = valuePosition.map((position) => query.substring(position.from + 1, position.to - 1))[0];
@@ -178,10 +209,45 @@ function parseLineFilters(query: string, lineFilters: LineFilterType[]) {
   }
 }
 
+function getNumericFieldOperator(matcher: SyntaxNode) {
+  if (getAllPositionsInNodeByType(matcher, Lte).length) {
+    return FilterOperator.lte;
+  } else if (getAllPositionsInNodeByType(matcher, Lss).length) {
+    return FilterOperator.lt;
+  } else if (getAllPositionsInNodeByType(matcher, Gte).length) {
+    return FilterOperator.gte;
+  } else if (getAllPositionsInNodeByType(matcher, Gtr).length) {
+    return FilterOperator.gt;
+  }
+
+  console.warn('unknown numeric operator');
+
+  return undefined;
+}
+
+function getStringFieldOperator(matcher: SyntaxNode) {
+  if (getAllPositionsInNodeByType(matcher, Eq).length) {
+    return FilterOperator.Equal; // =
+  } else if (getAllPositionsInNodeByType(matcher, Neq).length) {
+    return FilterOperator.NotEqual; // !=
+  } else if (getAllPositionsInNodeByType(matcher, Re).length) {
+    console.warn('field regex not currently supported'); // =~
+  } else if (getAllPositionsInNodeByType(matcher, Nre).length) {
+    console.warn('field exclusive regex not currently supported'); // !~
+  }
+
+  return undefined;
+}
+
 function parseFields(query: string, fields: FieldFilter[], context: PluginExtensionPanelContext, lokiQuery: LokiQuery) {
   const frame = context.data?.series.find((frame) => frame.refId === lokiQuery.refId);
-  const labels = frame?.fields.find((field) => field.type === FieldType.other && field.name === 'labels');
-  const allFields = getNodesFromQuery(query, [LabelFilter]);
+  // We do not currently support "or" in Explore logs, so grab the left hand side LabelFilter leaf nodes as this will be the first filter expression in a given pipeline stage
+  const allFields = getLHSLeafNodesFromQuery(query, [LabelFilter]);
+
+  // @todo it might be better to check for parsers before the current node instead of checking for parsers in the entire query?
+  // @todo we need to use detected_fields API to get the "right" parser for a specific field
+  const logFmtParser = getNodesFromQuery(query, [Logfmt]);
+  const jsonParser = getNodesFromQuery(query, [Json]);
 
   for (const matcher of allFields) {
     const position = NodePosition.fromNode(matcher);
@@ -192,73 +258,61 @@ function parseFields(query: string, fields: FieldFilter[], context: PluginExtens
       continue;
     }
 
-    const numberFilter = getAllPositionsInNodeByType(matcher, NumberFilter); // bytes, duration or float
-    if (numberFilter.length) {
-      const lte = getAllPositionsInNodeByType(matcher, Lte); // <=
-      const lss = getAllPositionsInNodeByType(matcher, Lss); // <
-      const gte = getAllPositionsInNodeByType(matcher, Gte); // >=
-      const gtr = getAllPositionsInNodeByType(matcher, Gtr); // >
+    // field filter key
+    const fieldNameNode = getAllPositionsInNodeByType(matcher, Identifier);
+    const fieldName = fieldNameNode[0]?.getExpression(query);
 
-      console.log('number position', {
-        position,
-        expression,
-        lte,
-        lss,
-        gte,
-        gtr,
-        numberFilter,
-      });
+    // field filter value
+    const fieldStringValue = getAllPositionsInNodeByType(matcher, String);
+    const fieldNumberValue = getAllPositionsInNodeByType(matcher, Number);
+    const fieldBytesValue = getAllPositionsInNodeByType(matcher, Bytes);
+    const fieldDurationValue = getAllPositionsInNodeByType(matcher, Duration);
+
+    let fieldValue: string, operator: FilterOperator | undefined;
+    if (fieldStringValue.length) {
+      operator = getStringFieldOperator(matcher);
+      // Strip out quotes
+      fieldValue = query.substring(fieldStringValue[0].from + 1, fieldStringValue[0].to - 1);
+    } else if (fieldNumberValue.length) {
+      fieldValue = fieldNumberValue[0].getExpression(query);
+      operator = getNumericFieldOperator(matcher);
+    } else if (fieldDurationValue.length) {
+      operator = getNumericFieldOperator(matcher);
+      fieldValue = fieldDurationValue[0].getExpression(query);
+    } else if (fieldBytesValue.length) {
+      operator = getNumericFieldOperator(matcher);
+      fieldValue = fieldBytesValue[0].getExpression(query);
     } else {
-      // Operator
-      let operator;
-      if (getAllPositionsInNodeByType(matcher, Eq).length) {
-        // =
-        operator = FilterOperator.Equal;
-      } else if (getAllPositionsInNodeByType(matcher, Neq).length) {
-        // !=
-        operator = FilterOperator.NotEqual;
-      } else if (getAllPositionsInNodeByType(matcher, Re).length) {
-        // =~
-        console.warn('field regex not currently supported');
-      } else if (getAllPositionsInNodeByType(matcher, Nre).length) {
-        // !~
-        console.warn('field exclusive regex not currently supported');
+      console.warn('Unknown field type');
+      continue;
+    }
+
+    // Label type
+    let labelType: LabelType | undefined;
+    if (frame) {
+      // @todo if the field label is not in the first line, we'll always add this filter as a field filter
+      // Also negative filters that exclude all values of a field will always fail?
+      labelType = getLabelTypeFromFrame(fieldName, frame) ?? undefined;
+    }
+
+    if (operator) {
+      let parser: ParserType | undefined;
+      if (logFmtParser.length && jsonParser.length) {
+        parser = 'mixed';
+      } else if (logFmtParser.length) {
+        parser = 'logfmt';
+      } else if (jsonParser.length) {
+        parser = 'json';
+      } else {
+        // If there is no parser in the query, the field would have to be metadata?
+        labelType = LabelType.StructuredMetadata;
       }
-
-      // field filter key
-      const fieldNameNode = getAllPositionsInNodeByType(matcher, Identifier)[0];
-      const fieldName = fieldNameNode?.getExpression(query);
-
-      // field filter value
-      const fieldValueNode = getAllPositionsInNodeByType(matcher, String)[0];
-      // @todo do double-quotes vs back-ticks change anything?
-      const fieldValue = query.substring(fieldValueNode.from + 1, fieldValueNode.to - 1);
-
-      // Label type
-      let labelType;
-      if (frame) {
-        // @todo if the label is not in the first line we'll fall back to mixed field which will negatively impact query performance
-        // Also negative filters that exclude all values of a field will always fail
-        labelType = getLabelTypeFromFrame(fieldName, frame);
-      }
-
-      if (operator) {
-        fields.push({
-          key: fieldName,
-          operator: operator,
-          type: labelType ?? LabelType.Parsed,
-          value: fieldValue,
-        });
-      }
-
-      console.log('field position', {
-        position,
-        expression,
-        labelType,
-        labels,
-        fields,
-        fieldName,
-        fieldValue,
+      fields.push({
+        key: fieldName,
+        operator: operator,
+        type: labelType ?? LabelType.Parsed,
+        parser,
+        value: fieldValue,
       });
     }
   }

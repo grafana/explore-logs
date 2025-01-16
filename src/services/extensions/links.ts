@@ -2,6 +2,7 @@
 import { PluginExtensionLinkConfig, PluginExtensionPanelContext, PluginExtensionPoints } from '@grafana/data';
 
 import {
+  AdHocFieldValue,
   LEVEL_VARIABLE_VALUE,
   SERVICE_NAME,
   VAR_DATASOURCE,
@@ -62,11 +63,6 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
     return undefined;
   }
 
-  console.log('contextToLink', {
-    context,
-    lokiQuery,
-  });
-
   const expr = lokiQuery.expr;
   const { labelFilters: labelFilters, lineFilters, fields } = getMatcherFromQuery(expr, context, lokiQuery);
 
@@ -112,7 +108,7 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
       if (field.type === LabelType.StructuredMetadata) {
         if (field.key === LEVEL_VARIABLE_VALUE) {
           params = appendUrlParameter(
-            UrlParameters.Fields,
+            UrlParameters.Levels,
             `${field.key}|${field.operator}|${escapeURLDelimiters(field.value)}`,
             params
           );
@@ -124,10 +120,15 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
           );
         }
       } else {
-        // @todo JSON encode field value
+        const fieldValue: AdHocFieldValue = {
+          value: field.value,
+          parser: field.parser,
+        };
         params = appendUrlParameter(
           UrlParameters.Fields,
-          `${field.key}|${field.operator}|${escapeURLDelimiters(field.value)}`,
+          `${field.key}|${field.operator}|${escapeURLDelimiters(JSON.stringify(fieldValue))},${escapeURLDelimiters(
+            fieldValue.value
+          )}`,
           params
         );
       }
