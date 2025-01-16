@@ -228,9 +228,9 @@ function getStringFieldOperator(matcher: SyntaxNode) {
   } else if (getAllPositionsInNodeByType(matcher, Neq).length) {
     return FilterOperator.NotEqual; // !=
   } else if (getAllPositionsInNodeByType(matcher, Re).length) {
-    console.warn('field regex not currently supported'); // =~
+    // console.warn('field regex not currently supported'); // =~
   } else if (getAllPositionsInNodeByType(matcher, Nre).length) {
-    console.warn('field exclusive regex not currently supported'); // !~
+    // console.warn('field exclusive regex not currently supported'); // !~
   }
 
   return undefined;
