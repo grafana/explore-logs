@@ -1084,10 +1084,10 @@
     ua-parser-js "^1.0.32"
     web-vitals "^4.0.1"
 
-"@grafana/lezer-logql@^0.2.6":
-  version "0.2.6"
-  resolved "https://registry.yarnpkg.com/@grafana/lezer-logql/-/lezer-logql-0.2.6.tgz#0e330443e88d547cc9353ac1e4b2dadd7301ef4a"
-  integrity sha512-XGTvLEzbKVCi/Y7li1fOYrihQqJhQ1Q2Qopj0Dix850TDnjtmK/V20js+ZA0bd+I0TiRyFYvMDLMwiUVMjzmCg==
+"@grafana/lezer-logql@^0.2.7":
+  version "0.2.7"
+  resolved "https://registry.yarnpkg.com/@grafana/lezer-logql/-/lezer-logql-0.2.7.tgz#f04a82ed15dca2095464099a8fae4dab2729674e"
+  integrity sha512-c+OkLvE/p0oGTAE71BmYz+gTm3ZCGIJBfbN1JMWdN+10UtyrzJ7yU16QNrH51IkQynit4fbY7R2JfkOseNV7TQ==
 
 "@grafana/plugin-e2e@^1.1.1":
   version "1.14.2"
