@@ -223,7 +223,7 @@ export function renderPatternFilters(patterns: AppliedPattern[]) {
     if (includePatterns.length === 1) {
       includePatternsLine = `|> "${sceneUtils.escapeLabelValueInExactSelector(includePatterns[0].pattern)}"`;
     } else {
-      includePatternsLine = `|>  ${includePatterns
+      includePatternsLine = `|> ${includePatterns
         .map((p) => `"${sceneUtils.escapeLabelValueInExactSelector(p.pattern)}"`)
         .join(' or ')}`;
     }
