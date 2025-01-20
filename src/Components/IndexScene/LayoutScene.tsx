@@ -91,9 +91,9 @@ export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
                 {controls &&
                   controls.map((control) => {
                     return control.state.key === CONTROLS_VARS_METADATA_ROW_KEY ? (
-                      <div className={styles.filtersWrap}>
+                      <div key={control.state.key} className={styles.filtersWrap}>
                         <div className={styles.filters}>
-                          <control.Component key={control.state.key} model={control} />
+                          <control.Component model={control} />
                         </div>
                       </div>
                     ) : null;
