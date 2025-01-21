@@ -1,31 +1,15 @@
 import { FilterOp, LineFilterOp } from './filterTypes';
 import { SelectableValue } from '@grafana/data';
 
-const getLabelForOperator = (op: FilterOp): string => {
-  switch (op) {
-    case FilterOp.Equal:
-      return 'Equal';
-    case FilterOp.NotEqual:
-      return 'Not equal';
-    case FilterOp.RegexEqual:
-      return 'Regex equal';
-    case FilterOp.RegexNotEqual:
-      return 'Regex not equal';
-    default:
-      console.error('invalid operator');
-      throw new Error('invalid operator!');
-  }
-};
-
 export const operators = [FilterOp.Equal, FilterOp.NotEqual].map<SelectableValue<string>>((value, index, array) => {
   return {
-    label: getLabelForOperator(value),
+    label: value,
     value,
   };
 });
 
 export const includeOperators = [FilterOp.Equal].map<SelectableValue<string>>((value) => ({
-  label: getLabelForOperator(value),
+  label: value,
   value,
 }));
 
