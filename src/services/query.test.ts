@@ -435,7 +435,7 @@ describe('joinTagFilters', () => {
       },
     ]);
   });
-  it('does not join multiple exclude', () => {
+  it('joins multiple exclude', () => {
     const filters = [
       {
         key: 'not_service_name',
@@ -459,6 +459,17 @@ describe('joinTagFilters', () => {
     });
 
     const result = joinTagFilters(adHoc);
-    expect(result).toEqual(filters);
+    expect(result).toEqual([
+      {
+        key: 'not_service_name',
+        value: 'not_service_name_value',
+        operator: '=',
+      },
+      {
+        key: 'service_name',
+        value: 'service_value|service_value_2',
+        operator: '!~',
+      },
+    ]);
   });
 });
