@@ -2,8 +2,13 @@
 
 View [releases](https://github.com/grafana/explore-logs/releases/) on GitHub for up-to-date changelog information.
 
+## 1.0.6
+* Line filters: Regex support by @gtk-grafana in https://github.com/grafana/explore-logs/pull/963
+* Line filters: Allow backticks5 by @gtk-grafana in https://github.com/grafana/explore-logs/pull/992
+* Fix: use urlUtil instead of UrlSearchParams by @gtk-grafana in https://github.com/grafana/explore-logs/pull/994
+* Sorting: prevent sorting timeFields in place by @svennergr in https://github.com/grafana/explore-logs/pull/996
+  
 ## 1.0.5
-## What's Changed
 * feat(explorations): remove disabled state by @svennergr in https://github.com/grafana/explore-logs/pull/913
 * Webpack: upgrade to 5.95 by @gtk-grafana in https://github.com/grafana/explore-logs/pull/914
 * chore: cleanup faro error messages by @gtk-grafana in https://github.com/grafana/explore-logs/pull/915
@@ -43,7 +48,6 @@ View [releases](https://github.com/grafana/explore-logs/releases/) on GitHub for
 * Logs panel: Direction and wrap URL state by @gtk-grafana in https://github.com/grafana/explore-logs/pull/985
   
 ## 1.0.4
-## What's Changed
 * fix: console error when undefined jsondata.interval by @gtk-grafana in https://github.com/grafana/explore-logs/pull/877
 * ServiceSelectionScene: Manual query runners by @gtk-grafana in https://github.com/grafana/explore-logs/pull/868
 * Detected fields: Use detected_fields response to determine if avg_over_time query should be run by @gtk-grafana in https://github.com/grafana/explore-logs/pull/871
@@ -57,7 +61,6 @@ View [releases](https://github.com/grafana/explore-logs/releases/) on GitHub for
 * Panel UI: Numeric filtering by @gtk-grafana in https://github.com/grafana/explore-logs/pull/894
   
 ## 1.0.3
-## What's Changed
 * feat(exploration): add `grafana-lokiexplore-app/metric-exploration/v1` entrypoint by @svennergr in https://github.com/grafana/explore-logs/pull/840
 * Initial label docs by @stevendungan in https://github.com/grafana/explore-logs/pull/853
 * chore(intercept-banner): move into `container` by @svennergr in https://github.com/grafana/explore-logs/pull/854
@@ -70,7 +73,6 @@ View [releases](https://github.com/grafana/explore-logs/releases/) on GitHub for
 * feat(shardSplitting): improve error handling by @matyax in https://github.com/grafana/explore-logs/pull/873
   
 ## 1.0.2
-## What's Changed
 * Module: Split it up + heavy refactor by @gtk-grafana in https://github.com/grafana/explore-logs/pull/768
 * Breakdowns: Remove service_name requirement by @gtk-grafana in https://github.com/grafana/explore-logs/pull/801
 * docs: update installation instructions by @JStickler in https://github.com/grafana/explore-logs/pull/815
@@ -91,7 +93,6 @@ View [releases](https://github.com/grafana/explore-logs/releases/) on GitHub for
 * Structured metadata: Changes to ad-hoc variable doesn't run detected_fields  by @gtk-grafana in https://github.com/grafana/explore-logs/pull/849
   
 ## 1.0.0
-## What's Changed
 * fix(shardQuerySplitting): do not emit empty data by @matyax in https://github.com/grafana/explore-logs/pull/793
 * removed preview warning and updated some copy (added link to support) by @matryer in https://github.com/grafana/explore-logs/pull/792
 * Frontend instrumentation by @gtk-grafana in https://github.com/grafana/explore-logs/pull/790
@@ -107,7 +108,6 @@ View [releases](https://github.com/grafana/explore-logs/releases/) on GitHub for
 * GA: Remove preview copy in intercept banner by @gtk-grafana in https://github.com/grafana/explore-logs/pull/777
   
 ## 0.1.4
-## What's Changed
 * Fields: include and exclude empty values by @gtk-grafana in https://github.com/grafana/explore-logs/pull/703
 * Update `make docs` procedure by @github-actions in https://github.com/grafana/explore-logs/pull/716
 * Displayed fields: persist selection in local storage and URL by @matyax in https://github.com/grafana/explore-logs/pull/733
@@ -132,7 +132,6 @@ View [releases](https://github.com/grafana/explore-logs/releases/) on GitHub for
 * @BitDesert made their first contribution in https://github.com/grafana/explore-logs/pull/743
   
 ## 0.1.3
-## What's Changed
 * added better hero image by @matryer in https://github.com/grafana/explore-logs/pull/598
 * Updated plugin links to docs by @matryer in https://github.com/grafana/explore-logs/pull/599
 * docs: Copyedit for style and docs standards by @JStickler in https://github.com/grafana/explore-logs/pull/582
@@ -159,7 +158,6 @@ View [releases](https://github.com/grafana/explore-logs/releases/) on GitHub for
 * @moxious made their first contribution in https://github.com/grafana/explore-logs/pull/673
 
 ## 0.1.2
-## What's Changed
 * added better hero image by @matryer in https://github.com/grafana/explore-logs/pull/598
 * Updated plugin links to docs by @matryer in https://github.com/grafana/explore-logs/pull/599
 * docs: Copyedit for style and docs standards by @JStickler in https://github.com/grafana/explore-logs/pull/582

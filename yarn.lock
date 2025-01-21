@@ -1084,10 +1084,10 @@
     ua-parser-js "^1.0.32"
     web-vitals "^4.0.1"
 
-"@grafana/lezer-logql@^0.2.6":
-  version "0.2.6"
-  resolved "https://registry.yarnpkg.com/@grafana/lezer-logql/-/lezer-logql-0.2.6.tgz#0e330443e88d547cc9353ac1e4b2dadd7301ef4a"
-  integrity sha512-XGTvLEzbKVCi/Y7li1fOYrihQqJhQ1Q2Qopj0Dix850TDnjtmK/V20js+ZA0bd+I0TiRyFYvMDLMwiUVMjzmCg==
+"@grafana/lezer-logql@^0.2.7":
+  version "0.2.7"
+  resolved "https://registry.yarnpkg.com/@grafana/lezer-logql/-/lezer-logql-0.2.7.tgz#f04a82ed15dca2095464099a8fae4dab2729674e"
+  integrity sha512-c+OkLvE/p0oGTAE71BmYz+gTm3ZCGIJBfbN1JMWdN+10UtyrzJ7yU16QNrH51IkQynit4fbY7R2JfkOseNV7TQ==
 
 "@grafana/plugin-e2e@^1.1.1":
   version "1.14.2"
@@ -1114,10 +1114,10 @@
     rxjs "7.8.1"
     tslib "2.7.0"
 
-"@grafana/scenes@5.36.0":
-  version "5.36.0"
-  resolved "https://registry.yarnpkg.com/@grafana/scenes/-/scenes-5.36.0.tgz#9719630712186e9e37dbc7de54e2c635e96deaec"
-  integrity sha512-RfYsxt1hapd3KdOBS3jHSVV+QBuQGlDWeUTG8Jb3qxmiG6gD3E2GPMSPVqeNgNWCI99qEvshUzwwrXV/7OKOPg==
+"@grafana/scenes@5.37.0":
+  version "5.37.0"
+  resolved "https://registry.yarnpkg.com/@grafana/scenes/-/scenes-5.37.0.tgz#c29ab740c017c4e82d5cc1e59bd0a73bb94e6afd"
+  integrity sha512-MJcpzONHsgs/VUbt0V4cVnqL1EoTtzQ0dWMWPrbMs357vZGimEGoZVmunNHmt5wMhkR/WggYH0p+QnJAQ9HQHA==
   dependencies:
     "@floating-ui/react" "^0.26.16"
     "@leeoniya/ufuzzy" "^1.0.16"

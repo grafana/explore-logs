@@ -30,8 +30,7 @@ import { getLogsPanelSortOrderFromStore, LogOptionsScene } from './LogOptionsSce
 import { LogsVolumePanel, logsVolumePanelKey } from './LogsVolumePanel';
 import { getPanelWrapperStyles, PanelMenu } from '../Panels/PanelMenu';
 import { ServiceScene } from './ServiceScene';
-import { LineFilterOp } from '../../services/filterTypes';
-import { LineFilterCaseSensitive } from './LineFilter/LineFilterScene';
+import { LineFilterCaseSensitive, LineFilterOp } from '../../services/filterTypes';
 import { Options } from '@grafana/schema/dist/esm/raw/composable/logs/panelcfg/x/LogsPanelCfg_types.gen';
 import { locationService } from '@grafana/runtime';
 import { narrowLogsSortOrder } from '../../services/narrowing';
