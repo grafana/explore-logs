@@ -264,9 +264,6 @@ export function wrapWildcardSearch(input: string) {
 }
 
 export function unwrapWildcardSearch(input: string) {
-  if (input.substring(0, 2) === '.*' && input.slice(-2) === '.*') {
-    return input.slice(2).slice(0, -2);
-  }
   if (input.substring(0, 6) === '(?i).*' && input.slice(-2) === '.*') {
     return input.slice(6).slice(0, -2);
   }
