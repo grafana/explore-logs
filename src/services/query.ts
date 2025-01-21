@@ -255,10 +255,9 @@ export function joinTagFilters(variable: AdHocFiltersVariable) {
   });
   return filters;
 }
-
 export function wrapWildcardSearch(input: string) {
   if (input !== '.+' && input.substring(0, 2) !== '.*') {
-    return `.*${input}.*`;
+    return `(?i).*${input}.*`;
   }
 
   return input;
@@ -267,6 +266,9 @@ export function wrapWildcardSearch(input: string) {
 export function unwrapWildcardSearch(input: string) {
   if (input.substring(0, 2) === '.*' && input.slice(-2) === '.*') {
     return input.slice(2).slice(0, -2);
+  }
+  if (input.substring(0, 6) === '(?i).*' && input.slice(-2) === '.*') {
+    return input.slice(6).slice(0, -2);
   }
   return input;
 }

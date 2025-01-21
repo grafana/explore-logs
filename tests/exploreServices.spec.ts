@@ -580,7 +580,7 @@ test.describe('explore services page', () => {
         // Assert results have loaded before we search or we'll cancel the ongoing volume query
         await expect(page.getByText('Showing 6 of 6')).toBeVisible();
         // Search for "gateway"
-        await page.getByTestId(testIds.index.searchLabelValueInput).fill('gate');
+        await page.getByTestId(testIds.index.searchLabelValueInput).fill('Gate');
         await page.getByTestId(testIds.index.searchLabelValueInput).press('Escape');
 
         // Asser this filters down to only one result
