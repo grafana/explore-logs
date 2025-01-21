@@ -240,23 +240,20 @@ export function joinTagFilters(variable: AdHocFiltersVariable) {
       filters.push({
         key,
         value: positiveGroups[key][0].value,
-        operator: positiveGroups[key][0].operator,
+        operator: '=',
       });
     } else {
       filters.push({
         key,
         value: values.join('|'),
-        operator: positiveGroups[key][0].operator,
+        operator: '=~',
       });
     }
   }
 
-  if (negative.length) {
-    negative.forEach((filter) => {
-      filters.push(filter);
-    });
-  }
-
+  negative.forEach((filter) => {
+    filters.push(filter);
+  });
   return filters;
 }
 
