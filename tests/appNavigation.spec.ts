@@ -39,7 +39,7 @@ test.describe('navigating app', () => {
 
     // Filter results to tempo-ingester to prevent flake
     await explorePage.servicesSearch.click();
-    await explorePage.servicesSearch.pressSequentially('tempo-i');
+    await explorePage.servicesSearch.pressSequentially('Tempo-i');
     await page.keyboard.press('Escape');
     await expect(page.getByRole('listbox')).not.toBeVisible();
     await expect(page.getByRole('heading', { name: 'tempo-ingester' })).toBeVisible();
@@ -54,7 +54,7 @@ test.describe('navigating app', () => {
     await expect(page.getByTestId('data-testid Show logs').first()).toHaveCount(1);
     const actualSearchParams = new URLSearchParams(page.url().split('?')[1]);
     const expectedSearchParams = new URLSearchParams(
-      '?patterns=%5B%5D&from=now-15m&to=now&var-ds=gdev-loki&var-filters=service_name%7C%3D%7Ctempo-ingester&var-fields=&var-filters_replica=&var-levels=&var-patterns=&var-lineFilterV2=&var-lineFilters=&var-metadata=&timezone=browser&var-primary_label=service_name%7C%3D%7E%7C.*tempo-i.*'
+      '?patterns=%5B%5D&from=now-15m&to=now&var-ds=gdev-loki&var-filters=service_name%7C%3D%7Ctempo-ingester&var-fields=&var-filters_replica=&var-levels=&var-patterns=&var-lineFilterV2=&var-lineFilters=&var-metadata=&timezone=browser&var-primary_label=service_name%7C%3D~%7C%28%3Fi%29.%2ATempo-i.%2A'
     );
     actualSearchParams.sort();
     expectedSearchParams.sort();
