@@ -244,14 +244,24 @@ export function renderPatternFilters(patterns: AppliedPattern[]) {
 export function joinTagFilters(variable: AdHocFiltersVariable) {
   const { positiveGroups, negativeGroups } = getLogQLLabelGroups(variable.state.filters);
 
+  console.log('joinTagFilters', {
+    filters: variable.state.filters,
+    positiveGroups,
+    negativeGroups,
+  });
+
   const filters: AdHocFilterWithLabels[] = [];
   for (const key in positiveGroups) {
     const values = positiveGroups[key].map((filter) => filter.value);
+    console.log('values', {
+      key,
+      values,
+    });
     if (values.length === 1) {
       filters.push({
         key,
         value: positiveGroups[key][0].value,
-        operator: '=',
+        operator: positiveGroups[key][0].operator,
       });
     } else {
       filters.push({
@@ -268,7 +278,7 @@ export function joinTagFilters(variable: AdHocFiltersVariable) {
       filters.push({
         key,
         value: negativeGroups[key][0].value,
-        operator: '!=',
+        operator: negativeGroups[key][0].operator,
       });
     } else {
       filters.push({

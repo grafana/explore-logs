@@ -49,3 +49,6 @@ export const isOperatorInclusive = (op: string | FilterOp): boolean => {
 export const isOperatorExclusive = (op: string | FilterOp): boolean => {
   return op === FilterOp.NotEqual || op === FilterOp.RegexNotEqual;
 };
+export const isOperatorRegex = (op: string | FilterOp): boolean => {
+  return op === FilterOp.RegexEqual || op === FilterOp.RegexNotEqual;
+};

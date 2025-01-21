@@ -64,10 +64,10 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
   }
 
   const expr = lokiQuery.expr;
-  const { labelFilters: labelFilters, lineFilters, fields } = getMatcherFromQuery(expr, context, lokiQuery);
-
+  const { labelFilters, lineFilters, fields } = getMatcherFromQuery(expr, context, lokiQuery);
   const labelSelector = labelFilters.find((selector) => isOperatorInclusive(selector.operator));
 
+  // Require at least one inclusive operator to run a valid Loki query
   if (!labelSelector) {
     return undefined;
   }
@@ -89,7 +89,7 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
 
     params = appendUrlParameter(
       UrlParameters.Labels,
-      `${labelFilter.key}|${labelFilter.operator}|${labelFilter.value}`,
+      `${labelFilter.key}|${labelFilter.operator}|${escapeURLDelimiters(labelFilter.value)}`,
       params
     );
   }
@@ -134,6 +134,8 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
       }
     }
   }
+
+  console.log('output url', createAppUrl(`/explore/${labelName}/${labelValue}/logs`, params));
 
   return {
     path: createAppUrl(`/explore/${labelName}/${labelValue}/logs`, params),

@@ -10,6 +10,7 @@ import { isArray } from 'lodash';
 import { joinTagFilters } from './query';
 import { FilterOp } from './filterTypes';
 import { getFavoriteLabelValuesFromStorage } from './store';
+import { isOperatorInclusive, isOperatorRegex } from './operators';
 
 type FetchDetectedLabelValuesOptions = {
   expr?: string;
@@ -118,7 +119,18 @@ export async function getLabelsTagValuesProvider(
 
   if (datasource && datasource.getTagValues) {
     // Filter out other values for this key so users can include other values for this label
-    const filters = joinTagFilters(variable).filter((f) => !(filter.operator === '=' && f.key === filter.key));
+    let filters = joinTagFilters(variable).filter(
+      (f) => !(isOperatorInclusive(filter.operator) && f.key === filter.key)
+    );
+    console.log('filters', {
+      filters,
+      varState: variable.state.filters,
+    });
+
+    // If there aren't any inclusive filters, we need to ignore the exclusive ones as well, or Loki will throw an error
+    if (!filters.some((filter) => isOperatorInclusive(filter.operator))) {
+      filters = [];
+    }
 
     const options: DataSourceGetTagValuesOptions<LokiQuery> = {
       key: filter.key,
@@ -132,8 +144,13 @@ export async function getLabelsTagValuesProvider(
         return !variable.state.filters
           .filter((f) => f.key === filter.key)
           .some((f) => {
-            // If true, the results should be filtered out
-            return f.operator === FilterOp.Equal && f.value === result.text;
+            if (isOperatorRegex(f.operator)) {
+              const values = f.value.split('|');
+              return values.some((value) => value === result.text);
+            } else {
+              // If true, the results should be filtered out
+              return f.operator === FilterOp.Equal && f.value === result.text;
+            }
           });
       });
       const favoriteValuesArray = getFavoriteLabelValuesFromStorage(
