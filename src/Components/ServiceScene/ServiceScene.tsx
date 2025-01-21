@@ -58,7 +58,6 @@ import {
 import { replaceSlash } from '../../services/extensions/links';
 import { ShowLogsButtonScene } from '../IndexScene/ShowLogsButtonScene';
 import { migrateLineFilterV1 } from '../../services/migrations';
-import { FilterOp } from '../../services/filterTypes';
 import { isOperatorInclusive } from '../../services/operators';
 
 export const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';

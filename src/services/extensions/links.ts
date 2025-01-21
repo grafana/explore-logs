@@ -15,9 +15,8 @@ import {
 import pluginJson from '../../plugin.json';
 import { getMatcherFromQuery } from '../logqlMatchers';
 import { LokiQuery } from '../lokiQuery';
-import { FilterOp } from '../filterTypes';
 import { LabelType } from '../fieldsTypes';
-import { isOperatorExclusive, isOperatorInclusive } from '../operators';
+import { isOperatorInclusive } from '../operators';
 
 const title = 'Open in Explore Logs';
 const description = 'Open current query in the Explore Logs view';

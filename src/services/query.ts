@@ -1,5 +1,5 @@
 import { AdHocVariableFilter } from '@grafana/data';
-import { AppliedPattern, numericOperatorArray } from 'Components/IndexScene/IndexScene';
+import { AppliedPattern } from 'Components/IndexScene/IndexScene';
 import { EMPTY_VARIABLE_VALUE, VAR_DATASOURCE_EXPR } from './variables';
 import { groupBy, trim } from 'lodash';
 import { getValueFromFieldsFilter } from './variableGetters';
@@ -10,7 +10,7 @@ import { PLUGIN_ID } from './plugin';
 import { AdHocFiltersVariable, sceneUtils } from '@grafana/scenes';
 import { FilterOp, LineFilterCaseSensitive, LineFilterOp } from './filterTypes';
 import { sortLineFilters } from '../Components/IndexScene/LineFilterVariablesScene';
-import { isOperatorExclusive, isOperatorInclusive } from './operators';
+import { isOperatorExclusive, isOperatorInclusive, numericOperatorArray } from './operators';
 
 /**
  * Builds the resource query
