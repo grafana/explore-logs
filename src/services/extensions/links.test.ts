@@ -179,8 +179,8 @@ describe('contextToLink', () => {
         '&var-fields=level%7C%3D%7C%7B%22value%22%3A%22error%22__gfc__%22parser%22%3A%22logfmt%22%7D%2Cerror' +
         // statusSource|!=|{"value":"downstream"__gfc__"parser":"logfmt"},downstream
         '&var-fields=statusSource%7C%21%3D%7C%7B%22value%22%3A%22downstream%22__gfc__%22parser%22%3A%22logfmt%22%7D%2Cdownstream' +
-        // error|!=|{"value":""__gfc__"parser":"logfmt"},
-        '&var-fields=error%7C%21%3D%7C%7B%22value%22%3A%22%22__gfc__%22parser%22%3A%22logfmt%22%7D%2C' +
+        // error|!=|{"value":""__gfc__"parser":"logfmt"},""
+        '&var-fields=error%7C%21%3D%7C%7B%22value%22%3A%22%22__gfc__%22parser%22%3A%22logfmt%22%7D%2C%22%22' +
         // endpoint|=|{"value":"queryData"__gfc__"parser":"logfmt"},queryData
         '&var-fields=endpoint%7C%3D%7C%7B%22value%22%3A%22queryData%22__gfc__%22parser%22%3A%22logfmt%22%7D%2CqueryData';
 
@@ -206,12 +206,12 @@ describe('contextToLink', () => {
 
       // level|=|{"value":"error"__gfc__"parser":"logfmt"},error
       // statusSource|!=|{"value":"downstream"__gfc__"parser":"logfmt"},downstream
-      // error|!=|{"value":""__gfc__"parser":"logfmt"},
+      // error|!=|{"value":""__gfc__"parser":"logfmt"},""
       // endpoint|=|{"value":"queryData"__gfc__"parser":"logfmt"},queryData
       const expectedFieldsUrlString =
         '&var-fields=level%7C%3D%7C%7B%22value%22%3A%22error%22__gfc__%22parser%22%3A%22logfmt%22%7D%2Cerror' +
         '&var-fields=statusSource%7C%21%3D%7C%7B%22value%22%3A%22downstream%22__gfc__%22parser%22%3A%22logfmt%22%7D%2Cdownstream' +
-        '&var-fields=error%7C%21%3D%7C%7B%22value%22%3A%22%22__gfc__%22parser%22%3A%22logfmt%22%7D%2C' +
+        '&var-fields=error%7C%21%3D%7C%7B%22value%22%3A%22%22__gfc__%22parser%22%3A%22logfmt%22%7D%2C%22%22' +
         '&var-fields=endpoint%7C%3D%7C%7B%22value%22%3A%22queryData%22__gfc__%22parser%22%3A%22logfmt%22%7D%2CqueryData';
 
       expect(config).toEqual({

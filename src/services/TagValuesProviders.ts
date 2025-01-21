@@ -122,10 +122,6 @@ export async function getLabelsTagValuesProvider(
     let filters = joinTagFilters(variable).filter(
       (f) => !(isOperatorInclusive(filter.operator) && f.key === filter.key)
     );
-    console.log('filters', {
-      filters,
-      varState: variable.state.filters,
-    });
 
     // If there aren't any inclusive filters, we need to ignore the exclusive ones as well, or Loki will throw an error
     if (!filters.some((filter) => isOperatorInclusive(filter.operator))) {
