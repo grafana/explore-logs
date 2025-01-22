@@ -59,6 +59,32 @@ describe('contextToLink', () => {
     });
   });
 
+  describe('var-levels', () => {
+    it('should parse detected_level', () => {
+      const target = getTestTarget({
+        expr: '{service_name=~`nginx.+`, env=`staging`} | detected_level != "" | detected_level!="" | detected_level=`warn` | detected_level=~`warn|info` ',
+      });
+      const config = getTestConfig(linkConfigs, target);
+
+      const expectedLabelFiltersUrlString =
+        `&var-filters=${encodeFilter('service_name|=~|nginx.+')}` + `&var-filters=${encodeFilter('env|=|staging')}`;
+
+      const expectedLevelsFilterUrlString =
+        `&var-levels=${encodeFilter('detected_level|!=|""')}` +
+        `&var-levels=${encodeFilter('detected_level|!=|""')}` +
+        `&var-levels=${encodeFilter('detected_level|=|warn')}`;
+      // @todo detected_level is a field, not a label, so regex is not yet supported
+      // + `&var-levels=${encodeFilter('detected_level|=~|"warn__gfp__info"')}`
+      expect(config).toEqual({
+        path: getPath({
+          slug: 'service/nginx.+',
+          expectedLabelFiltersUrlString,
+          expectedLevelsFilterUrlString,
+        }),
+      });
+    });
+  });
+
   describe('line-filters', () => {
     it('should parse case sensitive regex line-filters in double quotes and backticks', () => {
       const target = getTestTarget({
@@ -622,10 +648,11 @@ function getPath(options: {
   expectedMetadataString?: string;
   expectedLineFiltersUrlString?: string;
   expectedFieldsUrlString?: string;
+  expectedLevelsFilterUrlString?: string;
 }) {
   return `/a/grafana-lokiexplore-app/explore/${options.slug}/logs?var-ds=123abc&from=1675828800000&to=1675854000000${
     options.expectedLabelFiltersUrlString ?? ''
   }${options.expectedMetadataString ?? ''}${options.expectedLineFiltersUrlString ?? ''}${
     options.expectedFieldsUrlString ?? ''
-  }`;
+  }${options.expectedLevelsFilterUrlString ?? ''}`;
 }
