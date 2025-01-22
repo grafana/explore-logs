@@ -5,6 +5,8 @@ import {
   renderLogQLFieldFilters,
   renderLogQLLabelFilters,
   renderLogQLLineFilter,
+  unwrapWildcardSearch,
+  wrapWildcardSearch,
   renderPatternFilters,
 } from './query';
 
@@ -461,6 +463,22 @@ describe('joinTagFilters', () => {
 
     const result = joinTagFilters(adHoc);
     expect(result).toEqual(filters);
+  });
+});
+describe('wrapWildcardSearch', () => {
+  it('should wrap string with case-insensitive query params', () => {
+    expect(wrapWildcardSearch('.+')).toEqual('.+');
+    expect(wrapWildcardSearch('Input-string')).toEqual('(?i).*Input-string.*');
+    expect(wrapWildcardSearch('(?i).*Input-string.*')).toEqual('(?i).*Input-string.*');
+  });
+});
+
+describe('unwrapWildcardSearch', () => {
+  it('should unwrap case-insensitive params', () => {
+    expect(unwrapWildcardSearch('(?i).*Input-string.*')).toEqual('Input-string');
+    expect(unwrapWildcardSearch('Input-string')).toEqual('Input-string');
+    expect(unwrapWildcardSearch('')).toEqual('');
+    expect(unwrapWildcardSearch('.+')).toEqual('.+');
   });
 });
 
