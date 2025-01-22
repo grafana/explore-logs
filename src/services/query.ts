@@ -225,7 +225,7 @@ export function renderRegexLabelFilter(key: string, values: string[], operator: 
 export function renderPatternFilters(patterns: AppliedPattern[]) {
   const excludePatterns = patterns.filter((pattern) => pattern.type === 'exclude');
   const excludePatternsLine = excludePatterns
-    .map((p) => `!> \`${p.pattern}\``)
+    .map((p) => `!> "${sceneUtils.escapeLabelValueInExactSelector(p.pattern)}"`)
     .join(' ')
     .trim();
 
@@ -233,9 +233,11 @@ export function renderPatternFilters(patterns: AppliedPattern[]) {
   let includePatternsLine = '';
   if (includePatterns.length > 0) {
     if (includePatterns.length === 1) {
-      includePatternsLine = `|> \`${includePatterns[0].pattern}\``;
+      includePatternsLine = `|> "${sceneUtils.escapeLabelValueInExactSelector(includePatterns[0].pattern)}"`;
     } else {
-      includePatternsLine = `|>  ${includePatterns.map((p) => `\`${p.pattern}\``).join(' or ')}`;
+      includePatternsLine = `|> ${includePatterns
+        .map((p) => `"${sceneUtils.escapeLabelValueInExactSelector(p.pattern)}"`)
+        .join(' or ')}`;
     }
   }
   return `${excludePatternsLine} ${includePatternsLine}`.trim();
@@ -281,19 +283,21 @@ export function joinTagFilters(variable: AdHocFiltersVariable) {
 
   return filters;
 }
-
 export function wrapWildcardSearch(input: string) {
-  if (input !== '.+' && input.substring(0, 2) !== '.*') {
-    return `.*${input}.*`;
+  if (input === '.+') {
+    return input;
+  } else if (input.substring(0, 6) !== '(?i).*') {
+    return `(?i).*${input}.*`;
   }
 
   return input;
 }
 
 export function unwrapWildcardSearch(input: string) {
-  if (input.substring(0, 2) === '.*' && input.slice(-2) === '.*') {
-    return input.slice(2).slice(0, -2);
+  if (input.substring(0, 6) === '(?i).*' && input.slice(-2) === '.*') {
+    return input.slice(6).slice(0, -2);
   }
+
   return input;
 }
 
