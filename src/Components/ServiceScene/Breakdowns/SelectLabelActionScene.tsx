@@ -94,6 +94,7 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
     const popoverRef = useRef<HTMLButtonElement>(null);
     const filterButtonDisabled =
       fieldType === ValueSlugs.label &&
+      // @todo support regex operators?
       variable.state.filters.filter((f) => f.key !== labelName && f.operator === FilterOp.Equal).length === 0;
 
     const isIncluded = existingFilter?.operator === FilterOp.NotEqual && fieldValue.value === EMPTY_VARIABLE_VALUE;

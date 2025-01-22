@@ -89,6 +89,7 @@ import { getCopiedTimeRange, PasteTimeEvent, setupKeyboardShortcuts } from '../.
 import { LokiDatasource } from '../../services/lokiQuery';
 import {
   includeOperators,
+  isOperatorInclusive,
   lineFilterOperators,
   numericOperatorArray,
   numericOperators,
@@ -246,7 +247,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       const wip = labelsVar.state._wip;
       if (
         wip &&
-        labelsVar.state.filters.some((filter) => filter.key === wip.key && filter.operator === FilterOp.Equal)
+        labelsVar.state.filters.some((filter) => filter.key === wip.key && isOperatorInclusive(filter.operator))
       ) {
         return includeOperators;
       }
@@ -451,7 +452,6 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     datasource: EXPLORATION_DS,
     layout: 'combobox',
     label: 'Labels',
-    supportsMultiValueOperators: true,
     allowCustomValue: true,
     filters: initialFilters ?? [],
     expressionBuilder: renderLogQLLabelFilters,

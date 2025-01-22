@@ -109,6 +109,7 @@ export function renderLogQLLabelFilters(filters: AdHocFilterWithLabels[]) {
 
 export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
   // @todo partition instead of looping through again and again
+  // @todo support regex operators
   const positive = filters.filter((filter) => filter.operator === FilterOp.Equal);
   const negative = filters.filter((filter) => filter.operator === FilterOp.NotEqual);
 
@@ -177,8 +178,8 @@ export function renderLogQLLineFilter(filters: AdHocFilterWithLabels[]) {
     .join(' ');
 }
 export function renderLogQLMetadataFilters(filters: AdHocVariableFilter[]) {
-  const positive = filters.filter((filter) => filter.operator === FilterOp.Equal);
-  const negative = filters.filter((filter) => filter.operator === FilterOp.NotEqual);
+  const positive = filters.filter((filter) => isOperatorInclusive(filter.operator));
+  const negative = filters.filter((filter) => isOperatorExclusive(filter.operator));
 
   const positiveGroups = groupBy(positive, (filter) => filter.key);
 

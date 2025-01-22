@@ -197,6 +197,50 @@ describe('getVisibleLevels', () => {
     ]);
     expect(getVisibleLevels(['error', 'logs'], scene)).toEqual(['error']);
   });
+
+  it('Handles exclusion regex negative log level filter', () => {
+    setup([
+      {
+        key: 'detected_level',
+        operator: FilterOp.RegexNotEqual,
+        value: '""',
+      },
+    ]);
+    expect(getVisibleLevels(['error', 'logs'], scene)).toEqual(['error']);
+  });
+
+  it('Handles matching regex positive log level filter', () => {
+    setup([
+      {
+        key: 'detected_level',
+        operator: FilterOp.RegexEqual,
+        value: '""',
+      },
+    ]);
+    expect(getVisibleLevels(['error', 'logs'], scene)).toEqual(['logs']);
+  });
+
+  it('Handles matching regex positive log levels filter', () => {
+    setup([
+      {
+        key: 'detected_level',
+        operator: FilterOp.RegexEqual,
+        value: 'error|info',
+      },
+    ]);
+    expect(getVisibleLevels(ALL_LEVELS, scene)).toEqual(['info', 'error']);
+  });
+
+  it('Handles matching regex negative log levels filter', () => {
+    setup([
+      {
+        key: 'detected_level',
+        operator: FilterOp.RegexNotEqual,
+        value: 'error|info',
+      },
+    ]);
+    expect(getVisibleLevels(ALL_LEVELS, scene)).toEqual(['logs', 'debug', 'warn', 'crit']);
+  });
 });
 
 describe('toggleLevelFromFilter', () => {
@@ -230,6 +274,20 @@ describe('toggleLevelFromFilter', () => {
 
   it('Toggles it off if the filter with the same value exists', () => {
     setup([{ key: 'detected_level', operator: FilterOp.Equal, value: 'info' }]);
+
+    expect(toggleLevelFromFilter('info', scene)).toBe('remove');
+    expect(addToFilters).toHaveBeenCalledTimes(1);
+  });
+
+  it('Toggles it off if a regex filter with the exact value exists', () => {
+    setup([{ key: 'detected_level', operator: FilterOp.RegexEqual, value: 'info' }]);
+
+    expect(toggleLevelFromFilter('info', scene)).toBe('remove');
+    expect(addToFilters).toHaveBeenCalledTimes(1);
+  });
+
+  it('Toggles it off if a regex filter containing the value exists', () => {
+    setup([{ key: 'detected_level', operator: FilterOp.RegexEqual, value: 'info|warn' }]);
 
     expect(toggleLevelFromFilter('info', scene)).toBe('remove');
     expect(addToFilters).toHaveBeenCalledTimes(1);
