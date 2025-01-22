@@ -50,9 +50,15 @@ describe('contextToLink', () => {
     const config = getTestConfig(linkConfigs, target);
 
     expect(config).toEqual({
-      path: '/a/grafana-lokiexplore-app/explore/service/cloud-gcp/logs?var-ds=123abc&from=1675828800000&to=1675854000000&var-filters=service_name%7C%3D%7Ccloud%2Fgcp&var-filters=resource_type%7C%21%3D%7Cgce_firewall_rule',
+      path: getPath({
+        slug: 'service/cloud-gcp',
+        expectedLabelFiltersUrlString:
+          `&var-filters=${encodeFilter('service_name|=|cloud/gcp')}` +
+          `&var-filters=${encodeFilter('resource_type|!=|gce_firewall_rule')}`,
+      }),
     });
   });
+
   describe('line-filters', () => {
     it('should parse case sensitive regex line-filters in double quotes and backticks', () => {
       const target = getTestTarget({
@@ -61,13 +67,22 @@ describe('contextToLink', () => {
       const config = getTestConfig(linkConfigs, target);
 
       const expectedLabelFiltersUrlString =
-        '&var-filters=cluster%7C%3D%7Ceu-west-1' + '&var-filters=resource_type%7C%21%3D%7Cgce_firewall_rule';
+        `&var-filters=${encodeFilter('cluster|=|eu-west-1')}` +
+        `&var-filters=${encodeFilter('resource_type|!=|gce_firewall_rule')}`;
       const expectedLineFiltersUrlString =
-        '&var-lineFilters=caseSensitive%2C0%7C__gfp__%7E%7C%28%2825%5B0-5%5D__gfp__%282%5B0-4%5D__gfp__1%5Cd__gfp__%5B1-9%5D__gfp__%29%5Cd%29%5C.%3F%5Cb%29%7B4%7D' +
-        '&var-lineFilters=caseSensitive%2C1%7C%21%3D%7C+%28%2825%5B0-5%5D__gfp__%282%5B0-4%5D__gfp__1%5Cd__gfp__%5B1-9%5D__gfp__%29%5Cd%29%5C.%3F%5Cb%29%7B4%7D';
+        `&var-lineFilters=${encodeFilter(
+          'caseSensitive,0|__gfp__~|((25[0-5]__gfp__(2[0-4]__gfp__1\\d__gfp__[1-9]__gfp__)\\d)\\.?\\b){4}'
+        )}` +
+        `&var-lineFilters=${encodeFilter(
+          'caseSensitive,1|!=| ((25[0-5]__gfp__(2[0-4]__gfp__1\\d__gfp__[1-9]__gfp__)\\d)\\.?\\b){4}'
+        )}`;
 
       expect(config).toEqual({
-        path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedLineFiltersUrlString}`,
+        path: getPath({
+          slug: 'cluster/eu-west-1',
+          expectedLabelFiltersUrlString,
+          expectedLineFiltersUrlString,
+        }),
       });
     });
     it('should parse case sensitive non-regex line-filters in double quotes and backticks', () => {
@@ -77,16 +92,21 @@ describe('contextToLink', () => {
       const config = getTestConfig(linkConfigs, target);
 
       const expectedLabelFiltersUrlString =
-        '&var-filters=cluster%7C%3D%7Ceu-west-1' + '&var-filters=resource_type%7C%21%3D%7Cgce_firewall_rule';
+        `&var-filters=${encodeFilter('cluster|=|eu-west-1')}` +
+        `&var-filters=${encodeFilter('resource_type|!=|gce_firewall_rule')}`;
       const expectedLineFiltersUrlString =
-        '&var-lineFilters=caseSensitive%2C0%7C__gfp__%3D%7C+%28%3Fi%29caller__gfc__' +
+        `&var-lineFilters=${encodeFilter('caseSensitive,0|__gfp__=| (?i)caller__gfc__')}` +
         // Note: This is a bug! If searching for log lines containing `__gfp__` or `__gfc__`, it will be interpolated as a pipe or a comma in the evaluated string
         '__gfp__' +
-        '&var-lineFilters=caseSensitive%2C1%7C__gfp__%3D%7C+%28%3Fi%29caller__gfc__' +
+        `&var-lineFilters=${encodeFilter('caseSensitive,1|__gfp__=| (?i)caller__gfc__')}` +
         '__gfc__';
 
       expect(config).toEqual({
-        path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedLineFiltersUrlString}`,
+        path: getPath({
+          slug: 'cluster/eu-west-1',
+          expectedLabelFiltersUrlString,
+          expectedLineFiltersUrlString,
+        }),
       });
     });
     it('should parse case insensitive regex line-filters in double quotes and backticks', () => {
@@ -95,11 +115,9 @@ describe('contextToLink', () => {
       });
       const config = getTestConfig(linkConfigs, target);
 
-      // &var-filters=cluster|=|eu-west-1
       const expectedLabelFiltersUrlString =
-        '&var-filters=cluster%7C%3D%7Ceu-west-1' +
-        // &var-filters=resource_type|!=|gce_firewall_rule
-        '&var-filters=resource_type%7C%21%3D%7Cgce_firewall_rule';
+        `&var-filters=${encodeFilter('cluster|=|eu-west-1')}` +
+        `&var-filters=${encodeFilter('resource_type|!=|gce_firewall_rule')}`;
 
       // &var-lineFilters=caseInsensitive|__gfp__~|((25[0-5]__gfp__(2[0-4]__gfp__1\d__gfp__[1-9]__gfp__)\d)\.?\b){4}
       const expectedLineFiltersUrlString =
@@ -108,7 +126,11 @@ describe('contextToLink', () => {
         '&var-lineFilters=caseInsensitive%7C%21%7E%7C+%28%2825%5B0-5%5D__gfp__%282%5B0-4%5D__gfp__1%5Cd__gfp__%5B1-9%5D__gfp__%29%5Cd%29%5C.%3F%5Cb%29%7B4%7D';
 
       expect(config).toEqual({
-        path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedLineFiltersUrlString}`,
+        path: getPath({
+          slug: 'cluster/eu-west-1',
+          expectedLabelFiltersUrlString,
+          expectedLineFiltersUrlString,
+        }),
       });
     });
     it('should parse case sensitive non-regex line-filters in double quotes and backticks containing case insensitive string, newlines, and double quotes', () => {
@@ -117,46 +139,52 @@ describe('contextToLink', () => {
       });
       const config = getTestConfig(linkConfigs, target);
 
-      // &var-filters=cluster|=|eu-west-1
       const expectedLabelFiltersUrlString =
-        '&var-filters=cluster%7C%3D%7Ceu-west-1' +
-        // &var-filters=resource_type|!=|gce_firewall_rule
-        '&var-filters=resource_type%7C%21%3D%7Cgce_firewall_rule';
+        `&var-filters=${encodeFilter('cluster|=|eu-west-1')}` +
+        `&var-filters=${encodeFilter('resource_type|!=|gce_firewall_rule')}`;
 
-      // &var-lineFilters=caseSensitive,0|__gfp__=|"+(?i)caller"
       const expectedLineFiltersUrlString =
-        '&var-lineFilters=caseSensitive%2C0%7C__gfp__%3D%7C%22+%28%3Fi%29caller%22' +
-        // &var-lineFilters=caseSensitive,1|__gfp__=|+(?i)caller.+\\\\n
-        '&var-lineFilters=caseSensitive%2C1%7C__gfp__%3D%7C+%28%3Fi%29caller.%2B%5C%5Cn';
+        `&var-lineFilters=${encodeFilter('caseSensitive,0|__gfp__=|" (?i)caller"')}` +
+        `&var-lineFilters=${encodeFilter('caseSensitive,1|__gfp__=| (?i)caller.+\\\\n')}`;
 
       expect(config).toEqual({
-        path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedLineFiltersUrlString}`,
+        path: getPath({
+          slug: 'cluster/eu-west-1',
+          expectedLabelFiltersUrlString,
+          expectedLineFiltersUrlString,
+        }),
       });
     });
     it('should parse case sensitive non-regex line-filter containing double quotes', () => {
       const target = getTestTarget({ expr: '{cluster="eu-west-1"} |= "thread \\\\\\"main\\\\\\""' });
       const config = getTestConfig(linkConfigs, target);
 
-      const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
-
-      // &var-lineFilters=caseSensitive,0|__gfp__=|thread \"main\"
-      const expectedLineFiltersUrlString = '&var-lineFilters=caseSensitive%2C0%7C__gfp__%3D%7Cthread+%5C%22main%5C%22';
+      const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter('cluster|=|eu-west-1')}`;
+      const expectedLineFiltersUrlString = `&var-lineFilters=${encodeFilter(
+        'caseSensitive,0|__gfp__=|thread \\"main\\"'
+      )}`;
 
       expect(config).toEqual({
-        path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedLineFiltersUrlString}`,
+        path: getPath({
+          slug: 'cluster/eu-west-1',
+          expectedLabelFiltersUrlString,
+          expectedLineFiltersUrlString,
+        }),
       });
     });
     it('should parse case sensitive non-regex line-filter containing newline match', () => {
       const target = getTestTarget({ expr: `{cluster="eu-west-1"} |= "\\\\n"` });
       const config = getTestConfig(linkConfigs, target);
 
-      const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
-
-      // &var-lineFilters=caseSensitive,0|__gfp__=|\n
-      const expectedLineFiltersUrlString = '&var-lineFilters=caseSensitive%2C0%7C__gfp__%3D%7C%5Cn';
+      const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter('cluster|=|eu-west-1')}`;
+      const expectedLineFiltersUrlString = `&var-lineFilters=${encodeFilter('caseSensitive,0|__gfp__=|\\n')}`;
 
       expect(config).toEqual({
-        path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedLineFiltersUrlString}`,
+        path: getPath({
+          slug: 'cluster/eu-west-1',
+          expectedLabelFiltersUrlString,
+          expectedLineFiltersUrlString,
+        }),
       });
     });
     it('should parse regex labels, fields, and line filters', () => {
@@ -164,28 +192,27 @@ describe('contextToLink', () => {
         expr: `sort_desc(sum by (error) (count_over_time({service_name=~"grafana/.*", cluster=~"prod-eu-west-2"} | logfmt | level="error" | logger=~".*grafana-datasource.*|.*coreplugin" | statusSource!="downstream" | error!="" |~"Partial data response error|Plugin Request Completed" | endpoint="queryData" [$__auto])))`,
       });
       const config = getTestConfig(linkConfigs, target);
-      // &var-filters=service_name|=~|grafana/.*
       const expectedLabelFiltersUrlString =
-        '&var-filters=service_name%7C%3D%7E%7Cgrafana%2F.*' +
-        //&var-filters=cluster|=~|prod-eu-west-2
-        '&var-filters=cluster%7C%3D%7E%7Cprod-eu-west-2';
+        `&var-filters=${encodeFilter('service_name|=~|grafana/.*')}` +
+        `&var-filters=${encodeFilter('cluster|=~|prod-eu-west-2')}`;
 
-      const expectedLineFiltersUrlString =
-        // caseSensitive,0|__gfp__~|Partial+data+response+error__gfp__Plugin+Request+Completed
-        '&var-lineFilters=caseSensitive%2C0%7C__gfp__%7E%7CPartial+data+response+error__gfp__Plugin+Request+Completed';
+      const expectedLineFiltersUrlString = `&var-lineFilters=${encodeFilter(
+        'caseSensitive,0|__gfp__~|Partial data response error__gfp__Plugin Request Completed'
+      )}`;
 
       const expectedFieldsUrlString =
-        // level|=|{"value":"error"__gfc__"parser":"logfmt"},error
-        '&var-fields=level%7C%3D%7C%7B%22value%22%3A%22error%22__gfc__%22parser%22%3A%22logfmt%22%7D%2Cerror' +
-        // statusSource|!=|{"value":"downstream"__gfc__"parser":"logfmt"},downstream
-        '&var-fields=statusSource%7C%21%3D%7C%7B%22value%22%3A%22downstream%22__gfc__%22parser%22%3A%22logfmt%22%7D%2Cdownstream' +
-        // error|!=|{"value":""__gfc__"parser":"logfmt"},""
-        '&var-fields=error%7C%21%3D%7C%7B%22value%22%3A%22%22__gfc__%22parser%22%3A%22logfmt%22%7D%2C%22%22' +
-        // endpoint|=|{"value":"queryData"__gfc__"parser":"logfmt"},queryData
-        '&var-fields=endpoint%7C%3D%7C%7B%22value%22%3A%22queryData%22__gfc__%22parser%22%3A%22logfmt%22%7D%2CqueryData';
+        `&var-fields=${encodeFilter('level|=|{"value":"error"__gfc__"parser":"logfmt"},error')}` +
+        `&var-fields=${encodeFilter('statusSource|!=|{"value":"downstream"__gfc__"parser":"logfmt"},downstream')}` +
+        `&var-fields=${encodeFilter('error|!=|{"value":""__gfc__"parser":"logfmt"},""')}` +
+        `&var-fields=${encodeFilter('endpoint|=|{"value":"queryData"__gfc__"parser":"logfmt"},queryData')}`;
 
       expect(config).toEqual({
-        path: `/a/grafana-lokiexplore-app/explore/service/grafana-.*/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedLineFiltersUrlString}${expectedFieldsUrlString}`,
+        path: getPath({
+          slug: 'service/grafana-.*',
+          expectedLabelFiltersUrlString,
+          expectedLineFiltersUrlString,
+          expectedFieldsUrlString,
+        }),
       });
     });
     it('should not confuse field filters with indexed label filters', () => {
@@ -194,44 +221,46 @@ describe('contextToLink', () => {
       });
       const config = getTestConfig(linkConfigs, target);
 
-      // &var-filters=cluster|=|eu-west-1
       const expectedLabelFiltersUrlString =
-        '&var-filters=cluster%7C%3D%7Ceu-west-1' +
-        //&var-filters=service_name|=~|grafana/.*
-        '&var-filters=service_name%7C%3D%7E%7Cgrafana%2F.*';
+        `&var-filters=${encodeFilter('cluster|=|eu-west-1')}` +
+        `&var-filters=${encodeFilter('service_name|=~|grafana/.*')}`;
 
-      // var-lineFilters=caseSensitive,0|__gfp__~|Partial data response error__gfp__Plugin Request Completed
-      const expectedLineFiltersUrlString =
-        '&var-lineFilters=caseSensitive%2C0%7C__gfp__%7E%7CPartial+data+response+error__gfp__Plugin+Request+Completed';
+      const expectedLineFiltersUrlString = `&var-lineFilters=${encodeFilter(
+        'caseSensitive,0|__gfp__~|Partial data response error__gfp__Plugin Request Completed'
+      )}`;
 
-      // level|=|{"value":"error"__gfc__"parser":"logfmt"},error
-      // statusSource|!=|{"value":"downstream"__gfc__"parser":"logfmt"},downstream
-      // error|!=|{"value":""__gfc__"parser":"logfmt"},""
-      // endpoint|=|{"value":"queryData"__gfc__"parser":"logfmt"},queryData
       const expectedFieldsUrlString =
-        '&var-fields=level%7C%3D%7C%7B%22value%22%3A%22error%22__gfc__%22parser%22%3A%22logfmt%22%7D%2Cerror' +
-        '&var-fields=statusSource%7C%21%3D%7C%7B%22value%22%3A%22downstream%22__gfc__%22parser%22%3A%22logfmt%22%7D%2Cdownstream' +
-        '&var-fields=error%7C%21%3D%7C%7B%22value%22%3A%22%22__gfc__%22parser%22%3A%22logfmt%22%7D%2C%22%22' +
-        '&var-fields=endpoint%7C%3D%7C%7B%22value%22%3A%22queryData%22__gfc__%22parser%22%3A%22logfmt%22%7D%2CqueryData';
+        `&var-fields=${encodeFilter('level|=|{"value":"error"__gfc__"parser":"logfmt"},error')}` +
+        `&var-fields=${encodeFilter('statusSource|!=|{"value":"downstream"__gfc__"parser":"logfmt"},downstream')}` +
+        `&var-fields=${encodeFilter('error|!=|{"value":""__gfc__"parser":"logfmt"},""')}` +
+        `&var-fields=${encodeFilter('endpoint|=|{"value":"queryData"__gfc__"parser":"logfmt"},queryData')}`;
 
       expect(config).toEqual({
-        path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedLineFiltersUrlString}${expectedFieldsUrlString}`,
+        path: getPath({
+          slug: 'cluster/eu-west-1',
+          expectedLabelFiltersUrlString,
+          expectedLineFiltersUrlString,
+          expectedFieldsUrlString,
+        }),
       });
     });
   });
+
   describe('fields', () => {
     describe('string fields', () => {
       it('should parse structured metadata field', () => {
         const target = getTestTarget({ expr: `{cluster="eu-west-1"} | pod!=\`mimir-ingester-xjntw\` ` });
         const config = getTestConfig(linkConfigs, target);
 
-        const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
-
-        // pod|!=|mimir-ingester-xjntw
-        const expectedFiltersString = '&var-metadata=pod%7C%21%3D%7Cmimir-ingester-xjntw';
+        const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter('cluster|=|eu-west-1')}`;
+        const expectedLineFiltersUrlString = `&var-metadata=${encodeFilter('pod|!=|mimir-ingester-xjntw')}`;
 
         expect(config).toEqual({
-          path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedFiltersString}`,
+          path: getPath({
+            slug: 'cluster/eu-west-1',
+            expectedLabelFiltersUrlString,
+            expectedLineFiltersUrlString,
+          }),
         });
       });
       it('should parse structured metadata field with parser(s)', () => {
@@ -240,41 +269,49 @@ describe('contextToLink', () => {
         });
         const config = getTestConfig(linkConfigs, target);
 
-        const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
-
-        // pod|!=|mimir-ingester-xjntw
-        const expectedFiltersString = '&var-metadata=pod%7C%21%3D%7Cmimir-ingester-xjntw';
+        const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter('cluster|=|eu-west-1')}`;
+        const expectedLineFiltersUrlString = `&var-metadata=${encodeFilter('pod|!=|mimir-ingester-xjntw')}`;
 
         expect(config).toEqual({
-          path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedFiltersString}`,
+          path: getPath({
+            slug: 'cluster/eu-west-1',
+            expectedLabelFiltersUrlString,
+            expectedLineFiltersUrlString,
+          }),
         });
       });
       it('should parse field with logfmt parser', () => {
         const target = getTestTarget({ expr: `{cluster="eu-west-1"} | logfmt | pod=\`mimir-ingester-xjntw\`  ` });
         const config = getTestConfig(linkConfigs, target);
 
-        const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
-
-        // pod|=|{"value":"mimir-ingester-xjntw"__gfc__"parser":"logfmt"},mimir-ingester-xjntw
-        const expectedFiltersString =
-          '&var-fields=pod%7C%3D%7C%7B%22value%22%3A%22mimir-ingester-xjntw%22__gfc__%22parser%22%3A%22logfmt%22%7D%2Cmimir-ingester-xjntw';
+        const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter('cluster|=|eu-west-1')}`;
+        const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
+          'pod|=|{"value":"mimir-ingester-xjntw"__gfc__"parser":"logfmt"},mimir-ingester-xjntw'
+        )}`;
 
         expect(config).toEqual({
-          path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedFiltersString}`,
+          path: getPath({
+            slug: 'cluster/eu-west-1',
+            expectedLabelFiltersUrlString,
+            expectedLineFiltersUrlString,
+          }),
         });
       });
       it('should parse field with json parser', () => {
         const target = getTestTarget({ expr: `{cluster="eu-west-1"} | json | pod=\`mimir-ingester-xjntw\`  ` });
         const config = getTestConfig(linkConfigs, target);
 
-        const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
-
-        // pod|=|{"value":"mimir-ingester-xjntw"__gfc__"parser":"json"},mimir-ingester-xjntw
-        const expectedFiltersString =
-          '&var-fields=pod%7C%3D%7C%7B%22value%22%3A%22mimir-ingester-xjntw%22__gfc__%22parser%22%3A%22json%22%7D%2Cmimir-ingester-xjntw';
+        const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter('cluster|=|eu-west-1')}`;
+        const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
+          'pod|=|{"value":"mimir-ingester-xjntw"__gfc__"parser":"json"},mimir-ingester-xjntw'
+        )}`;
 
         expect(config).toEqual({
-          path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedFiltersString}`,
+          path: getPath({
+            slug: 'cluster/eu-west-1',
+            expectedLabelFiltersUrlString,
+            expectedLineFiltersUrlString,
+          }),
         });
       });
       it('should parse field with mixed parser', () => {
@@ -283,14 +320,17 @@ describe('contextToLink', () => {
         });
         const config = getTestConfig(linkConfigs, target);
 
-        const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
-
-        // pod|=|{"value":"mimir-ingester-xjntw"__gfc__"parser":"mixed"},mimir-ingester-xjntw
-        const expectedFiltersString =
-          '&var-fields=pod%7C%3D%7C%7B%22value%22%3A%22mimir-ingester-xjntw%22__gfc__%22parser%22%3A%22mixed%22%7D%2Cmimir-ingester-xjntw';
+        const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter('cluster|=|eu-west-1')}`;
+        const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
+          'pod|=|{"value":"mimir-ingester-xjntw"__gfc__"parser":"mixed"},mimir-ingester-xjntw'
+        )}`;
 
         expect(config).toEqual({
-          path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedFiltersString}`,
+          path: getPath({
+            slug: 'cluster/eu-west-1',
+            expectedLabelFiltersUrlString,
+            expectedLineFiltersUrlString,
+          }),
         });
       });
       it('should ignore __error__ filters', () => {
@@ -299,14 +339,18 @@ describe('contextToLink', () => {
         });
         const config = getTestConfig(linkConfigs, target);
 
-        const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
+        const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter('cluster|=|eu-west-1')}`;
 
-        // pod|=|{"value":"mimir-ingester-xjntw"__gfc__"parser":"mixed"},mimir-ingester-xjntw
-        const expectedFiltersString =
-          '&var-fields=pod%7C%3D%7C%7B%22value%22%3A%22mimir-ingester-xjntw%22__gfc__%22parser%22%3A%22mixed%22%7D%2Cmimir-ingester-xjntw';
+        const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
+          'pod|=|{"value":"mimir-ingester-xjntw"__gfc__"parser":"mixed"},mimir-ingester-xjntw'
+        )}`;
 
         expect(config).toEqual({
-          path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedFiltersString}`,
+          path: getPath({
+            slug: 'cluster/eu-west-1',
+            expectedLabelFiltersUrlString,
+            expectedLineFiltersUrlString,
+          }),
         });
       });
       it('should ignore metric queries', () => {
@@ -315,14 +359,17 @@ describe('contextToLink', () => {
         });
         const config = getTestConfig(linkConfigs, target);
 
-        const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
-
-        // pod|=|{"value":"mimir-ingester-xjntw"__gfc__"parser":"mixed"},mimir-ingester-xjntw
-        const expectedFiltersString =
-          '&var-fields=pod%7C%3D%7C%7B%22value%22%3A%22mimir-ingester-xjntw%22__gfc__%22parser%22%3A%22mixed%22%7D%2Cmimir-ingester-xjntw';
+        const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter('cluster|=|eu-west-1')}`;
+        const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
+          'pod|=|{"value":"mimir-ingester-xjntw"__gfc__"parser":"mixed"},mimir-ingester-xjntw'
+        )}`;
 
         expect(config).toEqual({
-          path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedFiltersString}`,
+          path: getPath({
+            slug: 'cluster/eu-west-1',
+            expectedLabelFiltersUrlString,
+            expectedLineFiltersUrlString,
+          }),
         });
       });
       it('should ignore unwrap', () => {
@@ -331,14 +378,17 @@ describe('contextToLink', () => {
         });
         const config = getTestConfig(linkConfigs, target);
 
-        const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
-
-        // pod|=|{"value":"mimir-ingester-xjntw"__gfc__"parser":"mixed"},mimir-ingester-xjntw
-        const expectedFiltersString =
-          '&var-fields=pod%7C%3D%7C%7B%22value%22%3A%22mimir-ingester-xjntw%22__gfc__%22parser%22%3A%22logfmt%22%7D%2Cmimir-ingester-xjntw';
+        const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter('cluster|=|eu-west-1')}`;
+        const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
+          'pod|=|{"value":"mimir-ingester-xjntw"__gfc__"parser":"logfmt"},mimir-ingester-xjntw'
+        )}`;
 
         expect(config).toEqual({
-          path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedFiltersString}`,
+          path: getPath({
+            slug: 'cluster/eu-west-1',
+            expectedLabelFiltersUrlString,
+            expectedLineFiltersUrlString,
+          }),
         });
       });
       it('should ignore regex match', () => {
@@ -347,14 +397,17 @@ describe('contextToLink', () => {
         });
         const config = getTestConfig(linkConfigs, target);
 
-        const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
-
-        // pod|=|{"value":"mimir-ingester-xjntw"__gfc__"parser":"mixed"},mimir-ingester-xjntw
-        const expectedFiltersString =
-          '&var-fields=pod%7C%3D%7C%7B%22value%22%3A%22mimir-ingester-xjntw%22__gfc__%22parser%22%3A%22mixed%22%7D%2Cmimir-ingester-xjntw';
+        const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter('cluster|=|eu-west-1')}`;
+        const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
+          'pod|=|{"value":"mimir-ingester-xjntw"__gfc__"parser":"mixed"},mimir-ingester-xjntw'
+        )}`;
 
         expect(config).toEqual({
-          path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedFiltersString}`,
+          path: getPath({
+            slug: 'cluster/eu-west-1',
+            expectedLabelFiltersUrlString,
+            expectedLineFiltersUrlString,
+          }),
         });
       });
       it('should ignore regex exclusion', () => {
@@ -363,17 +416,21 @@ describe('contextToLink', () => {
         });
         const config = getTestConfig(linkConfigs, target);
 
-        const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
-
-        // pod|=|{"value":"mimir-ingester-xjntw"__gfc__"parser":"mixed"},mimir-ingester-xjntw
-        const expectedFiltersString =
-          '&var-fields=pod%7C%3D%7C%7B%22value%22%3A%22mimir-ingester-xjntw%22__gfc__%22parser%22%3A%22mixed%22%7D%2Cmimir-ingester-xjntw';
+        const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter('cluster|=|eu-west-1')}`;
+        const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
+          'pod|=|{"value":"mimir-ingester-xjntw"__gfc__"parser":"mixed"},mimir-ingester-xjntw'
+        )}`;
 
         expect(config).toEqual({
-          path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedFiltersString}`,
+          path: getPath({
+            slug: 'cluster/eu-west-1',
+            expectedLabelFiltersUrlString,
+            expectedLineFiltersUrlString,
+          }),
         });
       });
     });
+
     describe('numeric fields', () => {
       it('should parse gt', () => {
         const target = getTestTarget({
@@ -381,16 +438,19 @@ describe('contextToLink', () => {
         });
         const config = getTestConfig(linkConfigs, target);
 
-        const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
-
-        // pod|!=|mimir-ingester-xjntw
-        const expectedMetadataString = '&var-metadata=pod%7C%21%3D%7Cmimir-ingester-xjntw';
-        // duration|>|{"value":"10s"__gfc__"parser":"logfmt"},10s
-        const expectedFiltersString =
-          '&var-fields=duration%7C%3E%7C%7B%22value%22%3A%2210s%22__gfc__%22parser%22%3A%22logfmt%22%7D%2C10s';
+        const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter('cluster|=|eu-west-1')}`;
+        const expectedMetadataString = `&var-metadata=${encodeFilter('pod|!=|mimir-ingester-xjntw')}`;
+        const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
+          'duration|>|{"value":"10s"__gfc__"parser":"logfmt"},10s'
+        )}`;
 
         expect(config).toEqual({
-          path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedMetadataString}${expectedFiltersString}`,
+          path: getPath({
+            slug: 'cluster/eu-west-1',
+            expectedLabelFiltersUrlString,
+            expectedLineFiltersUrlString,
+            expectedMetadataString,
+          }),
         });
       });
       it('should parse gte', () => {
@@ -399,16 +459,19 @@ describe('contextToLink', () => {
         });
         const config = getTestConfig(linkConfigs, target);
 
-        const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
-
-        // pod|!=|mimir-ingester-xjntw
-        const expectedMetadataString = '&var-metadata=pod%7C%21%3D%7Cmimir-ingester-xjntw';
-        // duration|>=|{"value":"10s"__gfc__"parser":"logfmt"},10s
-        const expectedFiltersString =
-          '&var-fields=duration%7C%3E%3D%7C%7B%22value%22%3A%2210s%22__gfc__%22parser%22%3A%22logfmt%22%7D%2C10s';
+        const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter('cluster|=|eu-west-1')}`;
+        const expectedMetadataString = `&var-metadata=${encodeFilter('pod|!=|mimir-ingester-xjntw')}`;
+        const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
+          'duration|>=|{"value":"10s"__gfc__"parser":"logfmt"},10s'
+        )}`;
 
         expect(config).toEqual({
-          path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedMetadataString}${expectedFiltersString}`,
+          path: getPath({
+            slug: 'cluster/eu-west-1',
+            expectedLabelFiltersUrlString,
+            expectedLineFiltersUrlString,
+            expectedMetadataString,
+          }),
         });
       });
       it('should parse lt', () => {
@@ -417,16 +480,19 @@ describe('contextToLink', () => {
         });
         const config = getTestConfig(linkConfigs, target);
 
-        const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
-
-        // pod|!=|mimir-ingester-xjntw
-        const expectedMetadataString = '&var-metadata=pod%7C%21%3D%7Cmimir-ingester-xjntw';
-        // duration|<|{"value":"10s"__gfc__"parser":"logfmt"},10s
-        const expectedFiltersString =
-          '&var-fields=duration%7C%3C%7C%7B%22value%22%3A%2210s%22__gfc__%22parser%22%3A%22logfmt%22%7D%2C10s';
+        const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter('cluster|=|eu-west-1')}`;
+        const expectedMetadataString = `&var-metadata=${encodeFilter('pod|!=|mimir-ingester-xjntw')}`;
+        const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
+          'duration|<|{"value":"10s"__gfc__"parser":"logfmt"},10s'
+        )}`;
 
         expect(config).toEqual({
-          path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedMetadataString}${expectedFiltersString}`,
+          path: getPath({
+            slug: 'cluster/eu-west-1',
+            expectedLabelFiltersUrlString,
+            expectedLineFiltersUrlString,
+            expectedMetadataString,
+          }),
         });
       });
       it('should parse lte', () => {
@@ -435,16 +501,19 @@ describe('contextToLink', () => {
         });
         const config = getTestConfig(linkConfigs, target);
 
-        const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
-
-        // pod|!=|mimir-ingester-xjntw
-        const expectedMetadataString = '&var-metadata=pod%7C%21%3D%7Cmimir-ingester-xjntw';
-        // duration|<=|{"value":"10s"__gfc__"parser":"logfmt"},10s
-        const expectedFiltersString =
-          '&var-fields=duration%7C%3C%3D%7C%7B%22value%22%3A%2210s%22__gfc__%22parser%22%3A%22logfmt%22%7D%2C10s';
+        const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter('cluster|=|eu-west-1')}`;
+        const expectedMetadataString = `&var-metadata=${encodeFilter('pod|!=|mimir-ingester-xjntw')}`;
+        const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
+          'duration|<=|{"value":"10s"__gfc__"parser":"logfmt"},10s'
+        )}`;
 
         expect(config).toEqual({
-          path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedMetadataString}${expectedFiltersString}`,
+          path: getPath({
+            slug: 'cluster/eu-west-1',
+            expectedLabelFiltersUrlString,
+            expectedLineFiltersUrlString,
+            expectedMetadataString,
+          }),
         });
       });
       it('should ignore "or" expressions', () => {
@@ -453,16 +522,19 @@ describe('contextToLink', () => {
         });
         const config = getTestConfig(linkConfigs, target);
 
-        const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
-
-        // pod|!=|mimir-ingester-xjntw
-        const expectedMetadataString = '&var-metadata=pod%7C%21%3D%7Cmimir-ingester-xjntw';
-        // duration|<=|{"value":"10s"__gfc__"parser":"logfmt"},10s
-        const expectedFiltersString =
-          '&var-fields=duration%7C%3C%3D%7C%7B%22value%22%3A%2210s%22__gfc__%22parser%22%3A%22logfmt%22%7D%2C10s';
+        const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter('cluster|=|eu-west-1')}`;
+        const expectedMetadataString = `&var-metadata=${encodeFilter('pod|!=|mimir-ingester-xjntw')}`;
+        const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
+          'duration|<=|{"value":"10s"__gfc__"parser":"logfmt"},10s'
+        )}`;
 
         expect(config).toEqual({
-          path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedMetadataString}${expectedFiltersString}`,
+          path: getPath({
+            slug: 'cluster/eu-west-1',
+            expectedLabelFiltersUrlString,
+            expectedLineFiltersUrlString,
+            expectedMetadataString,
+          }),
         });
       });
 
@@ -474,16 +546,19 @@ describe('contextToLink', () => {
             });
             const config = getTestConfig(linkConfigs, target);
 
-            const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
-            // pod|!=|mimir-ingester-xjntw
-            const expectedMetadataString = '&var-metadata=pod%7C%21%3D%7Cmimir-ingester-xjntw';
-            // duration|>=|{"value":"10.1ms"__gfc__"parser":"logfmt"},10.1ms
-            const expectedFiltersString = `&var-fields=duration%7C%3E%3D%7C%7B%22value%22%3A%2210.1${encodeURIComponent(
-              unit
-            )}%22__gfc__%22parser%22%3A%22logfmt%22%7D%2C10.1${encodeURIComponent(unit)}`;
+            const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter('cluster|=|eu-west-1')}`;
+            const expectedMetadataString = `&var-metadata=${encodeFilter('pod|!=|mimir-ingester-xjntw')}`;
+            const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
+              `duration|>=|{"value":"10.1${unit}"__gfc__"parser":"logfmt"},10.1${unit}`
+            )}`;
 
             expect(config).toEqual({
-              path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedMetadataString}${expectedFiltersString}`,
+              path: getPath({
+                slug: 'cluster/eu-west-1',
+                expectedLabelFiltersUrlString,
+                expectedLineFiltersUrlString,
+                expectedMetadataString,
+              }),
             });
           });
         });
@@ -495,15 +570,14 @@ describe('contextToLink', () => {
           });
           const config = getTestConfig(linkConfigs, target);
 
-          const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
-
-          // pod|!=|mimir-ingester-xjntw
-          const expectedMetadataString = '&var-metadata=pod%7C%21%3D%7Cmimir-ingester-xjntw';
-          // duration|<=|{"value":"${unit}"__gfc__"parser":"logfmt"},${unit}
-          const expectedFiltersString = `&var-fields=duration%7C%3C%3D%7C%7B%22value%22%3A%22${unit}%22__gfc__%22parser%22%3A%22logfmt%22%7D%2C${unit}`;
+          const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter('cluster|=|eu-west-1')}`;
+          const expectedMetadataString = `&var-metadata=${encodeFilter('pod|!=|mimir-ingester-xjntw')}`;
+          const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
+            `duration|<=|{"value":"${unit}"__gfc__"parser":"logfmt"},${unit}`
+          )}`;
 
           expect(config).toEqual({
-            path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedMetadataString}${expectedFiltersString}`,
+            path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedMetadataString}${expectedLineFiltersUrlString}`,
           });
         });
       });
@@ -513,17 +587,45 @@ describe('contextToLink', () => {
             expr: `{cluster="eu-west-1"} | pod!=\`mimir-ingester-xjntw\` | logfmt | bytes >= 10.1${unit}`,
           });
           const config = getTestConfig(linkConfigs, target);
-          const expectedLabelFiltersUrlString = '&var-filters=cluster%7C%3D%7Ceu-west-1';
-          // pod|!=|mimir-ingester-xjntw
-          const expectedMetadataString = '&var-metadata=pod%7C%21%3D%7Cmimir-ingester-xjntw';
-          // bytes|>=|{"value":"10.1KiB"__gfc__"parser":"logfmt"},10.1KiB
-          const expectedFiltersString = `&var-fields=bytes%7C%3E%3D%7C%7B%22value%22%3A%2210.1${unit}%22__gfc__%22parser%22%3A%22logfmt%22%7D%2C10.1${unit}`;
+          const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter('cluster|=|eu-west-1')}`;
+          const expectedMetadataString = `&var-metadata=${encodeFilter('pod|!=|mimir-ingester-xjntw')}`;
+          const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
+            `bytes|>=|{"value":"10.1${unit}"__gfc__"parser":"logfmt"},10.1${unit}`
+          )}`;
 
           expect(config).toEqual({
-            path: `/a/grafana-lokiexplore-app/explore/cluster/eu-west-1/logs?var-ds=123abc&from=1675828800000&to=1675854000000${expectedLabelFiltersUrlString}${expectedMetadataString}${expectedFiltersString}`,
+            path: getPath({
+              slug: 'cluster/eu-west-1',
+              expectedLabelFiltersUrlString,
+              expectedLineFiltersUrlString,
+              expectedMetadataString,
+            }),
           });
         });
       });
     });
   });
 });
+
+function encodeFilter(input: string) {
+  return encodeURIComponent(input)
+    .replace(/!/g, '%21')
+    .replace(/~/g, '%7E')
+    .replace(/%20/g, '+')
+    .replace(/\(/g, '%28')
+    .replace(/\)/g, '%29');
+}
+
+function getPath(options: {
+  slug: string;
+  expectedLabelFiltersUrlString?: string;
+  expectedMetadataString?: string;
+  expectedLineFiltersUrlString?: string;
+  expectedFieldsUrlString?: string;
+}) {
+  return `/a/grafana-lokiexplore-app/explore/${options.slug}/logs?var-ds=123abc&from=1675828800000&to=1675854000000${
+    options.expectedLabelFiltersUrlString ?? ''
+  }${options.expectedMetadataString ?? ''}${options.expectedLineFiltersUrlString ?? ''}${
+    options.expectedFieldsUrlString ?? ''
+  }`;
+}
