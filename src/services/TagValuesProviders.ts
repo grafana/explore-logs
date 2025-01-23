@@ -1,7 +1,7 @@
-import { AdHocFiltersVariable, SceneObject } from '@grafana/scenes';
+import { AdHocFiltersVariable, AdHocFilterWithLabels, SceneObject } from '@grafana/scenes';
 import { DataSourceGetTagValuesOptions, GetTagResponse, MetricFindValue, ScopedVars, TimeRange } from '@grafana/data';
 import { BackendSrvRequest, DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
-import { AdHocFilterWithLabels, getDataSource } from './scenes';
+import { getDataSource } from './scenes';
 import { logger } from './logger';
 import { LokiDatasource, LokiQuery } from './lokiQuery';
 import { getDataSourceVariable, getValueFromFieldsFilter } from './variableGetters';
@@ -48,7 +48,7 @@ export interface LokiLanguageProviderWithDetectedLabelValues {
 }
 
 export const getDetectedFieldValuesTagValuesProvider = async (
-  filter: AdHocFilterWithLabels,
+  filter: AdHocFilterWithLabels<{ parser: 'json' | 'logfmt' | 'mixed' }>,
   expr: string,
   sceneRef: SceneObject,
   timeRange: TimeRange,
@@ -89,7 +89,6 @@ export const getDetectedFieldValuesTagValuesProvider = async (
       // @todo is the parser always the same for the currently selected values and the results from detected_field/.../values?
       if (results && isArray(results)) {
         if (variable === VAR_FIELDS) {
-          console.log('filter', filter);
           if (filter.value) {
             const valueDecoded = getValueFromFieldsFilter(filter, variable);
             return {
@@ -113,7 +112,7 @@ export const getDetectedFieldValuesTagValuesProvider = async (
                 text: v,
                 value: JSON.stringify({
                   value: v,
-                  parser: 'mixed',
+                  parser: filter.meta?.parser ?? 'mixed',
                 }),
               })),
             };
@@ -142,7 +141,7 @@ export const getDetectedFieldValuesTagValuesProvider = async (
 
 export async function getLabelsTagValuesProvider(
   variable: AdHocFiltersVariable,
-  filter: AdHocFilterWithLabels
+  filter: AdHocFilterWithLabels<{ meta: string }>
 ): Promise<{
   replace?: boolean;
   values: GetTagResponse | MetricFindValue[];

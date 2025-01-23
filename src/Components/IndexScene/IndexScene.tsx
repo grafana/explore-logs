@@ -3,6 +3,7 @@ import React from 'react';
 import { AdHocVariableFilter, AppEvents, AppPluginMeta, rangeUtil } from '@grafana/data';
 import {
   AdHocFiltersVariable,
+  AdHocFilterWithLabels,
   CustomVariable,
   DataSourceVariable,
   SceneComponentProps,
@@ -81,7 +82,7 @@ import { getDetectedFieldValuesTagValuesProvider, getLabelsTagValuesProvider } f
 import { lokiRegularEscape } from '../../services/fields';
 import { logger } from '../../services/logger';
 import { getLabelsTagKeysProvider, getFieldsKeysProvider } from '../../services/TagKeysProviders';
-import { AdHocFilterWithLabels, getLokiDatasource } from '../../services/scenes';
+import { getLokiDatasource } from '../../services/scenes';
 import { FilterOp } from '../../services/filterTypes';
 import { ShowLogsButtonScene } from './ShowLogsButtonScene';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';

@@ -1,9 +1,8 @@
-import { SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
+import { AdHocFilterWithLabels, SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import React, { ChangeEvent, KeyboardEvent } from 'react';
 import { getLineFiltersVariable } from '../../services/variableGetters';
 import { LineFilterCaseSensitive, LineFilterOp } from '../../services/filterTypes';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
-import { AdHocFilterWithLabels } from '../../services/scenes';
 import { debounce } from 'lodash';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';

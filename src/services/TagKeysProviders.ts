@@ -11,7 +11,7 @@ import {
   FetchDetectedFieldsOptions,
   LokiLanguageProviderWithDetectedLabelValues,
 } from './TagValuesProviders';
-import { FieldValue, LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LEVELS, VAR_METADATA } from './variables';
+import { LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LEVELS, VAR_METADATA } from './variables';
 
 export async function getLabelsTagKeysProvider(variable: AdHocFiltersVariable): Promise<{
   replace?: boolean;
@@ -85,11 +85,15 @@ export async function getFieldsKeysProvider(
             console.warn('Fields should not get metadata!');
           }
 
-          // @todo is there a way to pass metadata in the MetricFindValue?
+          const parser = field.parsers?.length === 1 ? field.parsers[0] : 'mixed';
+
           return {
             text: field.label,
-            group: field.parsers?.length === 1 ? field.parsers[0] : 'mixed',
-            meta: field.parsers?.length === 1 ? field.parsers[0] : 'mixed',
+            value: field.label,
+            group: parser,
+            meta: {
+              parser,
+            },
           };
         }
 
