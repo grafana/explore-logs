@@ -20,12 +20,31 @@ type FetchDetectedLabelValuesOptions = {
   throwError: boolean;
 };
 
-interface LokiLanguageProviderWithDetectedLabelValues {
+export type FetchDetectedFieldsOptions = {
+  expr: string;
+  timeRange?: TimeRange;
+  limit?: number;
+  scopedVars?: ScopedVars;
+};
+
+export type DetectedFieldsResult = Array<{
+  label: string;
+  type: 'bytes' | 'float' | 'int' | 'string' | 'duration';
+  cardinality: number;
+  parsers: Array<'logfmt' | 'json'> | null;
+}>;
+
+export interface LokiLanguageProviderWithDetectedLabelValues {
   fetchDetectedLabelValues: (
     labelName: string,
     queryOptions?: FetchDetectedLabelValuesOptions,
     requestOptions?: Partial<BackendSrvRequest>
   ) => Promise<string[] | Error>;
+
+  fetchDetectedFields: (
+    queryOptions?: FetchDetectedFieldsOptions,
+    requestOptions?: Partial<BackendSrvRequest>
+  ) => Promise<DetectedFieldsResult | Error>;
 }
 
 export const getDetectedFieldValuesTagValuesProvider = async (
@@ -70,17 +89,35 @@ export const getDetectedFieldValuesTagValuesProvider = async (
       // @todo is the parser always the same for the currently selected values and the results from detected_field/.../values?
       if (results && isArray(results)) {
         if (variable === VAR_FIELDS) {
-          const valueDecoded = getValueFromFieldsFilter(filter, variable);
-          return {
-            replace: true,
-            values: results.map((v) => ({
-              text: v,
-              value: JSON.stringify({
-                value: v,
-                parser: valueDecoded.parser,
-              }),
-            })),
-          };
+          console.log('filter', filter);
+          if (filter.value) {
+            const valueDecoded = getValueFromFieldsFilter(filter, variable);
+            return {
+              replace: true,
+              values: results.map((v) => ({
+                text: v,
+                value: JSON.stringify({
+                  value: v,
+                  parser: valueDecoded.parser,
+                }),
+              })),
+            };
+          } else {
+            // if the filter is wip, it won't have a value yet, so we need to get the parser from somewhere
+            // It's annoying that there's no metadata on the ad-hoc filters because in this situation we just threw away the parser from the getTagKeys (detected_fields)
+            // We can check the detected_fields frame, but it was a different call and could have different results
+
+            return {
+              replace: true,
+              values: results.map((v) => ({
+                text: v,
+                value: JSON.stringify({
+                  value: v,
+                  parser: 'mixed',
+                }),
+              })),
+            };
+          }
         } else {
           values = results.map((r) => ({ text: r }));
         }

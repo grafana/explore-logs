@@ -3,6 +3,8 @@ import { CustomConstantVariable } from './CustomConstantVariable';
 import { SERVICE_NAME, SERVICE_UI_LABEL } from './variables';
 import { IndexScene } from '../Components/IndexScene/IndexScene';
 import { getPrimaryLabelFromUrl } from './routing';
+import { FilterOp } from './filterTypes';
+import { includeOperators, operators } from './operators';
 
 export function getVariablesThatCanBeCleared(indexScene: IndexScene) {
   const variables = sceneGraph.getVariables(indexScene);
@@ -50,3 +52,13 @@ export function clearVariables(sceneRef: SceneObject) {
     }
   });
 }
+
+export const operatorFunction = function (variable: AdHocFiltersVariable) {
+  const wip = variable.state._wip;
+  // If there is already an inclusion operator for this key, don't allow exclusion
+  if (wip && variable.state.filters.some((filter) => filter.key === wip.key && filter.operator === FilterOp.Equal)) {
+    return includeOperators;
+  }
+
+  return operators;
+};

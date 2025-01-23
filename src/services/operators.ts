@@ -1,9 +1,28 @@
 import { FilterOp, LineFilterOp } from './filterTypes';
 import { SelectableValue } from '@grafana/data';
 
-export const operators = [FilterOp.Equal, FilterOp.NotEqual].map<SelectableValue<string>>((value, index, array) => {
+function getOperatorLabel(op: FilterOp): string {
+  if (op === FilterOp.NotEqual) {
+    return 'Not equal';
+  }
+  if (op === FilterOp.RegexNotEqual) {
+    return 'Regex: Not equal';
+  }
+  if (op === FilterOp.Equal) {
+    return 'Equal';
+  }
+  if (op === FilterOp.RegexEqual) {
+    return 'Regex: Equal';
+  }
+
+  return op.toString();
+}
+
+export const operators = [FilterOp.Equal, FilterOp.NotEqual, FilterOp.RegexEqual, FilterOp.RegexNotEqual].map<
+  SelectableValue<string>
+>((value, index, array) => {
   return {
-    label: value,
+    label: getOperatorLabel(value), // @todo return better labels?
     value,
   };
 });

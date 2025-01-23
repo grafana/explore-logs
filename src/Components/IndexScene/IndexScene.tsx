@@ -80,21 +80,15 @@ import { reportAppInteraction } from '../../services/analytics';
 import { getDetectedFieldValuesTagValuesProvider, getLabelsTagValuesProvider } from '../../services/TagValuesProviders';
 import { lokiRegularEscape } from '../../services/fields';
 import { logger } from '../../services/logger';
-import { getLabelsTagKeysProvider } from '../../services/TagKeysProviders';
+import { getLabelsTagKeysProvider, getFieldsKeysProvider } from '../../services/TagKeysProviders';
 import { AdHocFilterWithLabels, getLokiDatasource } from '../../services/scenes';
 import { FilterOp } from '../../services/filterTypes';
 import { ShowLogsButtonScene } from './ShowLogsButtonScene';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
 import { getCopiedTimeRange, PasteTimeEvent, setupKeyboardShortcuts } from '../../services/keyboardShortcuts';
 import { LokiDatasource } from '../../services/lokiQuery';
-import {
-  includeOperators,
-  isOperatorInclusive,
-  lineFilterOperators,
-  numericOperatorArray,
-  numericOperators,
-  operators,
-} from '../../services/operators';
+import { lineFilterOperators, numericOperatorArray, numericOperators, operators } from '../../services/operators';
+import { operatorFunction } from '../../services/variableHelpers';
 
 export const showLogsButtonSceneKey = 'showLogsButtonScene';
 export interface AppliedPattern {
@@ -192,7 +186,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
   public onActivate() {
     const stateUpdate: Partial<IndexSceneState> = {};
-    this.setVariableTagValuesProviders();
+    this.setVariableProviders();
 
     // Show "show logs" button
     const showLogsButton = sceneGraph.findByKeyAndType(this, showLogsButtonSceneKey, ShowLogsButtonScene);
@@ -241,19 +235,13 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   }
 
   private setTagProviders() {
+    this.setLabelsProviders();
+  }
+
+  private setLabelsProviders() {
     const labelsVar = getLabelsVariable(this);
 
-    labelsVar._getOperators = function () {
-      const wip = labelsVar.state._wip;
-      if (
-        wip &&
-        labelsVar.state.filters.some((filter) => filter.key === wip.key && isOperatorInclusive(filter.operator))
-      ) {
-        return includeOperators;
-      }
-
-      return operators;
-    };
+    labelsVar._getOperators = () => operatorFunction(labelsVar);
 
     labelsVar.setState({
       getTagKeysProvider: getLabelsTagKeysProvider,
@@ -339,22 +327,44 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     };
   }
 
-  private setVariableTagValuesProviders() {
+  private setVariableProviders() {
     const fieldsVariable = getFieldsVariable(this);
     const levelsVariable = getLevelsVariable(this);
     const metadataVariable = getMetadataVariable(this);
 
+    fieldsVariable._getOperators = () => operatorFunction(fieldsVariable);
+    levelsVariable._getOperators = () => operatorFunction(levelsVariable);
+    metadataVariable._getOperators = () => operatorFunction(metadataVariable);
+
     fieldsVariable.setState({
       getTagValuesProvider: this.getFieldsTagValuesProvider(VAR_FIELDS),
+      getTagKeysProvider: this.getFieldsTagKeysProvider(VAR_FIELDS),
     });
 
     levelsVariable.setState({
       getTagValuesProvider: this.getFieldsTagValuesProvider(VAR_LEVELS),
+      getTagKeysProvider: this.getFieldsTagKeysProvider(VAR_LEVELS),
     });
 
     metadataVariable.setState({
       getTagValuesProvider: this.getFieldsTagValuesProvider(VAR_METADATA),
+      getTagKeysProvider: this.getFieldsTagKeysProvider(VAR_METADATA),
     });
+  }
+
+  private getFieldsTagKeysProvider(variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS) {
+    return (variable: AdHocFiltersVariable, currentKey: string | null) => {
+      const filters = variable.state.filters.filter((f) => f.key !== currentKey);
+      const values = filters.map((f) => {
+        const parsed = variableType === VAR_FIELDS ? getValueFromFieldsFilter(f, variableType) : { value: f.value };
+        return `${f.key}${f.operator}\`${lokiRegularEscape(parsed.value)}\``;
+      });
+      const otherFiltersString = values.length ? '| ' + values.join(' |') : '';
+      const uninterpolatedExpression = this.getFieldsTagValuesExpression(variableType);
+      const expr = uninterpolatedExpression.replace(PENDING_FIELDS_EXPR, otherFiltersString);
+      const interpolated = sceneGraph.interpolate(this, expr);
+      return getFieldsKeysProvider(interpolated, this, sceneGraph.getTimeRange(this).state.value, variableType);
+    };
   }
 
   private getFieldsTagValuesProvider(variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS) {
@@ -465,13 +475,14 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
 
   const fieldsVariable = new AdHocFiltersVariable({
     name: VAR_FIELDS,
-    label: 'Fields',
+    label: 'Detected fields',
     applyMode: 'manual',
-    layout: 'vertical',
+    layout: 'combobox',
     getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
     getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
     expressionBuilder: renderLogQLFieldFilters,
-    hide: VariableHide.hideLabel,
+    hide: VariableHide.dontHide,
+    allowCustomValue: true,
   });
 
   fieldsVariable._getOperators = () => {
@@ -482,11 +493,12 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     name: VAR_METADATA,
     label: 'Metadata',
     applyMode: 'manual',
-    layout: 'vertical',
+    layout: 'combobox',
     getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
     getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
     expressionBuilder: renderLogQLMetadataFilters,
-    hide: VariableHide.hideLabel,
+    hide: VariableHide.dontHide,
+    allowCustomValue: true,
   });
 
   metadataVariable._getOperators = () => {
@@ -495,13 +507,14 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
 
   const levelsVariable = new AdHocFiltersVariable({
     name: VAR_LEVELS,
-    label: 'Filters',
+    label: 'Error levels',
     applyMode: 'manual',
-    layout: 'vertical',
+    layout: 'combobox',
     getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
     getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
     expressionBuilder: renderLogQLMetadataFilters,
-    hide: VariableHide.hideLabel,
+    hide: VariableHide.dontHide,
+    allowCustomValue: true,
   });
 
   levelsVariable._getOperators = () => {
