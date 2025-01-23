@@ -15,14 +15,18 @@ export class LogsVolumeActions extends SceneObjectBase<LogsVolumeActionsState> {
 
 type SelectorFilterItem = Pick<AdHocVariableFilter, 'key' | 'operator' | 'value'>;
 
-type TemporaryExemptionsButtonProps = {
+type TemporaryExemptionsProps = {
+  /** Currently selected data source */
   dataSourceUid?: string;
+  /** The selector fields that we are considering temporary exemptions for */
   selectorFilters?: SelectorFilterItem[];
+  /** A list of string identifiers to provide context cue of where this component is being embedded and how we might want to consider displaying it */
+  contextHints?: string[];
 };
 
 function Component({ model }: SceneComponentProps<LogsVolumeActions>) {
-  const { component: TemporaryExemptionsButton, isLoading } = usePluginComponent<TemporaryExemptionsButtonProps>(
-    'grafana-adaptivelogs-app/temporary-exemptions-button/v1'
+  const { component: TemporaryExemptionsButton, isLoading } = usePluginComponent<TemporaryExemptionsProps>(
+    'grafana-adaptivelogs-app/temporary-exemptions/v1'
   );
 
   const labelsVar = getAdHocFiltersVariable(VAR_LABELS, model);
@@ -35,5 +39,11 @@ function Component({ model }: SceneComponentProps<LogsVolumeActions>) {
     return null;
   }
 
-  return <TemporaryExemptionsButton dataSourceUid={dataSourceUid} selectorFilters={selectorFilters} />;
+  return (
+    <TemporaryExemptionsButton
+      dataSourceUid={dataSourceUid}
+      selectorFilters={selectorFilters}
+      contextHints={['log-volume-panel', 'header-action']}
+    />
+  );
 }
