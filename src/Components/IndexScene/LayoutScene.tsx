@@ -22,6 +22,7 @@ const interceptBannerStorageKey = `${PLUGIN_ID}.interceptBannerStorageKey`;
 
 export const CONTROLS_VARS_FIRST_ROW_KEY = 'vars-row__datasource-labels-timepicker-button';
 export const CONTROLS_VARS_METADATA_ROW_KEY = 'vars-metadata';
+export const CONTROLS_VARS_LEVELS_ROW_KEY = 'vars-levels';
 export const CONTROLS_VARS_FIELDS_ELSE_KEY = 'vars-all-else';
 export const CONTROLS_VARS_TIMEPICKER = 'vars-timepicker';
 export const CONTROLS_VARS_REFRESH = 'vars-refresh';
@@ -86,7 +87,21 @@ export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
                 </div>
               )}
 
-              {/* Second row - Metadata  */}
+              {/* Second row - Levels  */}
+              <div className={styles.controlsRowContainer}>
+                {controls &&
+                  controls.map((control) => {
+                    return control.state.key === CONTROLS_VARS_LEVELS_ROW_KEY ? (
+                      <div key={control.state.key} className={styles.filtersWrap}>
+                        <div className={styles.filters}>
+                          <control.Component model={control} />
+                        </div>
+                      </div>
+                    ) : null;
+                  })}
+              </div>
+
+              {/* 3rd row - Metadata  */}
               <div className={styles.controlsRowContainer}>
                 {controls &&
                   controls.map((control) => {
@@ -100,7 +115,7 @@ export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
                   })}
               </div>
 
-              {/* 3rd row - Patterns */}
+              {/* 4th row - Patterns */}
               <div className={styles.controlsRowContainer}>
                 <PatternControls
                   patterns={patterns}
@@ -108,12 +123,12 @@ export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
                 />
               </div>
 
-              {/* 4th row - line filters */}
+              {/* 5th row - line filters */}
               <div className={styles.controlsRowContainer}>
                 {lineFilterRenderer && <lineFilterRenderer.Component model={lineFilterRenderer} />}
               </div>
 
-              {/* 5th row - Fields  */}
+              {/* 6th row - Fields  */}
               <div className={styles.controlsRowContainer}>
                 {controls && (
                   <div className={styles.filtersWrap}>

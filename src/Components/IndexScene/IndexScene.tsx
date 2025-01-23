@@ -45,6 +45,7 @@ import { ServiceScene } from '../ServiceScene/ServiceScene';
 import {
   CONTROLS_VARS_FIELDS_ELSE_KEY,
   CONTROLS_VARS_FIRST_ROW_KEY,
+  CONTROLS_VARS_LEVELS_ROW_KEY,
   CONTROLS_VARS_METADATA_ROW_KEY,
   CONTROLS_VARS_REFRESH,
   CONTROLS_VARS_TIMEPICKER,
@@ -138,7 +139,12 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       new CustomVariableValueSelectors({
         key: CONTROLS_VARS_METADATA_ROW_KEY,
         layout: 'vertical',
-        include: [VAR_METADATA, VAR_LEVELS],
+        include: [VAR_METADATA],
+      }),
+      new CustomVariableValueSelectors({
+        key: CONTROLS_VARS_LEVELS_ROW_KEY,
+        layout: 'vertical',
+        include: [VAR_LEVELS],
       }),
       new CustomVariableValueSelectors({
         key: CONTROLS_VARS_FIELDS_ELSE_KEY,
@@ -381,6 +387,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       const interpolated = sceneGraph.interpolate(this, expr);
       return getDetectedFieldValuesTagValuesProvider(
         filter,
+        variable,
         interpolated,
         this,
         sceneGraph.getTimeRange(this).state.value,
@@ -482,7 +489,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
     getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
     expressionBuilder: renderLogQLFieldFilters,
-    hide: VariableHide.dontHide,
+    hide: VariableHide.hideVariable,
     allowCustomValue: true,
   });
 
@@ -498,7 +505,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
     getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
     expressionBuilder: renderLogQLMetadataFilters,
-    hide: VariableHide.dontHide,
+    hide: VariableHide.hideVariable,
     allowCustomValue: true,
   });
 
@@ -514,8 +521,9 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
     getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
     expressionBuilder: renderLogQLMetadataFilters,
-    hide: VariableHide.dontHide,
+    hide: VariableHide.hideVariable,
     allowCustomValue: true,
+    supportsMultiValueOperators: true,
   });
 
   levelsVariable._getOperators = () => {

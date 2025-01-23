@@ -49,10 +49,11 @@ export interface LokiLanguageProviderWithDetectedLabelValues {
 
 export const getDetectedFieldValuesTagValuesProvider = async (
   filter: AdHocFilterWithLabels<{ parser: 'json' | 'logfmt' | 'mixed' }>,
+  variable: AdHocFiltersVariable,
   expr: string,
   sceneRef: SceneObject,
   timeRange: TimeRange,
-  variable: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS
+  variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS
 ): Promise<{
   replace?: boolean;
   values: MetricFindValue[];
@@ -88,12 +89,27 @@ export const getDetectedFieldValuesTagValuesProvider = async (
       // If the variable has a parser in the value, make sure we extract it and carry it over, this assumes the parser for the currently selected value is the same as any value in the response.
       // @todo is the parser always the same for the currently selected values and the results from detected_field/.../values?
       if (results && isArray(results)) {
-        if (variable === VAR_FIELDS) {
+        const currentFilters = variable.state.filters;
+
+        // Remove values that are already used, if an exact match is found
+        let valuesToRemove: string[] = [];
+        currentFilters.forEach((filter) => {
+          if (isOperatorRegex(filter.operator)) {
+            filter.value.split('|').forEach((v) => valuesToRemove.push(v));
+          } else {
+            valuesToRemove.push(filter.value);
+          }
+        });
+
+        const filteredResults = results.filter((value) => {
+          return !valuesToRemove.includes(value);
+        });
+        if (variableType === VAR_FIELDS) {
           if (filter.value) {
-            const valueDecoded = getValueFromFieldsFilter(filter, variable);
+            const valueDecoded = getValueFromFieldsFilter(filter, variableType);
             return {
               replace: true,
-              values: results.map((v) => ({
+              values: filteredResults.map((v) => ({
                 text: v,
                 value: JSON.stringify({
                   value: v,
@@ -108,7 +124,7 @@ export const getDetectedFieldValuesTagValuesProvider = async (
 
             return {
               replace: true,
-              values: results.map((v) => ({
+              values: filteredResults.map((v) => ({
                 text: v,
                 value: JSON.stringify({
                   value: v,
@@ -118,7 +134,7 @@ export const getDetectedFieldValuesTagValuesProvider = async (
             };
           }
         } else {
-          values = results.map((r) => ({ text: r }));
+          values = filteredResults.map((r) => ({ text: r }));
         }
       } else {
         values = [];

@@ -59,6 +59,7 @@ import { replaceSlash } from '../../services/extensions/links';
 import { ShowLogsButtonScene } from '../IndexScene/ShowLogsButtonScene';
 import { migrateLineFilterV1 } from '../../services/migrations';
 import { isOperatorInclusive } from '../../services/operators';
+import { VariableHide } from '@grafana/schema';
 
 export const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 export const LOGS_COUNT_QUERY_REFID = 'logsCountQuery';
@@ -261,6 +262,12 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     });
   };
 
+  private showVariables() {
+    getMetadataVariable(this).setState({ hide: VariableHide.dontHide });
+    getLevelsVariable(this).setState({ hide: VariableHide.dontHide });
+    getFieldsVariable(this).setState({ hide: VariableHide.dontHide });
+  }
+
   /**
    * After routing we need to pull any data set to the service scene by other routes from the metadata singleton,
    * as each route has a different instantiation of this scene
@@ -281,6 +288,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     // Hide show logs button
     const showLogsButton = sceneGraph.findByKeyAndType(this, showLogsButtonSceneKey, ShowLogsButtonScene);
     showLogsButton.setState({ hidden: true });
+    this.showVariables();
     this.getMetadata();
     this.resetBodyAndData();
 
