@@ -16,12 +16,12 @@ export class LogsVolumeActions extends SceneObjectBase<LogsVolumeActionsState> {
 type SelectorFilterItem = Pick<AdHocVariableFilter, 'key' | 'operator' | 'value'>;
 
 type TemporaryExemptionsProps = {
-  /** Currently selected data source */
-  dataSourceUid?: string;
-  /** The selector fields that we are considering temporary exemptions for */
-  selectorFilters?: SelectorFilterItem[];
   /** A list of string identifiers to provide context cue of where this component is being embedded and how we might want to consider displaying it */
   contextHints?: string[];
+  /** Currently selected data source */
+  dataSourceUid?: string;
+  /** The stream selector, broken down into a list of structured subselector filter items */
+  streamSelector?: SelectorFilterItem[];
 };
 
 function Component({ model }: SceneComponentProps<LogsVolumeActions>) {
