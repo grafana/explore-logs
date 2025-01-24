@@ -31,7 +31,7 @@ function Component({ model }: SceneComponentProps<LogsVolumeActions>) {
 
   const labelsVar = getAdHocFiltersVariable(VAR_LABELS, model);
   const { filters } = labelsVar.useState();
-  const selectorFilters = filters.map(({ key, operator, value }: AdHocVariableFilter) => ({ key, operator, value }));
+  const streamSelector = filters.map(({ key, operator, value }: AdHocVariableFilter) => ({ key, operator, value }));
 
   const dataSourceUid = getDataSource(model);
 
@@ -42,7 +42,7 @@ function Component({ model }: SceneComponentProps<LogsVolumeActions>) {
   return (
     <TemporaryExemptionsButton
       dataSourceUid={dataSourceUid}
-      selectorFilters={selectorFilters}
+      streamSelector={streamSelector}
       contextHints={['log-volume-panel', 'header-action']}
     />
   );
