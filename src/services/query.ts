@@ -1,5 +1,5 @@
 import { AdHocVariableFilter } from '@grafana/data';
-import { AppliedPattern, numericOperatorArray } from 'Components/IndexScene/IndexScene';
+import { AppliedPattern } from 'Components/IndexScene/IndexScene';
 import { EMPTY_VARIABLE_VALUE, VAR_DATASOURCE_EXPR } from './variables';
 import { groupBy, trim } from 'lodash';
 import { getValueFromFieldsFilter } from './variableGetters';
@@ -10,6 +10,7 @@ import { PLUGIN_ID } from './plugin';
 import { AdHocFiltersVariable, sceneUtils } from '@grafana/scenes';
 import { FilterOp, LineFilterCaseSensitive, LineFilterOp } from './filterTypes';
 import { sortLineFilters } from '../Components/IndexScene/LineFilterVariablesScene';
+import { isOperatorExclusive, isOperatorInclusive, numericOperatorArray } from './operators';
 
 /**
  * Builds the resource query
@@ -65,38 +66,50 @@ export const buildVolumeQuery = (
 };
 
 export function getLogQLLabelGroups(filters: AdHocVariableFilter[]) {
-  const positive = filters.filter((filter) => filter.operator === FilterOp.Equal);
-  const negative = filters.filter((filter) => filter.operator === FilterOp.NotEqual);
+  const positive = filters.filter((filter) => isOperatorInclusive(filter.operator));
+  const negative = filters.filter((filter) => isOperatorExclusive(filter.operator));
 
   const positiveGroups = groupBy(positive, (filter) => filter.key);
-  return { negative, positiveGroups };
+  const negativeGroups = groupBy(negative, (filter) => filter.key);
+  return { positiveGroups, negativeGroups };
 }
 
 export function getLogQLLabelFilters(filters: AdHocVariableFilter[]) {
-  const { negative, positiveGroups } = getLogQLLabelGroups(filters);
+  const { positiveGroups, negativeGroups } = getLogQLLabelGroups(filters);
 
   let positiveFilters: string[] = [];
   for (const key in positiveGroups) {
     const values = positiveGroups[key].map((filter) => filter.value);
     positiveFilters.push(
-      values.length === 1 ? renderMetadata(positiveGroups[key][0]) : renderRegexLabelFilter(key, values)
+      values.length === 1
+        ? renderMetadata(positiveGroups[key][0])
+        : renderRegexLabelFilter(key, values, FilterOp.RegexEqual)
     );
   }
 
-  return { positiveFilters, negative };
+  let negativeFilters: string[] = [];
+  for (const key in negativeGroups) {
+    const values = negativeGroups[key].map((filter) => filter.value);
+    negativeFilters.push(
+      values.length === 1
+        ? renderMetadata(negativeGroups[key][0])
+        : renderRegexLabelFilter(key, values, FilterOp.RegexNotEqual)
+    );
+  }
+
+  return { positiveFilters, negativeFilters };
 }
 
 export function renderLogQLLabelFilters(filters: AdHocFilterWithLabels[]) {
-  let { positiveFilters, negative } = getLogQLLabelFilters(filters);
-  const negativeFilters = negative.map((filter) => renderMetadata(filter)).join(', ');
-
-  const result = trim(`${positiveFilters.join(', ')}, ${negativeFilters}`, ' ,');
+  let { positiveFilters, negativeFilters } = getLogQLLabelFilters(filters);
+  const result = trim(`${positiveFilters.join(', ')}, ${negativeFilters.join(', ')}`, ' ,');
 
   return result;
 }
 
 export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
   // @todo partition instead of looping through again and again
+  // @todo support regex operators
   const positive = filters.filter((filter) => filter.operator === FilterOp.Equal);
   const negative = filters.filter((filter) => filter.operator === FilterOp.NotEqual);
 
@@ -165,8 +178,8 @@ export function renderLogQLLineFilter(filters: AdHocFilterWithLabels[]) {
     .join(' ');
 }
 export function renderLogQLMetadataFilters(filters: AdHocVariableFilter[]) {
-  const positive = filters.filter((filter) => filter.operator === FilterOp.Equal);
-  const negative = filters.filter((filter) => filter.operator === FilterOp.NotEqual);
+  const positive = filters.filter((filter) => isOperatorInclusive(filter.operator));
+  const negative = filters.filter((filter) => isOperatorExclusive(filter.operator));
 
   const positiveGroups = groupBy(positive, (filter) => filter.key);
 
@@ -206,8 +219,8 @@ function fieldNumericFilterToQueryString(filter: AdHocVariableFilter) {
   return `${filter.key}${filter.operator}${value}`;
 }
 
-export function renderRegexLabelFilter(key: string, values: string[]) {
-  return `${key}=~"${values.join('|')}"`;
+export function renderRegexLabelFilter(key: string, values: string[], operator: FilterOp) {
+  return `${key}${operator}"${values.join('|')}"`;
 }
 
 export function renderPatternFilters(patterns: AppliedPattern[]) {
@@ -232,7 +245,7 @@ export function renderPatternFilters(patterns: AppliedPattern[]) {
 }
 
 export function joinTagFilters(variable: AdHocFiltersVariable) {
-  const { positiveGroups, negative } = getLogQLLabelGroups(variable.state.filters);
+  const { positiveGroups, negativeGroups } = getLogQLLabelGroups(variable.state.filters);
 
   const filters: AdHocFilterWithLabels[] = [];
   for (const key in positiveGroups) {
@@ -241,7 +254,7 @@ export function joinTagFilters(variable: AdHocFiltersVariable) {
       filters.push({
         key,
         value: positiveGroups[key][0].value,
-        operator: '=',
+        operator: positiveGroups[key][0].operator,
       });
     } else {
       filters.push({
@@ -252,9 +265,23 @@ export function joinTagFilters(variable: AdHocFiltersVariable) {
     }
   }
 
-  negative.forEach((filter) => {
-    filters.push(filter);
-  });
+  for (const key in negativeGroups) {
+    const values = negativeGroups[key].map((filter) => filter.value);
+    if (values.length === 1) {
+      filters.push({
+        key,
+        value: negativeGroups[key][0].value,
+        operator: negativeGroups[key][0].operator,
+      });
+    } else {
+      filters.push({
+        key,
+        value: values.join('|'),
+        operator: '!~',
+      });
+    }
+  }
+
   return filters;
 }
 export function wrapWildcardSearch(input: string) {

@@ -10,6 +10,9 @@ export enum FilterOp {
   lt = '<',
   gte = '>=',
   lte = '<=',
+
+  RegexEqual = '=~',
+  RegexNotEqual = '!~',
 }
 
 export type IndexedLabelFilter = {
