@@ -47,7 +47,7 @@ export async function getFieldsKeysProvider(
   expr: string,
   sceneRef: SceneObject,
   timeRange: TimeRange,
-  variable: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS
+  variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS,
 ): Promise<{
   replace?: boolean;
   values: MetricFindValue[];
@@ -69,23 +69,24 @@ export async function getFieldsKeysProvider(
     const tagKeys: DetectedFieldsResult = await datasource.languageProvider.fetchDetectedFields(options);
     const result: MetricFindValue[] = tagKeys
       .filter((field) => {
-        if (variable === VAR_METADATA && field.label !== LEVEL_VARIABLE_VALUE) {
+        if (variableType === VAR_METADATA && field.label !== LEVEL_VARIABLE_VALUE) {
           return field.parsers === null;
         }
 
-        if (variable === VAR_LEVELS) {
+        if (variableType === VAR_LEVELS) {
           return field.label === LEVEL_VARIABLE_VALUE;
         }
 
         return field.parsers !== null;
       })
       .map((field) => {
-        if (variable === VAR_FIELDS) {
+        if (variableType === VAR_FIELDS) {
           if (field.parsers === null) {
             console.warn('Fields should not get metadata!');
           }
 
           const parser = field.parsers?.length === 1 ? field.parsers[0] : 'mixed';
+          const type = field.type
 
           return {
             text: field.label,
@@ -93,6 +94,7 @@ export async function getFieldsKeysProvider(
             group: parser,
             meta: {
               parser,
+              type
             },
           };
         }

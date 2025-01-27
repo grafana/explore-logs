@@ -1,6 +1,11 @@
-import { AdHocVariableFilter } from '@grafana/data';
+import {AdHocVariableFilter, SelectableValue} from '@grafana/data';
 import { AppliedPattern } from 'Components/IndexScene/IndexScene';
-import { EMPTY_VARIABLE_VALUE, VAR_DATASOURCE_EXPR } from './variables';
+import {
+  AdHocFiltersWithLabelsAndMeta,
+  EMPTY_VARIABLE_VALUE,
+  FieldValue,
+  VAR_DATASOURCE_EXPR
+} from './variables';
 import { groupBy, trim } from 'lodash';
 import { getValueFromFieldsFilter } from './variableGetters';
 import { LokiQuery } from './lokiQuery';
@@ -104,6 +109,18 @@ export function renderLogQLLabelFilters(filters: AdHocFilterWithLabels[]) {
   const result = trim(`${positiveFilters.join(', ')}, ${negativeFilters.join(', ')}`, ' ,');
 
   return result;
+}
+
+export function onAddCustomValue(item: SelectableValue<string> & {isCustom?: boolean}, filter: AdHocFiltersWithLabelsAndMeta): {value: string | undefined, valueLabels: string[]} {
+  console.warn('onAddCustomValue', {item, filter})
+  const field: FieldValue = {
+    value: item.value ?? '',
+    parser: filter?.meta?.parser ?? 'mixed'
+  }
+  return {
+    value: JSON.stringify(field),
+    valueLabels: [item.label ?? field.value]
+  }
 }
 
 export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {

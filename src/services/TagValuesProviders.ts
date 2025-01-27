@@ -1,16 +1,16 @@
-import { AdHocFiltersVariable, AdHocFilterWithLabels, SceneObject } from '@grafana/scenes';
-import { DataSourceGetTagValuesOptions, GetTagResponse, MetricFindValue, ScopedVars, TimeRange } from '@grafana/data';
-import { BackendSrvRequest, DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
-import { getDataSource } from './scenes';
-import { logger } from './logger';
-import { LokiDatasource, LokiQuery } from './lokiQuery';
-import { getDataSourceVariable, getValueFromFieldsFilter } from './variableGetters';
-import { VAR_FIELDS, VAR_LEVELS, VAR_METADATA } from './variables';
-import { isArray } from 'lodash';
-import { joinTagFilters } from './query';
-import { FilterOp } from './filterTypes';
-import { getFavoriteLabelValuesFromStorage } from './store';
-import { isOperatorInclusive, isOperatorRegex } from './operators';
+import {AdHocFiltersVariable, AdHocFilterWithLabels, SceneObject} from '@grafana/scenes';
+import {DataSourceGetTagValuesOptions, GetTagResponse, MetricFindValue, ScopedVars, TimeRange} from '@grafana/data';
+import {BackendSrvRequest, DataSourceWithBackend, getDataSourceSrv} from '@grafana/runtime';
+import {getDataSource} from './scenes';
+import {logger} from './logger';
+import {LokiDatasource, LokiQuery} from './lokiQuery';
+import {getDataSourceVariable, getValueFromFieldsFilter} from './variableGetters';
+import {AdHocFiltersWithLabelsAndMeta, DetectedFieldType, VAR_FIELDS, VAR_LEVELS, VAR_METADATA} from './variables';
+import {isArray} from 'lodash';
+import {joinTagFilters} from './query';
+import {FilterOp} from './filterTypes';
+import {getFavoriteLabelValuesFromStorage} from './store';
+import {isOperatorInclusive, isOperatorRegex} from './operators';
 
 type FetchDetectedLabelValuesOptions = {
   expr?: string;
@@ -29,7 +29,7 @@ export type FetchDetectedFieldsOptions = {
 
 export type DetectedFieldsResult = Array<{
   label: string;
-  type: 'bytes' | 'float' | 'int' | 'string' | 'duration';
+  type: DetectedFieldType;
   cardinality: number;
   parsers: Array<'logfmt' | 'json'> | null;
 }>;
@@ -48,7 +48,7 @@ export interface LokiLanguageProviderWithDetectedLabelValues {
 }
 
 export const getDetectedFieldValuesTagValuesProvider = async (
-  filter: AdHocFilterWithLabels<{ parser: 'json' | 'logfmt' | 'mixed' }>,
+  filter: AdHocFiltersWithLabelsAndMeta,
   variable: AdHocFiltersVariable,
   expr: string,
   sceneRef: SceneObject,
@@ -157,7 +157,7 @@ export const getDetectedFieldValuesTagValuesProvider = async (
 
 export async function getLabelsTagValuesProvider(
   variable: AdHocFiltersVariable,
-  filter: AdHocFilterWithLabels<{ meta: string }>
+  filter: AdHocFilterWithLabels
 ): Promise<{
   replace?: boolean;
   values: GetTagResponse | MetricFindValue[];

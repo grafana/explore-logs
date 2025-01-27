@@ -356,6 +356,9 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
   private subscribeToFieldsVariable() {
     return getFieldsVariable(this).subscribeToState((newState, prevState) => {
+      // console.log('fieldsVarChange', {
+      //   newState, prevState
+      // })
       if (!areArraysEqual(newState.filters, prevState.filters)) {
         this.state.$detectedFieldsData?.runQueries();
         this.state.$logsCount?.runQueries();

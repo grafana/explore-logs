@@ -246,47 +246,47 @@ function getStyles(theme: GrafanaTheme2) {
 
       //@todo not like this
       // The filter variables container: i.e. services, filters
-      '& > div &:first-child': {
-        // The wrapper of each filter
-        '& > div': {
-          // The actual inputs container
-          '& > div': {
-            flexWrap: 'wrap',
-            // wrapper around all inputs
-            '& > div': {
-              maxWidth: '380px',
-
-              // Wrapper around each input: i.e. label name, binary operator, value
-              '& > div': {
-                // These inputs need to flex, otherwise the value takes all of available space and they look broken
-                flex: '1 0 auto',
-
-                // The value input needs to shrink when the parent component is at max width
-                '&:nth-child(3)': {
-                  flex: '0 1 auto',
-                },
-              },
-            },
-          },
-        },
-      },
+      // '& > div &:first-child': {
+      //   // The wrapper of each filter
+      //   '& > div': {
+      //     // The actual inputs container
+      //     '& > div': {
+      //       flexWrap: 'wrap',
+      //       // wrapper around all inputs
+      //       '& > div': {
+      //         maxWidth: '380px',
+      //
+      //         // Wrapper around each input: i.e. label name, binary operator, value
+      //         '& > div': {
+      //           // These inputs need to flex, otherwise the value takes all of available space and they look broken
+      //           flex: '1 0 auto',
+      //
+      //           // The value input needs to shrink when the parent component is at max width
+      //           '&:nth-child(3)': {
+      //             flex: '0 1 auto',
+      //           },
+      //         },
+      //       },
+      //     },
+      //   },
+      // },
       // the `service_name` filter is a special case where we want to hide the operator
-      '[data-testid="AdHocFilter-service_name"]': {
-        'div[class*="input-wrapper"]:first-child': {
-          display: 'none',
-        },
-        'div[class*="input-wrapper"]:nth-child(2)': {
-          marginLeft: 0,
-        },
-      },
+      // '[data-testid="AdHocFilter-service_name"]': {
+      //   'div[class*="input-wrapper"]:first-child': {
+      //     display: 'none',
+      //   },
+      //   'div[class*="input-wrapper"]:nth-child(2)': {
+      //     marginLeft: 0,
+      //   },
+      // },
 
-      ['div >[title="Add filter"]']: {
-        border: 0,
-        display: 'none',
-        width: 0,
-        padding: 0,
-        margin: 0,
-      },
+      // ['div >[title="Add filter"]']: {
+      //   border: 0,
+      //   display: 'none',
+      //   width: 0,
+      //   padding: 0,
+      //   margin: 0,
+      // },
     }),
     controlsWrapper: css({
       label: 'controlsWrapper',

@@ -1,5 +1,7 @@
 // Warning, this file is included in the main module.tsx bundle, and doesn't contain any imports to keep that bundle size small. Don't add imports to this file!
 
+import {AdHocFilterWithLabels} from "@grafana/scenes";
+
 export interface FieldValue {
   value: string;
   parser: ParserType;
@@ -12,6 +14,8 @@ export interface AdHocFieldValue {
 
 export type ParserType = 'logfmt' | 'json' | 'mixed' | 'structuredMetadata';
 export type DetectedFieldType = 'int' | 'float' | 'duration' | 'bytes' | 'boolean' | 'string';
+export type AdHocFilterWithLabelsMeta = { parser?: 'json' | 'logfmt' | 'mixed', type?: DetectedFieldType }
+export type AdHocFiltersWithLabelsAndMeta = AdHocFilterWithLabels<AdHocFilterWithLabelsMeta>
 
 export type LogsQueryOptions = {
   labelExpressionToAdd?: string;

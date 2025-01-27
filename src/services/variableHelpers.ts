@@ -54,6 +54,8 @@ export function clearVariables(sceneRef: SceneObject) {
 }
 
 export const operatorFunction = function (variable: AdHocFiltersVariable) {
+  console.log('operatorFunction', variable)
+
   const wip = variable.state._wip;
   // If there is already an inclusion operator for this key, don't allow exclusion
   if (wip && variable.state.filters.some((filter) => filter.key === wip.key && filter.operator === FilterOp.Equal)) {
