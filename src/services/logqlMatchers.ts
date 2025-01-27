@@ -131,7 +131,14 @@ function parseLabelFilters(query: string, filter: IndexedLabelFilter[]) {
     const key = identifierPosition[0].getExpression(query);
     const value = valuePosition.map((position) => query.substring(position.from + 1, position.to - 1))[0];
 
-    if (!key || !value || (operator !== FilterOperator.NotEqual && operator !== FilterOperator.Equal)) {
+    if (
+      !key ||
+      !value ||
+      (operator !== FilterOperator.NotEqual &&
+        operator !== FilterOperator.Equal &&
+        operator !== FilterOperator.RegexEqual &&
+        operator !== FilterOperator.RegexNotEqual)
+    ) {
       continue;
     }
 
