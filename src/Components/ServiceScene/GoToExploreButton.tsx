@@ -53,7 +53,14 @@ export const onExploreLinkClick = (indexScene: IndexScene, expr?: string, open =
     ['loki-explore']: {
       range: toURLRange(timeRange.raw),
       queries: [{ refId: 'logs', expr, datasource }],
-      panelsState: { logs: { displayedFields, visualisationType, columns, labelFieldName: DATAPLANE_LABELS_NAME } },
+      panelsState: {
+        logs: {
+          displayedFields,
+          visualisationType,
+          columns,
+          labelFieldName: visualisationType === 'table' ? DATAPLANE_LABELS_NAME : undefined,
+        },
+      },
       datasource,
     },
   });
