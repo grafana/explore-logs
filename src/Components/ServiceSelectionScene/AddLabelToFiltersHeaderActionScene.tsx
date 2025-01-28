@@ -51,6 +51,7 @@ export class AddLabelToFiltersHeaderActionScene extends SceneObjectBase<AddLabel
       return { included: false };
     }
 
+    // @todo support regex operator
     return {
       included: filterInSelectedFilters.operator === FilterOp.Equal,
     };

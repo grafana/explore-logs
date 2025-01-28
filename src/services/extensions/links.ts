@@ -15,8 +15,8 @@ import {
 import pluginJson from '../../plugin.json';
 import { getMatcherFromQuery } from '../logqlMatchers';
 import { LokiQuery } from '../lokiQuery';
-import { FilterOp } from '../filterTypes';
 import { LabelType } from '../fieldsTypes';
+import { isOperatorInclusive } from '../operators';
 
 const title = 'Open in Explore Logs';
 const description = 'Open current query in the Explore Logs view';
@@ -54,6 +54,13 @@ export const linkConfigs: LinkConfigs = [
   },
 ];
 
+function stringifyValues(value?: string): string {
+  if (!value) {
+    return '""';
+  }
+  return value;
+}
+
 function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
   if (!context) {
     return undefined;
@@ -64,10 +71,10 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
   }
 
   const expr = lokiQuery.expr;
-  const { labelFilters: labelFilters, lineFilters, fields } = getMatcherFromQuery(expr, context, lokiQuery);
+  const { labelFilters, lineFilters, fields } = getMatcherFromQuery(expr, context, lokiQuery);
+  const labelSelector = labelFilters.find((selector) => isOperatorInclusive(selector.operator));
 
-  const labelSelector = labelFilters.find((selector) => selector.operator === FilterOp.Equal);
-
+  // Require at least one inclusive operator to run a valid Loki query
   if (!labelSelector) {
     return undefined;
   }
@@ -89,7 +96,7 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
 
     params = appendUrlParameter(
       UrlParameters.Labels,
-      `${labelFilter.key}|${labelFilter.operator}|${labelFilter.value}`,
+      `${labelFilter.key}|${labelFilter.operator}|${escapeURLDelimiters(stringifyValues(labelFilter.value))}`,
       params
     );
   }
@@ -98,7 +105,9 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
     for (const lineFilter of lineFilters) {
       params = appendUrlParameter(
         UrlParameters.LineFilters,
-        `${lineFilter.key}|${escapeURLDelimiters(lineFilter.operator)}|${escapeURLDelimiters(lineFilter.value)}`,
+        `${lineFilter.key}|${escapeURLDelimiters(lineFilter.operator)}|${escapeURLDelimiters(
+          stringifyValues(lineFilter.value)
+        )}`,
         params
       );
     }
@@ -109,13 +118,13 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
         if (field.key === LEVEL_VARIABLE_VALUE) {
           params = appendUrlParameter(
             UrlParameters.Levels,
-            `${field.key}|${field.operator}|${escapeURLDelimiters(field.value)}`,
+            `${field.key}|${field.operator}|${escapeURLDelimiters(stringifyValues(field.value))}`,
             params
           );
         } else {
           params = appendUrlParameter(
             UrlParameters.Metadata,
-            `${field.key}|${field.operator}|${escapeURLDelimiters(field.value)}`,
+            `${field.key}|${field.operator}|${escapeURLDelimiters(stringifyValues(field.value))}`,
             params
           );
         }
@@ -127,7 +136,7 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
         params = appendUrlParameter(
           UrlParameters.Fields,
           `${field.key}|${field.operator}|${escapeURLDelimiters(JSON.stringify(fieldValue))},${escapeURLDelimiters(
-            fieldValue.value
+            stringifyValues(fieldValue.value)
           )}`,
           params
         );

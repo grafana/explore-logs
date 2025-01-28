@@ -298,6 +298,7 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
       return { isIncluded: false, isExcluded: false };
     }
 
+    // @todo support regex operators?
     return {
       isIncluded: filterInSelectedFilters.operator === FilterOp.Equal,
       isExcluded: filterInSelectedFilters.operator === FilterOp.NotEqual,

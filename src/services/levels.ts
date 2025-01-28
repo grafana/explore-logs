@@ -4,7 +4,7 @@ import { LEVEL_VARIABLE_VALUE } from './variables';
 import { SceneObject } from '@grafana/scenes';
 import { addToFilters, replaceFilter } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { getLevelsVariable } from './variableGetters';
-import { FilterOp } from './filterTypes';
+import { isOperatorExclusive, isOperatorInclusive } from './operators';
 
 /**
  * Given a set of `visibleLevels` in a panel, it returns a list of the new visible levels
@@ -61,11 +61,13 @@ export function getLabelValueFromDataFrame(frame: DataFrame) {
 export function getVisibleLevels(allLevels: string[], sceneRef: SceneObject) {
   const levelsFilter = getLevelsVariable(sceneRef);
   const wantedLevels = levelsFilter.state.filters
-    .filter((filter) => filter.operator === FilterOp.Equal)
-    .map((filter) => normalizeLevelName(filter.value));
+    .filter((filter) => isOperatorInclusive(filter.operator))
+    .map((filter) => filter.value.split('|').map(normalizeLevelName))
+    .join('|');
   const unwantedLevels = levelsFilter.state.filters
-    .filter((filter) => filter.operator === FilterOp.NotEqual)
-    .map((filter) => normalizeLevelName(filter.value));
+    .filter((filter) => isOperatorExclusive(filter.operator))
+    .map((filter) => filter.value.split('|').map(normalizeLevelName))
+    .join('|');
   return allLevels.filter((level) => {
     if (unwantedLevels.includes(level)) {
       return false;
@@ -91,7 +93,7 @@ export function toggleLevelFromFilter(level: string, sceneRef: SceneObject) {
   const levelFilter = getLevelsVariable(sceneRef);
   const empty = levelFilter.state.filters.length === 0;
   const filterExists = levelFilter.state.filters.find(
-    (filter) => filter.value === level && filter.operator === FilterOp.Equal
+    (filter) => filter.value.split('|').includes(level) && isOperatorInclusive(filter.operator)
   );
 
   if (level === 'logs') {
