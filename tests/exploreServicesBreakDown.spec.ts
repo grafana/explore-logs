@@ -1501,11 +1501,15 @@ test.describe('explore services breakdown page', () => {
       await expect(firstExplorePanelRow).toBeVisible();
       const queryFieldText = await page.getByTestId('data-testid Query field').textContent();
 
-      // Open add menu (note will need to be changed after "queryless" button is released)
-      await page.getByLabel('Add', { exact: true }).click();
+      // Open "Go queryless" menu
+      const extensionsButton = page.getByLabel('Go queryless');
+      await expect(extensionsButton).toHaveCount(1);
+      await extensionsButton.click();
 
       // Go to explore logs
-      await page.getByLabel('Open in Explore Logs').first().click();
+      const openInExploreLocator = page.getByLabel('Open in Explore Logs').first();
+      await expect(openInExploreLocator).toBeVisible();
+      await openInExploreLocator.click();
       await page.getByRole('button', { name: 'Open', exact: true }).click();
 
       // Assert query returned results after nav
