@@ -468,7 +468,8 @@ test.describe('explore services breakdown page', () => {
 
     await explorePage.assertTabsNotLoading();
     // Fields on top should be loaded
-    // expect(requestCount).toEqual(6); -- assertion failed due to change in grafana latest
+    const REQUEST_COUNT_ADJUSTMENT = 3; // Due to a change in "latest" Grafana, the request count is 3 higher than expected
+    expect(requestCount).toEqual(6 + REQUEST_COUNT_ADJUSTMENT);
     expect(logsCountQueryCount).toEqual(2);
 
     await explorePage.scrollToBottom();
@@ -479,7 +480,7 @@ test.describe('explore services breakdown page', () => {
     // Wait for a bit for the requests to be made
     await page.waitForTimeout(250);
     // if this flakes we could just assert that it's greater then 3
-    expect(requestCount).toEqual(17);
+    expect(requestCount).toEqual(17 + REQUEST_COUNT_ADJUSTMENT);
     expect(logsCountQueryCount).toEqual(2);
   });
 
