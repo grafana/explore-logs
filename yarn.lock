@@ -1114,7 +1114,7 @@
     rxjs "7.8.1"
     tslib "2.7.0"
 
-"@grafana/scenes@@grafana/scenes@6.0.0--canary.979.12990094152.0":
+"@grafana/scenes@6.0.0--canary.979.12990094152.0":
   version "6.0.0--canary.979.12990094152.0"
   resolved "https://registry.yarnpkg.com/@grafana/scenes/-/scenes-6.0.0--canary.979.12990094152.0.tgz#9fafb500eb327038f67e90f4e29bd23513453d31"
   integrity sha512-YIXoeJMTijLUthgHSA5R8NzywmxTz6nlwX2vEOODZ+4LSlTChlBCxK2rGaeKiE0xm1Ifygp5VDFi6Vm5DJuJ4g==
