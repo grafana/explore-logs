@@ -227,11 +227,13 @@ test.describe('explore services breakdown page', () => {
     const toolBar = page.getByLabel('Explore toolbar');
     // Assert toolbar is visible before proceeding
     await expect(toolBar).toBeVisible();
-    const extensionsButton = page.getByLabel('Go queryless');
+    //const extensionsButton = page.getByLabel('Go queryless'); -- This will be required in a future Grafana
+    const extensionsButton = page.getByLabel('Add', { exact: true }); // Reverting for pinned v11.4.1
     await expect(extensionsButton).toHaveCount(1);
     // Click on extensions button
     await extensionsButton.click();
-    const openInExploreLocator = page.getByLabel('Open in Explore Logs').first();
+    // const openInExploreLocator = page.getByLabel('Open in Explore Logs').first(); -- This will be required in a future Grafana
+    const openInExploreLocator = page.getByLabel('Open in Explore Logs'); // Reverting for pinned v11.4.1
     await expect(openInExploreLocator).toBeVisible();
     // Click on open in logs explore
     await openInExploreLocator.click();
