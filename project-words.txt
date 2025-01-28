@@ -509,3 +509,4 @@ queryfrontend
 timesync
 openmetrics
 adaptivelogs
+subselector
