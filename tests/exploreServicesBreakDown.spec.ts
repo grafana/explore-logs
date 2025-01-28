@@ -1505,7 +1505,7 @@ test.describe('explore services breakdown page', () => {
       await page.getByLabel('Add', { exact: true }).click();
 
       // Go to explore logs
-      await page.getByLabel('Open in Explore Logs').click();
+      await page.getByLabel('Open in Explore Logs').first().click();
       await page.getByRole('button', { name: 'Open', exact: true }).click();
 
       // Assert query returned results after nav
