@@ -13,7 +13,7 @@ export class LogsVolumeActions extends SceneObjectBase<LogsVolumeActionsState> {
   static Component = Component;
 }
 
-type SelectorFilterItem = Pick<AdHocVariableFilter, 'key' | 'operator' | 'value'>;
+type StreamSelector = Pick<AdHocVariableFilter, 'key' | 'operator' | 'value'>;
 
 type TemporaryExemptionsProps = {
   /** A list of string identifiers to provide context cue of where this component is being embedded and how we might want to consider displaying it */
@@ -21,7 +21,7 @@ type TemporaryExemptionsProps = {
   /** Currently selected data source */
   dataSourceUid?: string;
   /** The stream selector, broken down into a list of structured subselector filter items */
-  streamSelector?: SelectorFilterItem[];
+  streamSelector?: StreamSelector[];
 };
 
 function Component({ model }: SceneComponentProps<LogsVolumeActions>) {
