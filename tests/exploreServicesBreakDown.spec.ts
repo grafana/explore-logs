@@ -1502,7 +1502,7 @@ test.describe('explore services breakdown page', () => {
       const queryFieldText = await page.getByTestId('data-testid Query field').textContent();
 
       // Open "Go queryless" menu
-      const extensionsButton = page.getByLabel('Go queryless');
+      const extensionsButton = page.getByText('Go queryless');
       await expect(extensionsButton).toHaveCount(1);
       await extensionsButton.click();
 
