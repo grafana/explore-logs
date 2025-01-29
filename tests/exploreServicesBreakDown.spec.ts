@@ -483,6 +483,23 @@ test.describe('explore services breakdown page', () => {
     expect(logsCountQueryCount).toEqual(2);
   });
 
+  test.only('Patterns should show error state when API call returns error', async ({ page }) => {
+    // Block everything to speed up the test
+    explorePage.blockAllQueriesExcept({
+      refIds: ['C'],
+    });
+
+    await page.route('**/resources/patterns**', async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'text/plain',
+        body: '{"message":"","traceID":"abc123"}',
+      });
+    });
+    await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
+    await expect(page.getByText('Pattern matching has not been configured.')).toBeVisible();
+  });
+
   test(`should select field ${fieldName}, update filters, open log panel`, async ({ page }) => {
     await explorePage.goToFieldsTab();
     await page.getByTestId(`data-testid Panel header ${fieldName}`).getByRole('button', { name: 'Select' }).click();
