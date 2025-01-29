@@ -467,9 +467,17 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId(/data-testid Panel header/).first()).toBeInViewport();
 
     await explorePage.assertTabsNotLoading();
+
+    // Assert the container size of the plugin hasn't changed, or that will mess with the assumptions below
+    const pageContainerSize = await page.locator('#pageContent').boundingBox();
+    expect(pageContainerSize.width).toEqual(1280);
+    expect(pageContainerSize.height).toEqual(640);
+
+    const INITIAL_ROWS = 3;
+    const COUNT_PER_ROW = 3;
+    const TOTAL_ROWS = 7;
     // Fields on top should be loaded
-    const REQUEST_COUNT_ADJUSTMENT = 3; // Due to a change in "latest" Grafana, the request count is 3 higher than expected
-    expect(requestCount).toEqual(6 + REQUEST_COUNT_ADJUSTMENT);
+    expect(requestCount).toEqual(INITIAL_ROWS * COUNT_PER_ROW);
     expect(logsCountQueryCount).toEqual(2);
 
     await explorePage.scrollToBottom();
@@ -479,8 +487,8 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId(/data-testid Panel header/).first()).not.toBeInViewport();
     // Wait for a bit for the requests to be made
     await page.waitForTimeout(250);
-    // if this flakes we could just assert that it's greater then 3
-    expect(requestCount).toEqual(17 + REQUEST_COUNT_ADJUSTMENT);
+    // 7 rows, last row only has 2
+    expect(requestCount).toEqual(TOTAL_ROWS * COUNT_PER_ROW - 1);
     expect(logsCountQueryCount).toEqual(2);
   });
 
