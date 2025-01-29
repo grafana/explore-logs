@@ -100,24 +100,23 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     this.setBody();
 
-    const dataFrames = serviceScene.state.$patternsData?.state.data?.series;
-
     // If the patterns exist already, update the dataframe
-    if (dataFrames) {
-      this.updatePatternFrames(dataFrames);
+    if (serviceScene.state.$patternsData?.state) {
+      this.onDataChange(serviceScene.state.$patternsData?.state);
     }
 
     // Subscribe to changes from pattern API call
     this._subs.add(serviceScene.state.$patternsData?.subscribeToState(this.onDataChange));
   }
 
-  private onDataChange = (newState: SceneDataState, prevState: SceneDataState) => {
+  private onDataChange = (newState: SceneDataState, prevState?: SceneDataState) => {
     const newFrames = newState.data?.series;
-    const prevFrames = prevState.data?.series;
+    const prevFrames = prevState?.data?.series;
 
     if (newState.data?.state === LoadingState.Done) {
       this.setState({
         loading: false,
+        error: false,
       });
 
       if (!areArraysEqual(newFrames, prevFrames)) {
@@ -126,6 +125,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     } else if (newState.data?.state === LoadingState.Loading) {
       this.setState({
         loading: true,
+        error: false,
       });
     } else if (newState.data?.state === LoadingState.Error) {
       this.setState({
