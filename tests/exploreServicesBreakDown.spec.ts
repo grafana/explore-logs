@@ -227,11 +227,11 @@ test.describe('explore services breakdown page', () => {
     const toolBar = page.getByLabel('Explore toolbar');
     // Assert toolbar is visible before proceeding
     await expect(toolBar).toBeVisible();
-    const extensionsButton = page.getByLabel('Go queryless');
+    const extensionsButton = page.getByLabel('Add', { exact: true });
     await expect(extensionsButton).toHaveCount(1);
     // Click on extensions button
     await extensionsButton.click();
-    const openInExploreLocator = page.getByLabel('Open in Explore Logs').first();
+    const openInExploreLocator = page.getByLabel('Open in Explore Logs');
     await expect(openInExploreLocator).toBeVisible();
     // Click on open in logs explore
     await openInExploreLocator.click();
