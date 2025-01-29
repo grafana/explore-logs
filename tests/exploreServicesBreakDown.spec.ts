@@ -492,7 +492,7 @@ test.describe('explore services breakdown page', () => {
     expect(logsCountQueryCount).toEqual(2);
   });
 
-  test.only('Patterns should show error state when API call returns error', async ({ page }) => {
+  test('Patterns should show error state when API call returns error', async ({ page }) => {
     // Block everything to speed up the test
     explorePage.blockAllQueriesExcept({
       refIds: ['C'],
