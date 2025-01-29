@@ -54,7 +54,10 @@
   "roles": [],
   "dependencies": {
     "grafanaDependency": ">=11.3.0",
-    "plugins": []
+    "plugins": [],
+    "extensions": {
+      "exposedComponents": ["grafana-adaptivelogs-app/temporary-exemptions/v1"]
+    }
   },
   "preload": true,
   "extensions": {
