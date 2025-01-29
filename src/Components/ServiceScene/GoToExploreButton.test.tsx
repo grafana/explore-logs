@@ -67,7 +67,7 @@ describe('GoToExploreButton', () => {
       await userEvent.click(screen.getByText('Open in Explore'));
 
       expect(window.open).toHaveBeenCalledWith(
-        '/explore?panes=%7B%22loki-explore%22:%7B%22range%22:%7B%22from%22:123456789,%22to%22:987654321%7D,%22queries%22:%5B%7B%22refId%22:%22logs%22,%22expr%22:%22%7Bplace%3D%5C%22luna%5C%22%7D%20%7C%20logfmt%22,%22datasource%22:%22gdev-loki%22%7D%5D,%22panelsState%22:%7B%22logs%22:%7B%22displayedFields%22:%5B%5D,%22visualisationType%22:%22table%22,%22columns%22:%7B%220%22:%22field1%22,%221%22:%22field2%22%7D%7D%7D,%22datasource%22:%22gdev-loki%22%7D%7D&schemaVersion=1',
+        '/explore?panes=%7B%22loki-explore%22:%7B%22range%22:%7B%22from%22:123456789,%22to%22:987654321%7D,%22queries%22:%5B%7B%22refId%22:%22logs%22,%22expr%22:%22%7Bplace%3D%5C%22luna%5C%22%7D%20%7C%20logfmt%22,%22datasource%22:%22gdev-loki%22%7D%5D,%22panelsState%22:%7B%22logs%22:%7B%22displayedFields%22:%5B%5D,%22visualisationType%22:%22table%22,%22columns%22:%7B%220%22:%22field1%22,%221%22:%22field2%22%7D,%22labelFieldName%22:%22labels%22%7D%7D,%22datasource%22:%22gdev-loki%22%7D%7D&schemaVersion=1',
         '_blank'
       );
     });
