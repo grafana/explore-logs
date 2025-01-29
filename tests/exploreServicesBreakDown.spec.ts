@@ -227,11 +227,11 @@ test.describe('explore services breakdown page', () => {
     const toolBar = page.getByLabel('Explore toolbar');
     // Assert toolbar is visible before proceeding
     await expect(toolBar).toBeVisible();
-    const extensionsButton = page.getByLabel('Add', { exact: true });
+    const extensionsButton = page.getByRole('button', { name: 'Go queryless' });
     await expect(extensionsButton).toHaveCount(1);
     // Click on extensions button
     await extensionsButton.click();
-    const openInExploreLocator = page.getByLabel('Open in Explore Logs');
+    const openInExploreLocator = page.getByLabel('Open in Explore Logs').first();
     await expect(openInExploreLocator).toBeVisible();
     // Click on open in logs explore
     await openInExploreLocator.click();
@@ -467,8 +467,17 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId(/data-testid Panel header/).first()).toBeInViewport();
 
     await explorePage.assertTabsNotLoading();
+
+    // Assert the container size of the plugin hasn't changed, or that will mess with the assumptions below
+    const pageContainerSize = await page.locator('#pageContent').boundingBox();
+    expect(pageContainerSize.width).toEqual(1280);
+    expect(pageContainerSize.height).toEqual(640);
+
+    const INITIAL_ROWS = 3;
+    const COUNT_PER_ROW = 3;
+    const TOTAL_ROWS = 7;
     // Fields on top should be loaded
-    expect(requestCount).toEqual(6);
+    expect(requestCount).toEqual(INITIAL_ROWS * COUNT_PER_ROW);
     expect(logsCountQueryCount).toEqual(2);
 
     await explorePage.scrollToBottom();
@@ -478,8 +487,8 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId(/data-testid Panel header/).first()).not.toBeInViewport();
     // Wait for a bit for the requests to be made
     await page.waitForTimeout(250);
-    // if this flakes we could just assert that it's greater then 3
-    expect(requestCount).toEqual(17);
+    // 7 rows, last row only has 2
+    expect(requestCount).toEqual(TOTAL_ROWS * COUNT_PER_ROW - 1);
     expect(logsCountQueryCount).toEqual(2);
   });
 
@@ -1517,11 +1526,15 @@ test.describe('explore services breakdown page', () => {
       await expect(firstExplorePanelRow).toBeVisible();
       const queryFieldText = await page.getByTestId('data-testid Query field').textContent();
 
-      // Open add menu (note will need to be changed after "queryless" button is released)
-      await page.getByLabel('Add', { exact: true }).click();
+      // Open "Go queryless" menu
+      const extensionsButton = page.getByText('Go queryless');
+      await expect(extensionsButton).toHaveCount(1);
+      await extensionsButton.click();
 
       // Go to explore logs
-      await page.getByLabel('Open in Explore Logs').click();
+      const openInExploreLocator = page.getByLabel('Open in Explore Logs').first();
+      await expect(openInExploreLocator).toBeVisible();
+      await openInExploreLocator.click();
       await page.getByRole('button', { name: 'Open', exact: true }).click();
 
       // Assert query returned results after nav
