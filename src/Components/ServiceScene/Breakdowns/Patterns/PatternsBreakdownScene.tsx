@@ -27,7 +27,7 @@ export interface PatternsBreakdownSceneState extends SceneObjectState {
   body?: SceneFlexLayout;
   value?: string;
   loading?: boolean;
-  error?: string;
+  error?: boolean;
   blockingMessage?: string;
   // The dataframe built from the patterns that we get back from the loki Patterns API
   patternFrames?: PatternFrame[];
@@ -64,7 +64,7 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
 
   // parent render
   public static Component = ({ model }: SceneComponentProps<PatternsBreakdownScene>) => {
-    const { body, loading, blockingMessage, patternFrames } = model.useState();
+    const { body, loading, blockingMessage, patternFrames, error } = model.useState();
     const { value: timeRange } = sceneGraph.getTimeRange(model).useState();
     const styles = useStyles2(getStyles);
     const timeRangeTooOld = dateTime().diff(timeRange.to, 'hours') >= PATTERNS_MAX_AGE_HOURS;
@@ -72,13 +72,13 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     return (
       <div className={styles.container}>
         <StatusWrapper {...{ isLoading: loading, blockingMessage }}>
-          {!loading && !patternFrames && (
+          {!loading && error && (
             <div className={styles.patternMissingText}>
               <Text textAlignment="center" color="primary">
                 <p>There are no pattern matches.</p>
                 <p>Pattern matching has not been configured.</p>
                 <p>Patterns let you detect similar log lines and add or exclude them from your search.</p>
-                <p>To see them in action, add the following to your configuration</p>
+                <p>To see them in action, add the following to your Loki configuration</p>
                 <p>
                   <code>--pattern-ingester.enabled=true</code>
                 </p>
@@ -86,9 +86,9 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
             </div>
           )}
 
-          {!loading && patternFrames?.length === 0 && timeRangeTooOld && <PatternsTooOld />}
-          {!loading && patternFrames?.length === 0 && !timeRangeTooOld && <PatternsNotDetected />}
-          {!loading && patternFrames && patternFrames.length > 0 && (
+          {!error && !loading && patternFrames?.length === 0 && timeRangeTooOld && <PatternsTooOld />}
+          {!error && !loading && patternFrames?.length === 0 && !timeRangeTooOld && <PatternsNotDetected />}
+          {!error && !loading && patternFrames && patternFrames.length > 0 && (
             <div className={styles.content}>{body && <body.Component model={body} />}</div>
           )}
         </StatusWrapper>
@@ -100,24 +100,23 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     this.setBody();
 
-    const dataFrames = serviceScene.state.$patternsData?.state.data?.series;
-
     // If the patterns exist already, update the dataframe
-    if (dataFrames) {
-      this.updatePatternFrames(dataFrames);
+    if (serviceScene.state.$patternsData?.state) {
+      this.onDataChange(serviceScene.state.$patternsData?.state);
     }
 
     // Subscribe to changes from pattern API call
     this._subs.add(serviceScene.state.$patternsData?.subscribeToState(this.onDataChange));
   }
 
-  private onDataChange = (newState: SceneDataState, prevState: SceneDataState) => {
+  private onDataChange = (newState: SceneDataState, prevState?: SceneDataState) => {
     const newFrames = newState.data?.series;
-    const prevFrames = prevState.data?.series;
+    const prevFrames = prevState?.data?.series;
 
     if (newState.data?.state === LoadingState.Done) {
       this.setState({
         loading: false,
+        error: false,
       });
 
       if (!areArraysEqual(newFrames, prevFrames)) {
@@ -126,6 +125,12 @@ export class PatternsBreakdownScene extends SceneObjectBase<PatternsBreakdownSce
     } else if (newState.data?.state === LoadingState.Loading) {
       this.setState({
         loading: true,
+        error: false,
+      });
+    } else if (newState.data?.state === LoadingState.Error) {
+      this.setState({
+        loading: false,
+        error: true,
       });
     }
   };

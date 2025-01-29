@@ -1114,10 +1114,10 @@
     rxjs "7.8.1"
     tslib "2.7.0"
 
-"@grafana/scenes@5.39.0--canary.1034.12935402698.0":
-  version "5.39.0--canary.1034.12935402698.0"
-  resolved "https://registry.yarnpkg.com/@grafana/scenes/-/scenes-5.39.0--canary.1034.12935402698.0.tgz#177669d303b4b5fa12f2d08abc2db91dbaf48829"
-  integrity sha512-B69aELirc/L3Sc4gEy/5f17OCOCt37KwopbbeU5jMpVzPEmk3j1wP/lqongVz7LccsWAP6fGRPR3ZvG7laiPuA==
+"@grafana/scenes@5.41.0":
+  version "5.41.0"
+  resolved "https://registry.yarnpkg.com/@grafana/scenes/-/scenes-5.41.0.tgz#851592266314634c2f3daa13c5b984969993b5d5"
+  integrity sha512-UQp92fCdPhn280H5ZjKo7KQ0OWla9QIP7zfC/hmpBqzNtpD20BUCPEBDcmFEkJ1PUxv49hH2F9aQ0NfOmUJI4g==
   dependencies:
     "@floating-ui/react" "^0.26.16"
     "@leeoniya/ufuzzy" "^1.0.16"

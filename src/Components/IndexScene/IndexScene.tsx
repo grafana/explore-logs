@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {AdHocVariableFilter, AppEvents, AppPluginMeta, rangeUtil} from '@grafana/data';
+import { AdHocVariableFilter, AppEvents, AppPluginMeta, rangeUtil } from '@grafana/data';
 import {
   AdHocFiltersVariable,
   AdHocFilterWithLabels,
@@ -40,8 +40,8 @@ import {
   VAR_PATTERNS,
 } from 'services/variables';
 
-import {addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage} from 'services/store';
-import {ServiceScene} from '../ServiceScene/ServiceScene';
+import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
+import { ServiceScene } from '../ServiceScene/ServiceScene';
 import {
   CONTROLS_VARS_FIELDS_ELSE_KEY,
   CONTROLS_VARS_FIRST_ROW_KEY,
@@ -52,10 +52,10 @@ import {
   CONTROLS_VARS_TOOLBAR,
   LayoutScene,
 } from './LayoutScene';
-import {getDrilldownSlug, PageSlugs} from '../../services/routing';
-import {ServiceSelectionScene} from '../ServiceSelectionScene/ServiceSelectionScene';
-import {LoadingPlaceholder} from '@grafana/ui';
-import {config, getAppEvents, locationService} from '@grafana/runtime';
+import { getDrilldownSlug, PageSlugs } from '../../services/routing';
+import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelectionScene';
+import { LoadingPlaceholder } from '@grafana/ui';
+import { config, getAppEvents, locationService } from '@grafana/runtime';
 import {
   onAddCustomValue,
   renderLogQLFieldFilters,
@@ -64,8 +64,8 @@ import {
   renderLogQLMetadataFilters,
   renderPatternFilters,
 } from 'services/query';
-import {VariableHide} from '@grafana/schema';
-import {CustomConstantVariable} from '../../services/CustomConstantVariable';
+import { VariableHide } from '@grafana/schema';
+import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 import {
   getFieldsVariable,
   getLabelsVariable,
@@ -74,21 +74,21 @@ import {
   getPatternsVariable,
   getUrlParamNameForVariable,
 } from '../../services/variableGetters';
-import {ToolbarScene} from './ToolbarScene';
-import {DEFAULT_TIME_RANGE, OptionalRouteMatch} from '../Pages';
-import {plugin} from '../../module';
-import {JsonData} from '../AppConfig/AppConfig';
-import {reportAppInteraction} from '../../services/analytics';
-import {getDetectedFieldValuesTagValuesProvider, getLabelsTagValuesProvider} from '../../services/TagValuesProviders';
-import {logger} from '../../services/logger';
-import {getFieldsKeysProvider, getLabelsTagKeysProvider} from '../../services/TagKeysProviders';
-import {getLokiDatasource} from '../../services/scenes';
-import {ShowLogsButtonScene} from './ShowLogsButtonScene';
-import {CustomVariableValueSelectors} from './CustomVariableValueSelectors';
-import {getCopiedTimeRange, PasteTimeEvent, setupKeyboardShortcuts} from '../../services/keyboardShortcuts';
-import {LokiDatasource} from '../../services/lokiQuery';
-import {lineFilterOperators, numericOperators, operators} from '../../services/operators';
-import {operatorFunction} from '../../services/variableHelpers';
+import { ToolbarScene } from './ToolbarScene';
+import { DEFAULT_TIME_RANGE, OptionalRouteMatch } from '../Pages';
+import { plugin } from '../../module';
+import { JsonData } from '../AppConfig/AppConfig';
+import { reportAppInteraction } from '../../services/analytics';
+import { getDetectedFieldValuesTagValuesProvider, getLabelsTagValuesProvider } from '../../services/TagValuesProviders';
+import { logger } from '../../services/logger';
+import { getFieldsKeysProvider, getLabelsTagKeysProvider } from '../../services/TagKeysProviders';
+import { getLokiDatasource } from '../../services/scenes';
+import { ShowLogsButtonScene } from './ShowLogsButtonScene';
+import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
+import { getCopiedTimeRange, PasteTimeEvent, setupKeyboardShortcuts } from '../../services/keyboardShortcuts';
+import { LokiDatasource } from '../../services/lokiQuery';
+import { lineFilterOperators, numericOperators, operators } from '../../services/operators';
+import { operatorFunction } from '../../services/variableHelpers';
 
 export const showLogsButtonSceneKey = 'showLogsButtonScene';
 export interface AppliedPattern {
@@ -232,12 +232,12 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
     fieldsVar._getOperators = function () {
       const wip = fieldsVar.state._wip;
-      if(wip?.meta){
-        const meta: Record<string, string> = wip.meta
-        const type = meta.type
+      if (wip?.meta) {
+        const meta: Record<string, string> = wip.meta;
+        const type = meta.type;
 
-        if(type === 'float' || type === 'bytes' || type === 'duration'){
-          return numericOperators
+        if (type === 'float' || type === 'bytes' || type === 'duration') {
+          return numericOperators;
         }
       }
 
@@ -392,15 +392,18 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     };
   }
 
-  private renderVariableFilters(variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS, filters: AdHocFilterWithLabels[]) {
+  private renderVariableFilters(
+    variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS,
+    filters: AdHocFilterWithLabels[]
+  ) {
     if (variableType === VAR_FIELDS) {
-      return renderLogQLFieldFilters(filters)
+      return renderLogQLFieldFilters(filters);
     } else if (variableType === VAR_METADATA) {
-      return renderLogQLMetadataFilters(filters)
+      return renderLogQLMetadataFilters(filters);
     } else if (variableType === VAR_LEVELS) {
-      return renderLogQLMetadataFilters(filters)
+      return renderLogQLMetadataFilters(filters);
     } else {
-      throw new Error('getFieldsTagValuesProvider only supports fields, metadata, and levels')
+      throw new Error('getFieldsTagValuesProvider only supports fields, metadata, and levels');
     }
   }
 
@@ -479,7 +482,6 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     layout: 'combobox',
     label: 'Labels',
     allowCustomValue: true,
-    // need way to update value when adding custom value
     filters: initialFilters ?? [],
     expressionBuilder: renderLogQLLabelFilters,
     hide: VariableHide.dontHide,
@@ -500,7 +502,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     expressionBuilder: renderLogQLFieldFilters,
     hide: VariableHide.hideVariable,
     allowCustomValue: true,
-    onAddCustomValue: onAddCustomValue
+    onAddCustomValue: onAddCustomValue,
   });
 
   fieldsVariable._getOperators = () => {

@@ -24,6 +24,7 @@ import { ServiceScene } from './ServiceScene';
 import { getSeriesVisibleRange, getVisibleRangeFrame } from 'services/logsFrame';
 import { getLogsVolumeOption, setLogsVolumeOption } from 'services/store';
 import { IndexScene } from '../IndexScene/IndexScene';
+import { LogsVolumeActions } from './LogsVolumeActions';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
@@ -96,6 +97,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       .setMenu(new PanelMenu({}))
       .setCollapsible(true)
       .setCollapsed(Boolean(getLogsVolumeOption('collapsed')))
+      .setHeaderActions(new LogsVolumeActions({}))
       // 11.5
       // .setShowMenuAlways(true)
       .setData(
