@@ -1,5 +1,5 @@
 import { expect, test } from '@grafana/plugin-e2e';
-import { ExplorePage, PlaywrightRequest } from './fixtures/explore';
+import { E2EComboboxLabels, ExplorePage, PlaywrightRequest } from './fixtures/explore';
 
 import { LokiQuery } from '../src/services/lokiQuery';
 
@@ -51,9 +51,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     await expect(allPanels).toHaveCount(6);
 
     // Adhoc content filter should be added
-    await expect(
-      page.getByTestId(`data-testid Dashboard template variables submenu Label ${mixedFieldName}`)
-    ).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxLabels.editByKey(mixedFieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
     requests.forEach((req) => {
@@ -96,9 +94,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     await expect(allPanels).toHaveCount(13);
 
     // Adhoc content filter should be added
-    await expect(
-      page.getByTestId(`data-testid Dashboard template variables submenu Label ${logFmtFieldName}`)
-    ).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxLabels.editByKey(logFmtFieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
     requests.forEach((req, index) => {
@@ -120,6 +116,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
 
     expect(requests.length).toBeGreaterThanOrEqual(3);
   });
+
   test(`should exclude ${jsonFmtFieldName}, request should contain logfmt`, async ({ page }) => {
     let requests: PlaywrightRequest[] = [];
     explorePage.blockAllQueriesExcept({
@@ -144,9 +141,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     await expect(allPanels).toHaveCount(3);
 
     // Adhoc content filter should be added
-    await expect(
-      page.getByTestId(`data-testid Dashboard template variables submenu Label ${jsonFmtFieldName}`)
-    ).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxLabels.editByKey(jsonFmtFieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
     requests.forEach((req) => {
@@ -184,9 +179,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     await expect.poll(() => allPanels.count()).toBeGreaterThanOrEqual(actualCount - 1);
 
     // Adhoc content filter should be added
-    await expect(
-      page.getByTestId(`data-testid Dashboard template variables submenu Label ${metadataFieldName}`)
-    ).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxLabels.editByKey(metadataFieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
     await expect.poll(() => requests).toHaveLength(3);

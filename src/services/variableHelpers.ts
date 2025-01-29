@@ -70,6 +70,7 @@ export const operatorFunction = function (variable: AdHocFiltersVariable) {
     return includeOperators;
   }
 
+  // Only fields or metadata can have field types?
   if (wip?.meta) {
     const meta: Record<string, string> = wip.meta;
     const type = meta.type;

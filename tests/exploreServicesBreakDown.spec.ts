@@ -1,5 +1,5 @@
 import { expect, test } from '@grafana/plugin-e2e';
-import { ExplorePage, PlaywrightRequest } from './fixtures/explore';
+import { E2EComboboxLabels, ExplorePage, PlaywrightRequest } from './fixtures/explore';
 import { testIds } from '../src/services/testIds';
 import { mockEmptyQueryApiResponse } from './mocks/mockEmptyQueryApiResponse';
 import { LokiQuery } from '../src/services/lokiQuery';
@@ -87,6 +87,7 @@ test.describe('explore services breakdown page', () => {
     const nginxExcludeBtn = page
       .getByTestId('data-testid Panel header nginx')
       .getByTestId('data-testid button-filter-exclude');
+
     await expect(nginxExcludeBtn).toHaveCount(1);
     await nginxExcludeBtn.click();
 
@@ -149,7 +150,7 @@ test.describe('explore services breakdown page', () => {
     // Click the filter button
     await pillContextMenu.click();
     // New level filter should be added
-    await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${levelName}`)).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxLabels.editByKey(levelName))).toBeVisible();
   });
 
   test('table log line state should persist in the url', async ({ page }) => {
@@ -194,7 +195,7 @@ test.describe('explore services breakdown page', () => {
     await page.getByLabel(`Select ${levelName}`).click();
     await page.getByTestId(`data-testid Panel header ${valueName}`).getByRole('button', { name: 'Include' }).click();
 
-    await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${levelName}`)).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxLabels.editByKey(levelName))).toBeVisible();
     await explorePage.goToLogsTab();
     await explorePage.getLogsVolumePanelLocator().click();
     await page.getByTestId('data-testid Panel menu item Explore').click();
@@ -404,8 +405,9 @@ test.describe('explore services breakdown page', () => {
 
     // Should have removed a panel
     await expect(allPanels).toHaveCount(8);
+
     // Adhoc content filter should be added
-    await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${fieldName}`)).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxLabels.editByKey(fieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
     requests.forEach((req) => {
@@ -426,7 +428,7 @@ test.describe('explore services breakdown page', () => {
     await page.getByRole('button', { name: 'Include' }).nth(0).click();
 
     await explorePage.assertFieldsIndex();
-    await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${fieldName}`)).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxLabels.editByKey(fieldName))).toBeVisible();
     await expect(page.getByText('=').nth(1)).toBeVisible();
   });
 
@@ -448,7 +450,6 @@ test.describe('explore services breakdown page', () => {
         if (refId !== 'logsPanelQuery' && refId !== 'A' && refId !== 'logsCountQuery') {
           requestCount++;
           // simulate the query taking some time
-          await page.waitForTimeout(100);
           return await route.fulfill({ json: mockResponse });
         }
         if (refId === 'logsCountQuery') {
@@ -473,9 +474,11 @@ test.describe('explore services breakdown page', () => {
     expect(pageContainerSize.width).toEqual(1280);
     expect(pageContainerSize.height).toEqual(640);
 
-    const INITIAL_ROWS = 3;
+    const INITIAL_ROWS = 2;
     const COUNT_PER_ROW = 3;
     const TOTAL_ROWS = 7;
+
+    await page.pause();
     // Fields on top should be loaded
     expect(requestCount).toEqual(INITIAL_ROWS * COUNT_PER_ROW);
     expect(logsCountQueryCount).toEqual(2);
@@ -488,6 +491,7 @@ test.describe('explore services breakdown page', () => {
     // Wait for a bit for the requests to be made
     await page.waitForTimeout(250);
     // 7 rows, last row only has 2
+    await page.pause();
     expect(requestCount).toEqual(TOTAL_ROWS * COUNT_PER_ROW - 1);
     expect(logsCountQueryCount).toEqual(2);
   });
@@ -515,7 +519,7 @@ test.describe('explore services breakdown page', () => {
     await page.getByRole('button', { name: 'Include' }).nth(0).click();
     await explorePage.assertFieldsIndex();
     // Adhoc content filter should be added
-    await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${fieldName}`)).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxLabels.editByKey(fieldName))).toBeVisible();
   });
 
   test('should show sample table on `<_>` click in patterns', async ({ page }) => {
@@ -823,8 +827,8 @@ test.describe('explore services breakdown page', () => {
     );
 
     // Assert that the variables were added to the UI
-    await expect(page.getByText(/^bytes>500B$/)).toHaveCount(1);
-    await expect(page.getByText(/^bytes<=2KB$/)).toHaveCount(1);
+    await expect(page.getByText(/^bytes > 500B$/)).toHaveCount(1);
+    await expect(page.getByText(/^bytes <= 2KB$/)).toHaveCount(1);
 
     // Assert the pod and bytes panels have data
     await expect(
@@ -855,7 +859,6 @@ test.describe('explore services breakdown page', () => {
       numberOfQueries++;
 
       await route.fulfill({ json: [] });
-      // await route.continue()
     });
 
     // Include
@@ -963,10 +966,10 @@ test.describe('explore services breakdown page', () => {
       '/a/grafana-lokiexplore-app/explore/service/nginx-json/fields?var-ds=gdev-loki&from=now-5m&to=now&patterns=%5B%5D&var-fields=bytes|=|""&var-levels=&var-patterns=&var-lineFilter=&var-filters=service_name%7C%3D%7Cnginx-json&urlColumns=%5B%5D&visualizationType=%22logs%22&displayedFields=%5B%5D&var-fieldBy=$__all'
     );
     await expect(page.getByText('No labels match these filters.')).toHaveCount(1);
-    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label bytes')).toHaveCount(1);
+    await expect(page.getByLabel(E2EComboboxLabels.editByKey('bytes'))).toHaveCount(1);
     await expect(explorePage.getAllPanelsLocator()).toHaveCount(0);
     await page.getByText('Clear filters').click();
-    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label bytes')).toHaveCount(0);
+    await expect(page.getByLabel(E2EComboboxLabels.editByKey('bytes'))).toHaveCount(0);
     await expect(explorePage.getAllPanelsLocator().first()).toHaveCount(1);
     await expect(explorePage.getAllPanelsLocator().first()).toBeVisible();
     await expect(explorePage.getAllPanelsLocator().first()).toBeInViewport();
@@ -981,7 +984,7 @@ test.describe('explore services breakdown page', () => {
     const panelErrorLocator = page.getByTestId('data-testid Panel status error');
     const contentPanelLocator = page.getByTestId('data-testid Panel header content');
     const versionPanelLocator = page.getByTestId('data-testid Panel header version');
-    const versionVariableLocator = page.getByTestId('AdHocFilter-version');
+    const versionVariableLocator = page.getByLabel(E2EComboboxLabels.editByKey('version'));
     const versionFilterButton = versionPanelLocator.getByTestId(testIds.breakdowns.common.filterButtonGroup);
 
     // Go to the fields tab and assert errors aren't showing
@@ -998,23 +1001,28 @@ test.describe('explore services breakdown page', () => {
 
     // Exclude version
     await expect(versionVariableLocator).toHaveCount(1);
-    await expect(versionVariableLocator.getByText('=', { exact: true })).toHaveCount(1);
-    await expect(versionVariableLocator.getByText(/^!=$/)).toHaveCount(0);
-    await expect(versionVariableLocator.getByText(/^=$/)).toHaveCount(1);
+    await expect(versionVariableLocator).toContainText('=');
+    await expect(versionVariableLocator).not.toContainText('!=');
 
     // Open the menu
-    await versionVariableLocator.locator('svg').nth(1).click();
+    await versionVariableLocator.click();
+    await page.getByLabel('Edit filter operator').click();
 
     // assert the options are showing
     await expect(page.getByRole('option', { name: '=', exact: true })).toHaveCount(1);
     await expect(page.getByRole('option', { name: '!=', exact: true })).toHaveCount(1);
+    await expect(page.getByRole('option', { name: '=~', exact: true })).toHaveCount(1);
+    await expect(page.getByRole('option', { name: '!~', exact: true })).toHaveCount(1);
 
     // Click the other option and exclude version
     await page.getByRole('option', { name: '!=', exact: true }).click();
 
+    // Need to use the keyboard because by default the combobox matches everything until the user starts typing, even if a value is already present
+    // @todo is this a bug in the combobox?
+    await page.keyboard.press('Tab');
+
     // Check the right options are visible
-    await expect(versionVariableLocator.getByText(/^!=$/)).toHaveCount(1);
-    await expect(versionVariableLocator.getByText(/^=$/)).toHaveCount(0);
+    await expect(versionVariableLocator).toContainText('!=');
 
     // Assert no errors are visible
     await expect(panelErrorLocator).toHaveCount(0);

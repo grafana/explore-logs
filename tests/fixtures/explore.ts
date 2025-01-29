@@ -137,8 +137,8 @@ export class ExplorePage {
   async scrollToBottom() {
     const main = this.page.locator('html');
 
-    // Scroll the page container to the bottom
-    await main.evaluate((main) => main.scrollTo(0, main.scrollHeight));
+    // Scroll the page container to the bottom, smoothly
+    await main.evaluate((main) => main.scrollTo({ left: 0, top: main.scrollHeight, behavior: 'smooth' }));
   }
 
   async goToLogsTab() {
@@ -305,3 +305,10 @@ export class ExplorePage {
     });
   }
 }
+
+export const E2EComboboxLabels = {
+  editByKey: (keyName) => `Edit filter with key ${keyName}`,
+  labels: {
+    removeServiceLabel: 'Remove filter with key service_name',
+  },
+};

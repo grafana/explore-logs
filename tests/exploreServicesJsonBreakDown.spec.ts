@@ -1,5 +1,5 @@
 import { expect, test } from '@grafana/plugin-e2e';
-import { ExplorePage, PlaywrightRequest } from './fixtures/explore';
+import { E2EComboboxLabels, ExplorePage, PlaywrightRequest } from './fixtures/explore';
 
 import { LokiQuery } from '../src/services/lokiQuery';
 
@@ -45,7 +45,7 @@ test.describe('explore nginx-json breakdown pages ', () => {
     await expect(allPanels).toHaveCount(6);
 
     // Adhoc content filter should be added
-    await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${fieldName}`)).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxLabels.editByKey(fieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
     requests.forEach((req) => {
