@@ -186,7 +186,6 @@ export function getUrlParamNameForVariable(variableName: string) {
 }
 
 export function getValueFromFieldsFilter(filter: AdHocVariableFilter, variableName: string = VAR_FIELDS): FieldValue {
-  console.log('filter', filter)
   try {
     const fieldValue = narrowFieldValue(JSON.parse(filter.value));
     if (fieldValue !== false) {
@@ -195,7 +194,6 @@ export function getValueFromFieldsFilter(filter: AdHocVariableFilter, variableNa
       throw new NarrowingError('getValueFromFieldsFilter: invalid filter value!');
     }
   } catch (e) {
-    debugger;
     if (e instanceof NarrowingError) {
       logger.error(e, { msg: `getValueFromFieldsFilter: Failed to validate ${variableName}`, value: filter.value });
     } else {
