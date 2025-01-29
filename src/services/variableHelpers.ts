@@ -1,10 +1,10 @@
 import { AdHocFiltersVariable, sceneGraph, SceneObject, SceneVariable } from '@grafana/scenes';
 import { CustomConstantVariable } from './CustomConstantVariable';
-import { SERVICE_NAME, SERVICE_UI_LABEL } from './variables';
+import { SERVICE_NAME, SERVICE_UI_LABEL, VAR_LABELS } from './variables';
 import { IndexScene } from '../Components/IndexScene/IndexScene';
 import { getPrimaryLabelFromUrl } from './routing';
 import { FilterOp } from './filterTypes';
-import { includeOperators, operators } from './operators';
+import { includeOperators, isOperatorInclusive, numericOperators, operators } from './operators';
 
 export function getVariablesThatCanBeCleared(indexScene: IndexScene) {
   const variables = sceneGraph.getVariables(indexScene);
@@ -54,12 +54,29 @@ export function clearVariables(sceneRef: SceneObject) {
 }
 
 export const operatorFunction = function (variable: AdHocFiltersVariable) {
-  console.log('operatorFunction', variable)
-
   const wip = variable.state._wip;
-  // If there is already an inclusion operator for this key, don't allow exclusion
+
+  // If there is already a non-regex inclusion operator for this key, don't allow exclusion
   if (wip && variable.state.filters.some((filter) => filter.key === wip.key && filter.operator === FilterOp.Equal)) {
     return includeOperators;
+  }
+
+  // Labels should not be able to replace the last include operator
+  if (
+    variable.state.name === VAR_LABELS &&
+    !wip?.key &&
+    variable.state.filters.filter((filter) => isOperatorInclusive(filter.operator)).length === 1
+  ) {
+    return includeOperators;
+  }
+
+  if (wip?.meta) {
+    const meta: Record<string, string> = wip.meta;
+    const type = meta.type;
+
+    if (type === 'float' || type === 'bytes' || type === 'duration') {
+      return numericOperators;
+    }
   }
 
   return operators;

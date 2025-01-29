@@ -87,7 +87,7 @@ import { ShowLogsButtonScene } from './ShowLogsButtonScene';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
 import { getCopiedTimeRange, PasteTimeEvent, setupKeyboardShortcuts } from '../../services/keyboardShortcuts';
 import { LokiDatasource } from '../../services/lokiQuery';
-import { lineFilterOperators, numericOperators, operators } from '../../services/operators';
+import { lineFilterOperators, operators } from '../../services/operators';
 import { operatorFunction } from '../../services/variableHelpers';
 
 export const showLogsButtonSceneKey = 'showLogsButtonScene';
@@ -201,8 +201,6 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       stateUpdate.contentScene = getContentScene(this.state.routeMatch?.params.breakdownLabel);
     }
     this.setTagProviders();
-    this.setVariableOperators();
-
     this.setState(stateUpdate);
 
     this.updatePatterns(this.state, getPatternsVariable(this));
@@ -224,24 +222,6 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
     return () => {
       clearKeyBindings();
-    };
-  }
-
-  private setVariableOperators() {
-    const fieldsVar: AdHocFiltersVariable = getFieldsVariable(this);
-
-    fieldsVar._getOperators = function () {
-      const wip = fieldsVar.state._wip;
-      if (wip?.meta) {
-        const meta: Record<string, string> = wip.meta;
-        const type = meta.type;
-
-        if (type === 'float' || type === 'bytes' || type === 'duration') {
-          return numericOperators;
-        }
-      }
-
-      return operators;
     };
   }
 
