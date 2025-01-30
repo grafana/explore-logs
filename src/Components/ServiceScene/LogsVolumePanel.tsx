@@ -94,7 +94,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       .setTitle(this.getTitle(serviceScene.state.totalLogsCount, serviceScene.state.logsCount))
       .setOption('legend', { showLegend: true, calcs: ['sum'], displayMode: LegendDisplayMode.List })
       .setUnit('short')
-      .setMenu(new PanelMenu({}))
+      .setMenu(new PanelMenu({ labelName: 'level' }))
       .setCollapsible(true)
       .setCollapsed(Boolean(getLogsVolumeOption('collapsed')))
       .setHeaderActions(new LogsVolumeActions({}))
