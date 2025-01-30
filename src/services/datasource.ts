@@ -320,10 +320,8 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
         }
       );
 
-      const { labelName: primaryLabelName } = getPrimaryLabelFromUrl();
-
       const labels = response.detectedLabels
-        ?.filter((label) => primaryLabelName !== label.label && !LABELS_TO_REMOVE.includes(label.label))
+        ?.filter((label) => !LABELS_TO_REMOVE.includes(label.label))
         ?.sort((a, b) => sortLabelsByCardinality(a, b));
 
       const detectedLabelFields: Array<Partial<Field>> = labels?.map((label) => {

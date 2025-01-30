@@ -1,34 +1,50 @@
 import { FilterOp, LineFilterOp } from './filterTypes';
 import { SelectableValue } from '@grafana/data';
+import { logger } from './logger';
 
-// function getOperatorLabel(op: FilterOp): string {
-//   if (op === FilterOp.NotEqual) {
-//     return 'Not equal';
-//   }
-//   if (op === FilterOp.RegexNotEqual) {
-//     return 'Regex: Not equal';
-//   }
-//   if (op === FilterOp.Equal) {
-//     return 'Equal';
-//   }
-//   if (op === FilterOp.RegexEqual) {
-//     return 'Regex: Equal';
-//   }
-//
-//   return op.toString();
-// }
+function getOperatorDescription(op: FilterOp): string {
+  if (op === FilterOp.NotEqual) {
+    return 'Not equal';
+  }
+  if (op === FilterOp.RegexNotEqual) {
+    return 'Does not match regex';
+  }
+  if (op === FilterOp.Equal) {
+    return 'Equals';
+  }
+  if (op === FilterOp.RegexEqual) {
+    return 'Matches regex';
+  }
+  if (op === FilterOp.lt) {
+    return 'Less than';
+  }
+  if (op === FilterOp.gt) {
+    return 'Greater than';
+  }
+  if (op === FilterOp.gte) {
+    return 'Greater than or equal to';
+  }
+  if (op === FilterOp.lte) {
+    return 'Less than or equal to';
+  }
+
+  const error = new Error('Invalid operator!');
+  logger.error(error, { msg: 'Invalid operator', operator: op });
+  throw error;
+}
 
 export const operators = [FilterOp.Equal, FilterOp.NotEqual, FilterOp.RegexEqual, FilterOp.RegexNotEqual].map<
   SelectableValue<string>
 >((value, index, array) => {
   return {
-    // label: getOperatorLabel(value), // @todo return better labels?
-    label: value, // @todo return better labels?
+    description: getOperatorDescription(value),
+    label: value,
     value,
   };
 });
 
 export const includeOperators = [FilterOp.Equal, FilterOp.RegexEqual].map<SelectableValue<string>>((value) => ({
+  description: getOperatorDescription(value),
   label: value,
   value,
 }));
@@ -36,6 +52,7 @@ export const includeOperators = [FilterOp.Equal, FilterOp.RegexEqual].map<Select
 export const numericOperatorArray = [FilterOp.gt, FilterOp.gte, FilterOp.lt, FilterOp.lte];
 
 export const numericOperators = numericOperatorArray.map<SelectableValue<string>>((value) => ({
+  description: getOperatorDescription(value),
   label: value,
   value,
 }));

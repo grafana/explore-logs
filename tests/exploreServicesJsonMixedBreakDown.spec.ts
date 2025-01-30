@@ -1,5 +1,5 @@
 import { expect, test } from '@grafana/plugin-e2e';
-import { E2EComboboxLabels, ExplorePage, PlaywrightRequest } from './fixtures/explore';
+import { E2EComboboxStrings, ExplorePage, PlaywrightRequest } from './fixtures/explore';
 
 import { LokiQuery } from '../src/services/lokiQuery';
 
@@ -51,7 +51,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     await expect(allPanels).toHaveCount(6);
 
     // Adhoc content filter should be added
-    await expect(page.getByLabel(E2EComboboxLabels.editByKey(mixedFieldName))).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxStrings.editByKey(mixedFieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
     requests.forEach((req) => {
@@ -94,7 +94,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     await expect(allPanels).toHaveCount(13);
 
     // Adhoc content filter should be added
-    await expect(page.getByLabel(E2EComboboxLabels.editByKey(logFmtFieldName))).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxStrings.editByKey(logFmtFieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
     requests.forEach((req, index) => {
@@ -141,7 +141,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     await expect(allPanels).toHaveCount(3);
 
     // Adhoc content filter should be added
-    await expect(page.getByLabel(E2EComboboxLabels.editByKey(jsonFmtFieldName))).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxStrings.editByKey(jsonFmtFieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
     requests.forEach((req) => {
@@ -179,7 +179,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     await expect.poll(() => allPanels.count()).toBeGreaterThanOrEqual(actualCount - 1);
 
     // Adhoc content filter should be added
-    await expect(page.getByLabel(E2EComboboxLabels.editByKey(metadataFieldName))).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxStrings.editByKey(metadataFieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
     await expect.poll(() => requests).toHaveLength(3);
