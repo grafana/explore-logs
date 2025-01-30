@@ -265,7 +265,7 @@ test.describe('explore services breakdown page', () => {
     await explorePage.goToLogsTab();
     await explorePage.getLogsVolumePanelLocator().click();
     await page.getByTestId('data-testid Panel menu item Explore').click();
-    await expect(page.getByText(`{service_name=\`tempo-distributor\`} | ${levelName}=\`${valueName}\``)).toBeVisible();
+    await expect(page.getByText(`{service_name="tempo-distributor"} | ${levelName}="${valueName}"`)).toBeVisible();
   });
 
   test(`should select label ${labelName}, update filters, open in explore`, async ({ page, browser }) => {
@@ -287,7 +287,7 @@ test.describe('explore services breakdown page', () => {
 
     await expect(
       page.getByText(
-        `{service_name=\`tempo-distributor\`, ${labelName}=\`${valueName}\`} | json | logfmt | drop __error__, __error_details__`
+        `{service_name="tempo-distributor", ${labelName}="${valueName}"} | json | logfmt | drop __error__, __error_details__`
       )
     ).toBeVisible();
 
@@ -498,7 +498,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByText('=').nth(1)).toBeVisible();
   });
 
-  test.only(`Fields: can regex include ${fieldName} values containing "st"`, async ({ page }) => {
+  test(`Fields: can regex include ${fieldName} values containing "st"`, async ({ page }) => {
     await explorePage.goToFieldsTab();
     await page.pause();
 
@@ -841,7 +841,7 @@ test.describe('explore services breakdown page', () => {
     );
 
     expect(expressions[0]).toEqual(
-      'sum by (pod) (count_over_time({service_name=`tempo-distributor`} | pod!=""       [$__auto]))'
+      'sum by (pod) (count_over_time({service_name="tempo-distributor"} | pod!=""       [$__auto]))'
     );
 
     const bytesIncludeButton = page
@@ -915,7 +915,7 @@ test.describe('explore services breakdown page', () => {
     );
 
     expect(expressionsAfterNumericFilter[0]).toEqual(
-      'sum by (pod) (count_over_time({service_name=`tempo-distributor`} | pod!=""     | logfmt  | bytes>500B | bytes<=2KB [$__auto]))'
+      'sum by (pod) (count_over_time({service_name="tempo-distributor"} | pod!=""     | logfmt  | bytes>500B | bytes<=2KB [$__auto]))'
     );
 
     // Assert that the variables were added to the UI
@@ -1291,7 +1291,7 @@ test.describe('explore services breakdown page', () => {
     const newPageCodeEditor = page.getByRole('code').locator('div').filter({ hasText: 'sum(count_over_time({' }).nth(4);
     await expect(newPageCodeEditor).toBeInViewport();
     await expect(newPageCodeEditor).toContainText(
-      'sum(count_over_time({service_name=`tempo-distributor`} | detected_level != "" [$__auto])) by (detected_level)'
+      'sum(count_over_time({service_name="tempo-distributor"} | detected_level != "" [$__auto])) by (detected_level)'
     );
   });
 
@@ -1307,7 +1307,7 @@ test.describe('explore services breakdown page', () => {
     const newPageCodeEditor = page.getByRole('code').locator('div').filter({ hasText: 'sum(count_over_time({' }).nth(4);
     await expect(newPageCodeEditor).toBeInViewport();
     await expect(newPageCodeEditor).toContainText(
-      'sum(count_over_time({service_name=`tempo-distributor`} | detected_level != "" [$__auto])) by (detected_level)'
+      'sum(count_over_time({service_name="tempo-distributor"} | detected_level != "" [$__auto])) by (detected_level)'
     );
   });
 
@@ -1326,7 +1326,7 @@ test.describe('explore services breakdown page', () => {
       .nth(4);
     await expect(newPageCodeEditor).toBeInViewport();
     await expect(newPageCodeEditor).toContainText(
-      `sum by (${fieldName}) (count_over_time({service_name=\`tempo-distributor\`} | logfmt | ${fieldName}!="" [$__auto]))`
+      `sum by (${fieldName}) (count_over_time({service_name="tempo-distributor"} | logfmt | ${fieldName}!="" [$__auto]))`
     );
   });
 
@@ -1349,7 +1349,7 @@ test.describe('explore services breakdown page', () => {
       .nth(4);
     await expect(newPageCodeEditor).toBeInViewport();
     await expect(newPageCodeEditor).toContainText(
-      `sum by (${fieldName}) (count_over_time({service_name=\`tempo-distributor\`} | logfmt | ${fieldName}!="" [$__auto]))`
+      `sum by (${fieldName}) (count_over_time({service_name="tempo-distributor"} | logfmt | ${fieldName}!="" [$__auto]))`
     );
   });
 
@@ -1613,9 +1613,11 @@ test.describe('explore services breakdown page', () => {
         legendFormats: [],
       });
 
-      // raw logQL query: '{cluster=`us-west-1`} |~ "\\\\n" |= "\\n" |= "getBookTitles(Author.java:25)\\n" |~ "getBookTitles\\(Author\\.java:25\\)\\\\n" | json | logfmt | drop __error__, __error_details__'
+      await page.pause();
+
+      // raw logQL query: '{cluster="us-west-1"} |~ "\\\\n" |= "\\n" |= "getBookTitles(Author.java:25)\\n" |~ "getBookTitles\\(Author\\.java:25\\)\\\\n" | json | logfmt | drop __error__, __error_details__'
       const queryInUrl =
-        '{cluster=`us-west-1`} |~ \\"\\\\\\\\\\\\\\\\n\\" |= \\"\\\\\\\\n\\" |= \\"getBookTitles(Author.java:25)\\\\\\\\n\\" |~ \\"getBookTitles\\\\\\\\(Author\\\\\\\\.java:25\\\\\\\\)\\\\\\\\\\\\\\\\n\\" | json | logfmt | drop __error__, __error_details__';
+        '{cluster=\\"us-west-1\\"} |~ \\"\\\\\\\\\\\\\\\\n\\" |= \\"\\\\\\\\n\\" |= \\"getBookTitles(Author.java:25)\\\\\\\\n\\" |~ \\"getBookTitles\\\\\\\\(Author\\\\\\\\.java:25\\\\\\\\)\\\\\\\\\\\\\\\\n\\" | json | logfmt | drop __error__, __error_details__';
       await page.goto(
         `/explore?schemaVersion=1&panes={"dx6":{"datasource":"gdev-loki","queries":[{"refId":"logsPanelQuery","expr":"${queryInUrl}","datasource":{"type":"loki","uid":"gdev-loki"}}],"range":{"from":"now-30m","to":"now"},"panelsState":{"logs":{"visualisationType":"logs"}}}}&orgId=1`
       );

@@ -59,7 +59,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
       const queries: LokiQuery[] = post.queries;
       queries.forEach((query) => {
         expect(query.expr).toContain(
-          `sum by (${mixedFieldName}) (count_over_time({service_name=\`${serviceName}\`}      | json | logfmt | drop __error__, __error_details__ | ${mixedFieldName}!=""`
+          `sum by (${mixedFieldName}) (count_over_time({service_name="${serviceName}"}      | json | logfmt | drop __error__, __error_details__ | ${mixedFieldName}!=""`
         );
       });
     });
@@ -103,12 +103,12 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
       queries.forEach((query) => {
         if (index < 2) {
           expect(query.expr).toContain(
-            `sum by (${logFmtFieldName}) (count_over_time({service_name=\`${serviceName}\`}      | logfmt | ${logFmtFieldName}!=""  [$__auto]))`
+            `sum by (${logFmtFieldName}) (count_over_time({service_name="${serviceName}"}      | logfmt | ${logFmtFieldName}!=""  [$__auto]))`
           );
         }
         if (index >= 2) {
           expect(query.expr).toContain(
-            `sum by (${logFmtFieldName}) (count_over_time({service_name=\`${serviceName}\`}      | logfmt | ${logFmtFieldName}!="" | caller!=\`flush.go:253\` [$__auto]))`
+            `sum by (${logFmtFieldName}) (count_over_time({service_name="${serviceName}"}      | logfmt | ${logFmtFieldName}!="" | caller!="flush.go:253" [$__auto]))`
           );
         }
       });
@@ -149,7 +149,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
       const queries: LokiQuery[] = post.queries;
       queries.forEach((query) => {
         expect(query.expr).toContain(
-          `sum by (${jsonFmtFieldName}) (count_over_time({service_name=\`${serviceName}\`}      | json | drop __error__, __error_details__ | ${jsonFmtFieldName}!=""`
+          `sum by (${jsonFmtFieldName}) (count_over_time({service_name="${serviceName}"}      | json | drop __error__, __error_details__ | ${jsonFmtFieldName}!=""`
         );
       });
     });
@@ -189,7 +189,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
       const queries: LokiQuery[] = post.queries;
       queries.forEach((query) => {
         expect(query.expr).toContain(
-          `sum by (${metadataFieldName}) (count_over_time({service_name=\`${serviceName}\`} | ${metadataFieldName}!=""`
+          `sum by (${metadataFieldName}) (count_over_time({service_name="${serviceName}"} | ${metadataFieldName}!=""`
         );
       });
     });
