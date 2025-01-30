@@ -89,6 +89,7 @@ import { getCopiedTimeRange, PasteTimeEvent, setupKeyboardShortcuts } from '../.
 import { LokiDatasource } from '../../services/lokiQuery';
 import { lineFilterOperators, operators } from '../../services/operators';
 import { operatorFunction } from '../../services/variableHelpers';
+import { FilterOp } from '../../services/filterTypes';
 
 export const showLogsButtonSceneKey = 'showLogsButtonScene';
 export interface AppliedPattern {
@@ -345,11 +346,20 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
   private getFieldsTagKeysProvider(variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS) {
     return (variable: AdHocFiltersVariable, currentKey: string | null) => {
+      // Current key seems to always be null, so not sure what this is doing
       const filters = variable.state.filters.filter((f) => f.key !== currentKey);
       const otherFiltersString = this.renderVariableFilters(variableType, filters);
       const uninterpolatedExpression = this.getFieldsTagValuesExpression(variableType);
       const expr = uninterpolatedExpression.replace(PENDING_FIELDS_EXPR, otherFiltersString);
       const interpolated = sceneGraph.interpolate(this, expr);
+      console.log('getFieldsTagKeysProvider', {
+        uninterpolatedExpression,
+        expr,
+        interpolated,
+        otherFiltersString,
+        filters,
+        currentKey,
+      });
       return getFieldsKeysProvider({
         expr: interpolated,
         sceneRef: this,
@@ -361,11 +371,14 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
   private getFieldsTagValuesProvider(variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS) {
     return (variable: AdHocFiltersVariable, filter: AdHocFilterWithLabels) => {
-      const filters = variable.state.filters.filter((f) => f.key !== filter.key);
+      // Don't add equals operations to the query, the user might want to select more than one value
+      const filters = variable.state.filters.filter((f) => f.key !== filter.key && f.operator === FilterOp.Equal);
       const otherFiltersString = this.renderVariableFilters(variableType, filters);
       const uninterpolatedExpression = this.getFieldsTagValuesExpression(variableType);
       const expr = uninterpolatedExpression.replace(PENDING_FIELDS_EXPR, otherFiltersString);
       const interpolated = sceneGraph.interpolate(this, expr);
+
+      // @todo remove existing equal/notequal values
       return getDetectedFieldValuesTagValuesProvider(
         filter,
         variable,

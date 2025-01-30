@@ -1,16 +1,16 @@
-import {AdHocFiltersVariable, AdHocFilterWithLabels, SceneObject} from '@grafana/scenes';
-import {DataSourceGetTagValuesOptions, GetTagResponse, MetricFindValue, ScopedVars, TimeRange} from '@grafana/data';
-import {BackendSrvRequest, DataSourceWithBackend, getDataSourceSrv} from '@grafana/runtime';
-import {getDataSource} from './scenes';
-import {logger} from './logger';
-import {LokiDatasource, LokiQuery} from './lokiQuery';
-import {getDataSourceVariable, getValueFromFieldsFilter} from './variableGetters';
-import {AdHocFiltersWithLabelsAndMeta, DetectedFieldType, VAR_FIELDS, VAR_LEVELS, VAR_METADATA} from './variables';
-import {isArray} from 'lodash';
-import {joinTagFilters} from './query';
-import {FilterOp} from './filterTypes';
-import {getFavoriteLabelValuesFromStorage} from './store';
-import {isOperatorInclusive, isOperatorRegex} from './operators';
+import { AdHocFiltersVariable, AdHocFilterWithLabels, SceneObject } from '@grafana/scenes';
+import { DataSourceGetTagValuesOptions, GetTagResponse, MetricFindValue, ScopedVars, TimeRange } from '@grafana/data';
+import { BackendSrvRequest, DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
+import { getDataSource } from './scenes';
+import { logger } from './logger';
+import { LokiDatasource, LokiQuery } from './lokiQuery';
+import { getDataSourceVariable, getValueFromFieldsFilter } from './variableGetters';
+import { AdHocFiltersWithLabelsAndMeta, DetectedFieldType, VAR_FIELDS, VAR_LEVELS, VAR_METADATA } from './variables';
+import { isArray } from 'lodash';
+import { joinTagFilters } from './query';
+import { FilterOp } from './filterTypes';
+import { getFavoriteLabelValuesFromStorage } from './store';
+import { isOperatorInclusive, isOperatorRegex } from './operators';
 
 type FetchDetectedLabelValuesOptions = {
   expr?: string;
@@ -86,24 +86,24 @@ export const getDetectedFieldValuesTagValuesProvider = async (
 
     try {
       let results = await languageProvider.fetchDetectedLabelValues(filter.key, options, requestOptions);
-      // If the variable has a parser in the value, make sure we extract it and carry it over, this assumes the parser for the currently selected value is the same as any value in the response.
-      // @todo is the parser always the same for the currently selected values and the results from detected_field/.../values?
       if (results && isArray(results)) {
         const currentFilters = variable.state.filters;
 
         // Remove values that are already used, if an exact match is found
         let valuesToRemove: string[] = [];
         currentFilters.forEach((filter) => {
+          const value = filter.valueLabels?.[0] ?? filter.value;
           if (isOperatorRegex(filter.operator)) {
-            filter.value.split('|').forEach((v) => valuesToRemove.push(v));
+            value.split('|').forEach((v) => valuesToRemove.push(v));
           } else {
-            valuesToRemove.push(filter.value);
+            valuesToRemove.push(value);
           }
         });
 
         const filteredResults = results.filter((value) => {
           return !valuesToRemove.includes(value);
         });
+
         if (variableType === VAR_FIELDS) {
           if (filter.value) {
             const valueDecoded = getValueFromFieldsFilter(filter, variableType);
@@ -118,10 +118,7 @@ export const getDetectedFieldValuesTagValuesProvider = async (
               })),
             };
           } else {
-            // if the filter is wip, it won't have a value yet, so we need to get the parser from somewhere
-            // It's annoying that there's no metadata on the ad-hoc filters because in this situation we just threw away the parser from the getTagKeys (detected_fields)
-            // We can check the detected_fields frame, but it was a different call and could have different results
-
+            // if the filter is wip, we trust that the parser was returned in the getTagKeys method, and added to the meta prop on the filter
             return {
               replace: true,
               values: filteredResults.map((v) => ({

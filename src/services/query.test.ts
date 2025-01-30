@@ -201,7 +201,7 @@ describe('renderLogQLFieldFilters', () => {
     ];
 
     // Filters do not yet support regex operators
-    expect(renderLogQLFieldFilters(filters)).toEqual('');
+    expect(renderLogQLFieldFilters(filters)).toEqual('| level!~`info` | cluster!~`lil-cluster`');
   });
 });
 describe('renderLogQLLineFilter not containing backticks', () => {
