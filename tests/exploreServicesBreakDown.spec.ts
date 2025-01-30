@@ -8,6 +8,7 @@ import { SERVICE_NAME } from '../src/services/variables';
 
 const fieldName = 'caller';
 const levelName = 'detected_level';
+const metadataName = 'pod';
 const labelName = 'cluster';
 test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;
@@ -499,8 +500,10 @@ test.describe('explore services breakdown page', () => {
   });
 
   test(`Fields: can regex include ${fieldName} values containing "st"`, async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: [fieldName],
+    });
     await explorePage.goToFieldsTab();
-    await page.pause();
 
     // Go to caller values breakdown
     await page.getByLabel(`Select ${fieldName}`).click();
@@ -509,8 +512,10 @@ test.describe('explore services breakdown page', () => {
     const comboboxLocator = page.getByPlaceholder('Filter by label values').last();
     await comboboxLocator.click();
 
-    // Select cluster key
-    await page.getByRole('option', { name: 'caller' }).click();
+    // Filter the results so we don't have to scroll down
+    await page.keyboard.type(fieldName.substring(0, 2));
+    // Select fieldName key
+    await page.getByRole('option', { name: fieldName }).click();
     // Select regex equal operator
     await explorePage.getOperatorLocator(FilterOp.RegexEqual).click();
     // Enter custom value
@@ -519,11 +524,71 @@ test.describe('explore services breakdown page', () => {
     await page.getByRole('option', { name: /Use custom value/ }).click();
 
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
-    await page.pause();
     await expect(page.getByText('=~')).toBeVisible();
     const panels = explorePage.getAllPanelsLocator();
     await expect(panels).toHaveCount(4);
-    await expect(page.getByTestId(/data-testid Panel header .+st.+/)).toHaveCount(3);
+    await expect(page.getByTestId(/data-testid Panel header .+st.+/).getByTestId('header-container')).toHaveCount(3);
+  });
+
+  test(`Levels: can regex include ${levelName} values containing "e"`, async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      legendFormats: [`{{${levelName}}}`],
+    });
+    await explorePage.goToLabelsTab();
+
+    // Go to caller values breakdown
+    await page.getByLabel(`Select ${levelName}`).click();
+
+    // Open fields combobox
+    const comboboxLocator = page.getByPlaceholder('Filter by label values').nth(1);
+    await comboboxLocator.click();
+
+    // Select detected_level key
+    await page.getByRole('option', { name: levelName }).click();
+    // Select regex equal operator
+    await explorePage.getOperatorLocator(FilterOp.RegexEqual).click();
+    // Enter custom value
+    await page.keyboard.type(`.*e.*`);
+    // Select custom value
+    await page.getByRole('option', { name: /Use custom value/ }).click();
+
+    await expect(page.getByLabel(E2EComboboxStrings.editByKey(levelName))).toBeVisible();
+    await expect(page.getByText('=~')).toBeVisible();
+    const panels = explorePage.getAllPanelsLocator();
+    await expect(panels).toHaveCount(3);
+    await expect(page.getByTestId(/data-testid Panel header debug|error/).getByTestId('header-container')).toHaveCount(
+      2
+    );
+  });
+
+  test(`Metadata: can regex include ${metadataName} values containing "0\\d"`, async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: [metadataName],
+    });
+
+    await explorePage.goToFieldsTab();
+
+    // Go to caller values breakdown
+    await page.getByLabel(`Select ${metadataName}`).click();
+
+    // Open fields combobox
+    const comboboxLocator = page.getByPlaceholder('Filter by label values').nth(2);
+    await comboboxLocator.click();
+
+    // Select detected_level key
+    await page.getByRole('option', { name: metadataName }).click();
+    // Select regex equal operator
+    await explorePage.getOperatorLocator(FilterOp.RegexEqual).click();
+    // Enter custom value
+    await page.keyboard.type(`.+0\\d.+`);
+    // Select custom value
+    await page.getByRole('option', { name: /Use custom value/ }).click();
+
+    await expect(page.getByLabel(E2EComboboxStrings.editByKey(metadataName))).toBeVisible();
+    await expect(page.getByText('=~')).toBeVisible();
+    const panels = explorePage.getAllPanelsLocator();
+    await expect(panels).toHaveCount(4);
+    await expect(page.getByTestId(/data-testid Panel header .+0\d.+/).getByTestId('header-container')).toHaveCount(3);
   });
 
   test('should only load fields that are in the viewport', async ({ page }) => {
@@ -1612,8 +1677,6 @@ test.describe('explore services breakdown page', () => {
         refIds: ['logsPanelQuery'],
         legendFormats: [],
       });
-
-      await page.pause();
 
       // raw logQL query: '{cluster="us-west-1"} |~ "\\\\n" |= "\\n" |= "getBookTitles(Author.java:25)\\n" |~ "getBookTitles\\(Author\\.java:25\\)\\\\n" | json | logfmt | drop __error__, __error_details__'
       const queryInUrl =
