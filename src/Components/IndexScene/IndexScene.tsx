@@ -350,7 +350,12 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       const uninterpolatedExpression = this.getFieldsTagValuesExpression(variableType);
       const expr = uninterpolatedExpression.replace(PENDING_FIELDS_EXPR, otherFiltersString);
       const interpolated = sceneGraph.interpolate(this, expr);
-      return getFieldsKeysProvider(interpolated, this, sceneGraph.getTimeRange(this).state.value, variableType);
+      return getFieldsKeysProvider({
+        expr: interpolated,
+        sceneRef: this,
+        timeRange: sceneGraph.getTimeRange(this).state.value,
+        variableType,
+      });
     };
   }
 

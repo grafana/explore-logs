@@ -266,6 +266,7 @@ export class ExplorePage {
   blockAllQueriesExcept(options: {
     refIds?: Array<string | RegExp>;
     legendFormats?: string[];
+
     responses?: Array<{ [refIDOrLegendFormat: string]: any }>;
     requests?: PlaywrightRequest[];
   }) {
@@ -316,6 +317,8 @@ export class ExplorePage {
         return this.page.getByRole('option', { name: E2EComboboxStrings.operatorNames.regexEqual, exact: true });
       case FilterOp.RegexNotEqual:
         return this.page.getByRole('option', { name: E2EComboboxStrings.operatorNames.regexNotEqual, exact: true });
+      default:
+        throw new Error('invalid filter op');
     }
   }
 }

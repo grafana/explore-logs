@@ -100,7 +100,7 @@ test.describe('explore services breakdown page', () => {
   });
   test(`combobox should replace service_name with regex ${labelName} in url`, async ({ page }) => {
     explorePage.blockAllQueriesExcept({
-      refIds: ['logsPanelQuery', 'LABEL_BREAKDOWN_VALUES'],
+      refIds: ['LABEL_BREAKDOWN_VALUES'],
     });
 
     await explorePage.assertTabsNotLoading();
@@ -496,6 +496,34 @@ test.describe('explore services breakdown page', () => {
     await explorePage.assertFieldsIndex();
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
     await expect(page.getByText('=').nth(1)).toBeVisible();
+  });
+
+  test.only(`Fields: can regex include ${fieldName} values containing "st"`, async ({ page }) => {
+    await explorePage.goToFieldsTab();
+    await page.pause();
+
+    // Go to caller values breakdown
+    await page.getByLabel(`Select ${fieldName}`).click();
+
+    // Open fields combobox
+    const comboboxLocator = page.getByPlaceholder('Filter by label values').last();
+    await comboboxLocator.click();
+
+    // Select cluster key
+    await page.getByRole('option', { name: 'caller' }).click();
+    // Select regex equal operator
+    await explorePage.getOperatorLocator(FilterOp.RegexEqual).click();
+    // Enter custom value
+    await page.keyboard.type(`.+st.+`);
+    // Select custom value
+    await page.getByRole('option', { name: /Use custom value/ }).click();
+
+    await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
+    await page.pause();
+    await expect(page.getByText('=~')).toBeVisible();
+    const panels = explorePage.getAllPanelsLocator();
+    await expect(panels).toHaveCount(4);
+    await expect(page.getByTestId(/data-testid Panel header .+st.+/)).toHaveCount(3);
   });
 
   test('should only load fields that are in the viewport', async ({ page }) => {
