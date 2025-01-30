@@ -58,7 +58,7 @@ describe('renderLogQLFieldFilters', () => {
       },
     ];
 
-    expect(renderLogQLFieldFilters(filters)).toEqual('| level=`info` | cluster=`lil-cluster`');
+    expect(renderLogQLFieldFilters(filters)).toEqual('| level="info" | cluster="lil-cluster"');
   });
 
   test('Renders negative filters', () => {
@@ -81,9 +81,8 @@ describe('renderLogQLFieldFilters', () => {
       },
     ];
 
-    expect(renderLogQLFieldFilters(filters)).toEqual('| level!=`info` | cluster!=`lil-cluster`');
+    expect(renderLogQLFieldFilters(filters)).toEqual('| level!="info" | cluster!="lil-cluster"');
   });
-
   test('Groups positive filters', () => {
     const filters: AdHocVariableFilter[] = [
       {
@@ -104,9 +103,8 @@ describe('renderLogQLFieldFilters', () => {
       },
     ];
 
-    expect(renderLogQLFieldFilters(filters)).toEqual('| level=`info` or level=`error`');
+    expect(renderLogQLFieldFilters(filters)).toEqual('| level="info" or level="error"');
   });
-
   test('Renders grouped and ungrouped positive and negative filters', () => {
     const filters: AdHocVariableFilter[] = [
       {
@@ -152,10 +150,9 @@ describe('renderLogQLFieldFilters', () => {
     ];
 
     expect(renderLogQLFieldFilters(filters)).toEqual(
-      '| level=`info` or level=`error` | cluster=`lil-cluster` | component!=`comp1` | pod!=`pod1`'
+      '| level="info" or level="error" | cluster="lil-cluster" | component!="comp1" | pod!="pod1"'
     );
   });
-
   test('Renders positive regex filters', () => {
     const filters: AdHocVariableFilter[] = [
       {
@@ -170,16 +167,33 @@ describe('renderLogQLFieldFilters', () => {
         key: 'cluster',
         operator: FilterOp.RegexEqual,
         value: JSON.stringify({
-          value: 'lil-cluster',
+          value: 'lil"-cluster',
           parser: 'logfmt',
         } as FieldValue),
       },
     ];
 
     // Filters do not yet support regex operators
-    expect(renderLogQLFieldFilters(filters)).toEqual('');
+    expect(renderLogQLFieldFilters(filters)).toEqual('| level=~"info" | cluster=~"lil\\"-cluster"');
   });
+  test('Escapes regex', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: 'host',
+        operator: FilterOp.RegexEqual,
+        value: '((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}',
+      },
+      {
+        key: 'level',
+        operator: FilterOp.RegexEqual,
+        value: 'error',
+      },
+    ];
 
+    expect(renderLogQLFieldFilters(filters)).toEqual(
+      '| host=~"((25[0-5]|(2[0-4]|1\\\\d|[1-9]|)\\\\d)\\\\.?\\\\b){4}" | level=~"error"'
+    );
+  });
   test('Renders negative regex filters', () => {
     const filters: AdHocVariableFilter[] = [
       {
@@ -200,8 +214,7 @@ describe('renderLogQLFieldFilters', () => {
       },
     ];
 
-    // Filters do not yet support regex operators
-    expect(renderLogQLFieldFilters(filters)).toEqual('| level!~`info` | cluster!~`lil-cluster`');
+    expect(renderLogQLFieldFilters(filters)).toEqual('| level!~"info" | cluster!~"lil-cluster"');
   });
 });
 describe('renderLogQLLineFilter not containing backticks', () => {
@@ -379,7 +392,7 @@ describe('renderLogQLLabelFilters', () => {
       },
     ];
 
-    expect(renderLogQLLabelFilters(filters)).toEqual('level=`info`, cluster=`lil-cluster`');
+    expect(renderLogQLLabelFilters(filters)).toEqual('level="info", cluster="lil-cluster"');
   });
   test('Renders negative filters', () => {
     const filters: AdHocVariableFilter[] = [
@@ -395,7 +408,7 @@ describe('renderLogQLLabelFilters', () => {
       },
     ];
 
-    expect(renderLogQLLabelFilters(filters)).toEqual('level!=`info`, cluster!=`lil-cluster`');
+    expect(renderLogQLLabelFilters(filters)).toEqual('level!="info", cluster!="lil-cluster"');
   });
   test('Groups positive filters', () => {
     const filters: AdHocVariableFilter[] = [
@@ -459,7 +472,7 @@ describe('renderLogQLLabelFilters', () => {
       },
     ];
 
-    expect(renderLogQLLabelFilters(filters)).toEqual('level=~`info`, level!~`error`');
+    expect(renderLogQLLabelFilters(filters)).toEqual('level=~"info", level!~"error"');
   });
   test('Renders grouped and ungrouped positive and negative filters', () => {
     const filters: AdHocVariableFilter[] = [
@@ -491,7 +504,7 @@ describe('renderLogQLLabelFilters', () => {
     ];
 
     expect(renderLogQLLabelFilters(filters)).toEqual(
-      'level=~"info|error", cluster=`lil-cluster`, component!=`comp1`, pod!=`pod1`'
+      'level=~"info|error", cluster="lil-cluster", component!="comp1", pod!="pod1"'
     );
   });
 });
@@ -700,11 +713,11 @@ describe('renderLogQLMetadataFilters', () => {
       {
         key: 'cluster',
         operator: FilterOp.Equal,
-        value: 'lil-cluster',
+        value: 'lil"-cluster',
       },
     ];
 
-    expect(renderLogQLMetadataFilters(filters)).toEqual('| level=`info` | cluster=`lil-cluster`');
+    expect(renderLogQLMetadataFilters(filters)).toEqual('| level="info" | cluster="lil\\"-cluster"');
   });
   test('Renders negative filters', () => {
     const filters: AdHocVariableFilter[] = [
@@ -720,7 +733,7 @@ describe('renderLogQLMetadataFilters', () => {
       },
     ];
 
-    expect(renderLogQLMetadataFilters(filters)).toEqual('| level!=`info` | cluster!=`lil-cluster`');
+    expect(renderLogQLMetadataFilters(filters)).toEqual('| level!="info" | cluster!="lil-cluster"');
   });
   test('Groups positive filters', () => {
     const filters: AdHocVariableFilter[] = [
@@ -736,7 +749,7 @@ describe('renderLogQLMetadataFilters', () => {
       },
     ];
 
-    expect(renderLogQLMetadataFilters(filters)).toEqual('| level=`info` or level=`error`');
+    expect(renderLogQLMetadataFilters(filters)).toEqual('| level="info" or level="error"');
   });
   test('Renders grouped and ungrouped positive and negative filters', () => {
     const filters: AdHocVariableFilter[] = [
@@ -768,7 +781,7 @@ describe('renderLogQLMetadataFilters', () => {
     ];
 
     expect(renderLogQLMetadataFilters(filters)).toEqual(
-      '| level=`info` or level=`error` | cluster=`lil-cluster` | component!=`comp1` | pod!=`pod1`'
+      '| level="info" or level="error" | cluster="lil-cluster" | component!="comp1" | pod!="pod1"'
     );
   });
   test('Renders positive regex filters', () => {
@@ -785,7 +798,7 @@ describe('renderLogQLMetadataFilters', () => {
       },
     ];
 
-    expect(renderLogQLMetadataFilters(filters)).toEqual('| level=~`info` | cluster=~`lil-cluster`');
+    expect(renderLogQLMetadataFilters(filters)).toEqual('| level=~"info" | cluster=~"lil-cluster"');
   });
   test('Renders negative regex filters', () => {
     const filters: AdHocVariableFilter[] = [
@@ -801,7 +814,7 @@ describe('renderLogQLMetadataFilters', () => {
       },
     ];
 
-    expect(renderLogQLMetadataFilters(filters)).toEqual('| level!~`info` | cluster!~`lil-cluster`');
+    expect(renderLogQLMetadataFilters(filters)).toEqual('| level!~"info" | cluster!~"lil-cluster"');
   });
   test('Groups positive regex filters', () => {
     const filters: AdHocVariableFilter[] = [
@@ -817,7 +830,25 @@ describe('renderLogQLMetadataFilters', () => {
       },
     ];
 
-    expect(renderLogQLMetadataFilters(filters)).toEqual('| level=~`info` or level=~`error`');
+    expect(renderLogQLMetadataFilters(filters)).toEqual('| level=~"info" or level=~"error"');
+  });
+  test('Escapes regex filters', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: 'host',
+        operator: FilterOp.RegexEqual,
+        value: '((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}',
+      },
+      {
+        key: 'level',
+        operator: FilterOp.RegexEqual,
+        value: 'error',
+      },
+    ];
+
+    expect(renderLogQLMetadataFilters(filters)).toEqual(
+      '| host=~"((25[0-5]|(2[0-4]|1\\\\d|[1-9]|)\\\\d)\\\\.?\\\\b){4}" | level=~"error"'
+    );
   });
   test('Renders grouped and ungrouped positive and negative regex filters', () => {
     const filters: AdHocVariableFilter[] = [
@@ -849,7 +880,7 @@ describe('renderLogQLMetadataFilters', () => {
     ];
 
     expect(renderLogQLMetadataFilters(filters)).toEqual(
-      '| level=~`info` or level=~`error` | cluster=~`lil-cluster` | component!~`comp1` | pod!~`pod1`'
+      '| level=~"info" or level=~"error" | cluster=~"lil-cluster" | component!~"comp1" | pod!~"pod1"'
     );
   });
   test('Renders grouped and ungrouped positive and negative regex and non-regex filters', () => {
@@ -882,7 +913,7 @@ describe('renderLogQLMetadataFilters', () => {
     ];
 
     expect(renderLogQLMetadataFilters(filters)).toEqual(
-      '| level=~`info` or level=~`error` | cluster=`lil-cluster` | component!~`comp1` | pod!=`pod1`'
+      '| level=~"info" or level=~"error" | cluster="lil-cluster" | component!~"comp1" | pod!="pod1"'
     );
   });
 });

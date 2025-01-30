@@ -123,7 +123,6 @@ export function onAddCustomValue(
 
 export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
   // @todo partition instead of looping through again and again
-  // @todo support regex operators
   const positive = filters.filter((filter) => isOperatorInclusive(filter.operator));
   const negative = filters.filter((filter) => isOperatorExclusive(filter.operator));
 
@@ -140,7 +139,6 @@ export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
   }
 
   const negativeFilters = negative.map((filter) => `| ${fieldFilterToQueryString(filter)}`).join(' ');
-
   let numericFilters = numeric.map((filter) => `| ${fieldNumericFilterToQueryString(filter)}`).join(' ');
 
   return `${positiveFilters} ${negativeFilters} ${numericFilters}`.trim();
@@ -212,17 +210,17 @@ function renderMetadata(filter: AdHocVariableFilter) {
   if (filter.value === EMPTY_VARIABLE_VALUE) {
     return `${filter.key}${filter.operator}${filter.value}`;
   }
-  return `${filter.key}${filter.operator}\`${filter.value}\``;
+  return `${filter.key}${filter.operator}"${sceneUtils.escapeLabelValueInExactSelector(filter.value)}"`;
 }
 
 function fieldFilterToQueryString(filter: AdHocVariableFilter) {
   const fieldObject = getValueFromFieldsFilter(filter);
   const value = fieldObject.value;
-  // If the filter value is an empty string, we don't want to wrap it in backticks!
+  // If the filter value is an empty string, we don't want to wrap it in quotes!
   if (value === EMPTY_VARIABLE_VALUE) {
     return `${filter.key}${filter.operator}${value}`;
   }
-  return `${filter.key}${filter.operator}\`${value}\``;
+  return `${filter.key}${filter.operator}"${sceneUtils.escapeLabelValueInExactSelector(value)}"`;
 }
 
 function fieldNumericFilterToQueryString(filter: AdHocVariableFilter) {
