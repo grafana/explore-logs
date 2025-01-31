@@ -12,7 +12,7 @@ export interface VariableValueSelectorsState extends SceneObjectState {
   layout?: ControlsLayout;
   include?: string[];
   exclude?: string[];
-  wrap?: boolean;
+  noFilters?: boolean;
 }
 
 export class CustomVariableValueSelectors extends SceneObjectBase<VariableValueSelectorsState> {

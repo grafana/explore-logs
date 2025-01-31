@@ -386,11 +386,12 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   ) {
     const variableControl = this.state.controls.find((control) => control.state.key === controlKey);
     if (variableControl instanceof CustomVariableValueSelectors) {
-      variableControl.setState({ wrap: newState.filters.length === 0 });
+      variableControl.setState({ noFilters: newState.filters.length === 0 });
 
       console.log('setVariableControlsWrapState: force-render', {
         wrap: variableControl.state,
         variableLayout: this.state.body?.state.variableLayout,
+        variableState: newState,
       });
       this.state.body?.state.variableLayout?.forceRender();
     }

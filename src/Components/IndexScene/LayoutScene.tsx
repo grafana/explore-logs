@@ -87,22 +87,6 @@ export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
 
 function getStyles(theme: GrafanaTheme2) {
   return {
-    firstRowWrapper: css({
-      '& > div > div': {
-        gap: '16px',
-        label: 'first-row-wrapper',
-
-        [theme.breakpoints.down('lg')]: {
-          flexDirection: 'column',
-        },
-
-        // The datasource variable width should be auto, not fill the section
-        '& > div:first-child': {
-          flex: '1 0 auto',
-          display: 'inline-block',
-        },
-      },
-    }),
     bodyContainer: css({
       flexGrow: 1,
       display: 'flex',

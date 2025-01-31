@@ -84,7 +84,7 @@ export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneStat
             {controls &&
               controls.map((control) => {
                 return control instanceof CustomVariableValueSelectors &&
-                  !control.state.wrap &&
+                  !control.state.noFilters &&
                   control.state.key === CONTROLS_VARS_LEVELS_ROW_KEY ? (
                   <div key={control.state.key} className={styles.filtersWrap}>
                     <div className={styles.filters}>
@@ -100,7 +100,7 @@ export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneStat
             {controls &&
               controls.map((control) => {
                 return control instanceof CustomVariableValueSelectors &&
-                  !control.state.wrap &&
+                  !control.state.noFilters &&
                   control.state.key === CONTROLS_VARS_METADATA_ROW_KEY ? (
                   <div key={control.state.key} className={styles.filtersWrap}>
                     <div className={styles.filters}>
@@ -116,13 +116,13 @@ export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneStat
             {controls &&
               controls.map((control) => {
                 return (control instanceof CustomVariableValueSelectors &&
-                  control.state.wrap &&
+                  control.state.noFilters &&
                   control.state.key === CONTROLS_VARS_LEVELS_ROW_KEY) ||
                   (control instanceof CustomVariableValueSelectors &&
-                    control.state.wrap &&
+                    control.state.noFilters &&
                     control.state.key === CONTROLS_VARS_METADATA_ROW_KEY) ||
                   (control instanceof CustomVariableValueSelectors &&
-                    control.state.wrap &&
+                    control.state.noFilters &&
                     control.state.key === CONTROLS_VARS_FIELDS) ? (
                   <div key={control.state.key} className={styles.filtersWrap}>
                     <div className={styles.filters}>
@@ -156,7 +156,7 @@ export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneStat
                       console.log('fields control', control);
                     }
                     return control instanceof CustomVariableValueSelectors &&
-                      !control.state.wrap &&
+                      !control.state.noFilters &&
                       control.state.key === CONTROLS_VARS_FIELDS ? (
                       <control.Component key={control.state.key} model={control} />
                     ) : null;
@@ -180,12 +180,6 @@ function getStyles(theme: GrafanaTheme2) {
 
         [theme.breakpoints.down('lg')]: {
           flexDirection: 'column',
-        },
-
-        // The datasource variable width should be auto, not fill the section
-        '& > div:first-child': {
-          flex: '1 0 auto',
-          display: 'inline-block',
         },
       },
     }),
