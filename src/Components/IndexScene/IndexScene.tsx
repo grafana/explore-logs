@@ -43,8 +43,10 @@ import {
 import { addLastUsedDataSourceToStorage, getLastUsedDataSourceFromStorage } from 'services/store';
 import { ServiceScene } from '../ServiceScene/ServiceScene';
 import {
-  CONTROLS_VARS_FIELDS_ELSE_KEY,
+  CONTROLS_VARS_DATASOURCE,
+  CONTROLS_VARS_FIELDS,
   CONTROLS_VARS_FIRST_ROW_KEY,
+  CONTROLS_VARS_LABELS,
   CONTROLS_VARS_LEVELS_ROW_KEY,
   CONTROLS_VARS_METADATA_ROW_KEY,
   CONTROLS_VARS_REFRESH,
@@ -124,9 +126,9 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
         children: [
           new SceneFlexItem({
             body: new CustomVariableValueSelectors({
-              key: 'vars-labels-ds',
+              key: CONTROLS_VARS_LABELS,
               layout: 'vertical',
-              include: [VAR_LABELS, VAR_DATASOURCE],
+              include: [VAR_LABELS],
             }),
           }),
           new ShowLogsButtonScene({
@@ -136,19 +138,24 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
         ],
       }),
       new CustomVariableValueSelectors({
-        key: CONTROLS_VARS_METADATA_ROW_KEY,
-        layout: 'vertical',
-        include: [VAR_METADATA],
-      }),
-      new CustomVariableValueSelectors({
         key: CONTROLS_VARS_LEVELS_ROW_KEY,
         layout: 'vertical',
         include: [VAR_LEVELS],
       }),
       new CustomVariableValueSelectors({
-        key: CONTROLS_VARS_FIELDS_ELSE_KEY,
+        key: CONTROLS_VARS_METADATA_ROW_KEY,
         layout: 'vertical',
-        exclude: [VAR_LABELS, VAR_DATASOURCE, VAR_METADATA, VAR_LEVELS],
+        include: [VAR_METADATA],
+      }),
+      new CustomVariableValueSelectors({
+        key: CONTROLS_VARS_FIELDS,
+        layout: 'vertical',
+        include: [VAR_FIELDS],
+      }),
+      new CustomVariableValueSelectors({
+        key: CONTROLS_VARS_DATASOURCE,
+        layout: 'horizontal',
+        include: [VAR_DATASOURCE],
       }),
       new SceneTimePicker({ key: CONTROLS_VARS_TIMEPICKER }),
       new SceneRefreshPicker({ key: CONTROLS_VARS_REFRESH }),
@@ -342,6 +349,51 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       getTagValuesProvider: this.getFieldsTagValuesProvider(VAR_METADATA),
       getTagKeysProvider: this.getFieldsTagKeysProvider(VAR_METADATA),
     });
+
+    // Set control state so we can put each variable with filters on its own line
+
+    // Levels
+    this.setVariableControlsWrapState(levelsVariable.state, CONTROLS_VARS_LEVELS_ROW_KEY);
+    this._subs.add(
+      levelsVariable.subscribeToState((newState) => {
+        this.setVariableControlsWrapState(newState, CONTROLS_VARS_LEVELS_ROW_KEY);
+      })
+    );
+
+    // metadata
+    this.setVariableControlsWrapState(metadataVariable.state, CONTROLS_VARS_METADATA_ROW_KEY);
+    this._subs.add(
+      metadataVariable.subscribeToState((newState) => {
+        this.setVariableControlsWrapState(newState, CONTROLS_VARS_METADATA_ROW_KEY);
+      })
+    );
+
+    // Fields
+    this.setVariableControlsWrapState(fieldsVariable.state, CONTROLS_VARS_FIELDS);
+    this._subs.add(
+      fieldsVariable.subscribeToState((newState) => {
+        this.setVariableControlsWrapState(newState, CONTROLS_VARS_FIELDS);
+      })
+    );
+  }
+
+  private setVariableControlsWrapState(
+    newState: AdHocFiltersVariable['state'],
+    controlKey:
+      | typeof CONTROLS_VARS_FIELDS
+      | typeof CONTROLS_VARS_METADATA_ROW_KEY
+      | typeof CONTROLS_VARS_LEVELS_ROW_KEY
+  ) {
+    const variableControl = this.state.controls.find((control) => control.state.key === controlKey);
+    if (variableControl instanceof CustomVariableValueSelectors) {
+      variableControl.setState({ wrap: newState.filters.length === 0 });
+
+      console.log('setVariableControlsWrapState: force-render', {
+        wrap: variableControl.state,
+        variableLayout: this.state.body?.state.variableLayout,
+      });
+      this.state.body?.state.variableLayout?.forceRender();
+    }
   }
 
   private getFieldsTagKeysProvider(variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS) {
@@ -352,14 +404,6 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       const uninterpolatedExpression = this.getFieldsTagValuesExpression(variableType);
       const expr = uninterpolatedExpression.replace(PENDING_FIELDS_EXPR, otherFiltersString);
       const interpolated = sceneGraph.interpolate(this, expr);
-      console.log('getFieldsTagKeysProvider', {
-        uninterpolatedExpression,
-        expr,
-        interpolated,
-        otherFiltersString,
-        filters,
-        currentKey,
-      });
       return getFieldsKeysProvider({
         expr: interpolated,
         sceneRef: this,
