@@ -12,7 +12,7 @@ import {
 } from './query';
 
 import { FieldValue } from './variables';
-import { AdHocFiltersVariable } from '@grafana/scenes';
+import { AdHocFiltersVariable, AdHocFilterWithLabels } from '@grafana/scenes';
 import { FilterOp, LineFilterCaseSensitive, LineFilterOp } from './filterTypes';
 
 describe('buildDataQuery', () => {
@@ -177,16 +177,22 @@ describe('renderLogQLFieldFilters', () => {
     expect(renderLogQLFieldFilters(filters)).toEqual('| level=~"info" | cluster=~"lil\\"-cluster"');
   });
   test('Escapes regex', () => {
-    const filters: AdHocVariableFilter[] = [
+    const filters: AdHocFilterWithLabels[] = [
       {
         key: 'host',
         operator: FilterOp.RegexEqual,
-        value: '((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}',
+        value: JSON.stringify({
+          value: '((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}',
+          parser: 'logfmt',
+        } as FieldValue),
       },
       {
         key: 'level',
         operator: FilterOp.RegexEqual,
-        value: 'error',
+        value: JSON.stringify({
+          value: 'error',
+          parser: 'logfmt',
+        } as FieldValue),
       },
     ];
 
@@ -195,7 +201,7 @@ describe('renderLogQLFieldFilters', () => {
     );
   });
   test('Renders negative regex filters', () => {
-    const filters: AdHocVariableFilter[] = [
+    const filters: AdHocFilterWithLabels[] = [
       {
         key: 'level',
         operator: FilterOp.RegexNotEqual,
