@@ -16,7 +16,11 @@ import {
 import { FilterButton } from 'Components/FilterButton';
 import { getDetectedLabelsFrame } from '../ServiceScene';
 import { getParserForField } from '../../../services/fields';
-import { getAdHocFiltersVariable, getValueFromAdHocVariableFilter } from '../../../services/variableGetters';
+import {
+  getAdHocFiltersVariable,
+  getFieldsAndMetadataVariable,
+  getValueFromAdHocVariableFilter,
+} from '../../../services/variableGetters';
 import { FilterOp } from '../../../services/filterTypes';
 
 import { addToFavorites } from '../../../services/favorites';
@@ -69,7 +73,8 @@ export function clearFilters(
   if (!variableType) {
     variableType = resolveVariableTypeForField(key, scene);
   }
-  const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableType), scene);
+
+  const variable = getUIAdHocVariable(variableType, key, scene);
 
   let filters = variable.state.filters.filter((filter) => {
     const fieldValue = getValueFromAdHocVariableFilter(variable, filter);
@@ -113,7 +118,7 @@ export function removeFilter(
   if (!variableType) {
     variableType = resolveVariableTypeForField(key, scene);
   }
-  const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableType), scene);
+  const variable = getUIAdHocVariable(variableType, key, scene);
   const operatorType = operator ? getNumericOperatorType(operator) : undefined;
 
   let filters = variable.state.filters.filter((filter) => {
@@ -140,7 +145,7 @@ export function addNumericFilter(
   if (!variableType) {
     variableType = resolveVariableTypeForField(key, scene);
   }
-  const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableType), scene);
+  const variable = getUIAdHocVariable(variableType, key, scene);
 
   let valueObject: string | undefined = undefined;
   if (variableType === VAR_FIELDS) {
@@ -189,7 +194,7 @@ export function addToFilters(
     addToFavorites(key, value, scene);
   }
 
-  const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableType), scene);
+  const variable = getUIAdHocVariable(variableType, key, scene);
 
   let valueObject: string | undefined = undefined;
   if (variableType === VAR_FIELDS) {
@@ -236,12 +241,10 @@ export function replaceFilter(
   key: string,
   value: string,
   operator: Extract<FilterType, 'include' | 'exclude'>,
-  scene: SceneObject
+  scene: SceneObject,
+  variableType: InterpolatedFilterType
 ) {
-  const variable = getAdHocFiltersVariable(
-    validateVariableNameForField(key, resolveVariableTypeForField(key, scene)),
-    scene
-  );
+  const variable = getUIAdHocVariable(variableType, key, scene);
 
   variable.setState({
     filters: [
@@ -276,8 +279,8 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
     }
 
     addToFilters(filter.name, filter.value, type, this, this.state.variableName);
+    const variable = getUIAdHocVariable(this.state.variableName, filter.name, this);
 
-    const variable = getAdHocFiltersVariable(validateVariableNameForField(filter.name, this.state.variableName), this);
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.add_to_filters_in_breakdown_clicked,
@@ -296,7 +299,7 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
       return { isIncluded: false, isExcluded: false };
     }
 
-    const variable = getAdHocFiltersVariable(validateVariableNameForField(filter.name, this.state.variableName), this);
+    const variable = getUIAdHocVariable(this.state.variableName, filter.name, this);
 
     // Check if the filter is already there
     const filterInSelectedFilters = variable.state.filters.find((f) => {
@@ -340,4 +343,10 @@ const getFilter = (frame: DataFrame) => {
   const name = Object.keys(filterNameAndValueObj)[0];
   const value = filterNameAndValueObj[name];
   return { name, value };
+};
+
+const getUIAdHocVariable = (variableType: InterpolatedFilterType, key: string, scene: SceneObject) => {
+  return variableType === VAR_FIELDS || variableType === VAR_METADATA
+    ? getFieldsAndMetadataVariable(scene)
+    : getAdHocFiltersVariable(validateVariableNameForField(key, variableType), scene);
 };
