@@ -6,6 +6,7 @@ import {
   DataSourcePluginMeta,
   dateTime,
   LoadingState,
+  ScopedVars,
 } from '@grafana/data';
 import { Observable } from 'rxjs';
 import { DataSourceWithBackend } from '@grafana/runtime';
@@ -32,6 +33,8 @@ let datasource = new DataSourceWithBackend<LokiQuery>({
   readOnly: false,
   uid: '',
 }) as LokiDatasource;
+datasource.interpolateString = (s) => s;
+datasource.getTimeRangeParams = () => ({ start: 0, end: 0 });
 
 jest.mock('./scenes', () => ({
   ...jest.requireActual('./scenes'),
