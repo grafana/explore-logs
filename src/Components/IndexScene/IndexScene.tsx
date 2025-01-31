@@ -98,6 +98,7 @@ import { operatorFunction } from '../../services/variableHelpers';
 import { FilterOp } from '../../services/filterTypes';
 import { areArraysEqual } from '../../services/comparison';
 import { isFilterMetadata } from '../../services/filters';
+import { UIVariableFilterType } from '../ServiceScene/Breakdowns/AddToFiltersButton';
 
 export const showLogsButtonSceneKey = 'showLogsButtonScene';
 export interface AppliedPattern {
@@ -490,7 +491,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     }
   }
 
-  private getFieldsTagValuesExpression(variableType: typeof VAR_LEVELS | typeof VAR_FIELDS_AND_METADATA) {
+  private getFieldsTagValuesExpression(variableType: UIVariableFilterType) {
     switch (variableType) {
       case VAR_LEVELS:
         return DETECTED_LEVELS_VALUES_EXPR;

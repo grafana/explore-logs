@@ -15,14 +15,8 @@ import { getDataSource } from './scenes';
 import { LABELS_TO_REMOVE } from './filters';
 import { joinTagFilters } from './query';
 import { DetectedFieldsResult, LokiLanguageProviderWithDetectedLabelValues } from './TagValuesProviders';
-import {
-  LEVEL_VARIABLE_VALUE,
-  ParserType,
-  VAR_FIELDS,
-  VAR_FIELDS_AND_METADATA,
-  VAR_LEVELS,
-  VAR_METADATA,
-} from './variables';
+import { LEVEL_VARIABLE_VALUE, ParserType, VAR_FIELDS_AND_METADATA, VAR_LEVELS } from './variables';
+import { UIVariableFilterType } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
 
 export async function getLabelsTagKeysProvider(variable: AdHocFiltersVariable): Promise<{
   replace?: boolean;
@@ -60,7 +54,7 @@ type DetectedFieldQueryOptions = {
   limit?: number;
   scopedVars?: ScopedVars;
   sceneRef: SceneObject;
-  variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS | typeof VAR_FIELDS_AND_METADATA;
+  variableType: UIVariableFilterType;
 };
 
 export async function getFieldsKeysProvider({
@@ -112,10 +106,6 @@ export async function getFieldsKeysProvider({
 
     const result: MetricFindValue[] = tagKeys
       .filter((field) => {
-        if (variableType === VAR_METADATA && field.label !== LEVEL_VARIABLE_VALUE) {
-          return field.parsers === null;
-        }
-
         if (variableType === VAR_LEVELS) {
           return field.label === LEVEL_VARIABLE_VALUE;
         }
@@ -127,7 +117,7 @@ export async function getFieldsKeysProvider({
         return field.parsers !== null;
       })
       .map((field) => {
-        if (variableType === VAR_FIELDS || variableType === VAR_FIELDS_AND_METADATA) {
+        if (variableType === VAR_FIELDS_AND_METADATA) {
           let parser: ParserType = field.parsers?.length === 1 ? field.parsers[0] : 'mixed';
           if (field.parsers === null) {
             parser = 'structuredMetadata';

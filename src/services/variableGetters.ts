@@ -42,6 +42,7 @@ import { AdHocVariableFilter } from '@grafana/data';
 import { logger } from './logger';
 import { narrowFieldValue, NarrowingError } from './narrowing';
 import { isFilterMetadata } from './filters';
+import { AdHocFilterTypes } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
 
 export function getLogsStreamSelector(options: LogsQueryOptions) {
   const {
@@ -144,7 +145,7 @@ export function getLineFiltersVariable(scene: SceneObject) {
   return variable;
 }
 
-export function getAdHocFiltersVariable(variableName: string, scene: SceneObject) {
+export function getAdHocFiltersVariable(variableName: AdHocFilterTypes, scene: SceneObject) {
   const variable = sceneGraph.lookupVariable(variableName, scene);
 
   if (!(variable instanceof AdHocFiltersVariable)) {

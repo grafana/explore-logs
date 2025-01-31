@@ -4,7 +4,12 @@ import React from 'react';
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import { css, cx } from '@emotion/css';
 import { SelectLabelActionScene } from './SelectLabelActionScene';
-import { addNumericFilter, removeFilter, validateVariableNameForField, VariableFilterType } from './AddToFiltersButton';
+import {
+  addNumericFilter,
+  removeFilter,
+  validateVariableNameForField,
+  InterpolatedFilterType,
+} from './AddToFiltersButton';
 import { FilterOp } from '../../../services/filterTypes';
 import { getAdHocFiltersVariable, getValueFromFieldsFilter } from '../../../services/variableGetters';
 import { logger } from '../../../services/logger';
@@ -12,7 +17,7 @@ import { testIds } from '../../../services/testIds';
 
 export interface NumericFilterPopoverSceneState extends SceneObjectState {
   labelName: string;
-  variableType: VariableFilterType;
+  variableType: InterpolatedFilterType;
   gt?: number;
   gte?: boolean;
   lt?: number;
