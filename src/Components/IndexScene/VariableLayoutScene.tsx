@@ -4,10 +4,11 @@ import { css, cx } from '@emotion/css';
 import { GiveFeedbackButton } from './GiveFeedbackButton';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
 import { PatternControls } from './PatternControls';
-import { AppliedPattern, IndexScene, IndexSceneState } from './IndexScene';
+import { AppliedPattern, IndexScene } from './IndexScene';
 import {
   CONTROLS_VARS_DATASOURCE,
   CONTROLS_VARS_FIELDS,
+  CONTROLS_VARS_FIELDS_COMBINED,
   CONTROLS_VARS_LEVELS_ROW_KEY,
   CONTROLS_VARS_METADATA_ROW_KEY,
   LayoutScene,
@@ -15,17 +16,8 @@ import {
 import { useStyles2 } from '@grafana/ui';
 import { GrafanaTheme2 } from '@grafana/data';
 
-interface VariableLayoutSceneState extends SceneObjectState {
-  // toggle?: boolean
-}
+interface VariableLayoutSceneState extends SceneObjectState {}
 export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneState> {
-  constructor(state: Partial<VariableLayoutSceneState>) {
-    super(state);
-    this.addActivationHandler(this.onActivate.bind(this));
-  }
-
-  public onActivate() {}
-
   static Component = ({ model }: SceneComponentProps<VariableLayoutScene>) => {
     const indexScene = sceneGraph.getAncestor(model, IndexScene);
     const { controls, patterns } = indexScene.useState();
@@ -33,14 +25,7 @@ export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneStat
     const layoutScene = sceneGraph.getAncestor(model, LayoutScene);
     const { lineFilterRenderer } = layoutScene.useState();
 
-    // Need to call useState on the model or forceRender doesn't trigger render
-    model.useState();
-
     const styles = useStyles2(getStyles);
-
-    console.log('VariableLayoutScene render', {
-      controls,
-    });
 
     return (
       <div className={styles.controlsContainer}>
@@ -84,7 +69,6 @@ export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneStat
             {controls &&
               controls.map((control) => {
                 return control instanceof CustomVariableValueSelectors &&
-                  !control.state.noFilters &&
                   control.state.key === CONTROLS_VARS_LEVELS_ROW_KEY ? (
                   <div key={control.state.key} className={styles.filtersWrap}>
                     <div className={styles.filters}>
@@ -100,30 +84,7 @@ export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneStat
             {controls &&
               controls.map((control) => {
                 return control instanceof CustomVariableValueSelectors &&
-                  !control.state.noFilters &&
                   control.state.key === CONTROLS_VARS_METADATA_ROW_KEY ? (
-                  <div key={control.state.key} className={styles.filtersWrap}>
-                    <div className={styles.filters}>
-                      <control.Component model={control} />
-                    </div>
-                  </div>
-                ) : null;
-              })}
-          </div>
-
-          {/* Empty row - Empty variables (levels, metadata, fields)  */}
-          <div className={styles.controlsRowContainer}>
-            {controls &&
-              controls.map((control) => {
-                return (control instanceof CustomVariableValueSelectors &&
-                  control.state.noFilters &&
-                  control.state.key === CONTROLS_VARS_LEVELS_ROW_KEY) ||
-                  (control instanceof CustomVariableValueSelectors &&
-                    control.state.noFilters &&
-                    control.state.key === CONTROLS_VARS_METADATA_ROW_KEY) ||
-                  (control instanceof CustomVariableValueSelectors &&
-                    control.state.noFilters &&
-                    control.state.key === CONTROLS_VARS_FIELDS) ? (
                   <div key={control.state.key} className={styles.filtersWrap}>
                     <div className={styles.filters}>
                       <control.Component model={control} />
@@ -137,7 +98,7 @@ export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneStat
           <div className={styles.controlsRowContainer}>
             <PatternControls
               patterns={patterns}
-              onRemove={(patterns: AppliedPattern[]) => model.parent?.setState({ patterns } as IndexSceneState)}
+              onRemove={(patterns: AppliedPattern[]) => indexScene.setState({ patterns })}
             />
           </div>
 
@@ -152,12 +113,25 @@ export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneStat
               <div className={styles.filtersWrap}>
                 <div className={styles.filters}>
                   {controls.map((control) => {
-                    if (control.state.key === CONTROLS_VARS_FIELDS) {
-                      console.log('fields control', control);
-                    }
                     return control instanceof CustomVariableValueSelectors &&
-                      !control.state.noFilters &&
                       control.state.key === CONTROLS_VARS_FIELDS ? (
+                      <control.Component key={control.state.key} model={control} />
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* @todo clean up */}
+          {/* 7th row - Fields Combined  */}
+          <div className={styles.controlsRowContainer}>
+            {controls && (
+              <div className={styles.filtersWrap}>
+                <div className={styles.filters}>
+                  {controls.map((control) => {
+                    return control instanceof CustomVariableValueSelectors &&
+                      control.state.key === CONTROLS_VARS_FIELDS_COMBINED ? (
                       <control.Component key={control.state.key} model={control} />
                     ) : null;
                   })}

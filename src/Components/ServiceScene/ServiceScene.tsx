@@ -39,6 +39,7 @@ import { ActionBarScene } from './ActionBarScene';
 import { breakdownViewsDefinitions, TabNames, valueBreakdownViews } from './BreakdownViews';
 import {
   getDataSourceVariable,
+  getFieldsAndMetadataVariable,
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
@@ -266,6 +267,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     getMetadataVariable(this).setState({ hide: VariableHide.dontHide });
     getLevelsVariable(this).setState({ hide: VariableHide.dontHide });
     getFieldsVariable(this).setState({ hide: VariableHide.dontHide });
+    getFieldsAndMetadataVariable(this).setState({ hide: VariableHide.dontHide });
   }
 
   /**

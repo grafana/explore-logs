@@ -117,11 +117,11 @@ export async function getFieldsKeysProvider({
       })
       .map((field) => {
         if (variableType === VAR_FIELDS) {
+          let parser = field.parsers?.length === 1 ? field.parsers[0] : 'mixed';
           if (field.parsers === null) {
-            console.warn('Fields should not get metadata!');
+            parser = 'metadata';
           }
 
-          const parser = field.parsers?.length === 1 ? field.parsers[0] : 'mixed';
           const type = field.type;
 
           return {

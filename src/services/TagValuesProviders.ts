@@ -5,7 +5,14 @@ import { getDataSource } from './scenes';
 import { logger } from './logger';
 import { LokiDatasource, LokiQuery } from './lokiQuery';
 import { getDataSourceVariable, getValueFromFieldsFilter } from './variableGetters';
-import { AdHocFiltersWithLabelsAndMeta, DetectedFieldType, VAR_FIELDS, VAR_LEVELS, VAR_METADATA } from './variables';
+import {
+  AdHocFiltersWithLabelsAndMeta,
+  DetectedFieldType,
+  VAR_FIELDS,
+  VAR_FIELDS_AND_METADATA,
+  VAR_LEVELS,
+  VAR_METADATA,
+} from './variables';
 import { isArray } from 'lodash';
 import { joinTagFilters } from './query';
 import { FilterOp } from './filterTypes';
@@ -53,7 +60,7 @@ export const getDetectedFieldValuesTagValuesProvider = async (
   expr: string,
   sceneRef: SceneObject,
   timeRange: TimeRange,
-  variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS
+  variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS | typeof VAR_FIELDS_AND_METADATA
 ): Promise<{
   replace?: boolean;
   values: MetricFindValue[];

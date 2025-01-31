@@ -31,6 +31,7 @@ import {
   PENDING_FIELDS_EXPR,
   VAR_DATASOURCE,
   VAR_FIELDS,
+  VAR_FIELDS_AND_METADATA,
   VAR_LABELS,
   VAR_LEVELS,
   VAR_LINE_FILTER,
@@ -45,6 +46,7 @@ import { ServiceScene } from '../ServiceScene/ServiceScene';
 import {
   CONTROLS_VARS_DATASOURCE,
   CONTROLS_VARS_FIELDS,
+  CONTROLS_VARS_FIELDS_COMBINED,
   CONTROLS_VARS_FIRST_ROW_KEY,
   CONTROLS_VARS_LABELS,
   CONTROLS_VARS_LEVELS_ROW_KEY,
@@ -69,6 +71,7 @@ import {
 import { VariableHide } from '@grafana/schema';
 import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 import {
+  getFieldsAndMetadataVariable,
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
@@ -156,6 +159,11 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
         key: CONTROLS_VARS_DATASOURCE,
         layout: 'horizontal',
         include: [VAR_DATASOURCE],
+      }),
+      new CustomVariableValueSelectors({
+        key: CONTROLS_VARS_FIELDS_COMBINED,
+        layout: 'vertical',
+        include: [VAR_FIELDS_AND_METADATA],
       }),
       new SceneTimePicker({ key: CONTROLS_VARS_TIMEPICKER }),
       new SceneRefreshPicker({ key: CONTROLS_VARS_REFRESH }),
@@ -330,11 +338,14 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     const fieldsVariable = getFieldsVariable(this);
     const levelsVariable = getLevelsVariable(this);
     const metadataVariable = getMetadataVariable(this);
+    const fieldsCombinedVariable = getFieldsAndMetadataVariable(this);
 
     fieldsVariable._getOperators = () => operatorFunction(fieldsVariable);
     levelsVariable._getOperators = () => operatorFunction(levelsVariable);
     metadataVariable._getOperators = () => operatorFunction(metadataVariable);
+    fieldsCombinedVariable._getOperators = () => operatorFunction(fieldsCombinedVariable);
 
+    // @todo we don't need these any more?
     fieldsVariable.setState({
       getTagValuesProvider: this.getFieldsTagValuesProvider(VAR_FIELDS),
       getTagKeysProvider: this.getFieldsTagKeysProvider(VAR_FIELDS),
@@ -345,56 +356,16 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       getTagKeysProvider: this.getFieldsTagKeysProvider(VAR_LEVELS),
     });
 
+    // @todo we don't need these any more?
     metadataVariable.setState({
       getTagValuesProvider: this.getFieldsTagValuesProvider(VAR_METADATA),
       getTagKeysProvider: this.getFieldsTagKeysProvider(VAR_METADATA),
     });
 
-    // Set control state so we can put each variable with filters on its own line
-
-    // Levels
-    this.setVariableControlsWrapState(levelsVariable.state, CONTROLS_VARS_LEVELS_ROW_KEY);
-    this._subs.add(
-      levelsVariable.subscribeToState((newState) => {
-        this.setVariableControlsWrapState(newState, CONTROLS_VARS_LEVELS_ROW_KEY);
-      })
-    );
-
-    // metadata
-    this.setVariableControlsWrapState(metadataVariable.state, CONTROLS_VARS_METADATA_ROW_KEY);
-    this._subs.add(
-      metadataVariable.subscribeToState((newState) => {
-        this.setVariableControlsWrapState(newState, CONTROLS_VARS_METADATA_ROW_KEY);
-      })
-    );
-
-    // Fields
-    this.setVariableControlsWrapState(fieldsVariable.state, CONTROLS_VARS_FIELDS);
-    this._subs.add(
-      fieldsVariable.subscribeToState((newState) => {
-        this.setVariableControlsWrapState(newState, CONTROLS_VARS_FIELDS);
-      })
-    );
-  }
-
-  private setVariableControlsWrapState(
-    newState: AdHocFiltersVariable['state'],
-    controlKey:
-      | typeof CONTROLS_VARS_FIELDS
-      | typeof CONTROLS_VARS_METADATA_ROW_KEY
-      | typeof CONTROLS_VARS_LEVELS_ROW_KEY
-  ) {
-    const variableControl = this.state.controls.find((control) => control.state.key === controlKey);
-    if (variableControl instanceof CustomVariableValueSelectors) {
-      variableControl.setState({ noFilters: newState.filters.length === 0 });
-
-      console.log('setVariableControlsWrapState: force-render', {
-        wrap: variableControl.state,
-        variableLayout: this.state.body?.state.variableLayout,
-        variableState: newState,
-      });
-      this.state.body?.state.variableLayout?.forceRender();
-    }
+    fieldsCombinedVariable.setState({
+      getTagValuesProvider: this.getFieldsTagValuesProvider(VAR_FIELDS),
+      getTagKeysProvider: this.getFieldsTagKeysProvider(VAR_FIELDS),
+    });
   }
 
   private getFieldsTagKeysProvider(variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS) {
@@ -414,7 +385,10 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     };
   }
 
-  private getFieldsTagValuesProvider(variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS) {
+  // @todo clean up
+  private getFieldsTagValuesProvider(
+    variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS | typeof VAR_FIELDS_AND_METADATA
+  ) {
     return (variable: AdHocFiltersVariable, filter: AdHocFilterWithLabels) => {
       // Don't add equals operations to the query, the user might want to select more than one value
       const filters = variable.state.filters.filter((f) => f.key !== filter.key && f.operator === FilterOp.Equal);
@@ -436,7 +410,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   }
 
   private renderVariableFilters(
-    variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS,
+    variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS | typeof VAR_FIELDS_AND_METADATA,
     filters: AdHocFilterWithLabels[]
   ) {
     if (variableType === VAR_FIELDS) {
@@ -450,7 +424,10 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     }
   }
 
-  private getFieldsTagValuesExpression(variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS) {
+  // @todo cleanup
+  private getFieldsTagValuesExpression(
+    variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS | typeof VAR_FIELDS_AND_METADATA
+  ) {
     switch (variableType) {
       case VAR_FIELDS:
         return DETECTED_FIELD_VALUES_EXPR;
@@ -458,6 +435,8 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
         return DETECTED_METADATA_VALUES_EXPR;
       case VAR_LEVELS:
         return DETECTED_LEVELS_VALUES_EXPR;
+      case VAR_FIELDS_AND_METADATA:
+        return DETECTED_FIELD_VALUES_EXPR;
       default:
         const error = new Error(`Unknown variable type: ${variableType}`);
         logger.error(error, {
@@ -540,8 +519,6 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     label: 'Detected fields',
     applyMode: 'manual',
     layout: 'combobox',
-    getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
-    getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
     expressionBuilder: renderLogQLFieldFilters,
     hide: VariableHide.hideVariable,
     allowCustomValue: true,
@@ -557,9 +534,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     label: 'Metadata',
     applyMode: 'manual',
     layout: 'combobox',
-    getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
-    getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
-    expressionBuilder: renderLogQLMetadataFilters,
+    expressionBuilder: (filters: AdHocFilterWithLabels[]) => renderLogQLMetadataFilters(filters),
     hide: VariableHide.hideVariable,
     allowCustomValue: true,
   });
@@ -568,13 +543,20 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     return operators;
   };
 
+  const fieldsAndMetadataVariable = new AdHocFiltersVariable({
+    name: VAR_FIELDS_AND_METADATA,
+    label: 'Fields',
+    applyMode: 'manual',
+    layout: 'combobox',
+    hide: VariableHide.hideVariable,
+    allowCustomValue: true,
+  });
+
   const levelsVariable = new AdHocFiltersVariable({
     name: VAR_LEVELS,
     label: 'Error levels',
     applyMode: 'manual',
     layout: 'combobox',
-    getTagKeysProvider: () => Promise.resolve({ replace: true, values: [] }),
-    getTagValuesProvider: () => Promise.resolve({ replace: true, values: [] }),
     expressionBuilder: renderLogQLMetadataFilters,
     hide: VariableHide.hideVariable,
     allowCustomValue: true,
@@ -618,6 +600,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
         fieldsVariable,
         levelsVariable,
         metadataVariable,
+        fieldsAndMetadataVariable,
         new CustomVariable({
           name: VAR_PATTERNS,
           value: '',

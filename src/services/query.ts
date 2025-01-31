@@ -121,7 +121,24 @@ export function onAddCustomValue(
   };
 }
 
+export function renderLogQLMetadataFilters(filters: AdHocVariableFilter[]) {
+  const positive = filters.filter((filter) => isOperatorInclusive(filter.operator));
+  const negative = filters.filter((filter) => isOperatorExclusive(filter.operator));
+
+  const positiveGroups = groupBy(positive, (filter) => filter.key);
+
+  let positiveFilters = '';
+  for (const key in positiveGroups) {
+    positiveFilters += ' | ' + positiveGroups[key].map((filter) => `${renderMetadata(filter)}`).join(' or ');
+  }
+
+  const negativeFilters = negative.map((filter) => `| ${renderMetadata(filter)}`).join(' ');
+
+  return `${positiveFilters} ${negativeFilters}`.trim();
+}
+
 export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
+  console.log('renderLogQLFieldFilters', { filters });
   // @todo partition instead of looping through again and again
   const positive = filters.filter((filter) => isOperatorInclusive(filter.operator));
   const negative = filters.filter((filter) => isOperatorExclusive(filter.operator));
@@ -188,21 +205,6 @@ export function renderLogQLLineFilter(filters: AdHocFilterWithLabels[]) {
       return buildLogQlLineFilter(filter, value);
     })
     .join(' ');
-}
-export function renderLogQLMetadataFilters(filters: AdHocVariableFilter[]) {
-  const positive = filters.filter((filter) => isOperatorInclusive(filter.operator));
-  const negative = filters.filter((filter) => isOperatorExclusive(filter.operator));
-
-  const positiveGroups = groupBy(positive, (filter) => filter.key);
-
-  let positiveFilters = '';
-  for (const key in positiveGroups) {
-    positiveFilters += ' | ' + positiveGroups[key].map((filter) => `${renderMetadata(filter)}`).join(' or ');
-  }
-
-  const negativeFilters = negative.map((filter) => `| ${renderMetadata(filter)}`).join(' ');
-
-  return `${positiveFilters} ${negativeFilters}`.trim();
 }
 
 function renderMetadata(filter: AdHocVariableFilter) {

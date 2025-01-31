@@ -19,6 +19,7 @@ import {
   VAR_DATASOURCE,
   VAR_FIELD_GROUP_BY,
   VAR_FIELDS,
+  VAR_FIELDS_AND_METADATA,
   VAR_FIELDS_EXPR,
   VAR_LABEL_GROUP_BY,
   VAR_LABELS,
@@ -78,6 +79,10 @@ export function getLabelsVariableReplica(scene: SceneObject) {
 
 export function getMetadataVariable(scene: SceneObject) {
   return getAdHocFiltersVariable(VAR_METADATA, scene);
+}
+
+export function getFieldsAndMetadataVariable(scene: SceneObject) {
+  return getAdHocFiltersVariable(VAR_FIELDS_AND_METADATA, scene);
 }
 
 export function getFieldsVariable(scene: SceneObject) {

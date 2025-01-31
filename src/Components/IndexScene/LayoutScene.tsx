@@ -23,6 +23,7 @@ export const CONTROLS_VARS_FIRST_ROW_KEY = 'vars-row__datasource-labels-timepick
 export const CONTROLS_VARS_METADATA_ROW_KEY = 'vars-metadata';
 export const CONTROLS_VARS_LEVELS_ROW_KEY = 'vars-levels';
 export const CONTROLS_VARS_FIELDS = 'vars-fields';
+export const CONTROLS_VARS_FIELDS_COMBINED = 'vars-fields-metadata';
 export const CONTROLS_VARS_TIMEPICKER = 'vars-timepicker';
 export const CONTROLS_VARS_REFRESH = 'vars-refresh';
 export const CONTROLS_VARS_TOOLBAR = 'vars-toolbar';
