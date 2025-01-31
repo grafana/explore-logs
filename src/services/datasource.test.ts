@@ -6,7 +6,6 @@ import {
   DataSourcePluginMeta,
   dateTime,
   LoadingState,
-  ScopedVars,
 } from '@grafana/data';
 import { Observable } from 'rxjs';
 import { DataSourceWithBackend } from '@grafana/runtime';

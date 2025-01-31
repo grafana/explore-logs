@@ -25,9 +25,7 @@ import {
 import {
   AdHocFiltersWithLabelsAndMeta,
   DETECTED_FIELD_AND_METADATA_VALUES_EXPR,
-  DETECTED_FIELD_VALUES_EXPR,
   DETECTED_LEVELS_VALUES_EXPR,
-  DETECTED_METADATA_VALUES_EXPR,
   EXPLORATION_DS,
   MIXED_FORMAT_EXPR,
   PENDING_FIELDS_EXPR,
@@ -247,6 +245,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     // Sync fields in query variables to support existing urls
     fieldsAndMetadataVariable.updateFilters([...metdataFilters, ...fieldFilters]);
 
+    // Update the fields/metdata filters when the combined variable is changed in the variable UI.
     this._subs.add(fieldsAndMetadataVariable.subscribeToState(this.subscribeToCombinedFieldsVariable));
 
     const clearKeyBindings = setupKeyboardShortcuts(this);
@@ -375,7 +374,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     });
 
     fieldsCombinedVariable.setState({
-      getTagValuesProvider: this.getCombinedFieldsTagValuesProvider(VAR_FIELDS_AND_METADATA),
+      getTagValuesProvider: this.getCombinedFieldsTagValuesProvider(),
       getTagKeysProvider: this.getCombinedFieldsTagKeysProvider(),
     });
   }
@@ -407,11 +406,9 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     };
   }
 
-  private getCombinedFieldsTagValuesProvider(
-    variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS | typeof VAR_FIELDS_AND_METADATA
-  ) {
+  private getCombinedFieldsTagValuesProvider() {
     return (variable: AdHocFiltersVariable, filter: AdHocFilterWithLabels) => {
-      const uninterpolatedExpression = this.getFieldsTagValuesExpression(variableType);
+      const uninterpolatedExpression = this.getFieldsTagValuesExpression(VAR_FIELDS_AND_METADATA);
       const metadataVar = getMetadataVariable(this);
       const fieldVar = getFieldsVariable(this);
 
@@ -434,7 +431,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
         interpolated,
         this,
         sceneGraph.getTimeRange(this).state.value,
-        variableType
+        VAR_FIELDS_AND_METADATA
       );
     };
   }
@@ -493,14 +490,8 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     }
   }
 
-  private getFieldsTagValuesExpression(
-    variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS | typeof VAR_FIELDS_AND_METADATA
-  ) {
+  private getFieldsTagValuesExpression(variableType: typeof VAR_LEVELS | typeof VAR_FIELDS_AND_METADATA) {
     switch (variableType) {
-      case VAR_FIELDS:
-        return DETECTED_FIELD_VALUES_EXPR;
-      case VAR_METADATA:
-        return DETECTED_METADATA_VALUES_EXPR;
       case VAR_LEVELS:
         return DETECTED_LEVELS_VALUES_EXPR;
       case VAR_FIELDS_AND_METADATA:
