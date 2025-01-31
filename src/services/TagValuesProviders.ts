@@ -111,7 +111,13 @@ export const getDetectedFieldValuesTagValuesProvider = async (
           return !valuesToRemove.includes(value);
         });
 
-        if (variableType === VAR_FIELDS) {
+        console.log('getDetectedFieldValuesTagValuesProvider', {
+          filter,
+          results,
+          expr: options.expr,
+        });
+
+        if (filter.meta?.parser !== 'structuredMetadata') {
           if (filter.value) {
             const valueDecoded = getValueFromFieldsFilter(filter, variableType);
             return {

@@ -1,5 +1,6 @@
 import {
   AdHocFiltersVariable,
+  AdHocFilterWithLabels,
   CustomVariable,
   DataSourceVariable,
   sceneGraph,
@@ -40,6 +41,7 @@ import {
 import { AdHocVariableFilter } from '@grafana/data';
 import { logger } from './logger';
 import { narrowFieldValue, NarrowingError } from './narrowing';
+import { isFilterMetadata } from './filters';
 
 export function getLogsStreamSelector(options: LogsQueryOptions) {
   const {
@@ -81,6 +83,7 @@ export function getMetadataVariable(scene: SceneObject) {
   return getAdHocFiltersVariable(VAR_METADATA, scene);
 }
 
+// Combined fields and metadata, editable in the UI, changes to this variable flow into FIELDS and METADATA
 export function getFieldsAndMetadataVariable(scene: SceneObject) {
   return getAdHocFiltersVariable(VAR_FIELDS_AND_METADATA, scene);
 }
@@ -190,7 +193,17 @@ export function getUrlParamNameForVariable(variableName: string) {
   return `var-${variableName}`;
 }
 
-export function getValueFromFieldsFilter(filter: AdHocVariableFilter, variableName: string = VAR_FIELDS): FieldValue {
+export function getValueFromFieldsFilter(filter: AdHocFilterWithLabels, variableName: string = VAR_FIELDS): FieldValue {
+  // Metadata is not encoded? But should it be?
+  // console.log('getValueFromFieldsFilter', {filter, variableName, isMetadata})
+
+  if (isFilterMetadata(filter)) {
+    return {
+      value: filter.value,
+      parser: 'structuredMetadata',
+    };
+  }
+
   try {
     const fieldValue = narrowFieldValue(JSON.parse(filter.value));
     if (fieldValue !== false) {

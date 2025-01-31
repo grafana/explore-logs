@@ -264,9 +264,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   };
 
   private showVariables() {
-    getMetadataVariable(this).setState({ hide: VariableHide.dontHide });
     getLevelsVariable(this).setState({ hide: VariableHide.dontHide });
-    getFieldsVariable(this).setState({ hide: VariableHide.dontHide });
     getFieldsAndMetadataVariable(this).setState({ hide: VariableHide.dontHide });
   }
 

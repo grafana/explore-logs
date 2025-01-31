@@ -15,7 +15,14 @@ import { getDataSource } from './scenes';
 import { LABELS_TO_REMOVE } from './filters';
 import { joinTagFilters } from './query';
 import { DetectedFieldsResult, LokiLanguageProviderWithDetectedLabelValues } from './TagValuesProviders';
-import { LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LEVELS, VAR_METADATA } from './variables';
+import {
+  LEVEL_VARIABLE_VALUE,
+  ParserType,
+  VAR_FIELDS,
+  VAR_FIELDS_AND_METADATA,
+  VAR_LEVELS,
+  VAR_METADATA,
+} from './variables';
 
 export async function getLabelsTagKeysProvider(variable: AdHocFiltersVariable): Promise<{
   replace?: boolean;
@@ -53,7 +60,7 @@ type DetectedFieldQueryOptions = {
   limit?: number;
   scopedVars?: ScopedVars;
   sceneRef: SceneObject;
-  variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS;
+  variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS | typeof VAR_FIELDS_AND_METADATA;
 };
 
 export async function getFieldsKeysProvider({
@@ -113,13 +120,17 @@ export async function getFieldsKeysProvider({
           return field.label === LEVEL_VARIABLE_VALUE;
         }
 
+        if (variableType === VAR_FIELDS_AND_METADATA && field.label !== LEVEL_VARIABLE_VALUE) {
+          return true;
+        }
+
         return field.parsers !== null;
       })
       .map((field) => {
-        if (variableType === VAR_FIELDS) {
-          let parser = field.parsers?.length === 1 ? field.parsers[0] : 'mixed';
+        if (variableType === VAR_FIELDS || variableType === VAR_FIELDS_AND_METADATA) {
+          let parser: ParserType = field.parsers?.length === 1 ? field.parsers[0] : 'mixed';
           if (field.parsers === null) {
-            parser = 'metadata';
+            parser = 'structuredMetadata';
           }
 
           const type = field.type;
@@ -137,6 +148,16 @@ export async function getFieldsKeysProvider({
 
         return { text: field.label, value: field.label };
       });
+
+    result.sort((a, b) => {
+      if (a.group === 'structuredMetadata' && b.group !== 'structuredMetadata') {
+        return -1;
+      }
+      if (a.group !== 'structuredMetadata' && b.group === 'structuredMetadata') {
+        return 1;
+      }
+      return 0;
+    });
 
     return { replace: true, values: result };
   } else {

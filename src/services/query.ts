@@ -138,7 +138,6 @@ export function renderLogQLMetadataFilters(filters: AdHocVariableFilter[]) {
 }
 
 export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
-  console.log('renderLogQLFieldFilters', { filters });
   // @todo partition instead of looping through again and again
   const positive = filters.filter((filter) => isOperatorInclusive(filter.operator));
   const negative = filters.filter((filter) => isOperatorExclusive(filter.operator));

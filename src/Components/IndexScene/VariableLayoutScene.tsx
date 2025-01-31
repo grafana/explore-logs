@@ -7,10 +7,8 @@ import { PatternControls } from './PatternControls';
 import { AppliedPattern, IndexScene } from './IndexScene';
 import {
   CONTROLS_VARS_DATASOURCE,
-  CONTROLS_VARS_FIELDS,
   CONTROLS_VARS_FIELDS_COMBINED,
   CONTROLS_VARS_LEVELS_ROW_KEY,
-  CONTROLS_VARS_METADATA_ROW_KEY,
   LayoutScene,
 } from './LayoutScene';
 import { useStyles2 } from '@grafana/ui';
@@ -79,52 +77,7 @@ export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneStat
               })}
           </div>
 
-          {/* 3rd row - Metadata  */}
-          <div className={styles.controlsRowContainer}>
-            {controls &&
-              controls.map((control) => {
-                return control instanceof CustomVariableValueSelectors &&
-                  control.state.key === CONTROLS_VARS_METADATA_ROW_KEY ? (
-                  <div key={control.state.key} className={styles.filtersWrap}>
-                    <div className={styles.filters}>
-                      <control.Component model={control} />
-                    </div>
-                  </div>
-                ) : null;
-              })}
-          </div>
-
-          {/* 4th row - Patterns */}
-          <div className={styles.controlsRowContainer}>
-            <PatternControls
-              patterns={patterns}
-              onRemove={(patterns: AppliedPattern[]) => indexScene.setState({ patterns })}
-            />
-          </div>
-
-          {/* 5th row - line filters */}
-          <div className={styles.controlsRowContainer}>
-            {lineFilterRenderer && <lineFilterRenderer.Component model={lineFilterRenderer} />}
-          </div>
-
-          {/* 6th row - Fields  */}
-          <div className={styles.controlsRowContainer}>
-            {controls && (
-              <div className={styles.filtersWrap}>
-                <div className={styles.filters}>
-                  {controls.map((control) => {
-                    return control instanceof CustomVariableValueSelectors &&
-                      control.state.key === CONTROLS_VARS_FIELDS ? (
-                      <control.Component key={control.state.key} model={control} />
-                    ) : null;
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* @todo clean up */}
-          {/* 7th row - Fields Combined  */}
+          {/* 3rd row - Fields Combined  */}
           <div className={styles.controlsRowContainer}>
             {controls && (
               <div className={styles.filtersWrap}>
@@ -138,6 +91,19 @@ export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneStat
                 </div>
               </div>
             )}
+          </div>
+
+          {/* 4th row - Patterns */}
+          <div className={styles.controlsRowContainer}>
+            <PatternControls
+              patterns={patterns}
+              onRemove={(patterns: AppliedPattern[]) => indexScene.setState({ patterns })}
+            />
+          </div>
+
+          {/* 5th row - line filters */}
+          <div className={styles.controlsRowContainer}>
+            {lineFilterRenderer && <lineFilterRenderer.Component model={lineFilterRenderer} />}
           </div>
         </>
       </div>

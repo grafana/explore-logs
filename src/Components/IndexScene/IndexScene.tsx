@@ -23,12 +23,15 @@ import {
   SceneVariableSet,
 } from '@grafana/scenes';
 import {
+  AdHocFiltersWithLabelsAndMeta,
+  DETECTED_FIELD_AND_METADATA_VALUES_EXPR,
   DETECTED_FIELD_VALUES_EXPR,
   DETECTED_LEVELS_VALUES_EXPR,
   DETECTED_METADATA_VALUES_EXPR,
   EXPLORATION_DS,
   MIXED_FORMAT_EXPR,
   PENDING_FIELDS_EXPR,
+  PENDING_METADATA_EXPR,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_FIELDS_AND_METADATA,
@@ -95,6 +98,8 @@ import { LokiDatasource } from '../../services/lokiQuery';
 import { lineFilterOperators, operators } from '../../services/operators';
 import { operatorFunction } from '../../services/variableHelpers';
 import { FilterOp } from '../../services/filterTypes';
+import { areArraysEqual } from '../../services/comparison';
+import { isFilterMetadata } from '../../services/filters';
 
 export const showLogsButtonSceneKey = 'showLogsButtonScene';
 export interface AppliedPattern {
@@ -234,12 +239,35 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     this._subs.add(timeRange.subscribeToState(this.limitMaxInterval(timeRange)));
     this._subs.add(this.subscribeToEvent(PasteTimeEvent, this.subscribeToPasteTimeEvent));
 
+    const fieldFilters = getFieldsVariable(this).state.filters;
+    const metdataFilters = getMetadataVariable(this).state.filters;
+
+    const fieldsAndMetadataVariable = getFieldsAndMetadataVariable(this);
+
+    // Sync fields in query variables to support existing urls
+    fieldsAndMetadataVariable.updateFilters([...metdataFilters, ...fieldFilters]);
+
+    this._subs.add(fieldsAndMetadataVariable.subscribeToState(this.subscribeToCombinedFieldsVariable));
+
     const clearKeyBindings = setupKeyboardShortcuts(this);
 
     return () => {
       clearKeyBindings();
     };
   }
+
+  private subscribeToCombinedFieldsVariable = (
+    newState: AdHocFiltersVariable['state'],
+    prevState?: AdHocFiltersVariable['state']
+  ) => {
+    if (!areArraysEqual(newState.filters, prevState?.filters)) {
+      const metadataFilters = newState.filters.filter((f: AdHocFiltersWithLabelsAndMeta) => isFilterMetadata(f));
+      const fieldFilters = newState.filters.filter((f: AdHocFiltersWithLabelsAndMeta) => !isFilterMetadata(f));
+
+      getFieldsVariable(this).updateFilters(fieldFilters);
+      getMetadataVariable(this).updateFilters(metadataFilters);
+    }
+  };
 
   private setTagProviders() {
     this.setLabelsProviders();
@@ -335,69 +363,71 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   }
 
   private setVariableProviders() {
-    const fieldsVariable = getFieldsVariable(this);
     const levelsVariable = getLevelsVariable(this);
-    const metadataVariable = getMetadataVariable(this);
     const fieldsCombinedVariable = getFieldsAndMetadataVariable(this);
 
-    fieldsVariable._getOperators = () => operatorFunction(fieldsVariable);
     levelsVariable._getOperators = () => operatorFunction(levelsVariable);
-    metadataVariable._getOperators = () => operatorFunction(metadataVariable);
     fieldsCombinedVariable._getOperators = () => operatorFunction(fieldsCombinedVariable);
 
-    // @todo we don't need these any more?
-    fieldsVariable.setState({
-      getTagValuesProvider: this.getFieldsTagValuesProvider(VAR_FIELDS),
-      getTagKeysProvider: this.getFieldsTagKeysProvider(VAR_FIELDS),
-    });
-
     levelsVariable.setState({
-      getTagValuesProvider: this.getFieldsTagValuesProvider(VAR_LEVELS),
-      getTagKeysProvider: this.getFieldsTagKeysProvider(VAR_LEVELS),
-    });
-
-    // @todo we don't need these any more?
-    metadataVariable.setState({
-      getTagValuesProvider: this.getFieldsTagValuesProvider(VAR_METADATA),
-      getTagKeysProvider: this.getFieldsTagKeysProvider(VAR_METADATA),
+      getTagValuesProvider: this.getLevelsTagValuesProvider(),
+      getTagKeysProvider: this.getLevelsTagKeysProvider(),
     });
 
     fieldsCombinedVariable.setState({
-      getTagValuesProvider: this.getFieldsTagValuesProvider(VAR_FIELDS),
-      getTagKeysProvider: this.getFieldsTagKeysProvider(VAR_FIELDS),
+      getTagValuesProvider: this.getCombinedFieldsTagValuesProvider(VAR_FIELDS_AND_METADATA),
+      getTagKeysProvider: this.getCombinedFieldsTagKeysProvider(),
     });
   }
 
-  private getFieldsTagKeysProvider(variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS) {
+  private getCombinedFieldsTagKeysProvider() {
     return (variable: AdHocFiltersVariable, currentKey: string | null) => {
       // Current key seems to always be null, so not sure what this is doing
-      const filters = variable.state.filters.filter((f) => f.key !== currentKey);
-      const otherFiltersString = this.renderVariableFilters(variableType, filters);
-      const uninterpolatedExpression = this.getFieldsTagValuesExpression(variableType);
-      const expr = uninterpolatedExpression.replace(PENDING_FIELDS_EXPR, otherFiltersString);
+      // let filters = variable.state.filters.filter((f) => f.key !== currentKey);
+
+      const metadataVar = getMetadataVariable(this);
+      const fieldVar = getFieldsVariable(this);
+
+      const uninterpolatedExpression = this.getFieldsTagValuesExpression(VAR_FIELDS_AND_METADATA);
+
+      const metadataFilters = metadataVar.state.filters.filter((f) => f.key !== currentKey);
+      const fieldFilters = fieldVar.state.filters.filter((f) => f.key !== currentKey);
+      const otherFiltersString = this.renderVariableFilters(VAR_FIELDS, fieldFilters);
+      const otherMetadataString = this.renderVariableFilters(VAR_METADATA, metadataFilters);
+      const expr = uninterpolatedExpression
+        .replace(PENDING_FIELDS_EXPR, otherFiltersString)
+        .replace(PENDING_METADATA_EXPR, otherMetadataString);
       const interpolated = sceneGraph.interpolate(this, expr);
       return getFieldsKeysProvider({
         expr: interpolated,
         sceneRef: this,
         timeRange: sceneGraph.getTimeRange(this).state.value,
-        variableType,
+        variableType: VAR_FIELDS_AND_METADATA,
       });
     };
   }
 
-  // @todo clean up
-  private getFieldsTagValuesProvider(
+  private getCombinedFieldsTagValuesProvider(
     variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS | typeof VAR_FIELDS_AND_METADATA
   ) {
     return (variable: AdHocFiltersVariable, filter: AdHocFilterWithLabels) => {
-      // Don't add equals operations to the query, the user might want to select more than one value
-      const filters = variable.state.filters.filter((f) => f.key !== filter.key && f.operator === FilterOp.Equal);
-      const otherFiltersString = this.renderVariableFilters(variableType, filters);
       const uninterpolatedExpression = this.getFieldsTagValuesExpression(variableType);
-      const expr = uninterpolatedExpression.replace(PENDING_FIELDS_EXPR, otherFiltersString);
+      const metadataVar = getMetadataVariable(this);
+      const fieldVar = getFieldsVariable(this);
+
+      const metadataFilters = metadataVar.state.filters.filter(
+        (f) => f.key !== filter.key && f.operator === FilterOp.Equal
+      );
+      const fieldFilters = fieldVar.state.filters.filter((f) => f.key !== filter.key && f.operator === FilterOp.Equal);
+
+      const otherFiltersString = this.renderVariableFilters(VAR_FIELDS, fieldFilters);
+      const otherMetadataString = this.renderVariableFilters(VAR_METADATA, metadataFilters);
+
+      const expr = uninterpolatedExpression
+        .replace(PENDING_FIELDS_EXPR, otherFiltersString)
+        .replace(PENDING_METADATA_EXPR, otherMetadataString);
       const interpolated = sceneGraph.interpolate(this, expr);
 
-      // @todo remove existing equal/notequal values
       return getDetectedFieldValuesTagValuesProvider(
         filter,
         variable,
@@ -409,8 +439,45 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     };
   }
 
+  private getLevelsTagKeysProvider() {
+    return (variable: AdHocFiltersVariable, currentKey: string | null) => {
+      // Current key seems to always be null, I don't think this applies to the combobox where the key cannot be edited in a wip without completely removing the "chip" first
+      const filters = variable.state.filters.filter((f) => f.key !== currentKey);
+      const otherFiltersString = this.renderVariableFilters(VAR_LEVELS, filters);
+      const uninterpolatedExpression = this.getFieldsTagValuesExpression(VAR_LEVELS);
+      const expr = uninterpolatedExpression.replace(PENDING_FIELDS_EXPR, otherFiltersString);
+      const interpolated = sceneGraph.interpolate(this, expr);
+      return getFieldsKeysProvider({
+        expr: interpolated,
+        sceneRef: this,
+        timeRange: sceneGraph.getTimeRange(this).state.value,
+        variableType: VAR_LEVELS,
+      });
+    };
+  }
+
+  private getLevelsTagValuesProvider() {
+    return (variable: AdHocFiltersVariable, filter: AdHocFilterWithLabels) => {
+      // Don't add equals operations to the query, the user might want to select more than one value
+      const filters = variable.state.filters.filter((f) => f.key !== filter.key && f.operator === FilterOp.Equal);
+      const otherFiltersString = this.renderVariableFilters(VAR_LEVELS, filters);
+      const uninterpolatedExpression = this.getFieldsTagValuesExpression(VAR_LEVELS);
+      const expr = uninterpolatedExpression.replace(PENDING_FIELDS_EXPR, otherFiltersString);
+      const interpolated = sceneGraph.interpolate(this, expr);
+
+      return getDetectedFieldValuesTagValuesProvider(
+        filter,
+        variable,
+        interpolated,
+        this,
+        sceneGraph.getTimeRange(this).state.value,
+        VAR_LEVELS
+      );
+    };
+  }
+
   private renderVariableFilters(
-    variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS | typeof VAR_FIELDS_AND_METADATA,
+    variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS,
     filters: AdHocFilterWithLabels[]
   ) {
     if (variableType === VAR_FIELDS) {
@@ -420,11 +487,12 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     } else if (variableType === VAR_LEVELS) {
       return renderLogQLMetadataFilters(filters);
     } else {
-      throw new Error('getFieldsTagValuesProvider only supports fields, metadata, and levels');
+      const error = new Error('getFieldsTagValuesProvider only supports fields, metadata, and levels');
+      logger.error(error);
+      throw error;
     }
   }
 
-  // @todo cleanup
   private getFieldsTagValuesExpression(
     variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS | typeof VAR_FIELDS_AND_METADATA
   ) {
@@ -436,7 +504,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       case VAR_LEVELS:
         return DETECTED_LEVELS_VALUES_EXPR;
       case VAR_FIELDS_AND_METADATA:
-        return DETECTED_FIELD_VALUES_EXPR;
+        return DETECTED_FIELD_AND_METADATA_VALUES_EXPR;
       default:
         const error = new Error(`Unknown variable type: ${variableType}`);
         logger.error(error, {
@@ -543,6 +611,12 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     return operators;
   };
 
+  /**
+   * Not used in interpolation, used as "proxy" variable that routes filters added in the variable UI
+   * to the fields and metadata variables which are interpolated but not present in the UI.
+   *
+   * Not saved in the URL state, as on init we pull the values from the fields/metadata variables
+   */
   const fieldsAndMetadataVariable = new AdHocFiltersVariable({
     name: VAR_FIELDS_AND_METADATA,
     label: 'Fields',
@@ -550,6 +624,8 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     layout: 'combobox',
     hide: VariableHide.hideVariable,
     allowCustomValue: true,
+    onAddCustomValue: onAddCustomValue,
+    skipUrlSync: true,
   });
 
   const levelsVariable = new AdHocFiltersVariable({
