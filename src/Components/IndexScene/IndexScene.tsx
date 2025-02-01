@@ -239,14 +239,14 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     this._subs.add(this.subscribeToEvent(PasteTimeEvent, this.subscribeToPasteTimeEvent));
 
     const fieldFilters = getFieldsVariable(this).state.filters;
-    const metdataFilters = getMetadataVariable(this).state.filters;
+    const metadataFilters = getMetadataVariable(this).state.filters;
 
     const fieldsAndMetadataVariable = getFieldsAndMetadataVariable(this);
 
     // Sync fields in query variables to support existing urls
-    fieldsAndMetadataVariable.updateFilters([...metdataFilters, ...fieldFilters]);
+    fieldsAndMetadataVariable.updateFilters([...metadataFilters, ...fieldFilters]);
 
-    // Update the fields/metdata filters when the combined variable is changed in the variable UI.
+    // Update the fields/metadata filters when the combined variable is changed in the variable UI.
     this._subs.add(fieldsAndMetadataVariable.subscribeToState(this.subscribeToCombinedFieldsVariable));
 
     const clearKeyBindings = setupKeyboardShortcuts(this);
