@@ -33,6 +33,21 @@ function getOperatorDescription(op: FilterOp): string {
   throw error;
 }
 
+// export const multiOperators = ['=|'].map<
+//     SelectableValue<string>
+// >((value, index, array) => {
+//
+// }
+// });
+
+export const multiOperators = ['=|'].map<SelectableValue<string>>((value, index, array) => {
+  return {
+    description: 'One of',
+    label: value,
+    value,
+  };
+});
+
 export const operators = [FilterOp.Equal, FilterOp.NotEqual, FilterOp.RegexEqual, FilterOp.RegexNotEqual].map<
   SelectableValue<string>
 >((value, index, array) => {

@@ -27,6 +27,7 @@ import {
   DETECTED_FIELD_AND_METADATA_VALUES_EXPR,
   DETECTED_LEVELS_VALUES_EXPR,
   EXPLORATION_DS,
+  LEVEL_VARIABLE_VALUE,
   MIXED_FORMAT_EXPR,
   PENDING_FIELDS_EXPR,
   PENDING_METADATA_EXPR,
@@ -63,6 +64,7 @@ import { LoadingPlaceholder } from '@grafana/ui';
 import { config, getAppEvents, locationService } from '@grafana/runtime';
 import {
   onAddCustomValue,
+  renderLevelsFilter,
   renderLogQLFieldFilters,
   renderLogQLLabelFilters,
   renderLogQLLineFilter,
@@ -93,7 +95,7 @@ import { ShowLogsButtonScene } from './ShowLogsButtonScene';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
 import { getCopiedTimeRange, PasteTimeEvent, setupKeyboardShortcuts } from '../../services/keyboardShortcuts';
 import { LokiDatasource } from '../../services/lokiQuery';
-import { lineFilterOperators, operators } from '../../services/operators';
+import { lineFilterOperators, multiOperators, operators } from '../../services/operators';
 import { operatorFunction } from '../../services/variableHelpers';
 import { FilterOp } from '../../services/filterTypes';
 import { areArraysEqual } from '../../services/comparison';
@@ -366,7 +368,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     const levelsVariable = getLevelsVariable(this);
     const fieldsCombinedVariable = getFieldsAndMetadataVariable(this);
 
-    levelsVariable._getOperators = () => operatorFunction(levelsVariable);
+    // levelsVariable._getOperators = () => operatorFunction(levelsVariable);
     fieldsCombinedVariable._getOperators = () => operatorFunction(fieldsCombinedVariable);
 
     levelsVariable.setState({
@@ -624,15 +626,14 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     name: VAR_LEVELS,
     label: 'Error levels',
     applyMode: 'manual',
-    layout: 'combobox',
-    expressionBuilder: renderLogQLMetadataFilters,
+    layout: 'vertical',
+    expressionBuilder: renderLevelsFilter,
     hide: VariableHide.hideVariable,
-    allowCustomValue: true,
     supportsMultiValueOperators: true,
   });
 
   levelsVariable._getOperators = () => {
-    return operators;
+    return multiOperators;
   };
 
   const lineFiltersVariable = new AdHocFiltersVariable({

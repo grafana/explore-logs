@@ -69,7 +69,7 @@ export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneStat
                 return control instanceof CustomVariableValueSelectors &&
                   control.state.key === CONTROLS_VARS_LEVELS_ROW_KEY ? (
                   <div key={control.state.key} className={styles.filtersWrap}>
-                    <div className={styles.filters}>
+                    <div className={cx(styles.filters, styles.levelsWrap)}>
                       <control.Component model={control} />
                     </div>
                   </div>
@@ -179,6 +179,32 @@ function getStyles(theme: GrafanaTheme2) {
       width: 'calc(100% - 450)',
       flexWrap: 'wrap',
       alignItems: 'flex-end',
+    }),
+    levelsWrap: css({
+      // @todo add a way to hideLabel, hideAddButton, hideOperator in core Scenes to avoid hacks like this
+      label: 'levels-wrap',
+      '& > div > div': {
+        overflow: 'hidden',
+        // Hide variable field name label
+        '& label': {
+          display: 'none',
+        },
+        // Hide add more button
+        '& button': {
+          display: 'none',
+        },
+        // Hide operator
+        '& > div > div > div > div > div:first-child': {
+          display: 'none',
+        },
+        // Fix styles
+        '& > div > div > div > div > div:last-child': {
+          marginLeft: 0,
+          '& > div > div > div': {
+            paddingRight: '8px',
+          },
+        },
+      },
     }),
     controlsWrapper: css({
       label: 'controlsWrapper',
