@@ -21,7 +21,7 @@ export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneStat
     const { controls, patterns } = indexScene.useState();
 
     const layoutScene = sceneGraph.getAncestor(model, LayoutScene);
-    const { lineFilterRenderer } = layoutScene.useState();
+    const { lineFilterRenderer, levelsRenderer } = layoutScene.useState();
 
     const styles = useStyles2(getStyles);
 
@@ -61,6 +61,11 @@ export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneStat
               </div>
             </div>
           )}
+
+          {/* Second row - Levels - Custom renderer - WIP */}
+          <div className={styles.controlsRowContainer}>
+            {levelsRenderer && <levelsRenderer.Component model={levelsRenderer} />}
+          </div>
 
           {/* Second row - Levels */}
           <div className={styles.controlsRowContainer}>

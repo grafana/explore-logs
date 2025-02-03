@@ -10,10 +10,12 @@ import { PLUGIN_ID } from '../../services/plugin';
 import { logger } from '../../services/logger';
 import { LineFilterVariablesScene } from './LineFilterVariablesScene';
 import { VariableLayoutScene } from './VariableLayoutScene';
+import { LevelsVariableScene } from './LevelsVariableScene';
 
 interface LayoutSceneState extends SceneObjectState {
   interceptDismissed: boolean;
   lineFilterRenderer?: LineFilterVariablesScene;
+  levelsRenderer?: LevelsVariableScene;
   variableLayout?: SceneObject;
 }
 
@@ -74,6 +76,7 @@ export class LayoutScene extends SceneObjectBase<LayoutSceneState> {
   public onActivate() {
     this.setState({
       lineFilterRenderer: new LineFilterVariablesScene({}),
+      levelsRenderer: new LevelsVariableScene({}),
       variableLayout: new VariableLayoutScene({}),
     });
   }
