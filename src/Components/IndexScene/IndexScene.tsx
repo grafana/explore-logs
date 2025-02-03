@@ -50,7 +50,6 @@ import {
   CONTROLS_VARS_FIELDS_COMBINED,
   CONTROLS_VARS_FIRST_ROW_KEY,
   CONTROLS_VARS_LABELS,
-  CONTROLS_VARS_LEVELS_ROW_KEY,
   CONTROLS_VARS_METADATA_ROW_KEY,
   CONTROLS_VARS_REFRESH,
   CONTROLS_VARS_TIMEPICKER,
@@ -94,7 +93,7 @@ import { ShowLogsButtonScene } from './ShowLogsButtonScene';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
 import { getCopiedTimeRange, PasteTimeEvent, setupKeyboardShortcuts } from '../../services/keyboardShortcuts';
 import { LokiDatasource } from '../../services/lokiQuery';
-import { lineFilterOperators, multiOperators, operators } from '../../services/operators';
+import { lineFilterOperators, operators } from '../../services/operators';
 import { operatorFunction } from '../../services/variableHelpers';
 import { FilterOp } from '../../services/filterTypes';
 import { areArraysEqual } from '../../services/comparison';
@@ -144,11 +143,6 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
             disabled: true,
           }),
         ],
-      }),
-      new CustomVariableValueSelectors({
-        key: CONTROLS_VARS_LEVELS_ROW_KEY,
-        layout: 'vertical',
-        include: [VAR_LEVELS],
       }),
       new CustomVariableValueSelectors({
         key: CONTROLS_VARS_METADATA_ROW_KEY,
@@ -630,10 +624,6 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     hide: VariableHide.hideVariable,
     supportsMultiValueOperators: true,
   });
-
-  levelsVariable._getOperators = () => {
-    return multiOperators;
-  };
 
   const lineFiltersVariable = new AdHocFiltersVariable({
     name: VAR_LINE_FILTERS,

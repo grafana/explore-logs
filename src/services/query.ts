@@ -128,7 +128,10 @@ export function onAddCustomValue(
 }
 
 export function renderLevelsFilter(filters: AdHocVariableFilter[]) {
-  return `| ${LEVEL_VARIABLE_VALUE}=~\`${filters.map((f) => f.value).join('|')}\``;
+  if (filters.length) {
+    return `| ${LEVEL_VARIABLE_VALUE}=~\`${filters.map((f) => f.value).join('|')}\``;
+  }
+  return '';
 }
 
 export function renderLogQLMetadataFilters(filters: AdHocVariableFilter[]) {

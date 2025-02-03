@@ -5,12 +5,7 @@ import { GiveFeedbackButton } from './GiveFeedbackButton';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
 import { PatternControls } from './PatternControls';
 import { AppliedPattern, IndexScene } from './IndexScene';
-import {
-  CONTROLS_VARS_DATASOURCE,
-  CONTROLS_VARS_FIELDS_COMBINED,
-  CONTROLS_VARS_LEVELS_ROW_KEY,
-  LayoutScene,
-} from './LayoutScene';
+import { CONTROLS_VARS_DATASOURCE, CONTROLS_VARS_FIELDS_COMBINED, LayoutScene } from './LayoutScene';
 import { useStyles2 } from '@grafana/ui';
 import { GrafanaTheme2 } from '@grafana/data';
 
@@ -65,21 +60,6 @@ export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneStat
           {/* Second row - Levels - Custom renderer - WIP */}
           <div className={styles.controlsRowContainer}>
             {levelsRenderer && <levelsRenderer.Component model={levelsRenderer} />}
-          </div>
-
-          {/* Second row - Levels */}
-          <div className={styles.controlsRowContainer}>
-            {controls &&
-              controls.map((control) => {
-                return control instanceof CustomVariableValueSelectors &&
-                  control.state.key === CONTROLS_VARS_LEVELS_ROW_KEY ? (
-                  <div key={control.state.key} className={styles.filtersWrap}>
-                    <div className={cx(styles.filters, styles.levelsWrap)}>
-                      <control.Component model={control} />
-                    </div>
-                  </div>
-                ) : null;
-              })}
           </div>
 
           {/* 3rd row - Fields Combined  */}
@@ -184,32 +164,6 @@ function getStyles(theme: GrafanaTheme2) {
       width: 'calc(100% - 450)',
       flexWrap: 'wrap',
       alignItems: 'flex-end',
-    }),
-    levelsWrap: css({
-      // @todo add a way to hideLabel, hideAddButton, hideOperator in core Scenes to avoid hacks like this
-      label: 'levels-wrap',
-      '& > div > div': {
-        overflow: 'hidden',
-        // Hide variable field name label
-        '& label': {
-          display: 'none',
-        },
-        // Hide add more button
-        '& button': {
-          display: 'none',
-        },
-        // Hide operator
-        '& > div > div > div > div > div:first-child': {
-          display: 'none',
-        },
-        // Fix styles
-        '& > div > div > div > div > div:last-child': {
-          marginLeft: 0,
-          '& > div > div > div': {
-            paddingRight: '8px',
-          },
-        },
-      },
     }),
     controlsWrapper: css({
       label: 'controlsWrapper',

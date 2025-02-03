@@ -33,16 +33,6 @@ function getOperatorDescription(op: FilterOp): string {
   throw error;
 }
 
-// @todo there should be a way to define isMulti for any operator in core scenes, instead of having to use one that doesn't exist in LogQL
-// Also variables with only a single operator shouldn't give the user the choice to select the operator, and the input should be hidden without requiring css hacks
-export const multiOperators = ['=|'].map<SelectableValue<string>>((value, index, array) => {
-  return {
-    description: 'One of',
-    label: value,
-    value,
-  };
-});
-
 export const operators = [FilterOp.Equal, FilterOp.NotEqual, FilterOp.RegexEqual, FilterOp.RegexNotEqual].map<
   SelectableValue<string>
 >((value, index, array) => {

@@ -61,6 +61,7 @@ import { ShowLogsButtonScene } from '../IndexScene/ShowLogsButtonScene';
 import { migrateLineFilterV1 } from '../../services/migrations';
 import { isOperatorInclusive } from '../../services/operators';
 import { VariableHide } from '@grafana/schema';
+import { LEVELS_VARIABLE_SCENE_KEY, LevelsVariableScene } from '../IndexScene/LevelsVariableScene';
 
 export const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 export const LOGS_COUNT_QUERY_REFID = 'logsCountQuery';
@@ -264,7 +265,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   };
 
   private showVariables() {
-    getLevelsVariable(this).setState({ hide: VariableHide.dontHide });
+    const levelsVar = sceneGraph.findByKeyAndType(this, LEVELS_VARIABLE_SCENE_KEY, LevelsVariableScene);
+    levelsVar.setState({ visible: true });
     getFieldsAndMetadataVariable(this).setState({ hide: VariableHide.dontHide });
   }
 
@@ -373,11 +375,9 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private subscribeToLevelsVariable() {
-    return getLevelsVariable(this).subscribeToState((newState, prevState) => {
-      if (!areArraysEqual(newState.filters, prevState.filters)) {
-        this.state.$detectedFieldsData?.runQueries();
-        this.state.$logsCount?.runQueries();
-      }
+    return getLevelsVariable(this).subscribeToEvent(SceneVariableValueChangedEvent, () => {
+      this.state.$detectedFieldsData?.runQueries();
+      this.state.$logsCount?.runQueries();
     });
   }
 
