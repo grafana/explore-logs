@@ -335,3 +335,5 @@ export const E2EComboboxStrings = {
     regexNotEqual: '!~ Does not match regex',
   },
 };
+
+export const levelTextMatch = /error|warn|info|debug/;

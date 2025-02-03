@@ -12,6 +12,7 @@ import { css } from '@emotion/css';
 import { Icon, MultiSelect, useStyles2 } from '@grafana/ui';
 import { LEVEL_VARIABLE_VALUE } from '../../services/variables';
 import { FilterOp } from '../../services/filterTypes';
+import { testIds } from '../../services/testIds';
 
 type ChipOption = MetricFindValue & { selected?: boolean };
 export interface LevelsVariableSceneState extends SceneObjectState {
@@ -120,9 +121,10 @@ export class LevelsVariableScene extends SceneObjectBase<LevelsVariableSceneStat
     }
 
     return (
-      <div>
+      <div data-testid={testIds.variables.levels.inputWrap}>
         <ControlsLabel layout="vertical" label={'Log levels'} />
         <MultiSelect
+          aria-label={'Log level filters'}
           prefix={<Icon size={'lg'} name={'filter'} />}
           placeholder={'All levels'}
           className={styles.flex}

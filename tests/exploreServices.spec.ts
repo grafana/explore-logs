@@ -1,5 +1,5 @@
 import { test, expect } from '@grafana/plugin-e2e';
-import { E2EComboboxStrings, ExplorePage } from './fixtures/explore';
+import { E2EComboboxStrings, ExplorePage, levelTextMatch } from './fixtures/explore';
 import { testIds } from '../src/services/testIds';
 import { getMockVolumeApiResponse } from './mocks/getMockVolumeApiResponse';
 import { isNumber } from 'lodash';
@@ -148,12 +148,12 @@ test.describe('explore services page', () => {
       await explorePage.scrollToBottom();
       await page.getByTestId(testIds.exploreServiceDetails.buttonFilterInclude).nth(1).click();
 
-      await expect(page.getByLabel('Edit filter with key detected_level')).toBeVisible();
+      await expect(page.getByTestId(testIds.variables.levels.inputWrap)).toBeVisible();
+      await expect(page.getByTestId(testIds.variables.levels.inputWrap)).toContainText(levelTextMatch);
 
       // Navigate to patterns so the scene is cached
       await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
-
-      await expect(page.getByLabel('Edit filter with key detected_level')).toBeVisible();
+      await expect(page.getByTestId(testIds.variables.levels.inputWrap)).toContainText(levelTextMatch);
 
       // Remove service so we're redirected back to the start
       await page.getByLabel(E2EComboboxStrings.labels.removeServiceLabel).click();
@@ -163,11 +163,11 @@ test.describe('explore services page', () => {
 
       await explorePage.addServiceName();
 
-      await expect(page.getByLabel('Edit filter with key detected_level')).not.toBeVisible();
+      await expect(page.getByTestId(testIds.variables.levels.inputWrap)).toBeVisible();
+      await expect(page.getByTestId(testIds.variables.levels.inputWrap)).not.toContainText(levelTextMatch);
 
       await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
-
-      await expect(page.getByLabel('Edit filter with key detected_level')).not.toBeVisible();
+      await expect(page.getByTestId(testIds.variables.levels.inputWrap)).not.toContainText(levelTextMatch);
     });
 
     test('should add multiple includes on service selection', async ({ page }) => {
