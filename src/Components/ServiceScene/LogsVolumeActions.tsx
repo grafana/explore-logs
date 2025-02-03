@@ -16,7 +16,7 @@ export class LogsVolumeActions extends SceneObjectBase<LogsVolumeActionsState> {
 type StreamSelector = Pick<AdHocVariableFilter, 'key' | 'operator' | 'value'>;
 
 type TemporaryExemptionsProps = {
-  /** An ordered list of string identifiers to provide context cue of where this component is being embedded and how we might want to consider displaying it */
+  /** An ordered list of lower-case [a-z]+ string identifiers to provide context clues of where this component is being embedded and how we might want to consider displaying it */
   contextHints?: string[];
   /** Currently selected data source */
   dataSourceUid?: string;
