@@ -10,7 +10,7 @@ export interface OpenInExploreLogsButtonProps {
   returnToPreviousSource?: string;
 }
 
-export function OpenInExploreLogsButton({
+export default function OpenInExploreLogsButton({
   datasourceUid,
   labelMatchers,
   from,
@@ -49,7 +49,7 @@ export function OpenInExploreLogsButton({
     <LinkButton
       variant="secondary"
       href={href}
-      onClick={() => setReturnToPrevious(returnToPreviousSource || 'previous')}
+      onMouseDown={() => setReturnToPrevious(returnToPreviousSource || 'previous')}
     >
       Open in Explore logs
     </LinkButton>
