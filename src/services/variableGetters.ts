@@ -195,9 +195,7 @@ export function getUrlParamNameForVariable(variableName: string) {
 }
 
 export function getValueFromFieldsFilter(filter: AdHocFilterWithLabels, variableName: string = VAR_FIELDS): FieldValue {
-  // Metadata is not encoded? But should it be?
-  // console.log('getValueFromFieldsFilter', {filter, variableName, isMetadata})
-
+  // Metadata is not JSON encoded
   if (isFilterMetadata(filter)) {
     return {
       value: filter.value,
