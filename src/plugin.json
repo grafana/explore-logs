@@ -68,6 +68,13 @@
         "description": "Open current query in the Explore Logs view"
       }
     ],
+    "exposedComponents": [
+      {
+        "id": "grafana-lokiexplore-app/open-in-explore-logs-button/v1",
+        "title": "Open in Explore logs button",
+        "description": "A button that opens a logs view in the Explore logs app."
+      }
+    ],
     "extensionPoints": [
       {
         "id": "grafana-lokiexplore-app/metric-exploration/v1"
