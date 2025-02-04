@@ -3,7 +3,7 @@ import { SceneComponentProps, SceneFlexLayout, sceneGraph, SceneObjectBase, Scen
 import { useStyles2 } from '@grafana/ui';
 import React from 'react';
 import { PatternControls } from './PatternControls';
-import { AppliedPattern, IndexScene, IndexSceneState } from './IndexScene';
+import { IndexScene, IndexSceneState } from './IndexScene';
 import { css, cx } from '@emotion/css';
 import { GiveFeedbackButton } from './GiveFeedbackButton';
 import { InterceptBanner } from './InterceptBanner';
@@ -12,6 +12,7 @@ import { PLUGIN_ID } from '../../services/plugin';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
 import { logger } from '../../services/logger';
 import { LineFilterVariablesScene } from './LineFilterVariablesScene';
+import { AppliedPattern } from '../../services/variables';
 
 interface LayoutSceneState extends SceneObjectState {
   interceptDismissed: boolean;

@@ -36,11 +36,21 @@ export type LineFilterType = {
   value: string;
 };
 
+export type PatternFilterType = {
+  operator: PatternFilterOp;
+  value: string;
+};
+
 export enum LineFilterOp {
   match = '|=',
   negativeMatch = `!=`,
   regex = '|~',
   negativeRegex = `!~`,
+}
+
+export enum PatternFilterOp {
+  match = '|>',
+  negativeMatch = '!>',
 }
 
 export enum LineFilterCaseSensitive {

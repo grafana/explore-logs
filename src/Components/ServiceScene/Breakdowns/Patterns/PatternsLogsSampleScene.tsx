@@ -15,18 +15,19 @@ import React from 'react';
 import { LoadingState } from '@grafana/data';
 import { Alert, Button } from '@grafana/ui';
 import {
+  AppliedPattern,
   LOG_STREAM_SELECTOR_EXPR,
   PATTERNS_SAMPLE_SELECTOR_EXPR,
   VAR_PATTERNS_EXPR,
 } from '../../../../services/variables';
-import { buildDataQuery, renderPatternFilters } from '../../../../services/query';
+import { buildDataQuery } from '../../../../services/query';
 import { getQueryRunner } from '../../../../services/panel';
-import { AppliedPattern } from '../../../IndexScene/IndexScene';
 import { PatternsViewTableScene } from './PatternsViewTableScene';
 import { emptyStateStyles } from '../FieldsBreakdownScene';
 import { getFieldsVariable, getLevelsVariable, getLineFiltersVariable } from '../../../../services/variableGetters';
 import { LokiQuery } from '../../../../services/lokiQuery';
 import { logger } from '../../../../services/logger';
+import { renderPatternFilters } from '../../../../services/renderPatternFilters';
 
 interface PatternsLogsSampleSceneState extends SceneObjectState {
   pattern: string;

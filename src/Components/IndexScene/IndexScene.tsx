@@ -22,6 +22,7 @@ import {
   SceneVariableSet,
 } from '@grafana/scenes';
 import {
+  AppliedPattern,
   DETECTED_FIELD_VALUES_EXPR,
   DETECTED_LEVELS_VALUES_EXPR,
   DETECTED_METADATA_VALUES_EXPR,
@@ -59,7 +60,6 @@ import {
   renderLogQLLabelFilters,
   renderLogQLLineFilter,
   renderLogQLMetadataFilters,
-  renderPatternFilters,
 } from 'services/query';
 import { VariableHide } from '@grafana/schema';
 import { CustomConstantVariable } from '../../services/CustomConstantVariable';
@@ -95,12 +95,9 @@ import {
   numericOperators,
   operators,
 } from '../../services/operators';
+import { renderPatternFilters } from '../../services/renderPatternFilters';
 
 export const showLogsButtonSceneKey = 'showLogsButtonScene';
-export interface AppliedPattern {
-  pattern: string;
-  type: 'include' | 'exclude';
-}
 
 export interface IndexSceneState extends SceneObjectState {
   // contentScene is the scene that is displayed in the main body of the index scene - it can be either the service selection or service scene

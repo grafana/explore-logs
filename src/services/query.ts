@@ -1,5 +1,4 @@
 import { AdHocVariableFilter } from '@grafana/data';
-import { AppliedPattern } from 'Components/IndexScene/IndexScene';
 import { EMPTY_VARIABLE_VALUE, VAR_DATASOURCE_EXPR } from './variables';
 import { groupBy, trim } from 'lodash';
 import { getValueFromFieldsFilter } from './variableGetters';
@@ -221,27 +220,6 @@ function fieldNumericFilterToQueryString(filter: AdHocVariableFilter) {
 
 export function renderRegexLabelFilter(key: string, values: string[], operator: FilterOp) {
   return `${key}${operator}"${values.join('|')}"`;
-}
-
-export function renderPatternFilters(patterns: AppliedPattern[]) {
-  const excludePatterns = patterns.filter((pattern) => pattern.type === 'exclude');
-  const excludePatternsLine = excludePatterns
-    .map((p) => `!> "${sceneUtils.escapeLabelValueInExactSelector(p.pattern)}"`)
-    .join(' ')
-    .trim();
-
-  const includePatterns = patterns.filter((pattern) => pattern.type === 'include');
-  let includePatternsLine = '';
-  if (includePatterns.length > 0) {
-    if (includePatterns.length === 1) {
-      includePatternsLine = `|> "${sceneUtils.escapeLabelValueInExactSelector(includePatterns[0].pattern)}"`;
-    } else {
-      includePatternsLine = `|> ${includePatterns
-        .map((p) => `"${sceneUtils.escapeLabelValueInExactSelector(p.pattern)}"`)
-        .join(' or ')}`;
-    }
-  }
-  return `${excludePatternsLine} ${includePatternsLine}`.trim();
 }
 
 export function joinTagFilters(variable: AdHocFiltersVariable) {
