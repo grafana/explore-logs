@@ -8,6 +8,7 @@ export interface OpenInExploreLogsButtonProps {
   from?: string;
   to?: string;
   returnToPreviousSource?: string;
+  renderButton?: (props: { href: string }) => React.ReactElement<any>;
 }
 
 export default function OpenInExploreLogsButton({
@@ -16,6 +17,7 @@ export default function OpenInExploreLogsButton({
   from,
   to,
   returnToPreviousSource,
+  renderButton,
 }: OpenInExploreLogsButtonProps) {
   const setReturnToPrevious = useReturnToPrevious();
 
@@ -45,11 +47,15 @@ export default function OpenInExploreLogsButton({
     return null;
   }
 
+  if (renderButton) {
+    return renderButton({ href });
+  }
+
   return (
     <LinkButton
       variant="secondary"
       href={href}
-      onMouseDown={() => setReturnToPrevious(returnToPreviousSource || 'previous')}
+      onClick={() => setReturnToPrevious(returnToPreviousSource || 'previous')}
     >
       Open in Explore logs
     </LinkButton>
