@@ -374,6 +374,10 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     });
   }
 
+  /**
+   * Subscribe to SceneVariableValueChangedEvent and run logs count and detectedFields on update.
+   * In the levels variable renderer we update the ad-hoc filters, but we don't always want to immediately execute queries.
+   */
   private subscribeToLevelsVariable() {
     return getLevelsVariable(this).subscribeToEvent(SceneVariableValueChangedEvent, () => {
       this.state.$detectedFieldsData?.runQueries();

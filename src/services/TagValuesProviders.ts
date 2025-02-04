@@ -88,6 +88,7 @@ export const getDetectedFieldValuesTagValuesProvider = async (
     try {
       let results = await languageProvider.fetchDetectedLabelValues(filter.key, options, requestOptions);
       if (results && isArray(results)) {
+        // Always return all level values
         if (variableType === VAR_LEVELS) {
           return { replace: true, values: results.map((key) => ({ text: key })) };
         }
