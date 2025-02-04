@@ -24,8 +24,6 @@ import {
 } from '@grafana/scenes';
 import {
   AdHocFiltersWithLabelsAndMeta,
-  DETECTED_FIELD_AND_METADATA_VALUES_EXPR,
-  DETECTED_LEVELS_VALUES_EXPR,
   EXPLORATION_DS,
   MIXED_FORMAT_EXPR,
   PENDING_FIELDS_EXPR,
@@ -98,7 +96,7 @@ import { operatorFunction } from '../../services/variableHelpers';
 import { FilterOp } from '../../services/filterTypes';
 import { areArraysEqual } from '../../services/comparison';
 import { isFilterMetadata } from '../../services/filters';
-import { UIVariableFilterType } from '../ServiceScene/Breakdowns/AddToFiltersButton';
+import { getFieldsTagValuesExpression } from '../../services/expressions';
 
 export const showLogsButtonSceneKey = 'showLogsButtonScene';
 export interface AppliedPattern {
@@ -375,15 +373,16 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     });
   }
 
+  /**
+   * Get tag keys (label names) for the combined fields variable
+   */
   private getCombinedFieldsTagKeysProvider() {
     return (variable: AdHocFiltersVariable, currentKey: string | null) => {
-      // Current key seems to always be null, so not sure what this is doing
-      // let filters = variable.state.filters.filter((f) => f.key !== currentKey);
-
+      // Current key seems to always be null, I think it's only supported for other variable types that allow editing the key without first removing the value/operator?
       const metadataVar = getMetadataVariable(this);
       const fieldVar = getFieldsVariable(this);
 
-      const uninterpolatedExpression = this.getFieldsTagValuesExpression(VAR_FIELDS_AND_METADATA);
+      const uninterpolatedExpression = getFieldsTagValuesExpression(VAR_FIELDS_AND_METADATA);
 
       const metadataFilters = metadataVar.state.filters.filter((f) => f.key !== currentKey);
       const fieldFilters = fieldVar.state.filters.filter((f) => f.key !== currentKey);
@@ -402,9 +401,12 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     };
   }
 
+  /**
+   * Get tag values (label values) for combined fields variable
+   */
   private getCombinedFieldsTagValuesProvider() {
     return (variable: AdHocFiltersVariable, filter: AdHocFilterWithLabels) => {
-      const uninterpolatedExpression = this.getFieldsTagValuesExpression(VAR_FIELDS_AND_METADATA);
+      const uninterpolatedExpression = getFieldsTagValuesExpression(VAR_FIELDS_AND_METADATA);
       const metadataVar = getMetadataVariable(this);
       const fieldVar = getFieldsVariable(this);
 
@@ -432,12 +434,15 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     };
   }
 
+  /**
+   * Get tag keys (label names) for levels variable
+   */
   private getLevelsTagKeysProvider() {
     return (variable: AdHocFiltersVariable, currentKey: string | null) => {
-      // Current key seems to always be null, I don't think this applies to the combobox where the key cannot be edited in a wip without completely removing the "chip" first
+      // Current key seems to always be null, I think it's only supported for other variable types that allow editing the key without first removing the value/operator?
       const filters = variable.state.filters.filter((f) => f.key !== currentKey);
       const otherFiltersString = this.renderVariableFilters(VAR_LEVELS, filters);
-      const uninterpolatedExpression = this.getFieldsTagValuesExpression(VAR_LEVELS);
+      const uninterpolatedExpression = getFieldsTagValuesExpression(VAR_LEVELS);
       const expr = uninterpolatedExpression.replace(PENDING_FIELDS_EXPR, otherFiltersString);
       const interpolated = sceneGraph.interpolate(this, expr);
       return getFieldsKeysProvider({
@@ -449,12 +454,15 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     };
   }
 
+  /**
+   * Get tag values (label values) for levels variable
+   */
   private getLevelsTagValuesProvider() {
     return (variable: AdHocFiltersVariable, filter: AdHocFilterWithLabels) => {
       // Don't add equals operations to the query, the user might want to select more than one value
       const filters = variable.state.filters.filter((f) => f.key !== filter.key && f.operator === FilterOp.Equal);
       const otherFiltersString = this.renderVariableFilters(VAR_LEVELS, filters);
-      const uninterpolatedExpression = this.getFieldsTagValuesExpression(VAR_LEVELS);
+      const uninterpolatedExpression = getFieldsTagValuesExpression(VAR_LEVELS);
       const expr = uninterpolatedExpression.replace(PENDING_FIELDS_EXPR, otherFiltersString);
       const interpolated = sceneGraph.interpolate(this, expr);
 
@@ -483,22 +491,6 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       const error = new Error('getFieldsTagValuesProvider only supports fields, metadata, and levels');
       logger.error(error);
       throw error;
-    }
-  }
-
-  private getFieldsTagValuesExpression(variableType: UIVariableFilterType) {
-    switch (variableType) {
-      case VAR_LEVELS:
-        return DETECTED_LEVELS_VALUES_EXPR;
-      case VAR_FIELDS_AND_METADATA:
-        return DETECTED_FIELD_AND_METADATA_VALUES_EXPR;
-      default:
-        const error = new Error(`Unknown variable type: ${variableType}`);
-        logger.error(error, {
-          variableType,
-          msg: `getFieldsTagValuesExpression: Unknown variable type: ${variableType}`,
-        });
-        throw error;
     }
   }
 
