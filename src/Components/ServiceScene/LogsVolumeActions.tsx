@@ -16,7 +16,7 @@ export class LogsVolumeActions extends SceneObjectBase<LogsVolumeActionsState> {
 type StreamSelector = Pick<AdHocVariableFilter, 'key' | 'operator' | 'value'>;
 
 type TemporaryExemptionsProps = {
-  /** A list of string identifiers to provide context cue of where this component is being embedded and how we might want to consider displaying it */
+  /** An ordered list of lower-case [a-z]+ string identifiers to provide context clues of where this component is being embedded and how we might want to consider displaying it */
   contextHints?: string[];
   /** Currently selected data source */
   dataSourceUid?: string;
@@ -43,7 +43,7 @@ function Component({ model }: SceneComponentProps<LogsVolumeActions>) {
     <TemporaryExemptionsButton
       dataSourceUid={dataSourceUid}
       streamSelector={streamSelector}
-      contextHints={['log-volume-panel', 'header-action']}
+      contextHints={['explorelogs', 'logvolumepanel', 'headeraction']}
     />
   );
 }
