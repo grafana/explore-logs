@@ -57,12 +57,12 @@ export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneStat
             </div>
           )}
 
-          {/* Second row - Levels - Custom renderer - WIP */}
+          {/* Second row - levels - custom renderer */}
           <div className={styles.controlsRowContainer}>
             {levelsRenderer && <levelsRenderer.Component model={levelsRenderer} />}
           </div>
 
-          {/* 3rd row - Fields Combined  */}
+          {/* 3rd row - Combined fields (fields + metadata)  */}
           <div className={styles.controlsRowContainer}>
             {controls && (
               <div className={styles.filtersWrap}>
@@ -86,7 +86,7 @@ export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneStat
             />
           </div>
 
-          {/* 5th row - line filters */}
+          {/* 5th row - line filters - custom renderer */}
           <div className={styles.controlsRowContainer}>
             {lineFilterRenderer && <lineFilterRenderer.Component model={lineFilterRenderer} />}
           </div>
