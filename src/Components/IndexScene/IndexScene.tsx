@@ -359,7 +359,6 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     const levelsVariable = getLevelsVariable(this);
     const fieldsCombinedVariable = getFieldsAndMetadataVariable(this);
 
-    // levelsVariable._getOperators = () => operatorFunction(levelsVariable);
     fieldsCombinedVariable._getOperators = () => operatorFunction(fieldsCombinedVariable);
 
     levelsVariable.setState({
