@@ -110,7 +110,6 @@ export function onAddCustomValue(
   item: SelectableValue<string> & { isCustom?: boolean },
   filter: AdHocFiltersWithLabelsAndMeta
 ): { value: string | undefined; valueLabels: string[] } {
-  console.warn('onAddCustomValue', { item, filter });
   const field: FieldValue = {
     value: item.value ?? '',
     parser: filter?.meta?.parser ?? 'mixed',
