@@ -1,5 +1,5 @@
 import { expect, test } from '@grafana/plugin-e2e';
-import { ExplorePage, PlaywrightRequest } from './fixtures/explore';
+import { E2EComboboxStrings, ExplorePage, PlaywrightRequest } from './fixtures/explore';
 
 import { LokiQuery } from '../src/services/lokiQuery';
 
@@ -45,7 +45,7 @@ test.describe('explore nginx-json breakdown pages ', () => {
     await expect(allPanels).toHaveCount(6);
 
     // Adhoc content filter should be added
-    await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${fieldName}`)).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
     requests.forEach((req) => {
@@ -53,7 +53,7 @@ test.describe('explore nginx-json breakdown pages ', () => {
       const queries: LokiQuery[] = post.queries;
       queries.forEach((query) => {
         expect(query.expr).toContain(
-          `sum by (${fieldName}) (count_over_time({service_name=\`nginx-json\`}      | json | drop __error__, __error_details__ | ${fieldName}!=""`
+          `sum by (${fieldName}) (count_over_time({service_name="nginx-json"}      | json | drop __error__, __error_details__ | ${fieldName}!=""`
         );
       });
     });

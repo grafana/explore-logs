@@ -510,3 +510,6 @@ timesync
 openmetrics
 adaptivelogs
 subselector
+explorelogs
+logvolumepanel
+headeraction

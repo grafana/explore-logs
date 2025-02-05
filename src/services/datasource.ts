@@ -13,7 +13,6 @@ import { RuntimeDataSource, sceneUtils } from '@grafana/scenes';
 import { DataQuery, LogsSortOrder } from '@grafana/schema';
 import { Observable, Subscriber } from 'rxjs';
 import { getDataSource } from './scenes';
-import { getPrimaryLabelFromUrl } from './routing';
 import { DetectedFieldsResponse, DetectedLabelsResponse } from './fields';
 import { FIELDS_TO_REMOVE, LABELS_TO_REMOVE, sortLabelsByCardinality } from './filters';
 import { SERVICE_NAME } from './variables';
@@ -87,7 +86,7 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
       getDataSourceSrv()
         .get(getDataSource(request.scopedVars.__sceneObject.valueOf()))
         .then(async (ds) => {
-          if (!(ds instanceof DataSourceWithBackend)) {
+          if (!(ds instanceof DataSourceWithBackend) || !('interpolateString' in ds) || !('getTimeRangeParams' in ds)) {
             throw new Error('Invalid datasource!');
           }
 
@@ -320,10 +319,8 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
         }
       );
 
-      const { labelName: primaryLabelName } = getPrimaryLabelFromUrl();
-
       const labels = response.detectedLabels
-        ?.filter((label) => primaryLabelName !== label.label && !LABELS_TO_REMOVE.includes(label.label))
+        ?.filter((label) => !LABELS_TO_REMOVE.includes(label.label))
         ?.sort((a, b) => sortLabelsByCardinality(a, b));
 
       const detectedLabelFields: Array<Partial<Field>> = labels?.map((label) => {
