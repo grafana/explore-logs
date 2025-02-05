@@ -4,18 +4,30 @@ import { AdHocVariableFilter, BusEventBase, DataFrame } from '@grafana/data';
 import { SceneComponentProps, SceneObject, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { VariableHide } from '@grafana/schema';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS, VAR_LEVELS, VAR_METADATA } from 'services/variables';
+import {
+  LEVEL_VARIABLE_VALUE,
+  VAR_FIELDS,
+  VAR_FIELDS_AND_METADATA,
+  VAR_LABELS,
+  VAR_LABELS_REPLICA,
+  VAR_LEVELS,
+  VAR_METADATA,
+} from 'services/variables';
 import { FilterButton } from 'Components/FilterButton';
 import { getDetectedLabelsFrame } from '../ServiceScene';
 import { getParserForField } from '../../../services/fields';
-import { getAdHocFiltersVariable, getValueFromAdHocVariableFilter } from '../../../services/variableGetters';
+import {
+  getAdHocFiltersVariable,
+  getFieldsAndMetadataVariable,
+  getValueFromAdHocVariableFilter,
+} from '../../../services/variableGetters';
 import { FilterOp } from '../../../services/filterTypes';
 
 import { addToFavorites } from '../../../services/favorites';
 
 export interface AddToFiltersButtonState extends SceneObjectState {
   frame: DataFrame;
-  variableName: VariableFilterType;
+  variableName: InterpolatedFilterType;
 }
 
 export class AddFilterEvent extends BusEventBase {
@@ -42,24 +54,27 @@ export type NumericFilterType = FilterOp.gt | FilterOp.gte | FilterOp.lt | Filte
  */
 export type FilterType = 'include' | 'clear' | 'exclude' | 'toggle';
 
-export function addAdHocFilter(filter: AdHocVariableFilter, scene: SceneObject, variableType?: VariableFilterType) {
+export function addAdHocFilter(filter: AdHocVariableFilter, scene: SceneObject, variableType?: InterpolatedFilterType) {
   const type: FilterType = filter.operator === '=' ? 'include' : 'exclude';
   addToFilters(filter.key, filter.value, type, scene, variableType);
 }
 
-export type VariableFilterType = typeof VAR_LABELS | typeof VAR_FIELDS | typeof VAR_LEVELS | typeof VAR_METADATA;
+export type InterpolatedFilterType = typeof VAR_LABELS | typeof VAR_FIELDS | typeof VAR_LEVELS | typeof VAR_METADATA;
+export type UIVariableFilterType = typeof VAR_LEVELS | typeof VAR_FIELDS_AND_METADATA;
+export type AdHocFilterTypes = InterpolatedFilterType | typeof VAR_LABELS_REPLICA | typeof VAR_FIELDS_AND_METADATA;
 
 export function clearFilters(
   key: string,
   scene: SceneObject,
-  variableType?: VariableFilterType,
+  variableType?: InterpolatedFilterType,
   value?: string,
   operator?: FilterType
 ) {
   if (!variableType) {
     variableType = resolveVariableTypeForField(key, scene);
   }
-  const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableType), scene);
+
+  const variable = getUIAdHocVariable(variableType, key, scene);
 
   let filters = variable.state.filters.filter((filter) => {
     const fieldValue = getValueFromAdHocVariableFilter(variable, filter);
@@ -98,12 +113,12 @@ export function removeFilter(
   key: string,
   scene: SceneObject,
   operator?: NumericFilterType,
-  variableType?: VariableFilterType
+  variableType?: InterpolatedFilterType
 ) {
   if (!variableType) {
     variableType = resolveVariableTypeForField(key, scene);
   }
-  const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableType), scene);
+  const variable = getUIAdHocVariable(variableType, key, scene);
   const operatorType = operator ? getNumericOperatorType(operator) : undefined;
 
   let filters = variable.state.filters.filter((filter) => {
@@ -123,14 +138,14 @@ export function addNumericFilter(
   value: string,
   operator: NumericFilterType,
   scene: SceneObject,
-  variableType?: VariableFilterType
+  variableType?: InterpolatedFilterType
 ) {
   const operatorType = getNumericOperatorType(operator);
 
   if (!variableType) {
     variableType = resolveVariableTypeForField(key, scene);
   }
-  const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableType), scene);
+  const variable = getUIAdHocVariable(variableType, key, scene);
 
   let valueObject: string | undefined = undefined;
   if (variableType === VAR_FIELDS) {
@@ -169,7 +184,7 @@ export function addToFilters(
   value: string,
   operator: FilterType,
   scene: SceneObject,
-  variableType?: VariableFilterType
+  variableType?: InterpolatedFilterType
 ) {
   if (!variableType) {
     variableType = resolveVariableTypeForField(key, scene);
@@ -179,7 +194,7 @@ export function addToFilters(
     addToFavorites(key, value, scene);
   }
 
-  const variable = getAdHocFiltersVariable(validateVariableNameForField(key, variableType), scene);
+  const variable = getUIAdHocVariable(variableType, key, scene);
 
   let valueObject: string | undefined = undefined;
   if (variableType === VAR_FIELDS) {
@@ -226,12 +241,10 @@ export function replaceFilter(
   key: string,
   value: string,
   operator: Extract<FilterType, 'include' | 'exclude'>,
-  scene: SceneObject
+  scene: SceneObject,
+  variableType: InterpolatedFilterType
 ) {
-  const variable = getAdHocFiltersVariable(
-    validateVariableNameForField(key, resolveVariableTypeForField(key, scene)),
-    scene
-  );
+  const variable = getUIAdHocVariable(variableType, key, scene);
 
   variable.setState({
     filters: [
@@ -245,7 +258,7 @@ export function replaceFilter(
   });
 }
 
-export function validateVariableNameForField(field: string, variableName: string) {
+export function validateVariableNameForField(field: string, variableName: InterpolatedFilterType) {
   // Special case: If the key is LEVEL_VARIABLE_VALUE, we need to use the VAR_FIELDS.
   if (field === LEVEL_VARIABLE_VALUE) {
     return VAR_LEVELS;
@@ -253,7 +266,7 @@ export function validateVariableNameForField(field: string, variableName: string
   return variableName;
 }
 
-function resolveVariableTypeForField(field: string, scene: SceneObject): VariableFilterType {
+function resolveVariableTypeForField(field: string, scene: SceneObject): InterpolatedFilterType {
   const indexedLabel = getDetectedLabelsFrame(scene)?.fields?.find((label) => label.name === field);
   return indexedLabel ? VAR_LABELS : VAR_FIELDS;
 }
@@ -266,8 +279,8 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
     }
 
     addToFilters(filter.name, filter.value, type, this, this.state.variableName);
+    const variable = getUIAdHocVariable(this.state.variableName, filter.name, this);
 
-    const variable = getAdHocFiltersVariable(validateVariableNameForField(filter.name, this.state.variableName), this);
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
       USER_EVENTS_ACTIONS.service_details.add_to_filters_in_breakdown_clicked,
@@ -286,7 +299,7 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
       return { isIncluded: false, isExcluded: false };
     }
 
-    const variable = getAdHocFiltersVariable(validateVariableNameForField(filter.name, this.state.variableName), this);
+    const variable = getUIAdHocVariable(this.state.variableName, filter.name, this);
 
     // Check if the filter is already there
     const filterInSelectedFilters = variable.state.filters.find((f) => {
@@ -330,4 +343,10 @@ const getFilter = (frame: DataFrame) => {
   const name = Object.keys(filterNameAndValueObj)[0];
   const value = filterNameAndValueObj[name];
   return { name, value };
+};
+
+const getUIAdHocVariable = (variableType: InterpolatedFilterType, key: string, scene: SceneObject) => {
+  return variableType === VAR_FIELDS || variableType === VAR_METADATA
+    ? getFieldsAndMetadataVariable(scene)
+    : getAdHocFiltersVariable(validateVariableNameForField(key, variableType), scene);
 };

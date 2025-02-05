@@ -1,5 +1,5 @@
 import { test, expect } from '@grafana/plugin-e2e';
-import { E2EComboboxLabels, ExplorePage } from './fixtures/explore';
+import { E2EComboboxStrings, ExplorePage, levelTextMatch } from './fixtures/explore';
 import { testIds } from '../src/services/testIds';
 import { getMockVolumeApiResponse } from './mocks/getMockVolumeApiResponse';
 import { isNumber } from 'lodash';
@@ -148,26 +148,26 @@ test.describe('explore services page', () => {
       await explorePage.scrollToBottom();
       await page.getByTestId(testIds.exploreServiceDetails.buttonFilterInclude).nth(1).click();
 
-      await expect(page.getByLabel('Edit filter with key detected_level')).toBeVisible();
+      await expect(page.getByTestId(testIds.variables.levels.inputWrap)).toBeVisible();
+      await expect(page.getByTestId(testIds.variables.levels.inputWrap)).toContainText(levelTextMatch);
 
       // Navigate to patterns so the scene is cached
       await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
-
-      await expect(page.getByLabel('Edit filter with key detected_level')).toBeVisible();
+      await expect(page.getByTestId(testIds.variables.levels.inputWrap)).toContainText(levelTextMatch);
 
       // Remove service so we're redirected back to the start
-      await page.getByLabel(E2EComboboxLabels.labels.removeServiceLabel).click();
+      await page.getByLabel(E2EComboboxStrings.labels.removeServiceLabel).click();
 
       // Assert we're rendering the right scene and the services have loaded
       await expect(page.getByText(/Showing \d+ of \d+/)).toBeVisible();
 
       await explorePage.addServiceName();
 
-      await expect(page.getByLabel('Edit filter with key detected_level')).not.toBeVisible();
+      await expect(page.getByTestId(testIds.variables.levels.inputWrap)).toBeVisible();
+      await expect(page.getByTestId(testIds.variables.levels.inputWrap)).not.toContainText(levelTextMatch);
 
       await page.getByTestId(testIds.exploreServiceDetails.tabPatterns).click();
-
-      await expect(page.getByLabel('Edit filter with key detected_level')).not.toBeVisible();
+      await expect(page.getByTestId(testIds.variables.levels.inputWrap)).not.toContainText(levelTextMatch);
     });
 
     test('should add multiple includes on service selection', async ({ page }) => {
@@ -309,7 +309,7 @@ test.describe('explore services page', () => {
       // Since the addition of the runtime datasource, the query doesn't contain the datasource, and won't re-run when the datasource is changed, as such we need to manually re-run volume queries when the service selection scene is activated or users could be presented with an invalid set of services
       // This isn't ideal as we won't take advantage of being able to use the cached volume result for users that did not change the datasource any longer
       test('navigating back will re-run volume query', async ({ page }) => {
-        const removeVariableBtn = page.getByLabel(E2EComboboxLabels.labels.removeServiceLabel);
+        const removeVariableBtn = page.getByLabel(E2EComboboxStrings.labels.removeServiceLabel);
         await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
         expect(logsVolumeCount).toEqual(1);
         expect(logsQueryCount).toBeLessThanOrEqual(4);
@@ -431,7 +431,7 @@ test.describe('explore services page', () => {
 
           const serviceNameVariableLoc = page.getByTestId(testIds.variables.serviceName.label);
           await expect(serviceNameVariableLoc).toHaveCount(1);
-          const removeVariableBtn = page.getByLabel(E2EComboboxLabels.labels.removeServiceLabel);
+          const removeVariableBtn = page.getByLabel(E2EComboboxStrings.labels.removeServiceLabel);
           await expect(serviceNameVariableLoc).toHaveCount(1);
           await expect(removeVariableBtn).toHaveCount(1);
 

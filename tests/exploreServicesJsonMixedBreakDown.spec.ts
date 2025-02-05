@@ -1,5 +1,5 @@
 import { expect, test } from '@grafana/plugin-e2e';
-import { E2EComboboxLabels, ExplorePage, PlaywrightRequest } from './fixtures/explore';
+import { E2EComboboxStrings, ExplorePage, PlaywrightRequest } from './fixtures/explore';
 
 import { LokiQuery } from '../src/services/lokiQuery';
 
@@ -51,7 +51,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     await expect(allPanels).toHaveCount(6);
 
     // Adhoc content filter should be added
-    await expect(page.getByLabel(E2EComboboxLabels.editByKey(mixedFieldName))).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxStrings.editByKey(mixedFieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
     requests.forEach((req) => {
@@ -59,7 +59,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
       const queries: LokiQuery[] = post.queries;
       queries.forEach((query) => {
         expect(query.expr).toContain(
-          `sum by (${mixedFieldName}) (count_over_time({service_name=\`${serviceName}\`}      | json | logfmt | drop __error__, __error_details__ | ${mixedFieldName}!=""`
+          `sum by (${mixedFieldName}) (count_over_time({service_name="${serviceName}"}      | json | logfmt | drop __error__, __error_details__ | ${mixedFieldName}!=""`
         );
       });
     });
@@ -94,7 +94,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     await expect(allPanels).toHaveCount(13);
 
     // Adhoc content filter should be added
-    await expect(page.getByLabel(E2EComboboxLabels.editByKey(logFmtFieldName))).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxStrings.editByKey(logFmtFieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
     requests.forEach((req, index) => {
@@ -103,12 +103,12 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
       queries.forEach((query) => {
         if (index < 2) {
           expect(query.expr).toContain(
-            `sum by (${logFmtFieldName}) (count_over_time({service_name=\`${serviceName}\`}      | logfmt | ${logFmtFieldName}!=""  [$__auto]))`
+            `sum by (${logFmtFieldName}) (count_over_time({service_name="${serviceName}"}      | logfmt | ${logFmtFieldName}!=""  [$__auto]))`
           );
         }
         if (index >= 2) {
           expect(query.expr).toContain(
-            `sum by (${logFmtFieldName}) (count_over_time({service_name=\`${serviceName}\`}      | logfmt | ${logFmtFieldName}!="" | caller!=\`flush.go:253\` [$__auto]))`
+            `sum by (${logFmtFieldName}) (count_over_time({service_name="${serviceName}"}      | logfmt | ${logFmtFieldName}!="" | caller!="flush.go:253" [$__auto]))`
           );
         }
       });
@@ -141,7 +141,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     await expect(allPanels).toHaveCount(3);
 
     // Adhoc content filter should be added
-    await expect(page.getByLabel(E2EComboboxLabels.editByKey(jsonFmtFieldName))).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxStrings.editByKey(jsonFmtFieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
     requests.forEach((req) => {
@@ -149,7 +149,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
       const queries: LokiQuery[] = post.queries;
       queries.forEach((query) => {
         expect(query.expr).toContain(
-          `sum by (${jsonFmtFieldName}) (count_over_time({service_name=\`${serviceName}\`}      | json | drop __error__, __error_details__ | ${jsonFmtFieldName}!=""`
+          `sum by (${jsonFmtFieldName}) (count_over_time({service_name="${serviceName}"}      | json | drop __error__, __error_details__ | ${jsonFmtFieldName}!=""`
         );
       });
     });
@@ -179,7 +179,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     await expect.poll(() => allPanels.count()).toBeGreaterThanOrEqual(actualCount - 1);
 
     // Adhoc content filter should be added
-    await expect(page.getByLabel(E2EComboboxLabels.editByKey(metadataFieldName))).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxStrings.editByKey(metadataFieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
     await expect.poll(() => requests).toHaveLength(3);
@@ -189,7 +189,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
       const queries: LokiQuery[] = post.queries;
       queries.forEach((query) => {
         expect(query.expr).toContain(
-          `sum by (${metadataFieldName}) (count_over_time({service_name=\`${serviceName}\`} | ${metadataFieldName}!=""`
+          `sum by (${metadataFieldName}) (count_over_time({service_name="${serviceName}"} | ${metadataFieldName}!=""`
         );
       });
     });
