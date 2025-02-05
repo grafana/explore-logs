@@ -3,6 +3,8 @@ import { getLineFiltersVariable } from './variableGetters';
 import { LineFilterCaseSensitive, LineFilterOp } from './filterTypes';
 import { ServiceScene } from '../Components/ServiceScene/ServiceScene';
 import { urlUtil } from '@grafana/data';
+import { sceneGraph } from '@grafana/scenes';
+import { IndexScene } from '../Components/IndexScene/IndexScene';
 
 function removeEscapeChar(value: string, caseSensitive: boolean) {
   const charsEscapedByEscapeRegExp = ['^', '$', '.', '*', '+', '?', '(', ')', '[', ']', '{', '}', '|'];
@@ -36,11 +38,12 @@ export function migrateLineFilterV1(serviceScene: ServiceScene) {
     return;
   }
 
+  const indexScene = sceneGraph.getAncestor(serviceScene, IndexScene);
   const globalLineFilterVars = getLineFiltersVariable(serviceScene);
   const caseSensitiveMatches = deprecatedLineFilter?.match(/\|=.`(.+?)`/);
 
   if (caseSensitiveMatches && caseSensitiveMatches.length === 2) {
-    globalLineFilterVars.addActivationHandler(() => {
+    indexScene.state.body?.state.lineFilterRenderer?.addActivationHandler(() => {
       globalLineFilterVars.setState({
         filters: [
           {
@@ -56,7 +59,7 @@ export function migrateLineFilterV1(serviceScene: ServiceScene) {
 
   const caseInsensitiveMatches = deprecatedLineFilter?.match(/`\(\?i\)(.+)`/);
   if (caseInsensitiveMatches && caseInsensitiveMatches.length === 2) {
-    globalLineFilterVars.addActivationHandler(() => {
+    indexScene.state.body?.state.lineFilterRenderer?.addActivationHandler(() => {
       globalLineFilterVars.updateFilters([
         {
           key: LineFilterCaseSensitive.caseInsensitive,

@@ -4,6 +4,7 @@ import { testIds } from '../../src/services/testIds';
 import { expect } from '@grafana/plugin-e2e';
 
 import { LokiQuery } from '../../src/services/lokiQuery';
+import { FilterOp } from '../../src/services/filterTypes';
 
 export interface PlaywrightRequest {
   post: any;
@@ -137,8 +138,8 @@ export class ExplorePage {
   async scrollToBottom() {
     const main = this.page.locator('html');
 
-    // Scroll the page container to the bottom
-    await main.evaluate((main) => main.scrollTo(0, main.scrollHeight));
+    // Scroll the page container to the bottom, smoothly
+    await main.evaluate((main) => main.scrollTo({ left: 0, top: main.scrollHeight, behavior: 'smooth' }));
   }
 
   async goToLogsTab() {
@@ -258,7 +259,7 @@ export class ExplorePage {
     sortOrder: 'Ascending' | 'Descending' = 'Descending',
     wrapLogMessage: 'true' | 'false' = 'false'
   ) {
-    const url = `/a/grafana-lokiexplore-app/explore/service/tempo-distributor/logs?patterns=[]&from=now-5m&to=now&var-ds=gdev-loki&var-filters=service_name|=|tempo-distributor&var-fields=&var-levels=&var-metadata=&var-patterns=&var-lineFilter=&timezone=utc&urlColumns=["Time","Line"]&visualizationType="logs"&displayedFields=[]&sortOrder="${sortOrder}"&wrapLogMessage=${wrapLogMessage}&var-lineFilterV2=&var-lineFilters=`;
+    const url = `/a/grafana-lokiexplore-app/explore/service/tempo-distributor/logs?patterns=[]&from=now-5m&to=now&var-all-fields=&var-ds=gdev-loki&var-filters=service_name|=|tempo-distributor&var-fields=&var-levels=&var-metadata=&var-patterns=&var-lineFilter=&timezone=utc&urlColumns=["Time","Line"]&visualizationType="logs"&displayedFields=[]&sortOrder="${sortOrder}"&wrapLogMessage=${wrapLogMessage}&var-lineFilterV2=&var-lineFilters=`;
     await this.page.goto(url);
   }
 
@@ -304,4 +305,35 @@ export class ExplorePage {
       }
     });
   }
+
+  getOperatorLocator(filter: FilterOp): Locator {
+    switch (filter) {
+      case FilterOp.Equal:
+        return this.page.getByRole('option', { name: E2EComboboxStrings.operatorNames.equal, exact: true });
+      case FilterOp.NotEqual:
+        return this.page.getByRole('option', { name: E2EComboboxStrings.operatorNames.notEqual, exact: true });
+      case FilterOp.RegexEqual:
+        return this.page.getByRole('option', { name: E2EComboboxStrings.operatorNames.regexEqual, exact: true });
+      case FilterOp.RegexNotEqual:
+        return this.page.getByRole('option', { name: E2EComboboxStrings.operatorNames.regexNotEqual, exact: true });
+      default:
+        throw new Error('invalid filter op');
+    }
+  }
 }
+
+export const E2EComboboxStrings = {
+  editByKey: (keyName: string) => `Edit filter with key ${keyName}`,
+  removeByKey: (keyName: string) => `Remove filter with key ${keyName}`,
+  labels: {
+    removeServiceLabel: 'Remove filter with key service_name',
+  },
+  operatorNames: {
+    equal: '= Equals',
+    notEqual: '!= Not equal',
+    regexEqual: '=~ Matches regex',
+    regexNotEqual: '!~ Does not match regex',
+  },
+};
+
+export const levelTextMatch = /error|warn|info|debug/;

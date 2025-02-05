@@ -7,7 +7,7 @@ import {
   SceneDataTransformer,
   SceneObject,
 } from '@grafana/scenes';
-import { AddToFiltersButton, VariableFilterType } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
+import { AddToFiltersButton, InterpolatedFilterType } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import {
   DetectedFieldType,
   LEVEL_VARIABLE_VALUE,
@@ -197,7 +197,7 @@ export function getVariableForLabel(
   frame: DataFrame | undefined,
   key: string,
   sceneRef: SceneObject
-): VariableFilterType {
+): InterpolatedFilterType {
   const labelType = frame ? getLabelTypeFromFrame(key, frame) : LabelType.Parsed;
 
   if (labelType) {
@@ -219,7 +219,7 @@ export function getVariableForLabel(
   return VAR_FIELDS;
 }
 
-export function getFilterTypeFromLabelType(type: LabelType, key: string): VariableFilterType {
+export function getFilterTypeFromLabelType(type: LabelType, key: string): InterpolatedFilterType {
   switch (type) {
     case LabelType.Indexed: {
       return VAR_LABELS;

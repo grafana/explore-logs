@@ -72,9 +72,8 @@ describe('contextToLink', () => {
       const expectedLevelsFilterUrlString =
         `&var-levels=${encodeFilter('detected_level|!=|""')}` +
         `&var-levels=${encodeFilter('detected_level|!=|""')}` +
-        `&var-levels=${encodeFilter('detected_level|=|warn')}`;
-      // @todo detected_level is a field, not a label, so regex is not yet supported
-      // + `&var-levels=${encodeFilter('detected_level|=~|"warn__gfp__info"')}`
+        `&var-levels=${encodeFilter('detected_level|=|warn')}` +
+        `&var-levels=${encodeFilter('detected_level|=~|warn__gfp__info')}`;
       expect(config).toEqual({
         path: getPath({
           slug: 'service/nginx.+',
@@ -228,6 +227,9 @@ describe('contextToLink', () => {
 
       const expectedFieldsUrlString =
         `&var-fields=${encodeFilter('level|=|{"value":"error"__gfc__"parser":"logfmt"},error')}` +
+        `&var-fields=${encodeFilter(
+          'logger|=~|{"value":".*grafana-datasource.*__gfp__.*coreplugin"__gfc__"parser":"logfmt"},.*grafana-datasource.*__gfp__.*coreplugin'
+        )}` +
         `&var-fields=${encodeFilter('statusSource|!=|{"value":"downstream"__gfc__"parser":"logfmt"},downstream')}` +
         `&var-fields=${encodeFilter('error|!=|{"value":""__gfc__"parser":"logfmt"},""')}` +
         `&var-fields=${encodeFilter('endpoint|=|{"value":"queryData"__gfc__"parser":"logfmt"},queryData')}`;
@@ -257,6 +259,9 @@ describe('contextToLink', () => {
 
       const expectedFieldsUrlString =
         `&var-fields=${encodeFilter('level|=|{"value":"error"__gfc__"parser":"logfmt"},error')}` +
+        `&var-fields=${encodeFilter(
+          'logger|=~|{"value":".*grafana-datasource.*__gfp__.*coreplugin"__gfc__"parser":"logfmt"},.*grafana-datasource.*__gfp__.*coreplugin'
+        )}` +
         `&var-fields=${encodeFilter('statusSource|!=|{"value":"downstream"__gfc__"parser":"logfmt"},downstream')}` +
         `&var-fields=${encodeFilter('error|!=|{"value":""__gfc__"parser":"logfmt"},""')}` +
         `&var-fields=${encodeFilter('endpoint|=|{"value":"queryData"__gfc__"parser":"logfmt"},queryData')}`;
@@ -417,16 +422,20 @@ describe('contextToLink', () => {
           }),
         });
       });
-      it('should ignore regex match', () => {
+      it('should parse regex match', () => {
         const target = getTestTarget({
-          expr: `{cluster="eu-west-1"} | logfmt | json | pod=\`mimir-ingester-xjntw\` pod=~\`mimir-ingester-.+\``,
+          expr: `{cluster="eu-west-1"} | logfmt | json | pod=\`mimir-ingester-xjntw\` | pod=~\`mimir-ingester-.+\``,
         });
         const config = getTestConfig(linkConfigs, target);
 
         const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter('cluster|=|eu-west-1')}`;
-        const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
-          'pod|=|{"value":"mimir-ingester-xjntw"__gfc__"parser":"mixed"},mimir-ingester-xjntw'
-        )}`;
+        const expectedLineFiltersUrlString =
+          `&var-fields=${encodeFilter(
+            'pod|=|{"value":"mimir-ingester-xjntw"__gfc__"parser":"mixed"},mimir-ingester-xjntw'
+          )}` +
+          `&var-fields=${encodeFilter(
+            'pod|=~|{"value":"mimir-ingester-.+"__gfc__"parser":"mixed"},mimir-ingester-.+'
+          )}`;
 
         expect(config).toEqual({
           path: getPath({
@@ -436,16 +445,20 @@ describe('contextToLink', () => {
           }),
         });
       });
-      it('should ignore regex exclusion', () => {
+      it('should parse regex exclusion', () => {
         const target = getTestTarget({
           expr: `{cluster="eu-west-1"} | logfmt | json | pod=\`mimir-ingester-xjntw\` | pod!~\`mimir-ingester-.+\``,
         });
         const config = getTestConfig(linkConfigs, target);
 
         const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter('cluster|=|eu-west-1')}`;
-        const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
-          'pod|=|{"value":"mimir-ingester-xjntw"__gfc__"parser":"mixed"},mimir-ingester-xjntw'
-        )}`;
+        const expectedLineFiltersUrlString =
+          `&var-fields=${encodeFilter(
+            'pod|=|{"value":"mimir-ingester-xjntw"__gfc__"parser":"mixed"},mimir-ingester-xjntw'
+          )}` +
+          `&var-fields=${encodeFilter(
+            'pod|!~|{"value":"mimir-ingester-.+"__gfc__"parser":"mixed"},mimir-ingester-.+'
+          )}`;
 
         expect(config).toEqual({
           path: getPath({

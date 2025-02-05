@@ -1,5 +1,7 @@
 // Warning, this file is included in the main module.tsx bundle, and doesn't contain any imports to keep that bundle size small. Don't add imports to this file!
 
+import { AdHocFilterWithLabels } from '@grafana/scenes';
+
 export interface FieldValue {
   value: string;
   parser: ParserType;
@@ -16,6 +18,8 @@ export interface AppliedPattern {
 
 export type ParserType = 'logfmt' | 'json' | 'mixed' | 'structuredMetadata';
 export type DetectedFieldType = 'int' | 'float' | 'duration' | 'bytes' | 'boolean' | 'string';
+export type AdHocFilterWithLabelsMeta = { parser?: ParserType; type?: DetectedFieldType };
+export type AdHocFiltersWithLabelsAndMeta = AdHocFilterWithLabels<AdHocFilterWithLabelsMeta>;
 
 export type LogsQueryOptions = {
   labelExpressionToAdd?: string;
@@ -32,6 +36,8 @@ export const VAR_LABELS_REPLICA_EXPR = '${filters_replica}';
 export const VAR_FIELDS = 'fields';
 export const VAR_FIELDS_EXPR = '${fields}';
 export const PENDING_FIELDS_EXPR = '${pendingFields}';
+export const PENDING_METADATA_EXPR = '${pendingMetadata}';
+export const VAR_FIELDS_AND_METADATA = 'all-fields';
 export const VAR_METADATA = 'metadata';
 export const VAR_METADATA_EXPR = '${metadata}';
 export const VAR_PATTERNS = 'patterns';
@@ -64,6 +70,7 @@ export const VAR_LINE_FILTERS_EXPR = '${lineFilters}';
 export const LOG_STREAM_SELECTOR_EXPR = `{${VAR_LABELS_EXPR}} ${VAR_LEVELS_EXPR} ${VAR_METADATA_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTERS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_FIELDS_EXPR}`;
 // Same as the LOG_STREAM_SELECTOR_EXPR, but without the fields as they will need to be built manually to exclude the current filter value
 export const DETECTED_FIELD_VALUES_EXPR = `{${VAR_LABELS_EXPR}} ${VAR_LEVELS_EXPR} ${VAR_METADATA_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTERS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${PENDING_FIELDS_EXPR}`;
+export const DETECTED_FIELD_AND_METADATA_VALUES_EXPR = `{${VAR_LABELS_EXPR}} ${VAR_LEVELS_EXPR} ${PENDING_METADATA_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTERS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${PENDING_FIELDS_EXPR}`;
 export const DETECTED_METADATA_VALUES_EXPR = `{${VAR_LABELS_EXPR}} ${VAR_LEVELS_EXPR} ${PENDING_FIELDS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTERS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_FIELDS_EXPR}`;
 export const DETECTED_LEVELS_VALUES_EXPR = `{${VAR_LABELS_EXPR}} ${PENDING_FIELDS_EXPR} ${VAR_METADATA_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTERS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_FIELDS_EXPR}`;
 export const PATTERNS_SAMPLE_SELECTOR_EXPR = `{${VAR_LABELS_EXPR}} ${VAR_METADATA_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR}`;

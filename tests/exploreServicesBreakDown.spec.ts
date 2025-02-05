@@ -1,11 +1,14 @@
 import { expect, test } from '@grafana/plugin-e2e';
-import { ExplorePage, PlaywrightRequest } from './fixtures/explore';
+import { E2EComboboxStrings, ExplorePage, levelTextMatch, PlaywrightRequest } from './fixtures/explore';
 import { testIds } from '../src/services/testIds';
 import { mockEmptyQueryApiResponse } from './mocks/mockEmptyQueryApiResponse';
 import { LokiQuery } from '../src/services/lokiQuery';
+import { FilterOp } from '../src/services/filterTypes';
+import { SERVICE_NAME } from '../src/services/variables';
 
 const fieldName = 'caller';
 const levelName = 'detected_level';
+const metadataName = 'pod';
 const labelName = 'cluster';
 test.describe('explore services breakdown page', () => {
   let explorePage: ExplorePage;
@@ -87,6 +90,7 @@ test.describe('explore services breakdown page', () => {
     const nginxExcludeBtn = page
       .getByTestId('data-testid Panel header nginx')
       .getByTestId('data-testid button-filter-exclude');
+
     await expect(nginxExcludeBtn).toHaveCount(1);
     await nginxExcludeBtn.click();
 
@@ -94,6 +98,70 @@ test.describe('explore services breakdown page', () => {
     const serviceNameFilter = page.getByLabel('Edit filter with key service_name');
     await expect(serviceNameFilter).toHaveCount(1);
     await expect(serviceNameFilter).toHaveText('service_name != nginx');
+  });
+  test(`combobox should replace service_name with regex ${labelName} in url`, async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: ['LABEL_BREAKDOWN_VALUES'],
+    });
+
+    await explorePage.assertTabsNotLoading();
+    // Open new filter
+    const comboboxLocator = page.getByPlaceholder('Filter by label values').first();
+    await comboboxLocator.click();
+
+    // Select cluster key
+    await page.getByRole('option', { name: 'cluster' }).click();
+    // Select regex equal operator
+    await explorePage.getOperatorLocator(FilterOp.RegexEqual).click();
+    // Enter custom value
+    await page.keyboard.type(`us-.+`);
+    // Select custom value
+    await page.getByRole('option', { name: /Use custom value/ }).click();
+    // Remove current "primary" label used in the URL
+    await page.getByLabel(E2EComboboxStrings.removeByKey(SERVICE_NAME)).click();
+
+    // Assert cluster has been added as the new URL slug
+    await expect(page).toHaveURL(/\/cluster\/us-\.\+\//);
+
+    // Navigate to labels aggregation view
+    await explorePage.goToLabelsTab();
+
+    // Assert service_name is visible as a normal label
+    const clusterNameSelect = page.getByLabel('Select cluster');
+
+    // Assert cluster is visible as a normal label
+    const serviceNameSelect = page.getByLabel('Select service_name');
+
+    await expect(serviceNameSelect).toHaveCount(1);
+    await expect(clusterNameSelect).toHaveCount(1);
+
+    // add service exclude
+    await clusterNameSelect.click();
+
+    // Assert all three us-.+ cluster values are showing
+    await expect(page.getByTestId(/data-testid Panel header us-.+/)).toHaveCount(3);
+
+    // Assert there are only 4 panels (3 value panels + summary panel)
+    await expect(page.getByTestId(/data-testid Panel header/)).toHaveCount(4);
+
+    // exclude nginx service
+    const usEastExcludeButton = page
+      .getByTestId('data-testid Panel header us-east-1')
+      .getByTestId('data-testid button-filter-exclude');
+
+    await expect(usEastExcludeButton).toHaveCount(1);
+    await usEastExcludeButton.click();
+
+    // Assert service name exclusion filter is visible
+    const clusterExcludeFilter = page.getByLabel(E2EComboboxStrings.editByKey('cluster')).last();
+    await expect(clusterExcludeFilter).toHaveCount(1);
+    await expect(clusterExcludeFilter).toHaveText('cluster != us-east-1');
+
+    // Assert remaining two us-.+ cluster values are showing
+    await expect(page.getByTestId(/data-testid Panel header us-.+/)).toHaveCount(2);
+
+    // Assert there are only 3 panels (2 value panels + summary panel)
+    await expect(page.getByTestId(/data-testid Panel header/)).toHaveCount(3);
   });
 
   test('logs panel should have panel-content class suffix', async ({ page }) => {
@@ -149,7 +217,8 @@ test.describe('explore services breakdown page', () => {
     // Click the filter button
     await pillContextMenu.click();
     // New level filter should be added
-    await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${levelName}`)).toBeVisible();
+    await expect(page.getByTestId(testIds.variables.levels.inputWrap)).toBeVisible();
+    await expect(page.getByTestId(testIds.variables.levels.inputWrap)).toContainText(levelTextMatch);
   });
 
   test('table log line state should persist in the url', async ({ page }) => {
@@ -194,11 +263,11 @@ test.describe('explore services breakdown page', () => {
     await page.getByLabel(`Select ${levelName}`).click();
     await page.getByTestId(`data-testid Panel header ${valueName}`).getByRole('button', { name: 'Include' }).click();
 
-    await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${levelName}`)).toBeVisible();
+    await expect(page.getByTestId(testIds.variables.levels.inputWrap)).toContainText(valueName);
     await explorePage.goToLogsTab();
     await explorePage.getLogsVolumePanelLocator().click();
     await page.getByTestId('data-testid Panel menu item Explore').click();
-    await expect(page.getByText(`{service_name=\`tempo-distributor\`} | ${levelName}=\`${valueName}\``)).toBeVisible();
+    await expect(page.getByText(`{service_name="tempo-distributor"} | ${levelName}=~\`${valueName}\``)).toBeVisible();
   });
 
   test(`should select label ${labelName}, update filters, open in explore`, async ({ page, browser }) => {
@@ -220,7 +289,7 @@ test.describe('explore services breakdown page', () => {
 
     await expect(
       page.getByText(
-        `{service_name=\`tempo-distributor\`, ${labelName}=\`${valueName}\`} | json | logfmt | drop __error__, __error_details__`
+        `{service_name="tempo-distributor", ${labelName}="${valueName}"} | json | logfmt | drop __error__, __error_details__`
       )
     ).toBeVisible();
 
@@ -404,8 +473,9 @@ test.describe('explore services breakdown page', () => {
 
     // Should have removed a panel
     await expect(allPanels).toHaveCount(8);
+
     // Adhoc content filter should be added
-    await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${fieldName}`)).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
     requests.forEach((req) => {
@@ -426,8 +496,95 @@ test.describe('explore services breakdown page', () => {
     await page.getByRole('button', { name: 'Include' }).nth(0).click();
 
     await explorePage.assertFieldsIndex();
-    await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${fieldName}`)).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
     await expect(page.getByText('=').nth(1)).toBeVisible();
+  });
+
+  test(`Fields: can regex include ${fieldName} values containing "st"`, async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: [fieldName],
+    });
+    await explorePage.goToFieldsTab();
+
+    // Go to caller values breakdown
+    await page.getByLabel(`Select ${fieldName}`).click();
+
+    // Open fields combobox
+    const comboboxLocator = page.getByPlaceholder('Filter by label values').last();
+    await comboboxLocator.click();
+
+    // Filter the results so we don't have to scroll down
+    await page.keyboard.type(fieldName.substring(0, 2));
+    // Select fieldName key
+    await page.getByRole('option', { name: fieldName }).click();
+    // Select regex equal operator
+    await explorePage.getOperatorLocator(FilterOp.RegexEqual).click();
+    // Enter custom value
+    await page.keyboard.type(`.+st.+`);
+    // Select custom value
+    await page.getByRole('option', { name: /Use custom value/ }).click();
+
+    await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
+    await expect(page.getByText('=~')).toBeVisible();
+    const panels = explorePage.getAllPanelsLocator();
+    await expect(panels).toHaveCount(4);
+    await expect(page.getByTestId(/data-testid Panel header .+st.+/).getByTestId('header-container')).toHaveCount(3);
+  });
+
+  test(`Levels: include ${levelName} values`, async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      legendFormats: [`{{${levelName}}}`],
+    });
+    await explorePage.goToLabelsTab();
+
+    // Go to caller values breakdown
+    await page.getByLabel(`Select ${levelName}`).click();
+
+    // Open fields combobox
+    const comboboxLocator = page.getByTestId(testIds.variables.levels.inputWrap);
+    await comboboxLocator.click();
+
+    // Select debug|error
+    await page.getByRole('option', { name: 'debug' }).click();
+    await page.getByRole('option', { name: 'error' }).click();
+    await page.keyboard.press('Escape');
+
+    const panels = explorePage.getAllPanelsLocator();
+    await expect(panels).toHaveCount(3);
+    await expect(page.getByTestId(/data-testid Panel header debug|error/).getByTestId('header-container')).toHaveCount(
+      2
+    );
+  });
+
+  test(`Metadata: can regex include ${metadataName} values containing "0\\d"`, async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: [metadataName],
+    });
+
+    await explorePage.goToFieldsTab();
+
+    // Go to caller values breakdown
+    await page.getByLabel(`Select ${metadataName}`).click();
+
+    // Open fields combobox
+    const comboboxLocator = page.getByPlaceholder('Filter by label values').nth(1);
+    await comboboxLocator.click();
+
+    // Select detected_level key
+    await page.getByRole('option', { name: metadataName }).click();
+    // Select regex equal operator
+    await explorePage.getOperatorLocator(FilterOp.RegexEqual).click();
+    // Enter custom value
+    await page.keyboard.type(`.+0\\d.+`);
+    // Select custom value
+    await page.getByRole('option', { name: /Use custom value/ }).click();
+
+    await expect(page.getByLabel(E2EComboboxStrings.editByKey(metadataName))).toBeVisible();
+    await expect(page.getByText('=~')).toBeVisible();
+    const panels = explorePage.getAllPanelsLocator();
+    // Worried that this could flake if the pod names are randomly generated?
+    await expect(panels).toHaveCount(3);
+    await expect(page.getByTestId(/data-testid Panel header .+0\d.+/).getByTestId('header-container')).toHaveCount(2);
   });
 
   test('should only load fields that are in the viewport', async ({ page }) => {
@@ -448,7 +605,6 @@ test.describe('explore services breakdown page', () => {
         if (refId !== 'logsPanelQuery' && refId !== 'A' && refId !== 'logsCountQuery') {
           requestCount++;
           // simulate the query taking some time
-          await page.waitForTimeout(100);
           return await route.fulfill({ json: mockResponse });
         }
         if (refId === 'logsCountQuery') {
@@ -473,9 +629,10 @@ test.describe('explore services breakdown page', () => {
     expect(pageContainerSize.width).toEqual(1280);
     expect(pageContainerSize.height).toEqual(640);
 
-    const INITIAL_ROWS = 3;
+    const INITIAL_ROWS = 2;
     const COUNT_PER_ROW = 3;
     const TOTAL_ROWS = 7;
+
     // Fields on top should be loaded
     expect(requestCount).toEqual(INITIAL_ROWS * COUNT_PER_ROW);
     expect(logsCountQueryCount).toEqual(2);
@@ -515,7 +672,7 @@ test.describe('explore services breakdown page', () => {
     await page.getByRole('button', { name: 'Include' }).nth(0).click();
     await explorePage.assertFieldsIndex();
     // Adhoc content filter should be added
-    await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${fieldName}`)).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
   });
 
   test('should show sample table on `<_>` click in patterns', async ({ page }) => {
@@ -745,7 +902,7 @@ test.describe('explore services breakdown page', () => {
     );
 
     expect(expressions[0]).toEqual(
-      'sum by (pod) (count_over_time({service_name=`tempo-distributor`} | pod!=""       [$__auto]))'
+      'sum by (pod) (count_over_time({service_name="tempo-distributor"} | pod!=""       [$__auto]))'
     );
 
     const bytesIncludeButton = page
@@ -819,12 +976,12 @@ test.describe('explore services breakdown page', () => {
     );
 
     expect(expressionsAfterNumericFilter[0]).toEqual(
-      'sum by (pod) (count_over_time({service_name=`tempo-distributor`} | pod!=""     | logfmt  | bytes>500B | bytes<=2KB [$__auto]))'
+      'sum by (pod) (count_over_time({service_name="tempo-distributor"} | pod!=""     | logfmt  | bytes>500B | bytes<=2KB [$__auto]))'
     );
 
     // Assert that the variables were added to the UI
-    await expect(page.getByText(/^bytes>500B$/)).toHaveCount(1);
-    await expect(page.getByText(/^bytes<=2KB$/)).toHaveCount(1);
+    await expect(page.getByText(/^bytes > 500B$/)).toHaveCount(1);
+    await expect(page.getByText(/^bytes <= 2KB$/)).toHaveCount(1);
 
     // Assert the pod and bytes panels have data
     await expect(
@@ -855,7 +1012,6 @@ test.describe('explore services breakdown page', () => {
       numberOfQueries++;
 
       await route.fulfill({ json: [] });
-      // await route.continue()
     });
 
     // Include
@@ -963,10 +1119,10 @@ test.describe('explore services breakdown page', () => {
       '/a/grafana-lokiexplore-app/explore/service/nginx-json/fields?var-ds=gdev-loki&from=now-5m&to=now&patterns=%5B%5D&var-fields=bytes|=|""&var-levels=&var-patterns=&var-lineFilter=&var-filters=service_name%7C%3D%7Cnginx-json&urlColumns=%5B%5D&visualizationType=%22logs%22&displayedFields=%5B%5D&var-fieldBy=$__all'
     );
     await expect(page.getByText('No labels match these filters.')).toHaveCount(1);
-    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label bytes')).toHaveCount(1);
+    await expect(page.getByLabel(E2EComboboxStrings.editByKey('bytes'))).toHaveCount(1);
     await expect(explorePage.getAllPanelsLocator()).toHaveCount(0);
     await page.getByText('Clear filters').click();
-    await expect(page.getByTestId('data-testid Dashboard template variables submenu Label bytes')).toHaveCount(0);
+    await expect(page.getByLabel(E2EComboboxStrings.editByKey('bytes'))).toHaveCount(0);
     await expect(explorePage.getAllPanelsLocator().first()).toHaveCount(1);
     await expect(explorePage.getAllPanelsLocator().first()).toBeVisible();
     await expect(explorePage.getAllPanelsLocator().first()).toBeInViewport();
@@ -981,7 +1137,7 @@ test.describe('explore services breakdown page', () => {
     const panelErrorLocator = page.getByTestId('data-testid Panel status error');
     const contentPanelLocator = page.getByTestId('data-testid Panel header content');
     const versionPanelLocator = page.getByTestId('data-testid Panel header version');
-    const versionVariableLocator = page.getByTestId('AdHocFilter-version');
+    const versionVariableLocator = page.getByLabel(E2EComboboxStrings.editByKey('version'));
     const versionFilterButton = versionPanelLocator.getByTestId(testIds.breakdowns.common.filterButtonGroup);
 
     // Go to the fields tab and assert errors aren't showing
@@ -998,23 +1154,28 @@ test.describe('explore services breakdown page', () => {
 
     // Exclude version
     await expect(versionVariableLocator).toHaveCount(1);
-    await expect(versionVariableLocator.getByText('=', { exact: true })).toHaveCount(1);
-    await expect(versionVariableLocator.getByText(/^!=$/)).toHaveCount(0);
-    await expect(versionVariableLocator.getByText(/^=$/)).toHaveCount(1);
+    await expect(versionVariableLocator).toContainText('=');
+    await expect(versionVariableLocator).not.toContainText('!=');
 
     // Open the menu
-    await versionVariableLocator.locator('svg').nth(1).click();
+    await versionVariableLocator.click();
+    await page.getByLabel('Edit filter operator').click();
 
     // assert the options are showing
-    await expect(page.getByRole('option', { name: '=', exact: true })).toHaveCount(1);
-    await expect(page.getByRole('option', { name: '!=', exact: true })).toHaveCount(1);
+    await expect(explorePage.getOperatorLocator(FilterOp.Equal)).toHaveCount(1);
+    await expect(explorePage.getOperatorLocator(FilterOp.NotEqual)).toHaveCount(1);
+    await expect(explorePage.getOperatorLocator(FilterOp.RegexEqual)).toHaveCount(1);
+    await expect(explorePage.getOperatorLocator(FilterOp.RegexNotEqual)).toHaveCount(1);
 
     // Click the other option and exclude version
-    await page.getByRole('option', { name: '!=', exact: true }).click();
+    await explorePage.getOperatorLocator(FilterOp.NotEqual).click();
+
+    // Need to use the keyboard because by default the combobox matches everything until the user starts typing, even if a value is already present
+    // @todo is this a bug in the combobox?
+    await page.keyboard.press('Tab');
 
     // Check the right options are visible
-    await expect(versionVariableLocator.getByText(/^!=$/)).toHaveCount(1);
-    await expect(versionVariableLocator.getByText(/^=$/)).toHaveCount(0);
+    await expect(versionVariableLocator).toContainText('!=');
 
     // Assert no errors are visible
     await expect(panelErrorLocator).toHaveCount(0);
@@ -1191,7 +1352,7 @@ test.describe('explore services breakdown page', () => {
     const newPageCodeEditor = page.getByRole('code').locator('div').filter({ hasText: 'sum(count_over_time({' }).nth(4);
     await expect(newPageCodeEditor).toBeInViewport();
     await expect(newPageCodeEditor).toContainText(
-      'sum(count_over_time({service_name=`tempo-distributor`} | detected_level != "" [$__auto])) by (detected_level)'
+      'sum(count_over_time({service_name="tempo-distributor"} | detected_level != "" [$__auto])) by (detected_level)'
     );
   });
 
@@ -1207,7 +1368,7 @@ test.describe('explore services breakdown page', () => {
     const newPageCodeEditor = page.getByRole('code').locator('div').filter({ hasText: 'sum(count_over_time({' }).nth(4);
     await expect(newPageCodeEditor).toBeInViewport();
     await expect(newPageCodeEditor).toContainText(
-      'sum(count_over_time({service_name=`tempo-distributor`} | detected_level != "" [$__auto])) by (detected_level)'
+      'sum(count_over_time({service_name="tempo-distributor"} | detected_level != "" [$__auto])) by (detected_level)'
     );
   });
 
@@ -1226,7 +1387,7 @@ test.describe('explore services breakdown page', () => {
       .nth(4);
     await expect(newPageCodeEditor).toBeInViewport();
     await expect(newPageCodeEditor).toContainText(
-      `sum by (${fieldName}) (count_over_time({service_name=\`tempo-distributor\`} | logfmt | ${fieldName}!="" [$__auto]))`
+      `sum by (${fieldName}) (count_over_time({service_name="tempo-distributor"} | logfmt | ${fieldName}!="" [$__auto]))`
     );
   });
 
@@ -1249,7 +1410,7 @@ test.describe('explore services breakdown page', () => {
       .nth(4);
     await expect(newPageCodeEditor).toBeInViewport();
     await expect(newPageCodeEditor).toContainText(
-      `sum by (${fieldName}) (count_over_time({service_name=\`tempo-distributor\`} | logfmt | ${fieldName}!="" [$__auto]))`
+      `sum by (${fieldName}) (count_over_time({service_name="tempo-distributor"} | logfmt | ${fieldName}!="" [$__auto]))`
     );
   });
 
@@ -1513,9 +1674,9 @@ test.describe('explore services breakdown page', () => {
         legendFormats: [],
       });
 
-      // raw logQL query: '{cluster=`us-west-1`} |~ "\\\\n" |= "\\n" |= "getBookTitles(Author.java:25)\\n" |~ "getBookTitles\\(Author\\.java:25\\)\\\\n" | json | logfmt | drop __error__, __error_details__'
+      // raw logQL query: '{cluster="us-west-1"} |~ "\\\\n" |= "\\n" |= "getBookTitles(Author.java:25)\\n" |~ "getBookTitles\\(Author\\.java:25\\)\\\\n" | json | logfmt | drop __error__, __error_details__'
       const queryInUrl =
-        '{cluster=`us-west-1`} |~ \\"\\\\\\\\\\\\\\\\n\\" |= \\"\\\\\\\\n\\" |= \\"getBookTitles(Author.java:25)\\\\\\\\n\\" |~ \\"getBookTitles\\\\\\\\(Author\\\\\\\\.java:25\\\\\\\\)\\\\\\\\\\\\\\\\n\\" | json | logfmt | drop __error__, __error_details__';
+        '{cluster=\\"us-west-1\\"} |~ \\"\\\\\\\\\\\\\\\\n\\" |= \\"\\\\\\\\n\\" |= \\"getBookTitles(Author.java:25)\\\\\\\\n\\" |~ \\"getBookTitles\\\\\\\\(Author\\\\\\\\.java:25\\\\\\\\)\\\\\\\\\\\\\\\\n\\" | json | logfmt | drop __error__, __error_details__';
       await page.goto(
         `/explore?schemaVersion=1&panes={"dx6":{"datasource":"gdev-loki","queries":[{"refId":"logsPanelQuery","expr":"${queryInUrl}","datasource":{"type":"loki","uid":"gdev-loki"}}],"range":{"from":"now-30m","to":"now"},"panelsState":{"logs":{"visualisationType":"logs"}}}}&orgId=1`
       );

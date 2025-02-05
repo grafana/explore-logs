@@ -32,6 +32,8 @@ let datasource = new DataSourceWithBackend<LokiQuery>({
   readOnly: false,
   uid: '',
 }) as LokiDatasource;
+datasource.interpolateString = (s) => s;
+datasource.getTimeRangeParams = () => ({ start: 0, end: 0 });
 
 jest.mock('./scenes', () => ({
   ...jest.requireActual('./scenes'),
