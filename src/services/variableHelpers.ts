@@ -61,12 +61,13 @@ export const operatorFunction = function (variable: AdHocFiltersVariable) {
     return includeOperators;
   }
 
-  // Labels should not be able to replace the last include operator
-  if (
-    variable.state.name === VAR_LABELS &&
-    !wip?.key &&
-    variable.state.filters.filter((filter) => isOperatorInclusive(filter.operator)).length === 1
-  ) {
+  const isLabelsVar = variable.state.name === VAR_LABELS;
+  const inclusiveOperatorCount = variable.state.filters.filter((filter) => isOperatorInclusive(filter.operator)).length;
+  const isEditingOnlyFilter = !wip?.key && inclusiveOperatorCount === 1;
+  const isAddingFirstFilter = wip?.key && inclusiveOperatorCount < 1;
+
+  // Should not be able to exclude the only operator
+  if (isLabelsVar && (isEditingOnlyFilter || isAddingFirstFilter)) {
     return includeOperators;
   }
 

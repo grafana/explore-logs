@@ -5,12 +5,13 @@ import { getDataSource } from './scenes';
 import { logger } from './logger';
 import { LokiDatasource, LokiQuery } from './lokiQuery';
 import { getDataSourceVariable, getValueFromFieldsFilter } from './variableGetters';
-import { AdHocFiltersWithLabelsAndMeta, DetectedFieldType, VAR_FIELDS, VAR_LEVELS, VAR_METADATA } from './variables';
+import { AdHocFiltersWithLabelsAndMeta, DetectedFieldType, VAR_LEVELS } from './variables';
 import { isArray } from 'lodash';
 import { joinTagFilters } from './query';
 import { FilterOp } from './filterTypes';
 import { getFavoriteLabelValuesFromStorage } from './store';
 import { isOperatorInclusive, isOperatorRegex } from './operators';
+import { UIVariableFilterType } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
 
 type FetchDetectedLabelValuesOptions = {
   expr?: string;
@@ -53,7 +54,7 @@ export const getDetectedFieldValuesTagValuesProvider = async (
   expr: string,
   sceneRef: SceneObject,
   timeRange: TimeRange,
-  variableType: typeof VAR_FIELDS | typeof VAR_METADATA | typeof VAR_LEVELS
+  variableType: UIVariableFilterType
 ): Promise<{
   replace?: boolean;
   values: MetricFindValue[];
@@ -87,6 +88,11 @@ export const getDetectedFieldValuesTagValuesProvider = async (
     try {
       let results = await languageProvider.fetchDetectedLabelValues(filter.key, options, requestOptions);
       if (results && isArray(results)) {
+        // Always return all level values
+        if (variableType === VAR_LEVELS) {
+          return { replace: true, values: results.map((key) => ({ text: key })) };
+        }
+
         const currentFilters = variable.state.filters;
 
         // Remove values that are already used, if an exact match is found
@@ -104,7 +110,7 @@ export const getDetectedFieldValuesTagValuesProvider = async (
           return !valuesToRemove.includes(value);
         });
 
-        if (variableType === VAR_FIELDS) {
+        if (filter.meta?.parser !== 'structuredMetadata') {
           if (filter.value) {
             const valueDecoded = getValueFromFieldsFilter(filter, variableType);
             return {
@@ -135,6 +141,7 @@ export const getDetectedFieldValuesTagValuesProvider = async (
         }
       } else {
         values = [];
+        logger.error(results, { msg: 'fetchDetectedLabelValues error!' });
       }
     } catch (e) {
       logger.error(e, {

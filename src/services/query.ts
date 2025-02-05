@@ -1,6 +1,12 @@
 import { AdHocVariableFilter, SelectableValue } from '@grafana/data';
 import { AppliedPattern } from 'Components/IndexScene/IndexScene';
-import { AdHocFiltersWithLabelsAndMeta, EMPTY_VARIABLE_VALUE, FieldValue, VAR_DATASOURCE_EXPR } from './variables';
+import {
+  AdHocFiltersWithLabelsAndMeta,
+  EMPTY_VARIABLE_VALUE,
+  FieldValue,
+  LEVEL_VARIABLE_VALUE,
+  VAR_DATASOURCE_EXPR,
+} from './variables';
 import { groupBy, trim } from 'lodash';
 import { getValueFromFieldsFilter } from './variableGetters';
 import { LokiQuery } from './lokiQuery';
@@ -120,6 +126,29 @@ export function onAddCustomValue(
   };
 }
 
+export function renderLevelsFilter(filters: AdHocVariableFilter[]) {
+  if (filters.length) {
+    return `| ${LEVEL_VARIABLE_VALUE}=~\`${filters.map((f) => f.value).join('|')}\``;
+  }
+  return '';
+}
+
+export function renderLogQLMetadataFilters(filters: AdHocVariableFilter[]) {
+  const positive = filters.filter((filter) => isOperatorInclusive(filter.operator));
+  const negative = filters.filter((filter) => isOperatorExclusive(filter.operator));
+
+  const positiveGroups = groupBy(positive, (filter) => filter.key);
+
+  let positiveFilters = '';
+  for (const key in positiveGroups) {
+    positiveFilters += ' | ' + positiveGroups[key].map((filter) => `${renderMetadata(filter)}`).join(' or ');
+  }
+
+  const negativeFilters = negative.map((filter) => `| ${renderMetadata(filter)}`).join(' ');
+
+  return `${positiveFilters} ${negativeFilters}`.trim();
+}
+
 export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
   // @todo partition instead of looping through again and again
   const positive = filters.filter((filter) => isOperatorInclusive(filter.operator));
@@ -187,21 +216,6 @@ export function renderLogQLLineFilter(filters: AdHocFilterWithLabels[]) {
       return buildLogQlLineFilter(filter, value);
     })
     .join(' ');
-}
-export function renderLogQLMetadataFilters(filters: AdHocVariableFilter[]) {
-  const positive = filters.filter((filter) => isOperatorInclusive(filter.operator));
-  const negative = filters.filter((filter) => isOperatorExclusive(filter.operator));
-
-  const positiveGroups = groupBy(positive, (filter) => filter.key);
-
-  let positiveFilters = '';
-  for (const key in positiveGroups) {
-    positiveFilters += ' | ' + positiveGroups[key].map((filter) => `${renderMetadata(filter)}`).join(' or ');
-  }
-
-  const negativeFilters = negative.map((filter) => `| ${renderMetadata(filter)}`).join(' ');
-
-  return `${positiveFilters} ${negativeFilters}`.trim();
 }
 
 function renderMetadata(filter: AdHocVariableFilter) {

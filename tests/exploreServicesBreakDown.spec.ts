@@ -1,5 +1,5 @@
 import { expect, test } from '@grafana/plugin-e2e';
-import { E2EComboboxStrings, ExplorePage, PlaywrightRequest } from './fixtures/explore';
+import { E2EComboboxStrings, ExplorePage, levelTextMatch, PlaywrightRequest } from './fixtures/explore';
 import { testIds } from '../src/services/testIds';
 import { mockEmptyQueryApiResponse } from './mocks/mockEmptyQueryApiResponse';
 import { LokiQuery } from '../src/services/lokiQuery';
@@ -217,7 +217,8 @@ test.describe('explore services breakdown page', () => {
     // Click the filter button
     await pillContextMenu.click();
     // New level filter should be added
-    await expect(page.getByLabel(E2EComboboxStrings.editByKey(levelName))).toBeVisible();
+    await expect(page.getByTestId(testIds.variables.levels.inputWrap)).toBeVisible();
+    await expect(page.getByTestId(testIds.variables.levels.inputWrap)).toContainText(levelTextMatch);
   });
 
   test('table log line state should persist in the url', async ({ page }) => {
@@ -262,11 +263,11 @@ test.describe('explore services breakdown page', () => {
     await page.getByLabel(`Select ${levelName}`).click();
     await page.getByTestId(`data-testid Panel header ${valueName}`).getByRole('button', { name: 'Include' }).click();
 
-    await expect(page.getByLabel(E2EComboboxStrings.editByKey(levelName))).toBeVisible();
+    await expect(page.getByTestId(testIds.variables.levels.inputWrap)).toContainText(valueName);
     await explorePage.goToLogsTab();
     await explorePage.getLogsVolumePanelLocator().click();
     await page.getByTestId('data-testid Panel menu item Explore').click();
-    await expect(page.getByText(`{service_name="tempo-distributor"} | ${levelName}="${valueName}"`)).toBeVisible();
+    await expect(page.getByText(`{service_name="tempo-distributor"} | ${levelName}=~\`${valueName}\``)).toBeVisible();
   });
 
   test(`should select label ${labelName}, update filters, open in explore`, async ({ page, browser }) => {
@@ -530,7 +531,7 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId(/data-testid Panel header .+st.+/).getByTestId('header-container')).toHaveCount(3);
   });
 
-  test(`Levels: can regex include ${levelName} values containing "e"`, async ({ page }) => {
+  test(`Levels: include ${levelName} values`, async ({ page }) => {
     explorePage.blockAllQueriesExcept({
       legendFormats: [`{{${levelName}}}`],
     });
@@ -540,20 +541,14 @@ test.describe('explore services breakdown page', () => {
     await page.getByLabel(`Select ${levelName}`).click();
 
     // Open fields combobox
-    const comboboxLocator = page.getByPlaceholder('Filter by label values').nth(1);
+    const comboboxLocator = page.getByTestId(testIds.variables.levels.inputWrap);
     await comboboxLocator.click();
 
-    // Select detected_level key
-    await page.getByRole('option', { name: levelName }).click();
-    // Select regex equal operator
-    await explorePage.getOperatorLocator(FilterOp.RegexEqual).click();
-    // Enter custom value
-    await page.keyboard.type(`.*e.*`);
-    // Select custom value
-    await page.getByRole('option', { name: /Use custom value/ }).click();
+    // Select debug|error
+    await page.getByRole('option', { name: 'debug' }).click();
+    await page.getByRole('option', { name: 'error' }).click();
+    await page.keyboard.press('Escape');
 
-    await expect(page.getByLabel(E2EComboboxStrings.editByKey(levelName))).toBeVisible();
-    await expect(page.getByText('=~')).toBeVisible();
     const panels = explorePage.getAllPanelsLocator();
     await expect(panels).toHaveCount(3);
     await expect(page.getByTestId(/data-testid Panel header debug|error/).getByTestId('header-container')).toHaveCount(
@@ -572,7 +567,7 @@ test.describe('explore services breakdown page', () => {
     await page.getByLabel(`Select ${metadataName}`).click();
 
     // Open fields combobox
-    const comboboxLocator = page.getByPlaceholder('Filter by label values').nth(2);
+    const comboboxLocator = page.getByPlaceholder('Filter by label values').nth(1);
     await comboboxLocator.click();
 
     // Select detected_level key
@@ -587,8 +582,9 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(metadataName))).toBeVisible();
     await expect(page.getByText('=~')).toBeVisible();
     const panels = explorePage.getAllPanelsLocator();
-    await expect(panels).toHaveCount(4);
-    await expect(page.getByTestId(/data-testid Panel header .+0\d.+/).getByTestId('header-container')).toHaveCount(3);
+    // Worried that this could flake if the pod names are randomly generated?
+    await expect(panels).toHaveCount(3);
+    await expect(page.getByTestId(/data-testid Panel header .+0\d.+/).getByTestId('header-container')).toHaveCount(2);
   });
 
   test('should only load fields that are in the viewport', async ({ page }) => {
