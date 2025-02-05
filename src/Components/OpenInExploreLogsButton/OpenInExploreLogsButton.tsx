@@ -1,15 +1,8 @@
-import { useReturnToPrevious } from '@grafana/runtime';
+import { config, useReturnToPrevious } from '@grafana/runtime';
 import { LinkButton } from '@grafana/ui';
 import React, { useMemo } from 'react';
-
-export interface OpenInExploreLogsButtonProps {
-  datasourceUid?: string;
-  labelMatchers: Array<{ name: string; value: string }>;
-  from?: string;
-  to?: string;
-  returnToPreviousSource?: string;
-  renderButton?: (props: { href: string }) => React.ReactElement<any>;
-}
+import { replaceSlash } from 'services/extensions/links';
+import { OpenInExploreLogsButtonProps } from './types';
 
 export default function OpenInExploreLogsButton({
   datasourceUid,
@@ -29,7 +22,7 @@ export default function OpenInExploreLogsButton({
     }
 
     const url = new URL(
-      `${window.location.origin}/a/grafana-lokiexplore-app/explore/${mainLabel.name}/${mainLabel.value}/logs`
+      `${config.appSubUrl || config.appUrl}a/grafana-lokiexplore-app/explore/${mainLabel.name}/${mainLabel.value}/logs`
     );
 
     datasourceUid && url.searchParams.set('var-datasource', datasourceUid);
@@ -37,7 +30,7 @@ export default function OpenInExploreLogsButton({
     to && url.searchParams.set('to', to);
 
     labelMatchers.forEach((labelMatcher) => {
-      url.searchParams.append('var-filters', `${labelMatcher.name}|=|${labelMatcher.value}`);
+      url.searchParams.append('var-filters', `${labelMatcher.name}|=|${replaceSlash(labelMatcher.value)}`);
     });
 
     return url.toString();

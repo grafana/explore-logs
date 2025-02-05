@@ -1,7 +1,7 @@
 import { LinkButton } from '@grafana/ui';
-import { OpenInExploreLogsButtonProps } from 'Components/OpenInExploreLogsButton';
+import { OpenInExploreLogsButtonProps } from 'Components/OpenInExploreLogsButton/types';
 import React, { lazy, Suspense } from 'react';
-const EntityAssertionsWidget = lazy(() => import('Components/OpenInExploreLogsButton'));
+const OpenInExploreLogsButton = lazy(() => import('Components/OpenInExploreLogsButton/OpenInExploreLogsButton'));
 
 function SuspendedOpenInExploreLogsButton(props: OpenInExploreLogsButtonProps) {
   return (
@@ -12,7 +12,7 @@ function SuspendedOpenInExploreLogsButton(props: OpenInExploreLogsButtonProps) {
         </LinkButton>
       }
     >
-      <EntityAssertionsWidget {...props} />
+      <OpenInExploreLogsButton {...props} />
     </Suspense>
   );
 }
