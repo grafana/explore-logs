@@ -105,7 +105,7 @@ export function toggleLevelFromFilter(level: string, sceneRef: SceneObject) {
     replaceFilter(LEVEL_VARIABLE_VALUE, level, 'include', sceneRef, VAR_LEVELS);
     action = 'add';
   } else {
-    addToFilters(LEVEL_VARIABLE_VALUE, level, 'toggle', sceneRef);
+    addToFilters(LEVEL_VARIABLE_VALUE, level, 'toggle', sceneRef, VAR_LEVELS);
     action = 'remove';
   }
 

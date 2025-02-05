@@ -5,12 +5,7 @@ import { GiveFeedbackButton } from './GiveFeedbackButton';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
 import { PatternControls } from './PatternControls';
 import { AppliedPattern, IndexScene } from './IndexScene';
-import {
-  CONTROLS_VARS_DATASOURCE,
-  CONTROLS_VARS_FIELDS_COMBINED,
-  CONTROLS_VARS_LEVELS_ROW_KEY,
-  LayoutScene,
-} from './LayoutScene';
+import { CONTROLS_VARS_DATASOURCE, CONTROLS_VARS_FIELDS_COMBINED, LayoutScene } from './LayoutScene';
 import { useStyles2 } from '@grafana/ui';
 import { GrafanaTheme2 } from '@grafana/data';
 
@@ -21,7 +16,7 @@ export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneStat
     const { controls, patterns } = indexScene.useState();
 
     const layoutScene = sceneGraph.getAncestor(model, LayoutScene);
-    const { lineFilterRenderer } = layoutScene.useState();
+    const { lineFilterRenderer, levelsRenderer } = layoutScene.useState();
 
     const styles = useStyles2(getStyles);
 
@@ -62,22 +57,12 @@ export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneStat
             </div>
           )}
 
-          {/* Second row - Levels */}
+          {/* Second row - Levels - custom renderer */}
           <div className={styles.controlsRowContainer}>
-            {controls &&
-              controls.map((control) => {
-                return control instanceof CustomVariableValueSelectors &&
-                  control.state.key === CONTROLS_VARS_LEVELS_ROW_KEY ? (
-                  <div key={control.state.key} className={styles.filtersWrap}>
-                    <div className={styles.filters}>
-                      <control.Component model={control} />
-                    </div>
-                  </div>
-                ) : null;
-              })}
+            {levelsRenderer && <levelsRenderer.Component model={levelsRenderer} />}
           </div>
 
-          {/* 3rd row - Fields Combined  */}
+          {/* 3rd row - Combined fields (fields + metadata)  */}
           <div className={styles.controlsRowContainer}>
             {controls && (
               <div className={styles.filtersWrap}>
@@ -101,7 +86,7 @@ export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneStat
             />
           </div>
 
-          {/* 5th row - line filters */}
+          {/* 5th row - Line filters - custom renderer */}
           <div className={styles.controlsRowContainer}>
             {lineFilterRenderer && <lineFilterRenderer.Component model={lineFilterRenderer} />}
           </div>

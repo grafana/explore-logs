@@ -48,7 +48,6 @@ import {
   CONTROLS_VARS_FIELDS_COMBINED,
   CONTROLS_VARS_FIRST_ROW_KEY,
   CONTROLS_VARS_LABELS,
-  CONTROLS_VARS_LEVELS_ROW_KEY,
   CONTROLS_VARS_METADATA_ROW_KEY,
   CONTROLS_VARS_REFRESH,
   CONTROLS_VARS_TIMEPICKER,
@@ -61,6 +60,7 @@ import { LoadingPlaceholder } from '@grafana/ui';
 import { config, getAppEvents, locationService } from '@grafana/runtime';
 import {
   onAddCustomValue,
+  renderLevelsFilter,
   renderLogQLFieldFilters,
   renderLogQLLabelFilters,
   renderLogQLLineFilter,
@@ -141,11 +141,6 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
             disabled: true,
           }),
         ],
-      }),
-      new CustomVariableValueSelectors({
-        key: CONTROLS_VARS_LEVELS_ROW_KEY,
-        layout: 'vertical',
-        include: [VAR_LEVELS],
       }),
       new CustomVariableValueSelectors({
         key: CONTROLS_VARS_METADATA_ROW_KEY,
@@ -364,7 +359,6 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     const levelsVariable = getLevelsVariable(this);
     const fieldsCombinedVariable = getFieldsAndMetadataVariable(this);
 
-    levelsVariable._getOperators = () => operatorFunction(levelsVariable);
     fieldsCombinedVariable._getOperators = () => operatorFunction(fieldsCombinedVariable);
 
     levelsVariable.setState({
@@ -616,16 +610,11 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     name: VAR_LEVELS,
     label: 'Error levels',
     applyMode: 'manual',
-    layout: 'combobox',
-    expressionBuilder: renderLogQLMetadataFilters,
+    layout: 'vertical',
+    expressionBuilder: renderLevelsFilter,
     hide: VariableHide.hideVariable,
-    allowCustomValue: true,
     supportsMultiValueOperators: true,
   });
-
-  levelsVariable._getOperators = () => {
-    return operators;
-  };
 
   const lineFiltersVariable = new AdHocFiltersVariable({
     name: VAR_LINE_FILTERS,

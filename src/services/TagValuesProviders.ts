@@ -88,6 +88,11 @@ export const getDetectedFieldValuesTagValuesProvider = async (
     try {
       let results = await languageProvider.fetchDetectedLabelValues(filter.key, options, requestOptions);
       if (results && isArray(results)) {
+        // Always return all level values
+        if (variableType === VAR_LEVELS) {
+          return { replace: true, values: results.map((key) => ({ text: key })) };
+        }
+
         const currentFilters = variable.state.filters;
 
         // Remove values that are already used, if an exact match is found
@@ -105,7 +110,7 @@ export const getDetectedFieldValuesTagValuesProvider = async (
           return !valuesToRemove.includes(value);
         });
 
-        if (variableType !== VAR_LEVELS && filter.meta?.parser !== 'structuredMetadata') {
+        if (filter.meta?.parser !== 'structuredMetadata') {
           if (filter.value) {
             const valueDecoded = getValueFromFieldsFilter(filter, variableType);
             return {
