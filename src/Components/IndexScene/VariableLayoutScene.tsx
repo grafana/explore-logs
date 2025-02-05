@@ -86,7 +86,7 @@ export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneStat
             />
           </div>
 
-          {/* 5th row - line filters - custom renderer */}
+          {/* 5th row - Line filters - custom renderer */}
           <div className={styles.controlsRowContainer}>
             {lineFilterRenderer && <lineFilterRenderer.Component model={lineFilterRenderer} />}
           </div>
