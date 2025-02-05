@@ -306,6 +306,26 @@ export class ExplorePage {
     });
   }
 
+  async addCustomValueToCombobox(labelName: string, operator: FilterOp, comboBox: ComboBoxIndex, text: string) {
+    // Open combobox
+    const comboboxLocator = this.page.getByPlaceholder('Filter by label values').nth(comboBox);
+    await comboboxLocator.click();
+    // Select detected_level key
+    await this.page.getByRole('option', { name: labelName }).click();
+    await expect(this.getOperatorLocator(operator)).toHaveCount(1);
+    await expect(this.getOperatorLocator(operator)).toBeVisible();
+    // Select operator
+    await this.getOperatorLocator(operator).click();
+    // Enter custom value
+    await this.page.keyboard.type(text);
+    // Need to scroll to the bottom of the list
+    await this.page.keyboard.press('ArrowUp');
+    // Select custom value
+    await this.page.getByRole('option', { name: /Use custom value/ }).click();
+    // Close the label name dropdown that opens after adding a value
+    await this.page.keyboard.press('Escape');
+  }
+
   getOperatorLocator(filter: FilterOp): Locator {
     switch (filter) {
       case FilterOp.Equal:
@@ -337,3 +357,8 @@ export const E2EComboboxStrings = {
 };
 
 export const levelTextMatch = /error|warn|info|debug/;
+
+export enum ComboBoxIndex {
+  labels,
+  fields,
+}

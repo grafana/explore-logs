@@ -1,5 +1,5 @@
 import { expect, test } from '@grafana/plugin-e2e';
-import { E2EComboboxStrings, ExplorePage, levelTextMatch, PlaywrightRequest } from './fixtures/explore';
+import { ComboBoxIndex, E2EComboboxStrings, ExplorePage, levelTextMatch, PlaywrightRequest } from './fixtures/explore';
 import { testIds } from '../src/services/testIds';
 import { mockEmptyQueryApiResponse } from './mocks/mockEmptyQueryApiResponse';
 import { LokiQuery } from '../src/services/lokiQuery';
@@ -105,18 +105,9 @@ test.describe('explore services breakdown page', () => {
     });
 
     await explorePage.assertTabsNotLoading();
-    // Open new filter
-    const comboboxLocator = page.getByPlaceholder('Filter by label values').first();
-    await comboboxLocator.click();
+    // Add custom value to combobox
+    await explorePage.addCustomValueToCombobox(labelName, FilterOp.RegexEqual, ComboBoxIndex.labels, `us-.+`);
 
-    // Select cluster key
-    await page.getByRole('option', { name: 'cluster' }).click();
-    // Select regex equal operator
-    await explorePage.getOperatorLocator(FilterOp.RegexEqual).click();
-    // Enter custom value
-    await page.keyboard.type(`us-.+`);
-    // Select custom value
-    await page.getByRole('option', { name: /Use custom value/ }).click();
     // Remove current "primary" label used in the URL
     await page.getByLabel(E2EComboboxStrings.removeByKey(SERVICE_NAME)).click();
 
@@ -508,21 +499,8 @@ test.describe('explore services breakdown page', () => {
 
     // Go to caller values breakdown
     await page.getByLabel(`Select ${fieldName}`).click();
-
-    // Open fields combobox
-    const comboboxLocator = page.getByPlaceholder('Filter by label values').last();
-    await comboboxLocator.click();
-
-    // Filter the results so we don't have to scroll down
-    await page.keyboard.type(fieldName.substring(0, 2));
-    // Select fieldName key
-    await page.getByRole('option', { name: fieldName }).click();
-    // Select regex equal operator
-    await explorePage.getOperatorLocator(FilterOp.RegexEqual).click();
-    // Enter custom value
-    await page.keyboard.type(`.+st.+`);
-    // Select custom value
-    await page.getByRole('option', { name: /Use custom value/ }).click();
+    // Add custom regex value
+    await explorePage.addCustomValueToCombobox(fieldName, FilterOp.RegexEqual, ComboBoxIndex.fields, `.+st.+`);
 
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
     await expect(page.getByText('=~')).toBeVisible();
@@ -556,7 +534,7 @@ test.describe('explore services breakdown page', () => {
     );
   });
 
-  test(`Metadata: can regex include ${metadataName} values containing "0\\d"`, async ({ page }) => {
+  test.only(`Metadata: can regex include ${metadataName} values containing "0\\d"`, async ({ page }) => {
     explorePage.blockAllQueriesExcept({
       refIds: [metadataName],
     });
@@ -566,25 +544,34 @@ test.describe('explore services breakdown page', () => {
     // Go to caller values breakdown
     await page.getByLabel(`Select ${metadataName}`).click();
 
-    // Open fields combobox
-    const comboboxLocator = page.getByPlaceholder('Filter by label values').nth(1);
-    await comboboxLocator.click();
+    // Filter by cluster
+    await explorePage.addCustomValueToCombobox('cluster', FilterOp.RegexEqual, ComboBoxIndex.labels, `.+east-1$`);
+    // Add both tempo services
+    await explorePage.addCustomValueToCombobox('service_name', FilterOp.RegexEqual, ComboBoxIndex.labels, `tempo.+`);
+    await explorePage.addCustomValueToCombobox('namespace', FilterOp.RegexEqual, ComboBoxIndex.labels, `.+dev.*`);
 
-    // Select detected_level key
-    await page.getByRole('option', { name: metadataName }).click();
-    // Select regex equal operator
-    await explorePage.getOperatorLocator(FilterOp.RegexEqual).click();
-    // Enter custom value
-    await page.keyboard.type(`.+0\\d.+`);
-    // Select custom value
-    await page.getByRole('option', { name: /Use custom value/ }).click();
+    await explorePage.assertNotLoading();
+    await explorePage.assertPanelsNotLoading();
+
+    // Get panel count to ensure the pod regex filter reduces the result set
+    const panelCount = await explorePage.getAllPanelsLocator().count();
+    expect(panelCount).toBeGreaterThan(8);
+    // Filter hardcoded pod names for tempo-ingester service
+    await explorePage.addCustomValueToCombobox(
+      metadataName,
+      FilterOp.RegexEqual,
+      ComboBoxIndex.fields,
+      `tempo-ingester-[hc]{2}-\\d.+`
+    );
 
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(metadataName))).toBeVisible();
-    await expect(page.getByText('=~')).toBeVisible();
+    await expect(page.getByText('=~').nth(3)).toBeVisible();
     const panels = explorePage.getAllPanelsLocator();
-    // Worried that this could flake if the pod names are randomly generated?
-    await expect(panels).toHaveCount(3);
-    await expect(page.getByTestId(/data-testid Panel header .+0\d.+/).getByTestId('header-container')).toHaveCount(2);
+    // Worried that this could flake if the pod names are randomly generated? - yup
+    await expect(panels).toHaveCount(9);
+    await expect(
+      page.getByTestId(/data-testid Panel header tempo-ingester-[hc]{2}-\d.+/).getByTestId('header-container')
+    ).toHaveCount(8);
   });
 
   test('should only load fields that are in the viewport', async ({ page }) => {
