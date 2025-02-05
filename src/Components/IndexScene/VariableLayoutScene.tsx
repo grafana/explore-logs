@@ -158,7 +158,6 @@ function getStyles(theme: GrafanaTheme2) {
       display: 'flex',
       // @todo add custom renderers for all variables, this currently results in 2 "empty" rows that always take up space
       gap: theme.spacing(1),
-      // justifyContent: 'space-between',
       alignItems: 'flex-start',
       paddingLeft: theme.spacing(2),
     }),
