@@ -534,7 +534,7 @@ test.describe('explore services breakdown page', () => {
     );
   });
 
-  test.only(`Metadata: can regex include ${metadataName} values containing "0\\d"`, async ({ page }) => {
+  test(`Metadata: can regex include ${metadataName} values containing "0\\d"`, async ({ page }) => {
     explorePage.blockAllQueriesExcept({
       refIds: [metadataName],
     });
