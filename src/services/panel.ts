@@ -59,6 +59,7 @@ export function setLogsVolumeFieldConfigs(
     .setCustomFieldConfig('fillOpacity', 100)
     .setCustomFieldConfig('lineWidth', 0)
     .setCustomFieldConfig('pointSize', 0)
+    .setCustomFieldConfig('axisSoftMin', 0)
     .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
     .setOverrides(setLevelColorOverrides);
 }
