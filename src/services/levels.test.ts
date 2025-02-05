@@ -297,6 +297,6 @@ describe('toggleLevelFromFilter', () => {
     setup([]);
 
     expect(toggleLevelFromFilter('logs', scene)).toBe('add');
-    expect(replaceFilter).toHaveBeenCalledWith(LEVEL_NAME, '""', 'include', scene);
+    expect(replaceFilter).toHaveBeenCalledWith(LEVEL_NAME, '""', 'include', scene, VAR_LEVELS);
   });
 });

@@ -1,5 +1,6 @@
 import {
   AdHocFiltersVariable,
+  AdHocFilterWithLabels,
   CustomVariable,
   DataSourceVariable,
   sceneGraph,
@@ -19,6 +20,7 @@ import {
   VAR_DATASOURCE,
   VAR_FIELD_GROUP_BY,
   VAR_FIELDS,
+  VAR_FIELDS_AND_METADATA,
   VAR_FIELDS_EXPR,
   VAR_LABEL_GROUP_BY,
   VAR_LABELS,
@@ -39,6 +41,8 @@ import {
 import { AdHocVariableFilter } from '@grafana/data';
 import { logger } from './logger';
 import { narrowFieldValue, NarrowingError } from './narrowing';
+import { isFilterMetadata } from './filters';
+import { AdHocFilterTypes } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
 
 export function getLogsStreamSelector(options: LogsQueryOptions) {
   const {
@@ -78,6 +82,11 @@ export function getLabelsVariableReplica(scene: SceneObject) {
 
 export function getMetadataVariable(scene: SceneObject) {
   return getAdHocFiltersVariable(VAR_METADATA, scene);
+}
+
+// Combined fields and metadata, editable in the UI, changes to this variable flow into FIELDS and METADATA
+export function getFieldsAndMetadataVariable(scene: SceneObject) {
+  return getAdHocFiltersVariable(VAR_FIELDS_AND_METADATA, scene);
 }
 
 export function getFieldsVariable(scene: SceneObject) {
@@ -136,7 +145,7 @@ export function getLineFiltersVariable(scene: SceneObject) {
   return variable;
 }
 
-export function getAdHocFiltersVariable(variableName: string, scene: SceneObject) {
+export function getAdHocFiltersVariable(variableName: AdHocFilterTypes, scene: SceneObject) {
   const variable = sceneGraph.lookupVariable(variableName, scene);
 
   if (!(variable instanceof AdHocFiltersVariable)) {
@@ -185,7 +194,15 @@ export function getUrlParamNameForVariable(variableName: string) {
   return `var-${variableName}`;
 }
 
-export function getValueFromFieldsFilter(filter: AdHocVariableFilter, variableName: string = VAR_FIELDS): FieldValue {
+export function getValueFromFieldsFilter(filter: AdHocFilterWithLabels, variableName: string = VAR_FIELDS): FieldValue {
+  // Metadata is not JSON encoded
+  if (isFilterMetadata(filter)) {
+    return {
+      value: filter.value,
+      parser: 'structuredMetadata',
+    };
+  }
+
   try {
     const fieldValue = narrowFieldValue(JSON.parse(filter.value));
     if (fieldValue !== false) {

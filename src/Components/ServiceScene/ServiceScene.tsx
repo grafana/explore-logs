@@ -39,6 +39,7 @@ import { ActionBarScene } from './ActionBarScene';
 import { breakdownViewsDefinitions, TabNames, valueBreakdownViews } from './BreakdownViews';
 import {
   getDataSourceVariable,
+  getFieldsAndMetadataVariable,
   getFieldsVariable,
   getLabelsVariable,
   getLevelsVariable,
@@ -59,6 +60,8 @@ import { replaceSlash } from '../../services/extensions/links';
 import { ShowLogsButtonScene } from '../IndexScene/ShowLogsButtonScene';
 import { migrateLineFilterV1 } from '../../services/migrations';
 import { isOperatorInclusive } from '../../services/operators';
+import { VariableHide } from '@grafana/schema';
+import { LEVELS_VARIABLE_SCENE_KEY, LevelsVariableScene } from '../IndexScene/LevelsVariableScene';
 
 export const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 export const LOGS_COUNT_QUERY_REFID = 'logsCountQuery';
@@ -261,6 +264,12 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     });
   };
 
+  private showVariables() {
+    const levelsVar = sceneGraph.findByKeyAndType(this, LEVELS_VARIABLE_SCENE_KEY, LevelsVariableScene);
+    levelsVar.setState({ visible: true });
+    getFieldsAndMetadataVariable(this).setState({ hide: VariableHide.dontHide });
+  }
+
   /**
    * After routing we need to pull any data set to the service scene by other routes from the metadata singleton,
    * as each route has a different instantiation of this scene
@@ -281,6 +290,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     // Hide show logs button
     const showLogsButton = sceneGraph.findByKeyAndType(this, showLogsButtonSceneKey, ShowLogsButtonScene);
     showLogsButton.setState({ hidden: true });
+    this.showVariables();
     this.getMetadata();
     this.resetBodyAndData();
 
@@ -364,12 +374,14 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     });
   }
 
+  /**
+   * Subscribe to SceneVariableValueChangedEvent and run logs count and detectedFields on update.
+   * In the levels variable renderer we update the ad-hoc filters, but we don't always want to immediately execute queries.
+   */
   private subscribeToLevelsVariable() {
-    return getLevelsVariable(this).subscribeToState((newState, prevState) => {
-      if (!areArraysEqual(newState.filters, prevState.filters)) {
-        this.state.$detectedFieldsData?.runQueries();
-        this.state.$logsCount?.runQueries();
-      }
+    return getLevelsVariable(this).subscribeToEvent(SceneVariableValueChangedEvent, () => {
+      this.state.$detectedFieldsData?.runQueries();
+      this.state.$logsCount?.runQueries();
     });
   }
 

@@ -1,6 +1,6 @@
 import { DataFrame } from '@grafana/data';
 import { SeriesVisibilityChangeMode } from '@grafana/ui';
-import { LEVEL_VARIABLE_VALUE } from './variables';
+import { LEVEL_VARIABLE_VALUE, VAR_LEVELS } from './variables';
 import { SceneObject } from '@grafana/scenes';
 import { addToFilters, replaceFilter } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { getLevelsVariable } from './variableGetters';
@@ -102,10 +102,10 @@ export function toggleLevelFromFilter(level: string, sceneRef: SceneObject) {
 
   let action;
   if (empty || !filterExists) {
-    replaceFilter(LEVEL_VARIABLE_VALUE, level, 'include', sceneRef);
+    replaceFilter(LEVEL_VARIABLE_VALUE, level, 'include', sceneRef, VAR_LEVELS);
     action = 'add';
   } else {
-    addToFilters(LEVEL_VARIABLE_VALUE, level, 'toggle', sceneRef);
+    addToFilters(LEVEL_VARIABLE_VALUE, level, 'toggle', sceneRef, VAR_LEVELS);
     action = 'remove';
   }
 

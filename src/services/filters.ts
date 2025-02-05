@@ -1,6 +1,6 @@
 import { DetectedLabel } from './fields';
 import { ALL_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE } from './variables';
-import { VariableValueOption } from '@grafana/scenes';
+import { AdHocFilterWithLabels, VariableValueOption } from '@grafana/scenes';
 
 // We want to show labels with cardinality 1 at the end of the list because they are less useful
 // And then we want to sort by cardinality - from lowest to highest
@@ -41,4 +41,9 @@ export function getFieldOptions(labels: string[]) {
   }));
 
   return [{ label: 'All', value: ALL_VARIABLE_VALUE }, ...labelOptions];
+}
+
+// Since "meta" is not saved in the URL state, it's ephemeral and can only be used for wip keys, but we can differentiate fields from metadata if the value is not encoded (and therefore different then the label)
+export function isFilterMetadata(filter: AdHocFilterWithLabels) {
+  return filter.value === filter.valueLabels?.[0];
 }
