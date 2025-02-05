@@ -122,7 +122,7 @@ func lokiOtelPod(svc string) LogGenerator {
 			go func() {
 				for ctx.Err() == nil {
 					t := time.Now()
-					logger.LogWithMetadata(k, t, v, log.RandStructuredMetadata("loki-ingester"))
+					logger.LogWithMetadata(k, t, v, log.RandStructuredMetadata("loki-ingester", 0))
 					time.Sleep(time.Duration(rand.Intn(5000)) * time.Millisecond)
 				}
 			}()
@@ -217,14 +217,14 @@ func startFailingMimirPod(ctx context.Context, logger log.Logger) {
 	go func() {
 		for ctx.Err() == nil {
 			t := time.Now()
-			appLogger.LogWithMetadata(log.ERROR, t, mimirGRPCLog("connection refused to object store", "/cortex.Ingester/Push"), log.RandStructuredMetadata("mimir-ingester"))
+			appLogger.LogWithMetadata(log.ERROR, t, mimirGRPCLog("connection refused to object store", "/cortex.Ingester/Push"), log.RandStructuredMetadata("mimir-ingester", 0))
 			time.Sleep(time.Duration(rand.Intn(10000)) * time.Millisecond)
 		}
 	}()
 	go func() {
 		for ctx.Err() == nil {
 			t := time.Now()
-			appLogger.LogWithMetadata(log.INFO, t, mimirGRPCLog("", "/cortex.Ingester/Push"), log.RandStructuredMetadata("mimir-ingester"))
+			appLogger.LogWithMetadata(log.INFO, t, mimirGRPCLog("", "/cortex.Ingester/Push"), log.RandStructuredMetadata("mimir-ingester", 0))
 			time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
 		}
 	}()
