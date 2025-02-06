@@ -496,11 +496,12 @@ test.describe('explore services breakdown page', () => {
       refIds: [fieldName],
     });
     await explorePage.goToFieldsTab();
+    await explorePage.assertNotLoading();
 
     // Go to caller values breakdown
     await page.getByLabel(`Select ${fieldName}`).click();
     // Add custom regex value
-    await explorePage.addCustomValueToCombobox(fieldName, FilterOp.RegexEqual, ComboBoxIndex.fields, `.+st.+`);
+    await explorePage.addCustomValueToCombobox(fieldName, FilterOp.RegexEqual, ComboBoxIndex.fields, `.+st.+`, 'ca');
 
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
     await expect(page.getByText('=~')).toBeVisible();

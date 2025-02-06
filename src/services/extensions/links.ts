@@ -2,9 +2,11 @@
 import { PluginExtensionLinkConfig, PluginExtensionPanelContext, PluginExtensionPoints } from '@grafana/data';
 
 import {
+  addAdHocFilterUserInputPrefix,
   AdHocFieldValue,
   LEVEL_VARIABLE_VALUE,
   SERVICE_NAME,
+  stripAdHocFilterUserInputPrefix,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_LABELS,
@@ -61,6 +63,14 @@ function stringifyValues(value?: string): string {
   return value;
 }
 
+function stringifyAdHocValues(value?: string): string {
+  if (!value) {
+    return '""';
+  }
+  // All label values from explore are already escaped, so we mark them as custom values to prevent them from getting escaped again when rendering the LogQL
+  return addAdHocFilterUserInputPrefix(value);
+}
+
 function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
   if (!context) {
     return undefined;
@@ -96,7 +106,9 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
 
     params = appendUrlParameter(
       UrlParameters.Labels,
-      `${labelFilter.key}|${labelFilter.operator}|${escapeURLDelimiters(stringifyValues(labelFilter.value))}`,
+      `${labelFilter.key}|${labelFilter.operator}|${escapeURLDelimiters(
+        stringifyAdHocValues(labelFilter.value)
+      )},${escapeURLDelimiters(labelFilter.value)}`,
       params
     );
   }
@@ -124,7 +136,9 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
         } else {
           params = appendUrlParameter(
             UrlParameters.Metadata,
-            `${field.key}|${field.operator}|${escapeURLDelimiters(stringifyValues(field.value))}`,
+            `${field.key}|${field.operator}|${escapeURLDelimiters(
+              stringifyAdHocValues(field.value)
+            )},${escapeURLDelimiters(field.value)}`,
             params
           );
         }
@@ -135,9 +149,9 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
         };
         params = appendUrlParameter(
           UrlParameters.Fields,
-          `${field.key}|${field.operator}|${escapeURLDelimiters(JSON.stringify(fieldValue))},${escapeURLDelimiters(
-            stringifyValues(fieldValue.value)
-          )}`,
+          `${field.key}|${field.operator}|${escapeURLDelimiters(
+            stringifyAdHocValues(JSON.stringify(fieldValue))
+          )},${escapeURLDelimiters(fieldValue.value)}`,
           params
         );
       }
@@ -184,7 +198,12 @@ export function appendUrlParameter(
 }
 
 export function replaceSlash(parameter: string): string {
-  return parameter.replace(/\//g, '-').replace(/\\/g, '-');
+  return (
+    stripAdHocFilterUserInputPrefix(parameter)
+      // back-slash is converted to forward-slash in the URL, replace that char
+      .replace(/\//g, '-')
+      .replace(/\\/g, '-')
+  );
 }
 
 // Manually copied over from @grafana/scenes so we don't need to import scenes to build links

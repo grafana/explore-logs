@@ -212,7 +212,6 @@ func startFailingMimirPod(ctx context.Context, logger log.Logger) {
 		"cluster":      model.LabelValue(log.Clusters[0]),
 		"namespace":    model.LabelValue("mimir"),
 		"service_name": "mimir-ingester",
-		"file":         "C:\\Windows\\System32\\Config\\Sysevent.txt",
 	}, logger)
 
 	go func() {

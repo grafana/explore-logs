@@ -306,10 +306,28 @@ export class ExplorePage {
     });
   }
 
-  async addCustomValueToCombobox(labelName: string, operator: FilterOp, comboBox: ComboBoxIndex, text: string) {
+  /**
+   *
+   * @param labelName
+   * @param operator
+   * @param comboBox
+   * @param text
+   * @param typeAhead - if there are many options, the test can flake if the option isn't visible, if this string is passed in we'll type these chars to filter things down before attempting to click
+   */
+  async addCustomValueToCombobox(
+    labelName: string,
+    operator: FilterOp,
+    comboBox: ComboBoxIndex,
+    text: string,
+    typeAhead?: string
+  ) {
     // Open combobox
     const comboboxLocator = this.page.getByPlaceholder('Filter by label values').nth(comboBox);
     await comboboxLocator.click();
+    await this.page.pause();
+    if (typeAhead) {
+      await this.page.keyboard.type(typeAhead);
+    }
     // Select detected_level key
     await this.page.getByRole('option', { name: labelName }).click();
     await expect(this.getOperatorLocator(operator)).toHaveCount(1);

@@ -59,7 +59,8 @@ import { ServiceSelectionScene } from '../ServiceSelectionScene/ServiceSelection
 import { LoadingPlaceholder } from '@grafana/ui';
 import { config, getAppEvents, locationService } from '@grafana/runtime';
 import {
-  onAddCustomValue,
+  onAddCustomAdHocValue,
+  onAddCustomFieldValue,
   renderLevelsFilter,
   renderLogQLFieldFilters,
   renderLogQLLabelFilters,
@@ -91,7 +92,7 @@ import { ShowLogsButtonScene } from './ShowLogsButtonScene';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
 import { getCopiedTimeRange, PasteTimeEvent, setupKeyboardShortcuts } from '../../services/keyboardShortcuts';
 import { LokiDatasource } from '../../services/lokiQuery';
-import { lineFilterOperators, operators } from '../../services/operators';
+import { isOperatorInclusive, lineFilterOperators, operators } from '../../services/operators';
 import { operatorFunction } from '../../services/variableHelpers';
 import { FilterOp } from '../../services/filterTypes';
 import { areArraysEqual } from '../../services/comparison';
@@ -367,8 +368,8 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
     });
 
     fieldsCombinedVariable.setState({
-      getTagValuesProvider: this.getCombinedFieldsTagValuesProvider(),
       getTagKeysProvider: this.getCombinedFieldsTagKeysProvider(),
+      getTagValuesProvider: this.getCombinedFieldsTagValuesProvider(),
     });
   }
 
@@ -391,6 +392,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
         .replace(PENDING_FIELDS_EXPR, otherFiltersString)
         .replace(PENDING_METADATA_EXPR, otherMetadataString);
       const interpolated = sceneGraph.interpolate(this, expr);
+
       return getFieldsKeysProvider({
         expr: interpolated,
         sceneRef: this,
@@ -410,9 +412,11 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
       const fieldVar = getFieldsVariable(this);
 
       const metadataFilters = metadataVar.state.filters.filter(
-        (f) => f.key !== filter.key && f.operator === FilterOp.Equal
+        (f) => f.key !== filter.key && isOperatorInclusive(f.operator)
       );
-      const fieldFilters = fieldVar.state.filters.filter((f) => f.key !== filter.key && f.operator === FilterOp.Equal);
+      const fieldFilters = fieldVar.state.filters.filter(
+        (f) => f.key !== filter.key && isOperatorInclusive(f.operator)
+      );
 
       const otherFiltersString = this.renderVariableFilters(VAR_FIELDS, fieldFilters);
       const otherMetadataString = this.renderVariableFilters(VAR_METADATA, metadataFilters);
@@ -554,6 +558,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     expressionBuilder: renderLogQLLabelFilters,
     hide: VariableHide.dontHide,
     key: 'adhoc_service_filter',
+    onAddCustomValue: onAddCustomAdHocValue,
   });
 
   labelVariable._getOperators = function () {
@@ -568,7 +573,6 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     expressionBuilder: renderLogQLFieldFilters,
     hide: VariableHide.hideVariable,
     allowCustomValue: true,
-    onAddCustomValue: onAddCustomValue,
   });
 
   fieldsVariable._getOperators = () => {
@@ -602,7 +606,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     layout: 'combobox',
     hide: VariableHide.hideVariable,
     allowCustomValue: true,
-    onAddCustomValue: onAddCustomValue,
+    onAddCustomValue: onAddCustomFieldValue,
     skipUrlSync: true,
   });
 

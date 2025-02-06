@@ -5,13 +5,13 @@ import {
   renderLogQLFieldFilters,
   renderLogQLLabelFilters,
   renderLogQLLineFilter,
+  renderLogQLMetadataFilters,
+  renderPatternFilters,
   unwrapWildcardSearch,
   wrapWildcardSearch,
-  renderPatternFilters,
-  renderLogQLMetadataFilters,
 } from './query';
 
-import { FieldValue } from './variables';
+import { addAdHocFilterUserInputPrefix, FieldValue } from './variables';
 import { AdHocFiltersVariable, AdHocFilterWithLabels } from '@grafana/scenes';
 import { FilterOp, LineFilterCaseSensitive, LineFilterOp } from './filterTypes';
 
@@ -401,9 +401,14 @@ describe('renderLogQLLabelFilters', () => {
         operator: FilterOp.Equal,
         value: 'C:\\Grafana\\logs\\logs.txt',
       },
+      {
+        key: 'host',
+        operator: FilterOp.RegexEqual,
+        value: addAdHocFilterUserInputPrefix(`((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}`),
+      },
     ];
     expect(renderLogQLLabelFilters(filters)).toEqual(
-      'level="info", cluster="lil-cluster", filename="C:\\\\Grafana\\\\logs\\\\logs.txt"'
+      'level="info", cluster="lil-cluster", filename="C:\\\\Grafana\\\\logs\\\\logs.txt", host=~"((25[0-5]|(2[0-4]|1\\\\d|[1-9]|)\\\\d)\\\\.?\\\\b){4}"'
     );
   });
   test('Renders negative filters', () => {
@@ -563,7 +568,7 @@ describe('joinTagFilters', () => {
       filters: [
         {
           key: 'file',
-          value: 'C:\\\\Grafana\\\\Logs\\\\log.txt',
+          value: 'C:\\Grafana\\Logs\\log.txt',
           operator: '=~',
         },
       ],
@@ -573,7 +578,7 @@ describe('joinTagFilters', () => {
     expect(result).toEqual([
       {
         key: 'file',
-        value: 'C:\\\\\\\\Grafana\\\\\\\\Logs\\\\\\\\log.txt',
+        value: 'C:\\\\\\\\Grafana\\\\\\\\Logs\\\\\\\\log\\\\.txt',
         operator: '=~',
       },
     ]);
@@ -650,22 +655,22 @@ describe('joinTagFilters', () => {
       },
     ]);
   });
-  it('joins multiple include with regex', () => {
+  it('joins multiple include with user-input regex', () => {
     const adHoc = new AdHocFiltersVariable({
       filters: [
         {
           key: 'service_name',
-          value: 'service_value.+',
+          value: addAdHocFilterUserInputPrefix(`service_value.+`),
           operator: '=~',
         },
         {
           key: 'service_name',
-          value: 'service_value_2$',
-          operator: '=',
+          value: addAdHocFilterUserInputPrefix(`service_value_2$`),
+          operator: '=~',
         },
         {
           key: 'not_service_name',
-          value: 'not_service_name_value',
+          value: 'C:\\Grafana Logs\\logfile.txt',
           operator: '=',
         },
       ],
@@ -675,12 +680,12 @@ describe('joinTagFilters', () => {
     expect(result).toEqual([
       {
         key: 'service_name',
-        value: 'service_value.+|service_value_2$',
+        value: `service_value.+|service_value_2$`,
         operator: '=~',
       },
       {
         key: 'not_service_name',
-        value: 'not_service_name_value',
+        value: 'C:\\\\Grafana Logs\\\\logfile.txt',
         operator: '=',
       },
     ]);
@@ -905,7 +910,7 @@ describe('renderLogQLMetadataFilters', () => {
       {
         key: 'host',
         operator: FilterOp.RegexEqual,
-        value: '((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}',
+        value: addAdHocFilterUserInputPrefix(`((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}`),
       },
       {
         key: 'level',
