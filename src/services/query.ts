@@ -15,7 +15,7 @@ import { PLUGIN_ID } from './plugin';
 import { AdHocFiltersVariable, AdHocFilterWithLabels, sceneUtils } from '@grafana/scenes';
 import { FilterOp, LineFilterCaseSensitive, LineFilterOp } from './filterTypes';
 import { sortLineFilters } from '../Components/IndexScene/LineFilterVariablesScene';
-import { isOperatorExclusive, isOperatorInclusive, numericOperatorArray } from './operators';
+import { isOperatorExclusive, isOperatorInclusive, isOperatorRegex, numericOperatorArray } from './operators';
 
 /**
  * Builds the resource query
@@ -76,6 +76,13 @@ export function getLogQLLabelGroups(filters: AdHocVariableFilter[]) {
 
   const positiveGroups = groupBy(positive, (filter) => filter.key);
   const negativeGroups = groupBy(negative, (filter) => filter.key);
+
+  // Need to break out by operation?
+  console.log('labelGroups', {
+    positiveGroups,
+    negativeGroups,
+  });
+
   return { positiveGroups, negativeGroups };
 }
 
@@ -87,8 +94,8 @@ export function getLogQLLabelFilters(filters: AdHocVariableFilter[]) {
     const values = positiveGroups[key].map((filter) => filter.value);
     positiveFilters.push(
       values.length === 1
-        ? renderMetadata(positiveGroups[key][0])
-        : renderRegexLabelFilter(key, values, FilterOp.RegexEqual)
+        ? labelFilterToLogQL(positiveGroups[key][0])
+        : labelFiltersToLogQL(key, values, FilterOp.RegexEqual)
     );
   }
 
@@ -97,8 +104,8 @@ export function getLogQLLabelFilters(filters: AdHocVariableFilter[]) {
     const values = negativeGroups[key].map((filter) => filter.value);
     negativeFilters.push(
       values.length === 1
-        ? renderMetadata(negativeGroups[key][0])
-        : renderRegexLabelFilter(key, values, FilterOp.RegexNotEqual)
+        ? labelFilterToLogQL(negativeGroups[key][0])
+        : labelFiltersToLogQL(key, values, FilterOp.RegexNotEqual)
     );
   }
 
@@ -107,6 +114,7 @@ export function getLogQLLabelFilters(filters: AdHocVariableFilter[]) {
 
 export function renderLogQLLabelFilters(filters: AdHocFilterWithLabels[]) {
   let { positiveFilters, negativeFilters } = getLogQLLabelFilters(filters);
+
   const result = trim(`${positiveFilters.join(', ')}, ${negativeFilters.join(', ')}`, ' ,');
 
   return result;
@@ -141,10 +149,10 @@ export function renderLogQLMetadataFilters(filters: AdHocVariableFilter[]) {
 
   let positiveFilters = '';
   for (const key in positiveGroups) {
-    positiveFilters += ' | ' + positiveGroups[key].map((filter) => `${renderMetadata(filter)}`).join(' or ');
+    positiveFilters += ' | ' + positiveGroups[key].map((filter) => `${labelFilterToLogQL(filter)}`).join(' or ');
   }
 
-  const negativeFilters = negative.map((filter) => `| ${renderMetadata(filter)}`).join(' ');
+  const negativeFilters = negative.map((filter) => `| ${labelFilterToLogQL(filter)}`).join(' ');
 
   return `${positiveFilters} ${negativeFilters}`.trim();
 }
@@ -218,10 +226,17 @@ export function renderLogQLLineFilter(filters: AdHocFilterWithLabels[]) {
     .join(' ');
 }
 
-function renderMetadata(filter: AdHocVariableFilter) {
+function labelFilterToLogQL(filter: AdHocVariableFilter) {
   // If the filter value is an empty string, we don't want to wrap it in backticks!
   if (filter.value === EMPTY_VARIABLE_VALUE) {
     return `${filter.key}${filter.operator}${filter.value}`;
+  }
+  console.log('labelFilterToLogQL', {
+    filter,
+    output: `${filter.key}${filter.operator}"${sceneUtils.escapeLabelValueInExactSelector(filter.value)}"`,
+  });
+  if (isOperatorRegex(filter.operator)) {
+    return `${filter.key}${filter.operator}"${sceneUtils.escapeLabelValueInRegexSelector(filter.value)}"`;
   }
   return `${filter.key}${filter.operator}"${sceneUtils.escapeLabelValueInExactSelector(filter.value)}"`;
 }
@@ -244,8 +259,13 @@ function fieldNumericFilterToQueryString(filter: AdHocVariableFilter) {
   return `${filter.key}${filter.operator}${value}`;
 }
 
-export function renderRegexLabelFilter(key: string, values: string[], operator: FilterOp) {
-  return `${key}${operator}"${values.join('|')}"`;
+export function labelFiltersToLogQL(key: string, values: string[], operator: FilterOp) {
+  const mappedValues = values.map((value) => sceneUtils.escapeLabelValueInRegexSelector(value)).join('|');
+  console.log('labelFiltersToLogQL', {
+    values,
+    mappedValues,
+  });
+  return `${key}${operator}"${mappedValues}"`;
 }
 
 export function renderPatternFilters(patterns: AppliedPattern[]) {
@@ -269,40 +289,79 @@ export function renderPatternFilters(patterns: AppliedPattern[]) {
   return `${excludePatternsLine} ${includePatternsLine}`.trim();
 }
 
+/**
+ * Escapes values and joins ad hoc variable filters for consumption by tagKeys, tagValues
+ * Do not save the output to state!
+ * @param variable
+ */
 export function joinTagFilters(variable: AdHocFiltersVariable) {
+  console.log('join tag filters', variable.state.filters);
   const { positiveGroups, negativeGroups } = getLogQLLabelGroups(variable.state.filters);
 
   const filters: AdHocFilterWithLabels[] = [];
+  // @todo DRY
   for (const key in positiveGroups) {
-    const values = positiveGroups[key].map((filter) => filter.value);
-    if (values.length === 1) {
+    const matchValues = positiveGroups[key]
+      .filter((filter) => filter.operator === FilterOp.Equal)
+      .map((filter) => filter.value);
+    const regexValues = positiveGroups[key]
+      .filter((filter) => filter.operator === FilterOp.RegexEqual)
+      .map((filter) => filter.value);
+
+    if (matchValues.length) {
+      if (matchValues.length === 1) {
+        filters.push({
+          key,
+          value: sceneUtils.escapeLabelValueInExactSelector(positiveGroups[key][0].value),
+          operator: positiveGroups[key][0].operator,
+        });
+      } else {
+        filters.push({
+          key,
+          value: matchValues.map((value) => sceneUtils.escapeLabelValueInRegexSelector(value)).join('|'),
+          operator: '=~',
+        });
+      }
+    }
+
+    if (regexValues.length) {
       filters.push({
         key,
-        value: positiveGroups[key][0].value,
-        operator: positiveGroups[key][0].operator,
-      });
-    } else {
-      filters.push({
-        key,
-        value: values.join('|'),
+        value: regexValues.map((value) => sceneUtils.escapeLabelValueInRegexSelector(value)).join('|'),
         operator: '=~',
       });
     }
   }
 
   for (const key in negativeGroups) {
-    const values = negativeGroups[key].map((filter) => filter.value);
-    if (values.length === 1) {
+    const matchValues = positiveGroups[key]
+      .filter((filter) => filter.operator === FilterOp.Equal)
+      .map((filter) => filter.value);
+    const regexValues = positiveGroups[key]
+      .filter((filter) => filter.operator === FilterOp.RegexEqual)
+      .map((filter) => filter.value);
+
+    if (matchValues.length) {
+      if (matchValues.length === 1) {
+        filters.push({
+          key,
+          value: sceneUtils.escapeLabelValueInExactSelector(positiveGroups[key][0].value),
+          operator: negativeGroups[key][0].operator,
+        });
+      } else {
+        filters.push({
+          key,
+          value: matchValues.map((value) => sceneUtils.escapeLabelValueInRegexSelector(value)).join('|'),
+          operator: '!~',
+        });
+      }
+    }
+
+    if (regexValues.length) {
       filters.push({
         key,
-        value: negativeGroups[key][0].value,
-        operator: negativeGroups[key][0].operator,
-      });
-    } else {
-      filters.push({
-        key,
-        value: values.join('|'),
-        operator: '!~',
+        value: regexValues.map((value) => sceneUtils.escapeLabelValueInRegexSelector(value)).join('|'),
+        operator: '=~',
       });
     }
   }

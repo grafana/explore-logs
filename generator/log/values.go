@@ -119,6 +119,7 @@ func ForAllClusters(namespace, svc model.LabelValue, cb func(model.LabelSet, pus
 				"__stream_shard__": model.LabelValue(shards[clusterInt%len(shards)]),
 				"namespace":        namespace,
 				"service_name":     svc,
+				"file":             "C:\\Grafana\\logs\\" + namespace + ".txt",
 			}, RandStructuredMetadata(string(svc), i))
 		}
 	}

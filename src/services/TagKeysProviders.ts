@@ -31,6 +31,7 @@ export async function getLabelsTagKeysProvider(variable: AdHocFiltersVariable): 
 
   if (datasource && datasource.getTagKeys) {
     const filters = joinTagFilters(variable);
+    console.log('keys joinTagFilters', filters);
 
     const options: DataSourceGetTagKeysOptions<LokiQuery> = {
       filters,

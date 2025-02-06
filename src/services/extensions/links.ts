@@ -184,7 +184,7 @@ export function appendUrlParameter(
 }
 
 export function replaceSlash(parameter: string): string {
-  return parameter.replace(/\//g, '-');
+  return parameter.replace(/\//g, '-').replace(/\\/g, '-');
 }
 
 // Manually copied over from @grafana/scenes so we don't need to import scenes to build links

@@ -396,9 +396,15 @@ describe('renderLogQLLabelFilters', () => {
         operator: FilterOp.Equal,
         value: 'lil-cluster',
       },
+      {
+        key: 'filename',
+        operator: FilterOp.Equal,
+        value: 'C:\\Grafana\\logs\\logs.txt',
+      },
     ];
-
-    expect(renderLogQLLabelFilters(filters)).toEqual('level="info", cluster="lil-cluster"');
+    expect(renderLogQLLabelFilters(filters)).toEqual(
+      'level="info", cluster="lil-cluster", filename="C:\\\\Grafana\\\\logs\\\\logs.txt"'
+    );
   });
   test('Renders negative filters', () => {
     const filters: AdHocVariableFilter[] = [
@@ -412,41 +418,57 @@ describe('renderLogQLLabelFilters', () => {
         operator: FilterOp.NotEqual,
         value: 'lil-cluster',
       },
+      {
+        key: 'filename',
+        operator: FilterOp.NotEqual,
+        value: 'C:\\Grafana\\logs\\logs.txt',
+      },
     ];
 
-    expect(renderLogQLLabelFilters(filters)).toEqual('level!="info", cluster!="lil-cluster"');
+    expect(renderLogQLLabelFilters(filters)).toEqual(
+      'level!="info", cluster!="lil-cluster", filename!="C:\\\\Grafana\\\\logs\\\\logs.txt"'
+    );
   });
   test('Groups positive filters', () => {
     const filters: AdHocVariableFilter[] = [
       {
-        key: 'level',
+        key: 'filename',
         operator: FilterOp.Equal,
-        value: 'info',
+        value: '/var/log/apache2/apache.log',
       },
       {
-        key: 'level',
+        key: 'filename',
         operator: FilterOp.Equal,
-        value: 'error',
+        value: '/var/log/nginx/nginx.log',
+      },
+      {
+        key: 'filename',
+        operator: FilterOp.Equal,
+        value: 'C:\\Grafana\\logs\\logs.txt',
       },
     ];
 
-    expect(renderLogQLLabelFilters(filters)).toEqual('level=~"info|error"');
+    expect(renderLogQLLabelFilters(filters)).toEqual(
+      'filename=~"/var/log/apache2/apache\\\\.log|/var/log/nginx/nginx\\\\.log|C:\\\\\\\\Grafana\\\\\\\\logs\\\\\\\\logs\\\\.txt"'
+    );
   });
   test('Groups positive regex filters', () => {
     const filters: AdHocVariableFilter[] = [
       {
-        key: 'level',
+        key: 'filename',
         operator: FilterOp.RegexEqual,
-        value: 'info',
+        value: 'C:\\Grafana\\logs\\logs3.txt',
       },
       {
-        key: 'level',
+        key: 'filename',
         operator: FilterOp.RegexEqual,
-        value: 'error',
+        value: 'C:\\Grafana\\logs\\logs2.txt',
       },
     ];
 
-    expect(renderLogQLLabelFilters(filters)).toEqual('level=~"info|error"');
+    expect(renderLogQLLabelFilters(filters)).toEqual(
+      'filename=~"C:\\\\\\\\Grafana\\\\\\\\logs\\\\\\\\logs3\\\\.txt|C:\\\\\\\\Grafana\\\\\\\\logs\\\\\\\\logs2\\\\.txt"'
+    );
   });
   test('Groups negative regex filters', () => {
     const filters: AdHocVariableFilter[] = [
@@ -516,22 +538,12 @@ describe('renderLogQLLabelFilters', () => {
 });
 
 describe('joinTagFilters', () => {
-  it('joins multiple include', () => {
+  it('escapes special chars', () => {
     const adHoc = new AdHocFiltersVariable({
       filters: [
         {
-          key: 'service_name',
-          value: 'service_value',
-          operator: '=',
-        },
-        {
-          key: 'service_name',
-          value: 'service_value_2',
-          operator: '=',
-        },
-        {
-          key: 'not_service_name',
-          value: 'not_service_name_value',
+          key: 'file',
+          value: 'C:\\Grafana\\Logs\\log.txt',
           operator: '=',
         },
       ],
@@ -540,13 +552,63 @@ describe('joinTagFilters', () => {
     const result = joinTagFilters(adHoc);
     expect(result).toEqual([
       {
-        key: 'service_name',
-        value: 'service_value|service_value_2',
+        key: 'file',
+        value: 'C:\\\\Grafana\\\\Logs\\\\log.txt',
+        operator: '=',
+      },
+    ]);
+  });
+  it('escapes special chars with regex selector', () => {
+    const adHoc = new AdHocFiltersVariable({
+      filters: [
+        {
+          key: 'file',
+          value: 'C:\\\\Grafana\\\\Logs\\\\log.txt',
+          operator: '=~',
+        },
+      ],
+    });
+
+    const result = joinTagFilters(adHoc);
+    expect(result).toEqual([
+      {
+        key: 'file',
+        value: 'C:\\\\\\\\Grafana\\\\\\\\Logs\\\\\\\\log.txt',
+        operator: '=~',
+      },
+    ]);
+  });
+  it('joins multiple include', () => {
+    const adHoc = new AdHocFiltersVariable({
+      filters: [
+        {
+          key: 'filename',
+          value: 'C:\\Grafana\\logs\\logs.txt',
+          operator: '=',
+        },
+        {
+          key: 'filename',
+          value: 'C:\\Grafana\\logs\\logs2.txt',
+          operator: '=',
+        },
+        {
+          key: 'filename_2',
+          value: 'C:\\Grafana\\more-logs\\logs2.txt',
+          operator: '=',
+        },
+      ],
+    });
+
+    const result = joinTagFilters(adHoc);
+    expect(result).toEqual([
+      {
+        key: 'filename',
+        value: 'C:\\\\\\\\Grafana\\\\\\\\logs\\\\\\\\logs\\\\.txt|C:\\\\\\\\Grafana\\\\\\\\logs\\\\\\\\logs2\\\\.txt',
         operator: '=~',
       },
       {
-        key: 'not_service_name',
-        value: 'not_service_name_value',
+        key: 'filename_2',
+        value: 'C:\\\\Grafana\\\\more-logs\\\\logs2.txt',
         operator: '=',
       },
     ]);
