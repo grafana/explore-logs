@@ -1,13 +1,13 @@
 package log
 
 import (
-	"math/rand"
-	"strings"
-	"time"
-
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/grafana/loki/pkg/push"
 	"github.com/prometheus/common/model"
+	"math/rand"
+	"strconv"
+	"strings"
+	"time"
 )
 
 var Clusters = []string{
@@ -84,6 +84,8 @@ var UserIDs = []string{"14234", "03428", "10572", "94223", "08203", "93820", "12
 
 var defaultTraceId = gofakeit.UUID()
 
+var lessRandomPodLabelName = "tempo-ingester"
+
 func RandLevel() model.LabelValue {
 	r := rand.Intn(100)
 	if r < 5 {
@@ -101,6 +103,9 @@ func RandURI() string {
 
 func ForAllClusters(namespace, svc model.LabelValue, cb func(model.LabelSet, push.LabelsAdapter)) {
 	podCount := rand.Intn(10) + 1
+	if string(svc) == lessRandomPodLabelName {
+		podCount = 8
+	}
 	for _, cluster := range Clusters {
 		for i := 0; i < podCount; i++ {
 			clusterInt := 0
@@ -114,7 +119,7 @@ func ForAllClusters(namespace, svc model.LabelValue, cb func(model.LabelSet, pus
 				"__stream_shard__": model.LabelValue(shards[clusterInt%len(shards)]),
 				"namespace":        namespace,
 				"service_name":     svc,
-			}, RandStructuredMetadata(string(svc)))
+			}, RandStructuredMetadata(string(svc), i))
 		}
 	}
 }
@@ -174,10 +179,15 @@ func RandTraceID(prevTrace string) string {
 	return newTrace
 }
 
-func RandStructuredMetadata(svc string) push.LabelsAdapter {
+func RandStructuredMetadata(svc string, index int) push.LabelsAdapter {
+	podName := svc + "-" + RandSeq(5)
+	if svc == lessRandomPodLabelName {
+		// Hardcode the pod name ID for the tempo-ingester service so we can consistently query metadata in e2e tests.
+		podName = lessRandomPodLabelName + "-hc-" + strconv.Itoa(index) + RandSeq(3)
+	}
 	return push.LabelsAdapter{
 		push.LabelAdapter{Name: "traceID", Value: RandTraceID(defaultTraceId)},
-		push.LabelAdapter{Name: "pod", Value: svc + "-" + RandSeq(5)},
+		push.LabelAdapter{Name: "pod", Value: podName},
 		push.LabelAdapter{Name: "user", Value: RandUserID()},
 	}
 }
