@@ -324,7 +324,6 @@ export class ExplorePage {
     // Open combobox
     const comboboxLocator = this.page.getByPlaceholder('Filter by label values').nth(comboBox);
     await comboboxLocator.click();
-    await this.page.pause();
     if (typeAhead) {
       await this.page.keyboard.type(typeAhead);
     }

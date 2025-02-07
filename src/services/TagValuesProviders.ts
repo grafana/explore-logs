@@ -9,9 +9,9 @@ import { AdHocFiltersWithLabelsAndMeta, DetectedFieldType, VAR_LEVELS } from './
 import { isArray } from 'lodash';
 import { FilterOp } from './filterTypes';
 import { getFavoriteLabelValuesFromStorage } from './store';
-import { isOperatorInclusive, isOperatorRegex } from './operators';
 import { UIVariableFilterType } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { ExpressionBuilder } from './ExpressionBuilder';
+import { isOperatorInclusive, isOperatorRegex } from './operatorHelpers';
 
 type FetchDetectedLabelValuesOptions = {
   expr?: string;

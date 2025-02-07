@@ -92,12 +92,13 @@ import { ShowLogsButtonScene } from './ShowLogsButtonScene';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
 import { getCopiedTimeRange, PasteTimeEvent, setupKeyboardShortcuts } from '../../services/keyboardShortcuts';
 import { LokiDatasource } from '../../services/lokiQuery';
-import { isOperatorInclusive, lineFilterOperators, operators } from '../../services/operators';
+import { lineFilterOperators, operators } from '../../services/operators';
 import { operatorFunction } from '../../services/variableHelpers';
 import { FilterOp } from '../../services/filterTypes';
 import { areArraysEqual } from '../../services/comparison';
 import { isFilterMetadata } from '../../services/filters';
 import { getFieldsTagValuesExpression } from '../../services/expressions';
+import { isOperatorInclusive } from '../../services/operatorHelpers';
 
 export const showLogsButtonSceneKey = 'showLogsButtonScene';
 export interface AppliedPattern {

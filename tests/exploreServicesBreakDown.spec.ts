@@ -550,6 +550,8 @@ test.describe('explore services breakdown page', () => {
     // Add both tempo services
     await explorePage.addCustomValueToCombobox('service_name', FilterOp.RegexEqual, ComboBoxIndex.labels, `tempo.+`);
     await explorePage.addCustomValueToCombobox('namespace', FilterOp.RegexEqual, ComboBoxIndex.labels, `.+dev.*`);
+    // Remove tempo-distributor
+    await page.getByLabel('Remove filter with key').first().click();
 
     await explorePage.assertNotLoading();
     await explorePage.assertPanelsNotLoading();
@@ -568,7 +570,6 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(metadataName))).toBeVisible();
     await expect(page.getByText('=~').nth(3)).toBeVisible();
     const panels = explorePage.getAllPanelsLocator();
-    // Worried that this could flake if the pod names are randomly generated? - yup
     await expect(panels).toHaveCount(9);
     await expect(
       page.getByTestId(/data-testid Panel header tempo-ingester-[hc]{2}-\d.+/).getByTestId('header-container')

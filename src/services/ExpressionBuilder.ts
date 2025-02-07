@@ -1,10 +1,10 @@
 import { AdHocFilterWithLabels } from '@grafana/scenes';
 import { AdHocVariableFilter } from '@grafana/data';
-import { isOperatorExclusive, isOperatorInclusive, isOperatorNumeric, isOperatorRegex } from './operators';
 import { FilterOp, FilterOpType, LabelFilterOp, NumericFilterOp } from './filterTypes';
 import { Dictionary, groupBy, trim } from 'lodash';
 import { EMPTY_VARIABLE_VALUE, isAdHocFilterValueUserInput, stripAdHocFilterUserInputPrefix } from './variables';
 import { getValueFromFieldsFilter } from './variableGetters';
+import { isOperatorExclusive, isOperatorInclusive, isOperatorNumeric, isOperatorRegex } from './operatorHelpers';
 
 type Key = string;
 type Value = string;

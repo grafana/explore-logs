@@ -18,7 +18,8 @@ import pluginJson from '../../plugin.json';
 import { getMatcherFromQuery } from '../logqlMatchers';
 import { LokiQuery } from '../lokiQuery';
 import { LabelType } from '../fieldsTypes';
-import { isOperatorInclusive } from '../operators';
+
+import { isOperatorInclusive } from '../operatorHelpers';
 
 const title = 'Open in Explore Logs';
 const description = 'Open current query in the Explore Logs view';
@@ -63,12 +64,18 @@ function stringifyValues(value?: string): string {
   return value;
 }
 
+// Why are there twice as many escape chars in the url as expected?
+function replaceEscapeChars(value?: string): string | undefined {
+  return value?.replace(/\\\\/g, '\\');
+}
+
 function stringifyAdHocValues(value?: string): string {
   if (!value) {
     return '""';
   }
+
   // All label values from explore are already escaped, so we mark them as custom values to prevent them from getting escaped again when rendering the LogQL
-  return addAdHocFilterUserInputPrefix(value);
+  return addAdHocFilterUserInputPrefix(replaceEscapeChars(value));
 }
 
 function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
@@ -108,7 +115,9 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
 
     const labelsAdHocFilterURLString = `${labelFilter.key}|${labelFilter.operator}|${escapeURLDelimiters(
       stringifyAdHocValues(labelFilter.value)
-    )},${escapeURLDelimiters(labelFilter.value)}`;
+    )},${escapeURLDelimiters(replaceEscapeChars(labelFilter.value))}`;
+
+    console.log('labelsAdHocFilterURLString', labelsAdHocFilterURLString);
 
     params = appendUrlParameter(UrlParameters.Labels, labelsAdHocFilterURLString, params);
   }
@@ -138,7 +147,7 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
             UrlParameters.Metadata,
             `${field.key}|${field.operator}|${escapeURLDelimiters(
               stringifyAdHocValues(field.value)
-            )},${escapeURLDelimiters(field.value)}`,
+            )},${escapeURLDelimiters(replaceEscapeChars(field.value))}`,
             params
           );
         }
@@ -150,7 +159,7 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
 
         const adHocFilterURLString = `${field.key}|${field.operator}|${escapeURLDelimiters(
           stringifyAdHocValues(JSON.stringify(fieldValue))
-        )},${escapeURLDelimiters(fieldValue.value)}`;
+        )},${escapeURLDelimiters(replaceEscapeChars(fieldValue.value))}`;
 
         params = appendUrlParameter(UrlParameters.Fields, adHocFilterURLString, params);
       }
