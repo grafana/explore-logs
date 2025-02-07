@@ -1,8 +1,8 @@
-import { FilterOp, LineFilterOp } from './filterTypes';
+import { FilterOp, FilterOpType, LineFilterOp } from './filterTypes';
 import { SelectableValue } from '@grafana/data';
 import { logger } from './logger';
 
-function getOperatorDescription(op: FilterOp): string {
+function getOperatorDescription(op: FilterOpType): string {
   if (op === FilterOp.NotEqual) {
     return 'Not equal';
   }
@@ -64,12 +64,12 @@ export const lineFilterOperators: SelectableValue[] = [
   { label: 'negativeRegex', value: LineFilterOp.negativeRegex },
 ];
 
-export const isOperatorInclusive = (op: string | FilterOp): boolean => {
+export const isOperatorInclusive = (op: string | FilterOpType): boolean => {
   return op === FilterOp.Equal || op === FilterOp.RegexEqual;
 };
-export const isOperatorExclusive = (op: string | FilterOp): boolean => {
+export const isOperatorExclusive = (op: string | FilterOpType): boolean => {
   return op === FilterOp.NotEqual || op === FilterOp.RegexNotEqual;
 };
-export const isOperatorRegex = (op: string | FilterOp): boolean => {
+export const isOperatorRegex = (op: string | FilterOpType): boolean => {
   return op === FilterOp.RegexEqual || op === FilterOp.RegexNotEqual;
 };

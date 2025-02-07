@@ -22,7 +22,7 @@ import {
   getValueFromAdHocVariableFilter,
   getValueFromFieldsFilter,
 } from '../../../services/variableGetters';
-import { FilterOp } from '../../../services/filterTypes';
+import { FilterOp, FilterOpType } from '../../../services/filterTypes';
 import { LokiQuery } from '../../../services/lokiQuery';
 import { css } from '@emotion/css';
 import { rest } from 'lodash';
@@ -104,7 +104,7 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
       selectedValue?.value ?? (isIncluded ? INCLUDE_VALUE : hasNumericFilters ? NUMERIC_FILTER_VALUE : INCLUDE_VALUE);
 
     const hasExistingNumericFilter = existingFilter?.operator
-      ? [FilterOp.gte, FilterOp.gt, FilterOp.lte, FilterOp.lt].includes(existingFilter.operator as FilterOp)
+      ? [FilterOp.gte, FilterOp.gt, FilterOp.lte, FilterOp.lt].includes(existingFilter.operator as FilterOpType)
       : false;
     const numericSelected = selectedOptionValue === NUMERIC_FILTER_VALUE || hasExistingNumericFilter;
     const includeSelected = selectedOptionValue === INCLUDE_VALUE && !numericSelected;

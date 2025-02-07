@@ -21,10 +21,12 @@ import { getQueryRunner, getResourceQueryRunner } from 'services/panel';
 import { buildDataQuery, buildResourceQuery } from 'services/query';
 import {
   EMPTY_VARIABLE_VALUE,
+  isAdHocFilterValueUserInput,
   LEVEL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
   SERVICE_NAME,
   SERVICE_UI_LABEL,
+  stripAdHocFilterUserInputPrefix,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_LABELS,
@@ -193,13 +195,17 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
             (f) => isOperatorInclusive(f.operator) && f.value !== EMPTY_VARIABLE_VALUE
           );
           if (newPrimaryLabel) {
+            const newPrimaryLabelValue = isAdHocFilterValueUserInput(newPrimaryLabel.value)
+              ? replaceSlash(stripAdHocFilterUserInputPrefix(newPrimaryLabel.value))
+              : replaceSlash(newPrimaryLabel.value);
             indexScene.setState({
               routeMatch: {
                 ...prevRouteMatch,
                 params: {
                   ...prevRouteMatch?.params,
                   labelName: newPrimaryLabel.key === SERVICE_NAME ? SERVICE_UI_LABEL : newPrimaryLabel.key,
-                  labelValue: replaceSlash(newPrimaryLabel.value),
+                  // If there are a bunch of values separated by pipe, like labels that come from explore, let's truncate the value so the slug doesn't get too long
+                  labelValue: newPrimaryLabelValue.split('|')[0],
                 },
                 url: prevRouteMatch?.url ?? '',
                 path: prevRouteMatch?.path ?? '',

@@ -10,15 +10,16 @@ import {
   stripAdHocFilterUserInputPrefix,
   VAR_DATASOURCE_EXPR,
 } from './variables';
-import { Dictionary, groupBy, trim } from 'lodash';
+import { groupBy } from 'lodash';
 import { getValueFromFieldsFilter } from './variableGetters';
 import { LokiQuery } from './lokiQuery';
 import { SceneDataQueryResourceRequest, SceneDataQueryResourceRequestOptions } from './datasourceTypes';
 import { PLUGIN_ID } from './plugin';
-import { AdHocFiltersVariable, AdHocFilterWithLabels, sceneUtils } from '@grafana/scenes';
-import { FilterOp, LineFilterCaseSensitive, LineFilterOp } from './filterTypes';
+import { AdHocFilterWithLabels, sceneUtils } from '@grafana/scenes';
+import { FilterOp, FilterOpType, LineFilterCaseSensitive, LineFilterOp } from './filterTypes';
 import { sortLineFilters } from '../Components/IndexScene/LineFilterVariablesScene';
 import { isOperatorExclusive, isOperatorInclusive, isOperatorRegex, numericOperatorArray } from './operators';
+import { filtersToLogQL } from './filtersToLogQL';
 
 /**
  * Builds the resource query
@@ -110,12 +111,8 @@ export function getLogQLLabelFilters(filters: AdHocVariableFilter[]) {
 }
 
 export function renderLogQLLabelFilters(filters: AdHocFilterWithLabels[]) {
-  let { positiveFilters, negativeFilters } = getLogQLLabelFilters(filters);
-
-  const result = trim(`${positiveFilters.join(', ')}, ${negativeFilters.join(', ')}`, ' ,');
-  console.log('renderLogQLLabelFilters', result);
-
-  return result;
+  const filtersTransformer = new filtersToLogQL(filters);
+  return filtersTransformer.getLabelsExpr();
 }
 
 export function onAddCustomAdHocValue(item: SelectableValue<string>): {
@@ -166,26 +163,24 @@ export function renderLevelsFilter(filters: AdHocVariableFilter[]) {
 }
 
 export function renderLogQLMetadataFilters(filters: AdHocVariableFilter[]) {
-  const positive = filters.filter((filter) => isOperatorInclusive(filter.operator));
-  const negative = filters.filter((filter) => isOperatorExclusive(filter.operator));
-
-  const positiveGroups = groupBy(positive, (filter) => filter.key);
-
-  let positiveFilters = '';
-  for (const key in positiveGroups) {
-    positiveFilters += ' | ' + positiveGroups[key].map((filter) => `${labelFilterToLogQL(filter)}`).join(' or ');
-  }
-
-  const negativeFilters = negative.map((filter) => `| ${labelFilterToLogQL(filter)}`).join(' ');
-
-  console.log('positiveFilters', positiveFilters);
-  console.log('negativeFilters', negativeFilters);
-
-  return `${positiveFilters} ${negativeFilters}`.trim();
+  const filterTransformer = new filtersToLogQL(filters);
+  return filterTransformer.getMetadataExpr();
+  // const positive = filters.filter((filter) => isOperatorInclusive(filter.operator));
+  // const negative = filters.filter((filter) => isOperatorExclusive(filter.operator));
+  //
+  // const positiveGroups = groupBy(positive, (filter) => filter.key);
+  //
+  // let positiveFilters = '';
+  // for (const key in positiveGroups) {
+  //   positiveFilters += ' | ' + positiveGroups[key].map((filter) => `${labelFilterToLogQL(filter)}`).join(' or ');
+  // }
+  //
+  // const negativeFilters = negative.map((filter) => `| ${labelFilterToLogQL(filter)}`).join(' ');
+  //
+  // return `${positiveFilters} ${negativeFilters}`.trim();
 }
 
 export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
-  // @todo partition instead of looping through again and again
   const positive = filters.filter((filter) => isOperatorInclusive(filter.operator));
   const negative = filters.filter((filter) => isOperatorExclusive(filter.operator));
 
@@ -203,10 +198,6 @@ export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
 
   const negativeFilters = negative.map((filter) => `| ${fieldFilterToQueryString(filter)}`).join(' ');
   let numericFilters = numeric.map((filter) => `| ${fieldNumericFilterToQueryString(filter)}`).join(' ');
-
-  console.log('positiveFilters', positiveFilters);
-  console.log('negativeFilters', negativeFilters);
-  console.log('numericFilters', numericFilters);
 
   return `${positiveFilters} ${negativeFilters} ${numericFilters}`.trim();
 }
@@ -294,7 +285,7 @@ function fieldNumericFilterToQueryString(filter: AdHocVariableFilter) {
   return `${filter.key}${filter.operator}${value}`;
 }
 
-export function labelFiltersToLogQL(key: string, values: string[], operator: FilterOp) {
+export function labelFiltersToLogQL(key: string, values: string[], operator: FilterOpType) {
   const mappedValues = values
     .map((value) => {
       if (isAdHocFilterValueUserInput(value)) {
@@ -325,72 +316,6 @@ export function renderPatternFilters(patterns: AppliedPattern[]) {
     }
   }
   return `${excludePatternsLine} ${includePatternsLine}`.trim();
-}
-
-function joinGroupFilters(logQLOutputGroup: Dictionary<AdHocVariableFilter[]>, groupType: 'positive' | 'negative') {
-  const filters: AdHocFilterWithLabels[] = [];
-
-  for (const key in logQLOutputGroup) {
-    const matchValues = logQLOutputGroup[key]
-      .filter((filter) =>
-        groupType === 'positive' ? filter.operator === FilterOp.Equal : filter.operator === FilterOp.NotEqual
-      )
-      .map((filter) => filter.value);
-    const regexValues = logQLOutputGroup[key]
-      .filter((filter) =>
-        groupType === 'positive' ? filter.operator === FilterOp.RegexEqual : filter.operator === FilterOp.RegexNotEqual
-      )
-      .map((filter) => filter.value);
-
-    if (matchValues.length) {
-      if (matchValues.length === 1) {
-        filters.push({
-          key,
-          value: sceneUtils.escapeLabelValueInExactSelector(logQLOutputGroup[key][0].value),
-          operator: logQLOutputGroup[key][0].operator,
-        });
-      } else {
-        filters.push({
-          key,
-          value: matchValues.map((value) => sceneUtils.escapeLabelValueInRegexSelector(value)).join('|'),
-          operator: groupType === 'positive' ? FilterOp.RegexEqual : FilterOp.RegexNotEqual,
-        });
-      }
-    }
-
-    if (regexValues.length) {
-      filters.push({
-        key,
-        value: regexValues
-          .map((value) => {
-            if (isAdHocFilterValueUserInput(value)) {
-              return sceneUtils.escapeLabelValueInExactSelector(stripAdHocFilterUserInputPrefix(value));
-            }
-            return sceneUtils.escapeLabelValueInRegexSelector(value);
-          })
-          .join('|'),
-        operator: groupType === 'positive' ? FilterOp.RegexEqual : FilterOp.RegexNotEqual,
-      });
-    }
-  }
-
-  console.log('joinGroupFilters', {
-    groupType,
-    logQLOutputGroup,
-    filters,
-  });
-
-  return filters;
-}
-
-/**
- * Escapes values and joins ad hoc variable filters for consumption by tagKeys, tagValues
- * Do not save the output to state!
- * @param variable
- */
-export function joinTagFilters(variable: AdHocFiltersVariable) {
-  const { positiveGroups, negativeGroups } = getLogQLLabelGroups(variable.state.filters);
-  return [...joinGroupFilters(positiveGroups, 'positive'), ...joinGroupFilters(negativeGroups, 'negative')];
 }
 
 export function wrapWildcardSearch(input: string) {

@@ -89,7 +89,9 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
     return undefined;
   }
 
-  const labelValue = replaceSlash(labelSelector.value);
+  // If there are a bunch of values for the same field, the value slug can get really long, let's just use the first one in the URL
+  const urlLabelValue = labelSelector.value.split('|')[0];
+  const labelValue = replaceSlash(urlLabelValue);
   let labelName = labelSelector.key === SERVICE_NAME ? 'service' : labelSelector.key;
   // sort `primary label` first
   labelFilters.sort((a) => (a.key === labelName ? -1 : 1));
@@ -104,13 +106,11 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
       continue;
     }
 
-    params = appendUrlParameter(
-      UrlParameters.Labels,
-      `${labelFilter.key}|${labelFilter.operator}|${escapeURLDelimiters(
-        stringifyAdHocValues(labelFilter.value)
-      )},${escapeURLDelimiters(labelFilter.value)}`,
-      params
-    );
+    const labelsAdHocFilterURLString = `${labelFilter.key}|${labelFilter.operator}|${escapeURLDelimiters(
+      stringifyAdHocValues(labelFilter.value)
+    )},${escapeURLDelimiters(labelFilter.value)}`;
+
+    params = appendUrlParameter(UrlParameters.Labels, labelsAdHocFilterURLString, params);
   }
 
   if (lineFilters) {
@@ -147,17 +147,15 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
           value: field.value,
           parser: field.parser,
         };
-        params = appendUrlParameter(
-          UrlParameters.Fields,
-          `${field.key}|${field.operator}|${escapeURLDelimiters(
-            stringifyAdHocValues(JSON.stringify(fieldValue))
-          )},${escapeURLDelimiters(fieldValue.value)}`,
-          params
-        );
+
+        const adHocFilterURLString = `${field.key}|${field.operator}|${escapeURLDelimiters(
+          stringifyAdHocValues(JSON.stringify(fieldValue))
+        )},${escapeURLDelimiters(fieldValue.value)}`;
+
+        params = appendUrlParameter(UrlParameters.Fields, adHocFilterURLString, params);
       }
     }
   }
-
   return {
     path: createAppUrl(`/explore/${labelName}/${labelValue}/logs`, params),
   };
