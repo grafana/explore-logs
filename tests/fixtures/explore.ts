@@ -4,7 +4,7 @@ import { testIds } from '../../src/services/testIds';
 import { expect } from '@grafana/plugin-e2e';
 
 import { LokiQuery } from '../../src/services/lokiQuery';
-import { FilterOp } from '../../src/services/filterTypes';
+import { FilterOp, FilterOpType } from '../../src/services/filterTypes';
 
 export interface PlaywrightRequest {
   post: any;
@@ -316,7 +316,7 @@ export class ExplorePage {
    */
   async addCustomValueToCombobox(
     labelName: string,
-    operator: FilterOp,
+    operator: FilterOpType,
     comboBox: ComboBoxIndex,
     text: string,
     typeAhead?: string
@@ -344,7 +344,7 @@ export class ExplorePage {
     await this.page.keyboard.press('Escape');
   }
 
-  getOperatorLocator(filter: FilterOp): Locator {
+  getOperatorLocator(filter: FilterOpType): Locator {
     switch (filter) {
       case FilterOp.Equal:
         return this.page.getByRole('option', { name: E2EComboboxStrings.operatorNames.equal, exact: true });

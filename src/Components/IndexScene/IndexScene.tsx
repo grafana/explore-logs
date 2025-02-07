@@ -362,13 +362,11 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
     fieldsCombinedVariable._getOperators = () => operatorFunction(fieldsCombinedVariable);
 
-    // @todo
     levelsVariable.setState({
       getTagValuesProvider: this.getLevelsTagValuesProvider(),
       getTagKeysProvider: this.getLevelsTagKeysProvider(),
     });
 
-    // @todo
     fieldsCombinedVariable.setState({
       getTagKeysProvider: this.getCombinedFieldsTagKeysProvider(),
       getTagValuesProvider: this.getCombinedFieldsTagValuesProvider(),

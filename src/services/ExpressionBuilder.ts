@@ -81,7 +81,6 @@ export class ExpressionBuilder {
    * Escapes
    */
   public getLabelsExpr(): string {
-    // here
     let {
       equalsFilters,
       notEqualsFilters,
@@ -246,17 +245,17 @@ export class ExpressionBuilder {
         gtFiltersStrings,
         gteFiltersStrings,
       });
-    }
 
-    if (this.options.debug) {
       console.log('allFilters', allFilters);
     }
 
     // Create the final output string by joining filters with filterSeparator char
     const allFiltersString = trim(this.combineValues(allFilters, `${this.options.filterSeparator ?? ','} `));
+
     if (this.options.debug) {
       console.log('labels expr', { allFiltersString });
     }
+
     return allFiltersString;
   }
 
