@@ -236,7 +236,7 @@ export class ExpressionBuilder {
     allFilters.push(...this.buildFilter(gteFiltersStrings, NumericFilterOp.gte));
 
     if (this.options.debug) {
-      console.log('combined filters after stringifying', {
+      console.log('combined filters after stringify', {
         equalFiltersStrings,
         notEqualsFiltersStrings,
         regexEqualFiltersStrings,
