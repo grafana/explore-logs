@@ -236,11 +236,11 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         )
         .setMenu(new PanelMenu({ addExplorationsLink: false }))
         .setOption('showLogContextToggle', true)
-        // @ts-expect-error Requires Grafana 11.5
+        // @ts-ignore (HEADS UP! - Only added it temporarily to demonstrate that the scenes update works.)
         .setOption('enableInfiniteScrolling', true)
-        // @ts-expect-error Grafana 11.5
+        // @ts-ignore (HEADS UP! - Only added it temporarily to demonstrate that the scenes update works.)
         .setOption('onNewLogsReceived', this.updateVisibleRange)
-        // @ts-expect-error Grafana 11.5
+        // @ts-ignore (HEADS UP! - Only added it temporarily to demonstrate that the scenes update works.)
         .setOption('logRowMenuIconsAfter', [<CopyLinkButton onClick={this.handleShareLogLineClick} key={0} />])
 
         .setHeaderActions(

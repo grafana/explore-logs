@@ -183,6 +183,7 @@ export class PatternsLogsSampleScene extends SceneObjectBase<PatternsLogsSampleS
         isHidden: false,
         height: 'auto',
         body: new SceneReactObject({
+          // @ts-ignore (HEADS UP! - Only added it temporarily to demonstrate that the scenes update works.)
           reactNode: reactNode,
         }),
       });
