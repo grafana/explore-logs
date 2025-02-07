@@ -294,6 +294,19 @@ describe('renderLogQLFieldFilters', () => {
       '| file!~"C:\\\\\\\\grafana\\\\\\\\dir\\\\\\\\file\\\\.txt" | duration<20s | duration>=10s'
     );
   });
+  test('Empty quote is not escaped', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: 'bytes',
+        operator: FilterOp.Equal,
+        value: JSON.stringify({
+          value: '""',
+          parser: 'logfmt',
+        } as FieldValue),
+      },
+    ];
+    expect(renderLogQLFieldFilters(filters)).toEqual('| bytes=""');
+  });
 });
 describe('renderLogQLLineFilter not containing backticks', () => {
   // REGEXP ops

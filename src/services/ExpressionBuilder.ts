@@ -131,7 +131,6 @@ export class ExpressionBuilder {
       valueSeparator: 'or',
       prefix: '| ',
       joinMatchFilters: false,
-      debug: true,
       encodeFilters: false,
     };
     return this.getLabelsExpr();
@@ -146,7 +145,6 @@ export class ExpressionBuilder {
       valueSeparator: 'or',
       prefix: '| ',
       joinMatchFilters: false,
-      debug: true,
       encodeFilters: false,
     };
     return this.getLabelsExpr();
@@ -161,7 +159,6 @@ export class ExpressionBuilder {
       filterSeparator: ' |',
       valueSeparator: 'or',
       prefix: '| ',
-      debug: true,
       joinMatchFilters: false,
       encodeFilters: true,
     };
@@ -507,9 +504,17 @@ export class ExpressionBuilder {
       value = fieldObject.value;
     }
 
+    if (value === EMPTY_VARIABLE_VALUE) {
+      if (this.options.debug) {
+        console.info('empty variable value, do not escape');
+      }
+      // Don't encode empty value
+      return value;
+    }
+
     if (isUserInput) {
       if (this.options.debug) {
-        console.log('ESCAPE: user input - exact selector', {
+        console.info('ESCAPE: user input - exact selector', {
           operator,
           value,
           result: escapeLabelValueInExactSelector(stripAdHocFilterUserInputPrefix(value)),
@@ -519,7 +524,7 @@ export class ExpressionBuilder {
     }
     if (isOperatorRegex(operator)) {
       if (this.options.debug) {
-        console.log('ESCAPE: regex selector', { operator, value });
+        console.info('ESCAPE: regex selector', { operator, value });
       }
       return escapeLabelValueInRegexSelector(value);
     }

@@ -258,7 +258,7 @@ test.describe('explore services breakdown page', () => {
     await explorePage.goToLogsTab();
     await explorePage.getLogsVolumePanelLocator().click();
     await page.getByTestId('data-testid Panel menu item Explore').click();
-    await expect(page.getByText(`{service_name="tempo-distributor"} | ${levelName}=~\`${valueName}\``)).toBeVisible();
+    await expect(page.getByText(`{service_name="tempo-distributor"} | ${levelName}=~"${valueName}"`)).toBeVisible();
   });
 
   test(`should select label ${labelName}, update filters, open in explore`, async ({ page, browser }) => {
@@ -965,7 +965,7 @@ test.describe('explore services breakdown page', () => {
     );
 
     expect(expressionsAfterNumericFilter[0]).toEqual(
-      'sum by (pod) (count_over_time({service_name="tempo-distributor"} | pod!=""     | logfmt  | bytes>500B | bytes<=2KB [$__auto]))'
+      'sum by (pod) (count_over_time({service_name="tempo-distributor"} | pod!=""     | logfmt  | bytes<=2KB | bytes>500B [$__auto]))'
     );
 
     // Assert that the variables were added to the UI
