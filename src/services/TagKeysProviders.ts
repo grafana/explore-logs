@@ -16,7 +16,7 @@ import { LABELS_TO_REMOVE } from './filters';
 import { DetectedFieldsResult, LokiLanguageProviderWithDetectedLabelValues } from './TagValuesProviders';
 import { LEVEL_VARIABLE_VALUE, ParserType, VAR_FIELDS_AND_METADATA, VAR_LEVELS } from './variables';
 import { UIVariableFilterType } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
-import { filtersToLogQL } from './filtersToLogQL';
+import { ExpressionBuilder } from './ExpressionBuilder';
 
 export async function getLabelsTagKeysProvider(variable: AdHocFiltersVariable): Promise<{
   replace?: boolean;
@@ -30,7 +30,7 @@ export async function getLabelsTagKeysProvider(variable: AdHocFiltersVariable): 
   const datasource = datasource_ as LokiDatasource;
 
   if (datasource && datasource.getTagKeys) {
-    const filtersTransformer = new filtersToLogQL(variable.state.filters);
+    const filtersTransformer = new ExpressionBuilder(variable.state.filters);
     const filters = filtersTransformer.getJoinedLabelsFilters();
 
     const options: DataSourceGetTagKeysOptions<LokiQuery> = {

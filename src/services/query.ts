@@ -11,15 +11,14 @@ import {
   VAR_DATASOURCE_EXPR,
 } from './variables';
 import { groupBy } from 'lodash';
-import { getValueFromFieldsFilter } from './variableGetters';
 import { LokiQuery } from './lokiQuery';
 import { SceneDataQueryResourceRequest, SceneDataQueryResourceRequestOptions } from './datasourceTypes';
 import { PLUGIN_ID } from './plugin';
 import { AdHocFilterWithLabels, sceneUtils } from '@grafana/scenes';
 import { FilterOp, FilterOpType, LineFilterCaseSensitive, LineFilterOp } from './filterTypes';
 import { sortLineFilters } from '../Components/IndexScene/LineFilterVariablesScene';
-import { isOperatorExclusive, isOperatorInclusive, isOperatorRegex, numericOperatorArray } from './operators';
-import { filtersToLogQL } from './filtersToLogQL';
+import { isOperatorExclusive, isOperatorInclusive, isOperatorRegex } from './operators';
+import { ExpressionBuilder } from './ExpressionBuilder';
 
 /**
  * Builds the resource query
@@ -111,7 +110,7 @@ export function getLogQLLabelFilters(filters: AdHocVariableFilter[]) {
 }
 
 export function renderLogQLLabelFilters(filters: AdHocFilterWithLabels[]) {
-  const filtersTransformer = new filtersToLogQL(filters);
+  const filtersTransformer = new ExpressionBuilder(filters);
   return filtersTransformer.getLabelsExpr();
 }
 
@@ -163,43 +162,13 @@ export function renderLevelsFilter(filters: AdHocVariableFilter[]) {
 }
 
 export function renderLogQLMetadataFilters(filters: AdHocVariableFilter[]) {
-  const filterTransformer = new filtersToLogQL(filters);
+  const filterTransformer = new ExpressionBuilder(filters);
   return filterTransformer.getMetadataExpr();
-  // const positive = filters.filter((filter) => isOperatorInclusive(filter.operator));
-  // const negative = filters.filter((filter) => isOperatorExclusive(filter.operator));
-  //
-  // const positiveGroups = groupBy(positive, (filter) => filter.key);
-  //
-  // let positiveFilters = '';
-  // for (const key in positiveGroups) {
-  //   positiveFilters += ' | ' + positiveGroups[key].map((filter) => `${labelFilterToLogQL(filter)}`).join(' or ');
-  // }
-  //
-  // const negativeFilters = negative.map((filter) => `| ${labelFilterToLogQL(filter)}`).join(' ');
-  //
-  // return `${positiveFilters} ${negativeFilters}`.trim();
 }
 
 export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
-  const positive = filters.filter((filter) => isOperatorInclusive(filter.operator));
-  const negative = filters.filter((filter) => isOperatorExclusive(filter.operator));
-
-  const numeric = filters.filter((filter) => {
-    const numericValues: string[] = numericOperatorArray;
-    return numericValues.includes(filter.operator);
-  });
-
-  const positiveGroups = groupBy(positive, (filter) => filter.key);
-
-  let positiveFilters = '';
-  for (const key in positiveGroups) {
-    positiveFilters += ' | ' + positiveGroups[key].map((filter) => `${fieldFilterToQueryString(filter)}`).join(' or ');
-  }
-
-  const negativeFilters = negative.map((filter) => `| ${fieldFilterToQueryString(filter)}`).join(' ');
-  let numericFilters = numeric.map((filter) => `| ${fieldNumericFilterToQueryString(filter)}`).join(' ');
-
-  return `${positiveFilters} ${negativeFilters} ${numericFilters}`.trim();
+  const filterTransformer = new ExpressionBuilder(filters);
+  return filterTransformer.getFieldsExpr();
 }
 
 export function escapeDoubleQuotedLineFilter(filter: AdHocFilterWithLabels) {
@@ -215,6 +184,9 @@ export function escapeDoubleQuotedLineFilter(filter: AdHocFilterWithLabels) {
   }
 }
 
+/**
+ * All values are user input, and nothing ie escaped.
+ */
 function buildLogQlLineFilter(filter: AdHocFilterWithLabels, value: string) {
   // Change operator if needed and insert caseInsensitive flag
   if (filter.key === LineFilterCaseSensitive.caseInsensitive) {
@@ -265,24 +237,6 @@ function labelFilterToLogQL(filter: AdHocVariableFilter) {
     return `${filter.key}${filter.operator}"${sceneUtils.escapeLabelValueInRegexSelector(filter.value)}"`;
   }
   return `${filter.key}${filter.operator}"${sceneUtils.escapeLabelValueInExactSelector(filter.value)}"`;
-}
-
-function fieldFilterToQueryString(filter: AdHocVariableFilter) {
-  const fieldObject = getValueFromFieldsFilter(filter);
-  const value = fieldObject.value;
-  // If the filter value is an empty string, we don't want to wrap it in quotes!
-  if (value === EMPTY_VARIABLE_VALUE) {
-    return `${filter.key}${filter.operator}${value}`;
-  }
-  return `${filter.key}${filter.operator}"${sceneUtils.escapeLabelValueInExactSelector(value)}"`;
-}
-
-function fieldNumericFilterToQueryString(filter: AdHocVariableFilter) {
-  const fieldObject = getValueFromFieldsFilter(filter);
-  const value = fieldObject.value;
-  // If the filter value is an empty string, we don't want to wrap it in backticks!
-
-  return `${filter.key}${filter.operator}${value}`;
 }
 
 export function labelFiltersToLogQL(key: string, values: string[], operator: FilterOpType) {

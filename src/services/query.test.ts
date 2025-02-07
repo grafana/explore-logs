@@ -13,7 +13,7 @@ import {
 import { addAdHocFilterUserInputPrefix, FieldValue } from './variables';
 import { AdHocFiltersVariable, AdHocFilterWithLabels } from '@grafana/scenes';
 import { FilterOp, LineFilterCaseSensitive, LineFilterOp } from './filterTypes';
-import { filtersToLogQL } from './filtersToLogQL';
+import { ExpressionBuilder } from './ExpressionBuilder';
 
 describe('buildDataQuery', () => {
   test('Given an expression outputs a Loki query', () => {
@@ -57,10 +57,8 @@ describe('renderLogQLFieldFilters', () => {
         } as FieldValue),
       },
     ];
-
     expect(renderLogQLFieldFilters(filters)).toEqual('| level="info" | cluster="lil-cluster"');
   });
-
   test('Renders negative filters', () => {
     const filters: AdHocVariableFilter[] = [
       {
@@ -181,10 +179,12 @@ describe('renderLogQLFieldFilters', () => {
       {
         key: 'host',
         operator: FilterOp.RegexEqual,
-        value: JSON.stringify({
-          value: '((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}',
-          parser: 'logfmt',
-        } as FieldValue),
+        value: addAdHocFilterUserInputPrefix(
+          JSON.stringify({
+            value: '((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}',
+            parser: 'logfmt',
+          } as FieldValue)
+        ),
       },
       {
         key: 'level',
@@ -205,6 +205,16 @@ describe('renderLogQLFieldFilters', () => {
       {
         key: 'level',
         operator: FilterOp.RegexNotEqual,
+        value: addAdHocFilterUserInputPrefix(
+          JSON.stringify({
+            value: 'in.+',
+            parser: 'logfmt',
+          } as FieldValue)
+        ),
+      },
+      {
+        key: 'level',
+        operator: FilterOp.RegexNotEqual,
         value: JSON.stringify({
           value: 'info',
           parser: 'logfmt',
@@ -220,7 +230,69 @@ describe('renderLogQLFieldFilters', () => {
       },
     ];
 
-    expect(renderLogQLFieldFilters(filters)).toEqual('| level!~"info" | cluster!~"lil-cluster"');
+    expect(renderLogQLFieldFilters(filters)).toEqual('| level!~"in.+" or level!~"info" | cluster!~"lil-cluster"');
+  });
+  test('Renders lte && gt numeric filters', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: 'duration',
+        operator: FilterOp.lte,
+        value: JSON.stringify({
+          value: '20s',
+          parser: 'logfmt',
+        } as FieldValue),
+      },
+      {
+        key: 'duration',
+        operator: FilterOp.gt,
+        value: JSON.stringify({
+          value: '10s',
+          parser: 'logfmt',
+        } as FieldValue),
+      },
+      {
+        key: 'level',
+        operator: FilterOp.RegexNotEqual,
+        value: addAdHocFilterUserInputPrefix(
+          JSON.stringify({
+            value: 'in.+',
+            parser: 'logfmt',
+          } as FieldValue)
+        ),
+      },
+    ];
+    expect(renderLogQLFieldFilters(filters)).toEqual('| level!~"in.+" | duration<=20s | duration>10s');
+  });
+  test('Renders lt && gte numeric filters', () => {
+    const filters: AdHocVariableFilter[] = [
+      {
+        key: 'duration',
+        operator: FilterOp.lt,
+        value: JSON.stringify({
+          value: '20s',
+          parser: 'logfmt',
+        } as FieldValue),
+      },
+      {
+        key: 'duration',
+        operator: FilterOp.gte,
+        value: JSON.stringify({
+          value: '10s',
+          parser: 'logfmt',
+        } as FieldValue),
+      },
+      {
+        key: 'file',
+        operator: FilterOp.RegexNotEqual,
+        value: JSON.stringify({
+          value: 'C:\\grafana\\dir\\file.txt',
+          parser: 'logfmt',
+        } as FieldValue),
+      },
+    ];
+    expect(renderLogQLFieldFilters(filters)).toEqual(
+      '| file!~"C:\\\\\\\\grafana\\\\\\\\dir\\\\\\\\file\\\\.txt" | duration<20s | duration>=10s'
+    );
   });
 });
 describe('renderLogQLLineFilter not containing backticks', () => {
@@ -544,7 +616,7 @@ describe('renderLogQLLabelFilters', () => {
 
 describe('getJoinedLabelsFilters', () => {
   function joinTagFilters(adHoc: AdHocFiltersVariable) {
-    const filterTransformer = new filtersToLogQL(adHoc.state.filters);
+    const filterTransformer = new ExpressionBuilder(adHoc.state.filters);
     return filterTransformer.getJoinedLabelsFilters();
   }
 
@@ -925,7 +997,7 @@ describe('renderLogQLMetadataFilters', () => {
     ];
 
     expect(renderLogQLMetadataFilters(filters)).toEqual(
-      '| host=~"((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}" | level=~"error"'
+      '| host=~"((25[0-5]|(2[0-4]|1\\\\d|[1-9]|)\\\\d)\\\\.?\\\\b){4}" | level=~"error"'
     );
   });
   test('Renders grouped and ungrouped positive and negative regex filters', () => {
@@ -991,7 +1063,7 @@ describe('renderLogQLMetadataFilters', () => {
     ];
 
     expect(renderLogQLMetadataFilters(filters)).toEqual(
-      '| level=~"info" or level=~"error" | cluster="lil-cluster" | component!~"comp1" | pod!="pod1"'
+      '| cluster="lil-cluster" | pod!="pod1" | level=~"info" or level=~"error" | component!~"comp1"'
     );
   });
 });

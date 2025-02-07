@@ -1,6 +1,5 @@
 import {
   AdHocFiltersVariable,
-  AdHocFilterWithLabels,
   CustomVariable,
   DataSourceVariable,
   sceneGraph,
@@ -196,8 +195,10 @@ export function getUrlParamNameForVariable(variableName: string) {
   return `var-${variableName}`;
 }
 
-export function getValueFromFieldsFilter(filter: AdHocFilterWithLabels, variableName: string = VAR_FIELDS): FieldValue {
-  console.log('getValueFromFieldsFilter', filter);
+export function getValueFromFieldsFilter(
+  filter: { value: string; valueLabels?: string[] },
+  variableName: string = VAR_FIELDS
+): FieldValue {
   // Metadata is not JSON encoded????
   if (isFilterMetadata(filter)) {
     return {

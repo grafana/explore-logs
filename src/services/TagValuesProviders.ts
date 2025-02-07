@@ -11,7 +11,7 @@ import { FilterOp } from './filterTypes';
 import { getFavoriteLabelValuesFromStorage } from './store';
 import { isOperatorInclusive, isOperatorRegex } from './operators';
 import { UIVariableFilterType } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
-import { filtersToLogQL } from './filtersToLogQL';
+import { ExpressionBuilder } from './ExpressionBuilder';
 
 type FetchDetectedLabelValuesOptions = {
   expr?: string;
@@ -187,7 +187,7 @@ export async function getLabelsTagValuesProvider(
 
   if (datasource && datasource.getTagValues) {
     // Filter out other values for this key so users can include other values for this label
-    const filterTransformer = new filtersToLogQL(variable.state.filters);
+    const filterTransformer = new ExpressionBuilder(variable.state.filters);
     const filters = filterTransformer.getJoinedLabelsFilters();
     const filtersFiltered = tagValuesFilterAdHocFilters(filters, filter);
 

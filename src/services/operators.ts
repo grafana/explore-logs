@@ -1,4 +1,4 @@
-import { FilterOp, FilterOpType, LineFilterOp } from './filterTypes';
+import { FilterOp, FilterOpType, LineFilterOp, NumericFilterOp } from './filterTypes';
 import { SelectableValue } from '@grafana/data';
 import { logger } from './logger';
 
@@ -72,4 +72,7 @@ export const isOperatorExclusive = (op: string | FilterOpType): boolean => {
 };
 export const isOperatorRegex = (op: string | FilterOpType): boolean => {
   return op === FilterOp.RegexEqual || op === FilterOp.RegexNotEqual;
+};
+export const isOperatorNumeric = (op: string | NumericFilterOp): boolean => {
+  return numericOperatorArray.includes(op);
 };

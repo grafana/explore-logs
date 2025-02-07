@@ -5,7 +5,7 @@ import {
   LEVEL_VARIABLE_VALUE,
   stripAdHocFilterUserInputPrefix,
 } from './variables';
-import { AdHocFilterWithLabels, VariableValueOption } from '@grafana/scenes';
+import { VariableValueOption } from '@grafana/scenes';
 
 // We want to show labels with cardinality 1 at the end of the list because they are less useful
 // And then we want to sort by cardinality - from lowest to highest
@@ -49,7 +49,7 @@ export function getFieldOptions(labels: string[]) {
 }
 
 // Since "meta" is not saved in the URL state, it's ephemeral and can only be used for wip keys, but we can differentiate fields from metadata if the value is not encoded (and therefore different then the label)
-export function isFilterMetadata(filter: AdHocFilterWithLabels) {
+export function isFilterMetadata(filter: { value: string; valueLabels?: string[] }) {
   const value = isAdHocFilterValueUserInput(filter.value)
     ? stripAdHocFilterUserInputPrefix(filter.value)
     : filter.value;
