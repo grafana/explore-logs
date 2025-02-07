@@ -340,6 +340,27 @@ describe('contextToLink', () => {
           }),
         });
       });
+      it('should parse label with escape chars, escape chars should get replaced in url', () => {
+        const target = getTestTarget({
+          expr: `{cluster="C:\\Grafana\\logs\\log.txt"} | pod!=\`mimir-ingester-xjntw\` `,
+        });
+        const config = getTestConfig(linkConfigs, target);
+
+        const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
+          `cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('C:\\Grafana\\logs\\log.txt')}`
+        )}`;
+        const expectedLineFiltersUrlString = `&var-metadata=${encodeFilter(
+          `pod|!=|${addAdHocFilterUserInputPrefixAndValueLabel('mimir-ingester-xjntw')}`
+        )}`;
+
+        expect(config).toEqual({
+          path: getPath({
+            slug: 'cluster/C:-Grafana-logs-log.txt',
+            expectedLabelFiltersUrlString,
+            expectedLineFiltersUrlString,
+          }),
+        });
+      });
       it('should parse structured metadata field with parser(s)', () => {
         const target = getTestTarget({
           expr: `{cluster="eu-west-1"} | pod!=\`mimir-ingester-xjntw\` | logfmt | json `,
