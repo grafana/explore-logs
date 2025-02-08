@@ -117,8 +117,6 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
       stringifyAdHocValues(labelFilter.value)
     )},${escapeURLDelimiters(replaceEscapeChars(labelFilter.value))}`;
 
-    console.log('labelsAdHocFilterURLString', labelsAdHocFilterURLString);
-
     params = appendUrlParameter(UrlParameters.Labels, labelsAdHocFilterURLString, params);
   }
 
