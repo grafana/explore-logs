@@ -65,16 +65,16 @@ export const SUB_ROUTES = {
 };
 
 export const ROUTE_DEFINITIONS: Record<keyof typeof PageSlugs, string> = {
-  explore: prefixRoute(PageSlugs.explore),
-  logs: prefixRoute(`${PageSlugs.explore}/:labelName/:labelValue/${PageSlugs.logs}`),
-  fields: prefixRoute(`${PageSlugs.explore}/:labelName/:labelValue/${PageSlugs.fields}`),
-  patterns: prefixRoute(`${PageSlugs.explore}/:labelName/:labelValue/${PageSlugs.patterns}`),
-  labels: prefixRoute(`${PageSlugs.explore}/:labelName/:labelValue/${PageSlugs.labels}`),
+  explore: `${PageSlugs.explore}/*`,
+  logs: `:labelName/:labelValue/${PageSlugs.logs}`,
+  fields: `:labelName/:labelValue/${PageSlugs.fields}`,
+  patterns: `:labelName/:labelValue/${PageSlugs.patterns}`,
+  labels: `:labelName/:labelValue/${PageSlugs.labels}`,
 };
 
 export const CHILD_ROUTE_DEFINITIONS: Record<keyof typeof ValueSlugs, string> = {
-  field: prefixRoute(`${PageSlugs.explore}/:labelName/:labelValue/${ValueSlugs.field}/:breakdownLabel`),
-  label: prefixRoute(`${PageSlugs.explore}/:labelName/:labelValue/${ValueSlugs.label}/:breakdownLabel`),
+  field: `:labelName/:labelValue/${ValueSlugs.field}/:breakdownLabel`,
+  label: `:labelName/:labelValue/${ValueSlugs.label}/:breakdownLabel`,
 };
 
 export const EXPLORATIONS_ROUTE = `${PLUGIN_BASE_URL}/${PageSlugs.explore}`;
