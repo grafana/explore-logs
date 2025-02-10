@@ -6,6 +6,7 @@ import { EMPTY_VARIABLE_VALUE, isAdHocFilterValueUserInput, stripAdHocFilterUser
 import { getValueFromFieldsFilter } from './variableGetters';
 import { isOperatorExclusive, isOperatorInclusive, isOperatorNumeric, isOperatorRegex } from './operatorHelpers';
 import { narrowFilterOperator } from './narrowing';
+import { getExpressionBuilderDebug } from './store';
 
 type Key = string;
 type Value = string;
@@ -50,6 +51,9 @@ export class ExpressionBuilder {
   constructor(filters: AdHocFilterWithLabels[], options: Options = { joinMatchFilters: true, decodeFilters: false }) {
     this.filters = filters;
     this.options = options;
+    if (!this.options.debug) {
+      this.options.debug = getExpressionBuilderDebug();
+    }
   }
 
   /**
