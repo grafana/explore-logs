@@ -7,7 +7,7 @@ export function InterceptBanner(props: { onRemove: () => void }) {
   const styles = useStyles2(getStyles);
   return (
     <>
-      <Alert className={styles.alert} severity={'info'} title={'Welcome to Explore Logs!'} onRemove={props.onRemove}>
+      <Alert className={styles.alert} severity={'info'} title={'Welcome to Logs Drilldown!'} onRemove={props.onRemove}>
         <div>
           Check out our{' '}
           <a

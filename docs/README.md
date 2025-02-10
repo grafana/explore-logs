@@ -1,8 +1,8 @@
-# Explore Logs Documentation
+# Logs Drilldown Documentation
 
-This directory contains the source code for the Explore Logs documentation.
+This directory contains the source code for the Logs Drilldown documentation.
 
-Some key things to know about the Explore Logs documentation source:
+Some key things to know about the Logs Drilldown documentation source:
 
 - The docs are written in markdown, specifically the CommonMark flavor of markdown.
 - The Grafana docs team uses [Hugo](https://gohugo.io/) to generate the documentation.
@@ -12,14 +12,14 @@ The docs team has created a [Writers' Toolkit](https://grafana.com/docs/writers-
 
 ## Contributing
 
-The Explore Logs documentation is written using the CommonMark flavor of markdown, including some extended features. For more information about markdown, you can see the [CommonMark specification](https://spec.commonmark.org/), and a [quick reference guide](https://commonmark.org/help/) for CommonMark.
+The Logs Drilldown documentation is written using the CommonMark flavor of markdown, including some extended features. For more information about markdown, you can see the [CommonMark specification](https://spec.commonmark.org/), and a [quick reference guide](https://commonmark.org/help/) for CommonMark.
 
 If you have a GitHub account and you're just making a small fix, for example fixing a typo or updating an example, you can edit the topic in GitHub.
 
-1. Find the topic in the Explore Logs repo.
+1. Find the topic in the Logs Drilldown repo.
 2. Click the pencil icon.
 3. Enter your changes.
 4. Click **Commit changes**. GitHub creates a pull request for you.
-5. If this is your first contribution to the Explore Logs repository, you will need to sign the Contributor License Agreement (CLA) before your PR can be accepted.
+5. If this is your first contribution to the Logs Drilldown repository, you will need to sign the Contributor License Agreement (CLA) before your PR can be accepted.
 
 Note that in Hugo the structure of the documentation is based on the folder structure of the documentation repository. The URL structure is generated based on the folder structure and file names.
