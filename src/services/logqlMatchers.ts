@@ -32,6 +32,7 @@ import { NodeType, SyntaxNode, Tree } from '@lezer/common';
 import {
   FieldFilter,
   FilterOp as FilterOperator,
+  FilterOpType,
   IndexedLabelFilter,
   LineFilterCaseSensitive,
   LineFilterOp,
@@ -312,7 +313,7 @@ function parseFields(query: string, fields: FieldFilter[], context: PluginExtens
     const fieldBytesValue = getAllPositionsInNodeByType(matcher, Bytes);
     const fieldDurationValue = getAllPositionsInNodeByType(matcher, Duration);
 
-    let fieldValue: string, operator: FilterOperator | undefined;
+    let fieldValue: string, operator: FilterOpType | undefined;
     if (fieldStringValue.length) {
       operator = getStringFieldOperator(matcher);
       // Strip out quotes

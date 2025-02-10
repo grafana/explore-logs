@@ -2,6 +2,8 @@ import { SelectedTableRow } from '../Components/Table/LogLineCellComponent';
 import { LogsVisualizationType } from './store';
 import { FieldValue, ParserType } from './variables';
 import { LogsSortOrder, RawTimeRange } from '@grafana/data';
+import { LabelFilterOp, NumericFilterOp } from './filterTypes';
+
 const isObj = (o: unknown): o is object => typeof o === 'object' && o !== null;
 
 function hasProp<K extends PropertyKey>(data: object, prop: K): data is Record<K, unknown> {
@@ -103,6 +105,22 @@ export function narrowTimeRange(unknownRange: unknown): RawTimeRange | undefined
   }
 
   return undefined;
+}
+
+export function narrowFilterOperator(op: string): LabelFilterOp | NumericFilterOp {
+  switch (op) {
+    case LabelFilterOp.Equal:
+    case LabelFilterOp.NotEqual:
+    case LabelFilterOp.RegexEqual:
+    case LabelFilterOp.RegexNotEqual:
+    case NumericFilterOp.gt:
+    case NumericFilterOp.gte:
+    case NumericFilterOp.lt:
+    case NumericFilterOp.lte:
+      return op;
+    default:
+      throw new NarrowingError('operator is invalid!');
+  }
 }
 
 export class NarrowingError extends Error {}
