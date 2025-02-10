@@ -131,7 +131,7 @@ export class ExpressionBuilder {
    * Returns merged filters separated by pipe
    */
   public getMetadataExpr(
-    options = {
+    options: Options = {
       filterSeparator: ' |',
       prefix: '| ',
       joinMatchFilters: false,
@@ -146,7 +146,7 @@ export class ExpressionBuilder {
    * Same as metadata, but only include operators supported
    */
   public getLevelsExpr(
-    options = {
+    options: Options = {
       filterSeparator: ' |',
       prefix: '| ',
       joinMatchFilters: false,
@@ -162,7 +162,7 @@ export class ExpressionBuilder {
    * JSON encodes value
    */
   public getFieldsExpr(
-    options = {
+    options: Options = {
       filterSeparator: ' |',
       prefix: '| ',
       joinMatchFilters: false,
