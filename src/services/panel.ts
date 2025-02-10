@@ -19,13 +19,14 @@ import {
   VizPanel,
 } from '@grafana/scenes';
 import { map, Observable } from 'rxjs';
-import { HideSeriesConfig } from '@grafana/schema';
+import { HideSeriesConfig, LogsSortOrder } from '@grafana/schema';
 import { WRAPPED_LOKI_DS_UID } from './datasource';
 import { LogsSceneQueryRunner } from './LogsSceneQueryRunner';
 import { DrawStyle, StackingMode } from '@grafana/ui';
 import { getLabelsFromSeries, getVisibleLevels } from './levels';
-import { LokiQuery } from './lokiQuery';
+import { LokiQuery, LokiQueryDirection } from './lokiQuery';
 import { LOGS_COUNT_QUERY_REFID, LOGS_PANEL_QUERY_REFID } from '../Components/ServiceScene/ServiceScene';
+import { getLogsPanelSortOrderFromStore, getLogsPanelSortOrderFromURL } from 'Components/ServiceScene/LogOptionsScene';
 
 const UNKNOWN_LEVEL_LOGS = 'logs';
 export function setLevelColorOverrides(overrides: FieldConfigOverridesBuilder<FieldConfig>) {
@@ -59,6 +60,7 @@ export function setLogsVolumeFieldConfigs(
     .setCustomFieldConfig('fillOpacity', 100)
     .setCustomFieldConfig('lineWidth', 0)
     .setCustomFieldConfig('pointSize', 0)
+    .setCustomFieldConfig('axisSoftMin', 0)
     .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
     .setOverrides(setLevelColorOverrides);
 }
@@ -199,6 +201,12 @@ export function getQueryRunner(queries: LokiQuery[], queryRunnerOptions?: Partia
       }),
       transformations: [setColorByDisplayNameTransformation],
     });
+  } else {
+    const sortOrder = getLogsPanelSortOrderFromURL() || getLogsPanelSortOrderFromStore();
+    queries = queries.map((query) => ({
+      ...query,
+      direction: sortOrder === LogsSortOrder.Descending ? LokiQueryDirection.Backward : LokiQueryDirection.Forward,
+    }));
   }
 
   return getSceneQueryRunner({
