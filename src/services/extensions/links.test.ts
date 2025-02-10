@@ -5,7 +5,7 @@ import {
   ValidByteUnitValues,
   validDurationValues,
 } from '../../Components/ServiceScene/Breakdowns/NumericFilterPopoverScene';
-import { addAdHocFilterUserInputPrefix, AppliedPattern } from '../variables';
+import { addAdHocFilterUserInputPrefix } from '../variables';
 
 function getTestConfig(
   links: LinkConfigs,

@@ -40,7 +40,7 @@ describe('renderPatternFilters', () => {
         },
       ])
     ).toEqual(
-      `|> "logger=sqlstore.metrics traceID=<_> error=null" or "logger=sqlstore.metrics \`org_id\`=VALUES(\`org_id\`)" error=null"`
+      `|> "logger=sqlstore.metrics traceID=<_> error=null" or "logger=sqlstore.metrics \`org_id\`=VALUES(\`org_id\`)\\" error=null"`
     );
   });
   it('handles exclusion', () => {
@@ -56,7 +56,7 @@ describe('renderPatternFilters', () => {
         },
       ])
     ).toEqual(
-      `|> "logger=sqlstore.metrics traceID=<_> error=null" !> "logger=sqlstore.metrics \`org_id\`=VALUES(\`org_id\`)" error=null"`
+      `!> "logger=sqlstore.metrics traceID=<_> error=null" !> "logger=sqlstore.metrics \`org_id\`=VALUES(\`org_id\`)\\" error=null"`
     );
   });
 });
