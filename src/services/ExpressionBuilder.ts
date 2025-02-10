@@ -130,26 +130,30 @@ export class ExpressionBuilder {
   /**
    * Returns merged filters separated by pipe
    */
-  public getMetadataExpr(): string {
-    this.options = {
+  public getMetadataExpr(
+    options = {
       filterSeparator: ' |',
       prefix: '| ',
       joinMatchFilters: false,
       decodeFilters: false,
-    };
+    }
+  ): string {
+    this.options = options;
     return this.getLabelsExpr();
   }
 
   /**
    * Same as metadata, but only include operators supported
    */
-  public getLevelsExpr(): string {
-    this.options = {
+  public getLevelsExpr(
+    options = {
       filterSeparator: ' |',
       prefix: '| ',
       joinMatchFilters: false,
       decodeFilters: false,
-    };
+    }
+  ): string {
+    this.options = options;
     return this.getLabelsExpr();
   }
 
@@ -157,13 +161,15 @@ export class ExpressionBuilder {
    * Returns merged filters separated by pipe
    * JSON encodes value
    */
-  public getFieldsExpr(): string {
-    this.options = {
+  public getFieldsExpr(
+    options = {
       filterSeparator: ' |',
       prefix: '| ',
       joinMatchFilters: false,
       decodeFilters: true,
-    };
+    }
+  ): string {
+    this.options = options;
     return this.getLabelsExpr();
   }
 
