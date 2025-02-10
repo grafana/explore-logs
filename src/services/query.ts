@@ -2,7 +2,6 @@ import { AdHocVariableFilter, SelectableValue } from '@grafana/data';
 import {
   addAdHocFilterUserInputPrefix,
   AdHocFiltersWithLabelsAndMeta,
-  AppliedPattern,
   FieldValue,
   VAR_DATASOURCE_EXPR,
 } from './variables';
@@ -176,29 +175,6 @@ export function renderLogQLLineFilter(filters: AdHocFilterWithLabels[]) {
     })
     .join(' ');
 }
-
-// @todo worth migrating into the ExpressionBuilder class?
-export function renderPatternFilters(patterns: AppliedPattern[]) {
-  const excludePatterns = patterns.filter((pattern) => pattern.type === 'exclude');
-  const excludePatternsLine = excludePatterns
-    .map((p) => `!> "${sceneUtils.escapeLabelValueInExactSelector(p.pattern)}"`)
-    .join(' ')
-    .trim();
-
-  const includePatterns = patterns.filter((pattern) => pattern.type === 'include');
-  let includePatternsLine = '';
-  if (includePatterns.length > 0) {
-    if (includePatterns.length === 1) {
-      includePatternsLine = `|> "${sceneUtils.escapeLabelValueInExactSelector(includePatterns[0].pattern)}"`;
-    } else {
-      includePatternsLine = `|> ${includePatterns
-        .map((p) => `"${sceneUtils.escapeLabelValueInExactSelector(p.pattern)}"`)
-        .join(' or ')}`;
-    }
-  }
-  return `${excludePatternsLine} ${includePatternsLine}`.trim();
-}
-
 export function wrapWildcardSearch(input: string) {
   if (input === '.+') {
     return input;

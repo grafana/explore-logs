@@ -5,7 +5,7 @@ import {
   ValidByteUnitValues,
   validDurationValues,
 } from '../../Components/ServiceScene/Breakdowns/NumericFilterPopoverScene';
-import { addAdHocFilterUserInputPrefix } from '../variables';
+import { addAdHocFilterUserInputPrefix, AppliedPattern } from '../variables';
 
 function getTestConfig(
   links: LinkConfigs,
@@ -304,6 +304,78 @@ describe('contextToLink', () => {
           expectedLabelFiltersUrlString,
           expectedLineFiltersUrlString,
           expectedFieldsUrlString,
+        }),
+      });
+    });
+  });
+
+  describe('pattern-filters', () => {
+    it('should parse pattern filters', () => {
+      const target = getTestTarget({
+        expr: '{cluster="eu-west-1"} !> "<_> - - [<_> +0000]" |> "<_> - <_> [<_> +0000]" | json | logfmt | drop __error__, __error_details__',
+      });
+      const config = getTestConfig(linkConfigs, target);
+
+      const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
+        `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
+      )}`;
+
+      const expectedPatternsVariable = `&var-patterns=${encodeFilter(
+        '!> "<_> - - [<_> +0000]" |> "<_> - <_> [<_> +0000]"'
+      )}`;
+
+      const pattern = `[{"type":"exclude","pattern":"<_> - - [<_> +0000]"},{"type":"include","pattern":"<_> - <_> [<_> +0000]"}]`;
+      const expectedPatterns = `&patterns=${encodeFilter(pattern)}`;
+
+      expect(config).toEqual({
+        path: getPath({
+          slug: 'cluster/eu-west-1',
+          expectedLabelFiltersUrlString,
+          expectedPatternsVariable,
+          expectedPatterns,
+        }),
+      });
+    });
+    it('should parse multiple pattern filters', () => {
+      const target = getTestTarget({
+        expr: '{cluster="eu-west-1"} !> "<_> - - [<_> +0000]" |> "<_> - <_> [<_> +0000]" or "<_> - <_> [<_> +0000] \\"POST <_> <_>\\"" | json | logfmt | drop __error__, __error_details__',
+      });
+      const config = getTestConfig(linkConfigs, target);
+
+      const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
+        `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
+      )}`;
+
+      const expectedPatternsVariable = `&var-patterns=${encodeFilter(
+        '!> "<_> - - [<_> +0000]" |> "<_> - <_> [<_> +0000]" or "<_> - <_> [<_> +0000] \\"POST <_> <_>\\""'
+      )}`;
+
+      const pattern = `[{"type":"exclude","pattern":"<_> - - [<_> +0000]"},{"type":"include","pattern":"<_> - <_> [<_> +0000]"},{"type":"include","pattern":"<_> - <_> [<_> +0000] \\"POST <_> <_>\\""}]`;
+      const expectedPatterns = `&patterns=${encodeFilter(pattern)}`;
+
+      expect(config).toEqual({
+        path: getPath({
+          slug: 'cluster/eu-west-1',
+          expectedLabelFiltersUrlString,
+          expectedPatternsVariable,
+          expectedPatterns,
+        }),
+      });
+    });
+    it('should parse empty filters', () => {
+      const target = getTestTarget({
+        expr: '{cluster="eu-west-1"} !> "" !> "" |> "" or "" | json | logfmt | drop __error__, __error_details__',
+      });
+      const config = getTestConfig(linkConfigs, target);
+
+      const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
+        `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
+      )}`;
+
+      expect(config).toEqual({
+        path: getPath({
+          slug: 'cluster/eu-west-1',
+          expectedLabelFiltersUrlString,
         }),
       });
     });
@@ -793,12 +865,16 @@ function getPath(options: {
   expectedLineFiltersUrlString?: string;
   expectedFieldsUrlString?: string;
   expectedLevelsFilterUrlString?: string;
+  expectedPatternsVariable?: string;
+  expectedPatterns?: string;
 }) {
   return `/a/grafana-lokiexplore-app/explore/${options.slug}/logs?var-ds=123abc&from=1675828800000&to=1675854000000${
     options.expectedLabelFiltersUrlString ?? ''
   }${options.expectedMetadataString ?? ''}${options.expectedLineFiltersUrlString ?? ''}${
-    options.expectedFieldsUrlString ?? ''
-  }${options.expectedLevelsFilterUrlString ?? ''}`;
+    options.expectedPatterns ?? ''
+  }${options.expectedPatternsVariable ?? ''}${options.expectedFieldsUrlString ?? ''}${
+    options.expectedLevelsFilterUrlString ?? ''
+  }`;
 }
 
 /**
