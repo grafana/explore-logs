@@ -1,6 +1,6 @@
-# Logs Drilldown
+# Grafana Logs Drilldown
 
-Logs Drilldown offers a query-less experience for browsing Loki logs without the need for writing complex queries. Discover or narrow down your search using by volume and text patterns. Uncover related logs and understand patterns—all with just a few clicks. No LogQL required. With Logs Drilldown, you can:
+Grafana Logs Drilldown offers a query-less experience for browsing Loki logs without the need for writing complex queries. Discover or narrow down your search using by volume and text patterns. Uncover related logs and understand patterns—all with just a few clicks. No LogQL required. With Grafana Logs Drilldown, you can:
 
 - Easily find logs and log volumes for all of your services
 - Effortlessly filter service logs based on their log volumes, labels, fields, or patterns.
@@ -8,13 +8,13 @@ Logs Drilldown offers a query-less experience for browsing Loki logs without the
 
 ...all without crafting a single query!
 
-- Check out the [Logs Drilldown documentation](https://grafana.com/docs/grafana/latest/explore/simplified-exploration/logs/)
+- Check out the [Grafana Logs Drilldown documentation](https://grafana.com/docs/grafana/latest/explore/simplified-exploration/logs/)
 
-<img width="840" alt="Screenshot of Logs Drilldown" src="https://github.com/user-attachments/assets/96b7ddb5-5eb1-42a1-bc35-1f524fc0431b">
+<img width="840" alt="Screenshot of Grafana Logs Drilldown" src="https://github.com/user-attachments/assets/96b7ddb5-5eb1-42a1-bc35-1f524fc0431b">
 
 ## Installation in Your Own Grafana Instance
 
-You can install Logs Drilldown in your own Grafana instance using `grafana-cli`:
+You can install Grafana Logs Drilldown in your own Grafana instance using `grafana-cli`:
 
 > [!IMPORTANT]  
 > The following Loki and Grafana version and configuration are required:
@@ -52,7 +52,7 @@ curl -L https://github.com/grafana/explore-logs/raw/main/scripts/run.sh | sh
 
 This will download the https://github.com/grafana/explore-logs/blob/main/scripts/run.sh file and execute it. That shell file will download some configuration files into your `/tmp/explore-logs` directory and start the docker containers via `docker compose` from there.
 
-Once the docker container started, navigate to http://localhost:3000/a/grafana-lokiexplore-app/explore in order to use Logs Drilldown.
+Once the docker container started, navigate to http://localhost:3000/a/grafana-lokiexplore-app/explore in order to use Grafana Logs Drilldown.
 
 ## Getting Started
 

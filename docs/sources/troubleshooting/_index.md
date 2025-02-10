@@ -1,40 +1,40 @@
 ---
 canonical: https://grafana.com/docs/grafana/latest/explore/simplified-exploration/logs/troubleshooting/
-description: Describes how to solve common issues when working with Logs Drilldown.
+description: Describes how to solve common issues when working with Grafana Logs Drilldown.
 keywords:
   - Logs
   - Explore
   - Labels
   - Analysis
 menuTitle: Troubleshooting
-title: Troubleshooting Logs Drilldown
+title: Troubleshooting Grafana Logs Drilldown
 weight: 700
 ---
 
 # Troubleshooting
 
-This page address common issues when getting started and using Logs Drilldown.
+This page address common issues when getting started and using Grafana Logs Drilldown.
 
 ## Ensure Loki is properly configured
 
-To use Logs Drilldown, you need to have Loki properly configured. You can find full instructions on how to do this when [installing Logs Drilldown](https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/access/).
+To use Grafana Logs Drilldown, you need to have Loki properly configured. You can find full instructions on how to do this when [installing Grafana Logs Drilldown](https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/access/).
 
 ## There are no services
 
-If everything is presented as an `unknown_service` when you access Logs Drilldown, you can try the following fixes:
+If everything is presented as an `unknown_service` when you access Grafana Logs Drilldown, you can try the following fixes:
 
 1. Ensure the Volume API is enabled by setting the [`volume_enabled` configuration value](https://grafana.com/docs/loki/latest/configure/#:~:text=volume_enabled) in Loki. Enabled by default in Loki 3.1 and later.
 1. Specify the label to use to identify services by setting the [`discover_service_name` configuration value](https://grafana.com/docs/loki/latest/configure/#:~:text=discover_service_name) in Loki.
 
 ## There are no detected levels
 
-If you do not see `detected_level` values in Logs Drilldown, you can try the following fixes:
+If you do not see `detected_level` values in Grafana Logs Drilldown, you can try the following fixes:
 
 1. Ensure level detection is enabled by setting the [`discover_log_levels` configuration value](https://grafana.com/docs/loki/latest/configure/#:~:text=discover_log_levels). Enabled by default in Loki 3.1 and later.
 
 ## There are no labels
 
-If you do not see any labels in Logs Drilldown, you can try the following fixes:
+If you do not see any labels in Grafana Logs Drilldown, you can try the following fixes:
 
 1. Ensure your collector is properly configured to attach them.
 
