@@ -81,7 +81,7 @@ export class AddToExplorationButton extends SceneObjectBase<AddToExplorationButt
       return;
     }
     const ctx = {
-      origin: 'Explore Logs',
+      origin: 'Logs Drilldown',
       type: 'timeseries',
       queries,
       timeRange: { ...timeRange.state.value },
