@@ -199,7 +199,6 @@ export function getValueFromFieldsFilter(
   filter: { value: string; valueLabels?: string[] },
   variableName: string = VAR_FIELDS
 ): FieldValue {
-  // Metadata is not JSON encoded????
   if (isFilterMetadata(filter)) {
     return {
       value: filter.value,
