@@ -54,10 +54,8 @@ describe('contextToLink', () => {
       path: getPath({
         slug: 'service/cloud-gcp',
         expectedLabelFiltersUrlString:
-          `&var-filters=${encodeFilter(`service_name|=|${addAdHocFilterUserInputPrefixAndValueLabel('cloud/gcp')}`)}` +
-          `&var-filters=${encodeFilter(
-            `resource_type|!=|${addAdHocFilterUserInputPrefixAndValueLabel('gce_firewall_rule')}`
-          )}`,
+          `&var-filters=${encodeFilter(`service_name|=|${addCustomInputPrefixAndValueLabels('cloud/gcp')}`)}` +
+          `&var-filters=${encodeFilter(`resource_type|!=|${addCustomInputPrefixAndValueLabels('gce_firewall_rule')}`)}`,
       }),
     });
   });
@@ -70,8 +68,8 @@ describe('contextToLink', () => {
       const config = getTestConfig(linkConfigs, target);
 
       const expectedLabelFiltersUrlString =
-        `&var-filters=${encodeFilter(`service_name|=~|${addAdHocFilterUserInputPrefixAndValueLabel('nginx.+')}`)}` +
-        `&var-filters=${encodeFilter(`env|=|${addAdHocFilterUserInputPrefixAndValueLabel('staging')}`)}`;
+        `&var-filters=${encodeFilter(`service_name|=~|${addCustomInputPrefixAndValueLabels('nginx.+')}`)}` +
+        `&var-filters=${encodeFilter(`env|=|${addCustomInputPrefixAndValueLabels('staging')}`)}`;
 
       const expectedLevelsFilterUrlString =
         `&var-levels=${encodeFilter('detected_level|!=|""')}` +
@@ -96,10 +94,8 @@ describe('contextToLink', () => {
       const config = getTestConfig(linkConfigs, target);
 
       const expectedLabelFiltersUrlString =
-        `&var-filters=${encodeFilter(`cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`)}` +
-        `&var-filters=${encodeFilter(
-          `resource_type|!=|${addAdHocFilterUserInputPrefixAndValueLabel('gce_firewall_rule')}`
-        )}`;
+        `&var-filters=${encodeFilter(`cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`)}` +
+        `&var-filters=${encodeFilter(`resource_type|!=|${addCustomInputPrefixAndValueLabels('gce_firewall_rule')}`)}`;
       const expectedLineFiltersUrlString =
         `&var-lineFilters=${encodeFilter(
           'caseSensitive,0|__gfp__~|((25[0-5]__gfp__(2[0-4]__gfp__1\\d__gfp__[1-9]__gfp__)\\d)\\.?\\b){4}'
@@ -123,10 +119,8 @@ describe('contextToLink', () => {
       const config = getTestConfig(linkConfigs, target);
 
       const expectedLabelFiltersUrlString =
-        `&var-filters=${encodeFilter(`cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`)}` +
-        `&var-filters=${encodeFilter(
-          `resource_type|!=|${addAdHocFilterUserInputPrefixAndValueLabel('gce_firewall_rule')}`
-        )}`;
+        `&var-filters=${encodeFilter(`cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`)}` +
+        `&var-filters=${encodeFilter(`resource_type|!=|${addCustomInputPrefixAndValueLabels('gce_firewall_rule')}`)}`;
       const expectedLineFiltersUrlString =
         `&var-lineFilters=${encodeFilter('caseSensitive,0|__gfp__=| (?i)caller__gfc__')}` +
         // Note: This is a bug! If searching for log lines containing `__gfp__` or `__gfc__`, it will be interpolated as a pipe or a comma in the evaluated string
@@ -149,10 +143,8 @@ describe('contextToLink', () => {
       const config = getTestConfig(linkConfigs, target);
 
       const expectedLabelFiltersUrlString =
-        `&var-filters=${encodeFilter(`cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`)}` +
-        `&var-filters=${encodeFilter(
-          `resource_type|!=|${addAdHocFilterUserInputPrefixAndValueLabel('gce_firewall_rule')}`
-        )}`;
+        `&var-filters=${encodeFilter(`cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`)}` +
+        `&var-filters=${encodeFilter(`resource_type|!=|${addCustomInputPrefixAndValueLabels('gce_firewall_rule')}`)}`;
 
       const expectedLineFiltersUrlString =
         `&var-lineFilters=${encodeFilter(
@@ -177,10 +169,8 @@ describe('contextToLink', () => {
       const config = getTestConfig(linkConfigs, target);
 
       const expectedLabelFiltersUrlString =
-        `&var-filters=${encodeFilter(`cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`)}` +
-        `&var-filters=${encodeFilter(
-          `resource_type|!=|${addAdHocFilterUserInputPrefixAndValueLabel('gce_firewall_rule')}`
-        )}`;
+        `&var-filters=${encodeFilter(`cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`)}` +
+        `&var-filters=${encodeFilter(`resource_type|!=|${addCustomInputPrefixAndValueLabels('gce_firewall_rule')}`)}`;
 
       const expectedLineFiltersUrlString =
         `&var-lineFilters=${encodeFilter('caseSensitive,0|__gfp__=|" (?i)caller"')}` +
@@ -199,7 +189,7 @@ describe('contextToLink', () => {
       const config = getTestConfig(linkConfigs, target);
 
       const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
-        `cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`
+        `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
       )}`;
       const expectedLineFiltersUrlString = `&var-lineFilters=${encodeFilter(
         'caseSensitive,0|__gfp__=|thread \\"main\\"'
@@ -218,7 +208,7 @@ describe('contextToLink', () => {
       const config = getTestConfig(linkConfigs, target);
 
       const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
-        `cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`
+        `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
       )}`;
       const expectedLineFiltersUrlString = `&var-lineFilters=${encodeFilter('caseSensitive,0|__gfp__=|\\n')}`;
 
@@ -236,8 +226,8 @@ describe('contextToLink', () => {
       });
       const config = getTestConfig(linkConfigs, target);
       const expectedLabelFiltersUrlString =
-        `&var-filters=${encodeFilter(`service_name|=~|${addAdHocFilterUserInputPrefixAndValueLabel('grafana/.*')}`)}` +
-        `&var-filters=${encodeFilter(`cluster|=~|${addAdHocFilterUserInputPrefixAndValueLabel('prod-eu-west-2')}`)}`;
+        `&var-filters=${encodeFilter(`service_name|=~|${addCustomInputPrefixAndValueLabels('grafana/.*')}`)}` +
+        `&var-filters=${encodeFilter(`cluster|=~|${addCustomInputPrefixAndValueLabels('prod-eu-west-2')}`)}`;
 
       const expectedLineFiltersUrlString = `&var-lineFilters=${encodeFilter(
         'caseSensitive,0|__gfp__~|Partial data response error__gfp__Plugin Request Completed'
@@ -280,8 +270,8 @@ describe('contextToLink', () => {
       const config = getTestConfig(linkConfigs, target);
 
       const expectedLabelFiltersUrlString =
-        `&var-filters=${encodeFilter(`cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`)}` +
-        `&var-filters=${encodeFilter(`service_name|=~|${addAdHocFilterUserInputPrefixAndValueLabel('grafana/.*')}`)}`;
+        `&var-filters=${encodeFilter(`cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`)}` +
+        `&var-filters=${encodeFilter(`service_name|=~|${addCustomInputPrefixAndValueLabels('grafana/.*')}`)}`;
 
       const expectedLineFiltersUrlString = `&var-lineFilters=${encodeFilter(
         'caseSensitive,0|__gfp__~|Partial data response error__gfp__Plugin Request Completed'
@@ -326,10 +316,10 @@ describe('contextToLink', () => {
         const config = getTestConfig(linkConfigs, target);
 
         const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
-          `cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`
+          `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
         )}`;
         const expectedLineFiltersUrlString = `&var-metadata=${encodeFilter(
-          `pod|!=|${addAdHocFilterUserInputPrefixAndValueLabel('mimir-ingester-xjntw')}`
+          `pod|!=|${addCustomInputPrefixAndValueLabels('mimir-ingester-xjntw')}`
         )}`;
 
         expect(config).toEqual({
@@ -347,10 +337,10 @@ describe('contextToLink', () => {
         const config = getTestConfig(linkConfigs, target);
 
         const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
-          `cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('C:\\Grafana\\logs\\log.txt')}`
+          `cluster|=|${addCustomInputPrefixAndValueLabels('C:\\Grafana\\logs\\log.txt')}`
         )}`;
         const expectedLineFiltersUrlString = `&var-metadata=${encodeFilter(
-          `pod|!=|${addAdHocFilterUserInputPrefixAndValueLabel('mimir-ingester-xjntw')}`
+          `pod|!=|${addCustomInputPrefixAndValueLabels('mimir-ingester-xjntw')}`
         )}`;
 
         expect(config).toEqual({
@@ -368,10 +358,10 @@ describe('contextToLink', () => {
         const config = getTestConfig(linkConfigs, target);
 
         const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
-          `cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`
+          `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
         )}`;
         const expectedLineFiltersUrlString = `&var-metadata=${encodeFilter(
-          `pod|!=|${addAdHocFilterUserInputPrefixAndValueLabel('mimir-ingester-xjntw')}`
+          `pod|!=|${addCustomInputPrefixAndValueLabels('mimir-ingester-xjntw')}`
         )}`;
 
         expect(config).toEqual({
@@ -387,7 +377,7 @@ describe('contextToLink', () => {
         const config = getTestConfig(linkConfigs, target);
 
         const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
-          `cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`
+          `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
         )}`;
         const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
           `pod|=|${addAdHocFilterUserInputPrefix(
@@ -408,7 +398,7 @@ describe('contextToLink', () => {
         const config = getTestConfig(linkConfigs, target);
 
         const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
-          `cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`
+          `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
         )}`;
         const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
           `pod|=|${addAdHocFilterUserInputPrefix(
@@ -431,7 +421,7 @@ describe('contextToLink', () => {
         const config = getTestConfig(linkConfigs, target);
 
         const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
-          `cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`
+          `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
         )}`;
         const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
           `pod|=|${addAdHocFilterUserInputPrefix(
@@ -454,7 +444,7 @@ describe('contextToLink', () => {
         const config = getTestConfig(linkConfigs, target);
 
         const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
-          `cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`
+          `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
         )}`;
 
         const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
@@ -478,7 +468,7 @@ describe('contextToLink', () => {
         const config = getTestConfig(linkConfigs, target);
 
         const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
-          `cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`
+          `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
         )}`;
         const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
           `pod|=|${addAdHocFilterUserInputPrefix(
@@ -501,7 +491,7 @@ describe('contextToLink', () => {
         const config = getTestConfig(linkConfigs, target);
 
         const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
-          `cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`
+          `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
         )}`;
         const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
           `pod|=|${addAdHocFilterUserInputPrefix(
@@ -524,7 +514,7 @@ describe('contextToLink', () => {
         const config = getTestConfig(linkConfigs, target);
 
         const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
-          `cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`
+          `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
         )}`;
         const expectedLineFiltersUrlString =
           `&var-fields=${encodeFilter(
@@ -553,7 +543,7 @@ describe('contextToLink', () => {
         const config = getTestConfig(linkConfigs, target);
 
         const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
-          `cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`
+          `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
         )}`;
         const expectedLineFiltersUrlString =
           `&var-fields=${encodeFilter(
@@ -585,10 +575,10 @@ describe('contextToLink', () => {
         const config = getTestConfig(linkConfigs, target);
 
         const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
-          `cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`
+          `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
         )}`;
         const expectedMetadataString = `&var-metadata=${encodeFilter(
-          `pod|!=|${addAdHocFilterUserInputPrefixAndValueLabel('mimir-ingester-xjntw')}`
+          `pod|!=|${addCustomInputPrefixAndValueLabels('mimir-ingester-xjntw')}`
         )}`;
         const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
           `duration|>|${addAdHocFilterUserInputPrefix('{"value":"10s"__gfc__"parser":"logfmt"}')},10s`
@@ -610,10 +600,10 @@ describe('contextToLink', () => {
         const config = getTestConfig(linkConfigs, target);
 
         const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
-          `cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`
+          `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
         )}`;
         const expectedMetadataString = `&var-metadata=${encodeFilter(
-          `pod|!=|${addAdHocFilterUserInputPrefixAndValueLabel('mimir-ingester-xjntw')}`
+          `pod|!=|${addCustomInputPrefixAndValueLabels('mimir-ingester-xjntw')}`
         )}`;
         const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
           `duration|>=|${addAdHocFilterUserInputPrefix('{"value":"10s"__gfc__"parser":"logfmt"}')},10s`
@@ -635,10 +625,10 @@ describe('contextToLink', () => {
         const config = getTestConfig(linkConfigs, target);
 
         const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
-          `cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`
+          `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
         )}`;
         const expectedMetadataString = `&var-metadata=${encodeFilter(
-          `pod|!=|${addAdHocFilterUserInputPrefixAndValueLabel('mimir-ingester-xjntw')}`
+          `pod|!=|${addCustomInputPrefixAndValueLabels('mimir-ingester-xjntw')}`
         )}`;
         const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
           `duration|<|${addAdHocFilterUserInputPrefix('{"value":"10s"__gfc__"parser":"logfmt"}')},10s`
@@ -660,10 +650,10 @@ describe('contextToLink', () => {
         const config = getTestConfig(linkConfigs, target);
 
         const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
-          `cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`
+          `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
         )}`;
         const expectedMetadataString = `&var-metadata=${encodeFilter(
-          `pod|!=|${addAdHocFilterUserInputPrefixAndValueLabel('mimir-ingester-xjntw')}`
+          `pod|!=|${addCustomInputPrefixAndValueLabels('mimir-ingester-xjntw')}`
         )}`;
         const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
           `duration|<=|${addAdHocFilterUserInputPrefix('{"value":"10s"__gfc__"parser":"logfmt"}')},10s`
@@ -685,10 +675,10 @@ describe('contextToLink', () => {
         const config = getTestConfig(linkConfigs, target);
 
         const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
-          `cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`
+          `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
         )}`;
         const expectedMetadataString = `&var-metadata=${encodeFilter(
-          `pod|!=|${addAdHocFilterUserInputPrefixAndValueLabel('mimir-ingester-xjntw')}`
+          `pod|!=|${addCustomInputPrefixAndValueLabels('mimir-ingester-xjntw')}`
         )}`;
         const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
           `duration|<=|${addAdHocFilterUserInputPrefix('{"value":"10s"__gfc__"parser":"logfmt"}')},10s`
@@ -713,10 +703,10 @@ describe('contextToLink', () => {
             const config = getTestConfig(linkConfigs, target);
 
             const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
-              `cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`
+              `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
             )}`;
             const expectedMetadataString = `&var-metadata=${encodeFilter(
-              `pod|!=|${addAdHocFilterUserInputPrefixAndValueLabel('mimir-ingester-xjntw')}`
+              `pod|!=|${addCustomInputPrefixAndValueLabels('mimir-ingester-xjntw')}`
             )}`;
             const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
               `duration|>=|${addAdHocFilterUserInputPrefix(
@@ -743,10 +733,10 @@ describe('contextToLink', () => {
           const config = getTestConfig(linkConfigs, target);
 
           const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
-            `cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`
+            `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
           )}`;
           const expectedMetadataString = `&var-metadata=${encodeFilter(
-            `pod|!=|${addAdHocFilterUserInputPrefixAndValueLabel('mimir-ingester-xjntw')}`
+            `pod|!=|${addCustomInputPrefixAndValueLabels('mimir-ingester-xjntw')}`
           )}`;
           const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
             `duration|<=|${addAdHocFilterUserInputPrefix(`{"value":"${unit}"__gfc__"parser":"logfmt"}`)},${unit}`
@@ -764,10 +754,10 @@ describe('contextToLink', () => {
           });
           const config = getTestConfig(linkConfigs, target);
           const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
-            `cluster|=|${addAdHocFilterUserInputPrefixAndValueLabel('eu-west-1')}`
+            `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
           )}`;
           const expectedMetadataString = `&var-metadata=${encodeFilter(
-            `pod|!=|${addAdHocFilterUserInputPrefixAndValueLabel('mimir-ingester-xjntw')}`
+            `pod|!=|${addCustomInputPrefixAndValueLabels('mimir-ingester-xjntw')}`
           )}`;
           const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
             `bytes|>=|${addAdHocFilterUserInputPrefix(`{"value":"10.1${unit}"__gfc__"parser":"logfmt"}`)},10.1${unit}`
@@ -811,6 +801,11 @@ function getPath(options: {
   }${options.expectedLevelsFilterUrlString ?? ''}`;
 }
 
-function addAdHocFilterUserInputPrefixAndValueLabel(value: string, valueLabel = value) {
-  return `${addAdHocFilterUserInputPrefix(value)},${valueLabel}`;
+/**
+ * Test helper method
+ * Adds the custom input prefix
+ * Adds the value to valueLabels
+ */
+function addCustomInputPrefixAndValueLabels(value: string) {
+  return `${addAdHocFilterUserInputPrefix(value)},${value}`;
 }
