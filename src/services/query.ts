@@ -141,7 +141,8 @@ export function escapeDoubleQuotedLineFilter(filter: AdHocFilterWithLabels) {
 }
 
 /**
- * All values are user input
+ * Builds line filter as a double-quoted LogQL string
+ * Expects pre-escaped values
  */
 function buildLogQlLineFilter(filter: AdHocFilterWithLabels, value: string) {
   // Change operator if needed and insert caseInsensitive flag
