@@ -4,7 +4,7 @@ import { testIds } from '../../src/services/testIds';
 import { expect } from '@grafana/plugin-e2e';
 
 import { LokiQuery } from '../../src/services/lokiQuery';
-import { FilterOp } from '../../src/services/filterTypes';
+import { FilterOp, FilterOpType } from '../../src/services/filterTypes';
 
 export interface PlaywrightRequest {
   post: any;
@@ -306,10 +306,27 @@ export class ExplorePage {
     });
   }
 
-  async addCustomValueToCombobox(labelName: string, operator: FilterOp, comboBox: ComboBoxIndex, text: string) {
+  /**
+   *
+   * @param labelName
+   * @param operator
+   * @param comboBox
+   * @param text
+   * @param typeAhead - if there are many options, the test can flake if the option isn't visible, if this string is passed in we'll type these chars to filter things down before attempting to click
+   */
+  async addCustomValueToCombobox(
+    labelName: string,
+    operator: FilterOpType,
+    comboBox: ComboBoxIndex,
+    text: string,
+    typeAhead?: string
+  ) {
     // Open combobox
     const comboboxLocator = this.page.getByPlaceholder('Filter by label values').nth(comboBox);
     await comboboxLocator.click();
+    if (typeAhead) {
+      await this.page.keyboard.type(typeAhead);
+    }
     // Select detected_level key
     await this.page.getByRole('option', { name: labelName }).click();
     await expect(this.getOperatorLocator(operator)).toHaveCount(1);
@@ -326,7 +343,7 @@ export class ExplorePage {
     await this.page.keyboard.press('Escape');
   }
 
-  getOperatorLocator(filter: FilterOp): Locator {
+  getOperatorLocator(filter: FilterOpType): Locator {
     switch (filter) {
       case FilterOp.Equal:
         return this.page.getByRole('option', { name: E2EComboboxStrings.operatorNames.equal, exact: true });

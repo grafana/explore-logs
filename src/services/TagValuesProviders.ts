@@ -7,11 +7,11 @@ import { LokiDatasource, LokiQuery } from './lokiQuery';
 import { getDataSourceVariable, getValueFromFieldsFilter } from './variableGetters';
 import { AdHocFiltersWithLabelsAndMeta, DetectedFieldType, VAR_LEVELS } from './variables';
 import { isArray } from 'lodash';
-import { joinTagFilters } from './query';
 import { FilterOp } from './filterTypes';
 import { getFavoriteLabelValuesFromStorage } from './store';
-import { isOperatorInclusive, isOperatorRegex } from './operators';
 import { UIVariableFilterType } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
+import { ExpressionBuilder } from './ExpressionBuilder';
+import { isOperatorInclusive, isOperatorRegex } from './operatorHelpers';
 
 type FetchDetectedLabelValuesOptions = {
   expr?: string;
@@ -159,6 +159,18 @@ export const getDetectedFieldValuesTagValuesProvider = async (
   return { replace: true, values };
 };
 
+function tagValuesFilterAdHocFilters(oldFilters: AdHocFilterWithLabels[], filter: AdHocFilterWithLabels<{}>) {
+  let oldFiltersFiltered = oldFilters.filter(
+    (f) => !(isOperatorInclusive(filter.operator) && f.key === filter.key && f.operator === FilterOp.Equal)
+  );
+
+  // If there aren't any inclusive filters, we need to ignore the exclusive ones as well, or Loki will throw an error
+  if (!oldFiltersFiltered.some((filter) => isOperatorInclusive(filter.operator))) {
+    oldFiltersFiltered = [];
+  }
+  return oldFiltersFiltered;
+}
+
 export async function getLabelsTagValuesProvider(
   variable: AdHocFiltersVariable,
   filter: AdHocFilterWithLabels
@@ -175,19 +187,15 @@ export async function getLabelsTagValuesProvider(
 
   if (datasource && datasource.getTagValues) {
     // Filter out other values for this key so users can include other values for this label
-    let filters = joinTagFilters(variable).filter(
-      (f) => !(isOperatorInclusive(filter.operator) && f.key === filter.key)
-    );
-
-    // If there aren't any inclusive filters, we need to ignore the exclusive ones as well, or Loki will throw an error
-    if (!filters.some((filter) => isOperatorInclusive(filter.operator))) {
-      filters = [];
-    }
+    const filterTransformer = new ExpressionBuilder(variable.state.filters);
+    const filters = filterTransformer.getJoinedLabelsFilters();
+    const filtersFiltered = tagValuesFilterAdHocFilters(filters, filter);
 
     const options: DataSourceGetTagValuesOptions<LokiQuery> = {
       key: filter.key,
-      filters,
+      filters: filtersFiltered,
     };
+
     let results = await datasource.getTagValues(options);
 
     if (isArray(results)) {

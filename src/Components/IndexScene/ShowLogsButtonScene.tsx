@@ -6,7 +6,8 @@ import { css } from '@emotion/css';
 import { navigateToInitialPageAfterServiceSelection } from '../../services/navigate';
 import { getLabelsVariable } from '../../services/variableGetters';
 import { testIds } from '../../services/testIds';
-import { isOperatorInclusive } from '../../services/operators';
+
+import { isOperatorInclusive } from '../../services/operatorHelpers';
 
 export interface ShowLogsButtonSceneState extends SceneObjectState {
   disabled?: boolean;

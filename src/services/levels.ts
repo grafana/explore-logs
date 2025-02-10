@@ -4,7 +4,8 @@ import { LEVEL_VARIABLE_VALUE, VAR_LEVELS } from './variables';
 import { SceneObject } from '@grafana/scenes';
 import { addToFilters, replaceFilter } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { getLevelsVariable } from './variableGetters';
-import { isOperatorExclusive, isOperatorInclusive } from './operators';
+
+import { isOperatorExclusive, isOperatorInclusive } from './operatorHelpers';
 
 /**
  * Given a set of `visibleLevels` in a panel, it returns a list of the new visible levels

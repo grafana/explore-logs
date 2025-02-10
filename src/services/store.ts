@@ -316,3 +316,9 @@ export function getPanelOption<K extends keyof PanelOptions, V extends PanelOpti
 export function setPanelOption<K extends keyof PanelOptions, V extends PanelOptions[K]>(option: K, value: V) {
   localStorage.setItem(`${PANEL_OPTIONS_LOCALSTORAGE_KEY}.${option}`, value);
 }
+
+const EXPRESSION_BUILDER_DEBUG_LOCALSTORAGE_KEY = `${pluginJson.id}.expressionBuilder.debug`;
+export function getExpressionBuilderDebug() {
+  const value = localStorage.getItem(EXPRESSION_BUILDER_DEBUG_LOCALSTORAGE_KEY);
+  return !!value;
+}
