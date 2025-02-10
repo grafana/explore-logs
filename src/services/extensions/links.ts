@@ -25,7 +25,7 @@ import { isOperatorInclusive } from '../operatorHelpers';
 import { PatternFilterOp } from '../filterTypes';
 import { renderPatternFilters } from '../renderPatternFilters';
 
-const PRODUCT_NAME = 'Logs Drilldown';
+const PRODUCT_NAME = 'Grafana Logs Drilldown';
 const title = `Open in ${PRODUCT_NAME}`;
 const description = `Open current query in the ${PRODUCT_NAME} view`;
 const icon = 'gf-logs';

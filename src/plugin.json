@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
   "type": "app",
-  "name": "Logs Drilldown",
+  "name": "Grafana Logs Drilldown",
   "id": "grafana-lokiexplore-app",
   "autoEnabled": true,
   "info": {
@@ -44,7 +44,7 @@
   "includes": [
     {
       "type": "page",
-      "name": "Logs Drilldown",
+      "name": "Grafana Logs Drilldown",
       "path": "/a/%PLUGIN_ID%/explore",
       "action": "datasources:explore",
       "addToNav": true,
@@ -64,8 +64,8 @@
     "addedLinks": [
       {
         "targets": ["grafana/dashboard/panel/menu", "grafana/explore/toolbar/action"],
-        "title": "Open in Logs Drilldown",
-        "description": "Open current query in the Logs Drilldown view"
+        "title": "Open in Grafana Logs Drilldown",
+        "description": "Open current query in the Grafana Logs Drilldown view"
       }
     ],
     "exposedComponents": [

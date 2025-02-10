@@ -291,7 +291,7 @@ test.describe('explore services breakdown page', () => {
     await expect(extensionsButton).toHaveCount(1);
     // Click on extensions button
     await extensionsButton.click();
-    const openInExploreLocator = page.getByLabel('Open in Logs Drilldown').first();
+    const openInExploreLocator = page.getByLabel('Open in Grafana Logs Drilldown').first();
     await expect(openInExploreLocator).toBeVisible();
     // Click on open in logs explore
     await openInExploreLocator.click();
@@ -1691,7 +1691,7 @@ test.describe('explore services breakdown page', () => {
       await extensionsButton.click();
 
       // Go to explore logs
-      const openInExploreLocator = page.getByLabel('Open in Logs Drilldown').first();
+      const openInExploreLocator = page.getByLabel('Open in Grafana Logs Drilldown').first();
       await expect(openInExploreLocator).toBeVisible();
       await openInExploreLocator.click();
       await page.getByRole('button', { name: 'Open', exact: true }).click();
