@@ -30,7 +30,6 @@ import {
 import {
   DrawStyle,
   Field,
-  IconButton,
   LegendDisplayMode,
   PanelContext,
   SeriesVisibilityChangeMode,
@@ -87,6 +86,7 @@ import { NoServiceVolume } from './NoServiceVolume';
 import { getQueryRunnerFromChildren } from '../../services/scenes';
 import { AddLabelToFiltersHeaderActionScene } from './AddLabelToFiltersHeaderActionScene';
 import { ShowLogsButtonScene } from '../IndexScene/ShowLogsButtonScene';
+import { ServiceSelectionPaginationScene } from './ServiceSelectionPaginationScene';
 
 const aggregatedMetricsEnabled: boolean | undefined = config.featureToggles.exploreLogsAggregatedMetrics;
 // Don't export AGGREGATED_SERVICE_NAME, we want to rename things so the rest of the application is agnostic to how we got the services
@@ -94,7 +94,6 @@ const AGGREGATED_SERVICE_NAME = '__aggregated_metric__';
 
 //@todo make start date user configurable, currently hardcoded for experimental cloud release
 export const AGGREGATED_METRIC_START_DATE = dateTime('2024-08-30', 'YYYY-MM-DD');
-export const SERVICES_LIMIT = 20;
 
 interface ServiceSelectionSceneState extends SceneObjectState {
   // The body of the component
@@ -104,6 +103,11 @@ interface ServiceSelectionSceneState extends SceneObjectState {
   // Logs volume API response as dataframe with SceneQueryRunner
   $data: SceneQueryRunner;
   tabs?: ServiceSelectionTabsScene;
+  // Pagination options
+  countPerPage: number;
+  currentPage: number;
+  paginationScene?: ServiceSelectionPaginationScene;
+
   showPopover: boolean;
   tabOptions: Array<{
     label: string;
@@ -124,6 +128,42 @@ const primaryLabelUrlKey = 'var-primary_label';
 const datasourceUrlKey = 'var-ds';
 
 export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionSceneState> {
+  // We could also run model.setState in component, but it is recommended to implement the state-modifying methods in the scene object
+  onSearchServicesChange = debounce((primaryLabelSearch?: string) => {
+    // Set search variable
+    const searchVar = getServiceSelectionSearchVariable(this);
+
+    const newSearchString = primaryLabelSearch ? wrapWildcardSearch(primaryLabelSearch) : '.+';
+    if (newSearchString !== searchVar.state.value) {
+      searchVar.setState({
+        value: primaryLabelSearch ? wrapWildcardSearch(primaryLabelSearch) : '.+',
+        label: primaryLabelSearch ?? '',
+      });
+    }
+
+    const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
+    const filter = primaryLabelVar.state.filters[0];
+
+    // Update primary label with search string
+    if (wrapWildcardSearch(searchVar.state.value.toString()) !== filter.value) {
+      primaryLabelVar.setState({
+        filters: [
+          {
+            ...filter,
+            value: wrapWildcardSearch(searchVar.state.value.toString()),
+          },
+        ],
+      });
+    }
+
+    reportAppInteraction(
+      USER_EVENTS_PAGES.service_selection,
+      USER_EVENTS_ACTIONS.service_selection.search_services_changed,
+      {
+        searchQuery: primaryLabelSearch,
+      }
+    );
+  }, 500);
   protected _urlSync = new SceneObjectUrlSyncConfig(this, {
     keys: [primaryLabelUrlKey],
   });
@@ -191,6 +231,9 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
         runQueriesMode: 'manual',
       }),
       serviceLevel: new Map<string, string[]>(),
+      // pagination
+      countPerPage: 20,
+      currentPage: 1,
 
       showPopover: false,
       tabOptions: [
@@ -204,6 +247,102 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
 
     this.addActivationHandler(this.onActivate.bind(this));
   }
+
+  public static Component = ({ model }: SceneComponentProps<ServiceSelectionScene>) => {
+    const styles = useStyles2(getStyles);
+    const { body, $data, tabs, paginationScene } = model.useState();
+    const { data } = $data.useState();
+    const selectedTab = model.getSelectedTab();
+
+    const serviceStringVariable = getServiceSelectionSearchVariable(model);
+    const { label, value: searchValue } = serviceStringVariable.useState();
+    const hasSearch = searchValue && searchValue !== '.+';
+
+    const { labelsByVolume, labelsToQuery } = model.getLabels(data?.series);
+    const isLogVolumeLoading =
+      data?.state === LoadingState.Loading || data?.state === LoadingState.Streaming || data === undefined;
+    const volumeApiError = $data.state.data?.state === LoadingState.Error;
+
+    const onSearchChange = (serviceName?: string) => {
+      model.onSearchServicesChange(serviceName);
+    };
+    // To get the count of services that are currently displayed, divide the number of panels by 2, as there are 2 panels per service (logs and time series)
+    // const renderedServices = body.state.children.length / 2;
+
+    const filterLabel = model.formatPrimaryLabelForUI();
+    let customValue = serviceStringVariable.getValue().toString();
+    if (customValue === '.+') {
+      customValue = '';
+    }
+    const customLabel = unwrapWildcardSearch(customValue);
+
+    return (
+      <div className={styles.container}>
+        <div className={styles.bodyWrapper}>
+          {tabs && <tabs.Component model={tabs} />}
+          <Field className={styles.searchField}>
+            <div className={styles.searchWrapper}>
+              <ServiceFieldSelector
+                initialFilter={{
+                  label: customLabel,
+                  value: customValue,
+                  icon: 'filter',
+                }}
+                isLoading={isLogVolumeLoading}
+                value={customValue ? customValue : label}
+                onChange={(serviceName) => onSearchChange(serviceName)}
+                selectOption={(value: string) => {
+                  selectLabel(selectedTab, value, model);
+                }}
+                label={filterLabel}
+                options={
+                  labelsToQuery?.map((serviceName) => ({
+                    value: serviceName,
+                    label: serviceName,
+                  })) ?? []
+                }
+              />
+              {!isLogVolumeLoading && (
+                <span className={styles.searchPaginationWrap}>
+                  {paginationScene && (
+                    <ServiceSelectionPaginationScene.PageCount
+                      model={paginationScene}
+                      totalCount={labelsToQuery.length}
+                    />
+                  )}
+                  {paginationScene && (
+                    <ServiceSelectionPaginationScene.Component
+                      model={paginationScene}
+                      totalCount={labelsToQuery.length}
+                    />
+                  )}
+                </span>
+              )}
+            </div>
+          </Field>
+          {/** If we don't have any servicesByVolume, volume endpoint is probably not enabled */}
+          {!isLogVolumeLoading && volumeApiError && <ConfigureVolumeError />}
+          {!isLogVolumeLoading && !volumeApiError && hasSearch && !labelsByVolume?.length && <NoServiceSearchResults />}
+          {!isLogVolumeLoading && !volumeApiError && !hasSearch && !labelsByVolume?.length && (
+            <NoServiceVolume labelName={selectedTab} />
+          )}
+          {!(!isLogVolumeLoading && volumeApiError) && (
+            <div className={styles.body}>
+              <body.Component model={body} />
+              <div className={styles.headingWrapper}>
+                {paginationScene && (
+                  <ServiceSelectionPaginationScene.Component
+                    totalCount={labelsToQuery.length}
+                    model={paginationScene}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   /**
    * Set changes from the URL to the state of the primary label variable
@@ -273,127 +412,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       }
     }
   }
-
-  public static Component = ({ model }: SceneComponentProps<ServiceSelectionScene>) => {
-    const styles = useStyles2(getStyles);
-    const { body, $data, tabs } = model.useState();
-    const { data } = $data.useState();
-    const selectedTab = model.getSelectedTab();
-
-    const serviceStringVariable = getServiceSelectionSearchVariable(model);
-    const { label, value: searchValue } = serviceStringVariable.useState();
-    const hasSearch = searchValue && searchValue !== '.+';
-
-    const { labelsByVolume, labelsToQuery } = model.getLabels(data?.series);
-    const isLogVolumeLoading =
-      data?.state === LoadingState.Loading || data?.state === LoadingState.Streaming || data === undefined;
-    const volumeApiError = $data.state.data?.state === LoadingState.Error;
-
-    const onSearchChange = (serviceName?: string) => {
-      model.onSearchServicesChange(serviceName);
-    };
-    const totalServices = labelsToQuery?.length ?? 0;
-    // To get the count of services that are currently displayed, divide the number of panels by 2, as there are 2 panels per service (logs and time series)
-    const renderedServices = body.state.children.length / 2;
-
-    const filterLabel = model.formatPrimaryLabelForUI();
-    let customValue = serviceStringVariable.getValue().toString();
-    if (customValue === '.+') {
-      customValue = '';
-    }
-    const customLabel = unwrapWildcardSearch(customValue);
-
-    return (
-      <div className={styles.container}>
-        <div className={styles.bodyWrapper}>
-          {tabs && <tabs.Component model={tabs} />}
-          <Field className={styles.searchField}>
-            <div className={styles.searchWrapper}>
-              <ServiceFieldSelector
-                initialFilter={{
-                  label: customLabel,
-                  value: customValue,
-                  icon: 'filter',
-                }}
-                isLoading={isLogVolumeLoading}
-                value={customValue ? customValue : label}
-                onChange={(serviceName) => onSearchChange(serviceName)}
-                selectOption={(value: string) => {
-                  selectLabel(selectedTab, value, model);
-                }}
-                label={filterLabel}
-                options={
-                  labelsToQuery?.map((serviceName) => ({
-                    value: serviceName,
-                    label: serviceName,
-                  })) ?? []
-                }
-              />
-              {!isLogVolumeLoading && (
-                <span className={styles.searchFieldPlaceholderText}>
-                  Showing {renderedServices} of {totalServices}{' '}
-                  <IconButton
-                    className={styles.icon}
-                    aria-label="Count info"
-                    name={'info-circle'}
-                    tooltip={`${totalServices} labels have values for the selected time range. Total label count may differ`}
-                  />
-                </span>
-              )}
-            </div>
-          </Field>
-          {/** If we don't have any servicesByVolume, volume endpoint is probably not enabled */}
-          {!isLogVolumeLoading && volumeApiError && <ConfigureVolumeError />}
-          {!isLogVolumeLoading && !volumeApiError && hasSearch && !labelsByVolume?.length && <NoServiceSearchResults />}
-          {!isLogVolumeLoading && !volumeApiError && !hasSearch && !labelsByVolume?.length && (
-            <NoServiceVolume labelName={selectedTab} />
-          )}
-          {!(!isLogVolumeLoading && volumeApiError) && (
-            <div className={styles.body}>
-              <body.Component model={body} />
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  // We could also run model.setState in component, but it is recommended to implement the state-modifying methods in the scene object
-  onSearchServicesChange = debounce((primaryLabelSearch?: string) => {
-    // Set search variable
-    const searchVar = getServiceSelectionSearchVariable(this);
-
-    const newSearchString = primaryLabelSearch ? wrapWildcardSearch(primaryLabelSearch) : '.+';
-    if (newSearchString !== searchVar.state.value) {
-      searchVar.setState({
-        value: primaryLabelSearch ? wrapWildcardSearch(primaryLabelSearch) : '.+',
-        label: primaryLabelSearch ?? '',
-      });
-    }
-
-    const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
-    const filter = primaryLabelVar.state.filters[0];
-
-    // Update primary label with search string
-    if (wrapWildcardSearch(searchVar.state.value.toString()) !== filter.value) {
-      primaryLabelVar.setState({
-        filters: [
-          {
-            ...filter,
-            value: wrapWildcardSearch(searchVar.state.value.toString()),
-          },
-        ],
-      });
-    }
-
-    reportAppInteraction(
-      USER_EVENTS_PAGES.service_selection,
-      USER_EVENTS_ACTIONS.service_selection.search_services_changed,
-      {
-        searchQuery: primaryLabelSearch,
-      }
-    );
-  }, 500);
 
   getSelectedTab() {
     return getServiceSelectionPrimaryLabel(this).state.filters[0]?.key;
@@ -785,6 +803,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       },
     });
   }
+
   /**
    * Executes the Volume API call
    * @param resetQueryRunner - optional param which will replace the query runner state with a new instantiation
@@ -879,10 +898,17 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     }
   }
 
-  private updateBody(runQueries = false) {
+  public updateBody(runQueries = false) {
     const { labelsToQuery } = this.getLabels(this.state.$data.state.data?.series);
     const selectedTab = this.getSelectedTab();
     this.updateTabs();
+
+    if (!this.state.paginationScene) {
+      this.setState({
+        paginationScene: new ServiceSelectionPaginationScene({}),
+      });
+    }
+
     // If no services are to be queried, clear the body
     if (!labelsToQuery || labelsToQuery.length === 0) {
       this.state.body.setState({ children: [] });
@@ -895,7 +921,10 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
       const datasourceVariable = getDataSourceVariable(this);
 
-      for (const primaryLabelValue of labelsToQuery.slice(0, SERVICES_LIMIT)) {
+      const start = (this.state.currentPage - 1) * this.state.countPerPage;
+      const end = start + this.state.countPerPage;
+
+      for (const primaryLabelValue of labelsToQuery.slice(start, end)) {
         const existing = existingChildren.filter((child) => {
           const vizPanel = this.getVizPanel(child);
           return vizPanel?.state.title === primaryLabelValue;
@@ -1072,16 +1101,43 @@ function getStyles(theme: GrafanaTheme2) {
       color: theme.colors.text.disabled,
       marginLeft: theme.spacing.x1,
     }),
+    searchPaginationWrap: css({
+      label: 'search-pagination-wrap',
+      display: 'flex',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+      flex: '1 0 auto',
+      [theme.breakpoints.down('md')]: {
+        marginTop: theme.spacing(1),
+        width: '100%',
+      },
+    }),
+    searchPageCountWrap: css({
+      display: 'flex',
+      alignItems: 'center',
+    }),
+    select: css({
+      maxWidth: '65px',
+      marginLeft: theme.spacing(1),
+      marginRight: theme.spacing(1),
+    }),
     searchFieldPlaceholderText: css({
       fontSize: theme.typography.bodySmall.fontSize,
       color: theme.colors.text.disabled,
       alignItems: 'center',
       display: 'flex',
+      flex: '1 0 auto',
+      textWrapMode: 'nowrap',
     }),
     searchWrapper: css({
+      label: 'search-wrapper',
       display: 'flex',
       alignItems: 'center',
       flexWrap: 'wrap',
+      [theme.breakpoints.down('md')]: {
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+      },
     }),
     searchField: css({
       marginTop: theme.spacing(1),
