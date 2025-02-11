@@ -52,7 +52,7 @@ interface PanelMenuState extends SceneObjectState {
   addExplorationsLink?: boolean;
   explorationsButton?: AddToExplorationButton;
   panelType?: AvgFieldPanelType;
-  type?: 'timeseries' | 'logs' | undefined;
+  type?: 'timeseries' | 'logs';
 }
 
 /**
