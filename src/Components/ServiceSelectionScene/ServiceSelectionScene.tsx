@@ -230,8 +230,6 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
     const onSearchChange = (serviceName?: string) => {
       model.onSearchServicesChange(serviceName);
     };
-    // To get the count of services that are currently displayed, divide the number of panels by 2, as there are 2 panels per service (logs and time series)
-    // const renderedServices = body.state.children.length / 2;
 
     const filterLabel = model.formatPrimaryLabelForUI();
     let customValue = serviceStringVariable.getValue().toString();
