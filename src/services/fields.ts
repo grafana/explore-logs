@@ -149,7 +149,7 @@ export function getFilterBreakdownValueScene(
         })
       )
       .setOverrides(setLevelColorOverrides)
-      .setMenu(new PanelMenu({ frame, fieldName: getTitle(frame), labelName: labelKey }))
+      .setMenu(new PanelMenu({ investigationOptions: { frame, fieldName: getTitle(frame), labelName: labelKey } }))
       .setHeaderActions([new AddToFiltersButton({ frame, variableName })]);
 
     if (style === DrawStyle.Bars) {
