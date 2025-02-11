@@ -314,7 +314,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
       body = PanelBuilders.timeseries()
         .setTitle(labelName)
         .setData(dataTransformer)
-        .setMenu(new PanelMenu({ labelName: labelName }))
+        .setMenu(new PanelMenu({ investigationOptions: { labelName: labelName } }))
         .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
         .setCustomFieldConfig('fillOpacity', 100)
         .setCustomFieldConfig('lineWidth', 0)
@@ -331,7 +331,7 @@ export class FieldsAggregatedBreakdownScene extends SceneObjectBase<FieldsAggreg
       body
         .setTitle(labelName)
         .setData(dataTransformer)
-        .setMenu(new PanelMenu({ labelName: labelName, panelType }));
+        .setMenu(new PanelMenu({ investigationOptions: { labelName: labelName }, panelType }));
       headerActions.push(
         new SelectLabelActionScene({
           labelName: String(labelName),

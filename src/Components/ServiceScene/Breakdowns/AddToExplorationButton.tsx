@@ -17,6 +17,7 @@ export interface AddToExplorationButtonState extends SceneObjectState {
   ds?: LokiDatasource;
   context?: ExtensionContext;
   queries: LokiQuery[];
+  type?: 'timeseries' | 'logs' | undefined;
 }
 
 type ExtensionContext = {
@@ -74,7 +75,7 @@ export class AddToExplorationButton extends SceneObjectBase<AddToExplorationButt
   };
 
   private getContext = () => {
-    const { queries, ds, labelName, fieldName } = this.state;
+    const { queries, ds, labelName, fieldName, type } = this.state;
     const timeRange = sceneGraph.getTimeRange(this);
 
     if (!timeRange || !queries || !ds?.uid) {
@@ -82,7 +83,7 @@ export class AddToExplorationButton extends SceneObjectBase<AddToExplorationButt
     }
     const ctx = {
       origin: 'Explore Logs',
-      type: 'timeseries',
+      type: type ?? 'timeseries',
       queries,
       timeRange: { ...timeRange.state.value },
       datasource: { uid: ds.uid },
