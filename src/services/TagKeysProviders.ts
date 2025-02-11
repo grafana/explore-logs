@@ -13,10 +13,10 @@ import { AdHocFiltersVariable, SceneObject } from '@grafana/scenes';
 import { BackendSrvRequest, DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
 import { getDataSource } from './scenes';
 import { LABELS_TO_REMOVE } from './filters';
-import { joinTagFilters } from './query';
 import { DetectedFieldsResult, LokiLanguageProviderWithDetectedLabelValues } from './TagValuesProviders';
 import { LEVEL_VARIABLE_VALUE, ParserType, VAR_FIELDS_AND_METADATA, VAR_LEVELS } from './variables';
 import { UIVariableFilterType } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
+import { ExpressionBuilder } from './ExpressionBuilder';
 
 export async function getLabelsTagKeysProvider(variable: AdHocFiltersVariable): Promise<{
   replace?: boolean;
@@ -30,13 +30,13 @@ export async function getLabelsTagKeysProvider(variable: AdHocFiltersVariable): 
   const datasource = datasource_ as LokiDatasource;
 
   if (datasource && datasource.getTagKeys) {
-    const filters = joinTagFilters(variable);
+    const filtersTransformer = new ExpressionBuilder(variable.state.filters);
+    const filters = filtersTransformer.getJoinedLabelsFilters();
 
     const options: DataSourceGetTagKeysOptions<LokiQuery> = {
       filters,
     };
 
-    // Do we want to only have regex operations?
     const tagKeys = await datasource.getTagKeys(options);
     const result: MetricFindValue[] = Array.isArray(tagKeys) ? tagKeys : [];
     const filteredResult = result.filter((key) => !LABELS_TO_REMOVE.includes(key.text));

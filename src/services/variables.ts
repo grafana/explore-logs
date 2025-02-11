@@ -78,3 +78,19 @@ export const SERVICE_UI_LABEL = 'service';
 export const VAR_AGGREGATED_METRICS = 'var_aggregated_metrics';
 export const VAR_AGGREGATED_METRICS_EXPR = '${var_aggregated_metrics}';
 export const EMPTY_VARIABLE_VALUE = '""';
+
+// Delimiter used at the start of a label value to denote user input that should not be escaped
+// @todo we need ad-hoc-filter meta that is persisted in the URL so we can clean this up.
+export const USER_INPUT_ADHOC_VALUE_PREFIX = '__CVΩ__';
+export function stripAdHocFilterUserInputPrefix(value = '') {
+  if (value.startsWith(USER_INPUT_ADHOC_VALUE_PREFIX)) {
+    return value.substring(USER_INPUT_ADHOC_VALUE_PREFIX.length);
+  }
+  return value;
+}
+export function isAdHocFilterValueUserInput(value = '') {
+  return value.startsWith(USER_INPUT_ADHOC_VALUE_PREFIX);
+}
+export function addAdHocFilterUserInputPrefix(value = '') {
+  return USER_INPUT_ADHOC_VALUE_PREFIX + value;
+}

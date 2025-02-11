@@ -21,7 +21,7 @@ import {
   getFieldsAndMetadataVariable,
   getValueFromAdHocVariableFilter,
 } from '../../../services/variableGetters';
-import { FilterOp } from '../../../services/filterTypes';
+import { FilterOp, NumericFilterOp } from '../../../services/filterTypes';
 
 import { addToFavorites } from '../../../services/favorites';
 
@@ -44,7 +44,7 @@ export class ClearFilterEvent extends BusEventBase {
   public static type = 'add-filter';
 }
 
-export type NumericFilterType = FilterOp.gt | FilterOp.gte | FilterOp.lt | FilterOp.lte;
+export type NumericFilterType = NumericFilterOp.gt | NumericFilterOp.gte | NumericFilterOp.lt | NumericFilterOp.lte;
 
 /**
  * Filter types:

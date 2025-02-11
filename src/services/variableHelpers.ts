@@ -4,7 +4,8 @@ import { SERVICE_NAME, SERVICE_UI_LABEL, VAR_LABELS } from './variables';
 import { IndexScene } from '../Components/IndexScene/IndexScene';
 import { getPrimaryLabelFromUrl } from './routing';
 import { FilterOp } from './filterTypes';
-import { includeOperators, isOperatorInclusive, numericOperators, operators } from './operators';
+import { includeOperators, numericOperators, operators } from './operators';
+import { isOperatorInclusive } from './operatorHelpers';
 
 export function getVariablesThatCanBeCleared(indexScene: IndexScene) {
   const variables = sceneGraph.getVariables(indexScene);

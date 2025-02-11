@@ -258,7 +258,7 @@ test.describe('explore services breakdown page', () => {
     await explorePage.goToLogsTab();
     await explorePage.getLogsVolumePanelLocator().click();
     await page.getByTestId('data-testid Panel menu item Explore').click();
-    await expect(page.getByText(`{service_name="tempo-distributor"} | ${levelName}=~\`${valueName}\``)).toBeVisible();
+    await expect(page.getByText(`{service_name="tempo-distributor"} | ${levelName}="${valueName}"`)).toBeVisible();
   });
 
   test(`should select label ${labelName}, update filters, open in explore`, async ({ page, browser }) => {
@@ -496,11 +496,12 @@ test.describe('explore services breakdown page', () => {
       refIds: [fieldName],
     });
     await explorePage.goToFieldsTab();
+    await explorePage.assertNotLoading();
 
     // Go to caller values breakdown
     await page.getByLabel(`Select ${fieldName}`).click();
     // Add custom regex value
-    await explorePage.addCustomValueToCombobox(fieldName, FilterOp.RegexEqual, ComboBoxIndex.fields, `.+st.+`);
+    await explorePage.addCustomValueToCombobox(fieldName, FilterOp.RegexEqual, ComboBoxIndex.fields, `.+st.+`, 'ca');
 
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
     await expect(page.getByText('=~')).toBeVisible();
@@ -549,6 +550,8 @@ test.describe('explore services breakdown page', () => {
     // Add both tempo services
     await explorePage.addCustomValueToCombobox('service_name', FilterOp.RegexEqual, ComboBoxIndex.labels, `tempo.+`);
     await explorePage.addCustomValueToCombobox('namespace', FilterOp.RegexEqual, ComboBoxIndex.labels, `.+dev.*`);
+    // Remove tempo-distributor
+    await page.getByLabel('Remove filter with key').first().click();
 
     await explorePage.assertNotLoading();
     await explorePage.assertPanelsNotLoading();
@@ -567,7 +570,6 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(metadataName))).toBeVisible();
     await expect(page.getByText('=~').nth(3)).toBeVisible();
     const panels = explorePage.getAllPanelsLocator();
-    // Worried that this could flake if the pod names are randomly generated? - yup
     await expect(panels).toHaveCount(9);
     await expect(
       page.getByTestId(/data-testid Panel header tempo-ingester-[hc]{2}-\d.+/).getByTestId('header-container')
@@ -963,7 +965,7 @@ test.describe('explore services breakdown page', () => {
     );
 
     expect(expressionsAfterNumericFilter[0]).toEqual(
-      'sum by (pod) (count_over_time({service_name="tempo-distributor"} | pod!=""     | logfmt  | bytes>500B | bytes<=2KB [$__auto]))'
+      'sum by (pod) (count_over_time({service_name="tempo-distributor"} | pod!=""     | logfmt  | bytes<=2KB | bytes>500B [$__auto]))'
     );
 
     // Assert that the variables were added to the UI
