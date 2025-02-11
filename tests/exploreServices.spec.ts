@@ -139,9 +139,7 @@ test.describe('explore services page', () => {
       await expect(page.getByText(/level=info/)).not.toBeVisible();
     });
 
-    test.only('should clear filters and levels when navigating back to previously activated service', async ({
-      page,
-    }) => {
+    test('should clear filters and levels when navigating back to previously activated service', async ({ page }) => {
       await explorePage.addServiceName();
       // Add detected_level filter
       await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
