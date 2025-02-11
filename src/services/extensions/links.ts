@@ -21,8 +21,9 @@ import { LabelType } from '../fieldsTypes';
 
 import { isOperatorInclusive } from '../operatorHelpers';
 
-const title = 'Open in Explore Logs';
-const description = 'Open current query in the Explore Logs view';
+const PRODUCT_NAME = 'Grafana Logs Drilldown';
+const title = `Open in ${PRODUCT_NAME}`;
+const description = `Open current query in the ${PRODUCT_NAME} view`;
 const icon = 'gf-logs';
 
 export const ExtensionPoints = {

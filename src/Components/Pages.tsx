@@ -46,7 +46,7 @@ function getServicesScene(routeMatch: OptionalRouteMatch) {
 export function makeIndexPage() {
   return new SceneAppPage({
     // Top level breadcrumb
-    title: 'Logs',
+    title: 'Grafana Logs Drilldown',
     url: prefixRoute(PageSlugs.explore),
     layout: PageLayoutType.Custom,
     preserveUrlKeys: SERVICE_URL_KEYS,
