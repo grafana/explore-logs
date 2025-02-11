@@ -36,7 +36,7 @@ import {
   StackingMode,
   useStyles2,
 } from '@grafana/ui';
-import { addTabToLocalStorage, getFavoriteLabelValuesFromStorage } from 'services/store';
+import { addTabToLocalStorage, getFavoriteLabelValuesFromStorage, getServiceSelectionPageCount } from 'services/store';
 import {
   EXPLORATION_DS,
   LEVEL_VARIABLE_VALUE,
@@ -128,42 +128,6 @@ const primaryLabelUrlKey = 'var-primary_label';
 const datasourceUrlKey = 'var-ds';
 
 export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionSceneState> {
-  // We could also run model.setState in component, but it is recommended to implement the state-modifying methods in the scene object
-  onSearchServicesChange = debounce((primaryLabelSearch?: string) => {
-    // Set search variable
-    const searchVar = getServiceSelectionSearchVariable(this);
-
-    const newSearchString = primaryLabelSearch ? wrapWildcardSearch(primaryLabelSearch) : '.+';
-    if (newSearchString !== searchVar.state.value) {
-      searchVar.setState({
-        value: primaryLabelSearch ? wrapWildcardSearch(primaryLabelSearch) : '.+',
-        label: primaryLabelSearch ?? '',
-      });
-    }
-
-    const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
-    const filter = primaryLabelVar.state.filters[0];
-
-    // Update primary label with search string
-    if (wrapWildcardSearch(searchVar.state.value.toString()) !== filter.value) {
-      primaryLabelVar.setState({
-        filters: [
-          {
-            ...filter,
-            value: wrapWildcardSearch(searchVar.state.value.toString()),
-          },
-        ],
-      });
-    }
-
-    reportAppInteraction(
-      USER_EVENTS_PAGES.service_selection,
-      USER_EVENTS_ACTIONS.service_selection.search_services_changed,
-      {
-        searchQuery: primaryLabelSearch,
-      }
-    );
-  }, 500);
   protected _urlSync = new SceneObjectUrlSyncConfig(this, {
     keys: [primaryLabelUrlKey],
   });
@@ -232,7 +196,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       }),
       serviceLevel: new Map<string, string[]>(),
       // pagination
-      countPerPage: 20,
+      countPerPage: getServiceSelectionPageCount() ?? 20,
       currentPage: 1,
 
       showPopover: false,
@@ -343,6 +307,47 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
       </div>
     );
   };
+
+  // We could also run model.setState in component, but it is recommended to implement the state-modifying methods in the scene object
+  onSearchServicesChange = debounce((primaryLabelSearch?: string) => {
+    // Set search variable
+    const searchVar = getServiceSelectionSearchVariable(this);
+
+    const newSearchString = primaryLabelSearch ? wrapWildcardSearch(primaryLabelSearch) : '.+';
+    if (newSearchString !== searchVar.state.value) {
+      searchVar.setState({
+        value: primaryLabelSearch ? wrapWildcardSearch(primaryLabelSearch) : '.+',
+        label: primaryLabelSearch ?? '',
+      });
+    }
+
+    const primaryLabelVar = getServiceSelectionPrimaryLabel(this);
+    const filter = primaryLabelVar.state.filters[0];
+
+    // Update primary label with search string
+    if (wrapWildcardSearch(searchVar.state.value.toString()) !== filter.value) {
+      primaryLabelVar.setState({
+        filters: [
+          {
+            ...filter,
+            value: wrapWildcardSearch(searchVar.state.value.toString()),
+          },
+        ],
+      });
+    }
+
+    this.setState({
+      currentPage: 1,
+    });
+
+    reportAppInteraction(
+      USER_EVENTS_PAGES.service_selection,
+      USER_EVENTS_ACTIONS.service_selection.search_services_changed,
+      {
+        searchQuery: primaryLabelSearch,
+      }
+    );
+  }, 500);
 
   /**
    * Set changes from the URL to the state of the primary label variable
@@ -1097,10 +1102,6 @@ function getStyles(theme: GrafanaTheme2) {
       display: 'flex',
       flexDirection: 'column',
     }),
-    icon: css({
-      color: theme.colors.text.disabled,
-      marginLeft: theme.spacing.x1,
-    }),
     searchPaginationWrap: css({
       label: 'search-pagination-wrap',
       display: 'flex',
@@ -1111,23 +1112,6 @@ function getStyles(theme: GrafanaTheme2) {
         marginTop: theme.spacing(1),
         width: '100%',
       },
-    }),
-    searchPageCountWrap: css({
-      display: 'flex',
-      alignItems: 'center',
-    }),
-    select: css({
-      maxWidth: '65px',
-      marginLeft: theme.spacing(1),
-      marginRight: theme.spacing(1),
-    }),
-    searchFieldPlaceholderText: css({
-      fontSize: theme.typography.bodySmall.fontSize,
-      color: theme.colors.text.disabled,
-      alignItems: 'center',
-      display: 'flex',
-      flex: '1 0 auto',
-      textWrapMode: 'nowrap',
     }),
     searchWrapper: css({
       label: 'search-wrapper',

@@ -4,6 +4,7 @@ import { css } from '@emotion/css';
 import { IconButton, Pagination, Select, useStyles2 } from '@grafana/ui';
 import React from 'react';
 import { ServiceSelectionScene } from './ServiceSelectionScene';
+import { setServiceSelectionPageCount } from '../../services/store';
 
 export interface ServiceSelectionPaginationSceneState extends SceneObjectState {}
 
@@ -23,17 +24,16 @@ export class ServiceSelectionPaginationScene extends SceneObjectBase<ServiceSele
             className={styles.select}
             onChange={(value) => {
               if (value.value) {
-                serviceSelectionScene.setState({ countPerPage: parseInt(value.value, 10) });
+                const countPerPage = parseInt(value.value, 10);
+                serviceSelectionScene.setState({ countPerPage, currentPage: 1 });
                 serviceSelectionScene.updateBody();
+                setServiceSelectionPageCount(countPerPage);
               }
             }}
             options={[
               { value: '20', label: '20' },
               { value: '40', label: '40' },
-              {
-                value: '60',
-                label: '60',
-              },
+              { value: '60', label: '60' },
             ]}
             value={countPerPage.toString()}
           />{' '}
@@ -82,33 +82,37 @@ export class ServiceSelectionPaginationScene extends SceneObjectBase<ServiceSele
 
     const styles = useStyles2(getStyles);
 
-    return (
-      <>
-        <span className={styles.paginationWrapMd}>
-          <Pagination
-            className={styles.pagination}
-            currentPage={currentPage}
-            numberOfPages={Math.floor(totalCount / countPerPage)}
-            onNavigate={(toPage) => {
-              serviceSelectionScene.setState({ currentPage: toPage });
-              serviceSelectionScene.updateBody();
-            }}
-          />
-        </span>
-        <span className={styles.paginationWrap}>
-          <Pagination
-            showSmallVersion={true}
-            className={styles.pagination}
-            currentPage={currentPage}
-            numberOfPages={Math.floor(totalCount / countPerPage)}
-            onNavigate={(toPage) => {
-              serviceSelectionScene.setState({ currentPage: toPage });
-              serviceSelectionScene.updateBody();
-            }}
-          />
-        </span>
-      </>
-    );
+    if (totalCount > countPerPage) {
+      return (
+        <>
+          <span className={styles.paginationWrapMd}>
+            <Pagination
+              className={styles.pagination}
+              currentPage={currentPage}
+              numberOfPages={Math.ceil(totalCount / countPerPage)}
+              onNavigate={(toPage) => {
+                serviceSelectionScene.setState({ currentPage: toPage });
+                serviceSelectionScene.updateBody();
+              }}
+            />
+          </span>
+          <span className={styles.paginationWrap}>
+            <Pagination
+              showSmallVersion={true}
+              className={styles.pagination}
+              currentPage={currentPage}
+              numberOfPages={Math.ceil(totalCount / countPerPage)}
+              onNavigate={(toPage) => {
+                serviceSelectionScene.setState({ currentPage: toPage });
+                serviceSelectionScene.updateBody();
+              }}
+            />
+          </span>
+        </>
+      );
+    }
+
+    return null;
   };
 }
 
