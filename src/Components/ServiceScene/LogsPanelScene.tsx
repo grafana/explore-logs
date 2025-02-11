@@ -235,7 +235,11 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
           'prettifyLogMessage',
           options.prettifyLogMessage ?? Boolean(getLogOption<boolean>('wrapLogMessage', false))
         )
-        .setMenu(new PanelMenu({ type: 'logs', getLabelName: () => `Logs: ${getPrettyQueryExpr(serviceScene)}` }))
+        .setMenu(
+          new PanelMenu({
+            investigationOptions: { type: 'logs', getLabelName: () => `Logs: ${getPrettyQueryExpr(serviceScene)}` },
+          })
+        )
         .setOption('showLogContextToggle', true)
         // @ts-expect-error Requires Grafana 11.5
         .setOption('enableInfiniteScrolling', true)

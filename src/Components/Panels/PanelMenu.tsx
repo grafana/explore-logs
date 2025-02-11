@@ -43,16 +43,21 @@ export enum CollapsablePanelText {
   expanded = 'Expand',
 }
 
+interface InvestigationOptions {
+  labelName?: string;
+  fieldName?: string;
+  frame?: DataFrame;
+  type?: 'timeseries' | 'logs';
+  getLabelName?: () => string;
+}
+
 interface PanelMenuState extends SceneObjectState {
   body?: VizPanelMenu;
-  frame?: DataFrame;
-  labelName?: string;
-  getLabelName?: () => string;
-  fieldName?: string;
   addExplorationsLink?: boolean;
   explorationsButton?: AddToExplorationButton;
   panelType?: AvgFieldPanelType;
-  type?: 'timeseries' | 'logs';
+
+  investigationOptions?: InvestigationOptions;
 }
 
 /**
@@ -92,10 +97,12 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
 
       this.setState({
         explorationsButton: new AddToExplorationButton({
-          labelName: this.state.getLabelName ? this.state.getLabelName() : this.state.labelName,
-          fieldName: this.state.fieldName,
-          frame: this.state.frame,
-          type: this.state.type,
+          labelName: this.state.investigationOptions?.getLabelName
+            ? this.state.investigationOptions?.getLabelName()
+            : this.state.investigationOptions?.labelName,
+          fieldName: this.state.investigationOptions?.fieldName,
+          frame: this.state.investigationOptions?.frame,
+          type: this.state.investigationOptions?.type,
         }),
       });
 
