@@ -1,11 +1,11 @@
 apiVersion: 1
 
 datasources:
-#  - name: gdev-testdata-copy
-#    isDefault: false
-#    type: testdata
-#  - name: gdev-loki-copy
-#    type: loki
-#    uid: gdev-loki-copy
-#    access: proxy
-#    url: http://host.docker.internal:3100
+  - name: gdev-testdata-copy
+    isDefault: false
+    type: testdata
+  - name: gdev-loki-copy
+    type: loki
+    uid: gdev-loki-copy
+    access: proxy
+    url: http://host.docker.internal:3100
