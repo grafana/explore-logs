@@ -36,6 +36,7 @@ import { locationService } from '@grafana/runtime';
 import { narrowLogsSortOrder } from '../../services/narrowing';
 import { logger } from '../../services/logger';
 import { LogsSortOrder } from '@grafana/schema';
+import { getPrettyQueryExpr } from 'services/scenes';
 
 interface LogsPanelSceneState extends SceneObjectState {
   body?: VizPanel<Options>;
@@ -234,7 +235,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
           'prettifyLogMessage',
           options.prettifyLogMessage ?? Boolean(getLogOption<boolean>('wrapLogMessage', false))
         )
-        .setMenu(new PanelMenu({ addExplorationsLink: false }))
+        .setMenu(new PanelMenu({ type: 'logs', getLabelName: () => `Logs: ${getPrettyQueryExpr(serviceScene)}` }))
         .setOption('showLogContextToggle', true)
         // @ts-expect-error Requires Grafana 11.5
         .setOption('enableInfiniteScrolling', true)

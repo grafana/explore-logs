@@ -47,10 +47,12 @@ interface PanelMenuState extends SceneObjectState {
   body?: VizPanelMenu;
   frame?: DataFrame;
   labelName?: string;
+  getLabelName?: () => string;
   fieldName?: string;
   addExplorationsLink?: boolean;
   explorationsButton?: AddToExplorationButton;
   panelType?: AvgFieldPanelType;
+  type?: 'timeseries' | 'logs' | undefined;
 }
 
 /**
@@ -90,9 +92,10 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
 
       this.setState({
         explorationsButton: new AddToExplorationButton({
-          labelName: this.state.labelName,
+          labelName: this.state.getLabelName ? this.state.getLabelName() : this.state.labelName,
           fieldName: this.state.fieldName,
           frame: this.state.frame,
+          type: this.state.type,
         }),
       });
 
