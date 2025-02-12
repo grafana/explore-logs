@@ -322,3 +322,13 @@ export function getExpressionBuilderDebug() {
   const value = localStorage.getItem(EXPRESSION_BUILDER_DEBUG_LOCALSTORAGE_KEY);
   return !!value;
 }
+
+const SERVICE_SELECTION_PAGE_COUNT_KEY = `${pluginJson.id}.serviceSelection.pageCount`;
+
+export function getServiceSelectionPageCount(): number | undefined {
+  const value = localStorage.getItem(SERVICE_SELECTION_PAGE_COUNT_KEY);
+  return value ? parseInt(value, 10) : undefined;
+}
+export function setServiceSelectionPageCount(pageCount: number) {
+  localStorage.setItem(SERVICE_SELECTION_PAGE_COUNT_KEY, pageCount.toString(10));
+}
