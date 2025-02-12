@@ -634,6 +634,8 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     return lineFilterOperators;
   };
 
+  console.log('test');
+
   const dsVariable = new DataSourceVariable({
     name: VAR_DATASOURCE,
     label: 'Data source',
