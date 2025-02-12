@@ -4,13 +4,10 @@ import { useReturnToPrevious } from '@grafana/runtime';
 import { OpenInExploreLogsButtonProps } from './types';
 import OpenInExploreLogsButton from './OpenInExploreLogsButton';
 import { AbstractLabelOperator } from '@grafana/data';
+import { addCustomInputPrefixAndValueLabels, encodeFilter } from 'services/extensions/utils';
 
 jest.mock('@grafana/runtime', () => ({
   useReturnToPrevious: jest.fn(),
-  config: {
-    appSubUrl: 'http://localhost:3000/',
-    appUrl: 'http://localhost:3000/',
-  },
 }));
 
 describe('OpenInExploreLogsButton', () => {
@@ -34,7 +31,9 @@ describe('OpenInExploreLogsButton', () => {
     expect(linkButton).toBeInTheDocument();
     expect(linkButton).toHaveAttribute(
       'href',
-      'http://localhost:3000/a/grafana-lokiexplore-app/explore/job/test-job/logs?var-datasource=test-datasource&from=now-1h&to=now&var-filters=job%7C%3D%7C__CV%CE%A9__test-job%2Ctest-job'
+      `/a/grafana-lokiexplore-app/explore/job/test-job/logs?var-ds=test-datasource&from=now-1h&to=now&var-filters=${encodeFilter(
+        `job|=|${addCustomInputPrefixAndValueLabels('test-job')}`
+      )}`
     );
   });
 
@@ -51,7 +50,9 @@ describe('OpenInExploreLogsButton', () => {
     const linkButton = screen.getByRole('link');
     expect(linkButton).toHaveAttribute(
       'href',
-      'http://localhost:3000/a/grafana-lokiexplore-app/explore/job/test-job/logs?var-filters=job%7C%3D%7C__CV%CE%A9__test-job%2Ctest-job&var-filters=test_label_key%7C%21%3D%7C__CV%CE%A9__test-label-value%2Ctest-label-value'
+      `/a/grafana-lokiexplore-app/explore/job/test-job/logs?var-filters=${encodeFilter(
+        `job|=|${addCustomInputPrefixAndValueLabels('test-job')}`
+      )}&var-filters=${encodeFilter(`test_label_key|!=|${addCustomInputPrefixAndValueLabels('test-label-value')}`)}`
     );
   });
 
@@ -68,7 +69,11 @@ describe('OpenInExploreLogsButton', () => {
     const linkButton = screen.getByRole('link');
     expect(linkButton).toHaveAttribute(
       'href',
-      'http://localhost:3000/a/grafana-lokiexplore-app/explore/job/test-job/logs?var-filters=job%7C%3D%7C__CV%CE%A9__test-job%2Ctest-job&var-filters=test_label_key%7C%3D%7E%7C__CV%CE%A9__special.%28char%29%2B__gfp__value%24%2Cspecial.%28char%29%2B__gfp__value%24'
+      `/a/grafana-lokiexplore-app/explore/job/test-job/logs?var-filters=${encodeFilter(
+        `job|=|${addCustomInputPrefixAndValueLabels('test-job')}`
+      )}&var-filters=${encodeFilter(
+        `test_label_key|=~|${addCustomInputPrefixAndValueLabels('special.(char)+|value$')}`
+      )}`
     );
   });
 
@@ -85,7 +90,11 @@ describe('OpenInExploreLogsButton', () => {
     const linkButton = screen.getByRole('link');
     expect(linkButton).toHaveAttribute(
       'href',
-      'http://localhost:3000/a/grafana-lokiexplore-app/explore/job/test-job/logs?var-filters=job%7C%3D%7C__CV%CE%A9__test-job%2Ctest-job&var-filters=test_label_key%7C%21%7E%7C__CV%CE%A9__special.%28char%29%2B__gfp__value%24%2Cspecial.%28char%29%2B__gfp__value%24'
+      `/a/grafana-lokiexplore-app/explore/job/test-job/logs?var-filters=${encodeFilter(
+        `job|=|${addCustomInputPrefixAndValueLabels('test-job')}`
+      )}&var-filters=${encodeFilter(
+        `test_label_key|!~|${addCustomInputPrefixAndValueLabels('special.(char)+|value$')}`
+      )}`
     );
   });
 

@@ -221,7 +221,7 @@ function escapeUrlCommaDelimiters(value: string | undefined): string {
   return /,/g[Symbol.replace](value, '__gfc__');
 }
 
-function escapeUrlPipeDelimiters(value: string | undefined): string {
+export function escapeUrlPipeDelimiters(value: string | undefined): string {
   if (value === null || value === undefined) {
     return '';
   }

@@ -1,7 +1,16 @@
-import { config, useReturnToPrevious } from '@grafana/runtime';
+import { useReturnToPrevious } from '@grafana/runtime';
 import { LinkButton } from '@grafana/ui';
 import React, { useMemo } from 'react';
-import { escapeURLDelimiters, replaceEscapeChars, replaceSlash, stringifyAdHocValues } from 'services/extensions/links';
+import {
+  appendUrlParameter,
+  createAppUrl,
+  escapeURLDelimiters,
+  replaceEscapeChars,
+  replaceSlash,
+  setUrlParameter,
+  stringifyAdHocValues,
+  UrlParameters,
+} from 'services/extensions/links';
 import { OpenInExploreLogsButtonProps } from './types';
 import { AbstractLabelOperator } from '@grafana/data';
 import { LabelFilterOp } from 'services/filterTypes';
@@ -34,26 +43,33 @@ export default function OpenInExploreLogsButton({
       return null;
     }
 
-    const url = new URL(
-      `${config.appSubUrl || config.appUrl}a/grafana-lokiexplore-app/explore/${mainLabel.name}/${replaceSlash(
-        mainLabel.value
-      )}/logs`
-    );
+    const labelValue = replaceSlash(mainLabel.value);
 
-    datasourceUid && url.searchParams.set('var-datasource', datasourceUid);
-    from && url.searchParams.set('from', from);
-    to && url.searchParams.set('to', to);
+    let params = new URLSearchParams();
+
+    if (datasourceUid) {
+      params = setUrlParameter(UrlParameters.DatasourceId, datasourceUid, params);
+    }
+
+    if (from) {
+      params = setUrlParameter(UrlParameters.TimeRangeFrom, from, params);
+    }
+
+    if (to) {
+      params = setUrlParameter(UrlParameters.TimeRangeTo, to, params);
+    }
 
     labelMatchers.forEach((labelMatcher) => {
-      url.searchParams.append(
-        'var-filters',
+      params = appendUrlParameter(
+        UrlParameters.Labels,
         `${labelMatcher.name}|${operatorMap[labelMatcher.operator]}|${escapeURLDelimiters(
           stringifyAdHocValues(labelMatcher.value)
-        )},${escapeURLDelimiters(replaceEscapeChars(labelMatcher.value))}`
+        )},${escapeURLDelimiters(replaceEscapeChars(labelMatcher.value))}`,
+        params
       );
     });
 
-    return url.toString();
+    return createAppUrl(`/explore/${mainLabel.name}/${labelValue}/logs`, params);
   }, [datasourceUid, from, to, labelMatchers]);
 
   if (!href) {
@@ -70,7 +86,7 @@ export default function OpenInExploreLogsButton({
       href={href}
       onClick={() => setReturnToPrevious(returnToPreviousSource || 'previous')}
     >
-      Open in Explore logs
+      Open in Explore Logs
     </LinkButton>
   );
 }
