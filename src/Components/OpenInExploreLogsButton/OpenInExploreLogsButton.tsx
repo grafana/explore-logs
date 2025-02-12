@@ -24,7 +24,7 @@ const operatorMap = {
 
 export default function OpenInExploreLogsButton({
   datasourceUid,
-  labelMatchers,
+  streamSelectors,
   from,
   to,
   returnToPreviousSource,
@@ -33,7 +33,7 @@ export default function OpenInExploreLogsButton({
   const setReturnToPrevious = useReturnToPrevious();
 
   const href = useMemo(() => {
-    const mainLabel = labelMatchers[0];
+    const mainLabel = streamSelectors[0];
 
     if (
       !mainLabel ||
@@ -59,18 +59,18 @@ export default function OpenInExploreLogsButton({
       params = setUrlParameter(UrlParameters.TimeRangeTo, to, params);
     }
 
-    labelMatchers.forEach((labelMatcher) => {
+    streamSelectors.forEach((streamSelector) => {
       params = appendUrlParameter(
         UrlParameters.Labels,
-        `${labelMatcher.name}|${operatorMap[labelMatcher.operator]}|${escapeURLDelimiters(
-          stringifyAdHocValues(labelMatcher.value)
-        )},${escapeURLDelimiters(replaceEscapeChars(labelMatcher.value))}`,
+        `${streamSelector.name}|${operatorMap[streamSelector.operator]}|${escapeURLDelimiters(
+          stringifyAdHocValues(streamSelector.value)
+        )},${escapeURLDelimiters(replaceEscapeChars(streamSelector.value))}`,
         params
       );
     });
 
     return createAppUrl(`/explore/${mainLabel.name}/${labelValue}/logs`, params);
-  }, [datasourceUid, from, to, labelMatchers]);
+  }, [datasourceUid, from, to, streamSelectors]);
 
   if (!href) {
     return null;

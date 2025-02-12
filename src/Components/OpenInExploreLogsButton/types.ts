@@ -2,7 +2,7 @@ import { AbstractLabelMatcher } from '@grafana/data';
 
 export interface OpenInExploreLogsButtonProps {
   datasourceUid?: string;
-  labelMatchers: AbstractLabelMatcher[];
+  streamSelectors: AbstractLabelMatcher[];
   from?: string;
   to?: string;
   returnToPreviousSource?: string;

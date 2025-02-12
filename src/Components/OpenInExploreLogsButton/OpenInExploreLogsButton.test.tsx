@@ -20,7 +20,7 @@ describe('OpenInExploreLogsButton', () => {
   it('should render the button with correct href (Equal operator)', () => {
     const props: OpenInExploreLogsButtonProps = {
       datasourceUid: 'test-datasource',
-      labelMatchers: [{ name: 'job', value: 'test-job', operator: AbstractLabelOperator.Equal }],
+      streamSelectors: [{ name: 'job', value: 'test-job', operator: AbstractLabelOperator.Equal }],
       from: 'now-1h',
       to: 'now',
     };
@@ -39,7 +39,7 @@ describe('OpenInExploreLogsButton', () => {
 
   it('should handle NotEqual operator correctly', () => {
     const props: OpenInExploreLogsButtonProps = {
-      labelMatchers: [
+      streamSelectors: [
         { name: 'job', value: 'test-job', operator: AbstractLabelOperator.Equal },
         { name: 'test_label_key', value: 'test-label-value', operator: AbstractLabelOperator.NotEqual },
       ],
@@ -58,7 +58,7 @@ describe('OpenInExploreLogsButton', () => {
 
   it('should handle EqualRegEx operator with properly encoded PromQL values', () => {
     const props: OpenInExploreLogsButtonProps = {
-      labelMatchers: [
+      streamSelectors: [
         { name: 'job', value: 'test-job', operator: AbstractLabelOperator.Equal },
         { name: 'test_label_key', value: 'special.(char)+|value$', operator: AbstractLabelOperator.EqualRegEx },
       ],
@@ -79,7 +79,7 @@ describe('OpenInExploreLogsButton', () => {
 
   it('should handle NotEqualRegEx operator with properly encoded PromQL values', () => {
     const props: OpenInExploreLogsButtonProps = {
-      labelMatchers: [
+      streamSelectors: [
         { name: 'job', value: 'test-job', operator: AbstractLabelOperator.Equal },
         { name: 'test_label_key', value: 'special.(char)+|value$', operator: AbstractLabelOperator.NotEqualRegEx },
       ],
@@ -99,13 +99,13 @@ describe('OpenInExploreLogsButton', () => {
   });
 
   it('should not render button if labelMatchers is empty', () => {
-    render(<OpenInExploreLogsButton labelMatchers={[]} />);
+    render(<OpenInExploreLogsButton streamSelectors={[]} />);
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
   });
 
   it('should call setReturnToPrevious on click', () => {
     const props: OpenInExploreLogsButtonProps = {
-      labelMatchers: [{ name: 'job', value: 'test-job', operator: AbstractLabelOperator.Equal }],
+      streamSelectors: [{ name: 'job', value: 'test-job', operator: AbstractLabelOperator.Equal }],
       returnToPreviousSource: 'test-source',
     };
 
@@ -121,7 +121,7 @@ describe('OpenInExploreLogsButton', () => {
     const renderButtonMock = jest.fn(({ href }) => <a href={href}>Custom Button</a>);
 
     const props: OpenInExploreLogsButtonProps = {
-      labelMatchers: [{ name: 'job', value: 'test-job', operator: AbstractLabelOperator.Equal }],
+      streamSelectors: [{ name: 'job', value: 'test-job', operator: AbstractLabelOperator.Equal }],
       renderButton: renderButtonMock,
     };
 
