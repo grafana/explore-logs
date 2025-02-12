@@ -3,6 +3,15 @@ import { LinkButton } from '@grafana/ui';
 import React, { useMemo } from 'react';
 import { replaceSlash } from 'services/extensions/links';
 import { OpenInExploreLogsButtonProps } from './types';
+import { AbstractLabelOperator } from '@grafana/data';
+import { LabelFilterOp } from 'services/filterTypes';
+
+const operatorMap = {
+  [AbstractLabelOperator.Equal]: LabelFilterOp.Equal,
+  [AbstractLabelOperator.NotEqual]: LabelFilterOp.NotEqual,
+  [AbstractLabelOperator.EqualRegEx]: LabelFilterOp.RegexEqual,
+  [AbstractLabelOperator.NotEqualRegEx]: LabelFilterOp.RegexNotEqual,
+};
 
 export default function OpenInExploreLogsButton({
   datasourceUid,
@@ -17,7 +26,11 @@ export default function OpenInExploreLogsButton({
   const href = useMemo(() => {
     const mainLabel = labelMatchers[0];
 
-    if (!mainLabel) {
+    if (
+      !mainLabel ||
+      // we can't open in explore logs if main label matcher is smth different from equal
+      mainLabel?.operator !== AbstractLabelOperator.Equal
+    ) {
       return null;
     }
 
@@ -30,7 +43,9 @@ export default function OpenInExploreLogsButton({
     to && url.searchParams.set('to', to);
 
     labelMatchers.forEach((labelMatcher) => {
-      url.searchParams.append('var-filters', `${labelMatcher.name}|=|${replaceSlash(labelMatcher.value)}`);
+      let value = replaceSlash(labelMatcher.value);
+
+      url.searchParams.append('var-filters', `${labelMatcher.name}|${operatorMap[labelMatcher.operator]}|${value}`);
     });
 
     return url.toString();
