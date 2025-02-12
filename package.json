@@ -37,7 +37,7 @@
     "generate-logs": "pushd generator; docker build -t log-generator . && docker run log-generator -url http://host.docker.internal:3100/loki/api/v1/push; popd",
     "server": "docker compose -f docker-compose.local.yaml up --build",
     "server:localLoki": "docker compose -f docker-compose-local-loki.dev.yaml up --build",
-    "server:ci": "docker compose -f docker-compose.dev.yaml up --build -d",
+    "server:ci": "docker compose -f docker-compose.dev.yaml up --build --attach-dependencies",
     "sign": "npx --yes @grafana/sign-plugin@latest",
     "prepare": "husky",
     "docs": "cd docs && make docs",
