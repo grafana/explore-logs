@@ -1,7 +1,7 @@
 import { config, useReturnToPrevious } from '@grafana/runtime';
 import { LinkButton } from '@grafana/ui';
 import React, { useMemo } from 'react';
-import { replaceSlash } from 'services/extensions/links';
+import { escapeURLDelimiters, replaceEscapeChars, replaceSlash, stringifyAdHocValues } from 'services/extensions/links';
 import { OpenInExploreLogsButtonProps } from './types';
 import { AbstractLabelOperator } from '@grafana/data';
 import { LabelFilterOp } from 'services/filterTypes';
@@ -35,7 +35,9 @@ export default function OpenInExploreLogsButton({
     }
 
     const url = new URL(
-      `${config.appSubUrl || config.appUrl}a/grafana-lokiexplore-app/explore/${mainLabel.name}/${mainLabel.value}/logs`
+      `${config.appSubUrl || config.appUrl}a/grafana-lokiexplore-app/explore/${mainLabel.name}/${replaceSlash(
+        mainLabel.value
+      )}/logs`
     );
 
     datasourceUid && url.searchParams.set('var-datasource', datasourceUid);
@@ -43,9 +45,12 @@ export default function OpenInExploreLogsButton({
     to && url.searchParams.set('to', to);
 
     labelMatchers.forEach((labelMatcher) => {
-      let value = replaceSlash(labelMatcher.value);
-
-      url.searchParams.append('var-filters', `${labelMatcher.name}|${operatorMap[labelMatcher.operator]}|${value}`);
+      url.searchParams.append(
+        'var-filters',
+        `${labelMatcher.name}|${operatorMap[labelMatcher.operator]}|${escapeURLDelimiters(
+          stringifyAdHocValues(labelMatcher.value)
+        )},${escapeURLDelimiters(replaceEscapeChars(labelMatcher.value))}`
+      );
     });
 
     return url.toString();
