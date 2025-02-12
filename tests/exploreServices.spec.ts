@@ -145,7 +145,17 @@ test.describe('explore services page', () => {
       await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
       await page.getByLabel('Select detected_level').click();
       await explorePage.assertNotLoading();
-      await explorePage.scrollToBottom();
+      await explorePage.assertPanelsNotLoading();
+
+      // Scroll to the bottom of the page
+      await expect
+        .poll(async () => {
+          await explorePage.scrollToBottom();
+          return explorePage.getAllPanelsLocator().count();
+        })
+        .toBe(5);
+
+      // Assert that the button exists
       await page.getByTestId(testIds.exploreServiceDetails.buttonFilterInclude).nth(1).click();
 
       await expect(page.getByTestId(testIds.variables.levels.inputWrap)).toBeVisible();
