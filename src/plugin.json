@@ -59,7 +59,7 @@
       "exposedComponents": ["grafana-adaptivelogs-app/temporary-exemptions/v1"]
     }
   },
-  "preload": true,
+  "preload": false,
   "extensions": {
     "addedLinks": [
       {
