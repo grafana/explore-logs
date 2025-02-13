@@ -25,6 +25,8 @@ import { getSeriesVisibleRange, getVisibleRangeFrame } from 'services/logsFrame'
 import { getLogsVolumeOption, setLogsVolumeOption } from 'services/store';
 import { IndexScene } from '../IndexScene/IndexScene';
 import { LogsVolumeActions } from './LogsVolumeActions';
+import { AddFilterEvent } from './Breakdowns/AddToFiltersButton';
+import { LevelsVariableScene } from '../IndexScene/LevelsVariableScene';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
@@ -54,21 +56,40 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     const labels = getLabelsVariable(this);
     const fields = getFieldsVariable(this);
 
-    labels.subscribeToState((newState, prevState) => {
-      if (!areArraysEqual(newState.filters, prevState.filters)) {
-        this.setState({
-          panel: this.getVizPanel(),
-        });
-      }
-    });
+    this._subs.add(
+      labels.subscribeToState((newState, prevState) => {
+        if (!areArraysEqual(newState.filters, prevState.filters)) {
+          this.setState({
+            panel: this.getVizPanel(),
+          });
+        }
+      })
+    );
 
-    fields.subscribeToState((newState, prevState) => {
-      if (!areArraysEqual(newState.filters, prevState.filters)) {
-        this.setState({
-          panel: this.getVizPanel(),
-        });
-      }
-    });
+    this._subs.add(
+      fields.subscribeToState((newState, prevState) => {
+        if (!areArraysEqual(newState.filters, prevState.filters)) {
+          this.setState({
+            panel: this.getVizPanel(),
+          });
+        }
+      })
+    );
+
+    // Subscribe to filter event, call variable onFilterChange to trigger variable render, set filter state to trigger query in logs panel
+    this._subs.add(
+      this.subscribeToEvent(AddFilterEvent, (event) => {
+        if (event.key === LEVEL_VARIABLE_VALUE) {
+          const levelsVariableScene = sceneGraph.findObject(this, (obj) => obj instanceof LevelsVariableScene);
+          if (levelsVariableScene instanceof LevelsVariableScene) {
+            levelsVariableScene.onFilterChange();
+
+            const levelsVar = getLevelsVariable(this);
+            levelsVar.setState({ filters: levelsVar.state.filters });
+          }
+        }
+      })
+    );
   }
 
   private getTitle(totalLogsCount: number | undefined, logsCount: number | undefined) {
@@ -214,12 +235,8 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     );
 
     context.onToggleSeriesVisibility = (level: string, mode: SeriesVisibilityChangeMode) => {
-      // @TODO. We don't yet support filters with multiple values.
-      if (mode === SeriesVisibilityChangeMode.AppendToSelection) {
-        return;
-      }
-
       const action = toggleLevelFromFilter(level, this);
+      this.publishEvent(new AddFilterEvent('legend', 'include', LEVEL_VARIABLE_VALUE, level), true);
 
       reportAppInteraction(
         USER_EVENTS_PAGES.service_details,

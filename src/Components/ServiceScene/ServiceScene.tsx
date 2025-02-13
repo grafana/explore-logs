@@ -18,7 +18,7 @@ import {
 } from '@grafana/scenes';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { getQueryRunner, getResourceQueryRunner } from 'services/panel';
-import { buildDataQuery, buildResourceQuery } from 'services/query';
+import { buildDataQuery, buildResourceQuery, renderLevelsFilter } from 'services/query';
 import {
   EMPTY_VARIABLE_VALUE,
   isAdHocFilterValueUserInput,
@@ -318,7 +318,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.setSubscribeToLabelsVariable();
     this._subs.add(this.subscribeToFieldsVariable());
     this._subs.add(this.subscribeToMetadataVariable());
-    this._subs.add(this.subscribeToLevelsVariable());
+    this._subs.add(this.subscribeToLevelsVariableChangedEvent());
+    this._subs.add(this.subscribeToLevelsVariableFiltersState());
     this._subs.add(this.subscribeToDataSourceVariable());
     this._subs.add(this.subscribeToPatternsVariable());
     this._subs.add(this.subscribeToLineFiltersVariable());
@@ -384,10 +385,43 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
    * Subscribe to SceneVariableValueChangedEvent and run logs count and detectedFields on update.
    * In the levels variable renderer we update the ad-hoc filters, but we don't always want to immediately execute queries.
    */
-  private subscribeToLevelsVariable() {
+  private subscribeToLevelsVariableChangedEvent() {
     return getLevelsVariable(this).subscribeToEvent(SceneVariableValueChangedEvent, () => {
       this.state.$detectedFieldsData?.runQueries();
-      this.state.$logsCount?.runQueries();
+    });
+  }
+
+  /**
+   * Subscribe to actual filter changes and update the logs count
+   * @private
+   */
+  private subscribeToLevelsVariableFiltersState() {
+    const levelsVariable = getLevelsVariable(this);
+    return levelsVariable.subscribeToState((newState, prevState) => {
+      if (!areArraysEqual(newState.filters, prevState.filters)) {
+        // This is kinda hacky lol, but there isn't really a good way to specify that a particular query should interpolate things differently
+        // The only other solution I could think of was to create an invisible copy of each variable and sync the state from the visible variable to this one, and provide a different expression builder to the cloned variable.
+
+        // As long as we always check if the filters have changed before executing queries (or subscribe to the SceneVariableValueChangedEvent), this shouldn't introduce duplicate queries.
+        const previousExpressionBuilder = levelsVariable.state.expressionBuilder;
+        const previousExpression = levelsVariable.state.filterExpression;
+        levelsVariable.setState({
+          expressionBuilder: (filters) => renderLevelsFilter(filters, undefined),
+          filterExpression: renderLevelsFilter(levelsVariable.state.filters, undefined),
+        });
+
+        this.state.$logsCount?.runQueries();
+
+        // Wait for the logsCount query to be executed before swapping the expression builder back
+        this._subs.add(
+          this.state.$logsCount?.subscribeToState(() => {
+            levelsVariable.setState({
+              expressionBuilder: previousExpressionBuilder,
+              filterExpression: previousExpression,
+            });
+          })
+        );
+      }
     });
   }
 

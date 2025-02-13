@@ -529,7 +529,7 @@ test.describe('explore services breakdown page', () => {
     await page.keyboard.press('Escape');
 
     const panels = explorePage.getAllPanelsLocator();
-    await expect(panels).toHaveCount(3);
+    await expect(panels).toHaveCount(5);
     await expect(page.getByTestId(/data-testid Panel header debug|error/).getByTestId('header-container')).toHaveCount(
       2
     );

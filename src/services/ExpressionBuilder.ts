@@ -45,7 +45,7 @@ interface Options {
   /**
    * Keys to ignore
    */
-  ignoreKeys?: string[]
+  ignoreKeys?: string[];
 }
 
 export class ExpressionBuilder {
@@ -133,41 +133,37 @@ export class ExpressionBuilder {
   }
 
   public getLabelsExpr(options?: Partial<Options>): string {
-    const defaultOptions = { joinMatchFilters: true, decodeFilters: false }
-    this.options = {...defaultOptions, ...options};
+    const defaultOptions = { joinMatchFilters: true, decodeFilters: false };
+    this.options = { ...defaultOptions, ...options };
     return this.getExpr();
   }
 
   /**
    * Returns merged filters separated by pipe
    */
-  public getMetadataExpr(
-    options?: Partial<Options>
-  ): string {
+  public getMetadataExpr(options?: Partial<Options>): string {
     const defaultOptions = {
       filterSeparator: ' |',
       prefix: '| ',
       joinMatchFilters: false,
       decodeFilters: false,
-    }
-    this.options = {...defaultOptions, ...options};
+    };
+    this.options = { ...defaultOptions, ...options };
     return this.getExpr();
   }
 
   /**
    * Same as metadata, but only include operators supported
    */
-  public getLevelsExpr(
-    options?: Partial<Options>
-  ): string {
+  public getLevelsExpr(options?: Partial<Options>): string {
     const defaultOptions = {
       filterSeparator: ' |',
       prefix: '| ',
       joinMatchFilters: false,
       decodeFilters: false,
-    }
+    };
 
-    this.options = {...defaultOptions, ...options};
+    this.options = { ...defaultOptions, ...options };
     return this.getExpr();
   }
 
@@ -175,16 +171,14 @@ export class ExpressionBuilder {
    * Returns merged filters separated by pipe
    * JSON encodes value
    */
-  public getFieldsExpr(
-    options?: Partial<Options>
-  ): string {
+  public getFieldsExpr(options?: Partial<Options>): string {
     const defaultOptions = {
       filterSeparator: ' |',
       prefix: '| ',
       joinMatchFilters: false,
       decodeFilters: true,
-    }
-    this.options = {...defaultOptions, ...options};
+    };
+    this.options = { ...defaultOptions, ...options };
     return this.getExpr();
   }
 
@@ -275,7 +269,7 @@ export class ExpressionBuilder {
     const allFiltersString = trim(this.combineValues(allFilters, `${this.options.filterSeparator ?? ','} `));
 
     if (this.options.debug) {
-      console.info('labels expr', { allFiltersString });
+      console.info('DEBUG labels expr', { allFiltersString });
     }
 
     return allFiltersString;
@@ -618,7 +612,7 @@ export class ExpressionBuilder {
    * Groups all filters by operator and key
    */
   private groupFiltersByKey(filters: AdHocVariableFilter[]): Record<FilterOpType, Dictionary<AdHocFilterWithLabels[]>> {
-    const filteredFilters = filters.filter(f => !this.options.ignoreKeys?.includes(f.key))
+    const filteredFilters = filters.filter((f) => !this.options.ignoreKeys?.includes(f.key));
 
     const positiveMatch = filteredFilters.filter(
       (filter) => isOperatorInclusive(filter.operator) && !isOperatorRegex(filter.operator)

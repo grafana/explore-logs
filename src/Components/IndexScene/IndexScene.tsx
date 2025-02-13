@@ -549,7 +549,11 @@ function getContentScene(drillDownLabel?: string) {
   });
 }
 
-function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVariableFilter[], routeMatch?: OptionalRouteMatch) {
+function getVariableSet(
+  initialDatasourceUid: string,
+  initialFilters?: AdHocVariableFilter[],
+  routeMatch?: OptionalRouteMatch
+) {
   const labelVariable = new AdHocFiltersVariable({
     name: VAR_LABELS,
     datasource: EXPLORATION_DS,
@@ -557,7 +561,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     label: 'Labels',
     allowCustomValue: true,
     filters: initialFilters ?? [],
-    expressionBuilder: (filters) => renderLogQLLabelFilters(filters, [routeMatch?.params.breakdownLabel ?? '']),
+    expressionBuilder: renderLogQLLabelFilters,
     hide: VariableHide.dontHide,
     key: 'adhoc_service_filter',
     onAddCustomValue: onAddCustomAdHocValue,
@@ -617,7 +621,8 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     label: 'Error levels',
     applyMode: 'manual',
     layout: 'vertical',
-    expressionBuilder: (filters) => renderLevelsFilter(filters, ['detected_level']),
+    // Label names shouldn't have special chars that aren't allowed in the URL slug, or this could cause problems
+    expressionBuilder: (filters) => renderLevelsFilter(filters, [routeMatch?.params.breakdownLabel ?? '']),
     hide: VariableHide.hideVariable,
     supportsMultiValueOperators: true,
   });

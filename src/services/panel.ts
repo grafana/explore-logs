@@ -27,7 +27,6 @@ import { getLabelsFromSeries, getVisibleLevels } from './levels';
 import { LokiQuery, LokiQueryDirection } from './lokiQuery';
 import { LOGS_COUNT_QUERY_REFID, LOGS_PANEL_QUERY_REFID } from '../Components/ServiceScene/ServiceScene';
 import { getLogsPanelSortOrderFromStore, getLogsPanelSortOrderFromURL } from 'Components/ServiceScene/LogOptionsScene';
-import {getLevelsVariable} from "./variableGetters";
 
 const UNKNOWN_LEVEL_LOGS = 'logs';
 export function setLevelColorOverrides(overrides: FieldConfigOverridesBuilder<FieldConfig>) {
@@ -96,12 +95,11 @@ export function setLevelSeriesOverrides(levels: string[], overrideConfig: FieldC
 export function syncLogsPanelVisibleSeries(panel: VizPanel, series: DataFrame[], sceneRef: SceneObject) {
   const focusedLevels = getVisibleLevels(getLabelsFromSeries(series), sceneRef);
   const config = setLogsVolumeFieldConfigs(FieldConfigBuilders.timeseries()).setOverrides(
-      setLevelSeriesOverrides.bind(null, focusedLevels)
+    setLevelSeriesOverrides.bind(null, focusedLevels)
   );
   if (config instanceof FieldConfigBuilder) {
     panel.onFieldConfigChange(config.build(), true);
   }
-
 }
 function setColorByDisplayNameTransformation() {
   return (source: Observable<DataFrame[]>) => {

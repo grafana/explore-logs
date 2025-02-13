@@ -1,19 +1,12 @@
-import {
-  ControlsLabel,
-  SceneComponentProps,
-  SceneObjectBase,
-  SceneObjectState,
-  SceneVariableValueChangedEvent,
-} from '@grafana/scenes';
+import { ControlsLabel, SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import React from 'react';
-import {getLevelsVariable} from '../../services/variableGetters';
-import {GrafanaTheme2, MetricFindValue, SelectableValue} from '@grafana/data';
-import {css} from '@emotion/css';
-import {Icon, MultiSelect, useStyles2} from '@grafana/ui';
-import {LEVEL_VARIABLE_VALUE} from '../../services/variables';
-import {FilterOp} from '../../services/filterTypes';
-import {testIds} from '../../services/testIds';
-import {act} from "@testing-library/react";
+import { getLevelsVariable } from '../../services/variableGetters';
+import { GrafanaTheme2, MetricFindValue, SelectableValue } from '@grafana/data';
+import { css } from '@emotion/css';
+import { Icon, MultiSelect, useStyles2 } from '@grafana/ui';
+import { LEVEL_VARIABLE_VALUE } from '../../services/variables';
+import { FilterOp } from '../../services/filterTypes';
+import { testIds } from '../../services/testIds';
 
 type ChipOption = MetricFindValue & { selected?: boolean };
 export interface LevelsVariableSceneState extends SceneObjectState {
@@ -31,46 +24,18 @@ export class LevelsVariableScene extends SceneObjectBase<LevelsVariableSceneStat
   }
 
   onActivate() {
-    this.onFilterChange('activate');
-    const levelsVar = getLevelsVariable(this);
-    levelsVar.subscribeToEvent(SceneVariableValueChangedEvent, () => this.onFilterChange('sceneVariableValueChanged'));
-    // levelsVar.subscribeToState(newState => this.onFilterChange())
+    this.onFilterChange();
   }
 
-  public onFilterChange(context: string) {
+  public onFilterChange() {
     const levelsVar = getLevelsVariable(this);
-    console.log('onFiltersChange', {
-      filters: levelsVar.state.filters,
-      context
-    })
-
-    if(context === 'activate'){
-      this.setState({
-        options: levelsVar.state.filters.map((filter) => ({
-          text: filter.valueLabels?.[0] ?? filter.value,
-          selected: true,
-          value: filter.value,
-        })),
-      });
-    }else{
-      this.setState({
-        options: this.state.options?.map(opt => {
-          if(levelsVar.state.filters.find(filter => filter.value === opt.value)){
-            return {
-              ...opt,
-              selected: true,
-            }
-          }
-          return {
-            ...opt,
-            selected: false
-          }
-        })
-      })
-    }
-
-
-
+    this.setState({
+      options: levelsVar.state.filters.map((filter) => ({
+        text: filter.valueLabels?.[0] ?? filter.value,
+        selected: true,
+        value: filter.value,
+      })),
+    });
   }
 
   getTagValues = () => {

@@ -261,42 +261,45 @@ describe('toggleLevelFromFilter', () => {
   it('Sets the filter when it is empty', () => {
     setup([]);
 
-    expect(toggleLevelFromFilter('info', scene)).toBe('add');
-    expect(replaceFilter).toHaveBeenCalledTimes(1);
+    expect(toggleLevelFromFilter('info', scene)).toBe('include');
+    expect(addToFilters).toHaveBeenCalledTimes(1);
   });
 
   it('Overwrites the filter if exists with a different value', () => {
     setup([{ key: 'detected_level', operator: FilterOp.Equal, value: 'error' }]);
 
-    expect(toggleLevelFromFilter('info', scene)).toBe('add');
-    expect(replaceFilter).toHaveBeenCalledTimes(1);
+    expect(toggleLevelFromFilter('info', scene)).toBe('include');
+    expect(addToFilters).toHaveBeenCalledTimes(1);
   });
 
   it('Toggles it off if the filter with the same value exists', () => {
     setup([{ key: 'detected_level', operator: FilterOp.Equal, value: 'info' }]);
 
-    expect(toggleLevelFromFilter('info', scene)).toBe('remove');
+    expect(toggleLevelFromFilter('info', scene)).toBe('toggle');
     expect(addToFilters).toHaveBeenCalledTimes(1);
   });
 
   it('Toggles it off if a regex filter with the exact value exists', () => {
-    setup([{ key: 'detected_level', operator: FilterOp.RegexEqual, value: 'info' }]);
+    setup([{ key: 'detected_level', operator: FilterOp.Equal, value: 'info' }]);
 
-    expect(toggleLevelFromFilter('info', scene)).toBe('remove');
+    expect(toggleLevelFromFilter('info', scene)).toBe('toggle');
     expect(addToFilters).toHaveBeenCalledTimes(1);
   });
 
   it('Toggles it off if a regex filter containing the value exists', () => {
-    setup([{ key: 'detected_level', operator: FilterOp.RegexEqual, value: 'info|warn' }]);
+    setup([
+      { key: 'detected_level', operator: FilterOp.Equal, value: 'info' },
+      { key: 'detected_level', operator: FilterOp.Equal, value: 'warn' },
+    ]);
 
-    expect(toggleLevelFromFilter('info', scene)).toBe('remove');
+    expect(toggleLevelFromFilter('info', scene)).toBe('toggle');
     expect(addToFilters).toHaveBeenCalledTimes(1);
   });
 
   it('Handles empty log levels', () => {
     setup([]);
 
-    expect(toggleLevelFromFilter('logs', scene)).toBe('add');
-    expect(replaceFilter).toHaveBeenCalledWith(LEVEL_NAME, '""', 'include', scene, VAR_LEVELS);
+    expect(toggleLevelFromFilter('logs', scene)).toBe('include');
+    expect(addToFilters).toHaveBeenCalledWith(LEVEL_NAME, '""', 'include', scene, VAR_LEVELS);
   });
 });

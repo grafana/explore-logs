@@ -12,38 +12,38 @@ import {
   SceneObjectState,
   SceneReactObject,
 } from '@grafana/scenes';
-import {LayoutSwitcher} from './LayoutSwitcher';
-import {getLabelValue} from './SortByScene';
-import {DrawStyle, LoadingPlaceholder, StackingMode, useStyles2} from '@grafana/ui';
-import {getQueryRunner, setLevelColorOverrides} from '../../../services/panel';
-import {getSortByPreference} from '../../../services/store';
-import {AppEvents, DataQueryError, LoadingState} from '@grafana/data';
-import {ByFrameRepeater} from './ByFrameRepeater';
-import {getFilterBreakdownValueScene} from '../../../services/fields';
+import { LayoutSwitcher } from './LayoutSwitcher';
+import { getLabelValue } from './SortByScene';
+import { DrawStyle, LoadingPlaceholder, StackingMode, useStyles2 } from '@grafana/ui';
+import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel';
+import { getSortByPreference } from '../../../services/store';
+import { AppEvents, DataQueryError, LoadingState } from '@grafana/data';
+import { ByFrameRepeater } from './ByFrameRepeater';
+import { getFilterBreakdownValueScene } from '../../../services/fields';
 import {
   ALL_VARIABLE_VALUE,
   LEVEL_VARIABLE_VALUE,
   VAR_LABEL_GROUP_BY_EXPR,
-  VAR_LABELS
+  VAR_LABELS,
 } from '../../../services/variables';
 import React from 'react';
-import {LabelBreakdownScene} from './LabelBreakdownScene';
-import {navigateToDrilldownPage} from '../../../services/navigate';
-import {PageSlugs} from '../../../services/routing';
-import {ServiceScene} from '../ServiceScene';
-import {AddFilterEvent} from './AddToFiltersButton';
-import {DEFAULT_SORT_BY} from '../../../services/sorting';
-import {buildLabelsQuery, LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS} from '../../../services/labels';
-import {getAppEvents} from '@grafana/runtime';
-import {getLabelGroupByVariable, getLabelsVariable, getLevelsVariable} from '../../../services/variableGetters';
-import {getPanelWrapperStyles, PanelMenu} from '../../Panels/PanelMenu';
-import {NoMatchingLabelsScene} from './NoMatchingLabelsScene';
-import {EmptyLayoutScene} from './EmptyLayoutScene';
-import {IndexScene} from '../../IndexScene/IndexScene';
-import {clearVariables, getVariablesThatCanBeCleared} from '../../../services/variableHelpers';
-import {ValueSummaryPanelScene} from './Panels/ValueSummary';
-import {LevelsVariableScene} from "../../IndexScene/LevelsVariableScene";
-import {renderLevelsFilter, renderLogQLLabelFilters} from "../../../services/query";
+import { LabelBreakdownScene } from './LabelBreakdownScene';
+import { AddFilterEvent } from './AddToFiltersButton';
+import { DEFAULT_SORT_BY } from '../../../services/sorting';
+import { buildLabelsQuery, LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS } from '../../../services/labels';
+import { getAppEvents } from '@grafana/runtime';
+import { getLabelGroupByVariable, getLabelsVariable, getLevelsVariable } from '../../../services/variableGetters';
+import { getPanelWrapperStyles, PanelMenu } from '../../Panels/PanelMenu';
+import { NoMatchingLabelsScene } from './NoMatchingLabelsScene';
+import { EmptyLayoutScene } from './EmptyLayoutScene';
+import { IndexScene } from '../../IndexScene/IndexScene';
+import { clearVariables, getVariablesThatCanBeCleared } from '../../../services/variableHelpers';
+import { ValueSummaryPanelScene } from './Panels/ValueSummary';
+import { LevelsVariableScene } from '../../IndexScene/LevelsVariableScene';
+import { renderLevelsFilter, renderLogQLLabelFilters } from '../../../services/query';
+import { navigateToDrilldownPage } from '../../../services/navigate';
+import { PageSlugs } from '../../../services/routing';
+import { ServiceScene } from '../ServiceScene';
 
 type DisplayError = DataQueryError & { displayed: boolean };
 type DisplayErrors = Record<string, DisplayError>;
@@ -76,18 +76,18 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
     const variable = getLabelGroupByVariable(this);
     const tagKey = String(variable.state.value);
 
-    if(tagKey === LEVEL_VARIABLE_VALUE){
+    if (tagKey === LEVEL_VARIABLE_VALUE) {
       const levelsVar = getLevelsVariable(this);
       levelsVar.setState({
         expressionBuilder: (filters) => renderLevelsFilter(filters, [tagKey]),
-      })
-    }else{
-      const labelsVar = getLabelsVariable(this);
-      labelsVar.setState({
-        expressionBuilder: (filters) => renderLogQLLabelFilters(filters, [tagKey]),
-      })
+      });
     }
-
+    // else{
+    //       const labelsVar = getLabelsVariable(this);
+    //       labelsVar.setState({
+    //         expressionBuilder: (filters) => renderLogQLLabelFilters(filters, [tagKey]),
+    //       })
+    //     }
 
     const groupByVariable = getLabelGroupByVariable(this);
     this._subs.add(
@@ -101,24 +101,18 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       })
     );
 
-    this.subscribeToEvent(AddFilterEvent, (event) => {
-      this.setState({
-        lastFilterEvent: event,
-      });
+    this._subs.add(
+      this.subscribeToEvent(AddFilterEvent, (event) => {
+        this.setState({
+          lastFilterEvent: event,
+        });
 
-      const levelsVariableScene = sceneGraph.findObject(this, (obj) => obj instanceof LevelsVariableScene)
-      if(levelsVariableScene instanceof LevelsVariableScene){
-        console.log('LabelValuesBreakdownScene: AddFilterEvent', event)
-
-        if(event.source !== 'legend'){
-          console.log('NON LEGEND EVENT')
-          levelsVariableScene.onFilterChange('nonLegend')
-        }else{
-          console.log('LEGEND EVENT')
-          levelsVariableScene.onFilterChange('Legend')
+        const levelsVariableScene = sceneGraph.findObject(this, (obj) => obj instanceof LevelsVariableScene);
+        if (levelsVariableScene instanceof LevelsVariableScene) {
+          levelsVariableScene.onFilterChange();
         }
-      }
-    });
+      })
+    );
 
     this._subs.add(
       this.state.$data?.subscribeToState((newState, prevState) => {
@@ -129,13 +123,13 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
     return () => {
       const levelsVar = getLevelsVariable(this);
       levelsVar.setState({
-        expressionBuilder: (filters) => renderLevelsFilter(filters),
-      })
+        expressionBuilder: renderLevelsFilter,
+      });
 
-      const labelsVar = getLabelsVariable(this);
-      labelsVar.setState({
-        expressionBuilder: (filters) => renderLogQLLabelFilters(filters),
-      })
+      // const labelsVar = getLabelsVariable(this);
+      // labelsVar.setState({
+      //   expressionBuilder: (filters) => renderLogQLLabelFilters(filters),
+      // })
     };
   }
 
@@ -155,15 +149,18 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       // No panels for the user to select, presumably because everything has been excluded
       const event = this.state.lastFilterEvent;
 
-      // @todo discuss: Do we want to let users exclude all labels? Or should we redirect when excluding the penultimate panel?
-      if (event) {
+      const variable = getLabelGroupByVariable(this);
+      const variableState = variable.state;
+      const tagKey = String(variableState?.value);
+
+      if (event && tagKey !== LEVEL_VARIABLE_VALUE) {
         if (event.operator === 'exclude' && newState.data.series.length < 1) {
-          // this.navigateToLabels();
+          this.navigateToLabels();
         }
 
         // @todo discuss: wouldn't include always return in 1 result? Do we need to wait for the query to run or should we navigate on receiving the include event and cancel the ongoing query?
         if (event.operator === 'include' && newState.data.series.length <= 1) {
-          // this.navigateToLabels();
+          this.navigateToLabels();
         }
       }
     }
@@ -240,11 +237,12 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
     });
     navigateToDrilldownPage(PageSlugs.labels, sceneGraph.getAncestor(this, ServiceScene));
   }
+
   private build(): LayoutSwitcher {
     const variable = getLabelGroupByVariable(this);
     const variableState = variable.state;
-    const labelBreakdownScene = sceneGraph.getAncestor(this, LabelBreakdownScene);
     const tagKey = String(variableState?.value);
+    const labelBreakdownScene = sceneGraph.getAncestor(this, LabelBreakdownScene);
 
     let bodyOpts = PanelBuilders.timeseries();
     bodyOpts = bodyOpts
