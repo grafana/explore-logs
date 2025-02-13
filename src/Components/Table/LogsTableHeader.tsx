@@ -78,11 +78,7 @@ export const LogsTableHeader = (props: LogsTableHeaderProps) => {
   const isBodyField = props.field.name === getBodyName(logsFrame);
 
   const onLogTextToggle = () => {
-    if (bodyState === LogLineState.text) {
-      setBodyState(LogLineState.labels);
-    } else {
-      setBodyState(LogLineState.text);
-    }
+    setBodyState(bodyState === LogLineState.text ? LogLineState.labels : LogLineState.text);
   };
 
   return (
