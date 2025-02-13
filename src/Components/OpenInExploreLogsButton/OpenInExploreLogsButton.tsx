@@ -37,7 +37,7 @@ export default function OpenInExploreLogsButton({
 
     if (
       !mainLabel ||
-      // we can't open in explore logs if main label matcher is smth different from equal
+      // we can't open in explore logs if main label matcher is something different from equal
       mainLabel?.operator !== AbstractLabelOperator.Equal
     ) {
       return null;
