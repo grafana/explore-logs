@@ -6,7 +6,7 @@ import React, { useRef } from 'react';
 import { PanelChrome, useStyles2 } from '@grafana/ui';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 import { css } from '@emotion/css';
-import { addAdHocFilter, AddFilterEvent } from './Breakdowns/AddToFiltersButton';
+import { addAdHocFilter } from './Breakdowns/AddToFiltersButton';
 import { areArraysStrictlyEqual } from '../../services/comparison';
 import { getLogsPanelFrame } from './ServiceScene';
 import { getVariableForLabel } from '../../services/fields';
@@ -14,7 +14,6 @@ import { PanelMenu } from '../Panels/PanelMenu';
 import { LogLineState } from '../Table/Context/TableColumnsContext';
 import { LEVEL_VARIABLE_VALUE } from '../../services/variables';
 import { LevelsVariableScene } from '../IndexScene/LevelsVariableScene';
-import { getLevelsVariable } from '../../services/variableGetters';
 
 interface LogsTableSceneState extends SceneObjectState {
   menu?: PanelMenu;
