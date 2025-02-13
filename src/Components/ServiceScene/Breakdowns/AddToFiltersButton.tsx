@@ -28,10 +28,11 @@ import { addToFavorites } from '../../../services/favorites';
 export interface AddToFiltersButtonState extends SceneObjectState {
   frame: DataFrame;
   variableName: InterpolatedFilterType;
+  hideExclude?: boolean
 }
 
 export class AddFilterEvent extends BusEventBase {
-  constructor(public operator: FilterType | NumericFilterType, public key: string, public value: string) {
+  constructor(public source: 'legend' | 'filterButton' | 'variable', public operator?: FilterType | NumericFilterType, public key?: string, public value?: string) {
     super();
   }
   public static type = 'add-filter';
@@ -172,11 +173,11 @@ export function addNumericFilter(
     },
   ];
 
-  scene.publishEvent(new AddFilterEvent(operator, key, value), true);
-
   variable.setState({
     filters,
   });
+
+  scene.publishEvent(new AddFilterEvent('filterButton', operator, key, value), true);
 }
 
 export function addToFilters(
@@ -230,11 +231,11 @@ export function addToFilters(
     ];
   }
 
-  scene.publishEvent(new AddFilterEvent(operator, key, value), true);
-
   variable.setState({
     filters,
   });
+
+  scene.publishEvent(new AddFilterEvent('filterButton', operator, key, value), true);
 }
 
 export function replaceFilter(
@@ -280,6 +281,8 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
 
     addToFilters(filter.name, filter.value, type, this, this.state.variableName);
     const variable = getUIAdHocVariable(this.state.variableName, filter.name, this);
+    // @todo instead of force rendering can we put the isIncluded, isExcluded in the scene state?
+    this.forceRender()
 
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
@@ -319,7 +322,11 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
   };
 
   public static Component = ({ model }: SceneComponentProps<AddToFiltersButton>) => {
+
+    const { hideExclude} = model.useState()
     const { isIncluded, isExcluded } = model.isSelected();
+
+    // console.log('AddToFiltersButton render', {isIncluded, isExcluded, hideExclude})
     return (
       <FilterButton
         buttonFill={'outline'}
@@ -328,6 +335,7 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
         onInclude={() => model.onClick('include')}
         onClear={() => model.onClick('clear')}
         onExclude={() => model.onClick('exclude')}
+        hideExclude={hideExclude}
       />
     );
   };
@@ -338,6 +346,7 @@ const getFilter = (frame: DataFrame) => {
   const filterNameAndValueObj = frame.fields[1]?.labels ?? {};
   // Sanity check - filter should have only one key-value pair
   if (Object.keys(filterNameAndValueObj).length !== 1) {
+    console.warn('getFilter, keys length unexpected')
     return;
   }
   const name = Object.keys(filterNameAndValueObj)[0];

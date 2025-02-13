@@ -6,13 +6,14 @@ import {
   SceneVariableValueChangedEvent,
 } from '@grafana/scenes';
 import React from 'react';
-import { getLevelsVariable } from '../../services/variableGetters';
-import { GrafanaTheme2, MetricFindValue, SelectableValue } from '@grafana/data';
-import { css } from '@emotion/css';
-import { Icon, MultiSelect, useStyles2 } from '@grafana/ui';
-import { LEVEL_VARIABLE_VALUE } from '../../services/variables';
-import { FilterOp } from '../../services/filterTypes';
-import { testIds } from '../../services/testIds';
+import {getLevelsVariable} from '../../services/variableGetters';
+import {GrafanaTheme2, MetricFindValue, SelectableValue} from '@grafana/data';
+import {css} from '@emotion/css';
+import {Icon, MultiSelect, useStyles2} from '@grafana/ui';
+import {LEVEL_VARIABLE_VALUE} from '../../services/variables';
+import {FilterOp} from '../../services/filterTypes';
+import {testIds} from '../../services/testIds';
+import {act} from "@testing-library/react";
 
 type ChipOption = MetricFindValue & { selected?: boolean };
 export interface LevelsVariableSceneState extends SceneObjectState {
@@ -30,14 +31,20 @@ export class LevelsVariableScene extends SceneObjectBase<LevelsVariableSceneStat
   }
 
   onActivate() {
-    this.onFilterChange();
+    this.onFilterChange('activate');
     const levelsVar = getLevelsVariable(this);
-    levelsVar.subscribeToEvent(SceneVariableValueChangedEvent, () => this.onFilterChange());
+    levelsVar.subscribeToEvent(SceneVariableValueChangedEvent, () => this.onFilterChange('sceneVariableValueChanged'));
+    // levelsVar.subscribeToState(newState => this.onFilterChange())
   }
 
-  private onFilterChange() {
+  public onFilterChange(context: string) {
     const levelsVar = getLevelsVariable(this);
-    if (levelsVar.state.filters.length) {
+    console.log('onFiltersChange', {
+      filters: levelsVar.state.filters,
+      context
+    })
+
+    if(context === 'activate'){
       this.setState({
         options: levelsVar.state.filters.map((filter) => ({
           text: filter.valueLabels?.[0] ?? filter.value,
@@ -45,7 +52,25 @@ export class LevelsVariableScene extends SceneObjectBase<LevelsVariableSceneStat
           value: filter.value,
         })),
       });
+    }else{
+      this.setState({
+        options: this.state.options?.map(opt => {
+          if(levelsVar.state.filters.find(filter => filter.value === opt.value)){
+            return {
+              ...opt,
+              selected: true,
+            }
+          }
+          return {
+            ...opt,
+            selected: false
+          }
+        })
+      })
     }
+
+
+
   }
 
   getTagValues = () => {
@@ -155,50 +180,5 @@ export class LevelsVariableScene extends SceneObjectBase<LevelsVariableSceneStat
 const getStyles = (theme: GrafanaTheme2) => ({
   flex: css({
     flex: '1',
-  }),
-  removeButton: css({
-    marginInline: theme.spacing(0.5),
-    cursor: 'pointer',
-    '&:hover': {
-      color: theme.colors.text.primary,
-    },
-  }),
-  pillText: css({
-    maxWidth: '200px',
-    width: '100%',
-    textOverflow: 'ellipsis',
-    overflow: 'hidden',
-  }),
-  tooltipText: css({
-    textAlign: 'center',
-  }),
-  comboboxWrapper: css({
-    display: 'flex',
-    flexWrap: 'nowrap',
-    alignItems: 'center',
-    columnGap: theme.spacing(1),
-    rowGap: theme.spacing(0.5),
-    minHeight: theme.spacing(4),
-    backgroundColor: theme.components.input.background,
-    border: `1px solid ${theme.colors.border.strong}`,
-    borderRadius: theme.shape.radius.default,
-    paddingInline: theme.spacing(1),
-    paddingBlock: theme.spacing(0.5),
-    flexGrow: 1,
-  }),
-  comboboxFocusOutline: css({
-    '&:focus-within': {
-      outline: '2px dotted transparent',
-      outlineOffset: '2px',
-      boxShadow: `0 0 0 2px ${theme.colors.background.canvas}, 0 0 0px 4px ${theme.colors.primary.main}`,
-      transitionTimingFunction: `cubic-bezier(0.19, 1, 0.22, 1)`,
-      transitionDuration: '0.2s',
-      transitionProperty: 'outline, outline-offset, box-shadow',
-      zIndex: 2,
-    },
-  }),
-  filterIcon: css({
-    color: theme.colors.text.secondary,
-    alignSelf: 'center',
   }),
 });

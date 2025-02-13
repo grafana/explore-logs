@@ -41,6 +41,11 @@ interface Options {
    * Sets if the values are JSON encoded
    */
   decodeFilters: boolean;
+
+  /**
+   * Keys to ignore
+   */
+  ignoreKeys?: string[]
 }
 
 export class ExpressionBuilder {
@@ -83,7 +88,7 @@ export class ExpressionBuilder {
    * Returns logQL expression for AdHocFilterWithLabels[]
    * Merges multiple include matches into regex
    */
-  public getLabelsExpr(): string {
+  protected getExpr(): string {
     let {
       equalsFilters,
       notEqualsFilters,
@@ -127,34 +132,43 @@ export class ExpressionBuilder {
     return '';
   }
 
+  public getLabelsExpr(options?: Partial<Options>): string {
+    const defaultOptions = { joinMatchFilters: true, decodeFilters: false }
+    this.options = {...defaultOptions, ...options};
+    return this.getExpr();
+  }
+
   /**
    * Returns merged filters separated by pipe
    */
   public getMetadataExpr(
-    options: Options = {
+    options?: Partial<Options>
+  ): string {
+    const defaultOptions = {
       filterSeparator: ' |',
       prefix: '| ',
       joinMatchFilters: false,
       decodeFilters: false,
     }
-  ): string {
-    this.options = options;
-    return this.getLabelsExpr();
+    this.options = {...defaultOptions, ...options};
+    return this.getExpr();
   }
 
   /**
    * Same as metadata, but only include operators supported
    */
   public getLevelsExpr(
-    options: Options = {
+    options?: Partial<Options>
+  ): string {
+    const defaultOptions = {
       filterSeparator: ' |',
       prefix: '| ',
       joinMatchFilters: false,
       decodeFilters: false,
     }
-  ): string {
-    this.options = options;
-    return this.getLabelsExpr();
+
+    this.options = {...defaultOptions, ...options};
+    return this.getExpr();
   }
 
   /**
@@ -162,15 +176,16 @@ export class ExpressionBuilder {
    * JSON encodes value
    */
   public getFieldsExpr(
-    options: Options = {
+    options?: Partial<Options>
+  ): string {
+    const defaultOptions = {
       filterSeparator: ' |',
       prefix: '| ',
       joinMatchFilters: false,
       decodeFilters: true,
     }
-  ): string {
-    this.options = options;
-    return this.getLabelsExpr();
+    this.options = {...defaultOptions, ...options};
+    return this.getExpr();
   }
 
   /**
@@ -603,22 +618,24 @@ export class ExpressionBuilder {
    * Groups all filters by operator and key
    */
   private groupFiltersByKey(filters: AdHocVariableFilter[]): Record<FilterOpType, Dictionary<AdHocFilterWithLabels[]>> {
-    const positiveMatch = filters.filter(
+    const filteredFilters = filters.filter(f => !this.options.ignoreKeys?.includes(f.key))
+
+    const positiveMatch = filteredFilters.filter(
       (filter) => isOperatorInclusive(filter.operator) && !isOperatorRegex(filter.operator)
     );
-    const positiveRegex = filters.filter(
+    const positiveRegex = filteredFilters.filter(
       (filter) => isOperatorInclusive(filter.operator) && isOperatorRegex(filter.operator)
     );
-    const negativeMatch = filters.filter(
+    const negativeMatch = filteredFilters.filter(
       (filter) => isOperatorExclusive(filter.operator) && !isOperatorRegex(filter.operator)
     );
-    const negativeRegex = filters.filter(
+    const negativeRegex = filteredFilters.filter(
       (filter) => isOperatorExclusive(filter.operator) && isOperatorRegex(filter.operator)
     );
-    const gt = filters.filter((filter) => filter.operator === FilterOp.gt);
-    const gte = filters.filter((filter) => filter.operator === FilterOp.gte);
-    const lt = filters.filter((filter) => filter.operator === FilterOp.lt);
-    const lte = filters.filter((filter) => filter.operator === FilterOp.lte);
+    const gt = filteredFilters.filter((filter) => filter.operator === FilterOp.gt);
+    const gte = filteredFilters.filter((filter) => filter.operator === FilterOp.gte);
+    const lt = filteredFilters.filter((filter) => filter.operator === FilterOp.lt);
+    const lte = filteredFilters.filter((filter) => filter.operator === FilterOp.lte);
 
     // Field ops
     const positiveMatchGroup = groupBy(positiveMatch, (filter) => filter.key);

@@ -123,7 +123,8 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   public constructor(state: Partial<IndexSceneState>) {
     const { variablesScene, unsub } = getVariableSet(
       getLastUsedDataSourceFromStorage() ?? 'grafanacloud-logs',
-      state.initialFilters
+      state.initialFilters,
+      state.routeMatch
     );
 
     const controls: SceneObject[] = [
@@ -548,7 +549,7 @@ function getContentScene(drillDownLabel?: string) {
   });
 }
 
-function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVariableFilter[]) {
+function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVariableFilter[], routeMatch?: OptionalRouteMatch) {
   const labelVariable = new AdHocFiltersVariable({
     name: VAR_LABELS,
     datasource: EXPLORATION_DS,
@@ -556,7 +557,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     label: 'Labels',
     allowCustomValue: true,
     filters: initialFilters ?? [],
-    expressionBuilder: renderLogQLLabelFilters,
+    expressionBuilder: (filters) => renderLogQLLabelFilters(filters, [routeMatch?.params.breakdownLabel ?? '']),
     hide: VariableHide.dontHide,
     key: 'adhoc_service_filter',
     onAddCustomValue: onAddCustomAdHocValue,
@@ -616,7 +617,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     label: 'Error levels',
     applyMode: 'manual',
     layout: 'vertical',
-    expressionBuilder: renderLevelsFilter,
+    expressionBuilder: (filters) => renderLevelsFilter(filters, ['detected_level']),
     hide: VariableHide.hideVariable,
     supportsMultiValueOperators: true,
   });
