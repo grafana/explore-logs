@@ -379,3 +379,5 @@ export enum ComboBoxIndex {
   labels,
   fields,
 }
+
+export const serviceSelectionPaginationTextMatch = /of \d+/;
