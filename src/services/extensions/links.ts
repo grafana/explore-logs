@@ -1,5 +1,10 @@
 // Warning: This file (and any imports) are included in the main bundle with Grafana in order to provide link extension support in Grafana core, in an effort to keep Grafana loading quickly, please do not add any unnecessary imports to this file and run the bundle analyzer before committing any changes!
-import { PluginExtensionLinkConfig, PluginExtensionPanelContext, PluginExtensionPoints } from '@grafana/data';
+import {
+  DataSourceInstanceSettings,
+  PluginExtensionAddedLinkConfig,
+  PluginExtensionPanelContext,
+  PluginExtensionPoints,
+} from '@grafana/data';
 
 import {
   addAdHocFilterUserInputPrefix,
@@ -23,21 +28,22 @@ import { isOperatorInclusive } from '../operatorHelpers';
 
 const title = 'Open in Explore Logs';
 const description = 'Open current query in the Explore Logs view';
-const icon = 'gf-logs';
+const icon = 'gf-logs' as const;
 
 export const ExtensionPoints = {
   MetricExploration: 'grafana-lokiexplore-app/metric-exploration/v1',
 } as const;
 
+type SettingsExtensionContext = {
+  dataSource: DataSourceInstanceSettings;
+};
+
 export type LinkConfigs = Array<
   {
     targets: string | string[];
-    // eslint-disable-next-line deprecation/deprecation
-  } & Omit<PluginExtensionLinkConfig<PluginExtensionPanelContext>, 'type' | 'extensionPointId'>
+  } & Omit<PluginExtensionAddedLinkConfig<PluginExtensionPanelContext>, 'type' | 'extensionPointId'>
 >;
 
-// `plugin.addLink` requires these types; unfortunately, the correct `PluginExtensionAddedLinkConfig` type is not exported with 11.2.x
-// TODO: fix this type when we move to `@grafana/data` 11.3.x
 export const linkConfigs: LinkConfigs = [
   {
     targets: PluginExtensionPoints.DashboardPanelMenu,
@@ -55,22 +61,23 @@ export const linkConfigs: LinkConfigs = [
     path: createAppUrl(),
     configure: contextToLink,
   },
-  {
-    targets: 'grafana/datasources/config/test/successful/explore/v1',
-    title: 'Open in Grafana Logs Drilldown',
-    description: 'Open current data source in Grafana Logs Drilldown',
-    icon,
-    path: createAppUrl(),
-    configure: (context: any) => {
-      if (context.dataSource.type !== 'loki') {
-        return undefined;
-      }
-      return {
-        path: createAppUrl(),
-      };
-    },
-  },
 ];
+
+export const settingsLink = {
+  targets: 'grafana/datasources/config/test/successful/explore/v1',
+  title: 'Open in Grafana Logs Drilldown',
+  description: 'Open current data source in Grafana Logs Drilldown',
+  icon,
+  path: createAppUrl(),
+  configure: (context?: SettingsExtensionContext) => {
+    if (context?.dataSource.type !== 'loki') {
+      return undefined;
+    }
+    return {
+      path: createAppUrl('/explore', setUrlParameter(UrlParameters.DatasourceId, context.dataSource.uid)),
+    };
+  },
+};
 
 function stringifyValues(value?: string): string {
   if (!value) {
