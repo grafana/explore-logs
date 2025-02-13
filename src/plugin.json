@@ -66,6 +66,11 @@
         "targets": ["grafana/dashboard/panel/menu", "grafana/explore/toolbar/action"],
         "title": "Open in Explore Logs",
         "description": "Open current query in the Explore Logs view"
+      },
+      {
+        "targets": ["grafana/datasources/config/test/successful/explore/v1"],
+        "title": "Open in Grafana Logs Drilldown",
+        "description": "Open current data source in Grafana Logs Drilldown"
       }
     ],
     "extensionPoints": [

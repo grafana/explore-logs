@@ -55,6 +55,21 @@ export const linkConfigs: LinkConfigs = [
     path: createAppUrl(),
     configure: contextToLink,
   },
+  {
+    targets: 'grafana/datasources/config/test/successful/explore/v1',
+    title: 'Open in Grafana Logs Drilldown',
+    description: 'Open current data source in Grafana Logs Drilldown',
+    icon,
+    path: createAppUrl(),
+    configure: (context: any) => {
+      if (context.dataSource.type !== 'loki') {
+        return undefined;
+      }
+      return {
+        path: createAppUrl(),
+      };
+    },
+  },
 ];
 
 function stringifyValues(value?: string): string {
