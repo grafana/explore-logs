@@ -99,6 +99,8 @@ export const TableColumnContextProvider = ({
   clearSelectedLine,
   setUrlTableBodyState,
   urlTableBodyState,
+  showColumnManagementDrawer,
+  isColumnManagementActive,
 }: {
   children: ReactNode;
   initialColumns: FieldNameMetaStore;
@@ -107,11 +109,13 @@ export const TableColumnContextProvider = ({
   clearSelectedLine: () => void;
   setUrlTableBodyState: (logLineState: LogLineState) => void;
   urlTableBodyState?: LogLineState;
+  showColumnManagementDrawer: (isActive: boolean) => void;
+  isColumnManagementActive: boolean;
 }) => {
   const [columns, setColumns] = useState<FieldNameMetaStore>(removeExtraColumns(initialColumns));
   const [bodyState, setBodyState] = useState<LogLineState>(urlTableBodyState ?? LogLineState.auto);
   const [filteredColumns, setFilteredColumns] = useState<FieldNameMetaStore | undefined>(undefined);
-  const [visible, setVisible] = useState(false);
+
   const initialColumnWidths = getColumnWidthsFromLocalStorage();
   const [columnWidthMap, setColumnWidthMapState] = useState<Record<string, number>>(initialColumnWidths);
   const setColumnWidthMap = (map: Record<string, number>) => {
@@ -163,9 +167,12 @@ export const TableColumnContextProvider = ({
     clearSelectedLine();
   };
 
-  const handleSetVisible = useCallback((isVisible: boolean) => {
-    setVisible(isVisible);
-  }, []);
+  const handleSetVisible = useCallback(
+    (isVisible: boolean) => {
+      showColumnManagementDrawer(isVisible);
+    },
+    [showColumnManagementDrawer]
+  );
 
   // When the parent component recalculates new columns on dataframe change, we need to update or the column UI will be stale!
   useEffect(() => {
@@ -201,7 +208,7 @@ export const TableColumnContextProvider = ({
         filteredColumns,
         columns,
         setColumns: handleSetColumns,
-        visible: visible,
+        visible: isColumnManagementActive,
         setVisible: handleSetVisible,
         clearSelectedLine: handleClearSelectedLine,
       }}
