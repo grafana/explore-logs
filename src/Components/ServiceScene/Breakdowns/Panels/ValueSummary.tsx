@@ -1,6 +1,7 @@
 import {
   PanelBuilders,
   SceneComponentProps,
+  SceneDataProvider,
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
@@ -18,6 +19,8 @@ import { toggleLevelFromFilter } from '../../../../services/levels';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../../../services/analytics';
 import { LoadingState } from '@grafana/data';
 import { areArraysEqual } from '../../../../services/comparison';
+import { LEVEL_VARIABLE_VALUE } from '../../../../services/variables';
+import { logger } from '../../../../services/logger';
 
 const SUMMARY_PANEL_SERIES_LIMIT = 100;
 
@@ -52,9 +55,11 @@ export class ValueSummaryPanelScene extends SceneObjectBase<ValueSummaryPanelSce
     const viz = buildValueSummaryPanel(this.state.title, { levelColor: this.state.levelColor });
     const height = getValueSummaryHeight(collapsed);
 
-    viz.setState({
-      extendPanelContext: (_, context) => this.extendTimeSeriesLegendBus(context),
-    });
+    if (this.state.title === LEVEL_VARIABLE_VALUE) {
+      viz.setState({
+        extendPanelContext: (_, context) => this.extendLevelsTimeSeriesLegendBus(context),
+      });
+    }
 
     this.setState({
       body: new SceneFlexLayout({
@@ -88,9 +93,7 @@ export class ValueSummaryPanelScene extends SceneObjectBase<ValueSummaryPanelSce
     );
   }
 
-  private extendTimeSeriesLegendBus = (context: PanelContext) => {
-    // if level variable
-
+  private extendLevelsTimeSeriesLegendBus = (context: PanelContext) => {
     const $data = sceneGraph.getData(this);
     const dataFrame = $data.state.data?.series;
 
@@ -108,38 +111,9 @@ export class ValueSummaryPanelScene extends SceneObjectBase<ValueSummaryPanelSce
       syncLogsPanelVisibleSeries(panel, dataFrame, this);
     }
 
-    $data.subscribeToState((newState, prevState) => {
-      if (newState.data?.state === LoadingState.Done) {
-        if (!areArraysEqual(newState.data.series, prevState.data?.series)) {
-          // @todo re-render filter buttons
-          syncLogsPanelVisibleSeries(panel, newState.data.series, this);
-        }
-      }
-    });
+    this._subs.add(this.getQuerySubscription($data, panel));
 
-    const levelFilter = getLevelsVariable(this);
-    this._subs.add(
-      levelFilter?.subscribeToState((newState) => {
-        const sceneFlexItem = this.state.body?.state.children[0];
-        if (!(sceneFlexItem instanceof SceneFlexItem)) {
-          throw new Error('Cannot find sceneFlexItem');
-        }
-        const panel = sceneFlexItem.state.body;
-        if (!(panel instanceof VizPanel)) {
-          throw new Error('Cannot find VizPanel');
-        }
-
-        const $data = sceneGraph.getData(this);
-        const dataFrame = $data.state.data?.series;
-
-        if (!dataFrame) {
-          console.warn('no series?', dataFrame);
-          return;
-        }
-
-        syncLogsPanelVisibleSeries(panel, dataFrame, this);
-      })
-    );
+    this._subs.add(this.getLevelsVariableLegendSyncSubscription());
 
     context.onToggleSeriesVisibility = (level: string, mode: SeriesVisibilityChangeMode) => {
       const action = toggleLevelFromFilter(level, this);
@@ -154,6 +128,46 @@ export class ValueSummaryPanelScene extends SceneObjectBase<ValueSummaryPanelSce
       );
     };
   };
+
+  /**
+   * Sync visible series on dataframe update
+   */
+  private getQuerySubscription($data: SceneDataProvider, panel: VizPanel<{}, {}>) {
+    return $data.subscribeToState((newState, prevState) => {
+      if (newState.data?.state === LoadingState.Done) {
+        if (!areArraysEqual(newState.data.series, prevState.data?.series)) {
+          syncLogsPanelVisibleSeries(panel, newState.data.series, this);
+        }
+      }
+    });
+  }
+
+  /**
+   * Sync visible series on levels variable filter updates
+   */
+  private getLevelsVariableLegendSyncSubscription() {
+    const levelsVariable = getLevelsVariable(this);
+    return levelsVariable?.subscribeToState((newState) => {
+      const sceneFlexItem = this.state.body?.state.children[0];
+      if (!(sceneFlexItem instanceof SceneFlexItem)) {
+        throw new Error('Cannot find sceneFlexItem');
+      }
+      const panel = sceneFlexItem.state.body;
+      if (!(panel instanceof VizPanel)) {
+        throw new Error('Cannot find VizPanel');
+      }
+
+      const $data = sceneGraph.getData(this);
+      const dataFrame = $data.state.data?.series;
+
+      if (!dataFrame) {
+        logger.warn('ValueSummary - levelFilterSubscription: missing dataframe!');
+        return;
+      }
+
+      syncLogsPanelVisibleSeries(panel, dataFrame, this);
+    });
+  }
 }
 
 export function setValueSummaryHeight(vizPanelFlexLayout: SceneFlexLayout, collapsableState: CollapsablePanelText) {

@@ -82,6 +82,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
         expressionBuilder: (filters) => renderLevelsFilter(filters, [tagKey]),
       });
     }
+    // @todo move to child branch
     // else{
     //       const labelsVar = getLabelsVariable(this);
     //       labelsVar.setState({
@@ -126,6 +127,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
         expressionBuilder: renderLevelsFilter,
       });
 
+      // @todo move to child branch
       // const labelsVar = getLabelsVariable(this);
       // labelsVar.setState({
       //   expressionBuilder: (filters) => renderLogQLLabelFilters(filters),
@@ -153,6 +155,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       const variableState = variable.state;
       const tagKey = String(variableState?.value);
 
+      // @todo clean up in child branch
       if (event && tagKey !== LEVEL_VARIABLE_VALUE) {
         if (event.operator === 'exclude' && newState.data.series.length < 1) {
           this.navigateToLabels();

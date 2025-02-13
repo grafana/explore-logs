@@ -31,6 +31,7 @@ import { FilterOp, NumericFilterOp } from '../../../services/filterTypes';
 
 import { addToFavorites } from '../../../services/favorites';
 import { areArraysEqual } from '../../../services/comparison';
+import { logger } from '../../../services/logger';
 
 export interface AddToFiltersButtonState extends SceneObjectState {
   frame: DataFrame;
@@ -320,8 +321,6 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
       return;
     }
 
-    // const variable = getUIAdHocVariable(this.state.variableName, filter.name, this);
-
     // Check if the filter is already there
     const filterInSelectedFilters = variable.state.filters.find((f) => {
       const value = getValueFromAdHocVariableFilter(variable, f);
@@ -350,8 +349,6 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
 
     addToFilters(filter.name, filter.value, type, this, this.state.variableName);
     const variable = getUIAdHocVariable(this.state.variableName, filter.name, this);
-    // @todo instead of force rendering can we put the isIncluded, isExcluded in the scene state?
-    this.forceRender();
 
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,
@@ -386,7 +383,7 @@ const getFilter = (frame: DataFrame) => {
   const filterNameAndValueObj = frame.fields[1]?.labels ?? {};
   // Sanity check - filter should have only one key-value pair
   if (Object.keys(filterNameAndValueObj).length !== 1) {
-    console.warn('getFilter, keys length unexpected');
+    logger.warn('getFilter: unexpected empty labels');
     return;
   }
   const name = Object.keys(filterNameAndValueObj)[0];

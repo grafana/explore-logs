@@ -56,6 +56,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     const labels = getLabelsVariable(this);
     const fields = getFieldsVariable(this);
 
+    // Set panel on labels variable filter update
     this._subs.add(
       labels.subscribeToState((newState, prevState) => {
         if (!areArraysEqual(newState.filters, prevState.filters)) {
@@ -66,6 +67,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       })
     );
 
+    // Set Panel on fields variable filter update
     this._subs.add(
       fields.subscribeToState((newState, prevState) => {
         if (!areArraysEqual(newState.filters, prevState.filters)) {
@@ -76,7 +78,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       })
     );
 
-    // Subscribe to filter event, call variable onFilterChange to trigger variable render, set filter state to trigger query in logs panel
+    // trigger variable render on AddFilterEvent, set filter state to trigger logs panel query
     this._subs.add(
       this.subscribeToEvent(AddFilterEvent, (event) => {
         if (event.key === LEVEL_VARIABLE_VALUE) {

@@ -56,6 +56,7 @@ export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
       const variableType = getVariableForLabel(dataFrame, filter.key, model);
       addAdHocFilter(filter, parentModel, variableType);
 
+      // Update levels variable when adding filter from table
       if (filter.key === LEVEL_VARIABLE_VALUE) {
         const levelsVariableScene = sceneGraph.findObject(model, (obj) => obj instanceof LevelsVariableScene);
         if (levelsVariableScene instanceof LevelsVariableScene) {
