@@ -73,8 +73,7 @@ export const LogsTableHeader = (props: LogsTableHeaderProps) => {
   const referenceElement = useRef<HTMLButtonElement | null>(null);
   const theme = useTheme2();
   const styles = getStyles(theme, props.fieldIndex === 0, props.field.name === getBodyName(logsFrame));
-  const { columnWidthMap, setColumnWidthMap } = useTableColumnContext();
-  const { setBodyState, bodyState } = useTableColumnContext();
+  const { columnWidthMap, setColumnWidthMap, setBodyState, bodyState } = useTableColumnContext();
   const isBodyField = props.field.name === getBodyName(logsFrame);
 
   const onLogTextToggle = () => {
