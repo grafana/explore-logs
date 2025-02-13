@@ -184,7 +184,7 @@ test.describe('explore services breakdown page', () => {
     await expect(table.getByRole('columnheader').nth(1)).toContainText('body');
 
     // Open the menu for "Line"
-    await page.getByRole('button', { name: 'Show menu' }).nth(1).click();
+    await page.getByLabel(/Show body|Line menu/).click();
     await page.getByText('Move left').click();
     await expect(table.getByRole('columnheader').nth(0)).toContainText('body');
 
@@ -223,7 +223,7 @@ test.describe('explore services breakdown page', () => {
     await expect(table.getByTestId(testIds.table.rawLogLine)).toHaveCount(0);
 
     // Open menu
-    await page.getByRole('button', { name: 'Show menu' }).nth(1).click();
+    await await page.getByLabel(/Show body|Line menu/).click();
 
     // Show log text option should be visible by default
     await expect(page.getByText('Show log text')).toBeVisible();
