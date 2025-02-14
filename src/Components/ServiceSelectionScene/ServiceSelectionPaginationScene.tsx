@@ -1,8 +1,8 @@
 import { SceneComponentProps, sceneGraph, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
-import { GrafanaTheme2 } from '@grafana/data';
+import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import { css } from '@emotion/css';
 import { IconButton, Pagination, Select, useStyles2 } from '@grafana/ui';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ServiceSelectionScene } from './ServiceSelectionScene';
 import { setServiceSelectionPageCount } from '../../services/store';
 
@@ -16,6 +16,13 @@ export class ServiceSelectionPaginationScene extends SceneObjectBase<ServiceSele
     const styles = useStyles2(getPageCountStyles);
     const serviceSelectionScene = sceneGraph.getAncestor(model, ServiceSelectionScene);
     const { countPerPage } = serviceSelectionScene.useState();
+    const options = getCountOptionsFromTotal(totalCount);
+    useEffect(() => {
+      const lastOptionValue = options[options.length - 1].value ?? countPerPage.toString();
+      if (countPerPage.toString() > lastOptionValue) {
+        serviceSelectionScene.setState({ countPerPage: parseInt(lastOptionValue, 10) });
+      }
+    }, [countPerPage, options, serviceSelectionScene]);
     return (
       <span className={styles.searchPageCountWrap}>
         <span className={styles.searchFieldPlaceholderText}>
@@ -30,11 +37,7 @@ export class ServiceSelectionPaginationScene extends SceneObjectBase<ServiceSele
                 setServiceSelectionPageCount(countPerPage);
               }
             }}
-            options={[
-              { value: '20', label: '20' },
-              { value: '40', label: '40' },
-              { value: '60', label: '60' },
-            ]}
+            options={options}
             value={countPerPage.toString()}
           />{' '}
           of {totalCount}{' '}
@@ -140,4 +143,26 @@ function getPageCountStyles(theme: GrafanaTheme2) {
       textWrapMode: 'nowrap',
     }),
   };
+}
+
+export function getCountOptionsFromTotal(totalCount: number) {
+  const delta = 20;
+  const end = 60;
+  const roundedTotalCount = Math.ceil(totalCount / delta) * delta;
+
+  const options: Array<SelectableValue<string>> = [];
+  for (let count = delta; count <= end && count <= roundedTotalCount; count += delta) {
+    let label = count.toString();
+    if (count < delta) {
+      label = count.toString();
+    } else if (count > totalCount) {
+      label = totalCount.toString();
+    }
+    options.push({
+      value: count.toString(),
+      label,
+    });
+  }
+
+  return options;
 }
