@@ -25,6 +25,8 @@ interface TableWrapProps {
   panelWrap: React.RefObject<HTMLDivElement | null>;
   clearSelectedLine: () => void;
   setUrlTableBodyState: (logLineState: LogLineState) => void;
+  showColumnManagementDrawer: (isActive: boolean) => void;
+  isColumnManagementActive: boolean;
 }
 
 const getStyles = () => ({
@@ -118,6 +120,8 @@ export const TableWrap = (props: TableWrapProps) => {
         setUrlColumns={props.setUrlColumns}
         clearSelectedLine={props.clearSelectedLine}
         urlTableBodyState={props.urlTableBodyState}
+        showColumnManagementDrawer={props.showColumnManagementDrawer}
+        isColumnManagementActive={props.isColumnManagementActive}
       >
         <Table
           logsFrame={logsFrame}
