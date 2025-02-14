@@ -2,7 +2,7 @@
 FROM otel/opentelemetry-collector-contrib:latest AS collector
 
 # Final stage
-FROM golang:1.22
+FROM golang:1.24
 
 # Copy the collector binary from the collector stage
 COPY --from=collector /otelcol-contrib /otelcol-contrib
