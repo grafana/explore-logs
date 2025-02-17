@@ -10,7 +10,7 @@ import {
   SceneQueryRunner,
   VizPanel,
 } from '@grafana/scenes';
-import { DataFrame, getValueFormat, LoadingState, LogRowModel } from '@grafana/data';
+import { DataFrame, getValueFormat, LoadingState, LogRowModel, PanelData } from '@grafana/data';
 import { getLogOption, setDisplayedFields } from '../../services/store';
 import React, { MouseEvent } from 'react';
 import { LogsListScene } from './LogsListScene';
@@ -126,12 +126,9 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     this._subs.add(
       serviceScene.subscribeToState((newState, prevState) => {
         if (newState.$data?.state.data?.state === LoadingState.Error) {
-          const error = newState.$data?.state.data.errors?.length
-            ? newState.$data?.state.data.errors[0].message
-            : newState.$data?.state.data.error?.message;
-          this.setState({ error });
+          this.handleLogsError(newState.$data?.state.data);
         } else if (this.state.error) {
-          this.setState({ error: undefined });
+          this.clearLogsError();
         }
         if (newState.logsCount !== prevState.logsCount) {
           if (!this.state.body) {
@@ -150,6 +147,19 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         }
       })
     );
+  }
+
+  handleLogsError(data: PanelData) {
+    const error = data.errors?.length ? data.errors[0].message : data.error?.message;
+    this.setState({ error });
+    const logsVolume = sceneGraph.findByKeyAndType(this, logsVolumePanelKey, LogsVolumePanel);
+    logsVolume.state.panel?.setState({ collapsed: true });
+  }
+
+  clearLogsError() {
+    this.setState({ error: undefined });
+    const logsVolume = sceneGraph.findByKeyAndType(this, logsVolumePanelKey, LogsVolumePanel);
+    logsVolume.state.panel?.setState({ collapsed: false });
   }
 
   onClickShowField = (field: string) => {
