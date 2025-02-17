@@ -10,7 +10,7 @@ import {
   SceneQueryRunner,
   VizPanel,
 } from '@grafana/scenes';
-import { DataFrame, getValueFormat, LogRowModel } from '@grafana/data';
+import { DataFrame, getValueFormat, LoadingState, LogRowModel } from '@grafana/data';
 import { getLogOption, setDisplayedFields } from '../../services/store';
 import React, { MouseEvent } from 'react';
 import { LogsListScene } from './LogsListScene';
@@ -37,9 +37,12 @@ import { narrowLogsSortOrder } from '../../services/narrowing';
 import { logger } from '../../services/logger';
 import { LogsSortOrder } from '@grafana/schema';
 import { getPrettyQueryExpr } from 'services/scenes';
+import { LogsPanelError } from './LogsPanelError';
+import { clearVariables } from 'services/variableHelpers';
 
 interface LogsPanelSceneState extends SceneObjectState {
   body?: VizPanel<Options>;
+  error?: string;
   sortOrder?: LogsSortOrder;
   wrapLogMessage?: boolean;
 }
@@ -53,6 +56,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     super({
       sortOrder: getLogsPanelSortOrderFromStore(),
       wrapLogMessage: Boolean(getLogOption<boolean>('wrapLogMessage', false)),
+      error: undefined,
       ...state,
     });
 
@@ -121,6 +125,14 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     this._subs.add(
       serviceScene.subscribeToState((newState, prevState) => {
+        if (newState.$data?.state.data?.state === LoadingState.Error) {
+          const error = newState.$data?.state.data.errors?.length
+            ? newState.$data?.state.data.errors[0].message
+            : newState.$data?.state.data.error?.message;
+          this.setState({ error });
+        } else if (this.state.error) {
+          this.setState({ error: undefined });
+        }
         if (newState.logsCount !== prevState.logsCount) {
           if (!this.state.body) {
             this.setState({
@@ -402,12 +414,13 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
   }
 
   public static Component = ({ model }: SceneComponentProps<LogsPanelScene>) => {
-    const { body } = model.useState();
+    const { body, error } = model.useState();
     const styles = useStyles2(getPanelWrapperStyles);
     if (body) {
       return (
         <span className={styles.panelWrapper}>
-          <body.Component model={body} />
+          {!error && <body.Component model={body} />}
+          {error && <LogsPanelError error={error} clearFilters={() => clearVariables(body)} />}
         </span>
       );
     }
