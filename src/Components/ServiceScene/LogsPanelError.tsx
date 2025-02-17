@@ -28,5 +28,5 @@ function getMessageFromError(error: string) {
     return 'Logs could not be retrieved due to invalid filter parameters. Please review your filters and try again.';
   }
 
-  return 'Logs could not be retrieved. Please review your filters or try a different time interval.';
+  return 'Logs could not be retrieved. Please review your filters or try a different time range.';
 }
