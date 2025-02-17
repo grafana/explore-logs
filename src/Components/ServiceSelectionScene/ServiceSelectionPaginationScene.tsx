@@ -18,7 +18,7 @@ export class ServiceSelectionPaginationScene extends SceneObjectBase<ServiceSele
     const { countPerPage } = serviceSelectionScene.useState();
     const options = getCountOptionsFromTotal(totalCount);
     useEffect(() => {
-      const lastOptionValue = options[options.length - 1].value ?? countPerPage.toString();
+      const lastOptionValue = options[options.length - 1]?.value ?? countPerPage.toString();
       if (countPerPage.toString() > lastOptionValue) {
         serviceSelectionScene.setState({ countPerPage: parseInt(lastOptionValue, 10) });
       }
