@@ -36,7 +36,7 @@ export function toggleLevelVisibility(
   return [...levels, level];
 }
 
-export function getLabelsFromSeries(series: DataFrame[]) {
+export function getLevelLabelsFromSeries(series: DataFrame[]) {
   return series.map((dataFrame) => getLabelValueFromDataFrame(dataFrame) ?? 'logs');
 }
 

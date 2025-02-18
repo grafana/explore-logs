@@ -10,7 +10,7 @@ import {
   VizPanel,
 } from '@grafana/scenes';
 import { LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode, useStyles2 } from '@grafana/ui';
-import { getQueryRunner, setLogsVolumeFieldConfigs, syncLogsPanelVisibleSeries } from 'services/panel';
+import { getQueryRunner, setLogsVolumeFieldConfigs, syncLevelsVisibleSeries } from 'services/panel';
 import { buildDataQuery, LINE_LIMIT } from 'services/query';
 import { LEVEL_VARIABLE_VALUE } from 'services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
@@ -157,7 +157,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
         } else {
           this.displayVisibleRange();
         }
-        syncLogsPanelVisibleSeries(panel, newState.data.series, this);
+        syncLevelsVisibleSeries(panel, newState.data.series, this);
       })
     );
 
@@ -232,19 +232,19 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
           return;
         }
 
-        syncLogsPanelVisibleSeries(panel, panel?.state.$data?.state.data?.series, this);
+        syncLevelsVisibleSeries(panel, panel?.state.$data?.state.data?.series, this);
       })
     );
 
-    context.onToggleSeriesVisibility = (level: string, mode: SeriesVisibilityChangeMode) => {
-      const action = toggleLevelFromFilter(level, this);
-      this.publishEvent(new AddFilterEvent('legend', 'include', LEVEL_VARIABLE_VALUE, level), true);
+    context.onToggleSeriesVisibility = (label: string, mode: SeriesVisibilityChangeMode) => {
+      const action = toggleLevelFromFilter(label, this);
+      this.publishEvent(new AddFilterEvent('legend', 'include', LEVEL_VARIABLE_VALUE, label), true);
 
       reportAppInteraction(
         USER_EVENTS_PAGES.service_details,
         USER_EVENTS_ACTIONS.service_details.level_in_logs_volume_clicked,
         {
-          level,
+          level: label,
           action,
         }
       );

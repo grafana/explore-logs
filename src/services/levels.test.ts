@@ -1,5 +1,5 @@
 import { SeriesVisibilityChangeMode } from '@grafana/ui';
-import { getLabelsFromSeries, getVisibleLevels, toggleLevelFromFilter, toggleLevelVisibility } from './levels';
+import { getLevelLabelsFromSeries, getVisibleLevels, toggleLevelFromFilter, toggleLevelVisibility } from './levels';
 import { AdHocVariableFilter, FieldType, toDataFrame } from '@grafana/data';
 import { VAR_LEVELS } from './variables';
 import { AdHocFiltersVariable, SceneObject } from '@grafana/scenes';
@@ -99,7 +99,7 @@ describe('getLabelsFromSeries', () => {
     }),
   ];
   it('returns the label value from time series', () => {
-    expect(getLabelsFromSeries(series)).toEqual(['error', 'warn', 'logs']);
+    expect(getLevelLabelsFromSeries(series)).toEqual(['error', 'warn', 'logs']);
   });
 });
 

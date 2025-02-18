@@ -11,16 +11,22 @@ import {
 } from '@grafana/scenes';
 import { CollapsablePanelText, PanelMenu } from '../../../Panels/PanelMenu';
 import { DrawStyle, PanelContext, SeriesVisibilityChangeMode, StackingMode } from '@grafana/ui';
-import { setLevelColorOverrides, syncLogsPanelVisibleSeries } from '../../../../services/panel';
+import {
+  setLevelColorOverrides,
+  syncLabelsValueSummaryVisibleSeries,
+  syncLevelsVisibleSeries,
+} from '../../../../services/panel';
 import { getPanelOption, setPanelOption } from '../../../../services/store';
 import React from 'react';
-import { getLevelsVariable } from '../../../../services/variableGetters';
+import { getLabelGroupByVariable, getLabelsVariable, getLevelsVariable } from '../../../../services/variableGetters';
 import { toggleLevelFromFilter } from '../../../../services/levels';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../../../services/analytics';
-import { LoadingState } from '@grafana/data';
+import { DataFrame, LoadingState } from '@grafana/data';
 import { areArraysEqual } from '../../../../services/comparison';
 import { LEVEL_VARIABLE_VALUE } from '../../../../services/variables';
 import { logger } from '../../../../services/logger';
+import { FilterType } from '../AddToFiltersButton';
+import { toggleLabelFromFilter } from '../../../../services/labels';
 
 const SUMMARY_PANEL_SERIES_LIMIT = 100;
 
@@ -55,11 +61,9 @@ export class ValueSummaryPanelScene extends SceneObjectBase<ValueSummaryPanelSce
     const viz = buildValueSummaryPanel(this.state.title, { levelColor: this.state.levelColor });
     const height = getValueSummaryHeight(collapsed);
 
-    if (this.state.title === LEVEL_VARIABLE_VALUE) {
-      viz.setState({
-        extendPanelContext: (_, context) => this.extendLevelsTimeSeriesLegendBus(context),
-      });
-    }
+    viz.setState({
+      extendPanelContext: (_, context) => this.extendTimeSeriesLegendBus(context),
+    });
 
     this.setState({
       body: new SceneFlexLayout({
@@ -93,7 +97,15 @@ export class ValueSummaryPanelScene extends SceneObjectBase<ValueSummaryPanelSce
     );
   }
 
-  private extendLevelsTimeSeriesLegendBus = (context: PanelContext) => {
+  private getTagKey() {
+    const variable = getLabelGroupByVariable(this);
+    return String(variable.state.value);
+  }
+
+  /**
+   * Syncs legend with labels
+   */
+  private extendTimeSeriesLegendBus = (context: PanelContext) => {
     const $data = sceneGraph.getData(this);
     const dataFrame = $data.state.data?.series;
 
@@ -106,23 +118,25 @@ export class ValueSummaryPanelScene extends SceneObjectBase<ValueSummaryPanelSce
     if (!(panel instanceof VizPanel)) {
       throw new Error('Cannot find VizPanel');
     }
+    const key = this.getTagKey();
 
-    if (dataFrame) {
-      syncLogsPanelVisibleSeries(panel, dataFrame, this);
-    }
+    this.initLegendOptions(dataFrame, key, panel);
+    this._subs.add(this.getLabelsVariableLegendSyncSubscription(key));
+    this._subs.add(this.getQuerySubscription(key, $data, panel));
 
-    this._subs.add(this.getQuerySubscription($data, panel));
-
-    this._subs.add(this.getLevelsVariableLegendSyncSubscription());
-
-    context.onToggleSeriesVisibility = (level: string, mode: SeriesVisibilityChangeMode) => {
-      const action = toggleLevelFromFilter(level, this);
+    context.onToggleSeriesVisibility = (value: string, mode: SeriesVisibilityChangeMode) => {
+      let action: FilterType;
+      if (key === LEVEL_VARIABLE_VALUE) {
+        action = toggleLevelFromFilter(value, this);
+      } else {
+        action = toggleLabelFromFilter(key, value, this);
+      }
 
       reportAppInteraction(
         USER_EVENTS_PAGES.service_details,
-        USER_EVENTS_ACTIONS.service_details.level_in_logs_volume_clicked,
+        USER_EVENTS_ACTIONS.service_details.label_in_panel_summary_clicked,
         {
-          level,
+          label: value,
           action,
         }
       );
@@ -130,42 +144,64 @@ export class ValueSummaryPanelScene extends SceneObjectBase<ValueSummaryPanelSce
   };
 
   /**
+   * Sync legend with current dataframe
+   */
+  private initLegendOptions(dataFrame: DataFrame[] | undefined, key: string, panel: VizPanel<{}, {}>) {
+    if (dataFrame) {
+      if (key === LEVEL_VARIABLE_VALUE) {
+        syncLevelsVisibleSeries(panel, dataFrame, this);
+      } else {
+        syncLabelsValueSummaryVisibleSeries(key, panel, dataFrame, this);
+      }
+    }
+  }
+
+  /**
    * Sync visible series on dataframe update
    */
-  private getQuerySubscription($data: SceneDataProvider, panel: VizPanel<{}, {}>) {
+  private getQuerySubscription(key: string, $data: SceneDataProvider, panel: VizPanel<{}, {}>) {
     return $data.subscribeToState((newState, prevState) => {
       if (newState.data?.state === LoadingState.Done) {
         if (!areArraysEqual(newState.data.series, prevState.data?.series)) {
-          syncLogsPanelVisibleSeries(panel, newState.data.series, this);
+          if (key === LEVEL_VARIABLE_VALUE) {
+            syncLevelsVisibleSeries(panel, newState.data.series, this);
+          } else {
+            syncLabelsValueSummaryVisibleSeries(key, panel, newState.data.series, this);
+          }
         }
       }
     });
   }
 
   /**
-   * Sync visible series on levels variable filter updates
+   * Returns value subscription
    */
-  private getLevelsVariableLegendSyncSubscription() {
-    const levelsVariable = getLevelsVariable(this);
-    return levelsVariable?.subscribeToState((newState) => {
+  private getLabelsVariableLegendSyncSubscription(key: string) {
+    const isLevel = key === LEVEL_VARIABLE_VALUE;
+    const variable = isLevel ? getLevelsVariable(this) : getLabelsVariable(this);
+    return variable?.subscribeToState(() => {
       const sceneFlexItem = this.state.body?.state.children[0];
       if (!(sceneFlexItem instanceof SceneFlexItem)) {
         throw new Error('Cannot find sceneFlexItem');
       }
       const panel = sceneFlexItem.state.body;
       if (!(panel instanceof VizPanel)) {
-        throw new Error('Cannot find VizPanel');
+        throw new Error('ValueSummary - getLabelsVariableLegendSyncSubscription: Cannot find VizPanel');
       }
 
       const $data = sceneGraph.getData(this);
       const dataFrame = $data.state.data?.series;
 
       if (!dataFrame) {
-        logger.warn('ValueSummary - levelFilterSubscription: missing dataframe!');
+        logger.warn('ValueSummary - getLabelsVariableLegendSyncSubscription: missing dataframe!');
         return;
       }
 
-      syncLogsPanelVisibleSeries(panel, dataFrame, this);
+      if (isLevel) {
+        syncLevelsVisibleSeries(panel, dataFrame, this);
+      } else {
+        syncLabelsValueSummaryVisibleSeries(key, panel, dataFrame, this);
+      }
     });
   }
 }
@@ -197,10 +233,10 @@ function buildValueSummaryPanel(title: string, options?: { levelColor?: boolean 
     .setCustomFieldConfig('fillOpacity', 100)
     .setCustomFieldConfig('lineWidth', 0)
     .setCustomFieldConfig('pointSize', 0)
+    .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
     // 11.5
     // .setShowMenuAlways(true)
-    .setSeriesLimit(SUMMARY_PANEL_SERIES_LIMIT)
-    .setCustomFieldConfig('drawStyle', DrawStyle.Bars);
+    .setSeriesLimit(SUMMARY_PANEL_SERIES_LIMIT);
 
   if (options?.levelColor) {
     body.setOverrides(setLevelColorOverrides);

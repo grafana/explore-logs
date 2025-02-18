@@ -23,10 +23,11 @@ import { HideSeriesConfig, LogsSortOrder } from '@grafana/schema';
 import { WRAPPED_LOKI_DS_UID } from './datasource';
 import { LogsSceneQueryRunner } from './LogsSceneQueryRunner';
 import { DrawStyle, StackingMode } from '@grafana/ui';
-import { getLabelsFromSeries, getVisibleLevels } from './levels';
+import { getLevelLabelsFromSeries, getVisibleLevels } from './levels';
 import { LokiQuery, LokiQueryDirection } from './lokiQuery';
 import { LOGS_COUNT_QUERY_REFID, LOGS_PANEL_QUERY_REFID } from '../Components/ServiceScene/ServiceScene';
 import { getLogsPanelSortOrderFromStore, getLogsPanelSortOrderFromURL } from 'Components/ServiceScene/LogOptionsScene';
+import { getLabelsFromSeries, getVisibleLabels } from './labels';
 
 const UNKNOWN_LEVEL_LOGS = 'logs';
 export function setLevelColorOverrides(overrides: FieldConfigOverridesBuilder<FieldConfig>) {
@@ -65,17 +66,28 @@ export function setLogsVolumeFieldConfigs(
     .setOverrides(setLevelColorOverrides);
 }
 
+export function setValueSummaryFieldConfigs(
+  builder: ReturnType<typeof PanelBuilders.timeseries> | ReturnType<typeof FieldConfigBuilders.timeseries>
+) {
+  return builder
+    .setCustomFieldConfig('stacking', { mode: StackingMode.Normal })
+    .setCustomFieldConfig('fillOpacity', 100)
+    .setCustomFieldConfig('lineWidth', 0)
+    .setCustomFieldConfig('pointSize', 0)
+    .setCustomFieldConfig('drawStyle', DrawStyle.Bars);
+}
+
 interface TimeSeriesFieldConfig extends FieldConfig {
   hideFrom: HideSeriesConfig;
 }
 
-export function setLevelSeriesOverrides(levels: string[], overrideConfig: FieldConfigOverridesBuilder<FieldConfig>) {
+export function setLabelSeriesOverrides(labels: string[], overrideConfig: FieldConfigOverridesBuilder<FieldConfig>) {
   overrideConfig
     .match({
       id: FieldMatcherID.byNames,
       options: {
         mode: 'exclude',
-        names: levels,
+        names: labels,
         prefix: 'All except:',
         readOnly: true,
       },
@@ -92,15 +104,39 @@ export function setLevelSeriesOverrides(levels: string[], overrideConfig: FieldC
   overrides[overrides.length - 1].__systemRef = 'hideSeriesFrom';
 }
 
-export function syncLogsPanelVisibleSeries(panel: VizPanel, series: DataFrame[], sceneRef: SceneObject) {
-  const focusedLevels = getVisibleLevels(getLabelsFromSeries(series), sceneRef);
+/**
+ * Sets labels series visibility in the panel
+ */
+export function syncLevelsVisibleSeries(panel: VizPanel, series: DataFrame[], sceneRef: SceneObject) {
+  const focusedLevels = getVisibleLevels(getLevelLabelsFromSeries(series), sceneRef);
   const config = setLogsVolumeFieldConfigs(FieldConfigBuilders.timeseries()).setOverrides(
-    setLevelSeriesOverrides.bind(null, focusedLevels)
+    setLabelSeriesOverrides.bind(null, focusedLevels)
   );
   if (config instanceof FieldConfigBuilder) {
     panel.onFieldConfigChange(config.build(), true);
   }
 }
+
+/**
+ * Set levels series visibility in the panel
+ */
+export function syncLabelsValueSummaryVisibleSeries(
+  key: string,
+  panel: VizPanel,
+  series: DataFrame[],
+  sceneRef: SceneObject
+) {
+  const allLabels = getLabelsFromSeries(series);
+  const focusedLabels = getVisibleLabels(key, allLabels, sceneRef);
+  const config = setValueSummaryFieldConfigs(FieldConfigBuilders.timeseries());
+  if (focusedLabels.length) {
+    config.setOverrides(setLabelSeriesOverrides.bind(null, focusedLabels));
+  }
+  if (config instanceof FieldConfigBuilder) {
+    panel.onFieldConfigChange(config.build(), true);
+  }
+}
+
 function setColorByDisplayNameTransformation() {
   return (source: Observable<DataFrame[]>) => {
     return source.pipe(

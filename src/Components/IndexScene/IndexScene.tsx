@@ -120,8 +120,7 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
   public constructor(state: Partial<IndexSceneState>) {
     const { variablesScene, unsub } = getVariableSet(
       getLastUsedDataSourceFromStorage() ?? 'grafanacloud-logs',
-      state.initialFilters,
-      state.routeMatch
+      state.initialFilters
     );
 
     const controls: SceneObject[] = [
@@ -546,11 +545,7 @@ function getContentScene(drillDownLabel?: string) {
   });
 }
 
-function getVariableSet(
-  initialDatasourceUid: string,
-  initialFilters?: AdHocVariableFilter[],
-  routeMatch?: OptionalRouteMatch
-) {
+function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVariableFilter[]) {
   const labelVariable = new AdHocFiltersVariable({
     name: VAR_LABELS,
     datasource: EXPLORATION_DS,
@@ -618,8 +613,7 @@ function getVariableSet(
     label: 'Error levels',
     applyMode: 'manual',
     layout: 'vertical',
-    // Label names shouldn't have special chars that aren't allowed in the URL slug, or this could cause problems
-    expressionBuilder: (filters) => renderLevelsFilter(filters, [routeMatch?.params.breakdownLabel ?? '']),
+    expressionBuilder: (filters) => renderLevelsFilter(filters),
     hide: VariableHide.hideVariable,
     supportsMultiValueOperators: true,
   });
