@@ -1254,7 +1254,8 @@ test.describe('explore services breakdown page', () => {
     await expect(explorePage.getTableToggleLocator()).not.toBeChecked();
     await expect(explorePage.getLogsToggleLocator()).toBeChecked();
 
-    const newestLogContent = await firstRow.textContent();
+    const newestLogContent = (await firstRow.textContent()) ?? '';
+    expect(page.getByText(newestLogContent)).toBeVisible();
 
     // assert timesstamps are DESC (newest first)
     expect(new Date(await firstRowTimeCell.textContent()).valueOf()).toBeGreaterThanOrEqual(
@@ -1274,6 +1275,9 @@ test.describe('explore services breakdown page', () => {
     expect(new Date(await firstRowTimeCell.textContent()).valueOf()).toBeLessThanOrEqual(
       new Date(await secondRowTimeCell.textContent()).valueOf()
     );
+
+    // Changing the sort order triggers a new query with the opposite query direction, causing the newest log line to not be in the updated response
+    await page.getByText(newestLogContent).waitFor({ state: 'detached' });
 
     // Reload the page
     await page.reload();
