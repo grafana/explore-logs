@@ -20,7 +20,7 @@ Log patterns let you work with groups of similar log lines. You can hide log pat
 
 Loki automatically extracts patterns when your logs are ingested. Patterns are ephemeral and are only mined from the previous three hours of your logs.
 
-{{< figure alt="Explore Logs Patterns tab" width="900px" align="center" src="../images/patterns.png" caption="Patterns tab" >}}
+{{< figure alt="Explore Logs Patterns tab" width="900px" align="center" src="/media/docs/explore-logs/patterns.png" caption="Patterns tab" >}}
 
 The Explore Logs app shows you the patterns alongside their log volumes. From this view, you can investigate spikes and include or exclude specific log lines from your view.
 
