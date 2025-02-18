@@ -69,11 +69,11 @@ function stringifyValues(value?: string): string {
 }
 
 // Why are there twice as many escape chars in the url as expected?
-function replaceEscapeChars(value?: string): string | undefined {
+export function replaceEscapeChars(value?: string): string | undefined {
   return value?.replace(/\\\\/g, '\\');
 }
 
-function stringifyAdHocValues(value?: string): string {
+export function stringifyAdHocValues(value?: string): string {
   if (!value) {
     return '""';
   }
@@ -243,7 +243,7 @@ function escapeUrlCommaDelimiters(value: string | undefined): string {
   return /,/g[Symbol.replace](value, '__gfc__');
 }
 
-function escapeUrlPipeDelimiters(value: string | undefined): string {
+export function escapeUrlPipeDelimiters(value: string | undefined): string {
   if (value === null || value === undefined) {
     return '';
   }
@@ -252,6 +252,6 @@ function escapeUrlPipeDelimiters(value: string | undefined): string {
   return (value = /\|/g[Symbol.replace](value, '__gfp__'));
 }
 
-function escapeURLDelimiters(value: string | undefined): string {
+export function escapeURLDelimiters(value: string | undefined): string {
   return escapeUrlCommaDelimiters(escapeUrlPipeDelimiters(value));
 }
