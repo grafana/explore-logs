@@ -11,6 +11,10 @@ export interface AdHocFieldValue {
   value?: string;
   parser?: ParserType;
 }
+export interface AppliedPattern {
+  pattern: string;
+  type: 'include' | 'exclude';
+}
 
 export type ParserType = 'logfmt' | 'json' | 'mixed' | 'structuredMetadata';
 export type DetectedFieldType = 'int' | 'float' | 'duration' | 'bytes' | 'boolean' | 'string';

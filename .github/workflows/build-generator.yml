@@ -37,3 +37,5 @@ jobs:
           image_name: 'fake-log-generator'
           environment: 'prod'
           platforms: linux/amd64,linux/arm64
+          build-args: |
+            OTLP_ENDPOINT=http://localhost:3100/otlp

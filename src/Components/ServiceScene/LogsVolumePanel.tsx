@@ -119,7 +119,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       .setUnit('short')
       .setMenu(new PanelMenu({ investigationOptions: { labelName: 'level' } }))
       .setCollapsible(true)
-      .setCollapsed(Boolean(getLogsVolumeOption('collapsed')))
+      .setCollapsed(getLogsVolumeOption('collapsed'))
       .setHeaderActions(new LogsVolumeActions({}))
       // 11.5
       // .setShowMenuAlways(true)

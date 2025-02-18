@@ -13,8 +13,7 @@ processors:
 
 exporters:
   otlphttp/logs:
-    # change this depending on where you're running loki (can be made configurable)
-    endpoint: http://host.docker.internal:3100/otlp
+    endpoint: ${OTLP_ENDPOINT}
     tls:
       insecure: true
 
