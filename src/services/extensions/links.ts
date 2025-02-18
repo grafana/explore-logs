@@ -4,6 +4,7 @@ import { PluginExtensionLinkConfig, PluginExtensionPanelContext, PluginExtension
 import {
   addAdHocFilterUserInputPrefix,
   AdHocFieldValue,
+  AppliedPattern,
   LEVEL_VARIABLE_VALUE,
   SERVICE_NAME,
   stripAdHocFilterUserInputPrefix,
@@ -13,6 +14,7 @@ import {
   VAR_LEVELS,
   VAR_LINE_FILTERS,
   VAR_METADATA,
+  VAR_PATTERNS,
 } from 'services/variables';
 import pluginJson from '../../plugin.json';
 import { getMatcherFromQuery } from '../logqlMatchers';
@@ -20,6 +22,8 @@ import { LokiQuery } from '../lokiQuery';
 import { LabelType } from '../fieldsTypes';
 
 import { isOperatorInclusive } from '../operatorHelpers';
+import { PatternFilterOp } from '../filterTypes';
+import { renderPatternFilters } from '../renderPatternFilters';
 
 const title = 'Open in Explore Logs';
 const description = 'Open current query in the Explore Logs view';
@@ -88,7 +92,7 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
   }
 
   const expr = lokiQuery.expr;
-  const { labelFilters, lineFilters, fields } = getMatcherFromQuery(expr, context, lokiQuery);
+  const { labelFilters, lineFilters, fields, patternFilters } = getMatcherFromQuery(expr, context, lokiQuery);
   const labelSelector = labelFilters.find((selector) => isOperatorInclusive(selector.operator));
 
   // Require at least one inclusive operator to run a valid Loki query
@@ -163,6 +167,22 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
       }
     }
   }
+  if (patternFilters?.length) {
+    const patterns: AppliedPattern[] = [];
+
+    for (const field of patternFilters) {
+      patterns.push({
+        type: field.operator === PatternFilterOp.match ? 'include' : 'exclude',
+        pattern: stringifyValues(field.value),
+      });
+    }
+
+    let patternsString = renderPatternFilters(patterns);
+
+    params = appendUrlParameter(UrlParameters.Patterns, JSON.stringify(patterns), params);
+    params = appendUrlParameter(UrlParameters.PatternsVariable, patternsString, params);
+  }
+
   return {
     path: createAppUrl(`/explore/${labelName}/${labelValue}/logs`, params),
   };
@@ -181,6 +201,8 @@ export const UrlParameters = {
   Metadata: `var-${VAR_METADATA}`,
   Levels: `var-${VAR_LEVELS}`,
   LineFilters: `var-${VAR_LINE_FILTERS}`,
+  Patterns: VAR_PATTERNS,
+  PatternsVariable: `var-${VAR_PATTERNS}`,
 } as const;
 export type UrlParameterType = (typeof UrlParameters)[keyof typeof UrlParameters];
 

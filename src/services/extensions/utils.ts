@@ -26,10 +26,14 @@ export function getPath(options: {
   expectedLineFiltersUrlString?: string;
   expectedFieldsUrlString?: string;
   expectedLevelsFilterUrlString?: string;
+  expectedPatternsVariable?: string;
+  expectedPatterns?: string;
 }) {
   return `/a/grafana-lokiexplore-app/explore/${options.slug}/logs?var-ds=123abc&from=1675828800000&to=1675854000000${
     options.expectedLabelFiltersUrlString ?? ''
   }${options.expectedMetadataString ?? ''}${options.expectedLineFiltersUrlString ?? ''}${
-    options.expectedFieldsUrlString ?? ''
-  }${options.expectedLevelsFilterUrlString ?? ''}`;
+    options.expectedPatterns ?? ''
+  }${options.expectedPatternsVariable ?? ''}${options.expectedFieldsUrlString ?? ''}${
+    options.expectedLevelsFilterUrlString ?? ''
+  }`;
 }
