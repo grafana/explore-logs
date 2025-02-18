@@ -11,7 +11,7 @@ import {
   VizPanel,
 } from '@grafana/scenes';
 import { DataFrame, getValueFormat, LoadingState, LogRowModel, PanelData } from '@grafana/data';
-import { getLogOption, setDisplayedFields } from '../../services/store';
+import { getLogOption, getLogsVolumeOption, setDisplayedFields } from '../../services/store';
 import React, { MouseEvent } from 'react';
 import { LogsListScene } from './LogsListScene';
 import { LoadingPlaceholder, useStyles2 } from '@grafana/ui';
@@ -43,6 +43,7 @@ import { clearVariables } from 'services/variableHelpers';
 interface LogsPanelSceneState extends SceneObjectState {
   body?: VizPanel<Options>;
   error?: string;
+  logsVolumeCollapsedByError?: boolean;
   sortOrder?: LogsSortOrder;
   wrapLogMessage?: boolean;
 }
@@ -150,16 +151,24 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
   }
 
   handleLogsError(data: PanelData) {
+    const logsVolumeCollapsedByError = this.state.logsVolumeCollapsedByError ?? !getLogsVolumeOption('collapsed');
+
     const error = data.errors?.length ? data.errors[0].message : data.error?.message;
-    this.setState({ error });
-    const logsVolume = sceneGraph.findByKeyAndType(this, logsVolumePanelKey, LogsVolumePanel);
-    logsVolume.state.panel?.setState({ collapsed: true });
+    this.setState({ error, logsVolumeCollapsedByError });
+
+    if (logsVolumeCollapsedByError) {
+      const logsVolume = sceneGraph.findByKeyAndType(this, logsVolumePanelKey, LogsVolumePanel);
+      logsVolume.state.panel?.setState({ collapsed: true });
+    }
   }
 
   clearLogsError() {
-    this.setState({ error: undefined });
-    const logsVolume = sceneGraph.findByKeyAndType(this, logsVolumePanelKey, LogsVolumePanel);
-    logsVolume.state.panel?.setState({ collapsed: false });
+    if (this.state.logsVolumeCollapsedByError) {
+      const logsVolume = sceneGraph.findByKeyAndType(this, logsVolumePanelKey, LogsVolumePanel);
+      logsVolume.state.panel?.setState({ collapsed: false });
+    }
+
+    this.setState({ error: undefined, logsVolumeCollapsedByError: undefined });
   }
 
   onClickShowField = (field: string) => {

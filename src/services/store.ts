@@ -229,7 +229,7 @@ export function setLogsVolumeOption(option: 'collapsed', value: string | undefin
 }
 
 export function getLogsVolumeOption(option: 'collapsed') {
-  return localStorage.getItem(`${LOGS_VOLUME_LOCALSTORAGE_KEY}.${option}`);
+  return Boolean(localStorage.getItem(`${LOGS_VOLUME_LOCALSTORAGE_KEY}.${option}`));
 }
 
 // Log visualization options
