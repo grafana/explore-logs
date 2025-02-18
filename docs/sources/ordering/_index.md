@@ -22,7 +22,7 @@ You can use the **Asc/Desc** menu to change the direction of the sort.
 
 ## Sorting algorithms
 
-{{< figure alt="Sort by many" width="900px" align="center" src="../images/sort-by-dropdown.png" caption="Sort by menu" >}}
+{{< figure alt="Sort by many" width="900px" align="center" src="/media/docs/explore-logs/sort-by-dropdown.png" caption="Sort by menu" >}}
 
 By default the graphs are sorted by **Most relevant** where we prioritise graphs with more volatile data. For example, the graphs with the most spikes or dips will be shown first.
 
