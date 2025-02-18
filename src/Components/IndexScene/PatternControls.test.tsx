@@ -2,7 +2,7 @@ import React from 'react';
 import { PatternControls } from './PatternControls';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { AppliedPattern } from './IndexScene';
+import { AppliedPattern } from '../../services/variables';
 
 const originalWidth = global.window.innerWidth;
 beforeAll(() => {
