@@ -64,7 +64,7 @@ export class ValueSummaryPanelScene extends SceneObjectBase<ValueSummaryPanelSce
     const height = getValueSummaryHeight(collapsed);
 
     // @todo remove after fields support: tmp gate for fields
-    const key = this.state.key;
+    const key = this.state.tagKey;
     if (key) {
       viz.setState({
         extendPanelContext: (_, context) => this.extendTimeSeriesLegendBus(context, key),
@@ -110,7 +110,7 @@ export class ValueSummaryPanelScene extends SceneObjectBase<ValueSummaryPanelSce
     const $data = sceneGraph.getData(this);
     const dataFrame = $data.state.data?.series;
     // @todo after fields support
-    // const key = this.state.key
+    // const key = this.state.tagKey
 
     const sceneFlexItem = this.state.body?.state.children[0];
     if (!(sceneFlexItem instanceof SceneFlexItem)) {
