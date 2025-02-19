@@ -52,6 +52,26 @@ test.describe('explore services breakdown page', () => {
     await expect(selectClusterButton).toHaveCount(1);
     await page.getByLabel(`Select ${labelName}`).click();
 
+    // include eu-west-1 cluster
+    const includeCluster = 'eu-west-1';
+    const clusterIncludeSelectButton = page
+      .getByTestId(`data-testid Panel header ${includeCluster}`)
+      .getByTestId('data-testid button-filter-include');
+    await expect(clusterIncludeSelectButton).toHaveCount(1);
+    await clusterIncludeSelectButton.click();
+
+    // include us-west-1 cluster
+    const includeCluster2 = 'us-west-1';
+    const cluster2IncludeSelectButton = page
+      .getByTestId(`data-testid Panel header ${includeCluster2}`)
+      .getByTestId('data-testid button-filter-include');
+    await expect(clusterIncludeSelectButton).toHaveCount(1);
+    await cluster2IncludeSelectButton.click();
+
+    // assert there are 2 includes selected
+    await expect(clusterIncludeSelectButton).toHaveAttribute('aria-selected', 'true');
+    await expect(cluster2IncludeSelectButton).toHaveAttribute('aria-selected', 'true');
+
     // exclude "us-east-1" cluster
     const excludeCluster = 'us-east-1';
     const clusterExcludeSelectButton = page
@@ -60,13 +80,15 @@ test.describe('explore services breakdown page', () => {
     await expect(clusterExcludeSelectButton).toHaveCount(1);
     await clusterExcludeSelectButton.click();
 
-    // include eu-west-1 cluster
-    const includeCluster = 'eu-west-1';
-    const clusterIncludeSelectButton = page
-      .getByTestId(`data-testid Panel header ${includeCluster}`)
-      .getByTestId('data-testid button-filter-include');
-    await expect(clusterIncludeSelectButton).toHaveCount(1);
+    // assert the includes were removed, exclude is shown
+    await expect(clusterIncludeSelectButton).not.toHaveAttribute('aria-selected', 'true');
+    await expect(cluster2IncludeSelectButton).not.toHaveAttribute('aria-selected', 'true');
+    await expect(clusterExcludeSelectButton).toHaveAttribute('aria-selected', 'true');
+
+    // Add an include which should remove exclude button
     await clusterIncludeSelectButton.click();
+    await expect(clusterExcludeSelectButton).not.toHaveAttribute('aria-selected', 'true');
+    await expect(clusterIncludeSelectButton).toHaveAttribute('aria-selected', 'true');
 
     // Navigate to labels tab
     await explorePage.goToLabelsTab();
@@ -321,6 +343,21 @@ test.describe('explore services breakdown page', () => {
     await expect(serviceFilter).toBeVisible();
     await expect(serviceFilter).toHaveText('service_name = tempo-distributor');
   });
+
+  // test(`should select label ${labelName}, add multiple filters`, async ({page}) => {
+  //   await explorePage.assertTabsNotLoading();
+  //   explorePage.blockAllQueriesExcept({
+  //     refIds: [],
+  //     legendFormats: [`{{${labelName}}}`],
+  //   });
+  //   const valueName1 = 'eu-west-1';
+  //   const valueName2 = 'us-east-1';
+  //   const valueName3 = 'us-east-2';
+  //   const valueName4 = 'us-west-1';
+  //   await explorePage.goToLabelsTab();
+  //   await page.getByLabel(`Select ${labelName}`).click();
+  //
+  // })
 
   test('should select a label, label added to url', async ({ page }) => {
     await explorePage.goToLabelsTab();
