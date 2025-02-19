@@ -278,6 +278,35 @@ describe('renderLogQLFieldFilters', () => {
 });
 
 describe('renderLogQLLabelFilters', () => {
+  describe('excluding keys', () => {
+    it('should not remove the only include filter', () => {
+      const filters: AdHocVariableFilter[] = [
+        {
+          key: 'service',
+          operator: FilterOp.Equal,
+          value: 'service-1',
+        },
+      ];
+
+      expect(renderLogQLLabelFilters(filters, ['service'])).toEqual('service="service-1"');
+    });
+    it('should remove filters matching ignore keys', () => {
+      const filters: AdHocVariableFilter[] = [
+        {
+          key: 'service',
+          operator: FilterOp.Equal,
+          value: 'service-1',
+        },
+        {
+          key: 'cluster',
+          operator: FilterOp.Equal,
+          value: 'us-east-1',
+        },
+      ];
+
+      expect(renderLogQLLabelFilters(filters, ['cluster'])).toEqual('service="service-1"');
+    });
+  });
   test('Renders positive filters', () => {
     const filters: AdHocVariableFilter[] = [
       {

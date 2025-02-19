@@ -621,7 +621,6 @@ export class ExpressionBuilder {
 
   /**
    * Groups all filters by operator and key
-   * @todo unit test coverage
    */
   private groupFiltersByKey(filters: AdHocVariableFilter[]): Record<FilterOpType, Dictionary<AdHocFilterWithLabels[]>> {
     let filteredFilters: AdHocVariableFilter[] = filters.filter((f) => !this.options.ignoreKeys?.includes(f.key));

@@ -156,8 +156,6 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       })
     );
 
-    // @todo what if someone changes the same variable type?
-
     // if this label is detected level
     if (this.getTagKey() === LEVEL_VARIABLE_VALUE) {
       // Subscribe to the labels variable
