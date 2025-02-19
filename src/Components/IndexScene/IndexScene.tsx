@@ -613,7 +613,7 @@ function getVariableSet(initialDatasourceUid: string, initialFilters?: AdHocVari
     label: 'Error levels',
     applyMode: 'manual',
     layout: 'vertical',
-    expressionBuilder: (filters) => renderLevelsFilter(filters),
+    expressionBuilder: renderLevelsFilter,
     hide: VariableHide.hideVariable,
     supportsMultiValueOperators: true,
   });
