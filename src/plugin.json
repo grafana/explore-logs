@@ -77,7 +77,7 @@
     ],
     "extensionPoints": [
       {
-        "id": "grafana-lokiexplore-app/metric-exploration/v1"
+        "id": "grafana-lokiexplore-app/investigation/v1"
       },
       {
         "id": "grafana-lokiexplore-app/toolbar-open-related/v1",
