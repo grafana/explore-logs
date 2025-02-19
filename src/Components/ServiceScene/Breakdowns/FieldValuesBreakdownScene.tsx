@@ -66,6 +66,11 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
     return <LoadingPlaceholder text={'Loading...'} />;
   };
 
+  // private getTagKey() {
+  //   const groupByVariable = getFieldGroupByVariable(this);
+  //   return String(groupByVariable.state.value);
+  // }
+
   onActivate() {
     const groupByVariable = getFieldGroupByVariable(this);
     const tagKey = String(groupByVariable.state.value);
@@ -208,7 +213,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
             new SceneReactObject({
               reactNode: <FieldsBreakdownScene.LabelsMenu model={fieldsBreakdownScene} />,
             }),
-            new ValueSummaryPanelScene({ title: optionValue }),
+            new ValueSummaryPanelScene({ title: optionValue /* tagKey: this.getTagKey() */ }),
             new SceneReactObject({
               reactNode: <FieldsBreakdownScene.ValuesMenu model={fieldsBreakdownScene} />,
             }),
@@ -246,7 +251,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
             new SceneReactObject({
               reactNode: <FieldsBreakdownScene.LabelsMenu model={fieldsBreakdownScene} />,
             }),
-            new ValueSummaryPanelScene({ title: optionValue }),
+            new ValueSummaryPanelScene({ title: optionValue /* tagKey: this.getTagKey() */ }),
             new SceneReactObject({
               reactNode: <FieldsBreakdownScene.ValuesMenu model={fieldsBreakdownScene} />,
             }),

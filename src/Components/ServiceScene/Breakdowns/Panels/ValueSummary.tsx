@@ -18,7 +18,7 @@ import {
 } from '../../../../services/panel';
 import { getPanelOption, setPanelOption } from '../../../../services/store';
 import React from 'react';
-import { getLabelGroupByVariable, getLabelsVariable, getLevelsVariable } from '../../../../services/variableGetters';
+import { getLabelsVariable, getLevelsVariable } from '../../../../services/variableGetters';
 import { toggleLevelFromFilter } from '../../../../services/levels';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../../../services/analytics';
 import { DataFrame, LoadingState } from '@grafana/data';
@@ -34,6 +34,8 @@ interface ValueSummaryPanelSceneState extends SceneObjectState {
   body?: SceneFlexLayout;
   title: string;
   levelColor?: boolean;
+  // @todo make required after adding field support
+  tagKey?: string;
 }
 export class ValueSummaryPanelScene extends SceneObjectBase<ValueSummaryPanelSceneState> {
   constructor(state: ValueSummaryPanelSceneState) {
@@ -61,9 +63,13 @@ export class ValueSummaryPanelScene extends SceneObjectBase<ValueSummaryPanelSce
     const viz = buildValueSummaryPanel(this.state.title, { levelColor: this.state.levelColor });
     const height = getValueSummaryHeight(collapsed);
 
-    viz.setState({
-      extendPanelContext: (_, context) => this.extendTimeSeriesLegendBus(context),
-    });
+    // @todo remove after fields support: tmp gate for fields
+    const key = this.state.key;
+    if (key) {
+      viz.setState({
+        extendPanelContext: (_, context) => this.extendTimeSeriesLegendBus(context, key),
+      });
+    }
 
     this.setState({
       body: new SceneFlexLayout({
@@ -97,17 +103,14 @@ export class ValueSummaryPanelScene extends SceneObjectBase<ValueSummaryPanelSce
     );
   }
 
-  private getTagKey() {
-    const variable = getLabelGroupByVariable(this);
-    return String(variable.state.value);
-  }
-
   /**
    * Syncs legend with labels
    */
-  private extendTimeSeriesLegendBus = (context: PanelContext) => {
+  private extendTimeSeriesLegendBus = (context: PanelContext, key: string) => {
     const $data = sceneGraph.getData(this);
     const dataFrame = $data.state.data?.series;
+    // @todo after fields support
+    // const key = this.state.key
 
     const sceneFlexItem = this.state.body?.state.children[0];
     if (!(sceneFlexItem instanceof SceneFlexItem)) {
@@ -118,7 +121,6 @@ export class ValueSummaryPanelScene extends SceneObjectBase<ValueSummaryPanelSce
     if (!(panel instanceof VizPanel)) {
       throw new Error('Cannot find VizPanel');
     }
-    const key = this.getTagKey();
 
     this.initLegendOptions(dataFrame, key, panel);
     this._subs.add(this.getLabelsVariableLegendSyncSubscription(key));

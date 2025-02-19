@@ -46,6 +46,11 @@ interface Options {
    * Keys to ignore
    */
   ignoreKeys?: string[];
+
+  /**
+   * Filter type
+   */
+  type: 'indexed' | 'field';
 }
 
 export class ExpressionBuilder {
@@ -53,7 +58,10 @@ export class ExpressionBuilder {
   private options: Options;
   private valueSeparator = 'or';
 
-  constructor(filters: AdHocFilterWithLabels[], options: Options = { joinMatchFilters: true, decodeFilters: false }) {
+  constructor(
+    filters: AdHocFilterWithLabels[],
+    options: Options = { joinMatchFilters: true, decodeFilters: false, type: 'field' }
+  ) {
     this.filters = filters;
     this.options = options;
     if (!this.options.debug) {
@@ -133,7 +141,7 @@ export class ExpressionBuilder {
   }
 
   public getLabelsExpr(options?: Partial<Options>): string {
-    const defaultOptions = { joinMatchFilters: true, decodeFilters: false };
+    const defaultOptions: Options = { joinMatchFilters: true, decodeFilters: false, type: 'indexed' };
     this.options = { ...defaultOptions, ...options };
     return this.getExpr();
   }
@@ -142,11 +150,12 @@ export class ExpressionBuilder {
    * Returns merged filters separated by pipe
    */
   public getMetadataExpr(options?: Partial<Options>): string {
-    const defaultOptions = {
+    const defaultOptions: Options = {
       filterSeparator: ' |',
       prefix: '| ',
       joinMatchFilters: false,
       decodeFilters: false,
+      type: 'field',
     };
     this.options = { ...defaultOptions, ...options };
     return this.getExpr();
@@ -156,11 +165,12 @@ export class ExpressionBuilder {
    * Same as metadata, but only include operators supported
    */
   public getLevelsExpr(options?: Partial<Options>): string {
-    const defaultOptions = {
+    const defaultOptions: Options = {
       filterSeparator: ' |',
       prefix: '| ',
       joinMatchFilters: false,
       decodeFilters: false,
+      type: 'field',
     };
 
     this.options = { ...defaultOptions, ...options };
@@ -172,11 +182,12 @@ export class ExpressionBuilder {
    * JSON encodes value
    */
   public getFieldsExpr(options?: Partial<Options>): string {
-    const defaultOptions = {
+    const defaultOptions: Options = {
       filterSeparator: ' |',
       prefix: '| ',
       joinMatchFilters: false,
       decodeFilters: true,
+      type: 'field',
     };
     this.options = { ...defaultOptions, ...options };
     return this.getExpr();
@@ -610,9 +621,17 @@ export class ExpressionBuilder {
 
   /**
    * Groups all filters by operator and key
+   * @todo unit test coverage
    */
   private groupFiltersByKey(filters: AdHocVariableFilter[]): Record<FilterOpType, Dictionary<AdHocFilterWithLabels[]>> {
-    const filteredFilters = filters.filter((f) => !this.options.ignoreKeys?.includes(f.key));
+    let filteredFilters: AdHocVariableFilter[] = filters.filter((f) => !this.options.ignoreKeys?.includes(f.key));
+
+    // We need at least one inclusive filter
+    if (this.options.type === 'indexed') {
+      if (filteredFilters.length < 1) {
+        filteredFilters = filters;
+      }
+    }
 
     const positiveMatch = filteredFilters.filter(
       (filter) => isOperatorInclusive(filter.operator) && !isOperatorRegex(filter.operator)

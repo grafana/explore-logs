@@ -382,7 +382,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
           direction: 'column',
           children: [
             new SceneReactObject({ reactNode: <LabelBreakdownScene.LabelsMenu model={labelBreakdownScene} /> }),
-            new ValueSummaryPanelScene({ title: tagKey, levelColor: true }),
+            new ValueSummaryPanelScene({ title: tagKey, levelColor: true, tagKey: this.getTagKey() }),
             new SceneReactObject({ reactNode: <LabelBreakdownScene.ValuesMenu model={labelBreakdownScene} /> }),
             new ByFrameRepeater({
               body: new SceneCSSGridLayout({
@@ -414,7 +414,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
           direction: 'column',
           children: [
             new SceneReactObject({ reactNode: <LabelBreakdownScene.LabelsMenu model={labelBreakdownScene} /> }),
-            new ValueSummaryPanelScene({ title: tagKey, levelColor: true }),
+            new ValueSummaryPanelScene({ title: tagKey, levelColor: true, tagKey: this.getTagKey() }),
             new SceneReactObject({ reactNode: <LabelBreakdownScene.ValuesMenu model={labelBreakdownScene} /> }),
             new ByFrameRepeater({
               body: new SceneCSSGridLayout({

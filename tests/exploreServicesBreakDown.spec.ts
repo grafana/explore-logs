@@ -68,6 +68,9 @@ test.describe('explore services breakdown page', () => {
     await expect(clusterIncludeSelectButton).toHaveCount(1);
     await clusterIncludeSelectButton.click();
 
+    // Navigate to labels tab
+    await explorePage.goToLabelsTab();
+
     // Include should navigate us back to labels tab
     await explorePage.assertTabsNotLoading();
     await expect(selectClusterButton).toHaveCount(1);
@@ -149,10 +152,10 @@ test.describe('explore services breakdown page', () => {
     await expect(clusterExcludeFilter).toHaveText('cluster != us-east-1');
 
     // Assert remaining two us-.+ cluster values are showing
-    await expect(page.getByTestId(/data-testid Panel header us-.+/)).toHaveCount(2);
+    await expect(page.getByTestId(/data-testid Panel header us-.+/)).toHaveCount(3);
 
     // Assert there are only 3 panels (2 value panels + summary panel)
-    await expect(page.getByTestId(/data-testid Panel header/)).toHaveCount(3);
+    await expect(page.getByTestId(/data-testid Panel header/)).toHaveCount(4);
   });
 
   test('logs panel should have panel-content class suffix', async ({ page }) => {
