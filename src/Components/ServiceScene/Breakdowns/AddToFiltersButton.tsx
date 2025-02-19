@@ -1,7 +1,13 @@
 import React from 'react';
 
 import { AdHocVariableFilter, BusEventBase, DataFrame } from '@grafana/data';
-import { SceneComponentProps, SceneObject, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
+import {
+  AdHocFiltersVariable,
+  SceneComponentProps,
+  SceneObject,
+  SceneObjectBase,
+  SceneObjectState,
+} from '@grafana/scenes';
 import { VariableHide } from '@grafana/schema';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import {
@@ -24,14 +30,24 @@ import {
 import { FilterOp, NumericFilterOp } from '../../../services/filterTypes';
 
 import { addToFavorites } from '../../../services/favorites';
+import { areArraysEqual } from '../../../services/comparison';
+import { logger } from '../../../services/logger';
 
 export interface AddToFiltersButtonState extends SceneObjectState {
   frame: DataFrame;
   variableName: InterpolatedFilterType;
+  hideExclude?: boolean;
+  isIncluded?: boolean;
+  isExcluded?: boolean;
 }
 
 export class AddFilterEvent extends BusEventBase {
-  constructor(public operator: FilterType | NumericFilterType, public key: string, public value: string) {
+  constructor(
+    public source: 'legend' | 'filterButton' | 'variable',
+    public operator?: FilterType | NumericFilterType,
+    public key?: string,
+    public value?: string
+  ) {
     super();
   }
   public static type = 'add-filter';
@@ -109,7 +125,7 @@ const getNumericOperatorType = (op: NumericFilterType | string): OperatorType | 
   return undefined;
 };
 
-export function removeFilter(
+export function removeNumericFilter(
   key: string,
   scene: SceneObject,
   operator?: NumericFilterType,
@@ -172,11 +188,11 @@ export function addNumericFilter(
     },
   ];
 
-  scene.publishEvent(new AddFilterEvent(operator, key, value), true);
-
   variable.setState({
     filters,
   });
+
+  scene.publishEvent(new AddFilterEvent('filterButton', operator, key, value), true);
 }
 
 export function addToFilters(
@@ -210,7 +226,10 @@ export function addToFilters(
 
     // if we're including, we want to remove all filters that have this key
     if (operator === 'include') {
-      return !(filter.key === key && filter.operator !== FilterOp.Equal);
+      return !(filter.key === key && filter.operator === FilterOp.NotEqual);
+    }
+    if (operator === 'exclude') {
+      return !(filter.key === key && filter.operator === FilterOp.Equal);
     }
 
     return !(filter.key === key && fieldValue.value === value);
@@ -230,11 +249,12 @@ export function addToFilters(
     ];
   }
 
-  scene.publishEvent(new AddFilterEvent(operator, key, value), true);
-
+  // Variable needs to be updated before event is published!
   variable.setState({
     filters,
   });
+
+  scene.publishEvent(new AddFilterEvent('filterButton', operator, key, value), true);
 }
 
 export function replaceFilter(
@@ -272,6 +292,58 @@ function resolveVariableTypeForField(field: string, scene: SceneObject): Interpo
 }
 
 export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState> {
+  constructor(state: AddToFiltersButtonState) {
+    super(state);
+
+    this.addActivationHandler(this.onActivate.bind(this));
+  }
+
+  onActivate() {
+    const filter = getFilter(this.state.frame);
+    if (filter) {
+      const variable = getUIAdHocVariable(this.state.variableName, filter.name, this);
+      this.setFilterState(variable);
+
+      this._subs.add(
+        variable.subscribeToState((newState, prevState) => {
+          if (!areArraysEqual(newState.filters, prevState.filters)) {
+            this.setFilterState(variable);
+          }
+        })
+      );
+    }
+  }
+
+  private setFilterState(variable: AdHocFiltersVariable) {
+    const filter = getFilter(this.state.frame);
+    if (!filter) {
+      this.setState({
+        isIncluded: false,
+        isExcluded: false,
+      });
+      return;
+    }
+
+    // Check if the filter is already there
+    const filterInSelectedFilters = variable.state.filters.find((f) => {
+      const value = getValueFromAdHocVariableFilter(variable, f);
+      return f.key === filter.name && value.value === filter.value;
+    });
+
+    if (!filterInSelectedFilters) {
+      this.setState({
+        isIncluded: false,
+        isExcluded: false,
+      });
+      return;
+    }
+
+    this.setState({
+      isIncluded: filterInSelectedFilters.operator === FilterOp.Equal,
+      isExcluded: filterInSelectedFilters.operator === FilterOp.NotEqual,
+    });
+  }
+
   public onClick = (type: FilterType) => {
     const filter = getFilter(this.state.frame);
     if (!filter) {
@@ -293,41 +365,17 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
     );
   };
 
-  isSelected = () => {
-    const filter = getFilter(this.state.frame);
-    if (!filter) {
-      return { isIncluded: false, isExcluded: false };
-    }
-
-    const variable = getUIAdHocVariable(this.state.variableName, filter.name, this);
-
-    // Check if the filter is already there
-    const filterInSelectedFilters = variable.state.filters.find((f) => {
-      const value = getValueFromAdHocVariableFilter(variable, f);
-      return f.key === filter.name && value.value === filter.value;
-    });
-
-    if (!filterInSelectedFilters) {
-      return { isIncluded: false, isExcluded: false };
-    }
-
-    // @todo support regex operators?
-    return {
-      isIncluded: filterInSelectedFilters.operator === FilterOp.Equal,
-      isExcluded: filterInSelectedFilters.operator === FilterOp.NotEqual,
-    };
-  };
-
   public static Component = ({ model }: SceneComponentProps<AddToFiltersButton>) => {
-    const { isIncluded, isExcluded } = model.isSelected();
+    const { hideExclude, isExcluded, isIncluded } = model.useState();
     return (
       <FilterButton
         buttonFill={'outline'}
-        isIncluded={isIncluded}
-        isExcluded={isExcluded}
+        isIncluded={isIncluded ?? false}
+        isExcluded={isExcluded ?? false}
         onInclude={() => model.onClick('include')}
         onClear={() => model.onClick('clear')}
         onExclude={() => model.onClick('exclude')}
+        hideExclude={hideExclude}
       />
     );
   };
@@ -338,6 +386,7 @@ const getFilter = (frame: DataFrame) => {
   const filterNameAndValueObj = frame.fields[1]?.labels ?? {};
   // Sanity check - filter should have only one key-value pair
   if (Object.keys(filterNameAndValueObj).length !== 1) {
+    logger.warn('getFilter: unexpected empty labels');
     return;
   }
   const name = Object.keys(filterNameAndValueObj)[0];

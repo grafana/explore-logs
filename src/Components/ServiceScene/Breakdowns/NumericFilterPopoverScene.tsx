@@ -6,7 +6,7 @@ import { css, cx } from '@emotion/css';
 import { SelectLabelActionScene } from './SelectLabelActionScene';
 import {
   addNumericFilter,
-  removeFilter,
+  removeNumericFilter,
   validateVariableNameForField,
   InterpolatedFilterType,
 } from './AddToFiltersButton';
@@ -185,7 +185,12 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
         this.state.variableType
       );
     } else {
-      removeFilter(this.state.labelName, this, this.state.gte ? FilterOp.gte : FilterOp.gt, this.state.variableType);
+      removeNumericFilter(
+        this.state.labelName,
+        this,
+        this.state.gte ? FilterOp.gte : FilterOp.gt,
+        this.state.variableType
+      );
     }
 
     if (this.state.lt) {
@@ -197,7 +202,12 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
         this.state.variableType
       );
     } else {
-      removeFilter(this.state.labelName, this, this.state.lte ? FilterOp.lte : FilterOp.lt, this.state.variableType);
+      removeNumericFilter(
+        this.state.labelName,
+        this,
+        this.state.lte ? FilterOp.lte : FilterOp.lt,
+        this.state.variableType
+      );
     }
 
     const selectLabelActionScene = sceneGraph.getAncestor(this, SelectLabelActionScene);

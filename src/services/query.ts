@@ -66,9 +66,9 @@ export const buildVolumeQuery = (
   return buildResourceQuery(expr, resource, { ...queryParamsOverrides }, primaryLabel);
 };
 
-export function renderLogQLLabelFilters(filters: AdHocFilterWithLabels[]) {
+export function renderLogQLLabelFilters(filters: AdHocFilterWithLabels[], ignoreKeys?: string[]) {
   const filtersTransformer = new ExpressionBuilder(filters);
-  return filtersTransformer.getLabelsExpr();
+  return filtersTransformer.getLabelsExpr({ ignoreKeys });
 }
 
 export function onAddCustomAdHocValue(item: SelectableValue<string>): {
@@ -111,19 +111,19 @@ export function onAddCustomFieldValue(
   };
 }
 
-export function renderLevelsFilter(filters: AdHocVariableFilter[]) {
+export function renderLevelsFilter(filters: AdHocVariableFilter[], ignoreKeys?: string[]) {
   const filterTransformer = new ExpressionBuilder(filters);
-  return filterTransformer.getLevelsExpr();
+  return filterTransformer.getLevelsExpr({ ignoreKeys });
 }
 
-export function renderLogQLMetadataFilters(filters: AdHocVariableFilter[]) {
+export function renderLogQLMetadataFilters(filters: AdHocVariableFilter[], ignoreKeys?: string[]) {
   const filterTransformer = new ExpressionBuilder(filters);
-  return filterTransformer.getMetadataExpr();
+  return filterTransformer.getMetadataExpr({ ignoreKeys });
 }
 
-export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
+export function renderLogQLFieldFilters(filters: AdHocVariableFilter[], ignoreKeys?: string[]) {
   const filterTransformer = new ExpressionBuilder(filters);
-  return filterTransformer.getFieldsExpr();
+  return filterTransformer.getFieldsExpr({ ignoreKeys });
 }
 
 export function escapeDoubleQuotedLineFilter(filter: AdHocFilterWithLabels) {
