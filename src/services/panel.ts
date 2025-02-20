@@ -27,7 +27,8 @@ import { getLevelLabelsFromSeries, getVisibleLevels } from './levels';
 import { LokiQuery, LokiQueryDirection } from './lokiQuery';
 import { LOGS_COUNT_QUERY_REFID, LOGS_PANEL_QUERY_REFID } from '../Components/ServiceScene/ServiceScene';
 import { getLogsPanelSortOrderFromStore, getLogsPanelSortOrderFromURL } from 'Components/ServiceScene/LogOptionsScene';
-import { getLabelsFromSeries, getVisibleLabels } from './labels';
+import { getLabelsFromSeries, getVisibleFields, getVisibleLabels, getVisibleMetadata } from './labels';
+import { getParserForField } from './fields';
 
 const UNKNOWN_LEVEL_LOGS = 'logs';
 export function setLevelColorOverrides(overrides: FieldConfigOverridesBuilder<FieldConfig>) {
@@ -105,6 +106,7 @@ export function setLabelSeriesOverrides(labels: string[], overrideConfig: FieldC
 }
 
 /**
+ * @todo unit test
  * Sets labels series visibility in the panel
  */
 export function syncLevelsVisibleSeries(panel: VizPanel, series: DataFrame[], sceneRef: SceneObject) {
@@ -118,6 +120,7 @@ export function syncLevelsVisibleSeries(panel: VizPanel, series: DataFrame[], sc
 }
 
 /**
+ * @todo unit test
  * Set levels series visibility in the panel
  */
 export function syncLabelsValueSummaryVisibleSeries(
@@ -128,7 +131,38 @@ export function syncLabelsValueSummaryVisibleSeries(
 ) {
   const allLabels = getLabelsFromSeries(series);
   const focusedLabels = getVisibleLabels(key, allLabels, sceneRef);
+
+  console.log('getVisibleLabels', focusedLabels);
   const config = setValueSummaryFieldConfigs(FieldConfigBuilders.timeseries());
+  if (focusedLabels.length) {
+    config.setOverrides(setLabelSeriesOverrides.bind(null, focusedLabels));
+  }
+  if (config instanceof FieldConfigBuilder) {
+    panel.onFieldConfigChange(config.build(), true);
+  }
+}
+
+/**
+ * @todo unit test
+ * Set fields series visibility in the panel
+ */
+export function syncFieldsValueSummaryVisibleSeries(
+  key: string,
+  panel: VizPanel,
+  series: DataFrame[],
+  sceneRef: SceneObject
+) {
+  const allLabels = getLabelsFromSeries(series);
+  const detectedFieldType = getParserForField(key, sceneRef);
+
+  const focusedLabels =
+    detectedFieldType === 'structuredMetadata'
+      ? getVisibleMetadata(key, allLabels, sceneRef)
+      : getVisibleFields(key, allLabels, sceneRef);
+
+  const config = setValueSummaryFieldConfigs(FieldConfigBuilders.timeseries());
+  console.log('focusedLabels', { focusedLabels, allLabels, key });
+
   if (focusedLabels.length) {
     config.setOverrides(setLabelSeriesOverrides.bind(null, focusedLabels));
   }

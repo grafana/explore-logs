@@ -43,7 +43,7 @@ import { AdHocVariableFilter } from '@grafana/data';
 import { logger } from './logger';
 import { narrowFieldValue, NarrowingError } from './narrowing';
 import { isFilterMetadata } from './filters';
-import { AdHocFilterTypes } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
+import { AdHocFilterTypes, InterpolatedFilterType } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
 
 export function getLogsStreamSelector(options: LogsQueryOptions) {
   const {
@@ -195,6 +195,11 @@ export function getUrlParamNameForVariable(variableName: string) {
   return `var-${variableName}`;
 }
 
+/**
+ * Parses an adHoc filter and returns the encoded value and parser
+ * @param filter
+ * @param variableName - only used in the log errors
+ */
 export function getValueFromFieldsFilter(
   filter: { value: string; valueLabels?: string[] },
   variableName: string = VAR_FIELDS
@@ -235,10 +240,10 @@ export function getValueFromFieldsFilter(
 }
 
 export function getValueFromAdHocVariableFilter(
-  variable: AdHocFiltersVariable,
+  variableName: InterpolatedFilterType,
   filter?: AdHocVariableFilter
 ): AdHocFieldValue {
-  if (variable.state.name === VAR_FIELDS && filter) {
+  if (variableName === VAR_FIELDS && filter) {
     return getValueFromFieldsFilter(filter);
   }
 

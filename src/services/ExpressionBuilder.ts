@@ -623,7 +623,9 @@ export class ExpressionBuilder {
    * Groups all filters by operator and key
    */
   private groupFiltersByKey(filters: AdHocVariableFilter[]): Record<FilterOpType, Dictionary<AdHocFilterWithLabels[]>> {
-    let filteredFilters: AdHocVariableFilter[] = filters.filter((f) => !this.options.ignoreKeys?.includes(f.key));
+    let filteredFilters: AdHocVariableFilter[] = filters.filter(
+      (f) => !this.options.ignoreKeys?.includes(f.key) || isOperatorRegex(f.operator)
+    );
 
     // We need at least one inclusive filter
     if (this.options.type === 'indexed') {
