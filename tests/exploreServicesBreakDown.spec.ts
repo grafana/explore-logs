@@ -2,7 +2,7 @@ import { expect, test } from '@grafana/plugin-e2e';
 import { ComboBoxIndex, E2EComboboxStrings, ExplorePage, levelTextMatch, PlaywrightRequest } from './fixtures/explore';
 import { testIds } from '../src/services/testIds';
 import { mockEmptyQueryApiResponse } from './mocks/mockEmptyQueryApiResponse';
-import { LokiQuery } from '../src/services/lokiQuery';
+import { LokiQuery, LokiQueryDirection } from '../src/services/lokiQuery';
 import { FilterOp } from '../src/services/filterTypes';
 import { SERVICE_NAME } from '../src/services/variables';
 
@@ -316,7 +316,7 @@ test.describe('explore services breakdown page', () => {
     await expect(extensionsButton).toHaveCount(1);
     // Click on extensions button
     await extensionsButton.click();
-    const openInExploreLocator = page.getByLabel('Open in Explore Logs').first();
+    const openInExploreLocator = page.getByLabel('Open in Grafana Logs Drilldown').first();
     await expect(openInExploreLocator).toBeVisible();
     // Click on open in logs explore
     await openInExploreLocator.click();
@@ -1279,8 +1279,6 @@ test.describe('explore services breakdown page', () => {
     await expect(explorePage.getTableToggleLocator()).not.toBeChecked();
     await expect(explorePage.getLogsToggleLocator()).toBeChecked();
 
-    const newestLogContent = await firstRow.textContent();
-
     // assert timesstamps are DESC (newest first)
     expect(new Date(await firstRowTimeCell.textContent()).valueOf()).toBeGreaterThanOrEqual(
       new Date(await secondRowTimeCell.textContent()).valueOf()
@@ -1299,6 +1297,17 @@ test.describe('explore services breakdown page', () => {
     expect(new Date(await firstRowTimeCell.textContent()).valueOf()).toBeLessThanOrEqual(
       new Date(await secondRowTimeCell.textContent()).valueOf()
     );
+
+    // Changing the sort order triggers a new query with the opposite query direction
+    let queryWithForwardDirectionExecuted = false;
+    await explorePage.waitForRequest(
+      () => {
+        queryWithForwardDirectionExecuted = true;
+      },
+      (q) => q.direction === LokiQueryDirection.Forward
+    );
+
+    expect(queryWithForwardDirectionExecuted).toEqual(true);
 
     // Reload the page
     await page.reload();
@@ -1707,7 +1716,7 @@ test.describe('explore services breakdown page', () => {
       await extensionsButton.click();
 
       // Go to explore logs
-      const openInExploreLocator = page.getByLabel('Open in Explore Logs').first();
+      const openInExploreLocator = page.getByLabel('Open in Grafana Logs Drilldown').first();
       await expect(openInExploreLocator).toBeVisible();
       await openInExploreLocator.click();
       await page.getByRole('button', { name: 'Open', exact: true }).click();

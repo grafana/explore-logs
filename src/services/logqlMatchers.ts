@@ -286,14 +286,14 @@ function getStringFieldOperator(matcher: SyntaxNode) {
 
 function parseFields(query: string, fields: FieldFilter[], context: PluginExtensionPanelContext, lokiQuery: LokiQuery) {
   const dataFrame = context.data?.series.find((frame) => frame.refId === lokiQuery.refId);
-  // We do not currently support "or" in Explore logs, so grab the left hand side LabelFilter leaf nodes as this will be the first filter expression in a given pipeline stage
+  // We do not currently support "or" in Grafana Logs Drilldown, so grab the left hand side LabelFilter leaf nodes as this will be the first filter expression in a given pipeline stage
   const allFields = getLHSLeafNodesFromQuery(query, [LabelFilter]);
 
   for (const matcher of allFields) {
     const position = NodePosition.fromNode(matcher);
     const expression = position.getExpression(query);
 
-    // Skip error expression, it will get added automatically when explore logs adds a parser
+    // Skip error expression, it will get added automatically when Grafana Logs Drilldown adds a parser
     if (expression.substring(0, 9) === `__error__`) {
       continue;
     }
