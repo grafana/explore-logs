@@ -34,7 +34,7 @@ export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
 
   public onActivate() {
     this.setState({
-      menu: new PanelMenu({ addExplorationsLink: false }),
+      menu: new PanelMenu({ addInvestigationsLink: false }),
     });
   }
   public static Component = ({ model }: SceneComponentProps<LogsTableScene>) => {

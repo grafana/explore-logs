@@ -1,11 +1,11 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
   "type": "app",
-  "name": "Explore Logs",
+  "name": "Grafana Logs Drilldown",
   "id": "grafana-lokiexplore-app",
   "autoEnabled": true,
   "info": {
-    "keywords": ["app", "loki", "explore", "logs"],
+    "keywords": ["app", "loki", "explore", "logs", "drilldown", "drill", "down", "drill-down"],
     "description": "Query-less exploration of log data stored in Loki",
     "author": {
       "name": "Grafana"
@@ -44,7 +44,7 @@
   "includes": [
     {
       "type": "page",
-      "name": "Logs",
+      "name": "Grafana Logs Drilldown",
       "path": "/a/%PLUGIN_ID%/explore",
       "action": "datasources:explore",
       "addToNav": true,
@@ -64,8 +64,8 @@
     "addedLinks": [
       {
         "targets": ["grafana/dashboard/panel/menu", "grafana/explore/toolbar/action"],
-        "title": "Open in Explore Logs",
-        "description": "Open current query in the Explore Logs view"
+        "title": "Open in Grafana Logs Drilldown",
+        "description": "Open current query in the Grafana Logs Drilldown view"
       }
     ],
     "exposedComponents": [
@@ -77,7 +77,7 @@
     ],
     "extensionPoints": [
       {
-        "id": "grafana-lokiexplore-app/metric-exploration/v1"
+        "id": "grafana-lokiexplore-app/investigation/v1"
       },
       {
         "id": "grafana-lokiexplore-app/toolbar-open-related/v1",

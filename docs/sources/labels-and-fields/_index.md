@@ -13,11 +13,11 @@ weight: 500
 
 # Labels and Fields
 
-Explore Logs visualises log volumes for the labels attached to your log lines, and fields automatically extracted from the text of the line itself.
+Grafana Logs Drilldown visualises log volumes for the labels attached to your log lines, and fields automatically extracted from the text of the line itself.
 
-{{< figure alt="Explore Logs Labels tab" width="900px" align="center" src="/media/docs/explore-logs/labels.png" caption="Labels tab" >}}
+{{< figure alt="Grafana Logs Drilldown Labels tab" width="900px" align="center" src="/media/docs/explore-logs/labels.png" caption="Labels tab" >}}
 
-Explore Logs adds a special `detected_level` label to all log lines where Loki assigns a level of the log line, including `debug`, `info`, `warn`, `error`, `fatal`, `critical`, `trace`, or `unknown` if no level could be determined.
+Grafana Logs Drilldown adds a special `detected_level` label to all log lines where Loki assigns a level of the log line, including `debug`, `info`, `warn`, `error`, `fatal`, `critical`, `trace`, or `unknown` if no level could be determined.
 
 You can click **Select** on a Label or Field to access a breakdown of its values, seeing the log volumes visualized along the way.
 This can be useful for understanding the traits of your system, and for spotting spikes or other changes.
@@ -49,7 +49,7 @@ You also have a range of [sorting and ordering options](https://grafana.com/docs
 
 You can repeat the same steps in the **Fields** tab to see fields that were extracted from your log lines.
 
-{{< figure alt="Explore Logs Fields tab" width="900px" align="center" src="/media/docs/explore-logs/fields.png" caption="Fields tab" >}}
+{{< figure alt="Grafana Logs Drilldown Fields tab" width="900px" align="center" src="/media/docs/explore-logs/fields.png" caption="Fields tab" >}}
 
 ## What next?
 

@@ -25,12 +25,13 @@ import { isOperatorInclusive } from '../operatorHelpers';
 import { PatternFilterOp } from '../filterTypes';
 import { renderPatternFilters } from '../renderPatternFilters';
 
-const title = 'Open in Explore Logs';
-const description = 'Open current query in the Explore Logs view';
+const PRODUCT_NAME = 'Grafana Logs Drilldown';
+const title = `Open in ${PRODUCT_NAME}`;
+const description = `Open current query in the ${PRODUCT_NAME} view`;
 const icon = 'gf-logs';
 
 export const ExtensionPoints = {
-  MetricExploration: 'grafana-lokiexplore-app/metric-exploration/v1',
+  MetricInvestigation: 'grafana-lokiexplore-app/investigation/v1',
 } as const;
 
 export type LinkConfigs = Array<

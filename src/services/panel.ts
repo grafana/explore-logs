@@ -267,10 +267,12 @@ export function getQueryRunner(queries: LokiQuery[], queryRunnerOptions?: Partia
       transformations: [setColorByDisplayNameTransformation],
     });
   } else {
-    const sortOrder = getLogsPanelSortOrderFromURL() || getLogsPanelSortOrderFromStore();
     queries = queries.map((query) => ({
       ...query,
-      direction: sortOrder === LogsSortOrder.Descending ? LokiQueryDirection.Backward : LokiQueryDirection.Forward,
+      get direction() {
+        const sortOrder = getLogsPanelSortOrderFromURL() || getLogsPanelSortOrderFromStore();
+        return sortOrder === LogsSortOrder.Descending ? LokiQueryDirection.Backward : LokiQueryDirection.Forward;
+      },
     }));
   }
 

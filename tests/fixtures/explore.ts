@@ -176,15 +176,18 @@ export class ExplorePage {
 
   async waitForRequest(callback: (lokiQuery: LokiQuery) => void, test: (lokiQuery: LokiQuery) => boolean) {
     await Promise.all([
-      this.page.waitForResponse((resp) => {
-        const post = resp.request().postDataJSON();
-        const queries = post?.queries as LokiQuery[];
-        if (queries && test(queries[0])) {
-          callback(queries[0]);
-          return true;
-        }
-        return false;
-      }),
+      this.page.waitForResponse(
+        (resp) => {
+          const post = resp.request().postDataJSON();
+          const queries = post?.queries as LokiQuery[];
+          if (queries && test(queries[0])) {
+            callback(queries[0]);
+            return true;
+          }
+          return false;
+        },
+        { timeout: 30000 }
+      ),
     ]);
   }
 

@@ -27,7 +27,8 @@ export type LokiQueryType = 'instant' | 'range' | 'stream' | string;
 
 export type LokiDatasource = DataSourceWithBackend<LokiQuery, DataSourceJsonData> & {
   maxLines?: number;
-} & { // @todo delete after min supported grafana is upgraded to >=11.6
+} & {
+  // @todo delete after min supported grafana is upgraded to >=11.6
   interpolateString?: (string: string, scopedVars?: ScopedVars) => string;
   getTimeRangeParams: (timeRange: TimeRange) => { start: number; end: number };
 };
