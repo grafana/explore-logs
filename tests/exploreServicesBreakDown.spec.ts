@@ -344,21 +344,6 @@ test.describe('explore services breakdown page', () => {
     await expect(serviceFilter).toHaveText('service_name = tempo-distributor');
   });
 
-  // test(`should select label ${labelName}, add multiple filters`, async ({page}) => {
-  //   await explorePage.assertTabsNotLoading();
-  //   explorePage.blockAllQueriesExcept({
-  //     refIds: [],
-  //     legendFormats: [`{{${labelName}}}`],
-  //   });
-  //   const valueName1 = 'eu-west-1';
-  //   const valueName2 = 'us-east-1';
-  //   const valueName3 = 'us-east-2';
-  //   const valueName4 = 'us-west-1';
-  //   await explorePage.goToLabelsTab();
-  //   await page.getByLabel(`Select ${labelName}`).click();
-  //
-  // })
-
   test('should select a label, label added to url', async ({ page }) => {
     await explorePage.goToLabelsTab();
     const labelsUrlArray = page.url().split('/');
