@@ -3,7 +3,6 @@ import { useStyles2, useTheme2 } from '@grafana/ui';
 import SVG from 'react-inlinesvg';
 import { GrafanaTheme2, locationUtil } from '@grafana/data';
 import { css } from '@emotion/css';
-import { config } from '@grafana/runtime';
 
 export const NoLokiSplash = () => {
   const styles = useStyles2(getStyles);
