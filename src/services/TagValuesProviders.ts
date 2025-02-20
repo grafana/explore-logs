@@ -163,7 +163,6 @@ export function tagValuesFilterAdHocFilters(
   existingFilters: AdHocFilterWithLabels[],
   filter: AdHocFilterWithLabels<{}>
 ) {
-  console.log('tagValues', { existingFilters, filter });
   let oldFiltersFiltered = existingFilters.filter(
     (f) => !(isOperatorInclusive(filter.operator) && f.key === filter.key)
   );
