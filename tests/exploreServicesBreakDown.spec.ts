@@ -594,6 +594,8 @@ test.describe('explore services breakdown page', () => {
 
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(metadataName))).toBeVisible();
     await expect(page.getByText('=~').nth(3)).toBeVisible();
+    await explorePage.assertNotLoading();
+    await explorePage.assertPanelsNotLoading();
     const panels = explorePage.getAllPanelsLocator();
     await expect(panels).toHaveCount(9);
     await expect(
