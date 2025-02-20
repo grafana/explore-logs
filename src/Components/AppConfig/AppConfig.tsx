@@ -47,8 +47,8 @@ const AppConfig = ({ plugin }: Props) => {
           error={'Interval is invalid. Please enter an interval longer then "60m". For example: 3d, 1w, 1m'}
           description={
             <span>
-              The maximum interval that can be selected in the time picker within the Explore Logs app. If empty, users
-              can select any time range interval in Explore Logs. <br />
+              The maximum interval that can be selected in the time picker within the Grafana Logs Drilldown app. If
+              empty, users can select any time range interval in Grafana Logs Drilldown. <br />
               Example values: 7d, 24h, 2w
             </span>
           }
