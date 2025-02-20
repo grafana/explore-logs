@@ -1,7 +1,7 @@
 import React from 'react';
 import { useStyles2, useTheme2 } from '@grafana/ui';
 import SVG from 'react-inlinesvg';
-import { GrafanaTheme2 } from '@grafana/data';
+import { GrafanaTheme2, locationUtil } from '@grafana/data';
 import { css } from '@emotion/css';
 
 export const NoLokiSplash = () => {
@@ -25,7 +25,7 @@ export const NoLokiSplash = () => {
           We noticed there is no Loki datasource configured.
           <br />
           Add a{' '}
-          <a className={'external-link'} href={'/connections/datasources/new'}>
+          <a className={'external-link'} href={locationUtil.assureBaseUrl(`/connections/datasources/new`)}>
             Loki datasource
           </a>{' '}
           to view logs.
