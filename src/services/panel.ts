@@ -106,7 +106,6 @@ export function setLabelSeriesOverrides(labels: string[], overrideConfig: FieldC
 }
 
 /**
- * @todo unit test
  * Sets labels series visibility in the panel
  */
 export function syncLevelsVisibleSeries(panel: VizPanel, series: DataFrame[], sceneRef: SceneObject) {
