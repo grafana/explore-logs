@@ -10,7 +10,7 @@ Grafana Logs Drilldown offers a query-less experience for browsing Loki logs wit
 
 - Check out the [Grafana Logs Drilldown documentation](https://grafana.com/docs/grafana/latest/explore/simplified-exploration/logs/)
 
-<img width="840" alt="Screenshot of Grafana Logs Drilldown" src="https://github.com/user-attachments/assets/96b7ddb5-5eb1-42a1-bc35-1f524fc0431b">
+<img width="840" alt="Screenshot of Grafana Logs Drilldown" src="src/img/drilldown-features.png">
 
 ## Installation in Your Own Grafana Instance
 
