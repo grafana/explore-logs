@@ -66,7 +66,7 @@ Once the docker container started, navigate to http://localhost:3000/a/grafana-l
 6. Select the service you would like to explore. This takes you to the Service page.
 7. Filter logs based on strings, labels, fields, or detected patterns.
 
-<img src="src/img/service_logs.png" alt="app"/>
+<img src="src/img/service_logs.jpg" alt="app"/>
 
 ## Community Resources, Feedback, and Support
 
@@ -102,5 +102,3 @@ Service Selection is the entry step where users can choose a service. List of fe
 **3. Previously selected services** - Previously selected services are displayed at the top of the list for easier access.
 
 **4. Searching of services** - The search input can be used to filter services that include the specified string.
-
-### Service Details
