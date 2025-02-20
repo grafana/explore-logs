@@ -18,7 +18,7 @@ import { IndexScene } from '../IndexScene/IndexScene';
 import { findObjectOfType, getQueryRunnerFromChildren } from '../../services/scenes';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import { logger } from '../../services/logger';
-import { AddToInvestigationButton } from '../ServiceScene/Breakdowns/AddToExplorationButton';
+import { AddToInvestigationButton } from '../ServiceScene/Breakdowns/AddToInvestigationButton';
 import { getPluginLinkExtensions } from '@grafana/runtime';
 import { ExtensionPoints } from '../../services/extensions/links';
 import { setLevelColorOverrides } from '../../services/panel';
