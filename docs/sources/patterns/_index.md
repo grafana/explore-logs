@@ -20,9 +20,9 @@ Log patterns let you work with groups of similar log lines. You can hide log pat
 
 Loki automatically extracts patterns when your logs are ingested. Patterns are ephemeral and are only mined from the previous three hours of your logs.
 
-{{< figure alt="Explore Logs Patterns tab" width="900px" align="center" src="../images/patterns.png" caption="Patterns tab" >}}
+{{< figure alt="Grafana Logs Drilldown Patterns tab" width="900px" align="center" src="/media/docs/explore-logs/patterns.png" caption="Patterns tab" >}}
 
-The Explore Logs app shows you the patterns alongside their log volumes. From this view, you can investigate spikes and include or exclude specific log lines from your view.
+The Grafana Logs Drilldown app shows you the patterns alongside their log volumes. From this view, you can investigate spikes and include or exclude specific log lines from your view.
 
 Patterns can change over time as your logging evolves.
 
@@ -44,7 +44,7 @@ We've outlined the steps you'll need to take to perform some common use cases.
 
 ### Browse log volumes by type
 
-Explore Logs proactively visualizes your log volume data per detected pattern, broken down in various ways. At a glance you can immediately spot spikes or other changes.
+Grafana Logs Drilldown proactively visualizes your log volume data per detected pattern, broken down in various ways. At a glance you can immediately spot spikes or other changes.
 
 For example, if your HTTP service is suffering from a DDoS attack, the relevant graphs will clearly show the spikes. From here you can drill down to discover enough details about the attack to counter it.
 
@@ -109,4 +109,4 @@ Since Loki 3.0, you can make queries using this simplified [pattern match filter
 
 ## What next?
 
-See how Explore Logs works on your own data by following our [Get started guide](https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/get-started/).
+See how Grafana Logs Drilldown works on your own data by following our [Get started guide](https://grafana.com/docs/grafana-cloud/visualizations/simplified-exploration/logs/get-started/).

@@ -1,11 +1,11 @@
 import React from 'react';
 import { GrafanaTheme2 } from '@grafana/data';
-import { AppliedPattern } from './IndexScene';
 import { PatternTag } from './PatternTag';
 import { css } from '@emotion/css';
 import { useStyles2, Text } from '@grafana/ui';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
 import { testIds } from 'services/testIds';
+import { AppliedPattern } from '../../services/variables';
 
 type Props = {
   patterns: AppliedPattern[] | undefined;

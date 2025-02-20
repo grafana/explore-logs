@@ -1,36 +1,36 @@
 ---
 canonical: https://grafana.com/docs/grafana/latest/explore/simplified-exploration/logs/access/
-description: Describes how to access Explore Logs in Grafana Cloud and the different installation methods for self-hosted Grafana.
+description: Describes how to access Grafana Logs Drilldown in Grafana Cloud and the different installation methods for self-hosted Grafana.
 keywords:
   - Logs
   - Explore
   - Labels
   - Analysis
 menuTitle: Access or Install
-title: Access or install Explore Logs
+title: Access or install Grafana Logs Drilldown
 weight: 200
 ---
 
-# Access or install Explore Logs
+# Access or install Grafana Logs Drilldown
 
-To use Explore Logs on your own data, you can either access it in Grafana Cloud or install it in your own Grafana instance.
+To use Grafana Logs Drilldown on your own data, you can either access it in Grafana Cloud or install it in your own Grafana instance.
 
 {{< docs/play title="the Grafana Play site" url="https://play.grafana.org/a/grafana-lokiexplore-app/explore?var-ds=ddhr3fttaw8aod&var-patterns=&var-lineFilter=&var-logsFormat=" >}}
 
 ## Access in Grafana Cloud
 
-To access Explore Logs:
+To access Grafana Logs Drilldown:
 
 1. Open your Grafana stack in a web browser.
 1. In the main menu, select **Explore** > **Logs**.
 
 ## Installation
 
-If you are not using Grafana Cloud, you can install Explore Logs in your Grafana environment.
+If you are not using Grafana Cloud, you can install Grafana Logs Drilldown in your Grafana environment.
 
 ### Install via Plugins catalog
 
-For Enterprise and OSS Grafana users, you can install Explore Logs via the [Grafana Plugins catalog](https://grafana.com/grafana/plugins/grafana-lokiexplore-app/).
+For Enterprise and OSS Grafana users, you can install Grafana Logs Drilldown via the [Grafana Plugins catalog](https://grafana.com/grafana/plugins/grafana-lokiexplore-app/).
 
 1. Open [https://grafana.com/grafana/plugins/grafana-lokiexplore-app/](https://grafana.com/grafana/plugins/grafana-lokiexplore-app/) in a web browser
 1. Open the **Installation** tab.
@@ -65,7 +65,7 @@ GF_INSTALL_PLUGINS=https://storage.googleapis.com/integration-artifacts/grafana-
 
 ### Install using grafana-cli
 
-You can install Explore Logs in your own Grafana instance using `grafana-cli`. For more information about `grafana-cli` refer to the [documentation](https://grafana.com/docs/grafana/latest/cli/.)
+You can install Grafana Logs Drilldown in your own Grafana instance using `grafana-cli`. For more information about `grafana-cli` refer to the [documentation](https://grafana.com/docs/grafana/latest/cli/.)
 
 Using `grafana-cli` run the following command:
 
@@ -75,7 +75,7 @@ grafana-cli --pluginUrl=https://storage.googleapis.com/integration-artifacts/gra
 
 ## Test with Docker Compose
 
-You can test the app using the following command to spin up Grafana, Loki, and the Explore Logs App:
+You can test the app using the following command to spin up Grafana, Loki, and the Grafana Logs Drilldown App:
 
 ```sh
 curl -L https://github.com/grafana/explore-logs/raw/main/scripts/run.sh | sh
@@ -85,7 +85,7 @@ This will download the [run.sh](https://github.com/grafana/explore-logs/blob/mai
 
 That shell file will download some configuration files into your `/tmp/explore-logs` directory and start the docker containers via `docker compose` from there.
 
-Once the docker container has started, navigate to `http://localhost:3000/a/grafana-lokiexplore-app/explore` to access Explore Logs.
+Once the docker container has started, navigate to `http://localhost:3000/a/grafana-lokiexplore-app/explore` to access Grafana Logs Drilldown.
 
 ## Having trouble?
 
@@ -93,5 +93,5 @@ Refer to the [troubleshooting guide]({{< relref "../troubleshooting" >}}) for ti
 
 ## What next?
 
-Before you can use Explore Logs, an administrator must configure a Loki data source in order to access your logs in Explore Logs.
+Before you can use Grafana Logs Drilldown, an administrator must configure a Loki data source in order to access your logs in Grafana Logs Drilldown.
 Refer to the [Loki data source documentation](https://grafana.com/docs/grafana-cloud/connect-externally-hosted/data-sources/loki/) for instructions.

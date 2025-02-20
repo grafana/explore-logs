@@ -6,6 +6,7 @@ import {
   validDurationValues,
 } from '../../Components/ServiceScene/Breakdowns/NumericFilterPopoverScene';
 import { addAdHocFilterUserInputPrefix } from '../variables';
+import { addCustomInputPrefixAndValueLabels, encodeFilter, getPath } from './utils';
 
 function getTestConfig(
   links: LinkConfigs,
@@ -304,6 +305,78 @@ describe('contextToLink', () => {
           expectedLabelFiltersUrlString,
           expectedLineFiltersUrlString,
           expectedFieldsUrlString,
+        }),
+      });
+    });
+  });
+
+  describe('pattern-filters', () => {
+    it('should parse pattern filters', () => {
+      const target = getTestTarget({
+        expr: '{cluster="eu-west-1"} !> "<_> - - [<_> +0000]" |> "<_> - <_> [<_> +0000]" | json | logfmt | drop __error__, __error_details__',
+      });
+      const config = getTestConfig(linkConfigs, target);
+
+      const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
+        `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
+      )}`;
+
+      const expectedPatternsVariable = `&var-patterns=${encodeFilter(
+        '!> "<_> - - [<_> +0000]" |> "<_> - <_> [<_> +0000]"'
+      )}`;
+
+      const pattern = `[{"type":"exclude","pattern":"<_> - - [<_> +0000]"},{"type":"include","pattern":"<_> - <_> [<_> +0000]"}]`;
+      const expectedPatterns = `&patterns=${encodeFilter(pattern)}`;
+
+      expect(config).toEqual({
+        path: getPath({
+          slug: 'cluster/eu-west-1',
+          expectedLabelFiltersUrlString,
+          expectedPatternsVariable,
+          expectedPatterns,
+        }),
+      });
+    });
+    it('should parse multiple pattern filters', () => {
+      const target = getTestTarget({
+        expr: '{cluster="eu-west-1"} !> "<_> - - [<_> +0000]" |> "<_> - <_> [<_> +0000]" or "<_> - <_> [<_> +0000] \\"POST <_> <_>\\"" | json | logfmt | drop __error__, __error_details__',
+      });
+      const config = getTestConfig(linkConfigs, target);
+
+      const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
+        `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
+      )}`;
+
+      const expectedPatternsVariable = `&var-patterns=${encodeFilter(
+        '!> "<_> - - [<_> +0000]" |> "<_> - <_> [<_> +0000]" or "<_> - <_> [<_> +0000] \\"POST <_> <_>\\""'
+      )}`;
+
+      const pattern = `[{"type":"exclude","pattern":"<_> - - [<_> +0000]"},{"type":"include","pattern":"<_> - <_> [<_> +0000]"},{"type":"include","pattern":"<_> - <_> [<_> +0000] \\"POST <_> <_>\\""}]`;
+      const expectedPatterns = `&patterns=${encodeFilter(pattern)}`;
+
+      expect(config).toEqual({
+        path: getPath({
+          slug: 'cluster/eu-west-1',
+          expectedLabelFiltersUrlString,
+          expectedPatternsVariable,
+          expectedPatterns,
+        }),
+      });
+    });
+    it('should parse empty filters', () => {
+      const target = getTestTarget({
+        expr: '{cluster="eu-west-1"} !> "" !> "" |> "" or "" | json | logfmt | drop __error__, __error_details__',
+      });
+      const config = getTestConfig(linkConfigs, target);
+
+      const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
+        `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
+      )}`;
+
+      expect(config).toEqual({
+        path: getPath({
+          slug: 'cluster/eu-west-1',
+          expectedLabelFiltersUrlString,
         }),
       });
     });
@@ -776,36 +849,3 @@ describe('contextToLink', () => {
     });
   });
 });
-
-function encodeFilter(input: string) {
-  return encodeURIComponent(input)
-    .replace(/!/g, '%21')
-    .replace(/~/g, '%7E')
-    .replace(/%20/g, '+')
-    .replace(/\(/g, '%28')
-    .replace(/\)/g, '%29');
-}
-
-function getPath(options: {
-  slug: string;
-  expectedLabelFiltersUrlString?: string;
-  expectedMetadataString?: string;
-  expectedLineFiltersUrlString?: string;
-  expectedFieldsUrlString?: string;
-  expectedLevelsFilterUrlString?: string;
-}) {
-  return `/a/grafana-lokiexplore-app/explore/${options.slug}/logs?var-ds=123abc&from=1675828800000&to=1675854000000${
-    options.expectedLabelFiltersUrlString ?? ''
-  }${options.expectedMetadataString ?? ''}${options.expectedLineFiltersUrlString ?? ''}${
-    options.expectedFieldsUrlString ?? ''
-  }${options.expectedLevelsFilterUrlString ?? ''}`;
-}
-
-/**
- * Test helper method
- * Adds the custom input prefix
- * Adds the value to valueLabels
- */
-function addCustomInputPrefixAndValueLabels(value: string) {
-  return `${addAdHocFilterUserInputPrefix(value)},${value}`;
-}

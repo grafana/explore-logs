@@ -2,7 +2,7 @@ import { expect, test } from '@grafana/plugin-e2e';
 import { ComboBoxIndex, E2EComboboxStrings, ExplorePage, levelTextMatch, PlaywrightRequest } from './fixtures/explore';
 import { testIds } from '../src/services/testIds';
 import { mockEmptyQueryApiResponse } from './mocks/mockEmptyQueryApiResponse';
-import { LokiQuery } from '../src/services/lokiQuery';
+import { LokiQuery, LokiQueryDirection } from '../src/services/lokiQuery';
 import { FilterOp } from '../src/services/filterTypes';
 import { SERVICE_NAME } from '../src/services/variables';
 
@@ -184,7 +184,7 @@ test.describe('explore services breakdown page', () => {
     await expect(table.getByRole('columnheader').nth(1)).toContainText('body');
 
     // Open the menu for "Line"
-    await page.getByRole('button', { name: 'Show menu' }).nth(1).click();
+    await page.getByLabel(/Show body|Line menu/).click();
     await page.getByText('Move left').click();
     await expect(table.getByRole('columnheader').nth(0)).toContainText('body');
 
@@ -223,7 +223,7 @@ test.describe('explore services breakdown page', () => {
     await expect(table.getByTestId(testIds.table.rawLogLine)).toHaveCount(0);
 
     // Open menu
-    await page.getByRole('button', { name: 'Show menu' }).nth(1).click();
+    await await page.getByLabel(/Show body|Line menu/).click();
 
     // Show log text option should be visible by default
     await expect(page.getByText('Show log text')).toBeVisible();
@@ -291,7 +291,7 @@ test.describe('explore services breakdown page', () => {
     await expect(extensionsButton).toHaveCount(1);
     // Click on extensions button
     await extensionsButton.click();
-    const openInExploreLocator = page.getByLabel('Open in Explore Logs').first();
+    const openInExploreLocator = page.getByLabel('Open in Grafana Logs Drilldown').first();
     await expect(openInExploreLocator).toBeVisible();
     // Click on open in logs explore
     await openInExploreLocator.click();
@@ -1254,8 +1254,6 @@ test.describe('explore services breakdown page', () => {
     await expect(explorePage.getTableToggleLocator()).not.toBeChecked();
     await expect(explorePage.getLogsToggleLocator()).toBeChecked();
 
-    const newestLogContent = await firstRow.textContent();
-
     // assert timesstamps are DESC (newest first)
     expect(new Date(await firstRowTimeCell.textContent()).valueOf()).toBeGreaterThanOrEqual(
       new Date(await secondRowTimeCell.textContent()).valueOf()
@@ -1274,6 +1272,17 @@ test.describe('explore services breakdown page', () => {
     expect(new Date(await firstRowTimeCell.textContent()).valueOf()).toBeLessThanOrEqual(
       new Date(await secondRowTimeCell.textContent()).valueOf()
     );
+
+    // Changing the sort order triggers a new query with the opposite query direction
+    let queryWithForwardDirectionExecuted = false;
+    await explorePage.waitForRequest(
+      () => {
+        queryWithForwardDirectionExecuted = true;
+      },
+      (q) => q.direction === LokiQueryDirection.Forward
+    );
+
+    expect(queryWithForwardDirectionExecuted).toEqual(true);
 
     // Reload the page
     await page.reload();
@@ -1682,7 +1691,7 @@ test.describe('explore services breakdown page', () => {
       await extensionsButton.click();
 
       // Go to explore logs
-      const openInExploreLocator = page.getByLabel('Open in Explore Logs').first();
+      const openInExploreLocator = page.getByLabel('Open in Grafana Logs Drilldown').first();
       await expect(openInExploreLocator).toBeVisible();
       await openInExploreLocator.click();
       await page.getByRole('button', { name: 'Open', exact: true }).click();

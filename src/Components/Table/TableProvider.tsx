@@ -18,6 +18,8 @@ interface TableProviderProps {
   clearSelectedLine: () => void;
   setUrlTableBodyState: (logLineState: LogLineState) => void;
   urlTableBodyState?: LogLineState;
+  showColumnManagementDrawer: (isActive: boolean) => void;
+  isColumnManagementActive: boolean;
 }
 
 export const TableProvider = ({
@@ -31,6 +33,8 @@ export const TableProvider = ({
   clearSelectedLine,
   setUrlTableBodyState,
   urlTableBodyState,
+  showColumnManagementDrawer,
+  isColumnManagementActive,
 }: TableProviderProps) => {
   if (!dataFrame) {
     return null;
@@ -50,6 +54,8 @@ export const TableProvider = ({
         urlColumns={urlColumns}
         panelWrap={panelWrap}
         clearSelectedLine={clearSelectedLine}
+        showColumnManagementDrawer={showColumnManagementDrawer}
+        isColumnManagementActive={isColumnManagementActive}
       />
     </QueryContextProvider>
   );

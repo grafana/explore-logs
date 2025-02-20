@@ -9,7 +9,7 @@ import {
 } from '@grafana/scenes';
 import { PatternFrame } from './PatternsBreakdownScene';
 import React from 'react';
-import { AppliedPattern, IndexScene } from '../../../IndexScene/IndexScene';
+import { IndexScene } from '../../../IndexScene/IndexScene';
 import { DataFrame, GrafanaTheme2, LoadingState, PanelData, scaledUnits } from '@grafana/data';
 import { AxisPlacement, Column, InteractiveTable, TooltipDisplayMode, useTheme2 } from '@grafana/ui';
 import { CellProps } from 'react-table';
@@ -23,6 +23,7 @@ import { PatternNameLabel } from './PatternNameLabel';
 import { getExplorationFor } from 'services/scenes';
 import { PatternsTableExpandedRow } from './PatternsTableExpandedRow';
 import { LINE_LIMIT } from '../../../../services/query';
+import { AppliedPattern } from '../../../../services/variables';
 
 // copied from from grafana repository packages/grafana-data/src/valueFormats/categories.ts
 // that is used in Grafana codebase for "short" units
