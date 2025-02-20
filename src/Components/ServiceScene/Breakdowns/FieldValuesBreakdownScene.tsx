@@ -221,7 +221,6 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
   private checkParser() {
     const parser = getParserFromFieldsFilters(getFieldsVariable(this));
     if (parser !== this.state.parser) {
-      console.log('parser change', parser);
       this.getSceneQueryRunner()?.setState({
         queries: [this.buildQuery()],
       });
