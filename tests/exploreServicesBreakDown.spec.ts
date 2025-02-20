@@ -559,7 +559,7 @@ test.describe('explore services breakdown page', () => {
     );
   });
 
-  test.only(`Metadata: can regex include ${metadataName} values containing "0\\d"`, async ({ page }) => {
+  test(`Metadata: can regex include ${metadataName} values containing "0\\d"`, async ({ page }) => {
     explorePage.blockAllQueriesExcept({
       refIds: [metadataName],
     });
@@ -1547,6 +1547,52 @@ test.describe('explore services breakdown page', () => {
     // Assert the panel body is visible again
     await expect(summaryPanel).toBeVisible();
     await expect(summaryPanelBody).toBeVisible();
+  });
+
+  test('field value breakdown: changing parser updates query', async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: [fieldName],
+    });
+
+    await explorePage.goToFieldsTab();
+
+    // Use the dropdown since the tenant field might not be visible
+    await page.getByText('FieldAll').click();
+    await page.keyboard.type('caller');
+    await page.keyboard.press('Enter');
+    await explorePage.assertNotLoading();
+
+    await expect(explorePage.getAllPanelsLocator()).toHaveCount(9);
+
+    // add a field with logfmt parser
+    await explorePage.addNthValueToCombobox('content', FilterOp.Equal, ComboBoxIndex.fields, 2, 'con');
+
+    await explorePage.assertPanelsNotLoading();
+
+    await expect(explorePage.getAllPanelsLocator()).toHaveCount(2);
+  });
+
+  test('label value breakdown: changing parser updates query', async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: ['LABEL_BREAKDOWN_VALUES'],
+    });
+
+    await explorePage.goToLabelsTab();
+
+    // Use the dropdown since the tenant field might not be visible
+    await page.getByText('LabelAll').click();
+    await page.keyboard.type('detected');
+    await page.keyboard.press('Enter');
+    await explorePage.assertNotLoading();
+
+    await expect(explorePage.getAllPanelsLocator()).toHaveCount(5);
+
+    // add a field with logfmt parser
+    await explorePage.addNthValueToCombobox('content', FilterOp.Equal, ComboBoxIndex.fields, 2, 'con');
+
+    await explorePage.assertPanelsNotLoading();
+
+    await expect(explorePage.getAllPanelsLocator()).toHaveCount(2);
   });
 
   test.describe('line filters', () => {

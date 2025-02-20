@@ -21,7 +21,12 @@ import { LayoutSwitcher } from './LayoutSwitcher';
 import { getQueryRunner } from '../../../services/panel';
 import { ByFrameRepeater } from './ByFrameRepeater';
 import { Alert, DrawStyle, LoadingPlaceholder, useStyles2 } from '@grafana/ui';
-import { buildFieldsQueryString, getFilterBreakdownValueScene, getParserForField } from '../../../services/fields';
+import {
+  buildFieldsQueryString,
+  getFilterBreakdownValueScene,
+  getParserForField,
+  getParserFromFieldsFilters,
+} from '../../../services/fields';
 import { getLabelValue } from './SortByScene';
 import { ParserType, VAR_FIELDS, VAR_METADATA } from '../../../services/variables';
 import React from 'react';
@@ -46,7 +51,7 @@ import { logger } from '../../../services/logger';
 export interface FieldValuesBreakdownSceneState extends SceneObjectState {
   body?: (LayoutSwitcher & SceneObject) | (SceneReactObject & SceneObject);
   $data?: SceneDataProvider;
-  detectedFieldType?: ParserType;
+  parser?: ParserType;
 }
 
 export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakdownSceneState> {
@@ -80,19 +85,12 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
   }
 
   onActivate() {
-    const tagKey = this.getTagKey();
-
-    const fieldsVariable = getFieldsVariable(this);
-    const detectedFieldsFrame = getDetectedFieldsFrame(this);
-    const detectedFieldType = getParserForField(tagKey, this);
-
-    const queryString = buildFieldsQueryString(tagKey, fieldsVariable, detectedFieldsFrame);
-    const query = buildDataQuery(queryString, { legendFormat: `{{${tagKey}}}`, refId: tagKey });
-
+    const query = this.buildQuery();
+    const parser = getParserForField(this.getTagKey(), this);
     // Set query runner
     this.setState({
       body: this.build(query),
-      detectedFieldType,
+      parser,
       $data: new SceneDataTransformer({
         $data: getQueryRunner([query], { runQueriesMode: 'manual' }),
         transformations: [],
@@ -108,6 +106,14 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
 
     this.runQuery();
     this.setSubs();
+  }
+
+  private buildQuery() {
+    const tagKey = this.getTagKey();
+    const fieldsVariable = getFieldsVariable(this);
+    const detectedFieldsFrame = getDetectedFieldsFrame(this);
+    const queryString = buildFieldsQueryString(tagKey, fieldsVariable, detectedFieldsFrame);
+    return buildDataQuery(queryString, { legendFormat: `{{${tagKey}}}`, refId: tagKey });
   }
 
   private setSubs() {
@@ -156,10 +162,8 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
       })
     );
 
-    // @todo need to clear subs when switching between field types in the dropdown??
-
     // Subscribe to metadata variable for external changes
-    if (this.state.detectedFieldType !== 'structuredMetadata') {
+    if (this.state.parser !== 'structuredMetadata') {
       // Subscribe to any metadata change and run the query without alteration
       this._subs.add(
         getMetadataVariable(this).subscribeToState(async (newState, prevState) => {
@@ -173,15 +177,15 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
       this._subs.add(
         getFieldsVariable(this).subscribeToState(async (newState, prevState) => {
           if (!areArraysEqual(newState.filters, prevState.filters)) {
+            const key = this.getTagKey();
             // Check to see if excluding this label changes the query string before running
             // If the filter change was for the label we're looking at, there's no need to re-run the query
-            const prevFilterExpression = renderLogQLFieldFilters(prevState.filters, [this.getTagKey()]);
-            const newFilterExpression = renderLogQLFieldFilters(newState.filters, [this.getTagKey()]);
+            const prevFilterExpression = renderLogQLFieldFilters(prevState.filters, [key]);
+            const newFilterExpression = renderLogQLFieldFilters(newState.filters, [key]);
 
             if (newFilterExpression !== prevFilterExpression) {
-              this.removeFieldLabelFromVariableInterpolation();
-              const queryRunner = this.getSceneQueryRunner();
-              queryRunner?.runQueries();
+              this.checkParser();
+              this.runQuery();
             }
           }
         })
@@ -191,8 +195,8 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
       this._subs.add(
         getFieldsVariable(this).subscribeToState(async (newState, prevState) => {
           if (!areArraysEqual(newState.filters, prevState.filters)) {
-            const queryRunner = this.getSceneQueryRunner();
-            queryRunner?.runQueries();
+            this.checkParser();
+            this.runQuery();
           }
         })
       );
@@ -210,6 +214,20 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
             queryRunner?.runQueries();
           }
         }
+      });
+    }
+  }
+
+  private checkParser() {
+    const parser = getParserFromFieldsFilters(getFieldsVariable(this));
+    if (parser !== this.state.parser) {
+      console.log('parser change', parser);
+      this.getSceneQueryRunner()?.setState({
+        queries: [this.buildQuery()],
+      });
+      // Set the parser to state so we can update the query next time it changes
+      this.setState({
+        parser,
       });
     }
   }
@@ -243,7 +261,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
   private removeFieldLabelFromVariableInterpolation() {
     const tagKey = this.getTagKey();
 
-    if (this.state.detectedFieldType === 'structuredMetadata') {
+    if (this.state.parser === 'structuredMetadata') {
       const metadataVar = getMetadataVariable(this);
       const filterExpression = renderLogQLFieldFilters(metadataVar.state.filters, [tagKey]);
       metadataVar.setState({

@@ -20,10 +20,11 @@ import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel'
 import { getSortByPreference } from '../../../services/store';
 import { AppEvents, DataQueryError, LoadingState } from '@grafana/data';
 import { ByFrameRepeater } from './ByFrameRepeater';
-import { getFilterBreakdownValueScene } from '../../../services/fields';
+import { getFilterBreakdownValueScene, getParserFromFieldsFilters } from '../../../services/fields';
 import {
   ALL_VARIABLE_VALUE,
   LEVEL_VARIABLE_VALUE,
+  ParserType,
   VAR_LABEL_GROUP_BY_EXPR,
   VAR_LABELS,
 } from '../../../services/variables';
@@ -34,11 +35,12 @@ import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { buildLabelsQuery, LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS } from '../../../services/labels';
 import { getAppEvents } from '@grafana/runtime';
 import {
-  getFieldsAndMetadataVariable,
+  getFieldsVariable,
   getLabelGroupByVariable,
   getLabelsVariable,
   getLevelsVariable,
   getLineFiltersVariable,
+  getMetadataVariable,
   getPatternsVariable,
 } from '../../../services/variableGetters';
 import { getPanelWrapperStyles, PanelMenu } from '../../Panels/PanelMenu';
@@ -59,6 +61,7 @@ export interface LabelValueBreakdownSceneState extends SceneObjectState {
   body?: (LayoutSwitcher & SceneObject) | (NoMatchingLabelsScene & SceneObject) | (EmptyLayoutScene & SceneObject);
   $data?: SceneDataProvider;
   errors: DisplayErrors;
+  parser?: ParserType;
 }
 
 export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdownSceneState> {
@@ -72,17 +75,24 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
   }
 
   onActivate() {
+    const parser = getParserFromFieldsFilters(getFieldsVariable(this));
     this.setState({
-      $data: getQueryRunner(
-        [buildLabelsQuery(this, VAR_LABEL_GROUP_BY_EXPR, String(getLabelGroupByVariable(this).state.value))],
-        { runQueriesMode: 'manual' }
-      ),
+      $data: this.buildQueryRunner(),
       body: this.build(),
+      parser,
     });
 
     // Run query on activate
     this.runQuery();
     this.setSubs();
+  }
+
+  private buildQueryRunner() {
+    return getQueryRunner([this.buildQuery()], { runQueriesMode: 'manual' });
+  }
+
+  private buildQuery() {
+    return buildLabelsQuery(this, VAR_LABEL_GROUP_BY_EXPR, String(getLabelGroupByVariable(this).state.value));
   }
 
   /**
@@ -129,9 +139,19 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       })
     );
 
+    this._subs.add(
+      getFieldsVariable(this).subscribeToState((newState, prevState) => {
+        if (!areArraysEqual(newState.filters, prevState.filters)) {
+          // Check to see if the new field filter changes the parser, if so rebuild the query
+          this.checkParser();
+          this.runQuery();
+        }
+      })
+    );
+
     // Subscribe to fields variable changes
     this._subs.add(
-      getFieldsAndMetadataVariable(this).subscribeToState((newState, prevState) => {
+      getMetadataVariable(this).subscribeToState((newState, prevState) => {
         if (!areArraysEqual(newState.filters, prevState.filters)) {
           this.runQuery();
         }
@@ -191,6 +211,19 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
           }
         })
       );
+    }
+  }
+
+  private checkParser() {
+    const parser = getParserFromFieldsFilters(getFieldsVariable(this));
+    if (parser !== this.state.parser) {
+      this.getSceneQueryRunner()?.setState({
+        queries: [this.buildQuery()],
+      });
+      // Set the parser to state so we can update the query next time it changes
+      this.setState({
+        parser,
+      });
     }
   }
 
