@@ -58,14 +58,6 @@ export function toggleFieldFromFilter(key: string, value: string, sceneRef: Scen
     return isOperatorInclusive(filter.operator) && getValueFromFieldsFilter(filter).value === value;
   });
 
-  console.log('toggleFieldFromFilter', {
-    isMetadata,
-    key,
-    value,
-    filterExists,
-    empty,
-  });
-
   if (empty || !filterExists) {
     addToFilters(key, value, 'include', sceneRef, isMetadata ? VAR_METADATA : VAR_FIELDS);
     return 'include';

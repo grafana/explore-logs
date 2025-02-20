@@ -132,7 +132,6 @@ export function syncLabelsValueSummaryVisibleSeries(
   const allLabels = getLabelsFromSeries(series);
   const focusedLabels = getVisibleLabels(key, allLabels, sceneRef);
 
-  console.log('getVisibleLabels', focusedLabels);
   const config = setValueSummaryFieldConfigs(FieldConfigBuilders.timeseries());
   if (focusedLabels.length) {
     config.setOverrides(setLabelSeriesOverrides.bind(null, focusedLabels));
@@ -161,7 +160,6 @@ export function syncFieldsValueSummaryVisibleSeries(
       : getVisibleFields(key, allLabels, sceneRef);
 
   const config = setValueSummaryFieldConfigs(FieldConfigBuilders.timeseries());
-  console.log('focusedLabels', { focusedLabels, allLabels, key });
 
   if (focusedLabels.length) {
     config.setOverrides(setLabelSeriesOverrides.bind(null, focusedLabels));

@@ -191,10 +191,6 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
       this._subs.add(
         getFieldsVariable(this).subscribeToState(async (newState, prevState) => {
           if (!areArraysEqual(newState.filters, prevState.filters)) {
-            console.log('fields change trigger query', {
-              new: newState.filters,
-              prev: prevState.filters,
-            });
             const queryRunner = this.getSceneQueryRunner();
             queryRunner?.runQueries();
           }
@@ -209,7 +205,6 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
           const newFilterExpression = renderLogQLMetadataFilters(newState.filters, [this.getTagKey()]);
 
           if (newFilterExpression !== prevFilterExpression) {
-            console.log('metadata change trigger query');
             this.removeMetadataLabelFromVariableInterpolation();
             const queryRunner = this.getSceneQueryRunner();
             queryRunner?.runQueries();

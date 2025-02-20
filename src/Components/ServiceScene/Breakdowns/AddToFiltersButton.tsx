@@ -204,13 +204,6 @@ export function addToFilters(
   scene: SceneObject,
   variableType: InterpolatedFilterType
 ) {
-  console.log('addToFilters', {
-    key,
-    value,
-    operator,
-    variableType,
-  });
-
   if (variableType === VAR_LABELS) {
     addToFavorites(key, value, scene);
   }
