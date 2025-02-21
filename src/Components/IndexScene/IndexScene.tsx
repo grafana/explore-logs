@@ -71,6 +71,7 @@ import {
 import { VariableHide } from '@grafana/schema';
 import { CustomConstantVariable } from '../../services/CustomConstantVariable';
 import {
+  getDataSourceVariable,
   getFieldsAndMetadataVariable,
   getFieldsVariable,
   getLabelsVariable,
@@ -100,6 +101,7 @@ import { isFilterMetadata } from '../../services/filters';
 import { getFieldsTagValuesExpression } from '../../services/expressions';
 import { isOperatorInclusive } from '../../services/operatorHelpers';
 import { renderPatternFilters } from '../../services/renderPatternFilters';
+import { NoLokiSplash } from '../NoLokiSplash';
 
 export const showLogsButtonSceneKey = 'showLogsButtonScene';
 
@@ -194,6 +196,12 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
 
   static Component = ({ model }: SceneComponentProps<IndexScene>) => {
     const { body } = model.useState();
+
+    const dsVar = getDataSourceVariable(model);
+    if (!dsVar.state.options.length) {
+      return <NoLokiSplash />;
+    }
+
     if (body) {
       return <body.Component model={body} />;
     }

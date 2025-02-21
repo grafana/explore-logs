@@ -159,15 +159,19 @@ export const getDetectedFieldValuesTagValuesProvider = async (
   return { replace: true, values };
 };
 
-function tagValuesFilterAdHocFilters(oldFilters: AdHocFilterWithLabels[], filter: AdHocFilterWithLabels<{}>) {
-  let oldFiltersFiltered = oldFilters.filter(
-    (f) => !(isOperatorInclusive(filter.operator) && f.key === filter.key && f.operator === FilterOp.Equal)
+export function tagValuesFilterAdHocFilters(
+  existingFilters: AdHocFilterWithLabels[],
+  filter: AdHocFilterWithLabels<{}>
+) {
+  let oldFiltersFiltered = existingFilters.filter(
+    (f) => !(isOperatorInclusive(filter.operator) && f.key === filter.key)
   );
 
   // If there aren't any inclusive filters, we need to ignore the exclusive ones as well, or Loki will throw an error
   if (!oldFiltersFiltered.some((filter) => isOperatorInclusive(filter.operator))) {
     oldFiltersFiltered = [];
   }
+
   return oldFiltersFiltered;
 }
 

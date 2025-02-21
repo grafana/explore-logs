@@ -95,7 +95,7 @@ export async function getFieldsKeysProvider({
       return fetchDetectedFields(datasource, opts);
     };
 
-  // fetchDetectedFields did not make the 11.5 cutoff, so is only available in 11.6, to keep this PR from needing to wait for 2 months before release, we're going to copy over the implementation into Explore Logs
+  // fetchDetectedFields did not make the 11.5 cutoff, so is only available in 11.6, to keep this PR from needing to wait for 2 months before release, we're going to copy over the implementation into Grafana Logs Drilldown
   if (fetchDetectedFieldsFn && typeof fetchDetectedFieldsFn === 'function') {
     const tagKeys: DetectedFieldsResult | Error = await fetchDetectedFieldsFn(options);
 
