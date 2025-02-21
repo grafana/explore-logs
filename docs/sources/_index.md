@@ -1,5 +1,6 @@
 ---
 title: Grafana Logs Drilldown
+menuTitle: Logs Drilldown
 canonical: https://grafana.com/docs/grafana/latest/explore/simplified-exploration/logs/
 description: Learn about the new experience for browsing your Loki logs without writing queries.
 weight: 100

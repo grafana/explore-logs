@@ -11,7 +11,7 @@ import {
   stringifyAdHocValues,
   UrlParameters,
 } from 'services/extensions/links';
-import { OpenInExploreLogsButtonProps } from './types';
+import { OpenInLogsDrilldownButtonProps } from './types';
 import { AbstractLabelOperator } from '@grafana/data';
 import { LabelFilterOp } from 'services/filterTypes';
 
@@ -22,14 +22,14 @@ const operatorMap = {
   [AbstractLabelOperator.NotEqualRegEx]: LabelFilterOp.RegexNotEqual,
 };
 
-export default function OpenInExploreLogsButton({
+export default function OpenInLogsDrilldownButton({
   datasourceUid,
   streamSelectors,
   from,
   to,
   returnToPreviousSource,
   renderButton,
-}: OpenInExploreLogsButtonProps) {
+}: OpenInLogsDrilldownButtonProps) {
   const setReturnToPrevious = useReturnToPrevious();
 
   const href = useMemo(() => {
@@ -86,7 +86,7 @@ export default function OpenInExploreLogsButton({
       href={href}
       onClick={() => setReturnToPrevious(returnToPreviousSource || 'previous')}
     >
-      Open in Explore Logs
+      Open in Logs Drilldown
     </LinkButton>
   );
 }
