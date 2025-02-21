@@ -583,6 +583,8 @@ test.describe('explore services breakdown page', () => {
 
     // Get panel count to ensure the pod regex filter reduces the result set
     const panelCount = await explorePage.getAllPanelsLocator().count();
+    await explorePage.assertNotLoading();
+    await explorePage.assertPanelsNotLoading();
     expect(panelCount).toBeGreaterThan(8);
     // Filter hardcoded pod names for tempo-ingester service
     await explorePage.addCustomValueToCombobox(
