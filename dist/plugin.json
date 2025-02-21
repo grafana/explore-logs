@@ -1,0 +1,88 @@
+{
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
+  "type": "app",
+  "name": "Grafana Logs Drilldown",
+  "id": "grafana-lokiexplore-app",
+  "autoEnabled": true,
+  "info": {
+    "keywords": ["app", "loki", "explore", "logs", "drilldown", "drill", "down", "drill-down"],
+    "description": "Query-less exploration of log data stored in Loki",
+    "author": {
+      "name": "Grafana"
+    },
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "screenshots": [
+      {
+        "name": "patterns",
+        "path": "img/patterns.png"
+      },
+      {
+        "name": "fields",
+        "path": "img/fields.png"
+      },
+      {
+        "name": "table",
+        "path": "img/table.png"
+      }
+    ],
+    "version": "1.0.8",
+    "updated": "2025-02-21",
+    "links": [
+      {
+        "name": "Github",
+        "url": "https://github.com/grafana/explore-logs"
+      },
+      {
+        "name": "Report bug",
+        "url": "https://github.com/grafana/explore-logs/issues/new"
+      }
+    ]
+  },
+  "includes": [
+    {
+      "type": "page",
+      "name": "Grafana Logs Drilldown",
+      "path": "/a/grafana-lokiexplore-app/explore",
+      "action": "datasources:explore",
+      "addToNav": true,
+      "defaultNav": true
+    }
+  ],
+  "roles": [],
+  "dependencies": {
+    "grafanaDependency": ">=11.3.0",
+    "plugins": [],
+    "extensions": {
+      "exposedComponents": ["grafana-adaptivelogs-app/temporary-exemptions/v1"]
+    }
+  },
+  "preload": true,
+  "extensions": {
+    "addedLinks": [
+      {
+        "targets": ["grafana/dashboard/panel/menu", "grafana/explore/toolbar/action"],
+        "title": "Open in Grafana Logs Drilldown",
+        "description": "Open current query in the Grafana Logs Drilldown view"
+      }
+    ],
+    "exposedComponents": [
+      {
+        "id": "grafana-lokiexplore-app/open-in-explore-logs-button/v1",
+        "title": "Open in Explore Logs button",
+        "description": "A button that opens a logs view in the Explore Logs app."
+      }
+    ],
+    "extensionPoints": [
+      {
+        "id": "grafana-lokiexplore-app/investigation/v1"
+      },
+      {
+        "id": "grafana-lokiexplore-app/toolbar-open-related/v1",
+        "title": "Open related signals like metrics/traces/profiles"
+      }
+    ]
+  }
+}
