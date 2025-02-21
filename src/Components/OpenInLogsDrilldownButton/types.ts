@@ -1,6 +1,6 @@
 import { AbstractLabelMatcher } from '@grafana/data';
 
-export interface OpenInExploreLogsButtonProps {
+export interface OpenInLogsDrilldownButtonProps {
   datasourceUid?: string;
   streamSelectors: AbstractLabelMatcher[];
   from?: string;
