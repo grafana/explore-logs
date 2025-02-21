@@ -169,7 +169,7 @@ export class ValueSummaryPanelScene extends SceneObjectBase<ValueSummaryPanelSce
           syncLabelsValueSummaryVisibleSeries(key, panel, dataFrame, this);
         }
       } else {
-        // syncFieldsValueSummaryVisibleSeries(key, panel, dataFrame, this);
+        syncFieldsValueSummaryVisibleSeries(key, panel, dataFrame, this);
       }
     }
   }

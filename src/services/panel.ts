@@ -141,7 +141,6 @@ export function syncLabelsValueSummaryVisibleSeries(
 }
 
 /**
- * @todo unit test
  * Set fields series visibility in the panel
  */
 export function syncFieldsValueSummaryVisibleSeries(

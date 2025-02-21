@@ -87,11 +87,6 @@ export function clearFilters(
   value?: string,
   operator?: FilterType
 ) {
-  if (!variableType) {
-    throw new Error('Not allowed');
-    variableType = resolveVariableTypeForField(key, scene);
-  }
-
   const variable = getUIAdHocVariable(variableType, key, scene);
 
   let filters = variable.state.filters.filter((filter) => {

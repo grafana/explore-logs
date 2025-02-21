@@ -271,7 +271,6 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
 
   /**
    * Returns the query runner
-   * @private
    */
   private getSceneQueryRunner() {
     if (this.state.$data) {
