@@ -214,6 +214,9 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
     }
   }
 
+  /**
+   * Rebuilds the query if the field variables were updated in a way that changes the current parser needed to build the query.
+   */
   private checkParser() {
     const parser = getParserFromFieldsFilters(getFieldsVariable(this));
     if (parser !== this.state.parser) {
@@ -260,9 +263,6 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
    * Generates the filterExpression for the label value query and saves it to state.
    * We have to manually generate the filterExpression as we want to exclude every filter for the target variable that matches the key used in this value breakdown.
    * e.g. in the "cluster" breakdown, we don't want to execute this query containing a cluster filter, or users will only be able to include a single value.
-   *
-   * Note: As soon as the variable filters are updated the filterExpression is overwritten,
-   * so we need to update the filterExpression before each manual query execution.
    */
   private removeValueLabelFromVariableInterpolation() {
     const tagKey = this.getTagKey();
@@ -270,15 +270,13 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
 
     if (tagKey === LEVEL_VARIABLE_VALUE) {
       const levelsVar = getLevelsVariable(this);
-      filterExpression = renderLevelsFilter(levelsVar.state.filters, [tagKey]);
       levelsVar.setState({
-        filterExpression,
+        expressionBuilder: (f) => renderLevelsFilter(f, [tagKey]),
       });
     } else {
       const labelsVar = getLabelsVariable(this);
-      filterExpression = renderLogQLLabelFilters(labelsVar.state.filters, [tagKey]);
       labelsVar.setState({
-        filterExpression,
+        expressionBuilder: (f) => renderLogQLLabelFilters(f, [tagKey]),
       });
     }
 
@@ -293,6 +291,9 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
     return String(variable.state.value);
   }
 
+  /**
+   * Actions to run when the value breakdown query response is received.
+   */
   private onValuesDataQueryChange(newState: SceneDataState) {
     // Set empty states
     this.setEmptyStates(newState);
@@ -301,6 +302,9 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
     this.setErrorStates(newState);
   }
 
+  /**
+   * Sets the error body state
+   */
   private setErrorStates(newState: SceneDataState) {
     // If panels have errors
     if (newState?.data?.errors && newState.data?.state !== LoadingState.Done) {
@@ -319,6 +323,9 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
     }
   }
 
+  /**
+   * Sets the empty body state
+   */
   private setEmptyStates(newState: SceneDataState) {
     if (newState.data?.state === LoadingState.Done) {
       if (newState.data.series.length > 0 && !(this.state.body instanceof LayoutSwitcher)) {
@@ -342,6 +349,9 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
     }
   }
 
+  /**
+   * Returns the active layout from the layout switcher
+   */
   private getActiveLayout(): SceneFlexLayout | undefined {
     const layoutSwitcher = this.state.body;
     if (layoutSwitcher instanceof LayoutSwitcher) {
@@ -353,6 +363,9 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
     return undefined;
   }
 
+  /**
+   * Returns a boolean when the active layout is empty
+   */
   private activeLayoutContainsNoPanels(): boolean {
     const activeLayout = this.getActiveLayout();
     if (activeLayout) {
@@ -366,6 +379,9 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
     return false;
   }
 
+  /**
+   * Builds the layout switcher
+   */
   private build(): LayoutSwitcher {
     const variable = getLabelGroupByVariable(this);
     const variableState = variable.state;

@@ -86,7 +86,8 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
 
   onActivate() {
     const query = this.buildQuery();
-    const parser = getParserForField(this.getTagKey(), this);
+    const parser = this.getQueryParser();
+
     // Set query runner
     this.setState({
       body: this.build(query),
@@ -108,6 +109,9 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
     this.setSubs();
   }
 
+  /**
+   * Builds the LokiQuery for the value breakdown
+   */
   private buildQuery() {
     const tagKey = this.getTagKey();
     const fieldsVariable = getFieldsVariable(this);
@@ -116,6 +120,9 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
     return buildDataQuery(queryString, { legendFormat: `{{${tagKey}}}`, refId: tagKey });
   }
 
+  /**
+   * Sets activation subscriptions
+   */
   private setSubs() {
     // Subscribe to time range changes
     this._subs.add(
@@ -162,67 +169,87 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
       })
     );
 
-    // Subscribe to metadata variable for external changes
-    if (this.state.parser !== 'structuredMetadata') {
-      // Subscribe to any metadata change and run the query without alteration
-      this._subs.add(
-        getMetadataVariable(this).subscribeToState(async (newState, prevState) => {
-          if (!areArraysEqual(newState.filters, prevState.filters)) {
-            const queryRunner = this.getSceneQueryRunner();
-            queryRunner?.runQueries();
-          }
-        })
-      );
-      // Subscribe to fields variable, run the query if the change wasn't for this label
-      this._subs.add(
-        getFieldsVariable(this).subscribeToState(async (newState, prevState) => {
-          if (!areArraysEqual(newState.filters, prevState.filters)) {
-            const key = this.getTagKey();
-            // Check to see if excluding this label changes the query string before running
-            // If the filter change was for the label we're looking at, there's no need to re-run the query
-            const prevFilterExpression = renderLogQLFieldFilters(prevState.filters, [key]);
-            const newFilterExpression = renderLogQLFieldFilters(newState.filters, [key]);
+    const { parser } = this.getParserForThisField();
 
-            if (newFilterExpression !== prevFilterExpression) {
-              this.checkParser();
-              this.runQuery();
-            }
-          }
-        })
-      );
+    if (parser !== 'structuredMetadata') {
+      this.fieldParserSubscriptions();
     } else {
-      // Subscribe to any fields change and run the query without change
-      this._subs.add(
-        getFieldsVariable(this).subscribeToState(async (newState, prevState) => {
-          if (!areArraysEqual(newState.filters, prevState.filters)) {
-            this.checkParser();
-            this.runQuery();
-          }
-        })
-      );
-
-      getMetadataVariable(this).subscribeToState(async (newState, prevState) => {
-        if (!areArraysEqual(newState.filters, prevState.filters)) {
-          // Check to see if excluding this label changes the query string before running
-          // If the filter change was for the label we're looking at, there's no need to re-run the query
-          const prevFilterExpression = renderLogQLMetadataFilters(prevState.filters, [this.getTagKey()]);
-          const newFilterExpression = renderLogQLMetadataFilters(newState.filters, [this.getTagKey()]);
-
-          if (newFilterExpression !== prevFilterExpression) {
-            this.removeMetadataLabelFromVariableInterpolation();
-            const queryRunner = this.getSceneQueryRunner();
-            queryRunner?.runQueries();
-          }
-        }
-      });
+      this.metadataParserSubscriptions();
     }
   }
 
+  /**
+   * Subscribe to variables for metadata breakdowns
+   */
+  private metadataParserSubscriptions() {
+    // Subscribe to any fields change and run the query without change
+    this._subs.add(
+      getFieldsVariable(this).subscribeToState(async (newState, prevState) => {
+        if (!areArraysEqual(newState.filters, prevState.filters)) {
+          this.checkParser();
+          this.runQuery();
+        }
+      })
+    );
+
+    getMetadataVariable(this).subscribeToState(async (newState, prevState) => {
+      if (!areArraysEqual(newState.filters, prevState.filters)) {
+        const key = this.getTagKey();
+        // Check to see if excluding this label changes the query string before running
+        // If the filter change was for the label we're looking at, there's no need to re-run the query
+        const prevFilterExpression = renderLogQLMetadataFilters(prevState.filters, [key]);
+        const newFilterExpression = renderLogQLMetadataFilters(newState.filters, [key]);
+
+        if (newFilterExpression !== prevFilterExpression) {
+          this.checkParser();
+          this.runQuery();
+        }
+      }
+    });
+  }
+
+  /**
+   * Subscribe to variables for field breakdowns
+   */
+  private fieldParserSubscriptions() {
+    // Subscribe to any metadata change and run the query without alteration
+    this._subs.add(
+      getMetadataVariable(this).subscribeToState(async (newState, prevState) => {
+        if (!areArraysEqual(newState.filters, prevState.filters)) {
+          this.checkParser();
+          this.runQuery();
+        }
+      })
+    );
+    // Subscribe to fields variable, run the query if the change wasn't for this label
+    this._subs.add(
+      getFieldsVariable(this).subscribeToState(async (newState, prevState) => {
+        if (!areArraysEqual(newState.filters, prevState.filters)) {
+          const key = this.getTagKey();
+          // Check to see if excluding this label changes the query string before running
+          // If the filter change was for the label we're looking at, there's no need to re-run the query
+          const prevFilterExpression = renderLogQLFieldFilters(prevState.filters, [key]);
+          const newFilterExpression = renderLogQLFieldFilters(newState.filters, [key]);
+
+          if (newFilterExpression !== prevFilterExpression) {
+            this.checkParser();
+            this.runQuery();
+          }
+        }
+      })
+    );
+  }
+
+  /**
+   * Check to see if the parser has changed
+   * If so update the query with the new parser and set the parser to state.
+   */
   private checkParser() {
-    const parser = getParserFromFieldsFilters(getFieldsVariable(this));
+    const parser = this.getQueryParser();
     if (parser !== this.state.parser) {
+      const query = this.buildQuery();
       this.getSceneQueryRunner()?.setState({
-        queries: [this.buildQuery()],
+        queries: [query],
       });
       // Set the parser to state so we can update the query next time it changes
       this.setState({
@@ -242,6 +269,10 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
     queryRunner?.runQueries();
   }
 
+  /**
+   * Returns the query runner
+   * @private
+   */
   private getSceneQueryRunner() {
     if (this.state.$data) {
       const queryRunners = sceneGraph.findDescendents(this.state.$data, SceneQueryRunner);
@@ -257,38 +288,30 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
     return undefined;
   }
 
+  /**
+   * Sets the expression builder to exclude the current field label
+   */
   private removeFieldLabelFromVariableInterpolation() {
     const tagKey = this.getTagKey();
 
-    if (this.state.parser === 'structuredMetadata') {
+    // We want the parser for this field, we only need to exclude keys for the variable type that matches this value breakdown
+    const parser = this.getQueryParser();
+    if (parser === 'structuredMetadata') {
       const metadataVar = getMetadataVariable(this);
-      const filterExpression = renderLogQLFieldFilters(metadataVar.state.filters, [tagKey]);
       metadataVar.setState({
-        filterExpression,
+        expressionBuilder: (f) => renderLogQLMetadataFilters(f, [tagKey]),
       });
-      return filterExpression;
     } else {
       const fieldsVar = getFieldsVariable(this);
-      const filterExpression = renderLogQLFieldFilters(fieldsVar.state.filters, [tagKey]);
       fieldsVar.setState({
-        filterExpression,
+        expressionBuilder: (f) => renderLogQLFieldFilters(f, [tagKey]),
       });
-      return filterExpression;
     }
   }
 
-  private removeMetadataLabelFromVariableInterpolation() {
-    const tagKey = this.getTagKey();
-
-    const metadataVar = getMetadataVariable(this);
-    const metadataExpression = renderLogQLMetadataFilters(metadataVar.state.filters, [tagKey]);
-    metadataVar.setState({
-      filterExpression: metadataExpression,
-    });
-
-    return metadataExpression;
-  }
-
+  /**
+   * Actions to run when the value breakdown query response is received.
+   */
   private onValuesDataQueryChange(newState: SceneDataState, query: LokiQuery) {
     if (newState.data?.state === LoadingState.Done) {
       if (this.state.body instanceof SceneReactObject) {
@@ -302,6 +325,9 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
     }
   }
 
+  /**
+   * Sets the error body state
+   */
   private setErrorState(errors: DataQueryError[] | undefined) {
     this.setState({
       body: new SceneReactObject({
@@ -332,16 +358,14 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
     });
   }
 
+  /**
+   * Builds the layout switcher
+   */
   private build(query: LokiQuery) {
-    const groupByVariable = getFieldGroupByVariable(this);
-    const optionValue = String(groupByVariable.state.value);
-
+    const { optionValue, parser } = this.getParserForThisField();
     const { sortBy, direction } = getSortByPreference('fields', DEFAULT_SORT_BY, 'desc');
-
     const fieldsBreakdownScene = sceneGraph.getAncestor(this, FieldsBreakdownScene);
     const getFilter = () => fieldsBreakdownScene.state.search.state.filter ?? '';
-
-    const parserForThisField = getParserForField(optionValue, this);
 
     return new LayoutSwitcher({
       options: [
@@ -397,7 +421,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
               getLayoutChild: getFilterBreakdownValueScene(
                 getLabelValue,
                 query?.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-                parserForThisField === 'structuredMetadata' ? VAR_METADATA : VAR_FIELDS,
+                parser === 'structuredMetadata' ? VAR_METADATA : VAR_FIELDS,
                 sceneGraph.getAncestor(this, FieldsBreakdownScene).state.sort,
                 optionValue
               ),
@@ -435,7 +459,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
               getLayoutChild: getFilterBreakdownValueScene(
                 getLabelValue,
                 query?.expr.includes('count_over_time') ? DrawStyle.Bars : DrawStyle.Line,
-                parserForThisField === 'structuredMetadata' ? VAR_METADATA : VAR_FIELDS,
+                parser === 'structuredMetadata' ? VAR_METADATA : VAR_FIELDS,
                 sceneGraph.getAncestor(this, FieldsBreakdownScene).state.sort,
                 optionValue
               ),
@@ -447,5 +471,49 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
         }),
       ],
     });
+  }
+
+  /**
+   * Gets the parser for the value breakdown
+   */
+  private getParserForThisField() {
+    const groupByVariable = getFieldGroupByVariable(this);
+    const optionValue = String(groupByVariable.state.value);
+    const parserForThisField = getParserForField(optionValue, this);
+    return { optionValue, parser: parserForThisField };
+  }
+
+  /**
+   * Gets the parser needed for fields variables
+   */
+  private getParserForFields() {
+    return getParserFromFieldsFilters(getFieldsVariable(this));
+  }
+
+  /**
+   * Gets the parser needed to run a query for the field variable and the breakdown field
+   */
+  private getQueryParser(): ParserType {
+    const { parser } = this.getParserForThisField();
+    const parserForFields = this.getParserForFields();
+
+    // If the parser needed to parse this field matches the parser needed to parse the fields
+    if (parser === parserForFields) {
+      return parserForFields;
+    }
+    // If there is no parser in the detected_fields frame for this field, let's play it safe and return mixed
+    if (parser === undefined) {
+      return 'mixed';
+    }
+    // If the parser for the breakdown field is metadata, return the parser for fields
+    if (parser === 'structuredMetadata') {
+      return parserForFields;
+    }
+    // if the parser for fields is metadata, return parser for the breakdown field
+    if (parserForFields === 'structuredMetadata') {
+      return parser;
+    }
+    // Otherwise return mixed, am I missing a case?
+    return 'mixed';
   }
 }
