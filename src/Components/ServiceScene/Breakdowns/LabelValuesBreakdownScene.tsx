@@ -84,7 +84,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
 
     // Run query on activate
     this.runQuery();
-    this.setSubs();
+    this.setSubscriptions();
   }
 
   private buildQueryRunner() {
@@ -98,7 +98,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
   /**
    * Set variable & event subscriptions
    */
-  private setSubs() {
+  private setSubscriptions() {
     // EVENT SUBS
     // Subscribe to AddFilterEvent to sync button filters with variable state
     this._subs.add(

@@ -106,7 +106,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
     );
 
     this.runQuery();
-    this.setSubs();
+    this.setSubscriptions();
   }
 
   /**
@@ -123,7 +123,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
   /**
    * Sets activation subscriptions
    */
-  private setSubs() {
+  private setSubscriptions() {
     // Subscribe to time range changes
     this._subs.add(
       sceneGraph.getTimeRange(this).subscribeToState(() => {
@@ -172,16 +172,16 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
     const { parser } = this.getParserForThisField();
 
     if (parser !== 'structuredMetadata') {
-      this.fieldParserSubscriptions();
+      this.setFieldParserSubscriptions();
     } else {
-      this.metadataParserSubscriptions();
+      this.setMetadataParserSubscriptions();
     }
   }
 
   /**
    * Subscribe to variables for metadata breakdowns
    */
-  private metadataParserSubscriptions() {
+  private setMetadataParserSubscriptions() {
     // Subscribe to any fields change and run the query without change
     this._subs.add(
       getFieldsVariable(this).subscribeToState(async (newState, prevState) => {
@@ -211,7 +211,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
   /**
    * Subscribe to variables for field breakdowns
    */
-  private fieldParserSubscriptions() {
+  private setFieldParserSubscriptions() {
     // Subscribe to any metadata change and run the query without alteration
     this._subs.add(
       getMetadataVariable(this).subscribeToState(async (newState, prevState) => {
