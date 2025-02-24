@@ -198,7 +198,7 @@ export function getUrlParamNameForVariable(variableName: string) {
 /**
  * Parses an adHoc filter and returns the encoded value and parser
  * @param filter
- * @param variableName - only used in the log errors
+ * @param variableName - only used for debugging
  */
 export function getValueFromFieldsFilter(
   filter: { value: string; valueLabels?: string[] },
