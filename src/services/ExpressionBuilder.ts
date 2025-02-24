@@ -41,14 +41,25 @@ interface Options {
    * Sets if the values are JSON encoded
    */
   decodeFilters: boolean;
+
+  /**
+   * Keys to ignore
+   */
+  ignoreKeys?: string[];
+
+  filterType: 'indexed' | 'field';
 }
 
 export class ExpressionBuilder {
   private filters: AdHocFilterWithLabels[];
   private options: Options;
-  private valueSeparator = 'or';
+  private positiveFilterValueSeparator = 'or';
+  private negativeFilterValueSeparator = '|';
 
-  constructor(filters: AdHocFilterWithLabels[], options: Options = { joinMatchFilters: true, decodeFilters: false }) {
+  constructor(
+    filters: AdHocFilterWithLabels[],
+    options: Options = { joinMatchFilters: true, decodeFilters: false, filterType: 'field' }
+  ) {
     this.filters = filters;
     this.options = options;
     if (!this.options.debug) {
@@ -83,7 +94,7 @@ export class ExpressionBuilder {
    * Returns logQL expression for AdHocFilterWithLabels[]
    * Merges multiple include matches into regex
    */
-  public getLabelsExpr(): string {
+  protected getExpr(): string {
     let {
       equalsFilters,
       notEqualsFilters,
@@ -127,50 +138,57 @@ export class ExpressionBuilder {
     return '';
   }
 
+  public getLabelsExpr(options?: Partial<Options>): string {
+    const defaultOptions: Options = { joinMatchFilters: true, decodeFilters: false, filterType: 'indexed' };
+    this.options = { ...defaultOptions, ...options };
+    return this.getExpr();
+  }
+
   /**
    * Returns merged filters separated by pipe
    */
-  public getMetadataExpr(
-    options: Options = {
+  public getMetadataExpr(options?: Partial<Options>): string {
+    const defaultOptions: Options = {
       filterSeparator: ' |',
       prefix: '| ',
       joinMatchFilters: false,
       decodeFilters: false,
-    }
-  ): string {
-    this.options = options;
-    return this.getLabelsExpr();
+      filterType: 'field',
+    };
+    this.options = { ...defaultOptions, ...options };
+    return this.getExpr();
   }
 
   /**
    * Same as metadata, but only include operators supported
    */
-  public getLevelsExpr(
-    options: Options = {
+  public getLevelsExpr(options?: Partial<Options>): string {
+    const defaultOptions: Options = {
       filterSeparator: ' |',
       prefix: '| ',
       joinMatchFilters: false,
       decodeFilters: false,
-    }
-  ): string {
-    this.options = options;
-    return this.getLabelsExpr();
+      filterType: 'field',
+    };
+
+    this.options = { ...defaultOptions, ...options };
+    return this.getExpr();
   }
 
   /**
    * Returns merged filters separated by pipe
    * JSON encodes value
    */
-  public getFieldsExpr(
-    options: Options = {
+  public getFieldsExpr(options?: Partial<Options>): string {
+    const defaultOptions: Options = {
       filterSeparator: ' |',
       prefix: '| ',
       joinMatchFilters: false,
       decodeFilters: true,
-    }
-  ): string {
-    this.options = options;
-    return this.getLabelsExpr();
+      filterType: 'field',
+    };
+    this.options = { ...defaultOptions, ...options };
+    return this.getExpr();
   }
 
   /**
@@ -260,7 +278,7 @@ export class ExpressionBuilder {
     const allFiltersString = trim(this.combineValues(allFilters, `${this.options.filterSeparator ?? ','} `));
 
     if (this.options.debug) {
-      console.info('labels expr', { allFiltersString });
+      console.info('DEBUG labels expr', { allFiltersString });
     }
 
     return allFiltersString;
@@ -361,7 +379,11 @@ export class ExpressionBuilder {
         values.forEach((value) => filtersWithSameOperatorsAndKeys.push(this.buildFilterString(key, operator, value)));
       }
 
-      filterStrings.push(filtersWithSameOperatorsAndKeys.join(` ${this.valueSeparator} `));
+      if (isOperatorInclusive(operator)) {
+        filterStrings.push(filtersWithSameOperatorsAndKeys.join(` ${this.positiveFilterValueSeparator} `));
+      } else {
+        filterStrings.push(filtersWithSameOperatorsAndKeys.join(` ${this.negativeFilterValueSeparator} `));
+      }
     }
 
     return filterStrings;
@@ -603,22 +625,33 @@ export class ExpressionBuilder {
    * Groups all filters by operator and key
    */
   private groupFiltersByKey(filters: AdHocVariableFilter[]): Record<FilterOpType, Dictionary<AdHocFilterWithLabels[]>> {
-    const positiveMatch = filters.filter(
+    let filteredFilters: AdHocVariableFilter[] = filters.filter(
+      (f) => !this.options.ignoreKeys?.includes(f.key) || isOperatorRegex(f.operator)
+    );
+
+    // We need at least one inclusive filter
+    if (this.options.filterType === 'indexed') {
+      if (filteredFilters.length < 1) {
+        filteredFilters = filters;
+      }
+    }
+
+    const positiveMatch = filteredFilters.filter(
       (filter) => isOperatorInclusive(filter.operator) && !isOperatorRegex(filter.operator)
     );
-    const positiveRegex = filters.filter(
+    const positiveRegex = filteredFilters.filter(
       (filter) => isOperatorInclusive(filter.operator) && isOperatorRegex(filter.operator)
     );
-    const negativeMatch = filters.filter(
+    const negativeMatch = filteredFilters.filter(
       (filter) => isOperatorExclusive(filter.operator) && !isOperatorRegex(filter.operator)
     );
-    const negativeRegex = filters.filter(
+    const negativeRegex = filteredFilters.filter(
       (filter) => isOperatorExclusive(filter.operator) && isOperatorRegex(filter.operator)
     );
-    const gt = filters.filter((filter) => filter.operator === FilterOp.gt);
-    const gte = filters.filter((filter) => filter.operator === FilterOp.gte);
-    const lt = filters.filter((filter) => filter.operator === FilterOp.lt);
-    const lte = filters.filter((filter) => filter.operator === FilterOp.lte);
+    const gt = filteredFilters.filter((filter) => filter.operator === FilterOp.gt);
+    const gte = filteredFilters.filter((filter) => filter.operator === FilterOp.gte);
+    const lt = filteredFilters.filter((filter) => filter.operator === FilterOp.lt);
+    const lte = filteredFilters.filter((filter) => filter.operator === FilterOp.lte);
 
     // Field ops
     const positiveMatchGroup = groupBy(positiveMatch, (filter) => filter.key);

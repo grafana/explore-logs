@@ -52,6 +52,26 @@ test.describe('explore services breakdown page', () => {
     await expect(selectClusterButton).toHaveCount(1);
     await page.getByLabel(`Select ${labelName}`).click();
 
+    // include eu-west-1 cluster
+    const includeCluster = 'eu-west-1';
+    const clusterIncludeSelectButton = page
+      .getByTestId(`data-testid Panel header ${includeCluster}`)
+      .getByTestId('data-testid button-filter-include');
+    await expect(clusterIncludeSelectButton).toHaveCount(1);
+    await clusterIncludeSelectButton.click();
+
+    // include us-west-1 cluster
+    const includeCluster2 = 'us-west-1';
+    const cluster2IncludeSelectButton = page
+      .getByTestId(`data-testid Panel header ${includeCluster2}`)
+      .getByTestId('data-testid button-filter-include');
+    await expect(clusterIncludeSelectButton).toHaveCount(1);
+    await cluster2IncludeSelectButton.click();
+
+    // assert there are 2 includes selected
+    await expect(clusterIncludeSelectButton).toHaveAttribute('aria-selected', 'true');
+    await expect(cluster2IncludeSelectButton).toHaveAttribute('aria-selected', 'true');
+
     // exclude "us-east-1" cluster
     const excludeCluster = 'us-east-1';
     const clusterExcludeSelectButton = page
@@ -60,13 +80,18 @@ test.describe('explore services breakdown page', () => {
     await expect(clusterExcludeSelectButton).toHaveCount(1);
     await clusterExcludeSelectButton.click();
 
-    // include eu-west-1 cluster
-    const includeCluster = 'eu-west-1';
-    const clusterIncludeSelectButton = page
-      .getByTestId(`data-testid Panel header ${includeCluster}`)
-      .getByTestId('data-testid button-filter-include');
-    await expect(clusterIncludeSelectButton).toHaveCount(1);
+    // assert the includes were removed, exclude is shown
+    await expect(clusterIncludeSelectButton).not.toHaveAttribute('aria-selected', 'true');
+    await expect(cluster2IncludeSelectButton).not.toHaveAttribute('aria-selected', 'true');
+    await expect(clusterExcludeSelectButton).toHaveAttribute('aria-selected', 'true');
+
+    // Add an include which should remove exclude button
     await clusterIncludeSelectButton.click();
+    await expect(clusterExcludeSelectButton).not.toHaveAttribute('aria-selected', 'true');
+    await expect(clusterIncludeSelectButton).toHaveAttribute('aria-selected', 'true');
+
+    // Navigate to labels tab
+    await explorePage.goToLabelsTab();
 
     // Include should navigate us back to labels tab
     await explorePage.assertTabsNotLoading();
@@ -149,10 +174,10 @@ test.describe('explore services breakdown page', () => {
     await expect(clusterExcludeFilter).toHaveText('cluster != us-east-1');
 
     // Assert remaining two us-.+ cluster values are showing
-    await expect(page.getByTestId(/data-testid Panel header us-.+/)).toHaveCount(2);
+    await expect(page.getByTestId(/data-testid Panel header us-.+/)).toHaveCount(3);
 
     // Assert there are only 3 panels (2 value panels + summary panel)
-    await expect(page.getByTestId(/data-testid Panel header/)).toHaveCount(3);
+    await expect(page.getByTestId(/data-testid Panel header/)).toHaveCount(4);
   });
 
   test('logs panel should have panel-content class suffix', async ({ page }) => {
@@ -459,11 +484,12 @@ test.describe('explore services breakdown page', () => {
     // And we'll have 2 requests, one on the aggregation, one for the label values
     expect(requests).toHaveLength(2);
 
-    // This should trigger more queries
-    await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
+    const excludeButton = page.getByRole('button', { name: 'Exclude' }).nth(0);
 
-    // Should have removed a panel
-    await expect(allPanels).toHaveCount(8);
+    // This should trigger more queries
+    await excludeButton.click();
+    // Should have excluded a panel
+    await expect(excludeButton).toHaveAttribute('aria-selected', 'true');
 
     // Adhoc content filter should be added
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
@@ -476,8 +502,8 @@ test.describe('explore services breakdown page', () => {
         expect(query.expr).toContain('| logfmt | caller!=""');
       });
     });
-    // Now we should have 3 queries, one more after adding the field exclusion filter
-    expect(requests).toHaveLength(3);
+    // Now we should still have 2 queries
+    expect(requests).toHaveLength(2);
   });
 
   test(`should include field ${fieldName}, update filters, open filters breakdown`, async ({ page }) => {
@@ -485,8 +511,6 @@ test.describe('explore services breakdown page', () => {
     await explorePage.scrollToBottom();
     await page.getByTestId(`data-testid Panel header ${fieldName}`).getByRole('button', { name: 'Select' }).click();
     await page.getByRole('button', { name: 'Include' }).nth(0).click();
-
-    await explorePage.assertFieldsIndex();
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
     await expect(page.getByText('=').nth(1)).toBeVisible();
   });
@@ -500,14 +524,21 @@ test.describe('explore services breakdown page', () => {
 
     // Go to caller values breakdown
     await page.getByLabel(`Select ${fieldName}`).click();
+    const panels = explorePage.getAllPanelsLocator();
+    await expect(panels).toHaveCount(9);
     // Add custom regex value
     await explorePage.addCustomValueToCombobox(fieldName, FilterOp.RegexEqual, ComboBoxIndex.fields, `.+st.+`, 'ca');
 
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
     await expect(page.getByText('=~')).toBeVisible();
-    const panels = explorePage.getAllPanelsLocator();
-    await expect(panels).toHaveCount(4);
+
+    // Filter will not change output
+    await expect(panels).toHaveCount(9);
     await expect(page.getByTestId(/data-testid Panel header .+st.+/).getByTestId('header-container')).toHaveCount(3);
+
+    await explorePage.goToFieldsTab();
+    // Verify that the regex query worked after navigating back to the label breakdown
+    await expect(page.getByTestId(/data-testid VizLegend series/)).toHaveCount(3);
   });
 
   test(`Levels: include ${levelName} values`, async ({ page }) => {
@@ -529,7 +560,7 @@ test.describe('explore services breakdown page', () => {
     await page.keyboard.press('Escape');
 
     const panels = explorePage.getAllPanelsLocator();
-    await expect(panels).toHaveCount(3);
+    await expect(panels).toHaveCount(5);
     await expect(page.getByTestId(/data-testid Panel header debug|error/).getByTestId('header-container')).toHaveCount(
       2
     );
@@ -558,6 +589,8 @@ test.describe('explore services breakdown page', () => {
 
     // Get panel count to ensure the pod regex filter reduces the result set
     const panelCount = await explorePage.getAllPanelsLocator().count();
+    await explorePage.assertNotLoading();
+    await explorePage.assertPanelsNotLoading();
     expect(panelCount).toBeGreaterThan(8);
     // Filter hardcoded pod names for tempo-ingester service
     await explorePage.addCustomValueToCombobox(
@@ -569,11 +602,18 @@ test.describe('explore services breakdown page', () => {
 
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(metadataName))).toBeVisible();
     await expect(page.getByText('=~').nth(3)).toBeVisible();
+    await explorePage.assertNotLoading();
+    await explorePage.assertPanelsNotLoading();
     const panels = explorePage.getAllPanelsLocator();
-    await expect(panels).toHaveCount(9);
+    // Filters for this key are not included in the value breakdown query
+    await expect(panels).toHaveCount(19);
     await expect(
       page.getByTestId(/data-testid Panel header tempo-ingester-[hc]{2}-\d.+/).getByTestId('header-container')
     ).toHaveCount(8);
+
+    await explorePage.goToFieldsTab();
+    // Verify that the regex query worked after navigating back to the label breakdown
+    await expect(page.getByTestId(/data-testid VizLegend series/)).toHaveCount(8);
   });
 
   test('should only load fields that are in the viewport', async ({ page }) => {
@@ -659,7 +699,6 @@ test.describe('explore services breakdown page', () => {
     await explorePage.goToFieldsTab();
     await page.getByTestId(`data-testid Panel header ${fieldName}`).getByRole('button', { name: 'Select' }).click();
     await page.getByRole('button', { name: 'Include' }).nth(0).click();
-    await explorePage.assertFieldsIndex();
     // Adhoc content filter should be added
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
   });
@@ -1522,6 +1561,52 @@ test.describe('explore services breakdown page', () => {
     // Assert the panel body is visible again
     await expect(summaryPanel).toBeVisible();
     await expect(summaryPanelBody).toBeVisible();
+  });
+
+  test('field value breakdown: changing parser updates query', async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: [fieldName],
+    });
+
+    await explorePage.goToFieldsTab();
+
+    // Use the dropdown since the tenant field might not be visible
+    await page.getByText('FieldAll').click();
+    await page.keyboard.type('caller');
+    await page.keyboard.press('Enter');
+    await explorePage.assertNotLoading();
+
+    await expect(explorePage.getAllPanelsLocator()).toHaveCount(9);
+
+    // add a field with logfmt parser
+    await explorePage.addNthValueToCombobox('content', FilterOp.Equal, ComboBoxIndex.fields, 2, 'con');
+
+    await explorePage.assertPanelsNotLoading();
+
+    await expect(explorePage.getAllPanelsLocator()).toHaveCount(2);
+  });
+
+  test('label value breakdown: changing parser updates query', async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: ['LABEL_BREAKDOWN_VALUES'],
+    });
+
+    await explorePage.goToLabelsTab();
+
+    // Use the dropdown since the tenant field might not be visible
+    await page.getByText('LabelAll').click();
+    await page.keyboard.type('detected');
+    await page.keyboard.press('Enter');
+    await explorePage.assertNotLoading();
+
+    await expect(explorePage.getAllPanelsLocator()).toHaveCount(5);
+
+    // add a field with logfmt parser
+    await explorePage.addNthValueToCombobox('content', FilterOp.Equal, ComboBoxIndex.fields, 2, 'con');
+
+    await explorePage.assertPanelsNotLoading();
+
+    await expect(explorePage.getAllPanelsLocator()).toHaveCount(2);
   });
 
   test.describe('line filters', () => {

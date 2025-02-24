@@ -45,9 +45,43 @@ describe('renderLogQLFieldFilters', () => {
           parser: 'logfmt',
         } as FieldValue),
       },
+      {
+        key: 'cluster',
+        operator: FilterOp.NotEqual,
+        value: JSON.stringify({
+          value: 'lil-cluster-2',
+          parser: 'logfmt',
+        } as FieldValue),
+      },
+      {
+        key: 'filename',
+        operator: FilterOp.NotEqual,
+        value: JSON.stringify({
+          value: 'C:\\Grafana\\logs\\logs.txt',
+          parser: 'logfmt',
+        } as FieldValue),
+      },
+      {
+        key: 'pod',
+        operator: FilterOp.Equal,
+        value: JSON.stringify({
+          value: 'pod-1',
+          parser: 'logfmt',
+        } as FieldValue),
+      },
+      {
+        key: 'pod',
+        operator: FilterOp.Equal,
+        value: JSON.stringify({
+          value: 'pod-2',
+          parser: 'logfmt',
+        } as FieldValue),
+      },
     ];
 
-    expect(renderLogQLFieldFilters(filters)).toEqual('| level!="info" | cluster!="lil-cluster"');
+    expect(renderLogQLFieldFilters(filters)).toEqual(
+      '| pod="pod-1" or pod="pod-2" | level!="info" | cluster!="lil-cluster" | cluster!="lil-cluster-2" | filename!="C:\\\\Grafana\\\\logs\\\\logs.txt"'
+    );
   });
   test('Groups positive filters', () => {
     const filters: AdHocVariableFilter[] = [
@@ -198,7 +232,7 @@ describe('renderLogQLFieldFilters', () => {
       },
     ];
 
-    expect(renderLogQLFieldFilters(filters)).toEqual('| level!~"in.+" or level!~"info" | cluster!~"lil-cluster"');
+    expect(renderLogQLFieldFilters(filters)).toEqual('| level!~"in.+" | level!~"info" | cluster!~"lil-cluster"');
   });
   test('Renders lte && gt numeric filters', () => {
     const filters: AdHocVariableFilter[] = [
@@ -278,6 +312,35 @@ describe('renderLogQLFieldFilters', () => {
 });
 
 describe('renderLogQLLabelFilters', () => {
+  describe('excluding keys', () => {
+    it('should not remove the only include filter', () => {
+      const filters: AdHocVariableFilter[] = [
+        {
+          key: 'service',
+          operator: FilterOp.Equal,
+          value: 'service-1',
+        },
+      ];
+
+      expect(renderLogQLLabelFilters(filters, ['service'])).toEqual('service="service-1"');
+    });
+    it('should remove filters matching ignore keys', () => {
+      const filters: AdHocVariableFilter[] = [
+        {
+          key: 'service',
+          operator: FilterOp.Equal,
+          value: 'service-1',
+        },
+        {
+          key: 'cluster',
+          operator: FilterOp.Equal,
+          value: 'us-east-1',
+        },
+      ];
+
+      expect(renderLogQLLabelFilters(filters, ['cluster'])).toEqual('service="service-1"');
+    });
+  });
   test('Renders positive filters', () => {
     const filters: AdHocVariableFilter[] = [
       {
@@ -318,14 +381,29 @@ describe('renderLogQLLabelFilters', () => {
         value: 'lil-cluster',
       },
       {
+        key: 'cluster',
+        operator: FilterOp.NotEqual,
+        value: 'lil-cluster-2',
+      },
+      {
         key: 'filename',
         operator: FilterOp.NotEqual,
         value: 'C:\\Grafana\\logs\\logs.txt',
       },
+      {
+        key: 'pod',
+        operator: FilterOp.Equal,
+        value: 'pod-1',
+      },
+      {
+        key: 'pod',
+        operator: FilterOp.Equal,
+        value: 'pod-2',
+      },
     ];
 
     expect(renderLogQLLabelFilters(filters)).toEqual(
-      'level!="info", cluster!="lil-cluster", filename!="C:\\\\Grafana\\\\logs\\\\logs.txt"'
+      'level!="info", filename!="C:\\\\Grafana\\\\logs\\\\logs.txt", pod=~"pod-1|pod-2", cluster!~"lil-cluster|lil-cluster-2"'
     );
   });
   test('Groups positive filters', () => {
@@ -657,9 +735,31 @@ describe('renderLogQLMetadataFilters', () => {
         operator: FilterOp.NotEqual,
         value: 'lil-cluster',
       },
+      {
+        key: 'cluster',
+        operator: FilterOp.NotEqual,
+        value: 'lil-cluster-2',
+      },
+      {
+        key: 'filename',
+        operator: FilterOp.NotEqual,
+        value: 'C:\\Grafana\\logs\\logs.txt',
+      },
+      {
+        key: 'pod',
+        operator: FilterOp.Equal,
+        value: 'pod-1',
+      },
+      {
+        key: 'pod',
+        operator: FilterOp.Equal,
+        value: 'pod-2',
+      },
     ];
 
-    expect(renderLogQLMetadataFilters(filters)).toEqual('| level!="info" | cluster!="lil-cluster"');
+    expect(renderLogQLMetadataFilters(filters)).toEqual(
+      '| pod="pod-1" or pod="pod-2" | level!="info" | cluster!="lil-cluster" | cluster!="lil-cluster-2" | filename!="C:\\\\Grafana\\\\logs\\\\logs.txt"'
+    );
   });
   test('Groups positive filters', () => {
     const filters: AdHocVariableFilter[] = [

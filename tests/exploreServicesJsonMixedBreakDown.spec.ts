@@ -47,8 +47,8 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     expect(requests).toHaveLength(2);
     // Exclude a panel
     await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
-    // Should be removed from the UI, and also lets us know when the query is done loading
-    await expect(allPanels).toHaveCount(6);
+    // Should NOT be removed from the UI
+    await expect(allPanels).toHaveCount(7);
 
     // Adhoc content filter should be added
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(mixedFieldName))).toBeVisible();
@@ -63,7 +63,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
         );
       });
     });
-    expect(requests).toHaveLength(3);
+    expect(requests).toHaveLength(2);
   });
   test(`should exclude ${logFmtFieldName}, request should contain logfmt`, async ({ page }) => {
     let requests: PlaywrightRequest[] = [];
@@ -89,6 +89,8 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     expect(requests).toHaveLength(2);
     // Exclude a panel
     await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
+    // Nav to fields index
+    await explorePage.goToFieldsTab();
     // There is only one panel/value, so we should be redirected back to the aggregation after excluding it
     // We'll have all 12 responses from detected_fields
     await expect(allPanels).toHaveCount(13);
@@ -101,20 +103,13 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
       const post = req.post;
       const queries: LokiQuery[] = post.queries;
       queries.forEach((query) => {
-        if (index < 2) {
-          expect(query.expr).toContain(
-            `sum by (${logFmtFieldName}) (count_over_time({service_name="${serviceName}"}      | logfmt | ${logFmtFieldName}!=""  [$__auto]))`
-          );
-        }
-        if (index >= 2) {
-          expect(query.expr).toContain(
-            `sum by (${logFmtFieldName}) (count_over_time({service_name="${serviceName}"}      | logfmt | ${logFmtFieldName}!="" | caller!="flush.go:253" [$__auto]))`
-          );
-        }
+        expect(query.expr).toContain(
+          `sum by (${logFmtFieldName}) (count_over_time({service_name="${serviceName}"}      | logfmt | ${logFmtFieldName}!=""  [$__auto]))`
+        );
       });
     });
 
-    expect(requests.length).toBeGreaterThanOrEqual(3);
+    expect(requests.length).toBeGreaterThanOrEqual(2);
   });
 
   test(`should exclude ${jsonFmtFieldName}, request should contain logfmt`, async ({ page }) => {
@@ -137,8 +132,8 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     expect(requests).toHaveLength(2);
     // Exclude a panel
     await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
-    // Should be removed from the UI, and also lets us know when the query is done loading
-    await expect(allPanels).toHaveCount(3);
+    // Should NOT be removed from the UI, and also lets us know when the query is done loading
+    await expect(allPanels).toHaveCount(4);
 
     // Adhoc content filter should be added
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(jsonFmtFieldName))).toBeVisible();
@@ -153,7 +148,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
         );
       });
     });
-    expect(requests).toHaveLength(3);
+    expect(requests).toHaveLength(2);
   });
   test(`should exclude ${metadataFieldName}, request should contain no parser`, async ({ page }) => {
     let requests: PlaywrightRequest[] = [];
@@ -182,7 +177,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(metadataFieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
-    await expect.poll(() => requests).toHaveLength(3);
+    await expect.poll(() => requests).toHaveLength(2);
 
     requests.forEach((req) => {
       const post = req.post;

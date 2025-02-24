@@ -183,7 +183,7 @@ describe('addToFilters and addAdHocFilter', () => {
     it('allows to clear a filter', () => {
       const lookupVariable = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(adHocVariable);
       jest.spyOn(sceneGraph, 'getAncestor').mockReturnValue(serviceScene);
-      addToFilters('existing', 'existingValue', 'clear', scene);
+      addToFilters('existing', 'existingValue', 'clear', scene, VAR_FIELDS);
       expect(lookupVariable).toHaveBeenCalledWith(VAR_FIELDS_AND_METADATA, expect.anything());
       expect(adHocVariable.state.filters).toEqual([]);
     });
@@ -231,7 +231,7 @@ describe('addToFilters and addAdHocFilter', () => {
     it.each(['=', '!='])('allows to add an %s filter', (operator: string) => {
       const lookupVariable = jest.spyOn(sceneGraph, 'lookupVariable').mockReturnValue(adHocVariable);
       jest.spyOn(sceneGraph, 'getAncestor').mockReturnValue(serviceScene);
-      addAdHocFilter({ key: 'key', value: 'value', operator }, scene);
+      addAdHocFilter({ key: 'key', value: 'value', operator }, scene, VAR_FIELDS);
 
       expect(lookupVariable).toHaveBeenCalledWith(VAR_FIELDS_AND_METADATA, expect.anything());
       expect(adHocVariable.state.filters).toEqual([
