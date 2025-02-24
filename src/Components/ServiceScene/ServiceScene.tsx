@@ -18,14 +18,7 @@ import {
 } from '@grafana/scenes';
 import { LoadingPlaceholder } from '@grafana/ui';
 import { getQueryRunner, getResourceQueryRunner } from 'services/panel';
-import {
-  buildDataQuery,
-  buildResourceQuery,
-  renderLevelsFilter,
-  renderLogQLFieldFilters,
-  renderLogQLLabelFilters,
-  renderLogQLMetadataFilters,
-} from 'services/query';
+import { buildDataQuery, buildResourceQuery } from 'services/query';
 import {
   EMPTY_VARIABLE_VALUE,
   isAdHocFilterValueUserInput,
@@ -306,7 +299,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.showVariables();
     this.getMetadata();
     this.resetBodyAndData();
-    this.resetVariableKeyExclusion();
 
     this.setBreakdownView();
 
@@ -372,7 +364,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private subscribeToFieldsVariable() {
-    return getFieldsVariable(this).subscribeToState((newState, prevState) => {
+    const fieldsVar = getFieldsVariable(this);
+    return fieldsVar.subscribeToState((newState, prevState) => {
       if (!areArraysEqual(newState.filters, prevState.filters)) {
         this.state.$detectedFieldsData?.runQueries();
         this.state.$logsCount?.runQueries();
@@ -381,7 +374,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private subscribeToMetadataVariable() {
-    return getMetadataVariable(this).subscribeToState((newState, prevState) => {
+    const metadataVar = getMetadataVariable(this);
+    return metadataVar.subscribeToState((newState, prevState) => {
       if (!areArraysEqual(newState.filters, prevState.filters)) {
         this.state.$detectedFieldsData?.runQueries();
         this.state.$logsCount?.runQueries();
@@ -528,33 +522,6 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
       this.state.$detectedLabelsData?.runQueries();
       this.state.$detectedFieldsData?.runQueries();
       this.state.$logsCount?.runQueries();
-    });
-  }
-
-  /**
-   * Reset expression builders
-   * If we're in a scene that requires excluding keys from the expression, they will be set in a child scene which is activated after this scene.
-   * Otherwise, when navigating to a cached scene we could run incorrect queries
-   */
-  private resetVariableKeyExclusion() {
-    const metadataVar = getMetadataVariable(this);
-    metadataVar.setState({
-      expressionBuilder: (f) => renderLogQLMetadataFilters(f),
-    });
-
-    const fieldsVar = getFieldsVariable(this);
-    fieldsVar.setState({
-      expressionBuilder: (f) => renderLogQLFieldFilters(f),
-    });
-
-    const labelsVar = getLabelsVariable(this);
-    labelsVar.setState({
-      expressionBuilder: (f) => renderLogQLLabelFilters(f),
-    });
-
-    const levelsVar = getLevelsVariable(this);
-    levelsVar.setState({
-      expressionBuilder: (f) => renderLevelsFilter(f),
     });
   }
 

@@ -20,13 +20,13 @@ import { getQueryRunner, setLevelColorOverrides } from '../../../services/panel'
 import { getSortByPreference } from '../../../services/store';
 import { AppEvents, DataQueryError, LoadingState } from '@grafana/data';
 import { ByFrameRepeater } from './ByFrameRepeater';
-import { getFilterBreakdownValueScene, getParserFromFieldsFilters } from '../../../services/fields';
+import { getFilterBreakdownValueScene } from '../../../services/fields';
 import {
   ALL_VARIABLE_VALUE,
   LEVEL_VARIABLE_VALUE,
-  ParserType,
   VAR_LABEL_GROUP_BY_EXPR,
   VAR_LABELS,
+  VAR_LEVELS,
 } from '../../../services/variables';
 import React from 'react';
 import { LabelBreakdownScene } from './LabelBreakdownScene';
@@ -61,7 +61,6 @@ export interface LabelValueBreakdownSceneState extends SceneObjectState {
   body?: (LayoutSwitcher & SceneObject) | (NoMatchingLabelsScene & SceneObject) | (EmptyLayoutScene & SceneObject);
   $data?: SceneDataProvider;
   errors: DisplayErrors;
-  parser?: ParserType;
 }
 
 export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdownSceneState> {
@@ -75,11 +74,9 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
   }
 
   onActivate() {
-    const parser = getParserFromFieldsFilters(getFieldsVariable(this));
     this.setState({
       $data: this.buildQueryRunner(),
       body: this.build(),
-      parser,
     });
 
     // Run query on activate
@@ -88,11 +85,16 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
   }
 
   private buildQueryRunner() {
-    return getQueryRunner([this.buildQuery()], { runQueriesMode: 'manual' });
+    const query = this.buildQuery();
+    return getQueryRunner([query], { runQueriesMode: 'manual' });
   }
 
   private buildQuery() {
-    return buildLabelsQuery(this, VAR_LABEL_GROUP_BY_EXPR, String(getLabelGroupByVariable(this).state.value));
+    const query = buildLabelsQuery(this, VAR_LABEL_GROUP_BY_EXPR, String(getLabelGroupByVariable(this).state.value));
+    // Manually interpolate query so we don't pollute the variable interpolation for other queries
+    const { variableName, filterExpression } = this.removeValueLabelFromVariableInterpolation();
+    query.expr = query.expr.replace(`$\{${variableName}}`, filterExpression);
+    return query;
   }
 
   /**
@@ -143,7 +145,6 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       getFieldsVariable(this).subscribeToState((newState, prevState) => {
         if (!areArraysEqual(newState.filters, prevState.filters)) {
           // Check to see if the new field filter changes the parser, if so rebuild the query
-          this.checkParser();
           this.runQuery();
         }
       })
@@ -176,58 +177,43 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       })
     );
 
-    // if this label is detected level
-    if (this.getTagKey() === LEVEL_VARIABLE_VALUE) {
-      // Subscribe to the labels variable
-      this._subs.add(
-        getLabelsVariable(this).subscribeToState(async (newState, prevState) => {
-          if (!areArraysEqual(newState.filters, prevState.filters)) {
-            // Check to see if excluding this label changes the query string before running
-            // If the filter change was for the label we're looking at, there's no need to re-run the query
-            const partialFilterExpression = this.removeValueLabelFromVariableInterpolation();
-            const filterExpression = renderLogQLLabelFilters(newState.filters, [this.getTagKey()]);
+    const key = this.getTagKey();
 
-            if (partialFilterExpression !== filterExpression) {
-              const queryRunner = this.getSceneQueryRunner();
-              queryRunner?.runQueries();
-            }
-          }
-        })
-      );
-    } else {
-      //otherwise subscribe to levels variable
-      this._subs.add(
-        getLevelsVariable(this).subscribeToState(async (newState, prevState) => {
-          if (!areArraysEqual(newState.filters, prevState.filters)) {
-            // Check to see if excluding this label changes the query string before running
-            // If the filter change was for the label we're looking at, there's no need to re-run the query
-            const partialFilterExpression = this.removeValueLabelFromVariableInterpolation();
-            const filterExpression = renderLevelsFilter(newState.filters, [this.getTagKey()]);
+    this._subs.add(
+      getLabelsVariable(this).subscribeToState(async (newState, prevState) => {
+        if (
+          !areArraysEqual(
+            newState.filters.filter((f) => key === LEVEL_VARIABLE_VALUE && f.key !== key),
+            prevState.filters.filter((f) => key === LEVEL_VARIABLE_VALUE && f.key !== key)
+          )
+        ) {
+          this.runQuery();
+        }
+      })
+    );
 
-            if (partialFilterExpression !== filterExpression) {
-              const queryRunner = this.getSceneQueryRunner();
-              queryRunner?.runQueries();
-            }
-          }
-        })
-      );
-    }
+    this._subs.add(
+      getLevelsVariable(this).subscribeToState(async (newState, prevState) => {
+        if (
+          !areArraysEqual(
+            newState.filters.filter((f) => key !== LEVEL_VARIABLE_VALUE && f.key !== key),
+            prevState.filters.filter((f) => key !== LEVEL_VARIABLE_VALUE && f.key !== key)
+          )
+        ) {
+          this.runQuery();
+        }
+      })
+    );
   }
 
   /**
-   * Rebuilds the query if the field variables were updated in a way that changes the current parser needed to build the query.
+   * Since we run this query manually, we want to rebuild it before every execution
    */
-  private checkParser() {
-    const parser = getParserFromFieldsFilters(getFieldsVariable(this));
-    if (parser !== this.state.parser) {
-      this.getSceneQueryRunner()?.setState({
-        queries: [this.buildQuery()],
-      });
-      // Set the parser to state so we can update the query next time it changes
-      this.setState({
-        parser,
-      });
-    }
+  private rebuildQuery() {
+    // Rebuild the query
+    this.getSceneQueryRunner()?.setState({
+      queries: [this.buildQuery()],
+    });
   }
 
   /**
@@ -235,8 +221,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
    * Generates the filterExpression excluding all filters with a key that matches the label.
    */
   private runQuery() {
-    // Update the filters to exclude the current value so all options are displayed to the user
-    this.removeValueLabelFromVariableInterpolation();
+    this.rebuildQuery();
     const queryRunner = this.getSceneQueryRunner();
     queryRunner?.runQueries();
   }
@@ -267,20 +252,19 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
   private removeValueLabelFromVariableInterpolation() {
     const tagKey = this.getTagKey();
     let filterExpression;
+    let variableName: typeof VAR_LEVELS | typeof VAR_LABELS;
 
     if (tagKey === LEVEL_VARIABLE_VALUE) {
       const levelsVar = getLevelsVariable(this);
-      levelsVar.setState({
-        expressionBuilder: (f) => renderLevelsFilter(f, [tagKey]),
-      });
+      variableName = VAR_LEVELS;
+      filterExpression = renderLevelsFilter(levelsVar.state.filters, [tagKey]);
     } else {
       const labelsVar = getLabelsVariable(this);
-      labelsVar.setState({
-        expressionBuilder: (f) => renderLogQLLabelFilters(f, [tagKey]),
-      });
+      variableName = VAR_LABELS;
+      filterExpression = renderLogQLLabelFilters(labelsVar.state.filters, [tagKey]);
     }
 
-    return filterExpression;
+    return { filterExpression, variableName };
   }
 
   /**

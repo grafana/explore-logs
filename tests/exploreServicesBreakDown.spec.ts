@@ -482,7 +482,7 @@ test.describe('explore services breakdown page', () => {
     // Should see 8 panels after it's done loading
     await expect(allPanels).toHaveCount(9);
     // And we'll have 2 requests, one on the aggregation, one for the label values
-    expect(requests).toHaveLength(2);
+    await expect.poll(() => requests).toHaveLength(2);
 
     const excludeButton = page.getByRole('button', { name: 'Exclude' }).nth(0);
 
@@ -495,6 +495,8 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
+    await expect.poll(() => requests).toHaveLength(2);
+
     requests.forEach((req) => {
       const post = req.post;
       const queries: LokiQuery[] = post.queries;
@@ -502,8 +504,6 @@ test.describe('explore services breakdown page', () => {
         expect(query.expr).toContain('| logfmt | caller!=""');
       });
     });
-    // Now we should still have 2 queries
-    expect(requests).toHaveLength(2);
   });
 
   test(`should include field ${fieldName}, update filters, open filters breakdown`, async ({ page }) => {
@@ -524,14 +524,21 @@ test.describe('explore services breakdown page', () => {
 
     // Go to caller values breakdown
     await page.getByLabel(`Select ${fieldName}`).click();
+    const panels = explorePage.getAllPanelsLocator();
+    await expect(panels).toHaveCount(9);
     // Add custom regex value
     await explorePage.addCustomValueToCombobox(fieldName, FilterOp.RegexEqual, ComboBoxIndex.fields, `.+st.+`, 'ca');
 
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
     await expect(page.getByText('=~')).toBeVisible();
-    const panels = explorePage.getAllPanelsLocator();
-    await expect(panels).toHaveCount(4);
+
+    // Filter will not change output
+    await expect(panels).toHaveCount(9);
     await expect(page.getByTestId(/data-testid Panel header .+st.+/).getByTestId('header-container')).toHaveCount(3);
+
+    await explorePage.goToFieldsTab();
+    // Verify that the regex query worked after navigating back to the label breakdown
+    await expect(page.getByTestId(/data-testid VizLegend series/)).toHaveCount(3);
   });
 
   test(`Levels: include ${levelName} values`, async ({ page }) => {
@@ -581,10 +588,9 @@ test.describe('explore services breakdown page', () => {
     await explorePage.assertPanelsNotLoading();
 
     // Get panel count to ensure the pod regex filter reduces the result set
-    const panelCount = await explorePage.getAllPanelsLocator().count();
     await explorePage.assertNotLoading();
     await explorePage.assertPanelsNotLoading();
-    expect(panelCount).toBeGreaterThan(8);
+    await expect.poll(() => explorePage.getAllPanelsLocator().count()).toBe(10);
     // Filter hardcoded pod names for tempo-ingester service
     await explorePage.addCustomValueToCombobox(
       metadataName,
@@ -597,11 +603,19 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByText('=~').nth(3)).toBeVisible();
     await explorePage.assertNotLoading();
     await explorePage.assertPanelsNotLoading();
-    const panels = explorePage.getAllPanelsLocator();
-    await expect(panels).toHaveCount(9);
-    await expect(
-      page.getByTestId(/data-testid Panel header tempo-ingester-[hc]{2}-\d.+/).getByTestId('header-container')
-    ).toHaveCount(8);
+    // Filters for this key are not included in the value breakdown query
+    await expect.poll(() => explorePage.getAllPanelsLocator().count()).toBe(10);
+    await expect
+      .poll(() =>
+        page
+          .getByTestId(/data-testid Panel header tempo-ingester-[hc]{2}-\d.+/)
+          .getByTestId('header-container')
+          .count()
+      )
+      .toBe(8);
+    await explorePage.goToFieldsTab();
+    // Verify that the regex query worked after navigating back to the label breakdown
+    await expect.poll(() => page.getByTestId(/data-testid VizLegend series/).count()).toBe(8);
   });
 
   test('should only load fields that are in the viewport', async ({ page }) => {
@@ -660,10 +674,10 @@ test.describe('explore services breakdown page', () => {
     // Panel on the top should not
     await expect(page.getByTestId(/data-testid Panel header/).first()).not.toBeInViewport();
     // Wait for a bit for the requests to be made
-    await page.waitForTimeout(250);
+    await expect.poll(() => requestCount).toEqual(TOTAL_ROWS * COUNT_PER_ROW - 1);
     // 7 rows, last row only has 2
     expect(requestCount).toEqual(TOTAL_ROWS * COUNT_PER_ROW - 1);
-    expect(logsCountQueryCount).toEqual(2);
+    await expect.poll(() => logsCountQueryCount).toEqual(2);
   });
 
   test('Patterns should show error state when API call returns error', async ({ page }) => {
@@ -1041,7 +1055,7 @@ test.describe('explore services breakdown page', () => {
     await expect(bytesIncludeButton).toHaveText('Include');
 
     // Assert that we actually ran some queries
-    expect(numberOfQueries).toBeGreaterThan(0);
+    await expect.poll(() => numberOfQueries).toBeGreaterThan(0);
   });
 
   test('should exclude all logs that contain bytes field', async ({ page }) => {
@@ -1688,7 +1702,7 @@ test.describe('explore services breakdown page', () => {
       await lastLineFilterLoc.click();
       await page.keyboard.type('[dD]ebug');
       await page.getByRole('button', { name: 'Include' }).click();
-      await expect(highlightedMatchesInFirstRow).toHaveCount(1);
+      await expect.poll(() => highlightedMatchesInFirstRow.count()).toBe(1);
       expect(logsCountQueryCount).toEqual(5);
       expect(logsPanelQueryCount).toEqual(5);
 
