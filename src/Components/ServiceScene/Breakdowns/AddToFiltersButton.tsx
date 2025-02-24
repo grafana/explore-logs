@@ -32,6 +32,7 @@ import { FilterOp, NumericFilterOp } from '../../../services/filterTypes';
 import { addToFavorites } from '../../../services/favorites';
 import { areArraysEqual } from '../../../services/comparison';
 import { logger } from '../../../services/logger';
+import { isFilterMetadata } from '../../../services/filters';
 
 export interface AddToFiltersButtonState extends SceneObjectState {
   frame: DataFrame;
@@ -70,7 +71,7 @@ export type NumericFilterType = NumericFilterOp.gt | NumericFilterOp.gte | Numer
  */
 export type FilterType = 'include' | 'clear' | 'exclude' | 'toggle';
 
-export function addAdHocFilter(filter: AdHocVariableFilter, scene: SceneObject, variableType?: InterpolatedFilterType) {
+export function addAdHocFilter(filter: AdHocVariableFilter, scene: SceneObject, variableType: InterpolatedFilterType) {
   const type: FilterType = filter.operator === '=' ? 'include' : 'exclude';
   addToFilters(filter.key, filter.value, type, scene, variableType);
 }
@@ -82,18 +83,14 @@ export type AdHocFilterTypes = InterpolatedFilterType | typeof VAR_LABELS_REPLIC
 export function clearFilters(
   key: string,
   scene: SceneObject,
-  variableType?: InterpolatedFilterType,
+  variableType: InterpolatedFilterType,
   value?: string,
   operator?: FilterType
 ) {
-  if (!variableType) {
-    variableType = resolveVariableTypeForField(key, scene);
-  }
-
   const variable = getUIAdHocVariable(variableType, key, scene);
 
   let filters = variable.state.filters.filter((filter) => {
-    const fieldValue = getValueFromAdHocVariableFilter(variable, filter);
+    const fieldValue = getValueFromAdHocVariableFilter(variableType, filter);
     if (value && operator) {
       return !(filter.key === key && fieldValue.value === value && filter.operator === operator);
     }
@@ -200,12 +197,8 @@ export function addToFilters(
   value: string,
   operator: FilterType,
   scene: SceneObject,
-  variableType?: InterpolatedFilterType
+  variableType: InterpolatedFilterType
 ) {
-  if (!variableType) {
-    variableType = resolveVariableTypeForField(key, scene);
-  }
-
   if (variableType === VAR_LABELS) {
     addToFavorites(key, value, scene);
   }
@@ -213,16 +206,19 @@ export function addToFilters(
   const variable = getUIAdHocVariable(variableType, key, scene);
 
   let valueObject: string | undefined = undefined;
+  let valueLabel = value;
   if (variableType === VAR_FIELDS) {
     valueObject = JSON.stringify({
       value,
       parser: getParserForField(key, scene),
     });
+  } else if (variableType === VAR_LEVELS && operator === 'exclude') {
+    valueLabel = `!${value}`;
   }
 
   // If the filter exists, filter it
   let filters = variable.state.filters.filter((filter) => {
-    const fieldValue = getValueFromAdHocVariableFilter(variable, filter);
+    const fieldValue = getValueFromAdHocVariableFilter(variableType, filter);
 
     // if we're including, we want to remove all filters that have this key
     if (operator === 'include') {
@@ -244,7 +240,7 @@ export function addToFilters(
         key,
         operator: operator === 'exclude' ? FilterOp.NotEqual : FilterOp.Equal,
         value: valueObject ? valueObject : value,
-        valueLabels: [value],
+        valueLabels: [valueLabel],
       },
     ];
   }
@@ -326,7 +322,8 @@ export class AddToFiltersButton extends SceneObjectBase<AddToFiltersButtonState>
 
     // Check if the filter is already there
     const filterInSelectedFilters = variable.state.filters.find((f) => {
-      const value = getValueFromAdHocVariableFilter(variable, f);
+      const isMetadata = isFilterMetadata(filter);
+      const value = getValueFromAdHocVariableFilter(isMetadata ? VAR_METADATA : VAR_FIELDS, f);
       return f.key === filter.name && value.value === filter.value;
     });
 

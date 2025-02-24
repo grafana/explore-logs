@@ -56,7 +56,8 @@ interface Options {
 export class ExpressionBuilder {
   private filters: AdHocFilterWithLabels[];
   private options: Options;
-  private valueSeparator = 'or';
+  private positiveFilterValueSeparator = 'or';
+  private negativeFilterValueSeparator = '|';
 
   constructor(
     filters: AdHocFilterWithLabels[],
@@ -381,7 +382,11 @@ export class ExpressionBuilder {
         values.forEach((value) => filtersWithSameOperatorsAndKeys.push(this.buildFilterString(key, operator, value)));
       }
 
-      filterStrings.push(filtersWithSameOperatorsAndKeys.join(` ${this.valueSeparator} `));
+      if (isOperatorInclusive(operator)) {
+        filterStrings.push(filtersWithSameOperatorsAndKeys.join(` ${this.positiveFilterValueSeparator} `));
+      } else {
+        filterStrings.push(filtersWithSameOperatorsAndKeys.join(` ${this.negativeFilterValueSeparator} `));
+      }
     }
 
     return filterStrings;
@@ -623,7 +628,9 @@ export class ExpressionBuilder {
    * Groups all filters by operator and key
    */
   private groupFiltersByKey(filters: AdHocVariableFilter[]): Record<FilterOpType, Dictionary<AdHocFilterWithLabels[]>> {
-    let filteredFilters: AdHocVariableFilter[] = filters.filter((f) => !this.options.ignoreKeys?.includes(f.key));
+    let filteredFilters: AdHocVariableFilter[] = filters.filter(
+      (f) => !this.options.ignoreKeys?.includes(f.key) || isOperatorRegex(f.operator)
+    );
 
     // We need at least one inclusive filter
     if (this.options.type === 'indexed') {

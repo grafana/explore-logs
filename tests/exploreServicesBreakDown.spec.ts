@@ -484,11 +484,12 @@ test.describe('explore services breakdown page', () => {
     // And we'll have 2 requests, one on the aggregation, one for the label values
     expect(requests).toHaveLength(2);
 
-    // This should trigger more queries
-    await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
+    const excludeButton = page.getByRole('button', { name: 'Exclude' }).nth(0);
 
-    // Should have removed a panel
-    await expect(allPanels).toHaveCount(8);
+    // This should trigger more queries
+    await excludeButton.click();
+    // Should have excluded a panel
+    await expect(excludeButton).toHaveAttribute('aria-selected', 'true');
 
     // Adhoc content filter should be added
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
@@ -501,8 +502,8 @@ test.describe('explore services breakdown page', () => {
         expect(query.expr).toContain('| logfmt | caller!=""');
       });
     });
-    // Now we should have 3 queries, one more after adding the field exclusion filter
-    expect(requests).toHaveLength(3);
+    // Now we should still have 2 queries
+    expect(requests).toHaveLength(2);
   });
 
   test(`should include field ${fieldName}, update filters, open filters breakdown`, async ({ page }) => {
@@ -510,8 +511,6 @@ test.describe('explore services breakdown page', () => {
     await explorePage.scrollToBottom();
     await page.getByTestId(`data-testid Panel header ${fieldName}`).getByRole('button', { name: 'Select' }).click();
     await page.getByRole('button', { name: 'Include' }).nth(0).click();
-
-    await explorePage.assertFieldsIndex();
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
     await expect(page.getByText('=').nth(1)).toBeVisible();
   });
@@ -688,7 +687,6 @@ test.describe('explore services breakdown page', () => {
     await explorePage.goToFieldsTab();
     await page.getByTestId(`data-testid Panel header ${fieldName}`).getByRole('button', { name: 'Select' }).click();
     await page.getByRole('button', { name: 'Include' }).nth(0).click();
-    await explorePage.assertFieldsIndex();
     // Adhoc content filter should be added
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
   });
@@ -1551,6 +1549,52 @@ test.describe('explore services breakdown page', () => {
     // Assert the panel body is visible again
     await expect(summaryPanel).toBeVisible();
     await expect(summaryPanelBody).toBeVisible();
+  });
+
+  test('field value breakdown: changing parser updates query', async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: [fieldName],
+    });
+
+    await explorePage.goToFieldsTab();
+
+    // Use the dropdown since the tenant field might not be visible
+    await page.getByText('FieldAll').click();
+    await page.keyboard.type('caller');
+    await page.keyboard.press('Enter');
+    await explorePage.assertNotLoading();
+
+    await expect(explorePage.getAllPanelsLocator()).toHaveCount(9);
+
+    // add a field with logfmt parser
+    await explorePage.addNthValueToCombobox('content', FilterOp.Equal, ComboBoxIndex.fields, 2, 'con');
+
+    await explorePage.assertPanelsNotLoading();
+
+    await expect(explorePage.getAllPanelsLocator()).toHaveCount(2);
+  });
+
+  test('label value breakdown: changing parser updates query', async ({ page }) => {
+    explorePage.blockAllQueriesExcept({
+      refIds: ['LABEL_BREAKDOWN_VALUES'],
+    });
+
+    await explorePage.goToLabelsTab();
+
+    // Use the dropdown since the tenant field might not be visible
+    await page.getByText('LabelAll').click();
+    await page.keyboard.type('detected');
+    await page.keyboard.press('Enter');
+    await explorePage.assertNotLoading();
+
+    await expect(explorePage.getAllPanelsLocator()).toHaveCount(5);
+
+    // add a field with logfmt parser
+    await explorePage.addNthValueToCombobox('content', FilterOp.Equal, ComboBoxIndex.fields, 2, 'con');
+
+    await explorePage.assertPanelsNotLoading();
+
+    await expect(explorePage.getAllPanelsLocator()).toHaveCount(2);
   });
 
   test.describe('line filters', () => {

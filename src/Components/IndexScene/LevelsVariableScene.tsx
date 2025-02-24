@@ -133,7 +133,7 @@ export class LevelsVariableScene extends SceneObjectBase<LevelsVariableSceneStat
           hideSelectedOptions={false}
           value={options?.filter((v) => v.selected)}
           options={options?.map((val) => ({
-            value: val.text,
+            value: val.value,
             label: val.text,
           }))}
         />

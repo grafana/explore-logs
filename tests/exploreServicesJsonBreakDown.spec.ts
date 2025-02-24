@@ -41,8 +41,8 @@ test.describe('explore nginx-json breakdown pages ', () => {
     expect(requests).toHaveLength(2);
     // Exclude a panel
     await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
-    // Should be removed from the UI, and also lets us know when the query is done loading
-    await expect(allPanels).toHaveCount(6);
+    // Should NOT be removed from the UI
+    await expect(allPanels).toHaveCount(7);
 
     // Adhoc content filter should be added
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
@@ -57,7 +57,7 @@ test.describe('explore nginx-json breakdown pages ', () => {
         );
       });
     });
-    expect(requests).toHaveLength(3);
+    expect(requests).toHaveLength(2);
   });
 
   test('should see too many series button', async ({ page }) => {

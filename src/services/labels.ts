@@ -1,8 +1,15 @@
-import { SceneObject } from '@grafana/scenes';
-import { LEVEL_VARIABLE_VALUE, VAR_LABELS } from './variables';
-import { getParserFromFieldsFilters } from './fields';
+import { AdHocFiltersVariable, SceneObject } from '@grafana/scenes';
+import { LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS, VAR_METADATA } from './variables';
+import { getParserForField, getParserFromFieldsFilters } from './fields';
 import { buildDataQuery } from './query';
-import { getFieldsVariable, getLabelsVariable, getLogsStreamSelector } from './variableGetters';
+import {
+  getFieldsAndMetadataVariable,
+  getFieldsVariable,
+  getLabelsVariable,
+  getLogsStreamSelector,
+  getMetadataVariable,
+  getValueFromFieldsFilter,
+} from './variableGetters';
 import { addToFilters, FilterType } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { isOperatorExclusive, isOperatorInclusive } from './operatorHelpers';
 import { getLabelValueFromDataFrame } from './levels';
@@ -38,6 +45,28 @@ export function getLabelsFromSeries(series: DataFrame[]): string[] {
   return labels.flatMap((f) => (f ? [f] : []));
 }
 
+export function toggleFieldFromFilter(key: string, value: string, sceneRef: SceneObject): FilterType {
+  const fieldsAndMetadataVariable = getFieldsAndMetadataVariable(sceneRef);
+  const empty = fieldsAndMetadataVariable.state.filters.length === 0;
+  const detectedFieldType = getParserForField(key, sceneRef);
+  const isMetadata = detectedFieldType === 'structuredMetadata';
+
+  const filterExists = fieldsAndMetadataVariable.state.filters.find((filter) => {
+    if (isMetadata) {
+      return isOperatorInclusive(filter.operator) && filter.value === value;
+    }
+    return isOperatorInclusive(filter.operator) && getValueFromFieldsFilter(filter).value === value;
+  });
+
+  if (empty || !filterExists) {
+    addToFilters(key, value, 'include', sceneRef, isMetadata ? VAR_METADATA : VAR_FIELDS);
+    return 'include';
+  } else {
+    addToFilters(key, value, 'toggle', sceneRef, isMetadata ? VAR_METADATA : VAR_FIELDS);
+    return 'toggle';
+  }
+}
+
 export function toggleLabelFromFilter(key: string, value: string, sceneRef: SceneObject): FilterType {
   const labelsVariable = getLabelsVariable(sceneRef);
   const empty = labelsVariable.state.filters.length === 0;
@@ -56,14 +85,26 @@ export function toggleLabelFromFilter(key: string, value: string, sceneRef: Scen
 
 export function getVisibleLabels(key: string, allLabels: string[], sceneRef: SceneObject) {
   const labelsVariable = getLabelsVariable(sceneRef);
-  const inclusiveFilters = labelsVariable.state.filters
+  return getVisibleFilters(key, allLabels, labelsVariable);
+}
+
+export function getVisibleFields(key: string, allLabels: string[], sceneRef: SceneObject) {
+  const fieldsVariable = getFieldsVariable(sceneRef);
+  return getVisibleFilters(key, allLabels, fieldsVariable);
+}
+
+export function getVisibleMetadata(key: string, allLabels: string[], sceneRef: SceneObject) {
+  const metadataVariable = getMetadataVariable(sceneRef);
+  return getVisibleFilters(key, allLabels, metadataVariable);
+}
+
+export function getVisibleFilters(key: string, allLabels: string[], variable: AdHocFiltersVariable) {
+  const inclusiveFilters = variable.state.filters
     .filter((filter) => filter.key === key && isOperatorInclusive(filter.operator))
-    .map((filter) => filter.value.split('|'))
-    .join('|');
-  const exclusiveLabels = labelsVariable.state.filters
+    .map((filter) => (variable.state.name === VAR_FIELDS ? getValueFromFieldsFilter(filter).value : filter.value));
+  const exclusiveLabels = variable.state.filters
     .filter((filter) => filter.key === key && isOperatorExclusive(filter.operator))
-    .map((filter) => filter.value.split('|'))
-    .join('|');
+    .map((filter) => (variable.state.name === VAR_FIELDS ? getValueFromFieldsFilter(filter).value : filter.value));
 
   return allLabels.filter((label) => {
     if (exclusiveLabels.includes(label)) {
