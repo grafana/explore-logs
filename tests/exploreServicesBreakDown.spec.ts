@@ -482,7 +482,7 @@ test.describe('explore services breakdown page', () => {
     // Should see 8 panels after it's done loading
     await expect(allPanels).toHaveCount(9);
     // And we'll have 2 requests, one on the aggregation, one for the label values
-    expect(requests).toHaveLength(2);
+    await expect.poll(() => requests).toHaveLength(2);
 
     const excludeButton = page.getByRole('button', { name: 'Exclude' }).nth(0);
 
@@ -495,6 +495,8 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
+    await expect.poll(() => requests).toHaveLength(2);
+
     requests.forEach((req) => {
       const post = req.post;
       const queries: LokiQuery[] = post.queries;
@@ -502,8 +504,6 @@ test.describe('explore services breakdown page', () => {
         expect(query.expr).toContain('| logfmt | caller!=""');
       });
     });
-    // Now we should still have 2 queries
-    expect(requests).toHaveLength(2);
   });
 
   test(`should include field ${fieldName}, update filters, open filters breakdown`, async ({ page }) => {
@@ -606,7 +606,7 @@ test.describe('explore services breakdown page', () => {
     await explorePage.assertPanelsNotLoading();
     const panels = explorePage.getAllPanelsLocator();
     // Filters for this key are not included in the value breakdown query
-    await expect(panels).toHaveCount(19);
+    await expect(panels).toHaveCount(10);
     await expect(
       page.getByTestId(/data-testid Panel header tempo-ingester-[hc]{2}-\d.+/).getByTestId('header-container')
     ).toHaveCount(8);
@@ -672,10 +672,10 @@ test.describe('explore services breakdown page', () => {
     // Panel on the top should not
     await expect(page.getByTestId(/data-testid Panel header/).first()).not.toBeInViewport();
     // Wait for a bit for the requests to be made
-    await page.waitForTimeout(250);
+    await expect.poll(() => requestCount).toEqual(TOTAL_ROWS * COUNT_PER_ROW - 1);
     // 7 rows, last row only has 2
     expect(requestCount).toEqual(TOTAL_ROWS * COUNT_PER_ROW - 1);
-    expect(logsCountQueryCount).toEqual(2);
+    await expect.poll(() => logsCountQueryCount).toEqual(2);
   });
 
   test('Patterns should show error state when API call returns error', async ({ page }) => {
@@ -1053,7 +1053,7 @@ test.describe('explore services breakdown page', () => {
     await expect(bytesIncludeButton).toHaveText('Include');
 
     // Assert that we actually ran some queries
-    expect(numberOfQueries).toBeGreaterThan(0);
+    await expect.poll(() => numberOfQueries).toBeGreaterThan(0);
   });
 
   test('should exclude all logs that contain bytes field', async ({ page }) => {

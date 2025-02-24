@@ -54,6 +54,8 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(mixedFieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
+    await expect.poll(() => requests).toHaveLength(2);
+
     requests.forEach((req) => {
       const post = req.post;
       const queries: LokiQuery[] = post.queries;
@@ -63,7 +65,6 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
         );
       });
     });
-    expect(requests).toHaveLength(2);
   });
   test(`should exclude ${logFmtFieldName}, request should contain logfmt`, async ({ page }) => {
     let requests: PlaywrightRequest[] = [];
@@ -98,20 +99,21 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     // Adhoc content filter should be added
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(logFmtFieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
+    await expect.poll(() => requests).toHaveLength(3);
 
-    requests.forEach((req, index) => {
-      const post = req.post;
-      const queries: LokiQuery[] = post.queries;
-      queries.forEach((query) => {
-        expect(query.expr).toContain(
-          `sum by (${logFmtFieldName}) (count_over_time({service_name="${serviceName}"}      | logfmt | ${logFmtFieldName}!=""  [$__auto]))`
-        );
-      });
-    });
-
-    expect(requests.length).toBeGreaterThanOrEqual(2);
+    // Aggregation query, no filter
+    expect(requests[0].post.queries[0].expr).toEqual(
+      `sum by (${logFmtFieldName}) (count_over_time({service_name="${serviceName}"}      | logfmt | ${logFmtFieldName}!=""  [$__auto]))`
+    );
+    // Value breakdown query, with/without filter
+    expect(requests[1].post.queries[0].expr).toEqual(
+      `sum by (${logFmtFieldName}) (count_over_time({service_name="${serviceName}"}      | logfmt | ${logFmtFieldName}!=""  [$__auto]))`
+    );
+    // Aggregation query, with filter
+    expect(requests[2].post.queries[0].expr).toContain(
+      `sum by (${logFmtFieldName}) (count_over_time({service_name="nginx-json-mixed"}      | logfmt | ${logFmtFieldName}!="" | ${logFmtFieldName}!="`
+    );
   });
-
   test(`should exclude ${jsonFmtFieldName}, request should contain logfmt`, async ({ page }) => {
     let requests: PlaywrightRequest[] = [];
     explorePage.blockAllQueriesExcept({
@@ -139,6 +141,8 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(jsonFmtFieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
+    await expect.poll(() => requests).toHaveLength(2);
+
     requests.forEach((req) => {
       const post = req.post;
       const queries: LokiQuery[] = post.queries;
@@ -148,7 +152,6 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
         );
       });
     });
-    expect(requests).toHaveLength(2);
   });
   test(`should exclude ${metadataFieldName}, request should contain no parser`, async ({ page }) => {
     let requests: PlaywrightRequest[] = [];
