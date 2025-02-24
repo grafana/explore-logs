@@ -524,14 +524,21 @@ test.describe('explore services breakdown page', () => {
 
     // Go to caller values breakdown
     await page.getByLabel(`Select ${fieldName}`).click();
+    const panels = explorePage.getAllPanelsLocator();
+    await expect(panels).toHaveCount(9);
     // Add custom regex value
     await explorePage.addCustomValueToCombobox(fieldName, FilterOp.RegexEqual, ComboBoxIndex.fields, `.+st.+`, 'ca');
 
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
     await expect(page.getByText('=~')).toBeVisible();
-    const panels = explorePage.getAllPanelsLocator();
-    await expect(panels).toHaveCount(4);
+
+    // Filter will not change output
+    await expect(panels).toHaveCount(9);
     await expect(page.getByTestId(/data-testid Panel header .+st.+/).getByTestId('header-container')).toHaveCount(3);
+
+    await explorePage.goToFieldsTab();
+    // Verify that the regex query worked after navigating back to the label breakdown
+    await expect(page.getByTestId(/data-testid VizLegend series/)).toHaveCount(3);
   });
 
   test(`Levels: include ${levelName} values`, async ({ page }) => {
@@ -598,10 +605,15 @@ test.describe('explore services breakdown page', () => {
     await explorePage.assertNotLoading();
     await explorePage.assertPanelsNotLoading();
     const panels = explorePage.getAllPanelsLocator();
-    await expect(panels).toHaveCount(9);
+    // Filters for this key are not included in the value breakdown query
+    await expect(panels).toHaveCount(19);
     await expect(
       page.getByTestId(/data-testid Panel header tempo-ingester-[hc]{2}-\d.+/).getByTestId('header-container')
     ).toHaveCount(8);
+
+    await explorePage.goToFieldsTab();
+    // Verify that the regex query worked after navigating back to the label breakdown
+    await expect(page.getByTestId(/data-testid VizLegend series/)).toHaveCount(8);
   });
 
   test('should only load fields that are in the viewport', async ({ page }) => {

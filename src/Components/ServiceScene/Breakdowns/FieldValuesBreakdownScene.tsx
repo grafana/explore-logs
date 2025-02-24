@@ -4,7 +4,6 @@ import {
   SceneCSSGridLayout,
   SceneDataProvider,
   SceneDataState,
-  SceneDataTransformer,
   SceneFlexItem,
   SceneFlexLayout,
   sceneGraph,
@@ -51,7 +50,6 @@ import { logger } from '../../../services/logger';
 export interface FieldValuesBreakdownSceneState extends SceneObjectState {
   body?: (LayoutSwitcher & SceneObject) | (SceneReactObject & SceneObject);
   $data?: SceneDataProvider;
-  parser?: ParserType;
 }
 
 export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakdownSceneState> {
@@ -86,16 +84,11 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
 
   onActivate() {
     const query = this.buildQuery();
-    const parser = this.getQueryParser();
 
     // Set query runner
     this.setState({
       body: this.build(query),
-      parser,
-      $data: new SceneDataTransformer({
-        $data: getQueryRunner([query], { runQueriesMode: 'manual' }),
-        transformations: [],
-      }),
+      $data: this.buildQueryRunner(),
     });
 
     // Subscribe to data query changes
@@ -109,6 +102,11 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
     this.setSubscriptions();
   }
 
+  private buildQueryRunner() {
+    const query = this.buildQuery();
+    return getQueryRunner([query], { runQueriesMode: 'manual' });
+  }
+
   /**
    * Builds the LokiQuery for the value breakdown
    */
@@ -117,7 +115,11 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
     const fieldsVariable = getFieldsVariable(this);
     const detectedFieldsFrame = getDetectedFieldsFrame(this);
     const queryString = buildFieldsQueryString(tagKey, fieldsVariable, detectedFieldsFrame);
-    return buildDataQuery(queryString, { legendFormat: `{{${tagKey}}}`, refId: tagKey });
+    // Manually interpolate query so we don't pollute the variable interpolation for other queries
+    const { variableName, filterExpression } = this.removeFieldLabelFromVariableInterpolation();
+    const expression = sceneGraph.interpolate(this, queryString.replace(`$\{${variableName}}`, filterExpression));
+
+    return buildDataQuery(expression, { legendFormat: `{{${tagKey}}}`, refId: tagKey });
   }
 
   /**
@@ -182,41 +184,39 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
    * Subscribe to variables for metadata breakdowns
    */
   private setMetadataParserSubscriptions() {
+    const key = this.getTagKey();
     // Subscribe to any fields change and run the query without change
     this._subs.add(
       getFieldsVariable(this).subscribeToState(async (newState, prevState) => {
         if (!areArraysEqual(newState.filters, prevState.filters)) {
-          this.checkParser();
           this.runQuery();
         }
       })
     );
 
-    getMetadataVariable(this).subscribeToState(async (newState, prevState) => {
-      if (!areArraysEqual(newState.filters, prevState.filters)) {
-        const key = this.getTagKey();
-        // Check to see if excluding this label changes the query string before running
-        // If the filter change was for the label we're looking at, there's no need to re-run the query
-        const prevFilterExpression = renderLogQLMetadataFilters(prevState.filters, [key]);
-        const newFilterExpression = renderLogQLMetadataFilters(newState.filters, [key]);
-
-        if (newFilterExpression !== prevFilterExpression) {
-          this.checkParser();
+    this._subs.add(
+      getMetadataVariable(this).subscribeToState(async (newState, prevState) => {
+        if (
+          !areArraysEqual(
+            newState.filters.filter((f) => f.key !== key),
+            prevState.filters.filter((f) => f.key !== key)
+          )
+        ) {
           this.runQuery();
         }
-      }
-    });
+      })
+    );
   }
 
   /**
    * Subscribe to variables for field breakdowns
    */
   private setFieldParserSubscriptions() {
+    const key = this.getTagKey();
     // Subscribe to any metadata change and run the query without alteration
     this._subs.add(
       getMetadataVariable(this).subscribeToState(async (newState, prevState) => {
         if (!areArraysEqual(newState.filters, prevState.filters)) {
-          this.checkParser();
           this.runQuery();
         }
       })
@@ -224,38 +224,27 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
     // Subscribe to fields variable, run the query if the change wasn't for this label
     this._subs.add(
       getFieldsVariable(this).subscribeToState(async (newState, prevState) => {
-        if (!areArraysEqual(newState.filters, prevState.filters)) {
-          const key = this.getTagKey();
-          // Check to see if excluding this label changes the query string before running
-          // If the filter change was for the label we're looking at, there's no need to re-run the query
-          const prevFilterExpression = renderLogQLFieldFilters(prevState.filters, [key]);
-          const newFilterExpression = renderLogQLFieldFilters(newState.filters, [key]);
-
-          if (newFilterExpression !== prevFilterExpression) {
-            this.checkParser();
-            this.runQuery();
-          }
+        if (
+          !areArraysEqual(
+            newState.filters.filter((f) => f.key !== key),
+            prevState.filters.filter((f) => f.key !== key)
+          )
+        ) {
+          this.runQuery();
         }
       })
     );
   }
 
   /**
-   * Check to see if the parser has changed
+   * Rebuild the query before running.
    * If so update the query with the new parser and set the parser to state.
    */
-  private checkParser() {
-    const parser = this.getQueryParser();
-    if (parser !== this.state.parser) {
-      const query = this.buildQuery();
-      this.getSceneQueryRunner()?.setState({
-        queries: [query],
-      });
-      // Set the parser to state so we can update the query next time it changes
-      this.setState({
-        parser,
-      });
-    }
+  private rebuildQuery() {
+    const query = this.buildQuery();
+    this.getSceneQueryRunner()?.setState({
+      queries: [query],
+    });
   }
 
   /**
@@ -264,7 +253,7 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
    */
   private runQuery() {
     // Update the filters to exclude the current value so all options are displayed to the user
-    this.removeFieldLabelFromVariableInterpolation();
+    this.rebuildQuery();
     const queryRunner = this.getSceneQueryRunner();
     queryRunner?.runQueries();
   }
@@ -292,22 +281,22 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
    */
   private removeFieldLabelFromVariableInterpolation() {
     const tagKey = this.getTagKey();
+    let filterExpression;
+    let variableName: typeof VAR_FIELDS | typeof VAR_METADATA;
 
     // We want the parser for this field, we only need to exclude keys for the variable type that matches this value breakdown
     const parser = this.getQueryParser();
     if (parser === 'structuredMetadata') {
       const metadataVar = getMetadataVariable(this);
-      metadataVar.setState({
-        expressionBuilder: (f) => renderLogQLMetadataFilters(f, [tagKey]),
-        filterExpression: renderLogQLMetadataFilters(metadataVar.state.filters, [tagKey]),
-      });
+      variableName = VAR_METADATA;
+      filterExpression = renderLogQLMetadataFilters(metadataVar.state.filters, [tagKey]);
     } else {
+      variableName = VAR_FIELDS;
       const fieldsVar = getFieldsVariable(this);
-      fieldsVar.setState({
-        expressionBuilder: (f) => renderLogQLFieldFilters(f, [tagKey]),
-        filterExpression: renderLogQLFieldFilters(fieldsVar.state.filters, [tagKey]),
-      });
+      filterExpression = renderLogQLFieldFilters(fieldsVar.state.filters, [tagKey]);
     }
+
+    return { filterExpression, variableName };
   }
 
   /**
