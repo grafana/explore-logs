@@ -89,7 +89,7 @@ export function getNodesFromQuery(query: string, nodeTypes?: number[]): SyntaxNo
  * @param query
  * @param nodeTypes
  */
-export function getLHSLeafNodesFromQuery(query: string, nodeTypes: number[]): SyntaxNode[] {
+export function getLeafNodesFromQuery(query: string, nodeTypes: number[]): SyntaxNode[] {
   const nodes: SyntaxNode[] = [];
   const tree: Tree = parser.parse(query);
 
@@ -287,11 +287,16 @@ function getStringFieldOperator(matcher: SyntaxNode) {
 function parseFields(query: string, fields: FieldFilter[], context: PluginExtensionPanelContext, lokiQuery: LokiQuery) {
   const dataFrame = context.data?.series.find((frame) => frame.refId === lokiQuery.refId);
   // We do not currently support "or" in Grafana Logs Drilldown, so grab the left hand side LabelFilter leaf nodes as this will be the first filter expression in a given pipeline stage
-  const allFields = getLHSLeafNodesFromQuery(query, [LabelFilter]);
-
+  const allFields = getNodesFromQuery(query, [LabelFilter]);
   for (const matcher of allFields) {
     const position = NodePosition.fromNode(matcher);
     const expression = position.getExpression(query);
+    const isParentNode = matcher.getChild(LabelFilter);
+
+    // If the Label filter contains other Label Filter nodes, we want to skip this node so we only add the leaf LabelFilter nodes
+    if (isParentNode) {
+      continue;
+    }
 
     // Skip error expression, it will get added automatically when Grafana Logs Drilldown adds a parser
     if (expression.substring(0, 9) === `__error__`) {

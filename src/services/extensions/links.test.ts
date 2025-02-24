@@ -741,7 +741,7 @@ describe('contextToLink', () => {
           }),
         });
       });
-      it('should ignore "or" expressions', () => {
+      it('should support multiple field inclusion expressions', () => {
         const target = getTestTarget({
           expr: `{cluster="eu-west-1"} | pod!=\`mimir-ingester-xjntw\` | logfmt | duration <= 10s or duration > 10.2s `,
         });
@@ -753,9 +753,13 @@ describe('contextToLink', () => {
         const expectedMetadataString = `&var-metadata=${encodeFilter(
           `pod|!=|${addCustomInputPrefixAndValueLabels('mimir-ingester-xjntw')}`
         )}`;
-        const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
-          `duration|<=|${addAdHocFilterUserInputPrefix('{"value":"10s"__gfc__"parser":"logfmt"}')},10s`
-        )}`;
+        const expectedLineFiltersUrlString =
+          `&var-fields=${encodeFilter(
+            `duration|<=|${addAdHocFilterUserInputPrefix('{"value":"10s"__gfc__"parser":"logfmt"}')},10s`
+          )}` +
+          `&var-fields=${encodeFilter(
+            `duration|>|${addAdHocFilterUserInputPrefix('{"value":"10.2s"__gfc__"parser":"logfmt"}')},10.2s`
+          )}`;
 
         expect(config).toEqual({
           path: getPath({
