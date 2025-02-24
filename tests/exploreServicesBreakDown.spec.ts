@@ -588,10 +588,9 @@ test.describe('explore services breakdown page', () => {
     await explorePage.assertPanelsNotLoading();
 
     // Get panel count to ensure the pod regex filter reduces the result set
-    const panelCount = await explorePage.getAllPanelsLocator().count();
     await explorePage.assertNotLoading();
     await explorePage.assertPanelsNotLoading();
-    expect(panelCount).toBeGreaterThan(8);
+    await expect.poll(() => explorePage.getAllPanelsLocator().count()).toBe(10);
     // Filter hardcoded pod names for tempo-ingester service
     await explorePage.addCustomValueToCombobox(
       metadataName,
@@ -604,16 +603,19 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByText('=~').nth(3)).toBeVisible();
     await explorePage.assertNotLoading();
     await explorePage.assertPanelsNotLoading();
-    const panels = explorePage.getAllPanelsLocator();
     // Filters for this key are not included in the value breakdown query
-    await expect(panels).toHaveCount(10);
-    await expect(
-      page.getByTestId(/data-testid Panel header tempo-ingester-[hc]{2}-\d.+/).getByTestId('header-container')
-    ).toHaveCount(8);
-
+    await expect.poll(() => explorePage.getAllPanelsLocator().count()).toBe(10);
+    await expect
+      .poll(() =>
+        page
+          .getByTestId(/data-testid Panel header tempo-ingester-[hc]{2}-\d.+/)
+          .getByTestId('header-container')
+          .count()
+      )
+      .toBe(8);
     await explorePage.goToFieldsTab();
     // Verify that the regex query worked after navigating back to the label breakdown
-    await expect(page.getByTestId(/data-testid VizLegend series/)).toHaveCount(8);
+    await expect.poll(() => page.getByTestId(/data-testid VizLegend series/).count()).toBe(8);
   });
 
   test('should only load fields that are in the viewport', async ({ page }) => {
@@ -1700,7 +1702,7 @@ test.describe('explore services breakdown page', () => {
       await lastLineFilterLoc.click();
       await page.keyboard.type('[dD]ebug');
       await page.getByRole('button', { name: 'Include' }).click();
-      await expect(highlightedMatchesInFirstRow).toHaveCount(1);
+      await expect.poll(() => highlightedMatchesInFirstRow.count()).toBe(1);
       expect(logsCountQueryCount).toEqual(5);
       expect(logsPanelQueryCount).toEqual(5);
 
