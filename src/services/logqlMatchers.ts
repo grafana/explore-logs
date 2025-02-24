@@ -84,32 +84,6 @@ export function getNodesFromQuery(query: string, nodeTypes?: number[]): SyntaxNo
   return nodes;
 }
 
-/**
- * Returns the leaf nodes on the left-hand-side matching nodeTypes
- * @param query
- * @param nodeTypes
- */
-export function getLeafNodesFromQuery(query: string, nodeTypes: number[]): SyntaxNode[] {
-  const nodes: SyntaxNode[] = [];
-  const tree: Tree = parser.parse(query);
-
-  tree.iterate({
-    enter: (node): false | void => {
-      if (nodeTypes.includes(node.type.id)) {
-        let leftChild: SyntaxNode | null;
-        while ((leftChild = node.node.firstChild) !== null) {
-          if (!nodeTypes.includes(leftChild.node.type.id)) {
-            nodes.push(node.node);
-            return false;
-          }
-          node = leftChild;
-        }
-      }
-    },
-  });
-  return nodes;
-}
-
 function getAllPositionsInNodeByType(node: SyntaxNode, type: number): NodePosition[] {
   if (node.type.id === type) {
     return [NodePosition.fromNode(node)];
