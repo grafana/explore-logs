@@ -45,8 +45,8 @@ export interface AddToFiltersButtonState extends SceneObjectState {
 export class AddFilterEvent extends BusEventBase {
   constructor(
     public source: 'legend' | 'filterButton' | 'variable',
-    public operator?: FilterType | NumericFilterType,
-    public key?: string,
+    public operator: FilterType | NumericFilterType,
+    public key: string,
     public value?: string
   ) {
     super();
