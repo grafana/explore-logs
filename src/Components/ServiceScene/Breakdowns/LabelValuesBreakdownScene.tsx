@@ -251,13 +251,17 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
 
     if (tagKey === LEVEL_VARIABLE_VALUE) {
       const levelsVar = getLevelsVariable(this);
+      filterExpression = renderLevelsFilter(levelsVar.state.filters, [tagKey]);
       levelsVar.setState({
         expressionBuilder: (f) => renderLevelsFilter(f, [tagKey]),
+        filterExpression,
       });
     } else {
       const labelsVar = getLabelsVariable(this);
+      filterExpression = renderLogQLLabelFilters(labelsVar.state.filters, [tagKey]);
       labelsVar.setState({
         expressionBuilder: (f) => renderLogQLLabelFilters(f, [tagKey]),
+        filterExpression,
       });
     }
 

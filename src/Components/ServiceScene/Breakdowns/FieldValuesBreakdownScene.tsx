@@ -299,11 +299,13 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
       const metadataVar = getMetadataVariable(this);
       metadataVar.setState({
         expressionBuilder: (f) => renderLogQLMetadataFilters(f, [tagKey]),
+        filterExpression: renderLogQLMetadataFilters(metadataVar.state.filters, [tagKey]),
       });
     } else {
       const fieldsVar = getFieldsVariable(this);
       fieldsVar.setState({
         expressionBuilder: (f) => renderLogQLFieldFilters(f, [tagKey]),
+        filterExpression: renderLogQLFieldFilters(fieldsVar.state.filters, [tagKey]),
       });
     }
   }

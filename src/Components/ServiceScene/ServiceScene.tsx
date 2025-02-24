@@ -231,6 +231,9 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
             this.redirectToStart();
           }
         } else if (!areArraysEqual(newState.filters, prevState.filters)) {
+          variable.setState({
+            filterExpression: renderLogQLLabelFilters(variable.state.filters),
+          });
           this.state.$patternsData?.runQueries();
           this.state.$detectedLabelsData?.runQueries();
           this.state.$detectedFieldsData?.runQueries();
@@ -372,8 +375,13 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private subscribeToFieldsVariable() {
-    return getFieldsVariable(this).subscribeToState((newState, prevState) => {
+    const fieldsVar = getFieldsVariable(this);
+    return fieldsVar.subscribeToState((newState, prevState) => {
       if (!areArraysEqual(newState.filters, prevState.filters)) {
+        fieldsVar.setState({
+          filterExpression: renderLogQLFieldFilters(newState.filters),
+        });
+
         this.state.$detectedFieldsData?.runQueries();
         this.state.$logsCount?.runQueries();
       }
@@ -381,8 +389,12 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private subscribeToMetadataVariable() {
-    return getMetadataVariable(this).subscribeToState((newState, prevState) => {
+    const metadataVar = getMetadataVariable(this);
+    return metadataVar.subscribeToState((newState, prevState) => {
       if (!areArraysEqual(newState.filters, prevState.filters)) {
+        metadataVar.setState({
+          filterExpression: renderLogQLMetadataFilters(newState.filters),
+        });
         this.state.$detectedFieldsData?.runQueries();
         this.state.$logsCount?.runQueries();
       }
@@ -407,6 +419,9 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     const levelsVariable = getLevelsVariable(this);
     return levelsVariable.subscribeToState((newState, prevState) => {
       if (!areArraysEqual(newState.filters, prevState.filters)) {
+        levelsVariable.setState({
+          filterExpression: renderLevelsFilter(newState.filters),
+        });
         this.state.$logsCount?.runQueries();
       }
     });
@@ -524,10 +539,15 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
 
   private subscribeToTimeRange() {
     return sceneGraph.getTimeRange(this).subscribeToState(() => {
-      this.state.$patternsData?.runQueries();
-      this.state.$detectedLabelsData?.runQueries();
-      this.state.$detectedFieldsData?.runQueries();
-      this.state.$logsCount?.runQueries();
+      // Hack: Wait for expressions in value breakdowns to run and then reset the expression builders,
+      // if they are both executed on the same callstack one of the queries will be interpolated incorrectly.
+      setTimeout(() => {
+        this.resetVariableKeyExclusion();
+        this.state.$patternsData?.runQueries();
+        this.state.$detectedLabelsData?.runQueries();
+        this.state.$detectedFieldsData?.runQueries();
+        this.state.$logsCount?.runQueries();
+      });
     });
   }
 
@@ -540,21 +560,25 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     const metadataVar = getMetadataVariable(this);
     metadataVar.setState({
       expressionBuilder: (f) => renderLogQLMetadataFilters(f),
+      filterExpression: renderLogQLMetadataFilters(metadataVar.state.filters),
     });
 
     const fieldsVar = getFieldsVariable(this);
     fieldsVar.setState({
       expressionBuilder: (f) => renderLogQLFieldFilters(f),
+      filterExpression: renderLogQLFieldFilters(fieldsVar.state.filters),
     });
 
     const labelsVar = getLabelsVariable(this);
     labelsVar.setState({
       expressionBuilder: (f) => renderLogQLLabelFilters(f),
+      filterExpression: renderLogQLLabelFilters(labelsVar.state.filters),
     });
 
     const levelsVar = getLevelsVariable(this);
     levelsVar.setState({
       expressionBuilder: (f) => renderLevelsFilter(f),
+      filterExpression: renderLevelsFilter(levelsVar.state.filters),
     });
   }
 
