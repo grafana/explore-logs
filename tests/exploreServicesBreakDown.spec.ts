@@ -590,7 +590,7 @@ test.describe('explore services breakdown page', () => {
     // Get panel count to ensure the pod regex filter reduces the result set
     await explorePage.assertNotLoading();
     await explorePage.assertPanelsNotLoading();
-    await expect.poll(() => explorePage.getAllPanelsLocator().count()).toBeGreaterThan(10);
+    await expect.poll(() => explorePage.getAllPanelsLocator().count()).toBe(10);
     // Filter hardcoded pod names for tempo-ingester service
     await explorePage.addCustomValueToCombobox(
       metadataName,
@@ -604,7 +604,7 @@ test.describe('explore services breakdown page', () => {
     await explorePage.assertNotLoading();
     await explorePage.assertPanelsNotLoading();
     // Filters for this key are not included in the value breakdown query
-    await expect.poll(() => explorePage.getAllPanelsLocator().count()).toBeGreaterThan(10);
+    await expect.poll(() => explorePage.getAllPanelsLocator().count()).toBe(10);
     await expect
       .poll(() =>
         page
