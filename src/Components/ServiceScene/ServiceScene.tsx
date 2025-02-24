@@ -540,7 +540,7 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   private subscribeToTimeRange() {
     return sceneGraph.getTimeRange(this).subscribeToState(() => {
       // Hack: Wait for expressions in value breakdowns to run and then reset the expression builders,
-      // if they are both executed on the same callstack one of the queries will be interpolated incorrectly.
+      // if they are both executed on the same call stack one of the queries will be interpolated incorrectly.
       setTimeout(() => {
         this.resetVariableKeyExclusion();
         this.state.$patternsData?.runQueries();
