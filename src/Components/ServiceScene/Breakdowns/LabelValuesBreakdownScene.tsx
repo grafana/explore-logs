@@ -176,42 +176,23 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       })
     );
 
-    // if this label is detected level
-    if (this.getTagKey() === LEVEL_VARIABLE_VALUE) {
-      // Subscribe to the labels variable
-      this._subs.add(
-        getLabelsVariable(this).subscribeToState(async (newState, prevState) => {
-          if (!areArraysEqual(newState.filters, prevState.filters)) {
-            // Check to see if excluding this label changes the query string before running
-            // If the filter change was for the label we're looking at, there's no need to re-run the query
-            const partialFilterExpression = this.removeValueLabelFromVariableInterpolation();
-            const filterExpression = renderLogQLLabelFilters(newState.filters, [this.getTagKey()]);
+    const variable = this.getTagKey() === LEVEL_VARIABLE_VALUE ? getLabelsVariable(this) : getLevelsVariable(this);
+    const renderer = this.getTagKey() === LEVEL_VARIABLE_VALUE ? renderLogQLLabelFilters : renderLevelsFilter;
 
-            if (partialFilterExpression !== filterExpression) {
-              const queryRunner = this.getSceneQueryRunner();
-              queryRunner?.runQueries();
-            }
+    this._subs.add(
+      variable.subscribeToState(async (newState, prevState) => {
+        if (!areArraysEqual(newState.filters, prevState.filters)) {
+          // Check to see if excluding this label changes the query string before running
+          // If the filter change was for the label we're looking at, there's no need to re-run the query
+          const partialFilterExpression = this.removeValueLabelFromVariableInterpolation();
+          const filterExpression = renderer(newState.filters, [this.getTagKey()]);
+          if (partialFilterExpression !== filterExpression) {
+            const queryRunner = this.getSceneQueryRunner();
+            queryRunner?.runQueries();
           }
-        })
-      );
-    } else {
-      //otherwise subscribe to levels variable
-      this._subs.add(
-        getLevelsVariable(this).subscribeToState(async (newState, prevState) => {
-          if (!areArraysEqual(newState.filters, prevState.filters)) {
-            // Check to see if excluding this label changes the query string before running
-            // If the filter change was for the label we're looking at, there's no need to re-run the query
-            const partialFilterExpression = this.removeValueLabelFromVariableInterpolation();
-            const filterExpression = renderLevelsFilter(newState.filters, [this.getTagKey()]);
-
-            if (partialFilterExpression !== filterExpression) {
-              const queryRunner = this.getSceneQueryRunner();
-              queryRunner?.runQueries();
-            }
-          }
-        })
-      );
-    }
+        }
+      })
+    );
   }
 
   /**
