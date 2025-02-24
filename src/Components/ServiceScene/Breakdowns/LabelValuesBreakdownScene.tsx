@@ -177,15 +177,27 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
       })
     );
 
-    const variable = this.getTagKey() === LEVEL_VARIABLE_VALUE ? getLabelsVariable(this) : getLevelsVariable(this);
     const key = this.getTagKey();
 
     this._subs.add(
-      variable.subscribeToState(async (newState, prevState) => {
+      getLabelsVariable(this).subscribeToState(async (newState, prevState) => {
         if (
           !areArraysEqual(
-            newState.filters.filter((f) => f.key !== key),
-            prevState.filters.filter((f) => f.key !== key)
+            newState.filters.filter((f) => key === LEVEL_VARIABLE_VALUE && f.key !== key),
+            prevState.filters.filter((f) => key === LEVEL_VARIABLE_VALUE && f.key !== key)
+          )
+        ) {
+          this.runQuery();
+        }
+      })
+    );
+
+    this._subs.add(
+      getLevelsVariable(this).subscribeToState(async (newState, prevState) => {
+        if (
+          !areArraysEqual(
+            newState.filters.filter((f) => key !== LEVEL_VARIABLE_VALUE && f.key !== key),
+            prevState.filters.filter((f) => key !== LEVEL_VARIABLE_VALUE && f.key !== key)
           )
         ) {
           this.runQuery();
