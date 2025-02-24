@@ -206,11 +206,14 @@ export function addToFilters(
   const variable = getUIAdHocVariable(variableType, key, scene);
 
   let valueObject: string | undefined = undefined;
+  let valueLabel = value;
   if (variableType === VAR_FIELDS) {
     valueObject = JSON.stringify({
       value,
       parser: getParserForField(key, scene),
     });
+  } else if (variableType === VAR_LEVELS && operator === 'exclude') {
+    valueLabel = `!${value}`;
   }
 
   // If the filter exists, filter it
@@ -237,7 +240,7 @@ export function addToFilters(
         key,
         operator: operator === 'exclude' ? FilterOp.NotEqual : FilterOp.Equal,
         value: valueObject ? valueObject : value,
-        valueLabels: [value],
+        valueLabels: [valueLabel],
       },
     ];
   }

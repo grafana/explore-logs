@@ -198,7 +198,7 @@ describe('renderLogQLFieldFilters', () => {
       },
     ];
 
-    expect(renderLogQLFieldFilters(filters)).toEqual('| level!~"in.+" or level!~"info" | cluster!~"lil-cluster"');
+    expect(renderLogQLFieldFilters(filters)).toEqual('| level!~"in.+" | level!~"info" | cluster!~"lil-cluster"');
   });
   test('Renders lte && gt numeric filters', () => {
     const filters: AdHocVariableFilter[] = [

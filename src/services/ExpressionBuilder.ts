@@ -56,7 +56,8 @@ interface Options {
 export class ExpressionBuilder {
   private filters: AdHocFilterWithLabels[];
   private options: Options;
-  private valueSeparator = 'or';
+  private positiveFilterValueSeparator = 'or';
+  private negativeFilterValueSeparator = '|';
 
   constructor(
     filters: AdHocFilterWithLabels[],
@@ -381,7 +382,11 @@ export class ExpressionBuilder {
         values.forEach((value) => filtersWithSameOperatorsAndKeys.push(this.buildFilterString(key, operator, value)));
       }
 
-      filterStrings.push(filtersWithSameOperatorsAndKeys.join(` ${this.valueSeparator} `));
+      if (isOperatorInclusive(operator)) {
+        filterStrings.push(filtersWithSameOperatorsAndKeys.join(` ${this.positiveFilterValueSeparator} `));
+      } else {
+        filterStrings.push(filtersWithSameOperatorsAndKeys.join(` ${this.negativeFilterValueSeparator} `));
+      }
     }
 
     return filterStrings;
