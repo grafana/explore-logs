@@ -98,9 +98,6 @@ export function getVisibleMetadata(key: string, allLabels: string[], sceneRef: S
   return getVisibleFilters(key, allLabels, metadataVariable);
 }
 
-/**
- * @todo unit test
- */
 export function getVisibleFilters(key: string, allLabels: string[], variable: AdHocFiltersVariable) {
   const inclusiveFilters = variable.state.filters
     .filter((filter) => filter.key === key && isOperatorInclusive(filter.operator))

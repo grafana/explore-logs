@@ -512,7 +512,6 @@ export class FieldValuesBreakdownScene extends SceneObjectBase<FieldValuesBreakd
     if (parserForFields === 'structuredMetadata') {
       return parser;
     }
-    // Otherwise return mixed, am I missing a case?
     return 'mixed';
   }
 }
