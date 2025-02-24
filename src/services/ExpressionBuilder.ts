@@ -47,10 +47,7 @@ interface Options {
    */
   ignoreKeys?: string[];
 
-  /**
-   * Filter type
-   */
-  type: 'indexed' | 'field';
+  filterType: 'indexed' | 'field';
 }
 
 export class ExpressionBuilder {
@@ -61,7 +58,7 @@ export class ExpressionBuilder {
 
   constructor(
     filters: AdHocFilterWithLabels[],
-    options: Options = { joinMatchFilters: true, decodeFilters: false, type: 'field' }
+    options: Options = { joinMatchFilters: true, decodeFilters: false, filterType: 'field' }
   ) {
     this.filters = filters;
     this.options = options;
@@ -142,7 +139,7 @@ export class ExpressionBuilder {
   }
 
   public getLabelsExpr(options?: Partial<Options>): string {
-    const defaultOptions: Options = { joinMatchFilters: true, decodeFilters: false, type: 'indexed' };
+    const defaultOptions: Options = { joinMatchFilters: true, decodeFilters: false, filterType: 'indexed' };
     this.options = { ...defaultOptions, ...options };
     return this.getExpr();
   }
@@ -156,7 +153,7 @@ export class ExpressionBuilder {
       prefix: '| ',
       joinMatchFilters: false,
       decodeFilters: false,
-      type: 'field',
+      filterType: 'field',
     };
     this.options = { ...defaultOptions, ...options };
     return this.getExpr();
@@ -171,7 +168,7 @@ export class ExpressionBuilder {
       prefix: '| ',
       joinMatchFilters: false,
       decodeFilters: false,
-      type: 'field',
+      filterType: 'field',
     };
 
     this.options = { ...defaultOptions, ...options };
@@ -188,7 +185,7 @@ export class ExpressionBuilder {
       prefix: '| ',
       joinMatchFilters: false,
       decodeFilters: true,
-      type: 'field',
+      filterType: 'field',
     };
     this.options = { ...defaultOptions, ...options };
     return this.getExpr();
@@ -633,7 +630,7 @@ export class ExpressionBuilder {
     );
 
     // We need at least one inclusive filter
-    if (this.options.type === 'indexed') {
+    if (this.options.filterType === 'indexed') {
       if (filteredFilters.length < 1) {
         filteredFilters = filters;
       }
