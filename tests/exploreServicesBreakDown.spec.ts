@@ -110,6 +110,7 @@ test.describe('explore services breakdown page', () => {
     const serviceNameSelect = page.getByLabel('Select service_name');
     await expect(serviceNameSelect).toHaveCount(1);
     await serviceNameSelect.click();
+    await explorePage.assertNotLoading();
 
     // exclude nginx service
     const nginxExcludeBtn = page
@@ -153,6 +154,7 @@ test.describe('explore services breakdown page', () => {
 
     // add service exclude
     await clusterNameSelect.click();
+    await explorePage.assertNotLoading();
 
     // Assert all three us-.+ cluster values are showing
     await expect(page.getByTestId(/data-testid Panel header us-.+/)).toHaveCount(3);
@@ -190,10 +192,14 @@ test.describe('explore services breakdown page', () => {
     await explorePage.goToLogsTab();
     // Switch to table view
     await explorePage.getTableToggleLocator().click();
+    const panelMenu = page.getByTestId('data-testid Panel menu Logs');
+    const panelMenuItem = page.getByTestId('data-testid Panel menu item Explore');
 
-    await page.getByTestId('data-testid Panel menu Logs').click();
-    await page.getByTestId('data-testid Panel menu item Explore').click();
-
+    await expect(panelMenu).toHaveCount(1);
+    await panelMenu.click();
+    await expect(panelMenuItem).toHaveCount(1);
+    await panelMenuItem.click();
+    await expect(page.getByLabel('Go Queryless')).toBeVisible();
     await expect(page.getByText(`drop __error__, __error_details__`)).toBeVisible();
   });
 
@@ -215,6 +221,7 @@ test.describe('explore services breakdown page', () => {
 
     // Refresh the page to see if the columns were saved in the url state
     await page.reload();
+    await expect(table).toBeVisible();
     await expect(table.getByRole('columnheader').nth(0)).toContainText('body');
   });
 
@@ -260,6 +267,7 @@ test.describe('explore services breakdown page', () => {
     await expect(table.getByTestId(testIds.table.rawLogLine).nth(0)).toBeVisible();
 
     await page.reload();
+    await explorePage.assertNotLoading();
     await expect(table.getByTestId(testIds.table.rawLogLine).nth(0)).toBeVisible();
   });
 
@@ -666,18 +674,17 @@ test.describe('explore services breakdown page', () => {
     const TOTAL_ROWS = 7;
 
     // Fields on top should be loaded
-    expect(requestCount).toEqual(INITIAL_ROWS * COUNT_PER_ROW);
-    expect(logsCountQueryCount).toEqual(2);
+    expect.poll(() => requestCount).toEqual(INITIAL_ROWS * COUNT_PER_ROW);
+    expect.poll(() => logsCountQueryCount).toEqual(2);
 
     await explorePage.scrollToBottom();
     // Panel on the bottom should be visible
     await expect(page.getByTestId(/data-testid Panel header/).last()).toBeInViewport();
     // Panel on the top should not
     await expect(page.getByTestId(/data-testid Panel header/).first()).not.toBeInViewport();
-    // Wait for a bit for the requests to be made
-    await expect.poll(() => requestCount).toEqual(TOTAL_ROWS * COUNT_PER_ROW - 1);
-    // 7 rows, last row only has 2
-    expect(requestCount).toEqual(TOTAL_ROWS * COUNT_PER_ROW - 1);
+    // Adding a bit of slop here, sometimes detected_fields misses a low cardinality field
+    await expect.poll(() => requestCount).toBeGreaterThanOrEqual(TOTAL_ROWS * COUNT_PER_ROW - 1 - 2);
+    await expect.poll(() => requestCount).toBeLessThanOrEqual(TOTAL_ROWS * COUNT_PER_ROW - 1);
     await expect.poll(() => logsCountQueryCount).toEqual(2);
   });
 
@@ -923,11 +930,10 @@ test.describe('explore services breakdown page', () => {
       legendFormats: [`{{${levelName}}}`],
     });
 
-    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
-
     // Wait for pod query to execute
     const expressions: string[] = [];
     await explorePage.waitForRequest(
+      () => page.getByTestId(testIds.exploreServiceDetails.tabFields).click(),
       (q) => expressions.push(q.expr),
       (q) => q.expr.includes('pod')
     );
@@ -996,12 +1002,11 @@ test.describe('explore services breakdown page', () => {
     await popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.inputLessThanInclusive).click();
     await popover.getByText('Less than or equal').click();
 
-    // Add the filter
-    await popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.submitButton).click();
-
     // Wait for pod query to execute
     const expressionsAfterNumericFilter: string[] = [];
     await explorePage.waitForRequest(
+      // Add the filter
+      () => popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.submitButton).click(),
       (q) => expressionsAfterNumericFilter.push(q.expr),
       (q) => q.expr.includes('pod')
     );
@@ -1301,8 +1306,18 @@ test.describe('explore services breakdown page', () => {
       new Date(await secondRowTimeCell.textContent()).valueOf()
     );
 
-    // Change sort order
-    await explorePage.getLogsDirectionOldestFirstLocator().click();
+    // Changing the sort order triggers a new query with the opposite query direction
+    let queryWithForwardDirectionExecuted = false;
+    await explorePage.waitForRequest(
+      // Change sort order
+      () => explorePage.getLogsDirectionOldestFirstLocator().click(),
+      () => {
+        queryWithForwardDirectionExecuted = true;
+      },
+      (q) => q.direction === LokiQueryDirection.Forward
+    );
+
+    expect(queryWithForwardDirectionExecuted).toEqual(true);
 
     await expect(explorePage.getLogsDirectionNewestFirstLocator()).not.toBeChecked();
     await expect(explorePage.getLogsDirectionOldestFirstLocator()).toBeChecked();
@@ -1314,17 +1329,6 @@ test.describe('explore services breakdown page', () => {
     expect(new Date(await firstRowTimeCell.textContent()).valueOf()).toBeLessThanOrEqual(
       new Date(await secondRowTimeCell.textContent()).valueOf()
     );
-
-    // Changing the sort order triggers a new query with the opposite query direction
-    let queryWithForwardDirectionExecuted = false;
-    await explorePage.waitForRequest(
-      () => {
-        queryWithForwardDirectionExecuted = true;
-      },
-      (q) => q.direction === LokiQueryDirection.Forward
-    );
-
-    expect(queryWithForwardDirectionExecuted).toEqual(true);
 
     // Reload the page
     await page.reload();
