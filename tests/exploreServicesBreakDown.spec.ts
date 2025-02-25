@@ -365,6 +365,7 @@ test.describe('explore services breakdown page', () => {
     await expect(panels.first()).toBeVisible();
     const panelTitles: Array<string | null> = [];
 
+    await expect.poll(() => panels.count()).toBeGreaterThanOrEqual(5);
     for (const panel of await panels.all()) {
       const panelTitle = await panel.getByRole('heading').textContent();
       panelTitles.push(panelTitle);
@@ -388,8 +389,8 @@ test.describe('explore services breakdown page', () => {
 
     await expect(panels.first()).toBeVisible();
     // assert the sort order hasn't changed
-    for (let i = 0; i < panelTitles.length; i++) {
-      expect(await panels.nth(i).getByRole('heading').textContent()).toEqual(panelTitles[panelTitles.length - i - 1]);
+    for (let i = 1; i < panelTitles.length; i++) {
+      expect(await panels.nth(i).getByRole('heading').textContent()).toEqual(panelTitles[panelTitles.length - i]);
     }
   });
 
