@@ -1,13 +1,14 @@
 import { SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
-import { Button, useStyles2 } from '@grafana/ui';
+import { LinkButton, useStyles2 } from '@grafana/ui';
 import React from 'react';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
-import { navigateToInitialPageAfterServiceSelection } from '../../services/navigate';
+import { getDrillDownLink } from '../../services/navigate';
 import { getLabelsVariable } from '../../services/variableGetters';
 import { testIds } from '../../services/testIds';
 
 import { isOperatorInclusive } from '../../services/operatorHelpers';
+import { logger } from '../../services/logger';
 
 export interface ShowLogsButtonSceneState extends SceneObjectState {
   disabled?: boolean;
@@ -37,13 +38,16 @@ export class ShowLogsButtonScene extends SceneObjectBase<ShowLogsButtonSceneStat
     });
   }
 
-  onClick = () => {
+  getLink = () => {
     const labelsVar = getLabelsVariable(this);
     const positiveFilter = labelsVar.state.filters.find((f) => isOperatorInclusive(f.operator));
 
     if (positiveFilter) {
-      navigateToInitialPageAfterServiceSelection(positiveFilter.key, positiveFilter.value);
+      return getDrillDownLink(positiveFilter.key, positiveFilter.value);
     }
+
+    logger.error('Cannot find filter to build link!');
+    return '';
   };
 
   static Component = ({ model }: SceneComponentProps<ShowLogsButtonScene>) => {
@@ -55,15 +59,15 @@ export class ShowLogsButtonScene extends SceneObjectBase<ShowLogsButtonSceneStat
     }
 
     return (
-      <Button
+      <LinkButton
         data-testid={testIds.index.header.showLogsButton}
         disabled={disabled}
         fill={'outline'}
         className={styles.button}
-        onClick={model.onClick}
+        href={model.getLink()}
       >
         Show logs
-      </Button>
+      </LinkButton>
     );
   };
 }

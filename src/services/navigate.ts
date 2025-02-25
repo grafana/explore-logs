@@ -7,7 +7,6 @@ import { buildServicesUrl, DRILLDOWN_URL_KEYS, PageSlugs, ROUTES, ValueSlugs } f
 import { sceneGraph } from '@grafana/scenes';
 import { UrlQueryMap, urlUtil } from '@grafana/data';
 import { replaceSlash } from './extensions/links';
-import { logger } from './logger';
 import { prefixRoute } from './plugin';
 
 let previousRoute: string | undefined = undefined;
@@ -41,6 +40,27 @@ export function buildDrilldownPageRoute(extraQueryParams?: UrlQueryMap): UrlQuer
   };
 }
 
+export function getValueBreakdownLink(newPath: ValueSlugs, label: string, serviceScene: ServiceScene) {
+  const indexScene = sceneGraph.getAncestor(serviceScene, IndexScene);
+  const urlLabelName = indexScene.state.routeMatch?.params.labelName;
+  const urlLabelValue = indexScene.state.routeMatch?.params.labelValue;
+
+  if (urlLabelName && urlLabelValue) {
+    let urlPath = buildValueBreakdownUrl(label, newPath, urlLabelValue, urlLabelName);
+    const fullUrl = buildDrilldownPageUrl(urlPath);
+
+    // If we're going to navigate, we need to share the state between this instantiation of the service scene
+    if (serviceScene) {
+      const metadataService = getMetadataService();
+      metadataService.setServiceSceneState(serviceScene.state);
+    }
+
+    return fullUrl;
+  }
+
+  return '';
+}
+
 /**
  * Navigate to value breakdown url
  * @param newPath
@@ -48,29 +68,9 @@ export function buildDrilldownPageRoute(extraQueryParams?: UrlQueryMap): UrlQuer
  * @param serviceScene
  */
 export function navigateToValueBreakdown(newPath: ValueSlugs, label: string, serviceScene: ServiceScene) {
-  const indexScene = sceneGraph.getAncestor(serviceScene, IndexScene);
-
-  if (indexScene) {
-    const urlLabelName = indexScene.state.routeMatch?.params.labelName;
-    const urlLabelValue = indexScene.state.routeMatch?.params.labelValue;
-    if (urlLabelName && urlLabelValue) {
-      let urlPath = buildValueBreakdownUrl(label, newPath, urlLabelValue, urlLabelName);
-      const fullUrl = buildDrilldownPageUrl(urlPath);
-
-      // If we're going to navigate, we need to share the state between this instantiation of the service scene
-      if (serviceScene) {
-        const metadataService = getMetadataService();
-        metadataService.setServiceSceneState(serviceScene.state);
-      }
-
-      pushUrlHandler(fullUrl);
-      return;
-    } else {
-      logger.warn('missing url params', {
-        urlLabelName: urlLabelName ?? '',
-        urlLabelValue: urlLabelValue ?? '',
-      });
-    }
+  const link = getValueBreakdownLink(newPath, label, serviceScene);
+  if (link) {
+    pushUrlHandler(link);
   }
 }
 
@@ -83,6 +83,11 @@ export function navigateToValueBreakdown(newPath: ValueSlugs, label: string, ser
 export function navigateToInitialPageAfterServiceSelection(labelName: string, labelValue: string) {
   const breakdownUrl = buildDrilldownPageUrl(ROUTES.logs(labelValue, labelName));
   pushUrlHandler(breakdownUrl);
+}
+
+export function getDrillDownLink(labelName: string, labelValue: string, labelFilters?: UrlQueryMap) {
+  const breakdownUrl = buildDrilldownPageUrl(ROUTES.logs(labelValue, labelName), labelFilters);
+  return breakdownUrl;
 }
 
 /**
