@@ -197,7 +197,7 @@ test.describe('explore services breakdown page', () => {
     await panelMenu.click();
     await expect(panelMenuItem).toHaveCount(1);
     await panelMenuItem.click();
-
+    await expect(page.getByLabel('Go Queryless')).toBeVisible();
     await expect(page.getByText(`drop __error__, __error_details__`)).toBeVisible();
   });
 
