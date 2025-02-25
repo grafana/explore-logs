@@ -110,6 +110,7 @@ test.describe('explore services breakdown page', () => {
     const serviceNameSelect = page.getByLabel('Select service_name');
     await expect(serviceNameSelect).toHaveCount(1);
     await serviceNameSelect.click();
+    await explorePage.assertNotLoading();
 
     // exclude nginx service
     const nginxExcludeBtn = page
@@ -153,6 +154,7 @@ test.describe('explore services breakdown page', () => {
 
     // add service exclude
     await clusterNameSelect.click();
+    await explorePage.assertNotLoading();
 
     // Assert all three us-.+ cluster values are showing
     await expect(page.getByTestId(/data-testid Panel header us-.+/)).toHaveCount(3);
@@ -219,6 +221,7 @@ test.describe('explore services breakdown page', () => {
 
     // Refresh the page to see if the columns were saved in the url state
     await page.reload();
+    await expect(table).toBeVisible();
     await expect(table.getByRole('columnheader').nth(0)).toContainText('body');
   });
 
@@ -264,6 +267,7 @@ test.describe('explore services breakdown page', () => {
     await expect(table.getByTestId(testIds.table.rawLogLine).nth(0)).toBeVisible();
 
     await page.reload();
+    await explorePage.assertNotLoading();
     await expect(table.getByTestId(testIds.table.rawLogLine).nth(0)).toBeVisible();
   });
 
