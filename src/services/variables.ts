@@ -11,6 +11,10 @@ export interface AdHocFieldValue {
   value?: string;
   parser?: ParserType;
 }
+export interface AppliedPattern {
+  pattern: string;
+  type: 'include' | 'exclude';
+}
 
 export type ParserType = 'logfmt' | 'json' | 'mixed' | 'structuredMetadata';
 export type DetectedFieldType = 'int' | 'float' | 'duration' | 'bytes' | 'boolean' | 'string';
@@ -70,6 +74,7 @@ export const DETECTED_FIELD_AND_METADATA_VALUES_EXPR = `{${VAR_LABELS_EXPR}} ${V
 export const DETECTED_METADATA_VALUES_EXPR = `{${VAR_LABELS_EXPR}} ${VAR_LEVELS_EXPR} ${PENDING_FIELDS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTERS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_FIELDS_EXPR}`;
 export const DETECTED_LEVELS_VALUES_EXPR = `{${VAR_LABELS_EXPR}} ${PENDING_FIELDS_EXPR} ${VAR_METADATA_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTERS_EXPR} ${VAR_LOGS_FORMAT_EXPR} ${VAR_FIELDS_EXPR}`;
 export const PATTERNS_SAMPLE_SELECTOR_EXPR = `{${VAR_LABELS_EXPR}} ${VAR_METADATA_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LOGS_FORMAT_EXPR}`;
+export const PRETTY_LOG_STREAM_SELECTOR_EXPR = `${VAR_LABELS_EXPR} ${VAR_LEVELS_EXPR} ${VAR_METADATA_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTERS_EXPR} ${VAR_FIELDS_EXPR}`;
 export const EXPLORATION_DS = { uid: VAR_DATASOURCE_EXPR };
 export const ALL_VARIABLE_VALUE = '$__all';
 export const LEVEL_VARIABLE_VALUE = 'detected_level';
@@ -78,3 +83,19 @@ export const SERVICE_UI_LABEL = 'service';
 export const VAR_AGGREGATED_METRICS = 'var_aggregated_metrics';
 export const VAR_AGGREGATED_METRICS_EXPR = '${var_aggregated_metrics}';
 export const EMPTY_VARIABLE_VALUE = '""';
+
+// Delimiter used at the start of a label value to denote user input that should not be escaped
+// @todo we need ad-hoc-filter meta that is persisted in the URL so we can clean this up.
+export const USER_INPUT_ADHOC_VALUE_PREFIX = '__CVΩ__';
+export function stripAdHocFilterUserInputPrefix(value = '') {
+  if (value.startsWith(USER_INPUT_ADHOC_VALUE_PREFIX)) {
+    return value.substring(USER_INPUT_ADHOC_VALUE_PREFIX.length);
+  }
+  return value;
+}
+export function isAdHocFilterValueUserInput(value = '') {
+  return value.startsWith(USER_INPUT_ADHOC_VALUE_PREFIX);
+}
+export function addAdHocFilterUserInputPrefix(value = '') {
+  return USER_INPUT_ADHOC_VALUE_PREFIX + value;
+}

@@ -10,7 +10,7 @@ import {
 } from '@grafana/data';
 import { config, DataSourceWithBackend, getDataSourceSrv } from '@grafana/runtime';
 import { RuntimeDataSource, sceneUtils } from '@grafana/scenes';
-import { DataQuery, LogsSortOrder } from '@grafana/schema';
+import { DataQuery } from '@grafana/schema';
 import { Observable, Subscriber } from 'rxjs';
 import { getDataSource } from './scenes';
 import { DetectedFieldsResponse, DetectedLabelsResponse } from './fields';
@@ -18,13 +18,11 @@ import { FIELDS_TO_REMOVE, LABELS_TO_REMOVE, sortLabelsByCardinality } from './f
 import { SERVICE_NAME } from './variables';
 import { runShardSplitQuery } from './shardQuerySplitting';
 import { requestSupportsSharding } from './logql';
-import { LokiDatasource, LokiQuery, LokiQueryDirection } from './lokiQuery';
+import { LokiDatasource, LokiQuery } from './lokiQuery';
 import { SceneDataQueryRequest, SceneDataQueryResourceRequest, VolumeRequestProps } from './datasourceTypes';
 import { logger } from './logger';
 import { PLUGIN_ID } from './plugin';
 import { sanitizeStreamSelector } from './query';
-import { LOGS_PANEL_QUERY_REFID } from 'Components/ServiceScene/ServiceScene';
-import { getLogsPanelSortOrderFromStore, getLogsPanelSortOrderFromURL } from 'Components/ServiceScene/LogOptionsScene';
 
 export const WRAPPED_LOKI_DS_UID = 'wrapped-loki-ds-uid';
 
@@ -142,13 +140,11 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
 
     const updatedRequest = {
       ...request,
-      targets: this.applyQueryDirection(
-        ds.interpolateVariablesInQueries(request.targets, request.scopedVars).map((target) => ({
-          ...target,
-          resource: undefined,
-          expr: sanitizeStreamSelector(target.expr),
-        }))
-      ),
+      targets: ds.interpolateVariablesInQueries(request.targets, request.scopedVars).map((target) => ({
+        ...target,
+        resource: undefined,
+        expr: sanitizeStreamSelector(target.expr),
+      })),
     };
 
     // Query the datasource and return either observable or promise
@@ -267,18 +263,6 @@ export class WrappedLokiDatasource extends RuntimeDataSource<DataQuery> {
     const interpolatedTarget = targetsInterpolated[0];
     const expression = sanitizeStreamSelector(interpolatedTarget.expr);
     return { interpolatedTarget, expression };
-  }
-
-  private applyQueryDirection(targets: LokiQuery[]) {
-    const sortOrder = getLogsPanelSortOrderFromURL() || getLogsPanelSortOrderFromStore();
-    return targets.map((target) => {
-      if (target.refId !== LOGS_PANEL_QUERY_REFID) {
-        return target;
-      }
-      target.direction =
-        sortOrder === LogsSortOrder.Descending ? LokiQueryDirection.Backward : LokiQueryDirection.Forward;
-      return target;
-    });
   }
 
   private async getDetectedLabels(

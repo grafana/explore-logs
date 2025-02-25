@@ -1,6 +1,5 @@
 import {
   AdHocFiltersVariable,
-  AdHocFilterWithLabels,
   CustomVariable,
   DataSourceVariable,
   sceneGraph,
@@ -11,11 +10,13 @@ import { CustomConstantVariable } from './CustomConstantVariable';
 import {
   AdHocFieldValue,
   FieldValue,
+  isAdHocFilterValueUserInput,
   JSON_FORMAT_EXPR,
   LOGS_FORMAT_EXPR,
   LogsQueryOptions,
   MIXED_FORMAT_EXPR,
   SERVICE_NAME,
+  stripAdHocFilterUserInputPrefix,
   VAR_AGGREGATED_METRICS,
   VAR_DATASOURCE,
   VAR_FIELD_GROUP_BY,
@@ -42,7 +43,7 @@ import { AdHocVariableFilter } from '@grafana/data';
 import { logger } from './logger';
 import { narrowFieldValue, NarrowingError } from './narrowing';
 import { isFilterMetadata } from './filters';
-import { AdHocFilterTypes } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
+import { AdHocFilterTypes, InterpolatedFilterType } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
 
 export function getLogsStreamSelector(options: LogsQueryOptions) {
   const {
@@ -194,8 +195,15 @@ export function getUrlParamNameForVariable(variableName: string) {
   return `var-${variableName}`;
 }
 
-export function getValueFromFieldsFilter(filter: AdHocFilterWithLabels, variableName: string = VAR_FIELDS): FieldValue {
-  // Metadata is not JSON encoded
+/**
+ * Parses an adHoc filter and returns the encoded value and parser
+ * @param filter
+ * @param variableName - only used for debugging
+ */
+export function getValueFromFieldsFilter(
+  filter: { value: string; valueLabels?: string[] },
+  variableName: string = VAR_FIELDS
+): FieldValue {
   if (isFilterMetadata(filter)) {
     return {
       value: filter.value,
@@ -204,7 +212,10 @@ export function getValueFromFieldsFilter(filter: AdHocFilterWithLabels, variable
   }
 
   try {
-    const fieldValue = narrowFieldValue(JSON.parse(filter.value));
+    const encodedValue = isAdHocFilterValueUserInput(filter.value)
+      ? stripAdHocFilterUserInputPrefix(filter.value)
+      : filter.value;
+    const fieldValue = narrowFieldValue(JSON.parse(encodedValue));
     if (fieldValue !== false) {
       return fieldValue;
     } else {
@@ -229,10 +240,10 @@ export function getValueFromFieldsFilter(filter: AdHocFilterWithLabels, variable
 }
 
 export function getValueFromAdHocVariableFilter(
-  variable: AdHocFiltersVariable,
+  variableName: InterpolatedFilterType,
   filter?: AdHocVariableFilter
 ): AdHocFieldValue {
-  if (variable.state.name === VAR_FIELDS && filter) {
+  if (variableName === VAR_FIELDS && filter) {
     return getValueFromFieldsFilter(filter);
   }
 

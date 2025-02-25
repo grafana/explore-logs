@@ -229,7 +229,7 @@ export function setLogsVolumeOption(option: 'collapsed', value: string | undefin
 }
 
 export function getLogsVolumeOption(option: 'collapsed') {
-  return localStorage.getItem(`${LOGS_VOLUME_LOCALSTORAGE_KEY}.${option}`);
+  return Boolean(localStorage.getItem(`${LOGS_VOLUME_LOCALSTORAGE_KEY}.${option}`));
 }
 
 // Log visualization options
@@ -315,4 +315,20 @@ export function getPanelOption<K extends keyof PanelOptions, V extends PanelOpti
 
 export function setPanelOption<K extends keyof PanelOptions, V extends PanelOptions[K]>(option: K, value: V) {
   localStorage.setItem(`${PANEL_OPTIONS_LOCALSTORAGE_KEY}.${option}`, value);
+}
+
+const EXPRESSION_BUILDER_DEBUG_LOCALSTORAGE_KEY = `${pluginJson.id}.expressionBuilder.debug`;
+export function getExpressionBuilderDebug() {
+  const value = localStorage.getItem(EXPRESSION_BUILDER_DEBUG_LOCALSTORAGE_KEY);
+  return !!value;
+}
+
+const SERVICE_SELECTION_PAGE_COUNT_KEY = `${pluginJson.id}.serviceSelection.pageCount`;
+
+export function getServiceSelectionPageCount(): number | undefined {
+  const value = localStorage.getItem(SERVICE_SELECTION_PAGE_COUNT_KEY);
+  return value ? parseInt(value, 10) : undefined;
+}
+export function setServiceSelectionPageCount(pageCount: number) {
+  localStorage.setItem(SERVICE_SELECTION_PAGE_COUNT_KEY, pageCount.toString(10));
 }

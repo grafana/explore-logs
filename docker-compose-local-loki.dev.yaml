@@ -4,7 +4,8 @@ services:
   grafana:
     container_name: 'grafana-logsapp'
     environment:
-      - GF_FEATURE_TOGGLES_ENABLE=accessControlOnCall lokiLogsDataplane
+      - GF_FEATURE_TOGGLES_ENABLE=accessControlOnCall lokiLogsDataplane      
+      - GF_PLUGINS_PREINSTALL_DISABLED=true
     build:
       context: ./.config
       args:

@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 jobs:
   sync:
-    if: github.repository == 'grafana/explore-logs'
+    if: github.repository == 'grafana/logs-drilldown'
     permissions:
       contents: read
       id-token: write

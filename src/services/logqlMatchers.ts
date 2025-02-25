@@ -16,12 +16,14 @@ import {
   Lte,
   Matcher,
   Neq,
+  Npa,
   Nre,
   Number,
   OrFilter,
   parser,
   PipeExact,
   PipeMatch,
+  PipePattern,
   Re,
   Selector,
   String,
@@ -30,10 +32,13 @@ import { NodeType, SyntaxNode, Tree } from '@lezer/common';
 import {
   FieldFilter,
   FilterOp as FilterOperator,
+  FilterOpType,
   IndexedLabelFilter,
   LineFilterCaseSensitive,
   LineFilterOp,
   LineFilterType,
+  PatternFilterOp,
+  PatternFilterType,
 } from './filterTypes';
 import { PluginExtensionPanelContext } from '@grafana/data';
 import { getLabelTypeFromFrame, LokiQuery } from './lokiQuery';
@@ -151,64 +156,100 @@ function parseLabelFilters(query: string, filter: IndexedLabelFilter[]) {
   }
 }
 
-function parseLineFilters(query: string, lineFilters: LineFilterType[]) {
+function parseNonPatternFilters(
+  lineFilterValue: string,
+  quoteString: string,
+  lineFilters: LineFilterType[],
+  index: number,
+  operator: LineFilterOp
+) {
+  const isRegexSelector = operator === LineFilterOp.regex || operator === LineFilterOp.negativeRegex;
+  const isCaseInsensitive = lineFilterValue.includes('(?i)') && isRegexSelector;
+
+  // If quoteString is `, we shouldn't need to un-escape anything
+  // But if the quoteString is ", we'll need to remove double escape chars, as these values are re-escaped when building the query expression (but not stored in the value/url)
+  if (quoteString === '"' && isRegexSelector) {
+    const replaceDoubleEscape = new RegExp(/\\\\/, 'g');
+    lineFilterValue = lineFilterValue.replace(replaceDoubleEscape, '\\');
+  } else if (quoteString === '"') {
+    const replaceDoubleQuoteEscape = new RegExp(/\\\\\"/, 'g');
+    lineFilterValue = lineFilterValue.replace(replaceDoubleQuoteEscape, '"');
+
+    const replaceDoubleEscape = new RegExp(/\\\\/, 'g');
+    lineFilterValue = lineFilterValue.replace(replaceDoubleEscape, '\\');
+  }
+
+  if (isCaseInsensitive) {
+    // If `(?i)` exists in a regex it would need to be escaped to match log lines containing `(?i)`, so it should be safe to replace all instances of `(?i)` in the line filter?
+    lineFilterValue = lineFilterValue.replace('(?i)', '');
+  }
+
+  lineFilters.push({
+    key: isCaseInsensitive
+      ? LineFilterCaseSensitive.caseInsensitive.toString()
+      : LineFilterCaseSensitive.caseSensitive.toString() + ',' + index.toString(),
+    operator: operator,
+    value: lineFilterValue,
+  });
+
+  return lineFilterValue;
+}
+
+function parsePatternFilters(lineFilterValue: string, patternFilters: PatternFilterType[], operator: PatternFilterOp) {
+  const replaceDoubleQuoteEscape = new RegExp(/\\"/, 'g');
+  lineFilterValue = lineFilterValue.replace(replaceDoubleQuoteEscape, '"');
+  patternFilters.push({
+    operator,
+    value: lineFilterValue,
+  });
+}
+
+function parseLineFilters(query: string, lineFilters: LineFilterType[], patternFilters: PatternFilterType[]) {
   const allLineFilters = getNodesFromQuery(query, [LineFilter]);
   for (const [index, matcher] of allLineFilters.entries()) {
     const equal = getAllPositionsInNodeByType(matcher, PipeExact);
     const pipeRegExp = getAllPositionsInNodeByType(matcher, PipeMatch);
     const notEqual = getAllPositionsInNodeByType(matcher, Neq);
     const notEqualRegExp = getAllPositionsInNodeByType(matcher, Nre);
+    const patternInclude = getAllPositionsInNodeByType(matcher, PipePattern);
+    const patternExclude = getAllPositionsInNodeByType(matcher, Npa);
 
-    const lineFilterValueNode = getStringsFromLineFilter(matcher);
+    const lineFilterValueNodes = getStringsFromLineFilter(matcher);
 
-    const quoteString = query.substring(lineFilterValueNode[0]?.from + 1, lineFilterValueNode[0]?.from);
+    for (const lineFilterValueNode of lineFilterValueNodes) {
+      const quoteString = query.substring(lineFilterValueNode?.from + 1, lineFilterValueNode?.from);
 
-    // Remove quotes
-    let lineFilterValue = query.substring(lineFilterValueNode[0]?.from + 1, lineFilterValueNode[0]?.to - 1);
+      // Remove quotes
+      let lineFilterValue = query.substring(lineFilterValueNode?.from + 1, lineFilterValueNode?.to - 1);
 
-    if (lineFilterValue.length) {
-      let operator;
-      if (equal.length) {
-        operator = LineFilterOp.match;
-      } else if (notEqual.length) {
-        operator = LineFilterOp.negativeMatch;
-      } else if (notEqualRegExp.length) {
-        operator = LineFilterOp.negativeRegex;
-      } else if (pipeRegExp.length) {
-        operator = LineFilterOp.regex;
-      } else {
-        throw new Error('unknown line filter operator');
+      if (lineFilterValue.length) {
+        let operator;
+        if (equal.length) {
+          operator = LineFilterOp.match;
+        } else if (notEqual.length) {
+          operator = LineFilterOp.negativeMatch;
+        } else if (notEqualRegExp.length) {
+          operator = LineFilterOp.negativeRegex;
+        } else if (pipeRegExp.length) {
+          operator = LineFilterOp.regex;
+        } else if (patternInclude.length) {
+          operator = PatternFilterOp.match;
+        } else if (patternExclude.length) {
+          operator = PatternFilterOp.negativeMatch;
+        } else {
+          console.warn('unknown line filter', {
+            query: query.substring(matcher.from, matcher.to),
+          });
+
+          continue;
+        }
+
+        if (!(operator === PatternFilterOp.match || operator === PatternFilterOp.negativeMatch)) {
+          parseNonPatternFilters(lineFilterValue, quoteString, lineFilters, index, operator);
+        } else {
+          parsePatternFilters(lineFilterValue, patternFilters, operator);
+        }
       }
-
-      const isRegexSelector = operator === LineFilterOp.regex || operator === LineFilterOp.negativeRegex;
-
-      const isCaseInsensitive = lineFilterValue.includes('(?i)') && isRegexSelector;
-
-      // If quoteString is `, we shouldn't need to un-escape anything
-      // But if the quoteString is ", we'll need to remove double escape chars, as these values are re-escaped when building the query expression (but not stored in the value/url)
-      if (quoteString === '"' && isRegexSelector) {
-        const replaceDoubleEscape = new RegExp(/\\\\/, 'g');
-        lineFilterValue = lineFilterValue.replace(replaceDoubleEscape, '\\');
-      } else if (quoteString === '"') {
-        const replaceDoubleQuoteEscape = new RegExp(/\\\\\"/, 'g');
-        lineFilterValue = lineFilterValue.replace(replaceDoubleQuoteEscape, '"');
-
-        const replaceDoubleEscape = new RegExp(/\\\\/, 'g');
-        lineFilterValue = lineFilterValue.replace(replaceDoubleEscape, '\\');
-      }
-
-      if (isCaseInsensitive) {
-        // If `(?i)` exists in a regex it would need to be escaped to match log lines containing `(?i)`, so it should be safe to replace all instances of `(?i)` in the line filter?
-        lineFilterValue = lineFilterValue.replace('(?i)', '');
-      }
-
-      lineFilters.push({
-        key: isCaseInsensitive
-          ? LineFilterCaseSensitive.caseInsensitive.toString()
-          : LineFilterCaseSensitive.caseSensitive.toString() + ',' + index.toString(),
-        operator: operator,
-        value: lineFilterValue,
-      });
     }
   }
 }
@@ -245,14 +286,14 @@ function getStringFieldOperator(matcher: SyntaxNode) {
 
 function parseFields(query: string, fields: FieldFilter[], context: PluginExtensionPanelContext, lokiQuery: LokiQuery) {
   const dataFrame = context.data?.series.find((frame) => frame.refId === lokiQuery.refId);
-  // We do not currently support "or" in Explore logs, so grab the left hand side LabelFilter leaf nodes as this will be the first filter expression in a given pipeline stage
+  // We do not currently support "or" in Grafana Logs Drilldown, so grab the left hand side LabelFilter leaf nodes as this will be the first filter expression in a given pipeline stage
   const allFields = getLHSLeafNodesFromQuery(query, [LabelFilter]);
 
   for (const matcher of allFields) {
     const position = NodePosition.fromNode(matcher);
     const expression = position.getExpression(query);
 
-    // Skip error expression, it will get added automatically when explore logs adds a parser
+    // Skip error expression, it will get added automatically when Grafana Logs Drilldown adds a parser
     if (expression.substring(0, 9) === `__error__`) {
       continue;
     }
@@ -272,7 +313,7 @@ function parseFields(query: string, fields: FieldFilter[], context: PluginExtens
     const fieldBytesValue = getAllPositionsInNodeByType(matcher, Bytes);
     const fieldDurationValue = getAllPositionsInNodeByType(matcher, Duration);
 
-    let fieldValue: string, operator: FilterOperator | undefined;
+    let fieldValue: string, operator: FilterOpType | undefined;
     if (fieldStringValue.length) {
       operator = getStringFieldOperator(matcher);
       // Strip out quotes
@@ -326,9 +367,15 @@ export function getMatcherFromQuery(
   query: string,
   context: PluginExtensionPanelContext,
   lokiQuery: LokiQuery
-): { labelFilters: IndexedLabelFilter[]; lineFilters?: LineFilterType[]; fields?: FieldFilter[] } {
+): {
+  labelFilters: IndexedLabelFilter[];
+  lineFilters?: LineFilterType[];
+  fields?: FieldFilter[];
+  patternFilters?: PatternFilterType[];
+} {
   const filter: IndexedLabelFilter[] = [];
   const lineFilters: LineFilterType[] = [];
+  const patternFilters: PatternFilterType[] = [];
   const fields: FieldFilter[] = [];
   const selector = getNodesFromQuery(query, [Selector]);
 
@@ -340,10 +387,10 @@ export function getMatcherFromQuery(
   const selectorQuery = getAllPositionsInNodeByType(selector[0], Selector)[0].getExpression(query);
 
   parseLabelFilters(selectorQuery, filter);
-  parseLineFilters(query, lineFilters);
+  parseLineFilters(query, lineFilters, patternFilters);
   parseFields(query, fields, context, lokiQuery);
 
-  return { labelFilters: filter, lineFilters, fields };
+  return { labelFilters: filter, lineFilters, fields, patternFilters };
 }
 
 export function isQueryWithNode(query: string, nodeType: number): boolean {

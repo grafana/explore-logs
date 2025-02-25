@@ -21,10 +21,12 @@ import { getQueryRunner, getResourceQueryRunner } from 'services/panel';
 import { buildDataQuery, buildResourceQuery } from 'services/query';
 import {
   EMPTY_VARIABLE_VALUE,
+  isAdHocFilterValueUserInput,
   LEVEL_VARIABLE_VALUE,
   LOG_STREAM_SELECTOR_EXPR,
   SERVICE_NAME,
   SERVICE_UI_LABEL,
+  stripAdHocFilterUserInputPrefix,
   VAR_DATASOURCE,
   VAR_FIELDS,
   VAR_LABELS,
@@ -59,9 +61,9 @@ import {
 import { replaceSlash } from '../../services/extensions/links';
 import { ShowLogsButtonScene } from '../IndexScene/ShowLogsButtonScene';
 import { migrateLineFilterV1 } from '../../services/migrations';
-import { isOperatorInclusive } from '../../services/operators';
 import { VariableHide } from '@grafana/schema';
 import { LEVELS_VARIABLE_SCENE_KEY, LevelsVariableScene } from '../IndexScene/LevelsVariableScene';
+import { isOperatorInclusive } from '../../services/operatorHelpers';
 
 export const LOGS_PANEL_QUERY_REFID = 'logsPanelQuery';
 export const LOGS_COUNT_QUERY_REFID = 'logsCountQuery';
@@ -193,13 +195,17 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
             (f) => isOperatorInclusive(f.operator) && f.value !== EMPTY_VARIABLE_VALUE
           );
           if (newPrimaryLabel) {
+            const newPrimaryLabelValue = isAdHocFilterValueUserInput(newPrimaryLabel.value)
+              ? replaceSlash(stripAdHocFilterUserInputPrefix(newPrimaryLabel.value))
+              : replaceSlash(newPrimaryLabel.value);
             indexScene.setState({
               routeMatch: {
                 ...prevRouteMatch,
                 params: {
                   ...prevRouteMatch?.params,
                   labelName: newPrimaryLabel.key === SERVICE_NAME ? SERVICE_UI_LABEL : newPrimaryLabel.key,
-                  labelValue: replaceSlash(newPrimaryLabel.value),
+                  // If there are a bunch of values separated by pipe, like labels that come from explore, let's truncate the value so the slug doesn't get too long
+                  labelValue: newPrimaryLabelValue.split('|')[0],
                 },
                 url: prevRouteMatch?.url ?? '',
                 path: prevRouteMatch?.path ?? '',
@@ -312,7 +318,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     this.setSubscribeToLabelsVariable();
     this._subs.add(this.subscribeToFieldsVariable());
     this._subs.add(this.subscribeToMetadataVariable());
-    this._subs.add(this.subscribeToLevelsVariable());
+    this._subs.add(this.subscribeToLevelsVariableChangedEvent());
+    this._subs.add(this.subscribeToLevelsVariableFiltersState());
     this._subs.add(this.subscribeToDataSourceVariable());
     this._subs.add(this.subscribeToPatternsVariable());
     this._subs.add(this.subscribeToLineFiltersVariable());
@@ -357,7 +364,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private subscribeToFieldsVariable() {
-    return getFieldsVariable(this).subscribeToState((newState, prevState) => {
+    const fieldsVar = getFieldsVariable(this);
+    return fieldsVar.subscribeToState((newState, prevState) => {
       if (!areArraysEqual(newState.filters, prevState.filters)) {
         this.state.$detectedFieldsData?.runQueries();
         this.state.$logsCount?.runQueries();
@@ -366,7 +374,8 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
   }
 
   private subscribeToMetadataVariable() {
-    return getMetadataVariable(this).subscribeToState((newState, prevState) => {
+    const metadataVar = getMetadataVariable(this);
+    return metadataVar.subscribeToState((newState, prevState) => {
       if (!areArraysEqual(newState.filters, prevState.filters)) {
         this.state.$detectedFieldsData?.runQueries();
         this.state.$logsCount?.runQueries();
@@ -378,10 +387,22 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
    * Subscribe to SceneVariableValueChangedEvent and run logs count and detectedFields on update.
    * In the levels variable renderer we update the ad-hoc filters, but we don't always want to immediately execute queries.
    */
-  private subscribeToLevelsVariable() {
+  private subscribeToLevelsVariableChangedEvent() {
     return getLevelsVariable(this).subscribeToEvent(SceneVariableValueChangedEvent, () => {
       this.state.$detectedFieldsData?.runQueries();
-      this.state.$logsCount?.runQueries();
+    });
+  }
+
+  /**
+   * Subscribe to actual filter changes and update the logs count
+   * @private
+   */
+  private subscribeToLevelsVariableFiltersState() {
+    const levelsVariable = getLevelsVariable(this);
+    return levelsVariable.subscribeToState((newState, prevState) => {
+      if (!areArraysEqual(newState.filters, prevState.filters)) {
+        this.state.$logsCount?.runQueries();
+      }
     });
   }
 

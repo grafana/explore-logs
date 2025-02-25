@@ -15,11 +15,12 @@ type Props = {
     include: string;
     exclude: string;
   };
+  hideExclude?: boolean;
 };
 
 export const FilterButton = (props: Props) => {
-  const { isExcluded, isIncluded, onInclude, onExclude, onClear, titles, buttonFill } = props;
-  const styles = useStyles2(getStyles, isIncluded, isExcluded);
+  const { isExcluded, isIncluded, onInclude, onExclude, onClear, titles, buttonFill, hideExclude } = props;
+  const styles = useStyles2(getStyles, isIncluded, isExcluded, hideExclude);
   return (
     <div className={styles.container}>
       <Button
@@ -34,23 +35,25 @@ export const FilterButton = (props: Props) => {
       >
         Include
       </Button>
-      <Button
-        variant={isExcluded ? 'primary' : 'secondary'}
-        fill={buttonFill}
-        size="sm"
-        aria-selected={isExcluded}
-        className={styles.excludeButton}
-        onClick={isExcluded ? onClear : onExclude}
-        title={titles?.exclude}
-        data-testid={testIds.exploreServiceDetails.buttonFilterExclude}
-      >
-        Exclude
-      </Button>
+      {!hideExclude && (
+        <Button
+          variant={isExcluded ? 'primary' : 'secondary'}
+          fill={buttonFill}
+          size="sm"
+          aria-selected={isExcluded}
+          className={styles.excludeButton}
+          onClick={isExcluded ? onClear : onExclude}
+          title={titles?.exclude}
+          data-testid={testIds.exploreServiceDetails.buttonFilterExclude}
+        >
+          Exclude
+        </Button>
+      )}
     </div>
   );
 };
 
-const getStyles = (theme: GrafanaTheme2, isIncluded: boolean, isExcluded: boolean) => {
+const getStyles = (theme: GrafanaTheme2, isIncluded: boolean, isExcluded: boolean, hideExclude?: boolean) => {
   return {
     container: css({
       display: 'flex',
@@ -58,7 +61,7 @@ const getStyles = (theme: GrafanaTheme2, isIncluded: boolean, isExcluded: boolea
     }),
     includeButton: css({
       borderRadius: 0,
-      borderRight: isIncluded ? undefined : 'none',
+      borderRight: isIncluded || hideExclude ? undefined : 'none',
     }),
     excludeButton: css({
       borderRadius: `0 ${theme.shape.radius.default} ${theme.shape.radius.default} 0`,

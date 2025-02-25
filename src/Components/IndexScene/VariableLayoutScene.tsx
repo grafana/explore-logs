@@ -4,10 +4,11 @@ import { css, cx } from '@emotion/css';
 import { GiveFeedbackButton } from './GiveFeedbackButton';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
 import { PatternControls } from './PatternControls';
-import { AppliedPattern, IndexScene } from './IndexScene';
+import { IndexScene } from './IndexScene';
 import { CONTROLS_VARS_DATASOURCE, CONTROLS_VARS_FIELDS_COMBINED, LayoutScene } from './LayoutScene';
 import { useStyles2 } from '@grafana/ui';
 import { GrafanaTheme2 } from '@grafana/data';
+import { AppliedPattern } from '../../services/variables';
 
 interface VariableLayoutSceneState extends SceneObjectState {}
 export class VariableLayoutScene extends SceneObjectBase<VariableLayoutSceneState> {

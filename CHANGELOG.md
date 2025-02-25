@@ -2,6 +2,40 @@
 
 View [releases](https://github.com/grafana/explore-logs/releases/) on GitHub for up-to-date changelog information.
 
+## 1.0.8
+* Open in Explore logs button by @kozhuhds in https://github.com/grafana/explore-logs/pull/1035
+* Table: Add manage columns button to table header by @gtk-grafana in https://github.com/grafana/explore-logs/pull/1057
+* Table: Hide custom pixel width, surface field menu options in column header by @gtk-grafana in https://github.com/grafana/explore-logs/pull/1064
+* Service selection: Pagination by @gtk-grafana in https://github.com/grafana/explore-logs/pull/1058
+* Make OTEL endpoint configurable in generator dockerfile by @shantanualsi in https://github.com/grafana/explore-logs/pull/1075
+* Service Selection Pagination: Generate options based on total count by @matyax in https://github.com/grafana/explore-logs/pull/1077
+* Service Selection Pagination: Check for possibly undefined in options by @matyax in https://github.com/grafana/explore-logs/pull/1080
+* Explore links: Add pattern filter support by @gtk-grafana in https://github.com/grafana/explore-logs/pull/1036
+* Logs Panel: Display error message when logs fail to load by @matyax in https://github.com/grafana/explore-logs/pull/1079
+* Docs: Migrate images to media service by @robbymilo in https://github.com/grafana/explore-logs/pull/1081
+* Query runner: Allow direction to be updated when sort order changes by @matyax in https://github.com/grafana/explore-logs/pull/1082
+* Investigations: change investigations plugin id by @svennergr in https://github.com/grafana/explore-logs/pull/1084
+* Grafana Drilldown Logs by @gtk-grafana in https://github.com/grafana/explore-logs/pull/1054
+* Labels combobox: Cannot add more then 2 values for same label by @gtk-grafana in https://github.com/grafana/explore-logs/pull/1088
+* README: Fix missing image, empty section by @gtk-grafana in https://github.com/grafana/explore-logs/pull/1089
+* No loki datasource: Splash page by @gtk-grafana in https://github.com/grafana/explore-logs/pull/1061
+* Fix splash page relative URL, update img in readme by @gtk-grafana in https://github.com/grafana/explore-logs/pull/1090
+* Docs: Fix title copy by @knylander-grafana in https://github.com/grafana/explore-logs/pull/1092
+  
+## 1.0.7
+* Link extensions: Add support for line filters by @gtk-grafana in https://github.com/grafana/explore-logs/pull/997
+* Link extensions: Add support for fields  by @gtk-grafana in https://github.com/grafana/explore-logs/pull/999
+* Patterns: Patterns containing quotes break when added as filter  by @gtk-grafana in https://github.com/grafana/explore-logs/issues/1003
+* Service Selection: make volume search case-insensitive by @gtk-grafana in https://github.com/grafana/explore-logs/issues/1012
+* Regex labels: Support queries from explore by @gtk-grafana in https://github.com/grafana/explore-logs/issues/1010
+* Table: Open in Explore links do not add labelFieldName by @gtk-grafana in https://github.com/grafana/explore-logs/pull/1018
+* Patterns: Not configured state not working by @gtk-grafana in https://github.com/grafana/explore-logs/issues/1021
+* Fields: Regex by @gtk-grafana in https://github.com/grafana/explore-logs/pull/1023
+* Logs Volume: Set axis soft min of 0 by @gtk-grafana in https://github.com/grafana/explore-logs/issues/1041
+* Logs: Apply query direction in query runner by @matyax in https://github.com/grafana/explore-logs/pull/1047
+* Filters: Expression builder - differentiate user input from selected tags/values by @gtk-grafana in https://github.com/grafana/explore-logs/issues/1045
+* Upgrade scenes to prevent panels from not being hidden by @svennergr in https://github.com/grafana/explore-logs/issues/1025
+
 ## 1.0.6
 * Line filters: Regex support by @gtk-grafana in https://github.com/grafana/explore-logs/pull/963
 * Line filters: Allow backticks5 by @gtk-grafana in https://github.com/grafana/explore-logs/pull/992

@@ -1,6 +1,6 @@
 {
   "name": "grafana-lokiexplore-app",
-  "version": "1.0.6",
+  "version": "1.0.8",
   "bundlewatch": {
     "files": [
       {
@@ -104,7 +104,7 @@
     "@grafana/data": "^11.3.0",
     "@grafana/lezer-logql": "^0.2.7",
     "@grafana/runtime": "^11.3.0",
-    "@grafana/scenes": "6.0.0--canary.979.13200094417.0",
+    "@grafana/scenes": "6.1.1",
     "@grafana/ui": "^11.3.0",
     "@hello-pangea/dnd": "^16.6.0",
     "@lezer/common": "^1.2.1",

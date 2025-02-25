@@ -3,28 +3,32 @@
 import { LabelType } from './fieldsTypes';
 import { ParserType } from './variables';
 
-export enum FilterOp {
+export type FilterOpType = LabelFilterOp | NumericFilterOp;
+export enum LabelFilterOp {
   Equal = '=',
   NotEqual = '!=',
-  gt = '>',
-  lt = '<',
-  gte = '>=',
-  lte = '<=',
-
   RegexEqual = '=~',
   RegexNotEqual = '!~',
 }
 
+export enum NumericFilterOp {
+  gt = '>',
+  lt = '<',
+  gte = '>=',
+  lte = '<=',
+}
+export const FilterOp = { ...LabelFilterOp, ...NumericFilterOp };
+
 export type IndexedLabelFilter = {
   key: string;
-  operator: FilterOp;
+  operator: FilterOpType;
   value: string;
   type?: LabelType;
 };
 
 export type FieldFilter = {
   key: string;
-  operator: FilterOp;
+  operator: FilterOpType;
   value: string;
   type?: LabelType;
   parser?: ParserType;
@@ -36,11 +40,21 @@ export type LineFilterType = {
   value: string;
 };
 
+export type PatternFilterType = {
+  operator: PatternFilterOp;
+  value: string;
+};
+
 export enum LineFilterOp {
   match = '|=',
   negativeMatch = `!=`,
   regex = '|~',
   negativeRegex = `!~`,
+}
+
+export enum PatternFilterOp {
+  match = '|>',
+  negativeMatch = '!>',
 }
 
 export enum LineFilterCaseSensitive {

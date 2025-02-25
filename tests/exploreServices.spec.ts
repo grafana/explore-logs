@@ -1,5 +1,10 @@
 import { test, expect } from '@grafana/plugin-e2e';
-import { E2EComboboxStrings, ExplorePage, levelTextMatch } from './fixtures/explore';
+import {
+  E2EComboboxStrings,
+  ExplorePage,
+  levelTextMatch,
+  serviceSelectionPaginationTextMatch,
+} from './fixtures/explore';
 import { testIds } from '../src/services/testIds';
 import { getMockVolumeApiResponse } from './mocks/getMockVolumeApiResponse';
 import { isNumber } from 'lodash';
@@ -80,7 +85,7 @@ test.describe('explore services page', () => {
       // Only the first title is visible
       await expect(page.getByText('mimir-ingester').nth(0)).toBeVisible();
       await expect(page.getByText('mimir-ingester').nth(1)).not.toBeVisible();
-      await expect(page.getByText('Showing 4 of 4')).toBeVisible();
+      await expect(page.getByText('of 4')).toBeVisible();
     });
 
     test('should filter service labels on exact search', async ({ page }) => {
@@ -101,7 +106,7 @@ test.describe('explore services page', () => {
       await expect(page.getByText('mimir-ingester').nth(1)).toBeVisible();
       // And the logs panel title should be hidden
       await expect(page.getByText('mimir-ingester').nth(2)).not.toBeVisible();
-      await expect(page.getByText('Showing 1 of 1')).toBeVisible();
+      await expect(page.getByText('of 1')).toBeVisible();
     });
 
     test('should filter service labels on partial string', async ({ page }) => {
@@ -118,7 +123,7 @@ test.describe('explore services page', () => {
       // Only the first title is visible
       await expect(page.getByText('mimir-ingester').nth(0)).toBeVisible();
       await expect(page.getByText('mimir-ingester').nth(1)).not.toBeVisible();
-      await expect(page.getByText('Showing 4 of 4')).toBeVisible();
+      await expect(page.getByText('of 4')).toBeVisible();
     });
 
     test('should select a service label value and navigate to log view', async ({ page }) => {
@@ -132,10 +137,11 @@ test.describe('explore services page', () => {
       await page.keyboard.press('Escape');
       // Volume can differ, scroll down so all of the panels are loaded
       await explorePage.scrollToBottom();
-      await expect(page.getByText('Showing 1 of 1')).toBeVisible();
+      await expect(page.getByText('of 1')).toBeVisible();
       await expect(page.getByText(/level=info/).first()).toBeVisible();
       await page.getByTitle('debug').first().click();
       await expect(page.getByText(/level=debug/).first()).toBeVisible();
+      await expect.poll(() => page.getByText(/level=info/).count()).toBe(0);
       await expect(page.getByText(/level=info/)).not.toBeVisible();
     });
 
@@ -145,7 +151,17 @@ test.describe('explore services page', () => {
       await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
       await page.getByLabel('Select detected_level').click();
       await explorePage.assertNotLoading();
-      await explorePage.scrollToBottom();
+      await explorePage.assertPanelsNotLoading();
+
+      // Scroll to the bottom of the page
+      await expect
+        .poll(async () => {
+          await explorePage.scrollToBottom();
+          return explorePage.getAllPanelsLocator().count();
+        })
+        .toBe(5);
+
+      // Assert that the button exists
       await page.getByTestId(testIds.exploreServiceDetails.buttonFilterInclude).nth(1).click();
 
       await expect(page.getByTestId(testIds.variables.levels.inputWrap)).toBeVisible();
@@ -159,7 +175,7 @@ test.describe('explore services page', () => {
       await page.getByLabel(E2EComboboxStrings.labels.removeServiceLabel).click();
 
       // Assert we're rendering the right scene and the services have loaded
-      await expect(page.getByText(/Showing \d+ of \d+/)).toBeVisible();
+      await expect(page.getByText(serviceSelectionPaginationTextMatch)).toBeVisible();
 
       await explorePage.addServiceName();
 
@@ -313,19 +329,19 @@ test.describe('explore services page', () => {
         await page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
         expect(logsVolumeCount).toEqual(1);
         expect(logsQueryCount).toBeLessThanOrEqual(4);
-        await expect(page.getByText(/Showing \d+ of \d+/)).toBeVisible();
+        await expect(page.getByText(serviceSelectionPaginationTextMatch)).toBeVisible();
 
         // Click on first service
         await explorePage.addServiceName();
         await explorePage.assertTabsNotLoading();
 
         // Clear variable
-        await expect(page.getByText(/Showing \d+ of \d+/)).toHaveCount(0);
+        await expect(page.getByText(serviceSelectionPaginationTextMatch)).toHaveCount(0);
         await expect(removeVariableBtn).toHaveCount(1);
         await removeVariableBtn.click();
 
         // Assert we navigated back
-        await expect(page.getByText(/Showing \d+ of \d+/)).toBeVisible();
+        await expect(page.getByText(serviceSelectionPaginationTextMatch)).toBeVisible();
 
         expect(logsVolumeCount).toEqual(2);
         expect(logsQueryCount).toBeLessThanOrEqual(6);
@@ -335,12 +351,12 @@ test.describe('explore services page', () => {
         await explorePage.assertTabsNotLoading();
 
         // Clear variable
-        await expect(page.getByText(/Showing \d+ of \d+/)).toHaveCount(0);
+        await expect(page.getByText(serviceSelectionPaginationTextMatch)).toHaveCount(0);
         await expect(removeVariableBtn).toHaveCount(1);
         await removeVariableBtn.click();
 
         // Assert we're rendering the right scene and the services have loaded
-        await expect(page.getByText(/Showing \d+ of \d+/)).toBeVisible();
+        await expect(page.getByText(serviceSelectionPaginationTextMatch)).toBeVisible();
         await explorePage.assertPanelsNotLoading();
 
         // We just need to wait a few ms for the query to get fired?
@@ -439,7 +455,7 @@ test.describe('explore services page', () => {
           await removeVariableBtn.click();
 
           // assert navigated back to index page
-          await expect(page.getByText(/Showing \d+ of \d+/)).toBeVisible();
+          await expect(page.getByText(serviceSelectionPaginationTextMatch)).toBeVisible();
 
           // Navigate back with browser history
           await page.goBack();
@@ -475,7 +491,7 @@ test.describe('explore services page', () => {
           await page.goBack();
 
           // assert navigated back to index page
-          await expect(page.getByText(/Showing \d+ of \d+/)).toBeVisible();
+          await expect(page.getByText(serviceSelectionPaginationTextMatch)).toBeVisible();
         });
       });
     });
@@ -555,8 +571,8 @@ test.describe('explore services page', () => {
       });
 
       test('Part 1: user can add namespace label as a new tab and navigate to breakdown', async ({}) => {
-        await expect(page.getByText('Showing 0 of 0')).not.toBeVisible();
-        await expect(page.getByText(/Showing \d+ of \d+/)).toBeVisible();
+        await expect(page.getByText('of 0')).not.toBeVisible();
+        await expect(page.getByText(serviceSelectionPaginationTextMatch)).toBeVisible();
 
         // Click "New" tab
         const addNewTab = page.getByTestId(testIds.index.addNewLabelTab);
@@ -573,14 +589,14 @@ test.describe('explore services page', () => {
         await expect(newNamespaceTabLoc).toHaveCount(1);
 
         // Assert results have loaded before we search or we'll cancel the ongoing volume query
-        await expect(page.getByText('Showing 6 of 6')).toBeVisible();
+        await expect(page.getByText('of 6')).toBeVisible();
         // Search for "gateway"
         await page.getByTestId(testIds.index.searchLabelValueInput).fill('Gate');
         await page.getByTestId(testIds.index.searchLabelValueInput).press('Escape');
 
         // Asser this filters down to only one result
         await expect(page.getByTestId(testIds.index.showLogsButton)).toHaveCount(1);
-        await expect(page.getByText('Showing 1 of 1')).toBeVisible();
+        await expect(page.getByText('of 1')).toBeVisible();
 
         // Select the first and only result
         await explorePage.addServiceName();
