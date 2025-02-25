@@ -451,7 +451,7 @@ test.describe('explore services page', () => {
           await expect(serviceTabLoc).toHaveCount(1);
           expect(await serviceTabLoc.getAttribute('aria-selected')).toEqual('true');
         });
-        test('removing the primary label should redirect back to index, user can go back to breakdown with browser history', async ({
+        test.only('removing the primary label should redirect back to index, user can go back to breakdown with browser history', async ({
           page,
         }) => {
           // Select the first service

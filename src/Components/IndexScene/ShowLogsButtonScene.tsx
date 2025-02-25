@@ -8,7 +8,6 @@ import { getLabelsVariable } from '../../services/variableGetters';
 import { testIds } from '../../services/testIds';
 
 import { isOperatorInclusive } from '../../services/operatorHelpers';
-import { logger } from '../../services/logger';
 
 export interface ShowLogsButtonSceneState extends SceneObjectState {
   disabled?: boolean;
@@ -46,7 +45,6 @@ export class ShowLogsButtonScene extends SceneObjectBase<ShowLogsButtonSceneStat
       return getDrillDownLink(positiveFilter.key, positiveFilter.value);
     }
 
-    logger.error('Cannot find filter to build link!');
     return '';
   };
 

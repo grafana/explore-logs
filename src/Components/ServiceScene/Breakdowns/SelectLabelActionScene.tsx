@@ -8,7 +8,7 @@ import {
   VizPanel,
 } from '@grafana/scenes';
 import { getDetectedFieldsFrame, getLogsPanelFrame, ServiceScene } from '../ServiceScene';
-import { getValueBreakdownLink, navigateToValueBreakdown } from '../../../services/navigate';
+import { getValueBreakdownLink } from '../../../services/navigate';
 import { getPrimaryLabelFromUrl, ValueSlugs } from '../../../services/routing';
 import {
   Button,
