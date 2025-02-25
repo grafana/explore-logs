@@ -6,7 +6,7 @@
   "autoEnabled": true,
   "info": {
     "keywords": ["app", "loki", "explore", "logs", "drilldown", "drill", "down", "drill-down"],
-    "description": "Query-less exploration of log data stored in Loki",
+    "description": "Queryless exploration of log data stored in Loki",
     "author": {
       "name": "Grafana"
     },
