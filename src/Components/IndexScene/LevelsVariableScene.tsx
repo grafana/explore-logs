@@ -1,4 +1,11 @@
-import { ControlsLabel, SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
+import {
+  ControlsLabel,
+  SceneComponentProps,
+  sceneGraph,
+  SceneObject,
+  SceneObjectBase,
+  SceneObjectState,
+} from '@grafana/scenes';
 import React from 'react';
 import { getLevelsVariable } from '../../services/variableGetters';
 import { GrafanaTheme2, MetricFindValue, SelectableValue } from '@grafana/data';
@@ -140,6 +147,12 @@ export class LevelsVariableScene extends SceneObjectBase<LevelsVariableSceneStat
       </div>
     );
   };
+}
+export function syncLevelsVariable(sceneRef: SceneObject) {
+  const levelsVariableScene = sceneGraph.findObject(sceneRef, (obj) => obj instanceof LevelsVariableScene);
+  if (levelsVariableScene instanceof LevelsVariableScene) {
+    levelsVariableScene.onFilterChange();
+  }
 }
 
 const getStyles = (theme: GrafanaTheme2) => ({

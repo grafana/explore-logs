@@ -31,6 +31,7 @@ import { getDetectedFieldType } from '../../../services/fields';
 import { logger } from '../../../services/logger';
 import { testIds } from '../../../services/testIds';
 import { findObjectOfType } from '../../../services/scenes';
+import { syncLevelsVariable } from '../../IndexScene/LevelsVariableScene';
 
 interface SelectLabelActionSceneState extends SceneObjectState {
   labelName: string;
@@ -94,7 +95,7 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
     const popoverRef = useRef<HTMLButtonElement>(null);
     const filterButtonDisabled =
       fieldType === ValueSlugs.label &&
-      // @todo support regex operators?
+      variable.state.name === VAR_FIELDS &&
       variable.state.filters.filter((f) => f.key !== labelName && f.operator === FilterOp.Equal).length === 0;
 
     const isIncluded = existingFilter?.operator === FilterOp.NotEqual && fieldValue.value === EMPTY_VARIABLE_VALUE;
@@ -299,6 +300,9 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
 
   public clearFilters = (variableType: InterpolatedFilterType) => {
     clearFilters(this.state.labelName, this, variableType);
+    if (this.state.labelName === LEVEL_VARIABLE_VALUE) {
+      syncLevelsVariable(this);
+    }
   };
 
   public togglePopover() {
