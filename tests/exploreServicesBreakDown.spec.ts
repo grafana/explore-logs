@@ -623,8 +623,8 @@ test.describe('explore services breakdown page', () => {
     const TOTAL_ROWS = 7;
 
     // Fields on top should be loaded
-    expect(requestCount).toEqual(INITIAL_ROWS * COUNT_PER_ROW);
-    expect(logsCountQueryCount).toEqual(2);
+    expect.poll(() => requestCount).toEqual(INITIAL_ROWS * COUNT_PER_ROW);
+    expect.poll(() => logsCountQueryCount).toEqual(2);
 
     await explorePage.scrollToBottom();
     // Panel on the bottom should be visible
@@ -632,10 +632,14 @@ test.describe('explore services breakdown page', () => {
     // Panel on the top should not
     await expect(page.getByTestId(/data-testid Panel header/).first()).not.toBeInViewport();
     // Wait for a bit for the requests to be made
-    await page.waitForTimeout(250);
     // 7 rows, last row only has 2
-    expect(requestCount).toEqual(TOTAL_ROWS * COUNT_PER_ROW - 1);
-    expect(logsCountQueryCount).toEqual(2);
+    await expect
+      .poll(async () => {
+        await explorePage.scrollToBottom();
+        return requestCount;
+      })
+      .toEqual(TOTAL_ROWS * COUNT_PER_ROW - 1);
+    expect.poll(() => logsCountQueryCount).toEqual(2);
   });
 
   test('Patterns should show error state when API call returns error', async ({ page }) => {
