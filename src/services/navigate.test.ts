@@ -1,4 +1,4 @@
-import { getDrillDownLink, navigateToDrilldownPage, navigateToValueBreakdown } from './navigate';
+import { getDrillDownIndexLink, navigateToDrilldownPage, navigateToValueBreakdown } from './navigate';
 import { PageSlugs, ValueSlugs } from './routing';
 import { ServiceScene, ServiceSceneCustomState } from '../Components/ServiceScene/ServiceScene';
 import { locationService } from '@grafana/runtime';
@@ -83,7 +83,7 @@ describe('navigate', () => {
       const labelValue = 'label_value_string';
       const labelName = 'label_name_string';
 
-      const link = getDrillDownLink(labelName, labelValue);
+      const link = getDrillDownIndexLink(labelName, labelValue);
       expect(link).toEqual(`/a/grafana-lokiexplore-app/explore/${labelName}/${labelValue}/logs`);
     });
   });

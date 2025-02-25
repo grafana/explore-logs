@@ -3,7 +3,7 @@ import { LinkButton, useStyles2 } from '@grafana/ui';
 import React from 'react';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
-import { getDrillDownLink } from '../../services/navigate';
+import { getDrillDownIndexLink } from '../../services/navigate';
 import { getLabelsVariable } from '../../services/variableGetters';
 import { testIds } from '../../services/testIds';
 
@@ -42,7 +42,7 @@ export class ShowLogsButtonScene extends SceneObjectBase<ShowLogsButtonSceneStat
     const positiveFilter = labelsVar.state.filters.find((f) => isOperatorInclusive(f.operator));
 
     if (positiveFilter) {
-      return getDrillDownLink(positiveFilter.key, positiveFilter.value);
+      return getDrillDownIndexLink(positiveFilter.key, positiveFilter.value);
     }
 
     return '';

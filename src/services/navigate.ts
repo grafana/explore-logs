@@ -80,9 +80,21 @@ export function navigateToValueBreakdown(newPath: ValueSlugs, label: string, ser
  * @param labelName
  * @param labelValue
  */
-export function getDrillDownLink(labelName: string, labelValue: string, labelFilters?: UrlQueryMap) {
+export function getDrillDownIndexLink(labelName: string, labelValue: string, labelFilters?: UrlQueryMap) {
   const breakdownUrl = buildDrilldownPageUrl(ROUTES.logs(labelValue, labelName), labelFilters);
   return breakdownUrl;
+}
+
+export function getDrillDownTabLink(path: PageSlugs, serviceScene: ServiceScene, extraQueryParams?: UrlQueryMap) {
+  const indexScene = sceneGraph.getAncestor(serviceScene, IndexScene);
+  const urlLabelValue = indexScene.state.routeMatch?.params.labelValue;
+  const urlLabelName = indexScene.state.routeMatch?.params.labelName;
+
+  if (urlLabelValue) {
+    const fullUrl = prefixRoute(`${PageSlugs.explore}/${urlLabelName}/${replaceSlash(urlLabelValue)}/${path}`);
+    return buildDrilldownPageUrl(fullUrl, extraQueryParams);
+  }
+  return '';
 }
 
 /**
@@ -93,21 +105,16 @@ export function getDrillDownLink(labelName: string, labelValue: string, labelFil
  * @param extraQueryParams
  */
 export function navigateToDrilldownPage(path: PageSlugs, serviceScene: ServiceScene, extraQueryParams?: UrlQueryMap) {
-  const indexScene = sceneGraph.getAncestor(serviceScene, IndexScene);
-  const urlLabelValue = indexScene.state.routeMatch?.params.labelValue;
-  const urlLabelName = indexScene.state.routeMatch?.params.labelName;
+  const drilldownLink = getDrillDownTabLink(path, serviceScene, extraQueryParams);
 
-  if (urlLabelValue) {
-    const fullUrl = prefixRoute(`${PageSlugs.explore}/${urlLabelName}/${replaceSlash(urlLabelValue)}/${path}`);
-    const breakdownUrl = buildDrilldownPageUrl(fullUrl, extraQueryParams);
-
+  if (drilldownLink) {
     // If we're going to navigate, we need to share the state between this instantiation of the service scene
     if (serviceScene) {
       const metadataService = getMetadataService();
       metadataService.setServiceSceneState(serviceScene.state);
     }
 
-    pushUrlHandler(breakdownUrl);
+    pushUrlHandler(drilldownLink);
     return;
   }
 }

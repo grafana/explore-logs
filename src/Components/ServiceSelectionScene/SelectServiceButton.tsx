@@ -3,7 +3,7 @@ import React from 'react';
 import { SceneComponentProps, SceneObject, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import { LinkButton, useStyles2 } from '@grafana/ui';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
-import { getDrillDownLink, pushUrlHandler } from '../../services/navigate';
+import { getDrillDownIndexLink, pushUrlHandler } from '../../services/navigate';
 import { getLabelsVariable } from '../../services/variableGetters';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
@@ -91,7 +91,7 @@ export function getLabelDrilldownLink(primaryLabelName: string, primaryLabelValu
   const clonedVar = variable.clone({ filters });
 
   // In this case, we don't have a ServiceScene created yet, so we call a special function to navigate there for the first time
-  return getDrillDownLink(primaryLabelName, primaryLabelValue, clonedVar.urlSync?.getUrlState());
+  return getDrillDownIndexLink(primaryLabelName, primaryLabelValue, clonedVar.urlSync?.getUrlState());
 }
 
 /**
