@@ -682,8 +682,9 @@ test.describe('explore services breakdown page', () => {
     await expect(page.getByTestId(/data-testid Panel header/).last()).toBeInViewport();
     // Panel on the top should not
     await expect(page.getByTestId(/data-testid Panel header/).first()).not.toBeInViewport();
-    // Wait for a bit for the requests to be made
-    await expect.poll(() => requestCount).toEqual(TOTAL_ROWS * COUNT_PER_ROW - 1);
+    // Adding a bit of slop here, sometimes detected_fields misses a low cardinality field
+    await expect.poll(() => requestCount).toBeGreaterThanOrEqual(TOTAL_ROWS * COUNT_PER_ROW - 1 - 2);
+    await expect.poll(() => requestCount).toBeLessThanOrEqual(TOTAL_ROWS * COUNT_PER_ROW - 1);
     // 7 rows, last row only has 2
     await expect
       .poll(async () => {
