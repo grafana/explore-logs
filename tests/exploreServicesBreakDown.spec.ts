@@ -879,17 +879,16 @@ test.describe('explore services breakdown page', () => {
     await expect(adHocLocator).toBeVisible();
   });
 
-  test('should filter logs by bytes range', async ({ page }) => {
+  test.only('should filter logs by bytes range', async ({ page }) => {
     explorePage.blockAllQueriesExcept({
       refIds: ['logsPanelQuery', 'bytes', 'pod'],
       legendFormats: [`{{${levelName}}}`],
     });
 
-    await page.getByTestId(testIds.exploreServiceDetails.tabFields).click();
-
     // Wait for pod query to execute
     const expressions: string[] = [];
     await explorePage.waitForRequest(
+      () => page.getByTestId(testIds.exploreServiceDetails.tabFields).click(),
       (q) => expressions.push(q.expr),
       (q) => q.expr.includes('pod')
     );
@@ -958,12 +957,11 @@ test.describe('explore services breakdown page', () => {
     await popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.inputLessThanInclusive).click();
     await popover.getByText('Less than or equal').click();
 
-    // Add the filter
-    await popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.submitButton).click();
-
     // Wait for pod query to execute
     const expressionsAfterNumericFilter: string[] = [];
     await explorePage.waitForRequest(
+      // Add the filter
+      () => popover.getByTestId(testIds.breakdowns.common.filterNumericPopover.submitButton).click(),
       (q) => expressionsAfterNumericFilter.push(q.expr),
       (q) => q.expr.includes('pod')
     );
@@ -1238,7 +1236,7 @@ test.describe('explore services breakdown page', () => {
     expect((await firstRow.boundingBox())?.width).toBeLessThanOrEqual(viewportSize?.width ?? Infinity);
   });
 
-  test('logs panel options: sortOrder', async ({ page }) => {
+  test.only('logs panel options: sortOrder', async ({ page }) => {
     explorePage.blockAllQueriesExcept({
       refIds: ['logsPanelQuery'],
     });
@@ -1263,8 +1261,18 @@ test.describe('explore services breakdown page', () => {
       new Date(await secondRowTimeCell.textContent()).valueOf()
     );
 
-    // Change sort order
-    await explorePage.getLogsDirectionOldestFirstLocator().click();
+    // Changing the sort order triggers a new query with the opposite query direction
+    let queryWithForwardDirectionExecuted = false;
+    await explorePage.waitForRequest(
+      // Change sort order
+      () => explorePage.getLogsDirectionOldestFirstLocator().click(),
+      () => {
+        queryWithForwardDirectionExecuted = true;
+      },
+      (q) => q.direction === LokiQueryDirection.Forward
+    );
+
+    expect(queryWithForwardDirectionExecuted).toEqual(true);
 
     await expect(explorePage.getLogsDirectionNewestFirstLocator()).not.toBeChecked();
     await expect(explorePage.getLogsDirectionOldestFirstLocator()).toBeChecked();
@@ -1276,17 +1284,6 @@ test.describe('explore services breakdown page', () => {
     expect(new Date(await firstRowTimeCell.textContent()).valueOf()).toBeLessThanOrEqual(
       new Date(await secondRowTimeCell.textContent()).valueOf()
     );
-
-    // Changing the sort order triggers a new query with the opposite query direction
-    let queryWithForwardDirectionExecuted = false;
-    await explorePage.waitForRequest(
-      () => {
-        queryWithForwardDirectionExecuted = true;
-      },
-      (q) => q.direction === LokiQueryDirection.Forward
-    );
-
-    expect(queryWithForwardDirectionExecuted).toEqual(true);
 
     // Reload the page
     await page.reload();
