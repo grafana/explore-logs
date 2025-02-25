@@ -146,6 +146,7 @@ test.describe('explore services page', () => {
       await expect(page.getByText(/level=info/).first()).toBeVisible();
       await page.getByTitle('debug').first().click();
       await expect(page.getByText(/level=debug/).first()).toBeVisible();
+      await expect.poll(() => page.getByText(/level=info/).count()).toBe(0);
       await expect(page.getByText(/level=info/)).not.toBeVisible();
     });
 
