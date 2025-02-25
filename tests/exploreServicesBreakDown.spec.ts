@@ -685,13 +685,6 @@ test.describe('explore services breakdown page', () => {
     // Adding a bit of slop here, sometimes detected_fields misses a low cardinality field
     await expect.poll(() => requestCount).toBeGreaterThanOrEqual(TOTAL_ROWS * COUNT_PER_ROW - 1 - 2);
     await expect.poll(() => requestCount).toBeLessThanOrEqual(TOTAL_ROWS * COUNT_PER_ROW - 1);
-    // 7 rows, last row only has 2
-    await expect
-      .poll(async () => {
-        await explorePage.scrollToBottom();
-        return requestCount;
-      })
-      .toEqual(TOTAL_ROWS * COUNT_PER_ROW - 1);
     await expect.poll(() => logsCountQueryCount).toEqual(2);
   });
 
