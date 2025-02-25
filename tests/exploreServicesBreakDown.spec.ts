@@ -161,13 +161,17 @@ test.describe('explore services breakdown page', () => {
     await expect(explorePage.getLogsPanelLocator().locator('[class$="panel-content"]')).toBeVisible();
   });
 
-  test(`should show "Explore" on table panel menu`, async ({ page }) => {
+  test.only(`should show "Explore" on table panel menu`, async ({ page }) => {
     await explorePage.goToLogsTab();
     // Switch to table view
     await explorePage.getTableToggleLocator().click();
+    const panelMenu = page.getByTestId('data-testid Panel menu Logs');
+    const panelMenuItem = page.getByTestId('data-testid Panel menu item Explore');
 
-    await page.getByTestId('data-testid Panel menu Logs').click();
-    await page.getByTestId('data-testid Panel menu item Explore').click();
+    await expect(panelMenu).toHaveCount(1);
+    await panelMenu.click();
+    await expect(panelMenuItem).toHaveCount(1);
+    await panelMenuItem.click();
 
     await expect(page.getByText(`drop __error__, __error_details__`)).toBeVisible();
   });
