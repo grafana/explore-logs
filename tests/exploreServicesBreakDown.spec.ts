@@ -592,7 +592,7 @@ test.describe('explore services breakdown page', () => {
     await explorePage.assertPanelsNotLoading();
 
     // Pods have a variable count!
-    await expect.poll(() => explorePage.getAllPanelsLocator().count()).toBeGreaterThan(10);
+    await expect.poll(() => explorePage.getAllPanelsLocator().count()).toBeGreaterThanOrEqual(10);
     // Filter hardcoded pod names for tempo-ingester service
     await explorePage.addCustomValueToCombobox(
       metadataName,
