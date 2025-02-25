@@ -80,11 +80,6 @@ export function navigateToValueBreakdown(newPath: ValueSlugs, label: string, ser
  * @param labelName
  * @param labelValue
  */
-export function navigateToInitialPageAfterServiceSelection(labelName: string, labelValue: string) {
-  const breakdownUrl = buildDrilldownPageUrl(ROUTES.logs(labelValue, labelName));
-  pushUrlHandler(breakdownUrl);
-}
-
 export function getDrillDownLink(labelName: string, labelValue: string, labelFilters?: UrlQueryMap) {
   const breakdownUrl = buildDrilldownPageUrl(ROUTES.logs(labelValue, labelName), labelFilters);
   return breakdownUrl;

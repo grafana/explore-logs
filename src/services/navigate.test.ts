@@ -1,8 +1,4 @@
-import {
-  navigateToDrilldownPage,
-  navigateToInitialPageAfterServiceSelection,
-  navigateToValueBreakdown,
-} from './navigate';
+import { getDrillDownLink, navigateToDrilldownPage, navigateToValueBreakdown } from './navigate';
 import { PageSlugs, ValueSlugs } from './routing';
 import { ServiceScene, ServiceSceneCustomState } from '../Components/ServiceScene/ServiceScene';
 import { locationService } from '@grafana/runtime';
@@ -87,8 +83,8 @@ describe('navigate', () => {
       const labelValue = 'label_value_string';
       const labelName = 'label_name_string';
 
-      navigateToInitialPageAfterServiceSelection(labelName, labelValue);
-      expect(locationSpy).toHaveBeenCalledWith(`/a/grafana-lokiexplore-app/explore/${labelName}/${labelValue}/logs`);
+      const link = getDrillDownLink(labelName, labelValue);
+      expect(link).toEqual(`/a/grafana-lokiexplore-app/explore/${labelName}/${labelValue}/logs`);
     });
   });
 });
