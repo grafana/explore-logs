@@ -9,7 +9,7 @@ const jsonFmtFieldName = 'status';
 const metadataFieldName = 'pod';
 const serviceName = 'nginx-json-mixed';
 // const levelName = 'cluster'
-test.describe.only('explore nginx-json-mixed breakdown pages ', () => {
+test.describe('explore nginx-json-mixed breakdown pages ', () => {
   let explorePage: ExplorePage;
 
   test.beforeEach(async ({ page }, testInfo) => {
