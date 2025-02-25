@@ -17,9 +17,6 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     await explorePage.setExtraTallViewportSize();
     await explorePage.clearLocalStorage();
     await explorePage.gotoServicesBreakdownOldUrl(serviceName);
-    explorePage.blockAllQueriesExcept({
-      refIds: ['logsPanelQuery', mixedFieldName, logFmtFieldName],
-    });
   });
 
   test.afterEach(async ({ page }) => {
