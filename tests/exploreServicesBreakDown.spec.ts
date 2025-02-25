@@ -879,7 +879,7 @@ test.describe('explore services breakdown page', () => {
     await expect(adHocLocator).toBeVisible();
   });
 
-  test.only('should filter logs by bytes range', async ({ page }) => {
+  test('should filter logs by bytes range', async ({ page }) => {
     explorePage.blockAllQueriesExcept({
       refIds: ['logsPanelQuery', 'bytes', 'pod'],
       legendFormats: [`{{${levelName}}}`],
@@ -1236,7 +1236,7 @@ test.describe('explore services breakdown page', () => {
     expect((await firstRow.boundingBox())?.width).toBeLessThanOrEqual(viewportSize?.width ?? Infinity);
   });
 
-  test.only('logs panel options: sortOrder', async ({ page }) => {
+  test('logs panel options: sortOrder', async ({ page }) => {
     explorePage.blockAllQueriesExcept({
       refIds: ['logsPanelQuery'],
     });
