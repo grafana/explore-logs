@@ -15,7 +15,7 @@ type Props = {
     include: string;
     exclude: string;
   };
-  hideExclude?: boolean
+  hideExclude?: boolean;
 };
 
 export const FilterButton = (props: Props) => {
@@ -35,7 +35,8 @@ export const FilterButton = (props: Props) => {
       >
         Include
       </Button>
-      {!hideExclude && <Button
+      {!hideExclude && (
+        <Button
           variant={isExcluded ? 'primary' : 'secondary'}
           fill={buttonFill}
           size="sm"
@@ -44,9 +45,10 @@ export const FilterButton = (props: Props) => {
           onClick={isExcluded ? onClear : onExclude}
           title={titles?.exclude}
           data-testid={testIds.exploreServiceDetails.buttonFilterExclude}
-      >
-        Exclude
-      </Button>}
+        >
+          Exclude
+        </Button>
+      )}
     </div>
   );
 };
