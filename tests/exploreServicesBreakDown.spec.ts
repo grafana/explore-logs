@@ -186,7 +186,7 @@ test.describe('explore services breakdown page', () => {
     await expect(explorePage.getLogsPanelLocator().locator('[class$="panel-content"]')).toBeVisible();
   });
 
-  test.only(`should show "Explore" on table panel menu`, async ({ page }) => {
+  test(`should show "Explore" on table panel menu`, async ({ page }) => {
     await explorePage.goToLogsTab();
     // Switch to table view
     await explorePage.getTableToggleLocator().click();
