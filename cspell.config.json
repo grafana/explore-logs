@@ -11,7 +11,7 @@
     "config/**"
   ],
   "ignoreRegExpList": [],
-  "words": [],
+  "words": ["queryless"],
   "dictionaryDefinitions": [
     {
       "name": "project-words",
