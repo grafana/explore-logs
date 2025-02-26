@@ -251,24 +251,9 @@ export class ServiceScene extends SceneObjectBase<ServiceSceneState> {
     getMetadataService().setServiceSceneState(this.state);
     this._subs.unsubscribe();
 
-    this.clearAdHocVariables();
-
     // Redirect to root with updated params, which will trigger history push back to index route, preventing empty page or empty service query bugs
     navigateToIndex();
   }
-
-  /**
-   * If the scene has previously been activated, we can see cached variable states when re-activating
-   * To prevent this we clear out the variable filters
-   */
-  private clearAdHocVariables = () => {
-    const variables = [getLabelsVariable(this), getFieldsVariable(this), getLevelsVariable(this)];
-    variables.forEach((variable) => {
-      variable.setState({
-        filters: [],
-      });
-    });
-  };
 
   private showVariables() {
     const levelsVar = sceneGraph.findByKeyAndType(this, LEVELS_VARIABLE_SCENE_KEY, LevelsVariableScene);
