@@ -33,9 +33,11 @@ export class LevelsVariableScene extends SceneObjectBase<LevelsVariableSceneStat
   onActivate() {
     this.onFilterChange();
 
-    getLevelsVariable(this).subscribeToEvent(SceneVariableValueChangedEvent, () => {
-      this.onFilterChange();
-    });
+    this._subs.add(
+      getLevelsVariable(this).subscribeToEvent(SceneVariableValueChangedEvent, () => {
+        this.onFilterChange();
+      })
+    );
   }
 
   public onFilterChange() {
