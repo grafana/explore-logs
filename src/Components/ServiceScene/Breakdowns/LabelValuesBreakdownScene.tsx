@@ -30,7 +30,6 @@ import {
 } from '../../../services/variables';
 import React from 'react';
 import { LabelBreakdownScene } from './LabelBreakdownScene';
-import { AddFilterEvent } from './AddToFiltersButton';
 import { DEFAULT_SORT_BY } from '../../../services/sorting';
 import { buildLabelsQuery, LABEL_BREAKDOWN_GRID_TEMPLATE_COLUMNS } from '../../../services/labels';
 import { getAppEvents } from '@grafana/runtime';
@@ -49,7 +48,6 @@ import { EmptyLayoutScene } from './EmptyLayoutScene';
 import { IndexScene } from '../../IndexScene/IndexScene';
 import { clearVariables, getVariablesThatCanBeCleared } from '../../../services/variableHelpers';
 import { ValueSummaryPanelScene } from './Panels/ValueSummary';
-import { LevelsVariableScene } from '../../IndexScene/LevelsVariableScene';
 import { renderLevelsFilter, renderLogQLLabelFilters } from '../../../services/query';
 import { logger } from '../../../services/logger';
 import { areArraysEqual } from '../../../services/comparison';
@@ -101,17 +99,6 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
    * Set variable & event subscriptions
    */
   private setSubscriptions() {
-    // EVENT SUBS
-    // Subscribe to AddFilterEvent to sync button filters with variable state
-    this._subs.add(
-      this.subscribeToEvent(AddFilterEvent, (event) => {
-        const levelsVariableScene = sceneGraph.findObject(this, (obj) => obj instanceof LevelsVariableScene);
-        if (levelsVariableScene instanceof LevelsVariableScene) {
-          levelsVariableScene.onFilterChange();
-        }
-      })
-    );
-
     // QUERY RUNNER SUBS
     // Subscribe to value breakdown state
     this._subs.add(

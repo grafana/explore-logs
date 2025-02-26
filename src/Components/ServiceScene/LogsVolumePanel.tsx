@@ -84,8 +84,6 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
         if (event.key === LEVEL_VARIABLE_VALUE) {
           const levelsVariableScene = sceneGraph.findObject(this, (obj) => obj instanceof LevelsVariableScene);
           if (levelsVariableScene instanceof LevelsVariableScene) {
-            levelsVariableScene.onFilterChange();
-
             const levelsVar = getLevelsVariable(this);
             levelsVar.setState({ filters: levelsVar.state.filters });
           }
