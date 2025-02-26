@@ -49,7 +49,7 @@ import { EmptyLayoutScene } from './EmptyLayoutScene';
 import { IndexScene } from '../../IndexScene/IndexScene';
 import { clearVariables, getVariablesThatCanBeCleared } from '../../../services/variableHelpers';
 import { ValueSummaryPanelScene } from './Panels/ValueSummary';
-import { LevelsVariableScene } from '../../IndexScene/LevelsVariableScene';
+import { syncLevelsVariable } from '../../IndexScene/LevelsVariableScene';
 import { renderLevelsFilter, renderLogQLLabelFilters } from '../../../services/query';
 import { logger } from '../../../services/logger';
 import { areArraysEqual } from '../../../services/comparison';
@@ -105,10 +105,7 @@ export class LabelValuesBreakdownScene extends SceneObjectBase<LabelValueBreakdo
     // Subscribe to AddFilterEvent to sync button filters with variable state
     this._subs.add(
       this.subscribeToEvent(AddFilterEvent, (event) => {
-        const levelsVariableScene = sceneGraph.findObject(this, (obj) => obj instanceof LevelsVariableScene);
-        if (levelsVariableScene instanceof LevelsVariableScene) {
-          levelsVariableScene.onFilterChange();
-        }
+        syncLevelsVariable(this);
       })
     );
 
