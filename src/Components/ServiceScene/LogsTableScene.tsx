@@ -13,7 +13,7 @@ import { getVariableForLabel } from '../../services/fields';
 import { PanelMenu } from '../Panels/PanelMenu';
 import { LogLineState } from '../Table/Context/TableColumnsContext';
 import { LEVEL_VARIABLE_VALUE } from '../../services/variables';
-import { LevelsVariableScene } from '../IndexScene/LevelsVariableScene';
+import { syncLevelsVariable } from '../IndexScene/LevelsVariableScene';
 
 interface LogsTableSceneState extends SceneObjectState {
   menu?: PanelMenu;
@@ -58,10 +58,7 @@ export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
 
       // Update levels variable when adding filter from table
       if (filter.key === LEVEL_VARIABLE_VALUE) {
-        const levelsVariableScene = sceneGraph.findObject(model, (obj) => obj instanceof LevelsVariableScene);
-        if (levelsVariableScene instanceof LevelsVariableScene) {
-          levelsVariableScene.onFilterChange();
-        }
+        syncLevelsVariable(model);
       }
     };
 
