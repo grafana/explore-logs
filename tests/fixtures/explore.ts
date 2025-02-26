@@ -174,8 +174,13 @@ export class ExplorePage {
     await this.page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
   }
 
-  async waitForRequest(callback: (lokiQuery: LokiQuery) => void, test: (lokiQuery: LokiQuery) => boolean) {
+  async waitForRequest(
+    init: () => Promise<any>,
+    callback: (lokiQuery: LokiQuery) => void,
+    test: (lokiQuery: LokiQuery) => boolean
+  ) {
     await Promise.all([
+      init(),
       this.page.waitForResponse(
         (resp) => {
           const post = resp.request().postDataJSON();
@@ -307,6 +312,41 @@ export class ExplorePage {
         await route.fulfill({ json: [] });
       }
     });
+  }
+
+  async addNthValueToCombobox(
+    labelName: string,
+    operator: FilterOpType,
+    comboBox: ComboBoxIndex,
+    n: number,
+    typeAhead?: string
+  ) {
+    // Open combobox
+    const comboboxLocator = this.page.getByPlaceholder('Filter by label values').nth(comboBox);
+    await comboboxLocator.click();
+
+    if (typeAhead) {
+      await this.page.keyboard.type(typeAhead);
+    }
+
+    // Select detected_level key
+    await this.page.getByRole('option', { name: labelName, exact: true }).click();
+    await expect(this.getOperatorLocator(operator)).toHaveCount(1);
+    await expect(this.getOperatorLocator(operator)).toBeVisible();
+    // Select operator
+    await this.getOperatorLocator(operator).click();
+
+    // assert the values have loaded
+    await expect(this.page.getByRole('option', { name: /\[compactor-.+]/ }).nth(0)).toBeVisible();
+
+    // Select the nth item
+    for (let i = 0; i < n; i++) {
+      await this.page.keyboard.press('ArrowDown');
+    }
+    // Select the item
+    await this.page.keyboard.press('Enter');
+    // Close the label name dropdown that opens after adding a value
+    await this.page.keyboard.press('Escape');
   }
 
   /**

@@ -6,7 +6,7 @@
   "autoEnabled": true,
   "info": {
     "keywords": ["app", "loki", "explore", "logs", "drilldown", "drill", "down", "drill-down"],
-    "description": "Query-less exploration of log data stored in Loki",
+    "description": "Queryless exploration of log data stored in Loki",
     "author": {
       "name": "Grafana"
     },
@@ -71,8 +71,8 @@
     "exposedComponents": [
       {
         "id": "grafana-lokiexplore-app/open-in-explore-logs-button/v1",
-        "title": "Open in Explore Logs button",
-        "description": "A button that opens a logs view in the Explore Logs app."
+        "title": "Open in Logs Drilldown button",
+        "description": "A button that opens a logs view in the Logs Drilldown app."
       }
     ],
     "extensionPoints": [

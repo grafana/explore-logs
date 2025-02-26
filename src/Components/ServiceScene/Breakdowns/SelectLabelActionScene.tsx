@@ -57,7 +57,7 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
     const variable = this.getVariable();
     const variableName = variable.state.name as InterpolatedFilterType;
     const existingFilter = this.getExistingFilter(variable);
-    const fieldValue = getValueFromAdHocVariableFilter(variable, existingFilter);
+    const fieldValue = getValueFromAdHocVariableFilter(variableName, existingFilter);
     const isIncluded = existingFilter?.operator === FilterOp.NotEqual && fieldValue.value === EMPTY_VARIABLE_VALUE;
 
     if (isIncluded && value.value === INCLUDE_VALUE) {
@@ -89,7 +89,7 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
     const variable = model.getVariable();
     const variableName = variable.useState().name as InterpolatedFilterType;
     const existingFilter = model.getExistingFilter(variable);
-    const fieldValue = getValueFromAdHocVariableFilter(variable, existingFilter);
+    const fieldValue = getValueFromAdHocVariableFilter(variableName, existingFilter);
     const styles = useStyles2(getStyles);
     const popoverRef = useRef<HTMLButtonElement>(null);
     const filterButtonDisabled =

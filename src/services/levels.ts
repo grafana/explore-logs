@@ -2,7 +2,7 @@ import { DataFrame } from '@grafana/data';
 import { SeriesVisibilityChangeMode } from '@grafana/ui';
 import { LEVEL_VARIABLE_VALUE, VAR_LEVELS } from './variables';
 import { SceneObject } from '@grafana/scenes';
-import { addToFilters, replaceFilter } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
+import { addToFilters, FilterType } from 'Components/ServiceScene/Breakdowns/AddToFiltersButton';
 import { getLevelsVariable } from './variableGetters';
 
 import { isOperatorExclusive, isOperatorInclusive } from './operatorHelpers';
@@ -36,7 +36,7 @@ export function toggleLevelVisibility(
   return [...levels, level];
 }
 
-export function getLabelsFromSeries(series: DataFrame[]) {
+export function getLevelLabelsFromSeries(series: DataFrame[]) {
   return series.map((dataFrame) => getLabelValueFromDataFrame(dataFrame) ?? 'logs');
 }
 
@@ -90,25 +90,22 @@ function normalizeLevelName(level: string) {
  * If the filter exists but it's different, it's replaced.
  * If the filter exists, it's removed.
  */
-export function toggleLevelFromFilter(level: string, sceneRef: SceneObject) {
+export function toggleLevelFromFilter(level: string, sceneRef: SceneObject): FilterType {
   const levelFilter = getLevelsVariable(sceneRef);
   const empty = levelFilter.state.filters.length === 0;
   const filterExists = levelFilter.state.filters.find(
-    (filter) => filter.value.split('|').includes(level) && isOperatorInclusive(filter.operator)
+    (filter) => filter.value === level && isOperatorInclusive(filter.operator)
   );
 
   if (level === 'logs') {
     level = '""';
   }
 
-  let action;
   if (empty || !filterExists) {
-    replaceFilter(LEVEL_VARIABLE_VALUE, level, 'include', sceneRef, VAR_LEVELS);
-    action = 'add';
+    addToFilters(LEVEL_VARIABLE_VALUE, level, 'include', sceneRef, VAR_LEVELS);
+    return 'include';
   } else {
     addToFilters(LEVEL_VARIABLE_VALUE, level, 'toggle', sceneRef, VAR_LEVELS);
-    action = 'remove';
+    return 'toggle';
   }
-
-  return action;
 }
