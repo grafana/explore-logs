@@ -20,7 +20,6 @@ test.describe('explore services page', () => {
       // Header sizes may change, bringing up the third row in queries, which will break tests in this suite
       await page.setViewportSize({ width: 1280, height: 600 });
       await explorePage.clearLocalStorage();
-      await explorePage.gotoServices();
       explorePage.captureConsoleLogs();
     });
 
@@ -30,6 +29,7 @@ test.describe('explore services page', () => {
     });
 
     test('should add labels to favorites', async ({ page }) => {
+      await explorePage.gotoServices();
       await explorePage.servicesSearch.click();
       const firstResult = page.getByRole('option').first();
 
@@ -69,6 +69,7 @@ test.describe('explore services page', () => {
 
     test('should filter service labels on search', async ({ page }) => {
       await explorePage.setExtraTallViewportSize();
+      await explorePage.gotoServices();
       await explorePage.servicesSearch.click();
       await explorePage.servicesSearch.pressSequentially('mimir');
       // Volume can differ, scroll down so all of the panels are loaded
@@ -89,6 +90,7 @@ test.describe('explore services page', () => {
     });
 
     test('should filter service labels on exact search', async ({ page }) => {
+      await explorePage.gotoServices();
       await explorePage.servicesSearch.click();
       await explorePage.servicesSearch.pressSequentially('mimir-ingester');
       // Volume can differ, scroll down so all of the panels are loaded
@@ -111,6 +113,7 @@ test.describe('explore services page', () => {
 
     test('should filter service labels on partial string', async ({ page }) => {
       await explorePage.setExtraTallViewportSize();
+      await explorePage.gotoServices();
       await explorePage.servicesSearch.click();
       await explorePage.servicesSearch.pressSequentially('imi');
       // service name should be in time series panel
@@ -127,11 +130,13 @@ test.describe('explore services page', () => {
     });
 
     test('should select a service label value and navigate to log view', async ({ page }) => {
+      await explorePage.gotoServices();
       await explorePage.addServiceName();
       await expect(explorePage.logVolumeGraph).toBeVisible();
     });
 
     test('should filter logs by clicking on the chart levels', async ({ page }) => {
+      await explorePage.gotoServices();
       await explorePage.servicesSearch.click();
       await explorePage.servicesSearch.pressSequentially('tempo-distributor');
       await page.keyboard.press('Escape');
@@ -146,6 +151,7 @@ test.describe('explore services page', () => {
     });
 
     test('should clear filters and levels when navigating back to previously activated service', async ({ page }) => {
+      await explorePage.gotoServices();
       await explorePage.addServiceName();
       // Add detected_level filter
       await page.getByTestId(testIds.exploreServiceDetails.tabLabels).click();
@@ -187,6 +193,7 @@ test.describe('explore services page', () => {
     });
 
     test('should add multiple includes on service selection', async ({ page }) => {
+      await explorePage.gotoServices();
       // await explorePage.aggregatedMetricsToggle();
       const showLogsHeaderBtn = page.getByTestId(testIds.index.header.showLogsButton);
 
@@ -257,29 +264,31 @@ test.describe('explore services page', () => {
         logsQueryCount = 0;
         logCountQueryCount = 0;
 
-        await page.route('**/index/volume*', async (route) => {
-          logsVolumeCount++;
-          const volumeResponse = getMockVolumeApiResponse();
-          await route.fulfill({ json: volumeResponse });
-        });
+        await Promise.all([
+          await explorePage.gotoServices(),
+          page.route('**/index/volume*', async (route) => {
+            logsVolumeCount++;
+            const volumeResponse = getMockVolumeApiResponse();
+            await route.fulfill({ json: volumeResponse });
+          }),
+          page.route('**/ds/query*', async (route, request) => {
+            const rawPostData = request.postData();
 
-        await page.route('**/ds/query*', async (route, request) => {
-          const rawPostData = request.postData();
-
-          // We only want to mock the actual field requests, and not the initial request that returns us our list of fields
-          if (rawPostData) {
-            const postData = JSON.parse(rawPostData);
-            const refId: string = postData.queries[0].refId;
-            // Logs panel and timeseries queries on service selection, and logs panel on breakdowns
-            if (refId === 'logsPanelQuery' || refId.includes('ts-') || refId.includes('logs-')) {
-              logsQueryCount++;
+            // We only want to mock the actual field requests, and not the initial request that returns us our list of fields
+            if (rawPostData) {
+              const postData = JSON.parse(rawPostData);
+              const refId: string = postData.queries[0].refId;
+              // Logs panel and timeseries queries on service selection, and logs panel on breakdowns
+              if (refId === 'logsPanelQuery' || refId.includes('ts-') || refId.includes('logs-')) {
+                logsQueryCount++;
+              }
+              if (refId === 'logsCountQuery') {
+                logCountQueryCount++;
+              }
             }
-            if (refId === 'logsCountQuery') {
-              logCountQueryCount++;
-            }
-          }
-          await route.fulfill({ json: {} });
-        });
+            await route.fulfill({ json: {} });
+          }),
+        ]);
 
         // Don't wait for a response if we've already got it!
         if (logsVolumeCount === 0) {
@@ -391,6 +400,9 @@ test.describe('explore services page', () => {
     });
 
     test.describe('tabs', () => {
+      test.beforeEach(async () => {
+        await explorePage.gotoServices();
+      });
       test.describe('navigation', () => {
         test('user can use browser history to navigate through tabs', async ({ page }) => {
           const addNewTab = page.getByTestId(testIds.index.addNewLabelTab);
@@ -519,50 +531,51 @@ test.describe('explore services page', () => {
         const pagePre = await browser.newPage();
         explorePage = new ExplorePage(pagePre, testInfo);
         page = explorePage.page;
-
-        await page.route('**/index/volume*', async (route) => {
-          const response = await route.fetch();
-          const json = await response.json();
-
-          logsVolumeCount++;
-          await page.waitForTimeout(25);
-          await route.fulfill({ response, json });
-        });
-        await page.route('**/resources/detected_fields*', async (route) => {
-          const response = await route.fetch();
-          const json = await response.json();
-
-          detectedFieldsCount++;
-          await page.waitForTimeout(25);
-          await route.fulfill({ response, json });
-        });
-        await page.route('**/resources/detected_labels*', async (route) => {
-          const response = await route.fetch();
-          const json = await response.json();
-
-          detectedLabelsCount++;
-          await page.waitForTimeout(25);
-          await route.fulfill({ response, json });
-        });
-        await page.route('**/resources/patterns*', async (route) => {
-          const response = await route.fetch();
-          const json = await response.json();
-
-          patternsCount++;
-          await page.waitForTimeout(25);
-          await route.fulfill({ response, json });
-        });
-
-        // Can skip logs query for this test
-        await page.route('**/ds/query*', async (route) => {
-          logsQueryCount++;
-          await route.fulfill({ json: {} });
-        });
-
-        await explorePage.gotoServices();
         await explorePage.setDefaultViewportSize();
-        await explorePage.clearLocalStorage();
         explorePage.captureConsoleLogs();
+        await Promise.all([
+          await page.route('**/index/volume*', async (route) => {
+            const response = await route.fetch();
+            const json = await response.json();
+
+            logsVolumeCount++;
+            await page.waitForTimeout(25);
+            await route.fulfill({ response, json });
+          }),
+          await page.route('**/resources/detected_fields*', async (route) => {
+            const response = await route.fetch();
+            const json = await response.json();
+
+            detectedFieldsCount++;
+            await page.waitForTimeout(25);
+            await route.fulfill({ response, json });
+          }),
+          await page.route('**/resources/detected_labels*', async (route) => {
+            const response = await route.fetch();
+            const json = await response.json();
+
+            detectedLabelsCount++;
+            await page.waitForTimeout(25);
+            await route.fulfill({ response, json });
+          }),
+          await page.route('**/resources/patterns*', async (route) => {
+            const response = await route.fetch();
+            const json = await response.json();
+
+            patternsCount++;
+            await page.waitForTimeout(25);
+            await route.fulfill({ response, json });
+          }),
+
+          // Can skip logs query for this test
+          await page.route('**/ds/query*', async (route) => {
+            logsQueryCount++;
+            await route.fulfill({ json: {} });
+          }),
+
+          await explorePage.gotoServices(),
+        ]);
+        await explorePage.clearLocalStorage();
       });
 
       test.afterAll(async ({}) => {
