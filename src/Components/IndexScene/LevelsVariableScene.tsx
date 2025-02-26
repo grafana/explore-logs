@@ -1,4 +1,10 @@
-import { ControlsLabel, SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
+import {
+  ControlsLabel,
+  SceneComponentProps,
+  SceneObjectBase,
+  SceneObjectState,
+  SceneVariableValueChangedEvent,
+} from '@grafana/scenes';
 import React from 'react';
 import { getLevelsVariable } from '../../services/variableGetters';
 import { GrafanaTheme2, MetricFindValue, SelectableValue } from '@grafana/data';
@@ -7,6 +13,7 @@ import { Icon, MultiSelect, useStyles2 } from '@grafana/ui';
 import { LEVEL_VARIABLE_VALUE } from '../../services/variables';
 import { FilterOp } from '../../services/filterTypes';
 import { testIds } from '../../services/testIds';
+import { addCurrentUrlToHistory } from '../../services/navigate';
 
 type ChipOption = MetricFindValue & { selected?: boolean };
 export interface LevelsVariableSceneState extends SceneObjectState {
@@ -25,6 +32,12 @@ export class LevelsVariableScene extends SceneObjectBase<LevelsVariableSceneStat
 
   onActivate() {
     this.onFilterChange();
+
+    this._subs.add(
+      getLevelsVariable(this).subscribeToEvent(SceneVariableValueChangedEvent, () => {
+        this.onFilterChange();
+      })
+    );
   }
 
   public onFilterChange() {
@@ -76,6 +89,9 @@ export class LevelsVariableScene extends SceneObjectBase<LevelsVariableSceneStat
   };
 
   onChangeOptions = (options: SelectableValue[]) => {
+    // Save current url to history before the filter change
+    addCurrentUrlToHistory();
+
     this.setState({
       options: this.state.options?.map((value) => {
         if (options.some((opt) => opt.value === value.value)) {
@@ -105,6 +121,8 @@ export class LevelsVariableScene extends SceneObjectBase<LevelsVariableSceneStat
   static Component = ({ model }: SceneComponentProps<LevelsVariableScene>) => {
     const { options, isLoading, visible, isOpen } = model.useState();
     const styles = useStyles2(getStyles);
+    const levelsVar = getLevelsVariable(model);
+    levelsVar.useState();
 
     if (!visible) {
       return null;
