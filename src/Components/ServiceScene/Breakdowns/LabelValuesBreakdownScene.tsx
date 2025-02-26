@@ -48,7 +48,6 @@ import { EmptyLayoutScene } from './EmptyLayoutScene';
 import { IndexScene } from '../../IndexScene/IndexScene';
 import { clearVariables, getVariablesThatCanBeCleared } from '../../../services/variableHelpers';
 import { ValueSummaryPanelScene } from './Panels/ValueSummary';
-import { syncLevelsVariable } from '../../IndexScene/LevelsVariableScene';
 import { renderLevelsFilter, renderLogQLLabelFilters } from '../../../services/query';
 import { logger } from '../../../services/logger';
 import { areArraysEqual } from '../../../services/comparison';
