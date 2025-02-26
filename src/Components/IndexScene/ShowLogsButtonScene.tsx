@@ -56,13 +56,15 @@ export class ShowLogsButtonScene extends SceneObjectBase<ShowLogsButtonSceneStat
       return null;
     }
 
+    const link = model.getLink();
+
     return (
       <LinkButton
         data-testid={testIds.index.header.showLogsButton}
-        disabled={disabled}
+        disabled={disabled || !link}
         fill={'outline'}
         className={styles.button}
-        href={model.getLink()}
+        href={link}
       >
         Show logs
       </LinkButton>
