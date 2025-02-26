@@ -2,7 +2,7 @@ import { SceneComponentProps, sceneGraph, SceneObject, SceneObjectBase, SceneObj
 import { Box, Dropdown, Menu, Stack, Tab, TabsBar, ToolbarButton, useStyles2 } from '@grafana/ui';
 import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, ValueSlugs } from '../../services/routing';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
-import { navigateToDrilldownPage } from '../../services/navigate';
+import { getDrillDownTabLink } from '../../services/navigate';
 import React, { useEffect, useState } from 'react';
 import { ServiceScene, ServiceSceneCustomState } from './ServiceScene';
 import { getValueFormat, GrafanaTheme2 } from '@grafana/data';
@@ -89,6 +89,7 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
                     : undefined
                 }
                 icon={loadingStates[tab.displayName] ? 'spinner' : undefined}
+                href={getDrillDownTabLink(tab.value, serviceScene)}
                 onChangeTab={() => {
                   if ((tab.value && tab.value !== currentBreakdownViewSlug) || allowNavToParent) {
                     reportAppInteraction(
@@ -99,9 +100,6 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
                         previousActionView: currentBreakdownViewSlug,
                       }
                     );
-
-                    const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
-                    navigateToDrilldownPage(tab.value, serviceScene);
                   }
                 }}
               />

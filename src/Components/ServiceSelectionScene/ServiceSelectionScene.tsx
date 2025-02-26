@@ -49,7 +49,7 @@ import {
   VAR_PRIMARY_LABEL_EXPR,
   VAR_PRIMARY_LABEL_SEARCH,
 } from 'services/variables';
-import { selectLabel, SelectServiceButton } from './SelectServiceButton';
+import { goToLabelDrillDownLink, SelectServiceButton } from './SelectServiceButton';
 import {
   buildDataQuery,
   buildVolumeQuery,
@@ -254,7 +254,7 @@ export class ServiceSelectionScene extends SceneObjectBase<ServiceSelectionScene
                 value={customValue ? customValue : label}
                 onChange={(serviceName) => onSearchChange(serviceName)}
                 selectOption={(value: string) => {
-                  selectLabel(selectedTab, value, model);
+                  goToLabelDrillDownLink(selectedTab, value, model);
                 }}
                 label={filterLabel}
                 options={
