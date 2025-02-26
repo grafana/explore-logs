@@ -1,6 +1,8 @@
 import {
   ControlsLabel,
   SceneComponentProps,
+  sceneGraph,
+  SceneObject,
   SceneObjectBase,
   SceneObjectState,
   SceneVariableValueChangedEvent,
@@ -158,6 +160,12 @@ export class LevelsVariableScene extends SceneObjectBase<LevelsVariableSceneStat
       </div>
     );
   };
+}
+export function syncLevelsVariable(sceneRef: SceneObject) {
+  const levelsVariableScene = sceneGraph.findObject(sceneRef, (obj) => obj instanceof LevelsVariableScene);
+  if (levelsVariableScene instanceof LevelsVariableScene) {
+    levelsVariableScene.onFilterChange();
+  }
 }
 
 const getStyles = (theme: GrafanaTheme2) => ({
