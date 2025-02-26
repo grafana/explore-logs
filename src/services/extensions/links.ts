@@ -83,6 +83,14 @@ export function stringifyAdHocValues(value?: string): string {
   return addAdHocFilterUserInputPrefix(replaceEscapeChars(value));
 }
 
+export function stringifyAdHocValueLabels(value?: string): string {
+  if (!value) {
+    return '""';
+  }
+
+  return escapeURLDelimiters(replaceEscapeChars(value));
+}
+
 function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
   if (!context) {
     return undefined;
@@ -162,7 +170,7 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
 
         const adHocFilterURLString = `${field.key}|${field.operator}|${escapeURLDelimiters(
           stringifyAdHocValues(JSON.stringify(fieldValue))
-        )},${escapeURLDelimiters(replaceEscapeChars(fieldValue.value))}`;
+        )},${stringifyAdHocValueLabels(fieldValue.value)}`;
 
         params = appendUrlParameter(UrlParameters.Fields, adHocFilterURLString, params);
       }
