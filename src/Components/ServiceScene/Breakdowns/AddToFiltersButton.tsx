@@ -33,6 +33,7 @@ import { addToFavorites } from '../../../services/favorites';
 import { areArraysEqual } from '../../../services/comparison';
 import { logger } from '../../../services/logger';
 import { isFilterMetadata } from '../../../services/filters';
+import { addCurrentUrlToHistory } from '../../../services/navigate';
 
 export interface AddToFiltersButtonState extends SceneObjectState {
   frame: DataFrame;
@@ -192,6 +193,10 @@ export function addNumericFilter(
   scene.publishEvent(new AddFilterEvent('filterButton', operator, key, value), true);
 }
 
+/**
+ * Helper for buttons in the UI
+ * toggles an ad hoc filter to a given variable type
+ */
 export function addToFilters(
   key: string,
   value: string,
@@ -199,6 +204,9 @@ export function addToFilters(
   scene: SceneObject,
   variableType: InterpolatedFilterType
 ) {
+  // Add the current url to browser history before the state is changed so the user can revert their change.
+  addCurrentUrlToHistory();
+
   if (variableType === VAR_LABELS) {
     addToFavorites(key, value, scene);
   }

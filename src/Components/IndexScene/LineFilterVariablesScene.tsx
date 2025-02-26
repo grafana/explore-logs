@@ -8,6 +8,7 @@ import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 import { IconButton, useStyles2 } from '@grafana/ui';
 import { LineFilterEditor, LineFilterEditorProps } from '../ServiceScene/LineFilter/LineFilterEditor';
+import { addCurrentUrlToHistory } from '../../services/navigate';
 
 interface LineFilterRendererState extends SceneObjectState {}
 
@@ -72,6 +73,8 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
    */
   handleEnter = (e: KeyboardEvent<HTMLInputElement>, lineFilter: string, filter: AdHocFilterWithLabels) => {
     if (e.key === 'Enter') {
+      // Add the current url to browser history before the state is changed so the user can revert their change.
+      addCurrentUrlToHistory();
       this.updateVariableLineFilter(filter, { ...filter, value: lineFilter });
     }
   };
@@ -177,6 +180,7 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
    * Remove a filter, will trigger query
    */
   removeFilter = (filter: AdHocFilterWithLabels) => {
+    addCurrentUrlToHistory();
     const variable = getLineFiltersVariable(this);
     const otherFilters = variable.state.filters.filter(
       (f) => f.keyLabel !== undefined && f.keyLabel !== filter.keyLabel
