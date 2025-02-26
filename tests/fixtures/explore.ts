@@ -174,8 +174,13 @@ export class ExplorePage {
     await this.page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
   }
 
-  async waitForRequest(callback: (lokiQuery: LokiQuery) => void, test: (lokiQuery: LokiQuery) => boolean) {
+  async waitForRequest(
+    init: () => Promise<any>,
+    callback: (lokiQuery: LokiQuery) => void,
+    test: (lokiQuery: LokiQuery) => boolean
+  ) {
     await Promise.all([
+      init(),
       this.page.waitForResponse(
         (resp) => {
           const post = resp.request().postDataJSON();
