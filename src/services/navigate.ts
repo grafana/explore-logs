@@ -124,6 +124,12 @@ export function pushUrlHandler(newUrl: string) {
   locationService.push(newUrl);
 }
 
+export function addCurrentUrlToHistory() {
+  // Add the current url to browser history before the state is changed so the user can revert their change.
+  const location = locationService.getLocation();
+  locationService.push(location.pathname + location.search);
+}
+
 /**
  * Navigate to the services selection url
  */

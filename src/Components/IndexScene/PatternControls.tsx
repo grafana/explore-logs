@@ -6,6 +6,7 @@ import { useStyles2, Text } from '@grafana/ui';
 import { USER_EVENTS_ACTIONS, USER_EVENTS_PAGES, reportAppInteraction } from 'services/analytics';
 import { testIds } from 'services/testIds';
 import { AppliedPattern } from '../../services/variables';
+import { addCurrentUrlToHistory } from '../../services/navigate';
 
 type Props = {
   patterns: AppliedPattern[] | undefined;
@@ -22,6 +23,7 @@ export const PatternControls = ({ patterns, onRemove }: Props) => {
   const excludePatterns = patterns.filter((pattern) => pattern.type !== 'include');
 
   const onRemovePattern = (pattern: AppliedPattern) => {
+    addCurrentUrlToHistory();
     onRemove(patterns.filter((pat) => pat !== pattern));
     reportAppInteraction(USER_EVENTS_PAGES.service_details, USER_EVENTS_ACTIONS.service_details.pattern_removed, {
       includePatternsLength: includePatterns.length - (pattern?.type === 'include' ? 1 : 0),
