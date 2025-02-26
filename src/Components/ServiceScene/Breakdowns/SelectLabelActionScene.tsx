@@ -8,9 +8,18 @@ import {
   VizPanel,
 } from '@grafana/scenes';
 import { getDetectedFieldsFrame, getLogsPanelFrame, ServiceScene } from '../ServiceScene';
-import { navigateToValueBreakdown } from '../../../services/navigate';
+import { getValueBreakdownLink } from '../../../services/navigate';
 import { getPrimaryLabelFromUrl, ValueSlugs } from '../../../services/routing';
-import { Button, ButtonGroup, ButtonSelect, IconButton, Popover, PopoverController, useStyles2 } from '@grafana/ui';
+import {
+  Button,
+  ButtonGroup,
+  ButtonSelect,
+  IconButton,
+  LinkButton,
+  Popover,
+  PopoverController,
+  useStyles2,
+} from '@grafana/ui';
 import React, { useRef } from 'react';
 import { addToFilters, clearFilters, InterpolatedFilterType } from './AddToFiltersButton';
 import { EMPTY_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE, VAR_FIELDS } from '../../../services/variables';
@@ -182,16 +191,16 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
           </>
         )}
         {hideValueDrilldown !== true && (
-          <Button
+          <LinkButton
             title={`View breakdown of values for ${labelName}`}
             variant="primary"
             fill="outline"
             size="sm"
-            onClick={model.onClickViewValues}
             aria-label={`Select ${labelName}`}
+            href={model.getViewValuesLink()}
           >
             Select
-          </Button>
+          </LinkButton>
         )}
 
         {popover && (
@@ -280,9 +289,9 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
     this.togglePopover();
   };
 
-  public onClickViewValues = () => {
+  public getViewValuesLink = () => {
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
-    navigateToValueBreakdown(this.state.fieldType, this.state.labelName, serviceScene);
+    return getValueBreakdownLink(this.state.fieldType, this.state.labelName, serviceScene);
   };
 
   public onClickExcludeEmpty = (variableType: InterpolatedFilterType) => {
