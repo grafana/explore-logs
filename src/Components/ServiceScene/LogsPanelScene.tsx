@@ -39,7 +39,7 @@ import { LogsSortOrder } from '@grafana/schema';
 import { getPrettyQueryExpr } from 'services/scenes';
 import { LogsPanelError } from './LogsPanelError';
 import { clearVariables } from 'services/variableHelpers';
-import { LevelsVariableScene } from '../IndexScene/LevelsVariableScene';
+import { syncLevelsVariable } from '../IndexScene/LevelsVariableScene';
 
 interface LogsPanelSceneState extends SceneObjectState {
   body?: VizPanel<Options>;
@@ -422,10 +422,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     addToFilters(key, value, operator, this, variableType);
 
     if (key === LEVEL_VARIABLE_VALUE) {
-      const levelsVariableScene = sceneGraph.findObject(this, (obj) => obj instanceof LevelsVariableScene);
-      if (levelsVariableScene instanceof LevelsVariableScene) {
-        levelsVariableScene.onFilterChange();
-      }
+      syncLevelsVariable(this);
     }
 
     reportAppInteraction(
