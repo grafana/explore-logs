@@ -3,7 +3,8 @@ auth_enabled: false
 server:
   http_listen_port: 3100
   grpc_listen_port: 9096
-
+  grpc_server_max_recv_msg_size: 8194304
+  grpc_server_max_send_msg_size: 8194304
 common:
   instance_addr: 127.0.0.1
   path_prefix: /tmp/loki
