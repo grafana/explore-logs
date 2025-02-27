@@ -1694,7 +1694,7 @@ test.describe('explore services breakdown page', () => {
       expect(logsPanelQueryCount).toEqual(3);
 
       // Clear the text - should trigger query
-      await page.getByLabel('Line filter variable').click();
+      await page.getByLabel('Remove line filter').click();
       // Enable regex - should not trigger empty query
       await page.getByLabel('Enable regex').click();
       // Enable case - should not trigger empty query

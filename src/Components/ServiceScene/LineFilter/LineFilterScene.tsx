@@ -1,6 +1,6 @@
 import { SceneComponentProps, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import debounce from 'lodash/debounce';
-import { ChangeEvent, KeyboardEvent } from 'react';
+import { ChangeEvent, KeyboardEvent, useState } from 'react';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { getLineFiltersVariable, getLineFilterVariable } from '../../../services/variableGetters';
 import {
@@ -264,6 +264,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
 
 function LineFilterComponent({ model }: SceneComponentProps<LineFilterScene>) {
   const { lineFilter, caseSensitive, regex, exclusive } = model.useState();
+  const [focus, setFocus] = useState(false);
   return LineFilterEditor({
     exclusive,
     lineFilter,
@@ -277,5 +278,8 @@ function LineFilterComponent({ model }: SceneComponentProps<LineFilterScene>) {
     onRegexToggle: model.onRegexToggle,
     setExclusive: model.onToggleExclusive,
     onClearLineFilter: model.clearFilter,
+    focus,
+    setFocus,
+    type: 'editor',
   });
 }
