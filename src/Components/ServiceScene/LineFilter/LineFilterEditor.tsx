@@ -13,7 +13,7 @@ export interface LineFilterEditorProps extends LineFilterProps {
   setFocus: (focus: boolean) => void;
 }
 
-const INITIAL_INPUT_WIDTH = 40;
+const INITIAL_INPUT_WIDTH = 30;
 
 export function LineFilterEditor({
   exclusive,
@@ -37,7 +37,7 @@ export function LineFilterEditor({
     // The input width roughly corresponds to char count
     const width = Math.max(content?.length ?? 0, INITIAL_INPUT_WIDTH);
     // We add a few extra because the buttons are absolutely positioned within the input width
-    setWidth(width + 8);
+    setWidth(width + 9);
   }
 
   useEffect(() => {

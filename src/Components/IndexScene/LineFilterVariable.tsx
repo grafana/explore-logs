@@ -2,7 +2,7 @@ import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 import { LineFilterEditor } from '../ServiceScene/LineFilter/LineFilterEditor';
 import React, { ChangeEvent, KeyboardEvent, useState } from 'react';
-import { ClickOutsideWrapper, IconButton, useStyles2 } from '@grafana/ui';
+import { IconButton, useStyles2 } from '@grafana/ui';
 import { LineFilterCaseSensitive } from '../../services/filterTypes';
 import { RegexInputValue } from '../ServiceScene/LineFilter/RegexIconButton';
 
@@ -25,22 +25,29 @@ export function LineFilterVariable({ onClick, props }: { onClick: () => void; pr
   const [focus, setFocus] = useState(false);
   const styles = useStyles2(getLineFilterStyles);
   return (
-    <ClickOutsideWrapper
-      onClick={() => {
-        setFocus(false);
-      }}
-    >
-      <>
-        <span className={styles.wrapper}>
-          <div className={styles.titleWrap}>
-            <span>Line filter</span>
-            <IconButton onClick={onClick} name={'times'} size={'xs'} aria-label={'Line filter variable'} />
-          </div>
+    <>
+      <span>
+        <div className={styles.titleWrap}>
+          <span>Line filter</span>
+          <IconButton onClick={onClick} name={'times'} size={'xs'} aria-label={'Line filter variable'} />
+        </div>
+        <span className={styles.collapseWrap}>
           <LineFilterEditor {...props} focus={focus} setFocus={setFocus} />
+          {focus && (
+            <IconButton
+              className={styles.collapseBtn}
+              tooltip={'Collapse'}
+              size={'lg'}
+              aria-label={'Collapse filter'}
+              onClick={() => setFocus(false)}
+              name={'table-collapse-all'}
+            />
+          )}
         </span>
-        {focus && <div className={styles.lineSpacer}></div>}
-      </>
-    </ClickOutsideWrapper>
+      </span>
+      {/* Push following line filters to the next line */}
+      {focus && <div className={styles.lineSpacer}></div>}
+    </>
   );
 }
 
@@ -51,10 +58,13 @@ const getLineFilterStyles = (theme: GrafanaTheme2) => ({
     marginBottom: theme.spacing(0.5),
     gap: theme.spacing(1),
   }),
-  wrapper: css({
-    // maxWidth: '300px',
-  }),
   lineSpacer: css({
     width: '100%',
+  }),
+  collapseWrap: css({
+    display: 'flex',
+  }),
+  collapseBtn: css({
+    marginLeft: theme.spacing(1),
   }),
 });
