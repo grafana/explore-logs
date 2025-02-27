@@ -5,7 +5,11 @@ import { expect } from '@grafana/plugin-e2e';
 
 import { LokiQuery } from '../../src/services/lokiQuery';
 import { FilterOp, FilterOpType } from '../../src/services/filterTypes';
-import { isOperatorRegex } from '../../src/services/operatorHelpers';
+// import { isOperatorRegex } from '../../src/services/operatorHelpers';
+// @todo why is importing this breaking e2e?
+const isOperatorRegex = (op: string | FilterOpType): boolean => {
+  return op === FilterOp.RegexEqual || op === FilterOp.RegexNotEqual;
+};
 
 export interface PlaywrightRequest {
   post: any;
