@@ -5,6 +5,7 @@ import { expect } from '@grafana/plugin-e2e';
 
 import { LokiQuery } from '../../src/services/lokiQuery';
 import { FilterOp, FilterOpType } from '../../src/services/filterTypes';
+import { isOperatorRegex } from '../../src/services/operatorHelpers';
 
 export interface PlaywrightRequest {
   post: any;
@@ -378,8 +379,14 @@ export class ExplorePage {
     await this.getOperatorLocator(operator).click();
     // Enter custom value
     await this.page.keyboard.type(text);
-    // Need to scroll to the bottom of the list
-    await this.page.keyboard.press('ArrowUp');
+    if (isOperatorRegex(operator)) {
+      // Custom value should be the first option for regex
+      await this.page.keyboard.press('Enter');
+    } else {
+      // Custom value should be the last option for regex, arrow up to get to it
+      await this.page.keyboard.press('ArrowUp');
+    }
+
     // Select custom value
     await this.page.getByRole('option', { name: /Use custom value/ }).click();
     // Close the label name dropdown that opens after adding a value

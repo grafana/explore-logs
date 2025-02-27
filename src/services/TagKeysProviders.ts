@@ -27,6 +27,7 @@ export async function getLabelsTagKeysProvider(variable: AdHocFiltersVariable): 
     logger.error(new Error('getTagKeysProvider: Invalid datasource!'));
     throw new Error('Invalid datasource!');
   }
+  resetCustomValuePosition(variable);
   const datasource = datasource_ as LokiDatasource;
 
   if (datasource && datasource.getTagKeys) {
@@ -73,6 +74,7 @@ export async function getFieldsKeysProvider({
     logger.error(new Error('getTagKeysProvider: Invalid datasource!'));
     throw new Error('Invalid datasource!');
   }
+
   const datasource = datasource_ as LokiDatasource;
   const languageProvider = datasource.languageProvider as LokiLanguageProviderWithDetectedLabelValues;
 
@@ -195,5 +197,11 @@ async function fetchDetectedFields(
       console.error('error', error);
       reject(error);
     }
+  });
+}
+
+export function resetCustomValuePosition(variable: AdHocFiltersVariable) {
+  variable.setState({
+    allowCustomValue: true,
   });
 }
