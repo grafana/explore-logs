@@ -126,6 +126,9 @@ const getCounter = (tab: BreakdownViewDefinition, state: ServiceSceneCustomState
 function getStyles(theme: GrafanaTheme2) {
   return {
     actions: css({
+      display: 'flex',
+      justifyContent: 'flex-end',
+
       [theme.breakpoints.up(theme.breakpoints.values.md)]: {
         position: 'absolute',
         right: 0,
