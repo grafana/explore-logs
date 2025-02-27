@@ -40,12 +40,6 @@ export function LineFilterEditor({
     setWidth(width + 8);
   }
 
-  function setFocusDebounced(focus: boolean) {
-    if (setFocus !== undefined) {
-      setFocus(focus);
-    }
-  }
-
   useEffect(() => {
     resize(lineFilter);
   }, [lineFilter, focus]);
@@ -72,9 +66,10 @@ export function LineFilterEditor({
       )}
       <Field className={styles.field}>
         <LineFilterInput
+          // Only set width if focused
           width={focus ? width : undefined}
-          onFocus={(e) => setFocusDebounced(true)}
-          onBlur={() => setFocusDebounced(false)}
+          onFocus={() => setFocus(true)}
+          onBlur={() => setFocus(false)}
           data-testid={testIds.exploreServiceDetails.searchLogs}
           value={lineFilter}
           className={cx(onSubmitLineFilter ? styles.inputNoBorderRight : undefined, styles.input)}
