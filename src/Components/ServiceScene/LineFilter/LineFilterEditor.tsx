@@ -1,27 +1,20 @@
-import React, { ChangeEvent, KeyboardEvent } from 'react';
-import { RegexIconButton, RegexInputValue } from './RegexIconButton';
+import React, { useEffect, useState } from 'react';
+import { RegexIconButton } from './RegexIconButton';
 import { Button, Field, Select, useStyles2 } from '@grafana/ui';
-import { SearchInput } from '../Breakdowns/SearchInput';
 import { testIds } from '../../../services/testIds';
 import { css, cx } from '@emotion/css';
 import { LineFilterCaseSensitivityButton } from './LineFilterCaseSensitivityButton';
 import { GrafanaTheme2 } from '@grafana/data';
-import { LineFilterCaseSensitive } from '../../../services/filterTypes';
+import { LineFilterInput } from '../Breakdowns/LineFilterInput';
+import { LineFilterProps } from '../../IndexScene/LineFilterVariable';
 
-export interface LineFilterEditorProps {
-  exclusive: boolean;
-  lineFilter: string;
-  caseSensitive: boolean;
-  regex: boolean;
-  setExclusive: (exclusive: boolean) => void;
-  onInputChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  onCaseSensitiveToggle: (caseSensitive: LineFilterCaseSensitive) => void;
-  onRegexToggle: (regex: RegexInputValue) => void;
-  updateFilter: (lineFilter: string, debounced: boolean) => void;
-  handleEnter: (e: KeyboardEvent<HTMLInputElement>, lineFilter: string) => void;
-  onSubmitLineFilter?: () => void;
-  onClearLineFilter?: () => void;
+export interface LineFilterEditorProps extends LineFilterProps {
+  focus: boolean;
+  setFocus: (focus: boolean) => void;
+  type: 'variable' | 'editor';
 }
+
+const INITIAL_INPUT_WIDTH = 30;
 
 export function LineFilterEditor({
   exclusive,
@@ -35,8 +28,24 @@ export function LineFilterEditor({
   handleEnter,
   onSubmitLineFilter,
   onClearLineFilter,
+  focus,
+  setFocus,
+  type,
 }: LineFilterEditorProps) {
-  const styles = useStyles2(getStyles);
+  const styles = useStyles2((theme) => getStyles(theme, type));
+  const [width, setWidth] = useState(INITIAL_INPUT_WIDTH);
+
+  function resize(content?: string) {
+    // The input width roughly corresponds to char count
+    const width = Math.max(content?.length ?? 0, INITIAL_INPUT_WIDTH);
+    // We add a few extra because the buttons are absolutely positioned within the input width
+    setWidth(width + 9);
+  }
+
+  useEffect(() => {
+    resize(lineFilter);
+  }, [lineFilter, focus]);
+
   return (
     <div className={styles.wrapper}>
       {!onSubmitLineFilter && (
@@ -58,7 +67,11 @@ export function LineFilterEditor({
         />
       )}
       <Field className={styles.field}>
-        <SearchInput
+        <LineFilterInput
+          // Only set width if focused
+          width={focus ? width : undefined}
+          onFocus={() => setFocus(true)}
+          // onBlur={() => setFocus(false)}
           data-testid={testIds.exploreServiceDetails.searchLogs}
           value={lineFilter}
           className={cx(onSubmitLineFilter ? styles.inputNoBorderRight : undefined, styles.input)}
@@ -75,7 +88,10 @@ export function LineFilterEditor({
           prefix={null}
           placeholder="Search in log lines"
           onClear={onClearLineFilter}
-          onKeyUp={(e) => handleEnter(e, lineFilter)}
+          onKeyUp={(e) => {
+            handleEnter(e, lineFilter);
+            resize(lineFilter);
+          }}
         />
       </Field>
       {onSubmitLineFilter && (
@@ -110,7 +126,7 @@ export function LineFilterEditor({
   );
 }
 
-const getStyles = (theme: GrafanaTheme2) => ({
+const getStyles = (theme: GrafanaTheme2, type: 'variable' | 'editor') => ({
   inputNoBorderRight: css({
     input: {
       borderTopRightRadius: 0,
@@ -157,21 +173,27 @@ const getStyles = (theme: GrafanaTheme2) => ({
     borderTopRightRadius: '0',
     borderRight: 'none',
     minHeight: '30px',
-    width: '100px',
+    minWidth: '95px',
     maxWidth: '95px',
     outline: 'none',
   }),
   wrapper: css({
     display: 'flex',
     width: '100%',
-    maxWidth: '600px',
   }),
   input: css({
     label: 'line-filter-input-wrapper',
-    width: '100%',
+    minWidth: '200px',
+
+    // Keeps the input from overflowing container on resize
+    maxWidth: type === 'editor' ? 'calc(100vw - 198px)' : 'calc(100vw - 288px)',
+
     input: {
       borderTopLeftRadius: 0,
       borderBottomLeftRadius: 0,
+      fontFamily: 'monospace',
+      fontSize: theme.typography.bodySmall.fontSize,
+      width: '100%',
     },
   }),
   exclusiveBtn: css({
@@ -180,7 +202,6 @@ const getStyles = (theme: GrafanaTheme2) => ({
   field: css({
     label: 'field',
     flex: '0 1 auto',
-    width: '100%',
     marginBottom: 0,
   }),
 });
