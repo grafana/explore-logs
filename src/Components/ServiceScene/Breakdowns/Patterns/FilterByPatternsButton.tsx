@@ -2,6 +2,7 @@ import { sceneGraph, SceneObjectState } from '@grafana/scenes';
 import { IndexScene } from '../../../IndexScene/IndexScene';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
 import { logger } from '../../../../services/logger';
+import { addCurrentUrlToHistory } from '../../../../services/navigate';
 
 export interface FilterByPatternsButtonState extends SceneObjectState {
   pattern: string;
@@ -22,6 +23,7 @@ export function onPatternClick(props: FilterByPatternsState) {
     return;
   }
 
+  addCurrentUrlToHistory();
   const { patterns = [] } = indexScene.state;
 
   // Remove the pattern if it's already there
