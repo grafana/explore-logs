@@ -2,7 +2,7 @@ import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
 import { LineFilterEditor } from '../ServiceScene/LineFilter/LineFilterEditor';
 import React, { ChangeEvent, KeyboardEvent, useState } from 'react';
-import { IconButton, useStyles2 } from '@grafana/ui';
+import { ClickOutsideWrapper, IconButton, useStyles2 } from '@grafana/ui';
 import { LineFilterCaseSensitive } from '../../services/filterTypes';
 import { RegexInputValue } from '../ServiceScene/LineFilter/RegexIconButton';
 
@@ -25,16 +25,22 @@ export function LineFilterVariable({ onClick, props }: { onClick: () => void; pr
   const [focus, setFocus] = useState(false);
   const styles = useStyles2(getLineFilterStyles);
   return (
-    <>
-      <span className={styles.wrapper}>
-        <div className={styles.titleWrap}>
-          <span>Line filter</span>
-          <IconButton onClick={onClick} name={'times'} size={'xs'} aria-label={'Line filter variable'} />
-        </div>
-        <LineFilterEditor {...props} focus={focus} setFocus={setFocus} />
-      </span>
-      {focus && <div className={styles.lineSpacer}></div>}
-    </>
+    <ClickOutsideWrapper
+      onClick={() => {
+        setFocus(false);
+      }}
+    >
+      <>
+        <span className={styles.wrapper}>
+          <div className={styles.titleWrap}>
+            <span>Line filter</span>
+            <IconButton onClick={onClick} name={'times'} size={'xs'} aria-label={'Line filter variable'} />
+          </div>
+          <LineFilterEditor {...props} focus={focus} setFocus={setFocus} />
+        </span>
+        {focus && <div className={styles.lineSpacer}></div>}
+      </>
+    </ClickOutsideWrapper>
   );
 }
 

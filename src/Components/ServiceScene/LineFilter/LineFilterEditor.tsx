@@ -69,7 +69,7 @@ export function LineFilterEditor({
           // Only set width if focused
           width={focus ? width : undefined}
           onFocus={() => setFocus(true)}
-          onBlur={() => setFocus(false)}
+          // onBlur={() => setFocus(false)}
           data-testid={testIds.exploreServiceDetails.searchLogs}
           value={lineFilter}
           className={cx(onSubmitLineFilter ? styles.inputNoBorderRight : undefined, styles.input)}
