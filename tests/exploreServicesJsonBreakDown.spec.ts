@@ -33,7 +33,7 @@ test.describe('explore nginx-json breakdown pages ', () => {
     // First request should fire here
     await explorePage.goToFieldsTab();
 
-    await page.getByTestId(`data-testid Panel header ${fieldName}`).getByRole('button', { name: 'Select' }).click();
+    await page.getByLabel(`Select ${fieldName}`).click();
     const allPanels = explorePage.getAllPanelsLocator();
     // We should have 6 panels
     await expect(allPanels).toHaveCount(7);

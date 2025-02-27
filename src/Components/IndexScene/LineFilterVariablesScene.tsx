@@ -6,8 +6,9 @@ import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '..
 import { debounce } from 'lodash';
 import { GrafanaTheme2 } from '@grafana/data';
 import { css } from '@emotion/css';
-import { IconButton, useStyles2 } from '@grafana/ui';
-import { LineFilterEditor, LineFilterEditorProps } from '../ServiceScene/LineFilter/LineFilterEditor';
+import { useStyles2 } from '@grafana/ui';
+import { LineFilterProps, LineFilterVariable } from './LineFilterVariable';
+import { addCurrentUrlToHistory } from '../../services/navigate';
 
 interface LineFilterRendererState extends SceneObjectState {}
 
@@ -29,7 +30,7 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
     return (
       <div className={styles.lineFiltersWrap}>
         {filters.map((filter) => {
-          const props: LineFilterEditorProps = {
+          const props: LineFilterProps = {
             lineFilter: filter.value,
             regex: filter.operator === LineFilterOp.regex || filter.operator === LineFilterOp.negativeRegex,
             caseSensitive: filter.key === LineFilterCaseSensitive.caseSensitive,
@@ -49,20 +50,7 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
             onInputChange: (e) => model.onInputChange(e, filter),
             onCaseSensitiveToggle: () => model.onCaseSensitiveToggle(filter),
           };
-          return (
-            <span key={filter.keyLabel} className={styles.wrapper}>
-              <div className={styles.titleWrap}>
-                <span>Line filter</span>
-                <IconButton
-                  onClick={() => model.removeFilter(filter)}
-                  name={'times'}
-                  size={'xs'}
-                  aria-label={'Line filter variable'}
-                />{' '}
-              </div>
-              <LineFilterEditor {...props} />
-            </span>
-          );
+          return <LineFilterVariable key={filter.keyLabel} onClick={() => model.removeFilter(filter)} props={props} />;
         })}
       </div>
     );
@@ -72,6 +60,8 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
    */
   handleEnter = (e: KeyboardEvent<HTMLInputElement>, lineFilter: string, filter: AdHocFilterWithLabels) => {
     if (e.key === 'Enter') {
+      // Add the current url to browser history before the state is changed so the user can revert their change.
+      addCurrentUrlToHistory();
       this.updateVariableLineFilter(filter, { ...filter, value: lineFilter });
     }
   };
@@ -177,6 +167,7 @@ export class LineFilterVariablesScene extends SceneObjectBase<LineFilterRenderer
    * Remove a filter, will trigger query
    */
   removeFilter = (filter: AdHocFilterWithLabels) => {
+    addCurrentUrlToHistory();
     const variable = getLineFiltersVariable(this);
     const otherFilters = variable.state.filters.filter(
       (f) => f.keyLabel !== undefined && f.keyLabel !== filter.keyLabel
@@ -256,15 +247,6 @@ function getStyles(theme: GrafanaTheme2) {
       display: 'flex',
       flexWrap: 'wrap',
       gap: `${theme.spacing(0.25)} ${theme.spacing(2)}`,
-    }),
-    wrapper: css({
-      maxWidth: '300px',
-    }),
-    titleWrap: css({
-      display: 'flex',
-      fontSize: theme.typography.bodySmall.fontSize,
-      marginBottom: theme.spacing(0.5),
-      gap: theme.spacing(1),
     }),
   };
 }

@@ -5,6 +5,7 @@ import {
   addAdHocFilterUserInputPrefix,
   AdHocFieldValue,
   AppliedPattern,
+  EMPTY_VARIABLE_VALUE,
   LEVEL_VARIABLE_VALUE,
   SERVICE_NAME,
   stripAdHocFilterUserInputPrefix,
@@ -64,7 +65,7 @@ export const linkConfigs: LinkConfigs = [
 
 function stringifyValues(value?: string): string {
   if (!value) {
-    return '""';
+    return EMPTY_VARIABLE_VALUE;
   }
   return value;
 }
@@ -76,11 +77,19 @@ export function replaceEscapeChars(value?: string): string | undefined {
 
 export function stringifyAdHocValues(value?: string): string {
   if (!value) {
-    return '""';
+    return EMPTY_VARIABLE_VALUE;
   }
 
   // All label values from explore are already escaped, so we mark them as custom values to prevent them from getting escaped again when rendering the LogQL
   return addAdHocFilterUserInputPrefix(replaceEscapeChars(value));
+}
+
+export function stringifyAdHocValueLabels(value?: string): string {
+  if (!value) {
+    return EMPTY_VARIABLE_VALUE;
+  }
+
+  return escapeURLDelimiters(replaceEscapeChars(value));
 }
 
 function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
@@ -162,7 +171,7 @@ function contextToLink<T extends PluginExtensionPanelContext>(context?: T) {
 
         const adHocFilterURLString = `${field.key}|${field.operator}|${escapeURLDelimiters(
           stringifyAdHocValues(JSON.stringify(fieldValue))
-        )},${escapeURLDelimiters(replaceEscapeChars(fieldValue.value))}`;
+        )},${stringifyAdHocValueLabels(fieldValue.value)}`;
 
         params = appendUrlParameter(UrlParameters.Fields, adHocFilterURLString, params);
       }

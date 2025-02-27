@@ -486,7 +486,7 @@ test.describe('explore services breakdown page', () => {
     await explorePage.goToFieldsTab();
 
     const allPanels = explorePage.getAllPanelsLocator();
-    await page.getByTestId(`data-testid Panel header ${fieldName}`).getByRole('button', { name: 'Select' }).click();
+    await page.getByLabel(`Select ${fieldName}`).click();
 
     // Should see 8 panels after it's done loading
     await expect(allPanels).toHaveCount(9);
@@ -518,7 +518,7 @@ test.describe('explore services breakdown page', () => {
   test(`should include field ${fieldName}, update filters, open filters breakdown`, async ({ page }) => {
     await explorePage.goToFieldsTab();
     await explorePage.scrollToBottom();
-    await page.getByTestId(`data-testid Panel header ${fieldName}`).getByRole('button', { name: 'Select' }).click();
+    await page.getByLabel(`Select ${fieldName}`).click();
     await page.getByRole('button', { name: 'Include' }).nth(0).click();
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
     await expect(page.getByText('=').nth(1)).toBeVisible();
@@ -707,7 +707,7 @@ test.describe('explore services breakdown page', () => {
 
   test(`should select field ${fieldName}, update filters, open log panel`, async ({ page }) => {
     await explorePage.goToFieldsTab();
-    await page.getByTestId(`data-testid Panel header ${fieldName}`).getByRole('button', { name: 'Select' }).click();
+    await page.getByLabel(`Select ${fieldName}`).click();
     await page.getByRole('button', { name: 'Include' }).nth(0).click();
     // Adhoc content filter should be added
     await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
@@ -1694,7 +1694,7 @@ test.describe('explore services breakdown page', () => {
       expect(logsPanelQueryCount).toEqual(3);
 
       // Clear the text - should trigger query
-      await page.getByLabel('Line filter variable').click();
+      await page.getByLabel('Remove line filter').click();
       // Enable regex - should not trigger empty query
       await page.getByLabel('Enable regex').click();
       // Enable case - should not trigger empty query

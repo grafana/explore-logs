@@ -33,10 +33,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     // First request should fire here
     await explorePage.goToFieldsTab();
 
-    await page
-      .getByTestId(`data-testid Panel header ${mixedFieldName}`)
-      .getByRole('button', { name: 'Select' })
-      .click();
+    await page.getByLabel(`Select ${mixedFieldName}`).click();
     const allPanels = explorePage.getAllPanelsLocator();
     // We should have 6 panels
     await expect(allPanels).toHaveCount(7);
@@ -77,10 +74,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     // Should be 16 fields coming back from the detected_fields, but one is detected_level
     await expect(allPanels).toHaveCount(16);
 
-    await page
-      .getByTestId(`data-testid Panel header ${logFmtFieldName}`)
-      .getByRole('button', { name: 'Select' })
-      .click();
+    await page.getByLabel(`Select ${logFmtFieldName}`).click();
 
     // We should have 2 panels for 1 field value
     await expect(allPanels).toHaveCount(2);
@@ -120,10 +114,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     // First request should fire here
     await explorePage.goToFieldsTab();
 
-    await page
-      .getByTestId(`data-testid Panel header ${jsonFmtFieldName}`)
-      .getByRole('button', { name: 'Select' })
-      .click();
+    await page.getByLabel(`Select ${jsonFmtFieldName}`).click();
     const allPanels = explorePage.getAllPanelsLocator();
     // We should have 4 panels
     await expect(allPanels).toHaveCount(4);
@@ -159,10 +150,7 @@ test.describe('explore nginx-json-mixed breakdown pages ', () => {
     // First request should fire here
     await explorePage.goToFieldsTab();
 
-    await page
-      .getByTestId(`data-testid Panel header ${metadataFieldName}`)
-      .getByRole('button', { name: 'Select' })
-      .click();
+    await page.getByLabel(`Select ${metadataFieldName}`).click();
     const allPanels = explorePage.getAllPanelsLocator();
     // We should have more than 1 panels
     await expect.poll(() => allPanels.count()).toBeGreaterThanOrEqual(4);

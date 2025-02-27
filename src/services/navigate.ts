@@ -7,7 +7,6 @@ import { buildServicesUrl, DRILLDOWN_URL_KEYS, PageSlugs, ROUTES, ValueSlugs } f
 import { sceneGraph } from '@grafana/scenes';
 import { UrlQueryMap, urlUtil } from '@grafana/data';
 import { replaceSlash } from './extensions/links';
-import { logger } from './logger';
 import { prefixRoute } from './plugin';
 
 let previousRoute: string | undefined = undefined;
@@ -41,6 +40,27 @@ export function buildDrilldownPageRoute(extraQueryParams?: UrlQueryMap): UrlQuer
   };
 }
 
+export function getValueBreakdownLink(newPath: ValueSlugs, label: string, serviceScene: ServiceScene) {
+  const indexScene = sceneGraph.getAncestor(serviceScene, IndexScene);
+  const urlLabelName = indexScene.state.routeMatch?.params.labelName;
+  const urlLabelValue = indexScene.state.routeMatch?.params.labelValue;
+
+  if (urlLabelName && urlLabelValue) {
+    let urlPath = buildValueBreakdownUrl(label, newPath, urlLabelValue, urlLabelName);
+    const fullUrl = buildDrilldownPageUrl(urlPath);
+
+    // If we're going to navigate, we need to share the state between this instantiation of the service scene
+    if (serviceScene) {
+      const metadataService = getMetadataService();
+      metadataService.setServiceSceneState(serviceScene.state);
+    }
+
+    return fullUrl;
+  }
+
+  return '';
+}
+
 /**
  * Navigate to value breakdown url
  * @param newPath
@@ -48,29 +68,9 @@ export function buildDrilldownPageRoute(extraQueryParams?: UrlQueryMap): UrlQuer
  * @param serviceScene
  */
 export function navigateToValueBreakdown(newPath: ValueSlugs, label: string, serviceScene: ServiceScene) {
-  const indexScene = sceneGraph.getAncestor(serviceScene, IndexScene);
-
-  if (indexScene) {
-    const urlLabelName = indexScene.state.routeMatch?.params.labelName;
-    const urlLabelValue = indexScene.state.routeMatch?.params.labelValue;
-    if (urlLabelName && urlLabelValue) {
-      let urlPath = buildValueBreakdownUrl(label, newPath, urlLabelValue, urlLabelName);
-      const fullUrl = buildDrilldownPageUrl(urlPath);
-
-      // If we're going to navigate, we need to share the state between this instantiation of the service scene
-      if (serviceScene) {
-        const metadataService = getMetadataService();
-        metadataService.setServiceSceneState(serviceScene.state);
-      }
-
-      pushUrlHandler(fullUrl);
-      return;
-    } else {
-      logger.warn('missing url params', {
-        urlLabelName: urlLabelName ?? '',
-        urlLabelValue: urlLabelValue ?? '',
-      });
-    }
+  const link = getValueBreakdownLink(newPath, label, serviceScene);
+  if (link) {
+    pushUrlHandler(link);
   }
 }
 
@@ -80,9 +80,21 @@ export function navigateToValueBreakdown(newPath: ValueSlugs, label: string, ser
  * @param labelName
  * @param labelValue
  */
-export function navigateToInitialPageAfterServiceSelection(labelName: string, labelValue: string) {
-  const breakdownUrl = buildDrilldownPageUrl(ROUTES.logs(labelValue, labelName));
-  pushUrlHandler(breakdownUrl);
+export function getDrillDownIndexLink(labelName: string, labelValue: string, labelFilters?: UrlQueryMap) {
+  const breakdownUrl = buildDrilldownPageUrl(ROUTES.logs(labelValue, labelName), labelFilters);
+  return breakdownUrl;
+}
+
+export function getDrillDownTabLink(path: PageSlugs, serviceScene: ServiceScene, extraQueryParams?: UrlQueryMap) {
+  const indexScene = sceneGraph.getAncestor(serviceScene, IndexScene);
+  const urlLabelValue = indexScene.state.routeMatch?.params.labelValue;
+  const urlLabelName = indexScene.state.routeMatch?.params.labelName;
+
+  if (urlLabelValue) {
+    const fullUrl = prefixRoute(`${PageSlugs.explore}/${urlLabelName}/${replaceSlash(urlLabelValue)}/${path}`);
+    return buildDrilldownPageUrl(fullUrl, extraQueryParams);
+  }
+  return '';
 }
 
 /**
@@ -93,21 +105,16 @@ export function navigateToInitialPageAfterServiceSelection(labelName: string, la
  * @param extraQueryParams
  */
 export function navigateToDrilldownPage(path: PageSlugs, serviceScene: ServiceScene, extraQueryParams?: UrlQueryMap) {
-  const indexScene = sceneGraph.getAncestor(serviceScene, IndexScene);
-  const urlLabelValue = indexScene.state.routeMatch?.params.labelValue;
-  const urlLabelName = indexScene.state.routeMatch?.params.labelName;
+  const drilldownLink = getDrillDownTabLink(path, serviceScene, extraQueryParams);
 
-  if (urlLabelValue) {
-    const fullUrl = prefixRoute(`${PageSlugs.explore}/${urlLabelName}/${replaceSlash(urlLabelValue)}/${path}`);
-    const breakdownUrl = buildDrilldownPageUrl(fullUrl, extraQueryParams);
-
+  if (drilldownLink) {
     // If we're going to navigate, we need to share the state between this instantiation of the service scene
     if (serviceScene) {
       const metadataService = getMetadataService();
       metadataService.setServiceSceneState(serviceScene.state);
     }
 
-    pushUrlHandler(breakdownUrl);
+    pushUrlHandler(drilldownLink);
     return;
   }
 }
@@ -115,6 +122,12 @@ export function navigateToDrilldownPage(path: PageSlugs, serviceScene: ServiceSc
 export function pushUrlHandler(newUrl: string) {
   previousRoute = newUrl;
   locationService.push(newUrl);
+}
+
+export function addCurrentUrlToHistory() {
+  // Add the current url to browser history before the state is changed so the user can revert their change.
+  const location = locationService.getLocation();
+  locationService.push(location.pathname + location.search);
 }
 
 /**
