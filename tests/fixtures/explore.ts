@@ -379,11 +379,7 @@ export class ExplorePage {
     await this.getOperatorLocator(operator).click();
     // Enter custom value
     await this.page.keyboard.type(text);
-    if (isOperatorRegex(operator)) {
-      // Custom value should be the first option for regex
-      await this.page.keyboard.press('Enter');
-    } else {
-      // Custom value should be the last option for regex, arrow up to get to it
+    if (!isOperatorRegex(operator)) {
       await this.page.keyboard.press('ArrowUp');
     }
 
