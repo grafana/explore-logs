@@ -11,6 +11,7 @@ const isOperatorRegex = (op: string | FilterOpType): boolean => {
   return op === FilterOp.RegexEqual || op === FilterOp.RegexNotEqual;
 };
 
+
 export interface PlaywrightRequest {
   post: any;
   url: string;
