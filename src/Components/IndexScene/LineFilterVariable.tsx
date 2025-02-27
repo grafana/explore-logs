@@ -32,7 +32,7 @@ export function LineFilterVariable({ onClick, props }: { onClick: () => void; pr
           <IconButton onClick={onClick} name={'times'} size={'xs'} aria-label={'Line filter variable'} />
         </div>
         <span className={styles.collapseWrap}>
-          <LineFilterEditor {...props} focus={focus} setFocus={setFocus} />
+          <LineFilterEditor {...props} focus={focus} setFocus={setFocus} type={'variable'} />
           {focus && (
             <IconButton
               className={styles.collapseBtn}
@@ -45,8 +45,6 @@ export function LineFilterVariable({ onClick, props }: { onClick: () => void; pr
           )}
         </span>
       </span>
-      {/* Push following line filters to the next line */}
-      {focus && <div className={styles.lineSpacer}></div>}
     </>
   );
 }
@@ -57,9 +55,6 @@ const getLineFilterStyles = (theme: GrafanaTheme2) => ({
     fontSize: theme.typography.bodySmall.fontSize,
     marginBottom: theme.spacing(0.5),
     gap: theme.spacing(1),
-  }),
-  lineSpacer: css({
-    width: '100%',
   }),
   collapseWrap: css({
     display: 'flex',

@@ -11,6 +11,7 @@ import { LineFilterProps } from '../../IndexScene/LineFilterVariable';
 export interface LineFilterEditorProps extends LineFilterProps {
   focus: boolean;
   setFocus: (focus: boolean) => void;
+  type: 'variable' | 'editor';
 }
 
 const INITIAL_INPUT_WIDTH = 30;
@@ -29,8 +30,9 @@ export function LineFilterEditor({
   onClearLineFilter,
   focus,
   setFocus,
+  type,
 }: LineFilterEditorProps) {
-  const styles = useStyles2(getStyles);
+  const styles = useStyles2((theme) => getStyles(theme, type));
   const [width, setWidth] = useState(INITIAL_INPUT_WIDTH);
 
   function resize(content?: string) {
@@ -124,7 +126,7 @@ export function LineFilterEditor({
   );
 }
 
-const getStyles = (theme: GrafanaTheme2) => ({
+const getStyles = (theme: GrafanaTheme2, type: 'variable' | 'editor') => ({
   inputNoBorderRight: css({
     input: {
       borderTopRightRadius: 0,
@@ -182,8 +184,9 @@ const getStyles = (theme: GrafanaTheme2) => ({
   input: css({
     label: 'line-filter-input-wrapper',
     minWidth: '200px',
+
     // Keeps the input from overflowing container on resize
-    maxWidth: 'calc(100vw - 198px)',
+    maxWidth: type === 'editor' ? 'calc(100vw - 198px)' : 'calc(100vw - 288px)',
 
     input: {
       borderTopLeftRadius: 0,

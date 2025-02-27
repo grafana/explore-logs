@@ -280,5 +280,6 @@ function LineFilterComponent({ model }: SceneComponentProps<LineFilterScene>) {
     onClearLineFilter: model.clearFilter,
     focus,
     setFocus,
+    type: 'editor',
   });
 }
