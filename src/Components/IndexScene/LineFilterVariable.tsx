@@ -29,7 +29,7 @@ export function LineFilterVariable({ onClick, props }: { onClick: () => void; pr
       <span>
         <div className={styles.titleWrap}>
           <span>Line filter</span>
-          <IconButton onClick={onClick} name={'times'} size={'xs'} aria-label={'Line filter variable'} />
+          <IconButton onClick={onClick} name={'times'} size={'xs'} aria-label={'Remove line filter'} />
         </div>
         <span className={styles.collapseWrap}>
           <LineFilterEditor {...props} focus={focus} setFocus={setFocus} type={'variable'} />
