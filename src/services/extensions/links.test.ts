@@ -5,7 +5,7 @@ import {
   ValidByteUnitValues,
   validDurationValues,
 } from '../../Components/ServiceScene/Breakdowns/NumericFilterPopoverScene';
-import { addAdHocFilterUserInputPrefix } from '../variables';
+import { addAdHocFilterUserInputPrefix, EMPTY_VARIABLE_VALUE } from '../variables';
 import { addCustomInputPrefixAndValueLabels, encodeFilter, getPath } from './utils';
 
 function getTestConfig(
@@ -249,7 +249,9 @@ describe('contextToLink', () => {
           )},downstream`
         )}` +
         `&var-fields=${encodeFilter(
-          `error|!=|${addAdHocFilterUserInputPrefix('{"value":""__gfc__"parser":"logfmt"}')},`
+          `error|!=|${addAdHocFilterUserInputPrefix(
+            `{"value":${EMPTY_VARIABLE_VALUE}__gfc__"parser":"logfmt"}`
+          )},${EMPTY_VARIABLE_VALUE}`
         )}` +
         `&var-fields=${encodeFilter(
           `endpoint|=|${addAdHocFilterUserInputPrefix('{"value":"queryData"__gfc__"parser":"logfmt"}')},queryData`
@@ -293,7 +295,9 @@ describe('contextToLink', () => {
           )},downstream`
         )}` +
         `&var-fields=${encodeFilter(
-          `error|!=|${addAdHocFilterUserInputPrefix('{"value":""__gfc__"parser":"logfmt"}')},`
+          `error|!=|${addAdHocFilterUserInputPrefix(
+            `{"value":${EMPTY_VARIABLE_VALUE}__gfc__"parser":"logfmt"}`
+          )},${EMPTY_VARIABLE_VALUE}`
         )}` +
         `&var-fields=${encodeFilter(
           `endpoint|=|${addAdHocFilterUserInputPrefix('{"value":"queryData"__gfc__"parser":"logfmt"}')},queryData`
@@ -403,6 +407,33 @@ describe('contextToLink', () => {
           }),
         });
       });
+      it('should add label for empty variable value', () => {
+        const target = getTestTarget({
+          expr: `{cluster="C:\\Grafana\\logs\\log.txt"} | pod!=\`mimir-ingester-xjntw\` | logfmt | msg=${EMPTY_VARIABLE_VALUE}`,
+        });
+        const config = getTestConfig(linkConfigs, target);
+
+        const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
+          `cluster|=|${addCustomInputPrefixAndValueLabels('C:\\Grafana\\logs\\log.txt')}`
+        )}`;
+        const expectedMetadataString = `&var-metadata=${encodeFilter(
+          `pod|!=|${addCustomInputPrefixAndValueLabels('mimir-ingester-xjntw')}`
+        )}`;
+        const expectedFieldsUrlString = `&var-fields=${encodeFilter(
+          `msg|=|${addAdHocFilterUserInputPrefix(
+            `{"value":${EMPTY_VARIABLE_VALUE}__gfc__"parser":"logfmt"}`
+          )},${EMPTY_VARIABLE_VALUE}`
+        )}`;
+
+        expect(config).toEqual({
+          path: getPath({
+            slug: 'cluster/C:-Grafana-logs-log.txt',
+            expectedLabelFiltersUrlString,
+            expectedMetadataString,
+            expectedFieldsUrlString,
+          }),
+        });
+      });
       it('should parse label with escape chars, escape chars should get replaced in url', () => {
         const target = getTestTarget({
           expr: `{cluster="C:\\Grafana\\logs\\log.txt"} | pod!=\`mimir-ingester-xjntw\` `,
@@ -446,13 +477,13 @@ describe('contextToLink', () => {
         });
       });
       it('should parse field with logfmt parser', () => {
-        const target = getTestTarget({ expr: `{cluster="eu-west-1"} | logfmt | pod=\`mimir-ingester-xjntw\`  ` });
+        const target = getTestTarget({ expr: `{cluster="eu-west-1"} | logfmt | pod=\`mimir-ingester-xjntw\`` });
         const config = getTestConfig(linkConfigs, target);
 
         const expectedLabelFiltersUrlString = `&var-filters=${encodeFilter(
           `cluster|=|${addCustomInputPrefixAndValueLabels('eu-west-1')}`
         )}`;
-        const expectedLineFiltersUrlString = `&var-fields=${encodeFilter(
+        const expectedFieldsUrlString = `&var-fields=${encodeFilter(
           `pod|=|${addAdHocFilterUserInputPrefix(
             '{"value":"mimir-ingester-xjntw"__gfc__"parser":"logfmt"}'
           )},mimir-ingester-xjntw`
@@ -462,7 +493,7 @@ describe('contextToLink', () => {
           path: getPath({
             slug: 'cluster/eu-west-1',
             expectedLabelFiltersUrlString,
-            expectedLineFiltersUrlString,
+            expectedFieldsUrlString,
           }),
         });
       });
