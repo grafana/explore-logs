@@ -17,7 +17,7 @@ import { LogsListScene } from './LogsListScene';
 import { LoadingPlaceholder, useStyles2 } from '@grafana/ui';
 import { addToFilters, FilterType } from './Breakdowns/AddToFiltersButton';
 import { getVariableForLabel } from '../../services/fields';
-import { LEVEL_VARIABLE_VALUE, VAR_FIELDS, VAR_LABELS, VAR_LEVELS, VAR_METADATA } from '../../services/variables';
+import { VAR_FIELDS, VAR_LABELS, VAR_LEVELS, VAR_METADATA } from '../../services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
 import {
   getAdHocFiltersVariable,
@@ -39,7 +39,6 @@ import { LogsSortOrder } from '@grafana/schema';
 import { getPrettyQueryExpr } from 'services/scenes';
 import { LogsPanelError } from './LogsPanelError';
 import { clearVariables } from 'services/variableHelpers';
-import { syncLevelsVariable } from '../IndexScene/LevelsVariableScene';
 
 interface LogsPanelSceneState extends SceneObjectState {
   body?: VizPanel<Options>;
@@ -420,10 +419,6 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
   private handleLabelFilter(key: string, value: string, frame: DataFrame | undefined, operator: FilterType) {
     const variableType = getVariableForLabel(frame, key, this);
     addToFilters(key, value, operator, this, variableType);
-
-    if (key === LEVEL_VARIABLE_VALUE) {
-      syncLevelsVariable(this);
-    }
 
     reportAppInteraction(
       USER_EVENTS_PAGES.service_details,

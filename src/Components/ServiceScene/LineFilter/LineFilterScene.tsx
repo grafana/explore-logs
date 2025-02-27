@@ -14,6 +14,7 @@ import {
 import { RegexInputValue } from './RegexIconButton';
 import { LineFilterCaseSensitive, LineFilterOp } from '../../../services/filterTypes';
 import { LineFilterEditor } from './LineFilterEditor';
+import { addCurrentUrlToHistory } from '../../../services/navigate';
 
 interface LineFilterState extends SceneObjectState {
   lineFilter: string;
@@ -160,6 +161,7 @@ export class LineFilterScene extends SceneObjectBase<LineFilterState> {
    * Clears the state of the local ad-hoc variable.
    */
   onSubmitLineFilter = () => {
+    addCurrentUrlToHistory();
     this.updateFilter(this.state.lineFilter, false);
     // Flush any debounced updates before grabbing the filter. Important that this happens before getFilter is called!
     this.updateVariableDebounced.flush();
