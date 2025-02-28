@@ -23,8 +23,8 @@ import {
   SceneVariableSet,
 } from '@grafana/scenes';
 import {
-  AppliedPattern,
   AdHocFiltersWithLabelsAndMeta,
+  AppliedPattern,
   EXPLORATION_DS,
   MIXED_FORMAT_EXPR,
   PENDING_FIELDS_EXPR,
@@ -87,7 +87,11 @@ import { JsonData } from '../AppConfig/AppConfig';
 import { reportAppInteraction } from '../../services/analytics';
 import { getDetectedFieldValuesTagValuesProvider, getLabelsTagValuesProvider } from '../../services/TagValuesProviders';
 import { logger } from '../../services/logger';
-import { getFieldsKeysProvider, getLabelsTagKeysProvider } from '../../services/TagKeysProviders';
+import {
+  getFieldsKeysProvider,
+  getLabelsTagKeysProvider,
+  resetCustomValuePosition,
+} from '../../services/TagKeysProviders';
 import { getLokiDatasource } from '../../services/scenes';
 import { ShowLogsButtonScene } from './ShowLogsButtonScene';
 import { CustomVariableValueSelectors } from './CustomVariableValueSelectors';
@@ -384,6 +388,8 @@ export class IndexScene extends SceneObjectBase<IndexSceneState> {
    */
   private getCombinedFieldsTagKeysProvider() {
     return (variable: AdHocFiltersVariable, currentKey: string | null) => {
+      // Reset custom value position to bottom, it will be pushed to top if a regex operation is selected when we fetch the values
+      resetCustomValuePosition(variable);
       // Current key seems to always be null, I think it's only supported for other variable types that allow editing the key without first removing the value/operator?
       const metadataVar = getMetadataVariable(this);
       const fieldVar = getFieldsVariable(this);
