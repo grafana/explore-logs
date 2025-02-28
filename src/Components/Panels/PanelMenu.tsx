@@ -28,6 +28,7 @@ import { setValueSummaryHeight } from '../ServiceScene/Breakdowns/Panels/ValueSu
 import { FieldValuesBreakdownScene } from '../ServiceScene/Breakdowns/FieldValuesBreakdownScene';
 import { LabelValuesBreakdownScene } from '../ServiceScene/Breakdowns/LabelValuesBreakdownScene';
 import { css } from '@emotion/css';
+import { createDashboard } from '../../services/DashboardService';
 
 const ADD_TO_INVESTIGATION_MENU_TEXT = 'Add to investigation';
 const ADD_TO_INVESTIGATION_MENU_DIVIDER_TEXT = 'investigations_divider'; // Text won't be visible
@@ -82,7 +83,7 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
         },
       ];
 
-      let viz;
+      let viz: VizPanel;
       try {
         viz = sceneGraph.getAncestor(this, VizPanel);
       } catch (e) {
@@ -93,6 +94,16 @@ export class PanelMenu extends SceneObjectBase<PanelMenuState> implements VizPan
           }),
         });
         return;
+      }
+
+      if (viz) {
+        items.push({
+          text: 'Add to dashboard',
+          iconClassName: 'create-dashboard',
+          onClick: () => createDashboard(viz),
+          // @todo
+          // shortcut: 'p d',
+        });
       }
 
       this.setState({
