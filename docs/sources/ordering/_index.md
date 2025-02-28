@@ -1,6 +1,6 @@
 ---
 canonical: https://grafana.com/docs/grafana/latest/explore/simplified-exploration/logs/ordering/
-description: Learn about sorting and ordering data in Explore Logs.
+description: Learn about sorting and ordering data in Grafana Logs Drilldown.
 keywords:
   - Logs
   - Log Patterns
@@ -16,13 +16,13 @@ weight: 400
 
 # Sorting and ordering
 
-Some pages in Explore Logs can display a large number of graphs. You may want to sort the graphs differently, depending on what you're looking for. These pages let you modify the default sort oder using the **Sort by** menu in the top right toolbar.
+Some pages in Grafana Logs Drilldown can display a large number of graphs. You may want to sort the graphs differently, depending on what you're looking for. These pages let you modify the default sort oder using the **Sort by** menu in the top right toolbar.
 
 You can use the **Asc/Desc** menu to change the direction of the sort.
 
 ## Sorting algorithms
 
-{{< figure alt="Sort by many" width="900px" align="center" src="../images/sort-by-dropdown.png" caption="Sort by menu" >}}
+{{< figure alt="Sort by many" width="900px" align="center" src="/media/docs/explore-logs/sort-by-dropdown.png" caption="Sort by menu" >}}
 
 By default the graphs are sorted by **Most relevant** where we prioritise graphs with more volatile data. For example, the graphs with the most spikes or dips will be shown first.
 

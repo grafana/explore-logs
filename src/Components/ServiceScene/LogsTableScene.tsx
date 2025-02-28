@@ -3,28 +3,36 @@ import { LogsListScene } from './LogsListScene';
 import { AdHocVariableFilter, GrafanaTheme2 } from '@grafana/data';
 import { TableProvider } from '../Table/TableProvider';
 import React, { useRef } from 'react';
-import { PanelChrome, useStyles2 } from '@grafana/ui';
+import { Button, PanelChrome, useStyles2 } from '@grafana/ui';
 import { LogsPanelHeaderActions } from '../Table/LogsHeaderActions';
 import { css } from '@emotion/css';
 import { addAdHocFilter } from './Breakdowns/AddToFiltersButton';
-import { areArraysEqual } from '../../services/comparison';
+import { areArraysStrictlyEqual } from '../../services/comparison';
 import { getLogsPanelFrame } from './ServiceScene';
 import { getVariableForLabel } from '../../services/fields';
 import { PanelMenu } from '../Panels/PanelMenu';
+import { LogLineState } from '../Table/Context/TableColumnsContext';
 
 interface LogsTableSceneState extends SceneObjectState {
   menu?: PanelMenu;
+  isColumnManagementActive: boolean;
 }
 export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
   constructor(state: Partial<LogsTableSceneState>) {
-    super(state);
+    super({ ...state, isColumnManagementActive: false });
 
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
+  public showColumnManagementDrawer = (isActive: boolean) => {
+    this.setState({
+      isColumnManagementActive: isActive,
+    });
+  };
+
   public onActivate() {
     this.setState({
-      menu: new PanelMenu({ addExplorationsLink: false }),
+      menu: new PanelMenu({ addInvestigationsLink: false }),
     });
   }
   public static Component = ({ model }: SceneComponentProps<LogsTableScene>) => {
@@ -32,8 +40,8 @@ export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
     // Get state from parent model
     const parentModel = sceneGraph.getAncestor(model, LogsListScene);
     const { data } = sceneGraph.getData(model).useState();
-    const { selectedLine, urlColumns, visualizationType } = parentModel.useState();
-    const { menu } = model.useState();
+    const { selectedLine, urlColumns, visualizationType, tableLogLineState } = parentModel.useState();
+    const { menu, isColumnManagementActive } = model.useState();
 
     // Get time range
     const timeRange = sceneGraph.getTimeRange(model);
@@ -53,9 +61,13 @@ export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
 
     // Define callback function to update url columns in react
     const setUrlColumns = (urlColumns: string[]) => {
-      if (!areArraysEqual(urlColumns, parentModel.state.urlColumns)) {
+      if (!areArraysStrictlyEqual(urlColumns, parentModel.state.urlColumns)) {
         parentModel.setState({ urlColumns });
       }
+    };
+
+    const setUrlTableBodyState = (logLineState: LogLineState) => {
+      parentModel.setState({ tableLogLineState: logLineState });
     };
 
     const clearSelectedLine = () => {
@@ -70,7 +82,14 @@ export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
           loadingState={data?.state}
           title={'Logs'}
           menu={menu ? <menu.Component model={menu} /> : undefined}
-          actions={<LogsPanelHeaderActions vizType={visualizationType} onChange={parentModel.setVisualizationType} />}
+          actions={
+            <>
+              <Button onClick={() => model.showColumnManagementDrawer(true)} variant={'secondary'} size={'sm'}>
+                Manage columns
+              </Button>
+              <LogsPanelHeaderActions vizType={visualizationType} onChange={parentModel.setVisualizationType} />
+            </>
+          }
         >
           {dataFrame && (
             <TableProvider
@@ -82,6 +101,10 @@ export class LogsTableScene extends SceneObjectBase<LogsTableSceneState> {
               setUrlColumns={setUrlColumns}
               dataFrame={dataFrame}
               clearSelectedLine={clearSelectedLine}
+              setUrlTableBodyState={setUrlTableBodyState}
+              urlTableBodyState={tableLogLineState}
+              showColumnManagementDrawer={model.showColumnManagementDrawer}
+              isColumnManagementActive={isColumnManagementActive}
             />
           )}
         </PanelChrome>

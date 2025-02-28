@@ -43,7 +43,7 @@ export class AddLabelToFiltersHeaderActionScene extends SceneObjectBase<AddLabel
 
     // Check if the filter is already there
     const filterInSelectedFilters = variable.state.filters.find((f) => {
-      const value = getValueFromAdHocVariableFilter(variable, f);
+      const value = getValueFromAdHocVariableFilter(VAR_LABELS, f);
       return f.key === this.state.name && value.value === this.state.value;
     });
 
@@ -51,6 +51,7 @@ export class AddLabelToFiltersHeaderActionScene extends SceneObjectBase<AddLabel
       return { included: false };
     }
 
+    // @todo support regex operator
     return {
       included: filterInSelectedFilters.operator === FilterOp.Equal,
     };

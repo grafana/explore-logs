@@ -1,14 +1,17 @@
-import { AdHocVariableFilter } from '@grafana/data';
-import { AppliedPattern, numericOperatorArray } from 'Components/IndexScene/IndexScene';
-import { EMPTY_VARIABLE_VALUE, VAR_DATASOURCE_EXPR } from './variables';
-import { groupBy, trim } from 'lodash';
-import { getValueFromFieldsFilter } from './variableGetters';
+import { AdHocVariableFilter, SelectableValue } from '@grafana/data';
+import {
+  addAdHocFilterUserInputPrefix,
+  AdHocFiltersWithLabelsAndMeta,
+  FieldValue,
+  VAR_DATASOURCE_EXPR,
+} from './variables';
 import { LokiQuery } from './lokiQuery';
 import { SceneDataQueryResourceRequest, SceneDataQueryResourceRequestOptions } from './datasourceTypes';
-import { AdHocFilterWithLabels } from './scenes';
 import { PLUGIN_ID } from './plugin';
-import { AdHocFiltersVariable } from '@grafana/scenes';
-import { FilterOp } from './filterTypes';
+import { AdHocFilterWithLabels, sceneUtils } from '@grafana/scenes';
+import { LineFilterCaseSensitive, LineFilterOp } from './filterTypes';
+import { sortLineFilters } from '../Components/IndexScene/LineFilterVariablesScene';
+import { ExpressionBuilder } from './ExpressionBuilder';
 
 /**
  * Builds the resource query
@@ -63,165 +66,130 @@ export const buildVolumeQuery = (
   return buildResourceQuery(expr, resource, { ...queryParamsOverrides }, primaryLabel);
 };
 
-export function getLogQLLabelGroups(filters: AdHocVariableFilter[]) {
-  const positive = filters.filter((filter) => filter.operator === FilterOp.Equal);
-  const negative = filters.filter((filter) => filter.operator === FilterOp.NotEqual);
-
-  const positiveGroups = groupBy(positive, (filter) => filter.key);
-  return { negative, positiveGroups };
+export function renderLogQLLabelFilters(filters: AdHocFilterWithLabels[], ignoreKeys?: string[]) {
+  const filtersTransformer = new ExpressionBuilder(filters);
+  return filtersTransformer.getLabelsExpr({ ignoreKeys });
 }
 
-export function getLogQLLabelFilters(filters: AdHocVariableFilter[]) {
-  const { negative, positiveGroups } = getLogQLLabelGroups(filters);
-
-  let positiveFilters: string[] = [];
-  for (const key in positiveGroups) {
-    const values = positiveGroups[key].map((filter) => filter.value);
-    positiveFilters.push(
-      values.length === 1 ? renderMetadata(positiveGroups[key][0]) : renderRegexLabelFilter(key, values)
-    );
+export function onAddCustomAdHocValue(item: SelectableValue<string>): {
+  value: string | undefined;
+  valueLabels: string[];
+} {
+  if (item.value) {
+    return {
+      value: addAdHocFilterUserInputPrefix(item.value),
+      valueLabels: [item.label ?? item.value],
+    };
   }
 
-  return { positiveFilters, negative };
+  return {
+    value: item.value,
+    valueLabels: [item.label ?? item.value ?? ''],
+  };
 }
 
-export function renderLogQLLabelFilters(filters: AdHocFilterWithLabels[]) {
-  let { positiveFilters, negative } = getLogQLLabelFilters(filters);
-  const negativeFilters = negative.map((filter) => renderMetadata(filter)).join(', ');
+export function onAddCustomFieldValue(
+  item: SelectableValue<string> & { isCustom?: boolean },
+  filter: AdHocFiltersWithLabelsAndMeta
+): { value: string | undefined; valueLabels: string[] } {
+  const field: FieldValue = {
+    value: item.value ?? '',
+    parser: filter?.meta?.parser ?? 'mixed',
+  };
 
-  const result = trim(`${positiveFilters.join(', ')}, ${negativeFilters}`, ' ,');
-
-  return result;
-}
-
-export function renderLogQLFieldFilters(filters: AdHocVariableFilter[]) {
-  // @todo partition instead of looping through again and again
-  const positive = filters.filter((filter) => filter.operator === FilterOp.Equal);
-  const negative = filters.filter((filter) => filter.operator === FilterOp.NotEqual);
-
-  const numeric = filters.filter((filter) => {
-    const numericValues: string[] = numericOperatorArray;
-    return numericValues.includes(filter.operator);
-  });
-
-  const positiveGroups = groupBy(positive, (filter) => filter.key);
-
-  let positiveFilters = '';
-  for (const key in positiveGroups) {
-    positiveFilters += ' | ' + positiveGroups[key].map((filter) => `${fieldFilterToQueryString(filter)}`).join(' or ');
+  // metadata is not encoded
+  if (field.parser === 'structuredMetadata') {
+    return {
+      value: addAdHocFilterUserInputPrefix(field.value),
+      valueLabels: [item.label ?? field.value],
+    };
   }
 
-  const negativeFilters = negative.map((filter) => `| ${fieldFilterToQueryString(filter)}`).join(' ');
-
-  let numericFilters = numeric.map((filter) => `| ${fieldNumericFilterToQueryString(filter)}`).join(' ');
-
-  return `${positiveFilters} ${negativeFilters} ${numericFilters}`.trim();
+  return {
+    value: addAdHocFilterUserInputPrefix(JSON.stringify(field)),
+    valueLabels: [item.label ?? field.value],
+  };
 }
 
-export function renderLogQLMetadataFilters(filters: AdHocVariableFilter[]) {
-  const positive = filters.filter((filter) => filter.operator === FilterOp.Equal);
-  const negative = filters.filter((filter) => filter.operator === FilterOp.NotEqual);
-
-  const positiveGroups = groupBy(positive, (filter) => filter.key);
-
-  let positiveFilters = '';
-  for (const key in positiveGroups) {
-    positiveFilters += ' | ' + positiveGroups[key].map((filter) => `${renderMetadata(filter)}`).join(' or ');
-  }
-
-  const negativeFilters = negative.map((filter) => `| ${renderMetadata(filter)}`).join(' ');
-
-  return `${positiveFilters} ${negativeFilters}`.trim();
+export function renderLevelsFilter(filters: AdHocVariableFilter[], ignoreKeys?: string[]) {
+  const filterTransformer = new ExpressionBuilder(filters);
+  return filterTransformer.getLevelsExpr({ ignoreKeys });
 }
 
-function renderMetadata(filter: AdHocVariableFilter) {
-  // If the filter value is an empty string, we don't want to wrap it in backticks!
-  if (filter.value === EMPTY_VARIABLE_VALUE) {
-    return `${filter.key}${filter.operator}${filter.value}`;
-  }
-  return `${filter.key}${filter.operator}\`${filter.value}\``;
+export function renderLogQLMetadataFilters(filters: AdHocVariableFilter[], ignoreKeys?: string[]) {
+  const filterTransformer = new ExpressionBuilder(filters);
+  return filterTransformer.getMetadataExpr({ ignoreKeys });
 }
 
-function fieldFilterToQueryString(filter: AdHocVariableFilter) {
-  const fieldObject = getValueFromFieldsFilter(filter);
-  const value = fieldObject.value;
-  // If the filter value is an empty string, we don't want to wrap it in backticks!
-  if (value === EMPTY_VARIABLE_VALUE) {
-    return `${filter.key}${filter.operator}${value}`;
-  }
-  return `${filter.key}${filter.operator}\`${value}\``;
+export function renderLogQLFieldFilters(filters: AdHocVariableFilter[], ignoreKeys?: string[]) {
+  const filterTransformer = new ExpressionBuilder(filters);
+  return filterTransformer.getFieldsExpr({ ignoreKeys });
 }
 
-function fieldNumericFilterToQueryString(filter: AdHocVariableFilter) {
-  const fieldObject = getValueFromFieldsFilter(filter);
-  const value = fieldObject.value;
-  // If the filter value is an empty string, we don't want to wrap it in backticks!
-
-  return `${filter.key}${filter.operator}${value}`;
-}
-
-export function renderRegexLabelFilter(key: string, values: string[]) {
-  return `${key}=~"${values.join('|')}"`;
-}
-
-export function renderPatternFilters(patterns: AppliedPattern[]) {
-  const excludePatterns = patterns.filter((pattern) => pattern.type === 'exclude');
-  const excludePatternsLine = excludePatterns
-    .map((p) => `!> \`${p.pattern}\``)
-    .join(' ')
-    .trim();
-
-  const includePatterns = patterns.filter((pattern) => pattern.type === 'include');
-  let includePatternsLine = '';
-  if (includePatterns.length > 0) {
-    if (includePatterns.length === 1) {
-      includePatternsLine = `|> \`${includePatterns[0].pattern}\``;
+export function escapeDoubleQuotedLineFilter(filter: AdHocFilterWithLabels) {
+  // Is not regex
+  if (filter.operator === LineFilterOp.match || filter.operator === LineFilterOp.negativeMatch) {
+    if (filter.key === LineFilterCaseSensitive.caseInsensitive) {
+      return sceneUtils.escapeLabelValueInRegexSelector(filter.value);
     } else {
-      includePatternsLine = `|>  ${includePatterns.map((p) => `\`${p.pattern}\``).join(' or ')}`;
+      return sceneUtils.escapeLabelValueInExactSelector(filter.value);
     }
+  } else {
+    return sceneUtils.escapeLabelValueInExactSelector(filter.value);
   }
-  return `${excludePatternsLine} ${includePatternsLine}`.trim();
 }
 
-export function joinTagFilters(variable: AdHocFiltersVariable) {
-  const { positiveGroups, negative } = getLogQLLabelGroups(variable.state.filters);
-
-  const filters: AdHocFilterWithLabels[] = [];
-  for (const key in positiveGroups) {
-    const values = positiveGroups[key].map((filter) => filter.value);
-    if (values.length === 1) {
-      filters.push({
-        key,
-        value: positiveGroups[key][0].value,
-        operator: '=',
-      });
-    } else {
-      filters.push({
-        key,
-        value: values.join('|'),
-        operator: '=~',
-      });
+/**
+ * Builds line filter as a double-quoted LogQL string
+ * Expects pre-escaped values
+ */
+function buildLogQlLineFilter(filter: AdHocFilterWithLabels, value: string) {
+  // Change operator if needed and insert caseInsensitive flag
+  if (filter.key === LineFilterCaseSensitive.caseInsensitive) {
+    if (filter.operator === LineFilterOp.negativeRegex || filter.operator === LineFilterOp.negativeMatch) {
+      return `${LineFilterOp.negativeRegex} "(?i)${value}"`;
     }
+    return `${LineFilterOp.regex} "(?i)${value}"`;
   }
 
-  negative.forEach((filter) => {
-    filters.push(filter);
-  });
-  return filters;
+  return `${filter.operator} "${value}"`;
 }
 
+/**
+ * Converts line filter ad-hoc filters to LogQL
+ *
+ * the filter key is LineFilterCaseSensitive
+ * the filter operator is LineFilterOp
+ * the value is the user input
+ */
+export function renderLogQLLineFilter(filters: AdHocFilterWithLabels[]) {
+  sortLineFilters(filters);
+  return filters
+    .map((filter) => {
+      if (filter.value === '') {
+        return '';
+      }
+
+      const value = escapeDoubleQuotedLineFilter(filter);
+      return buildLogQlLineFilter(filter, value);
+    })
+    .join(' ');
+}
 export function wrapWildcardSearch(input: string) {
-  if (input !== '.+' && input.substring(0, 2) !== '.*') {
-    return `.*${input}.*`;
+  if (input === '.+') {
+    return input;
+  } else if (input.substring(0, 6) !== '(?i).*') {
+    return `(?i).*${input}.*`;
   }
 
   return input;
 }
 
 export function unwrapWildcardSearch(input: string) {
-  if (input.substring(0, 2) === '.*' && input.slice(-2) === '.*') {
-    return input.slice(2).slice(0, -2);
+  if (input.substring(0, 6) === '(?i).*' && input.slice(-2) === '.*') {
+    return input.slice(6).slice(0, -2);
   }
+
   return input;
 }
 

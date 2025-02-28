@@ -10,15 +10,18 @@ import { CustomConstantVariable } from './CustomConstantVariable';
 import {
   AdHocFieldValue,
   FieldValue,
+  isAdHocFilterValueUserInput,
   JSON_FORMAT_EXPR,
   LOGS_FORMAT_EXPR,
   LogsQueryOptions,
   MIXED_FORMAT_EXPR,
   SERVICE_NAME,
+  stripAdHocFilterUserInputPrefix,
   VAR_AGGREGATED_METRICS,
   VAR_DATASOURCE,
   VAR_FIELD_GROUP_BY,
   VAR_FIELDS,
+  VAR_FIELDS_AND_METADATA,
   VAR_FIELDS_EXPR,
   VAR_LABEL_GROUP_BY,
   VAR_LABELS,
@@ -27,7 +30,8 @@ import {
   VAR_LEVELS,
   VAR_LEVELS_EXPR,
   VAR_LINE_FILTER,
-  VAR_LINE_FILTER_EXPR,
+  VAR_LINE_FILTERS,
+  VAR_LINE_FILTERS_EXPR,
   VAR_METADATA,
   VAR_METADATA_EXPR,
   VAR_PATTERNS,
@@ -38,6 +42,8 @@ import {
 import { AdHocVariableFilter } from '@grafana/data';
 import { logger } from './logger';
 import { narrowFieldValue, NarrowingError } from './narrowing';
+import { isFilterMetadata } from './filters';
+import { AdHocFilterTypes, InterpolatedFilterType } from '../Components/ServiceScene/Breakdowns/AddToFiltersButton';
 
 export function getLogsStreamSelector(options: LogsQueryOptions) {
   const {
@@ -49,13 +55,13 @@ export function getLogsStreamSelector(options: LogsQueryOptions) {
 
   switch (parser) {
     case 'structuredMetadata':
-      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_METADATA_EXPR} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTER_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
+      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_LEVELS_EXPR} ${VAR_METADATA_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTERS_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
     case 'json':
-      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_METADATA_EXPR} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTER_EXPR} ${JSON_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
+      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_LEVELS_EXPR} ${VAR_METADATA_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTERS_EXPR} ${JSON_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
     case 'logfmt':
-      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_METADATA_EXPR} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTER_EXPR} ${LOGS_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
+      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_LEVELS_EXPR} ${VAR_METADATA_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTERS_EXPR} ${LOGS_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
     default:
-      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_METADATA_EXPR} ${VAR_LEVELS_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTER_EXPR} ${MIXED_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
+      return `{${VAR_LABELS_EXPR}${labelExpressionToAdd}} ${structuredMetadataToAdd} ${VAR_LEVELS_EXPR} ${VAR_METADATA_EXPR} ${VAR_PATTERNS_EXPR} ${VAR_LINE_FILTERS_EXPR} ${MIXED_FORMAT_EXPR} ${fieldExpressionToAdd} ${VAR_FIELDS_EXPR}`;
   }
 }
 
@@ -79,6 +85,11 @@ export function getMetadataVariable(scene: SceneObject) {
   return getAdHocFiltersVariable(VAR_METADATA, scene);
 }
 
+// Combined fields and metadata, editable in the UI, changes to this variable flow into FIELDS and METADATA
+export function getFieldsAndMetadataVariable(scene: SceneObject) {
+  return getAdHocFiltersVariable(VAR_FIELDS_AND_METADATA, scene);
+}
+
 export function getFieldsVariable(scene: SceneObject) {
   return getAdHocFiltersVariable(VAR_FIELDS, scene);
 }
@@ -89,7 +100,7 @@ export function getLevelsVariable(scene: SceneObject) {
 
 export function getLineFilterVariable(scene: SceneObject) {
   const variable = sceneGraph.lookupVariable(VAR_LINE_FILTER, scene);
-  if (!(variable instanceof CustomVariable)) {
+  if (!(variable instanceof AdHocFiltersVariable)) {
     throw new Error('VAR_LINE_FILTER not found');
   }
   return variable;
@@ -127,7 +138,15 @@ export function getDataSourceVariable(scene: SceneObject) {
   return variable;
 }
 
-export function getAdHocFiltersVariable(variableName: string, scene: SceneObject) {
+export function getLineFiltersVariable(scene: SceneObject) {
+  const variable = sceneGraph.lookupVariable(VAR_LINE_FILTERS, scene);
+  if (!(variable instanceof AdHocFiltersVariable)) {
+    throw new Error('VAR_LINE_FILTERS not found');
+  }
+  return variable;
+}
+
+export function getAdHocFiltersVariable(variableName: AdHocFilterTypes, scene: SceneObject) {
   const variable = sceneGraph.lookupVariable(variableName, scene);
 
   if (!(variable instanceof AdHocFiltersVariable)) {
@@ -176,9 +195,27 @@ export function getUrlParamNameForVariable(variableName: string) {
   return `var-${variableName}`;
 }
 
-export function getValueFromFieldsFilter(filter: AdHocVariableFilter, variableName: string = VAR_FIELDS): FieldValue {
+/**
+ * Parses an adHoc filter and returns the encoded value and parser
+ * @param filter
+ * @param variableName - only used for debugging
+ */
+export function getValueFromFieldsFilter(
+  filter: { value: string; valueLabels?: string[] },
+  variableName: string = VAR_FIELDS
+): FieldValue {
+  if (isFilterMetadata(filter)) {
+    return {
+      value: filter.value,
+      parser: 'structuredMetadata',
+    };
+  }
+
   try {
-    const fieldValue = narrowFieldValue(JSON.parse(filter.value));
+    const encodedValue = isAdHocFilterValueUserInput(filter.value)
+      ? stripAdHocFilterUserInputPrefix(filter.value)
+      : filter.value;
+    const fieldValue = narrowFieldValue(JSON.parse(encodedValue));
     if (fieldValue !== false) {
       return fieldValue;
     } else {
@@ -203,10 +240,10 @@ export function getValueFromFieldsFilter(filter: AdHocVariableFilter, variableNa
 }
 
 export function getValueFromAdHocVariableFilter(
-  variable: AdHocFiltersVariable,
+  variableName: InterpolatedFilterType,
   filter?: AdHocVariableFilter
 ): AdHocFieldValue {
-  if (variable.state.name === VAR_FIELDS && filter) {
+  if (variableName === VAR_FIELDS && filter) {
     return getValueFromFieldsFilter(filter);
   }
 

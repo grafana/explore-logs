@@ -5,6 +5,7 @@ services:
     container_name: 'grafana-logsapp'
     environment:
       - GF_FEATURE_TOGGLES_ENABLE=accessControlOnCall lokiLogsDataplane
+      - GF_PLUGINS_PREINSTALL_DISABLED=true
     build:
       context: ./.config
       args:
@@ -18,7 +19,7 @@ services:
     extra_hosts:
       - 'host.docker.internal:host-gateway'
   loki:
-    image: grafana/loki:3.2.0
+    image: grafana/loki:3.3.2
     environment:
       LOG_CLUSTER_DEPTH: '8'
       LOG_SIM_TH: '0.3'

@@ -2,7 +2,7 @@ import { SceneComponentProps, sceneGraph, SceneObject, SceneObjectBase, SceneObj
 import { Box, Dropdown, Menu, Stack, Tab, TabsBar, ToolbarButton, useStyles2 } from '@grafana/ui';
 import { getDrilldownSlug, getDrilldownValueSlug, PageSlugs, ValueSlugs } from '../../services/routing';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
-import { navigateToDrilldownPage } from '../../services/navigate';
+import { getDrillDownTabLink } from '../../services/navigate';
 import React, { useEffect, useState } from 'react';
 import { ServiceScene, ServiceSceneCustomState } from './ServiceScene';
 import { getValueFormat, GrafanaTheme2 } from '@grafana/data';
@@ -12,9 +12,11 @@ import { config, usePluginLinks } from '@grafana/runtime';
 import { getLabelsVariable } from '../../services/variableGetters';
 import { IndexScene } from '../IndexScene/IndexScene';
 import { LINE_LIMIT } from '../../services/query';
+import { ShareButtonScene } from '../IndexScene/ShareButtonScene';
 
 export interface ActionBarSceneState extends SceneObjectState {
   maxLines?: number;
+  shareButtonScene?: ShareButtonScene;
 }
 
 export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
@@ -30,6 +32,12 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
     if (dataSource?.maxLines !== undefined) {
       this.setState({
         maxLines: dataSource.maxLines,
+      });
+    }
+
+    if (!this.state.shareButtonScene) {
+      this.setState({
+        shareButtonScene: new ShareButtonScene({}),
       });
     }
   }
@@ -60,6 +68,9 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
         <div className={styles.actions}>
           <Stack gap={1}>
             {config.featureToggles.appSidecar && <ToolbarExtensionsRenderer serviceScene={serviceScene} />}
+            {model.state.shareButtonScene && (
+              <model.state.shareButtonScene.Component model={model.state.shareButtonScene} />
+            )}
           </Stack>
         </div>
 
@@ -78,6 +89,7 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
                     : undefined
                 }
                 icon={loadingStates[tab.displayName] ? 'spinner' : undefined}
+                href={getDrillDownTabLink(tab.value, serviceScene)}
                 onChangeTab={() => {
                   if ((tab.value && tab.value !== currentBreakdownViewSlug) || allowNavToParent) {
                     reportAppInteraction(
@@ -88,9 +100,6 @@ export class ActionBarScene extends SceneObjectBase<ActionBarSceneState> {
                         previousActionView: currentBreakdownViewSlug,
                       }
                     );
-
-                    const serviceScene = sceneGraph.getAncestor(model, ServiceScene);
-                    navigateToDrilldownPage(tab.value, serviceScene);
                   }
                 }}
               />
@@ -117,6 +126,9 @@ const getCounter = (tab: BreakdownViewDefinition, state: ServiceSceneCustomState
 function getStyles(theme: GrafanaTheme2) {
   return {
     actions: css({
+      display: 'flex',
+      justifyContent: 'flex-end',
+
       [theme.breakpoints.up(theme.breakpoints.values.md)]: {
         position: 'absolute',
         right: 0,

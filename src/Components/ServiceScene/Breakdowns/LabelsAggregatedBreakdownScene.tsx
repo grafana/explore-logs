@@ -223,7 +223,7 @@ export class LabelsAggregatedBreakdownScene extends SceneObjectBase<LabelsAggreg
             // 11.5
             // .setShowMenuAlways(true)
             .setOverrides(setLevelColorOverrides)
-            .setMenu(new PanelMenu({ labelName: optionValue }))
+            .setMenu(new PanelMenu({ investigationOptions: { labelName: optionValue } }))
             .setSeriesLimit(MAX_NUMBER_OF_TIME_SERIES)
             .build(),
         })

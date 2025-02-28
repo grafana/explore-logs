@@ -19,6 +19,9 @@ export const testIds = {
     serviceName: {
       label: 'data-testid Dashboard template variables submenu Label Labels',
     },
+    levels: {
+      inputWrap: 'data-testid detected_level filter variable',
+    },
   },
   breakdowns: {
     labels: {},
@@ -78,5 +81,6 @@ export const testIds = {
   table: {
     wrapper: 'data-testid table-wrapper',
     inspectLine: 'data-testid inspect',
+    rawLogLine: 'data-testid raw-log-line',
   },
 };

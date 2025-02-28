@@ -229,7 +229,7 @@ export function setLogsVolumeOption(option: 'collapsed', value: string | undefin
 }
 
 export function getLogsVolumeOption(option: 'collapsed') {
-  return localStorage.getItem(`${LOGS_VOLUME_LOCALSTORAGE_KEY}.${option}`);
+  return Boolean(localStorage.getItem(`${LOGS_VOLUME_LOCALSTORAGE_KEY}.${option}`));
 }
 
 // Log visualization options
@@ -243,7 +243,7 @@ export function getLogsVisualizationType(): LogsVisualizationType {
     case 'logs':
       return storedType;
     case 'json':
-      return 'json'
+      return 'json';
     default:
       return 'logs';
   }
@@ -264,8 +264,36 @@ export function setLineFilterCase(caseSensitive: boolean) {
   localStorage.setItem(`${LINE_FILTER_OPTIONS_LOCALSTORAGE_KEY}.caseSensitive`, storedValue);
 }
 
+export function setLineFilterRegex(regex: boolean) {
+  let storedValue = regex.toString();
+  if (!regex) {
+    storedValue = '';
+  }
+
+  localStorage.setItem(`${LINE_FILTER_OPTIONS_LOCALSTORAGE_KEY}.regex`, storedValue);
+}
+
+export function setLineFilterExclusive(exclusive: boolean) {
+  let storedValue = exclusive.toString();
+  if (!exclusive) {
+    storedValue = '';
+  }
+
+  localStorage.setItem(`${LINE_FILTER_OPTIONS_LOCALSTORAGE_KEY}.exclusive`, storedValue);
+}
+
 export function getLineFilterCase(defaultValue: boolean): boolean {
   const storedValue = localStorage.getItem(`${LINE_FILTER_OPTIONS_LOCALSTORAGE_KEY}.caseSensitive`);
+  return storedValue === 'true' ? true : defaultValue;
+}
+
+export function getLineFilterRegex(defaultValue: boolean): boolean {
+  const storedValue = localStorage.getItem(`${LINE_FILTER_OPTIONS_LOCALSTORAGE_KEY}.regex`);
+  return storedValue === 'true' ? true : defaultValue;
+}
+
+export function getLineFilterExclusive(defaultValue: boolean): boolean {
+  const storedValue = localStorage.getItem(`${LINE_FILTER_OPTIONS_LOCALSTORAGE_KEY}.exclusive`);
   return storedValue === 'true' ? true : defaultValue;
 }
 
@@ -289,4 +317,20 @@ export function getPanelOption<K extends keyof PanelOptions, V extends PanelOpti
 
 export function setPanelOption<K extends keyof PanelOptions, V extends PanelOptions[K]>(option: K, value: V) {
   localStorage.setItem(`${PANEL_OPTIONS_LOCALSTORAGE_KEY}.${option}`, value);
+}
+
+const EXPRESSION_BUILDER_DEBUG_LOCALSTORAGE_KEY = `${pluginJson.id}.expressionBuilder.debug`;
+export function getExpressionBuilderDebug() {
+  const value = localStorage.getItem(EXPRESSION_BUILDER_DEBUG_LOCALSTORAGE_KEY);
+  return !!value;
+}
+
+const SERVICE_SELECTION_PAGE_COUNT_KEY = `${pluginJson.id}.serviceSelection.pageCount`;
+
+export function getServiceSelectionPageCount(): number | undefined {
+  const value = localStorage.getItem(SERVICE_SELECTION_PAGE_COUNT_KEY);
+  return value ? parseInt(value, 10) : undefined;
+}
+export function setServiceSelectionPageCount(pageCount: number) {
+  localStorage.setItem(SERVICE_SELECTION_PAGE_COUNT_KEY, pageCount.toString(10));
 }

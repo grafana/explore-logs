@@ -1,6 +1,6 @@
 {
   "name": "grafana-lokiexplore-app",
-  "version": "1.0.4",
+  "version": "1.0.8",
   "bundlewatch": {
     "files": [
       {
@@ -34,7 +34,7 @@
     "e2e:flake": "yarn e2e:10x",
     "e2e:debug": "playwright test --debug -x --trace on /test",
     "e2e:codegen": "playwright install && playwright codegen",
-    "generate-logs": "pushd generator; go mod download; go run . -url http://localhost:3100/loki/api/v1/push; popd",
+    "generate-logs": "pushd generator; docker build -t log-generator . && docker run log-generator -url http://host.docker.internal:3100/loki/api/v1/push; popd",
     "server": "docker compose -f docker-compose.local.yaml up --build",
     "server:localLoki": "docker compose -f docker-compose-local-loki.dev.yaml up --build",
     "server:ci": "docker compose -f docker-compose.dev.yaml up --build -d",
@@ -103,9 +103,9 @@
     "@bsull/augurs": "^0.6.0",
     "@emotion/css": "^11.10.6",
     "@grafana/data": "^11.3.0",
-    "@grafana/lezer-logql": "^0.2.6",
+    "@grafana/lezer-logql": "^0.2.7",
     "@grafana/runtime": "^11.3.0",
-    "@grafana/scenes": "5.29.0",
+    "@grafana/scenes": "5.41.1",
     "@grafana/ui": "^11.3.0",
     "@hello-pangea/dnd": "^16.6.0",
     "@lezer/common": "^1.2.1",

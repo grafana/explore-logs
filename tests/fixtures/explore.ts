@@ -4,6 +4,7 @@ import { testIds } from '../../src/services/testIds';
 import { expect } from '@grafana/plugin-e2e';
 
 import { LokiQuery } from '../../src/services/lokiQuery';
+import { FilterOp, FilterOpType } from '../../src/services/filterTypes';
 
 export interface PlaywrightRequest {
   post: any;
@@ -137,8 +138,8 @@ export class ExplorePage {
   async scrollToBottom() {
     const main = this.page.locator('html');
 
-    // Scroll the page container to the bottom
-    await main.evaluate((main) => main.scrollTo(0, main.scrollHeight));
+    // Scroll the page container to the bottom, smoothly
+    await main.evaluate((main) => main.scrollTo({ left: 0, top: main.scrollHeight, behavior: 'smooth' }));
   }
 
   async goToLogsTab() {
@@ -173,17 +174,25 @@ export class ExplorePage {
     await this.page.waitForFunction(() => !document.querySelector('[title="Cancel query"]'));
   }
 
-  async waitForRequest(callback: (lokiQuery: LokiQuery) => void, test: (lokiQuery: LokiQuery) => boolean) {
+  async waitForRequest(
+    init: () => Promise<any>,
+    callback: (lokiQuery: LokiQuery) => void,
+    test: (lokiQuery: LokiQuery) => boolean
+  ) {
     await Promise.all([
-      this.page.waitForResponse((resp) => {
-        const post = resp.request().postDataJSON();
-        const queries = post?.queries as LokiQuery[];
-        if (queries && test(queries[0])) {
-          callback(queries[0]);
-          return true;
-        }
-        return false;
-      }),
+      init(),
+      this.page.waitForResponse(
+        (resp) => {
+          const post = resp.request().postDataJSON();
+          const queries = post?.queries as LokiQuery[];
+          if (queries && test(queries[0])) {
+            callback(queries[0]);
+            return true;
+          }
+          return false;
+        },
+        { timeout: 30000 }
+      ),
     ]);
   }
 
@@ -236,6 +245,32 @@ export class ExplorePage {
     );
   }
 
+  async gotoServicesOldUrlLineFilters(
+    serviceName = 'tempo-distributor',
+    caseSensitive?: boolean,
+    lineFilterValue = 'debug'
+  ) {
+    if (caseSensitive) {
+      await this.page.goto(
+        // case insensitive
+        `/a/${pluginJson.id}/explore/service/tempo-distributor/logs?mode=service_details&patterns=[]&var-lineFilter=%7C~%20%60%28%3Fi%29%60${lineFilterValue}%60&var-filters=service_name|=|${serviceName}&var-logsFormat= | logfmt`
+      );
+    } else {
+      await this.page.goto(
+        // case insensitive
+        `/a/${pluginJson.id}/explore/service/tempo-distributor/logs?mode=service_details&patterns=[]&var-lineFilter=%7C%3D%20%60${lineFilterValue}%60&var-filters=service_name|=|${serviceName}&var-logsFormat= | logfmt`
+      );
+    }
+  }
+
+  async gotoLogsPanel(
+    sortOrder: 'Ascending' | 'Descending' = 'Descending',
+    wrapLogMessage: 'true' | 'false' = 'false'
+  ) {
+    const url = `/a/grafana-lokiexplore-app/explore/service/tempo-distributor/logs?patterns=[]&from=now-5m&to=now&var-all-fields=&var-ds=gdev-loki&var-filters=service_name|=|tempo-distributor&var-fields=&var-levels=&var-metadata=&var-patterns=&var-lineFilter=&timezone=utc&urlColumns=["Time","Line"]&visualizationType="logs"&displayedFields=[]&sortOrder="${sortOrder}"&wrapLogMessage=${wrapLogMessage}&var-lineFilterV2=&var-lineFilters=`;
+    await this.page.goto(url);
+  }
+
   blockAllQueriesExcept(options: {
     refIds?: Array<string | RegExp>;
     legendFormats?: string[];
@@ -278,4 +313,114 @@ export class ExplorePage {
       }
     });
   }
+
+  async addNthValueToCombobox(
+    labelName: string,
+    operator: FilterOpType,
+    comboBox: ComboBoxIndex,
+    n: number,
+    typeAhead?: string
+  ) {
+    // Open combobox
+    const comboboxLocator = this.page.getByPlaceholder('Filter by label values').nth(comboBox);
+    await comboboxLocator.click();
+
+    if (typeAhead) {
+      await this.page.keyboard.type(typeAhead);
+    }
+
+    // Select detected_level key
+    await this.page.getByRole('option', { name: labelName, exact: true }).click();
+    await expect(this.getOperatorLocator(operator)).toHaveCount(1);
+    await expect(this.getOperatorLocator(operator)).toBeVisible();
+    // Select operator
+    await this.getOperatorLocator(operator).click();
+
+    // assert the values have loaded
+    await expect(this.page.getByRole('option', { name: /\[compactor-.+]/ }).nth(0)).toBeVisible();
+
+    // Select the nth item
+    for (let i = 0; i < n; i++) {
+      await this.page.keyboard.press('ArrowDown');
+    }
+    // Select the item
+    await this.page.keyboard.press('Enter');
+    // Close the label name dropdown that opens after adding a value
+    await this.page.keyboard.press('Escape');
+  }
+
+  /**
+   *
+   * @param labelName
+   * @param operator
+   * @param comboBox
+   * @param text
+   * @param typeAhead - if there are many options, the test can flake if the option isn't visible, if this string is passed in we'll type these chars to filter things down before attempting to click
+   */
+  async addCustomValueToCombobox(
+    labelName: string,
+    operator: FilterOpType,
+    comboBox: ComboBoxIndex,
+    text: string,
+    typeAhead?: string
+  ) {
+    // Open combobox
+    const comboboxLocator = this.page.getByPlaceholder('Filter by label values').nth(comboBox);
+    await comboboxLocator.click();
+    if (typeAhead) {
+      await this.page.keyboard.type(typeAhead);
+    }
+    // Select detected_level key
+    await this.page.getByRole('option', { name: labelName }).click();
+    await expect(this.getOperatorLocator(operator)).toHaveCount(1);
+    await expect(this.getOperatorLocator(operator)).toBeVisible();
+    // Select operator
+    await this.getOperatorLocator(operator).click();
+    // Enter custom value
+    await this.page.keyboard.type(text);
+    // Need to scroll to the bottom of the list
+    await this.page.keyboard.press('ArrowUp');
+    // Select custom value
+    await this.page.getByRole('option', { name: /Use custom value/ }).click();
+    // Close the label name dropdown that opens after adding a value
+    await this.page.keyboard.press('Escape');
+  }
+
+  getOperatorLocator(filter: FilterOpType): Locator {
+    switch (filter) {
+      case FilterOp.Equal:
+        return this.page.getByRole('option', { name: E2EComboboxStrings.operatorNames.equal, exact: true });
+      case FilterOp.NotEqual:
+        return this.page.getByRole('option', { name: E2EComboboxStrings.operatorNames.notEqual, exact: true });
+      case FilterOp.RegexEqual:
+        return this.page.getByRole('option', { name: E2EComboboxStrings.operatorNames.regexEqual, exact: true });
+      case FilterOp.RegexNotEqual:
+        return this.page.getByRole('option', { name: E2EComboboxStrings.operatorNames.regexNotEqual, exact: true });
+      default:
+        throw new Error('invalid filter op');
+    }
+  }
 }
+
+export const E2EComboboxStrings = {
+  editByKey: (keyName: string) => `Edit filter with key ${keyName}`,
+  removeByKey: (keyName: string) => `Remove filter with key ${keyName}`,
+  labels: {
+    removeServiceLabel: 'Remove filter with key service_name',
+  },
+  operatorNames: {
+    equal: '= Equals',
+    notEqual: '!= Not equal',
+    regexEqual: '=~ Matches regex',
+    regexNotEqual: '!~ Does not match regex',
+  },
+};
+
+export const levelTextMatch = /error|warn|info|debug/;
+
+export enum ComboBoxIndex {
+  labels,
+  fields,
+}
+
+export const serviceSelectionPaginationTextMatch = /of \d+/;

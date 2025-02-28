@@ -69,7 +69,7 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
     const maxLabelLength = 15;
 
     return (
-      <TabsBar>
+      <TabsBar className={styles.tabs}>
         {tabOptions
           .filter((tabLabel) => tabLabel.saved || tabLabel.active || tabLabel.value === SERVICE_NAME)
           .sort((a, b) => {
@@ -301,6 +301,9 @@ export class ServiceSelectionTabsScene extends SceneObjectBase<ServiceSelectionT
 }
 
 const getTabsStyles = (theme: GrafanaTheme2) => ({
+  tabs: css({
+    overflowY: 'hidden',
+  }),
   addTab: css({
     label: 'add-label-tab',
     color: theme.colors.primary.text,

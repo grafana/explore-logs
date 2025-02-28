@@ -4,7 +4,12 @@ import React from 'react';
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import { css, cx } from '@emotion/css';
 import { SelectLabelActionScene } from './SelectLabelActionScene';
-import { addNumericFilter, removeFilter, validateVariableNameForField, VariableFilterType } from './AddToFiltersButton';
+import {
+  addNumericFilter,
+  removeNumericFilter,
+  validateVariableNameForField,
+  InterpolatedFilterType,
+} from './AddToFiltersButton';
 import { FilterOp } from '../../../services/filterTypes';
 import { getAdHocFiltersVariable, getValueFromFieldsFilter } from '../../../services/variableGetters';
 import { logger } from '../../../services/logger';
@@ -12,7 +17,7 @@ import { testIds } from '../../../services/testIds';
 
 export interface NumericFilterPopoverSceneState extends SceneObjectState {
   labelName: string;
-  variableType: VariableFilterType;
+  variableType: InterpolatedFilterType;
   gt?: number;
   gte?: boolean;
   lt?: number;
@@ -26,7 +31,7 @@ export type NumericFilterPopoverSceneStateTotal =
   | (NumericFilterPopoverSceneState & DurationTypes)
   | (NumericFilterPopoverSceneState & ByteTypes);
 
-enum durationUnitValues {
+enum DisplayDurationUnits {
   ns = 'ns',
   us = 'µs',
   ms = 'ms',
@@ -35,19 +40,36 @@ enum durationUnitValues {
   h = 'h',
 }
 
-enum byteUnitValues {
+export const validDurationValues: { [key in DisplayDurationUnits]: string[] } = {
+  [DisplayDurationUnits.ns]: ['ns'],
+  [DisplayDurationUnits.us]: ['µs', 'us'],
+  [DisplayDurationUnits.ms]: ['ms'],
+  [DisplayDurationUnits.s]: ['s'],
+  [DisplayDurationUnits.m]: ['m'],
+  [DisplayDurationUnits.h]: ['h'],
+};
+
+enum DisplayByteUnits {
+  B = 'B',
+  KB = 'KB',
+  MB = 'MB',
+  GB = 'GB',
+  TB = 'TB',
+}
+
+export enum ValidByteUnitValues {
   B = 'B',
   KB = 'KB',
   MB = 'MB',
   GB = 'GB',
   TB = 'TB',
 
-  // Supported but potentially confusing values, commented out for now
-  // kB = 'kB',
-  // KiB = 'KiB',
-  // MiB = 'MiB',
-  // GiB = 'GiB',
-  // TiB = 'TiB',
+  // Not selectable in the UI, but valid from link extensions
+  kB = 'kB',
+  KiB = 'KiB',
+  MiB = 'MiB',
+  GiB = 'GiB',
+  TiB = 'TiB',
 }
 
 interface FloatUnitTypes {
@@ -60,8 +82,8 @@ interface FloatTypes extends FloatUnitTypes {
 }
 
 interface DurationUnitTypes {
-  ltu: durationUnitValues;
-  gtu: durationUnitValues;
+  ltu: DisplayDurationUnits;
+  gtu: DisplayDurationUnits;
 }
 
 interface DurationTypes extends DurationUnitTypes {
@@ -69,8 +91,8 @@ interface DurationTypes extends DurationUnitTypes {
 }
 
 interface ByteUnitTypes {
-  ltu: byteUnitValues;
-  gtu: byteUnitValues;
+  ltu: DisplayByteUnits;
+  gtu: DisplayByteUnits;
 }
 
 interface ByteTypes extends ByteUnitTypes {
@@ -82,9 +104,9 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
     let units: FloatUnitTypes | DurationUnitTypes | ByteUnitTypes;
     const fieldType: 'float' | 'bytes' | 'duration' = state.fieldType;
     if (fieldType === 'bytes') {
-      units = { ltu: byteUnitValues.B, gtu: byteUnitValues.B };
+      units = { ltu: DisplayByteUnits.B, gtu: DisplayByteUnits.B };
     } else if (fieldType === 'duration') {
-      units = { ltu: durationUnitValues.s, gtu: durationUnitValues.s };
+      units = { ltu: DisplayDurationUnits.s, gtu: DisplayDurationUnits.s };
     } else if (fieldType === 'float') {
       units = { ltu: '', gtu: '' };
     } else {
@@ -163,7 +185,12 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
         this.state.variableType
       );
     } else {
-      removeFilter(this.state.labelName, this, this.state.gte ? FilterOp.gte : FilterOp.gt, this.state.variableType);
+      removeNumericFilter(
+        this.state.labelName,
+        this,
+        this.state.gte ? FilterOp.gte : FilterOp.gt,
+        this.state.variableType
+      );
     }
 
     if (this.state.lt) {
@@ -175,7 +202,12 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
         this.state.variableType
       );
     } else {
-      removeFilter(this.state.labelName, this, this.state.lte ? FilterOp.lte : FilterOp.lt, this.state.variableType);
+      removeNumericFilter(
+        this.state.labelName,
+        this,
+        this.state.lte ? FilterOp.lte : FilterOp.lt,
+        this.state.variableType
+      );
     }
 
     const selectLabelActionScene = sceneGraph.getAncestor(this, SelectLabelActionScene);
@@ -375,9 +407,9 @@ export class NumericFilterPopoverScene extends SceneObjectBase<NumericFilterPopo
 export function extractValueFromString(
   inputString: string,
   inputType: 'bytes' | 'duration'
-): { value: number; unit: byteUnitValues | durationUnitValues } | undefined {
+): { value: number; unit: DisplayByteUnits | DisplayDurationUnits } | undefined {
   if (inputType === 'duration') {
-    const durationValues = Object.values(durationUnitValues);
+    const durationValues = Object.values(DisplayDurationUnits);
 
     // Check the end of the filter value for a unit that exactly matches
     const durationValue = durationValues.find((durationValue) => {
@@ -397,7 +429,7 @@ export function extractValueFromString(
   }
 
   if (inputType === 'bytes') {
-    const bytesValues = Object.values(byteUnitValues)
+    const bytesValues = Object.values(DisplayByteUnits)
       // must be sorted from longest to shortest
       .sort((a, b) => b.length - a.length);
 
@@ -421,24 +453,26 @@ export function extractValueFromString(
   return undefined;
 }
 
-function getUnitOptions(fieldType: 'duration' | 'bytes'): Array<SelectableValue<durationUnitValues | byteUnitValues>> {
+function getUnitOptions(
+  fieldType: 'duration' | 'bytes'
+): Array<SelectableValue<DisplayDurationUnits | DisplayByteUnits>> {
   if (fieldType === 'duration') {
-    const keys = Object.keys(durationUnitValues) as Array<keyof typeof durationUnitValues>;
+    const keys = Object.keys(DisplayDurationUnits) as Array<keyof typeof DisplayDurationUnits>;
     return keys.map((key) => {
       return {
         text: key,
-        value: durationUnitValues[key],
+        value: DisplayDurationUnits[key],
         label: key,
       };
     });
   }
 
   if (fieldType === 'bytes') {
-    const keys = Object.keys(byteUnitValues) as Array<keyof typeof byteUnitValues>;
+    const keys = Object.keys(DisplayByteUnits) as Array<keyof typeof DisplayByteUnits>;
     return keys.map((key) => {
       return {
         text: key,
-        value: byteUnitValues[key],
+        value: DisplayByteUnits[key],
         label: key,
       };
     });

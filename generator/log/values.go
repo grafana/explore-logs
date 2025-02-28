@@ -1,16 +1,16 @@
-package main
+package log
 
 import (
-	"math/rand"
-	"strings"
-	"time"
-
-	gofakeit "github.com/brianvoe/gofakeit/v7"
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/grafana/loki/pkg/push"
 	"github.com/prometheus/common/model"
+	"math/rand"
+	"strconv"
+	"strings"
+	"time"
 )
 
-var clusters = []string{
+var Clusters = []string{
 	"us-west-1",
 	"us-east-1",
 	"us-east-2",
@@ -79,12 +79,14 @@ var level = []model.LabelValue{
 	ERROR,
 }
 
-var orgIDs = []string{"1218", "29", "1010", "2419", "2919"}
-var userIDs = []string{"14234", "03428", "10572", "94223", "08203", "93820", "12345", "54321", "67890"}
+var OrgIDs = []string{"1218", "29", "1010", "2419", "2919"}
+var UserIDs = []string{"14234", "03428", "10572", "94223", "08203", "93820", "12345", "54321", "67890"}
 
 var defaultTraceId = gofakeit.UUID()
 
-func randLevel() model.LabelValue {
+var lessRandomPodLabelName = "tempo-ingester"
+
+func RandLevel() model.LabelValue {
 	r := rand.Intn(100)
 	if r < 5 {
 		return ERROR
@@ -95,13 +97,16 @@ func randLevel() model.LabelValue {
 	}
 }
 
-func randURI() string {
+func RandURI() string {
 	return URI[rand.Intn(len(URI))]
 }
 
 func ForAllClusters(namespace, svc model.LabelValue, cb func(model.LabelSet, push.LabelsAdapter)) {
 	podCount := rand.Intn(10) + 1
-	for _, cluster := range clusters {
+	if string(svc) == lessRandomPodLabelName {
+		podCount = 8
+	}
+	for _, cluster := range Clusters {
 		for i := 0; i < podCount; i++ {
 			clusterInt := 0
 			for _, char := range cluster {
@@ -112,14 +117,15 @@ func ForAllClusters(namespace, svc model.LabelValue, cb func(model.LabelSet, pus
 				"env":              model.LabelValue(namespaces[rand.Intn(len(namespaces))]),
 				"cluster":          model.LabelValue(cluster),
 				"__stream_shard__": model.LabelValue(shards[clusterInt%len(shards)]),
-				"namespace":        model.LabelValue(namespace),
+				"namespace":        namespace,
 				"service_name":     svc,
-			}, randStructuredMetadata(string(svc)))
+				"file":             "C:\\Grafana\\logs\\" + namespace + ".txt",
+			}, RandStructuredMetadata(string(svc), i))
 		}
 	}
 }
 
-func randSeq(n int) string {
+func RandSeq(n int) string {
 	letters := []rune("abcdefghijklmnopqrstuvwxyz0123456789")
 	b := make([]rune, n)
 	for i := range b {
@@ -128,15 +134,15 @@ func randSeq(n int) string {
 	return string(b)
 }
 
-func randOrgID() string {
-	return orgIDs[rand.Intn(len(orgIDs))]
+func RandOrgID() string {
+	return OrgIDs[rand.Intn(len(OrgIDs))]
 }
 
-func randUserID() string {
-	return userIDs[rand.Intn(len(userIDs))]
+func RandUserID() string {
+	return UserIDs[rand.Intn(len(UserIDs))]
 }
 
-func randError() string {
+func RandError() string {
 	switch rand.Intn(10) {
 	case 0:
 		return gofakeit.ErrorDatabase().Error()
@@ -155,15 +161,15 @@ func randError() string {
 
 var filesNames = []string{gofakeit.ProductName(), gofakeit.ProductName(), gofakeit.ProductName(), gofakeit.Word(), gofakeit.Word()}
 
-func randFileName() string {
+func RandFileName() string {
 	return strings.ReplaceAll(strings.ToLower(filesNames[rand.Intn(len(filesNames))]), " ", "_")
 }
 
-func randDuration() string {
+func RandDuration() string {
 	return (time.Duration(gofakeit.Number(1, 30000)) * time.Millisecond).String()
 }
 
-func randTraceID(prevTrace string) string {
+func RandTraceID(prevTrace string) string {
 	// 50% chance to use `prevTrace` if it is set
 	if prevTrace != "" && rand.Intn(2) == 0 {
 		return prevTrace
@@ -174,10 +180,15 @@ func randTraceID(prevTrace string) string {
 	return newTrace
 }
 
-func randStructuredMetadata(svc string) push.LabelsAdapter {
+func RandStructuredMetadata(svc string, index int) push.LabelsAdapter {
+	podName := svc + "-" + RandSeq(5)
+	if svc == lessRandomPodLabelName {
+		// Hardcode the pod name ID for the tempo-ingester service so we can consistently query metadata in e2e tests.
+		podName = lessRandomPodLabelName + "-hc-" + strconv.Itoa(index) + RandSeq(3)
+	}
 	return push.LabelsAdapter{
-		push.LabelAdapter{Name: "traceID", Value: randTraceID(defaultTraceId)},
-		push.LabelAdapter{Name: "pod", Value: svc + "-" + randSeq(5)},
-		push.LabelAdapter{Name: "user", Value: randUserID()},
+		push.LabelAdapter{Name: "traceID", Value: RandTraceID(defaultTraceId)},
+		push.LabelAdapter{Name: "pod", Value: podName},
+		push.LabelAdapter{Name: "user", Value: RandUserID()},
 	}
 }

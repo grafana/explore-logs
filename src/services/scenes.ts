@@ -1,7 +1,12 @@
-import { AdHocVariableFilter, urlUtil } from '@grafana/data';
+import { urlUtil } from '@grafana/data';
 import { config, getDataSourceSrv } from '@grafana/runtime';
 import { sceneGraph, SceneObject, SceneObjectUrlValues, SceneQueryRunner, SceneTimePicker } from '@grafana/scenes';
-import { LOG_STREAM_SELECTOR_EXPR, VAR_DATASOURCE_EXPR, VAR_LABELS_EXPR } from './variables';
+import {
+  LOG_STREAM_SELECTOR_EXPR,
+  PRETTY_LOG_STREAM_SELECTOR_EXPR,
+  VAR_DATASOURCE_EXPR,
+  VAR_LABELS_EXPR,
+} from './variables';
 import { EXPLORATIONS_ROUTE } from './routing';
 import { IndexScene } from 'Components/IndexScene/IndexScene';
 import { logger } from './logger';
@@ -19,11 +24,15 @@ export function getDataSource(sceneObject: SceneObject) {
   return sceneGraph.interpolate(sceneObject, VAR_DATASOURCE_EXPR);
 }
 
-export function getQueryExpr(exploration: IndexScene) {
+export function getQueryExpr(exploration: SceneObject) {
   return sceneGraph.interpolate(exploration, LOG_STREAM_SELECTOR_EXPR).replace(/\s+/g, ' ');
 }
 
-export function getPatternExpr(exploration: IndexScene) {
+export function getPrettyQueryExpr(exploration: SceneObject) {
+  return sceneGraph.interpolate(exploration, PRETTY_LOG_STREAM_SELECTOR_EXPR).replace(/\s+/g, ' ');
+}
+
+export function getPatternExpr(exploration: SceneObject) {
   return sceneGraph.interpolate(exploration, VAR_LABELS_EXPR).replace(/\s+/g, ' ');
 }
 
@@ -45,12 +54,6 @@ export function isDefined<T>(value: T | null | undefined): value is T {
 
 export function getQueryRunnerFromChildren(sceneObject: SceneObject) {
   return sceneGraph.findDescendents(sceneObject, SceneQueryRunner);
-}
-
-//@todo export from scenes
-export interface AdHocFilterWithLabels extends AdHocVariableFilter {
-  keyLabel?: string;
-  valueLabels?: string[];
 }
 
 interface SceneType<T> extends Function {

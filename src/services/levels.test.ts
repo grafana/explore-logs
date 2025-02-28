@@ -1,5 +1,5 @@
 import { SeriesVisibilityChangeMode } from '@grafana/ui';
-import { getLabelsFromSeries, getVisibleLevels, toggleLevelFromFilter, toggleLevelVisibility } from './levels';
+import { getLevelLabelsFromSeries, getVisibleLevels, toggleLevelFromFilter, toggleLevelVisibility } from './levels';
 import { AdHocVariableFilter, FieldType, toDataFrame } from '@grafana/data';
 import { VAR_LEVELS } from './variables';
 import { AdHocFiltersVariable, SceneObject } from '@grafana/scenes';
@@ -99,7 +99,7 @@ describe('getLabelsFromSeries', () => {
     }),
   ];
   it('returns the label value from time series', () => {
-    expect(getLabelsFromSeries(series)).toEqual(['error', 'warn', 'logs']);
+    expect(getLevelLabelsFromSeries(series)).toEqual(['error', 'warn', 'logs']);
   });
 });
 
@@ -197,6 +197,50 @@ describe('getVisibleLevels', () => {
     ]);
     expect(getVisibleLevels(['error', 'logs'], scene)).toEqual(['error']);
   });
+
+  it('Handles exclusion regex negative log level filter', () => {
+    setup([
+      {
+        key: 'detected_level',
+        operator: FilterOp.RegexNotEqual,
+        value: '""',
+      },
+    ]);
+    expect(getVisibleLevels(['error', 'logs'], scene)).toEqual(['error']);
+  });
+
+  it('Handles matching regex positive log level filter', () => {
+    setup([
+      {
+        key: 'detected_level',
+        operator: FilterOp.RegexEqual,
+        value: '""',
+      },
+    ]);
+    expect(getVisibleLevels(['error', 'logs'], scene)).toEqual(['logs']);
+  });
+
+  it('Handles matching regex positive log levels filter', () => {
+    setup([
+      {
+        key: 'detected_level',
+        operator: FilterOp.RegexEqual,
+        value: 'error|info',
+      },
+    ]);
+    expect(getVisibleLevels(ALL_LEVELS, scene)).toEqual(['info', 'error']);
+  });
+
+  it('Handles matching regex negative log levels filter', () => {
+    setup([
+      {
+        key: 'detected_level',
+        operator: FilterOp.RegexNotEqual,
+        value: 'error|info',
+      },
+    ]);
+    expect(getVisibleLevels(ALL_LEVELS, scene)).toEqual(['logs', 'debug', 'warn', 'crit']);
+  });
 });
 
 describe('toggleLevelFromFilter', () => {
@@ -217,28 +261,45 @@ describe('toggleLevelFromFilter', () => {
   it('Sets the filter when it is empty', () => {
     setup([]);
 
-    expect(toggleLevelFromFilter('info', scene)).toBe('add');
-    expect(replaceFilter).toHaveBeenCalledTimes(1);
+    expect(toggleLevelFromFilter('info', scene)).toBe('include');
+    expect(addToFilters).toHaveBeenCalledTimes(1);
   });
 
   it('Overwrites the filter if exists with a different value', () => {
     setup([{ key: 'detected_level', operator: FilterOp.Equal, value: 'error' }]);
 
-    expect(toggleLevelFromFilter('info', scene)).toBe('add');
-    expect(replaceFilter).toHaveBeenCalledTimes(1);
+    expect(toggleLevelFromFilter('info', scene)).toBe('include');
+    expect(addToFilters).toHaveBeenCalledTimes(1);
   });
 
   it('Toggles it off if the filter with the same value exists', () => {
     setup([{ key: 'detected_level', operator: FilterOp.Equal, value: 'info' }]);
 
-    expect(toggleLevelFromFilter('info', scene)).toBe('remove');
+    expect(toggleLevelFromFilter('info', scene)).toBe('toggle');
+    expect(addToFilters).toHaveBeenCalledTimes(1);
+  });
+
+  it('Toggles it off if a regex filter with the exact value exists', () => {
+    setup([{ key: 'detected_level', operator: FilterOp.Equal, value: 'info' }]);
+
+    expect(toggleLevelFromFilter('info', scene)).toBe('toggle');
+    expect(addToFilters).toHaveBeenCalledTimes(1);
+  });
+
+  it('Toggles it off if a regex filter containing the value exists', () => {
+    setup([
+      { key: 'detected_level', operator: FilterOp.Equal, value: 'info' },
+      { key: 'detected_level', operator: FilterOp.Equal, value: 'warn' },
+    ]);
+
+    expect(toggleLevelFromFilter('info', scene)).toBe('toggle');
     expect(addToFilters).toHaveBeenCalledTimes(1);
   });
 
   it('Handles empty log levels', () => {
     setup([]);
 
-    expect(toggleLevelFromFilter('logs', scene)).toBe('add');
-    expect(replaceFilter).toHaveBeenCalledWith(LEVEL_NAME, '""', 'include', scene);
+    expect(toggleLevelFromFilter('logs', scene)).toBe('include');
+    expect(addToFilters).toHaveBeenCalledWith(LEVEL_NAME, '""', 'include', scene, VAR_LEVELS);
   });
 });

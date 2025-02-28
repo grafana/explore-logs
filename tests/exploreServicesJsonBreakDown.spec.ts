@@ -1,5 +1,5 @@
 import { expect, test } from '@grafana/plugin-e2e';
-import { ExplorePage, PlaywrightRequest } from './fixtures/explore';
+import { E2EComboboxStrings, ExplorePage, PlaywrightRequest } from './fixtures/explore';
 
 import { LokiQuery } from '../src/services/lokiQuery';
 
@@ -33,7 +33,7 @@ test.describe('explore nginx-json breakdown pages ', () => {
     // First request should fire here
     await explorePage.goToFieldsTab();
 
-    await page.getByTestId(`data-testid Panel header ${fieldName}`).getByRole('button', { name: 'Select' }).click();
+    await page.getByLabel(`Select ${fieldName}`).click();
     const allPanels = explorePage.getAllPanelsLocator();
     // We should have 6 panels
     await expect(allPanels).toHaveCount(7);
@@ -41,11 +41,11 @@ test.describe('explore nginx-json breakdown pages ', () => {
     expect(requests).toHaveLength(2);
     // Exclude a panel
     await page.getByRole('button', { name: 'Exclude' }).nth(0).click();
-    // Should be removed from the UI, and also lets us know when the query is done loading
-    await expect(allPanels).toHaveCount(6);
+    // Should NOT be removed from the UI
+    await expect(allPanels).toHaveCount(7);
 
     // Adhoc content filter should be added
-    await expect(page.getByTestId(`data-testid Dashboard template variables submenu Label ${fieldName}`)).toBeVisible();
+    await expect(page.getByLabel(E2EComboboxStrings.editByKey(fieldName))).toBeVisible();
     await expect(page.getByText('!=')).toBeVisible();
 
     requests.forEach((req) => {
@@ -53,11 +53,11 @@ test.describe('explore nginx-json breakdown pages ', () => {
       const queries: LokiQuery[] = post.queries;
       queries.forEach((query) => {
         expect(query.expr).toContain(
-          `sum by (${fieldName}) (count_over_time({service_name=\`nginx-json\`}      | json | drop __error__, __error_details__ | ${fieldName}!=""`
+          `sum by (${fieldName}) (count_over_time({service_name="nginx-json"}      | json | drop __error__, __error_details__ | ${fieldName}!=""`
         );
       });
     });
-    expect(requests).toHaveLength(3);
+    expect(requests).toHaveLength(2);
   });
 
   test('should see too many series button', async ({ page }) => {

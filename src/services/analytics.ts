@@ -47,10 +47,12 @@ export const USER_EVENTS_ACTIONS = {
     select_field_in_breakdown_clicked: 'select_field_in_breakdown_clicked',
     // Clicking on one of the levels in the Logs Volume panel
     level_in_logs_volume_clicked: 'level_in_logs_volume_clicked',
+    label_in_panel_summary_clicked: 'label_in_panel_summary_clicked',
     // Changing layout type (e.g. single/grid/rows). Used in multiple views. The view type is passed as a parameter. Props: layout, view
     layout_type_changed: 'layout_type_changed',
     // Changing search string in logs. Props: searchQuery
     search_string_in_logs_changed: 'search_string_in_logs_changed',
+    search_string_in_variables_changed: 'search_string_in_variables_changed',
     // Removing a pattern (e.g. include/exclude) from the list. Props: includePatternsLength, excludePatternsLength, type
     pattern_removed: 'pattern_removed',
     // Selecting a pattern (e.g. include/exclude) from the list. Props: includePatternsLength, excludePatternsLength, type

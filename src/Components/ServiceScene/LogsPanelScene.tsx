@@ -5,10 +5,13 @@ import {
   sceneGraph,
   SceneObjectBase,
   SceneObjectState,
+  SceneObjectUrlSyncConfig,
+  SceneObjectUrlValues,
+  SceneQueryRunner,
   VizPanel,
 } from '@grafana/scenes';
-import { DataFrame, getValueFormat, LogRowModel } from '@grafana/data';
-import { getLogOption, setDisplayedFields } from '../../services/store';
+import { DataFrame, getValueFormat, LoadingState, LogRowModel, PanelData } from '@grafana/data';
+import { getLogOption, getLogsVolumeOption, setDisplayedFields } from '../../services/store';
 import React, { MouseEvent } from 'react';
 import { LogsListScene } from './LogsListScene';
 import { LoadingPlaceholder, useStyles2 } from '@grafana/ui';
@@ -16,41 +19,126 @@ import { addToFilters, FilterType } from './Breakdowns/AddToFiltersButton';
 import { getVariableForLabel } from '../../services/fields';
 import { VAR_FIELDS, VAR_LABELS, VAR_LEVELS, VAR_METADATA } from '../../services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from '../../services/analytics';
-import { getAdHocFiltersVariable, getValueFromFieldsFilter } from '../../services/variableGetters';
+import {
+  getAdHocFiltersVariable,
+  getLineFiltersVariable,
+  getValueFromFieldsFilter,
+} from '../../services/variableGetters';
 import { copyText, generateLogShortlink, resolveRowTimeRangeForSharing } from 'services/text';
 import { CopyLinkButton } from './CopyLinkButton';
-import { getLogsPanelSortOrder, LogOptionsScene } from './LogOptionsScene';
+import { getLogsPanelSortOrderFromStore, LogOptionsScene } from './LogOptionsScene';
 import { LogsVolumePanel, logsVolumePanelKey } from './LogsVolumePanel';
 import { getPanelWrapperStyles, PanelMenu } from '../Panels/PanelMenu';
 import { ServiceScene } from './ServiceScene';
+import { LineFilterCaseSensitive, LineFilterOp } from '../../services/filterTypes';
+import { Options } from '@grafana/schema/dist/esm/raw/composable/logs/panelcfg/x/LogsPanelCfg_types.gen';
+import { locationService } from '@grafana/runtime';
+import { narrowLogsSortOrder } from '../../services/narrowing';
+import { logger } from '../../services/logger';
+import { LogsSortOrder } from '@grafana/schema';
+import { getPrettyQueryExpr } from 'services/scenes';
+import { LogsPanelError } from './LogsPanelError';
+import { clearVariables } from 'services/variableHelpers';
 
 interface LogsPanelSceneState extends SceneObjectState {
-  body?: VizPanel;
+  body?: VizPanel<Options>;
+  error?: string;
+  logsVolumeCollapsedByError?: boolean;
+  sortOrder?: LogsSortOrder;
+  wrapLogMessage?: boolean;
 }
 
 export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
+  protected _urlSync = new SceneObjectUrlSyncConfig(this, {
+    keys: ['sortOrder', 'wrapLogMessage'],
+  });
+
   constructor(state: Partial<LogsPanelSceneState>) {
     super({
+      sortOrder: getLogsPanelSortOrderFromStore(),
+      wrapLogMessage: Boolean(getLogOption<boolean>('wrapLogMessage', false)),
+      error: undefined,
       ...state,
     });
 
     this.addActivationHandler(this.onActivate.bind(this));
   }
 
+  private setStateFromUrl() {
+    const searchParams = new URLSearchParams(locationService.getLocation().search);
+
+    this.updateFromUrl({
+      sortOrder: searchParams.get('sortOrder'),
+      wrapLogMessage: searchParams.get('wrapLogMessage'),
+    });
+  }
+
+  getUrlState() {
+    return {
+      sortOrder: JSON.stringify(this.state.sortOrder),
+      wrapLogMessage: JSON.stringify(this.state.wrapLogMessage),
+    };
+  }
+
+  updateFromUrl(values: SceneObjectUrlValues) {
+    const stateUpdate: Partial<LogsPanelSceneState> = {};
+    try {
+      if (typeof values.sortOrder === 'string' && values.sortOrder) {
+        const decodedSortOrder = narrowLogsSortOrder(JSON.parse(values.sortOrder));
+        if (decodedSortOrder) {
+          stateUpdate.sortOrder = decodedSortOrder;
+          this.setLogsVizOption({ sortOrder: decodedSortOrder });
+        }
+      }
+
+      if (typeof values.wrapLogMessage === 'string' && values.wrapLogMessage) {
+        const decodedWrapLogMessage = JSON.parse(values.wrapLogMessage);
+        if (typeof decodedWrapLogMessage === 'boolean') {
+          stateUpdate.wrapLogMessage = decodedWrapLogMessage;
+          this.setLogsVizOption({ wrapLogMessage: decodedWrapLogMessage });
+          this.setLogsVizOption({ prettifyLogMessage: decodedWrapLogMessage });
+        }
+      }
+    } catch (e) {
+      // URL Params can be manually changed and it will make JSON.parse() fail.
+      logger.error(e, { msg: 'LogOptionsScene: updateFromUrl unexpected error' });
+    }
+
+    if (Object.keys(stateUpdate).length) {
+      this.setState({ ...stateUpdate });
+    }
+  }
+
   public onActivate() {
+    // Need viz to set options, but setting options will trigger query
+    this.setStateFromUrl();
+
     if (!this.state.body) {
       this.setState({
-        body: this.getLogsPanel(),
+        body: this.getLogsPanel({
+          wrapLogMessage: this.state.wrapLogMessage,
+          prettifyLogMessage: this.state.wrapLogMessage,
+          sortOrder: this.state.sortOrder,
+        }),
       });
     }
 
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
     this._subs.add(
       serviceScene.subscribeToState((newState, prevState) => {
+        if (newState.$data?.state.data?.state === LoadingState.Error) {
+          this.handleLogsError(newState.$data?.state.data);
+        } else if (this.state.error) {
+          this.clearLogsError();
+        }
         if (newState.logsCount !== prevState.logsCount) {
           if (!this.state.body) {
             this.setState({
-              body: this.getLogsPanel(),
+              body: this.getLogsPanel({
+                wrapLogMessage: this.state.wrapLogMessage,
+                prettifyLogMessage: this.state.wrapLogMessage,
+                sortOrder: this.state.sortOrder,
+              }),
             });
           } else {
             this.state.body.setState({
@@ -60,6 +148,27 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         }
       })
     );
+  }
+
+  handleLogsError(data: PanelData) {
+    const logsVolumeCollapsedByError = this.state.logsVolumeCollapsedByError ?? !getLogsVolumeOption('collapsed');
+
+    const error = data.errors?.length ? data.errors[0].message : data.error?.message;
+    this.setState({ error, logsVolumeCollapsedByError });
+
+    if (logsVolumeCollapsedByError) {
+      const logsVolume = sceneGraph.findByKeyAndType(this, logsVolumePanelKey, LogsVolumePanel);
+      logsVolume.state.panel?.setState({ collapsed: true });
+    }
+  }
+
+  clearLogsError() {
+    if (this.state.logsVolumeCollapsedByError) {
+      const logsVolume = sceneGraph.findByKeyAndType(this, logsVolumePanelKey, LogsVolumePanel);
+      logsVolume.state.panel?.setState({ collapsed: false });
+    }
+
+    this.setState({ error: undefined, logsVolumeCollapsedByError: undefined });
   }
 
   onClickShowField = (field: string) => {
@@ -100,9 +209,17 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     }
   };
 
-  setLogsVizOption(options = {}) {
+  setLogsVizOption(options: Partial<Options> = {}) {
     if (!this.state.body) {
       return;
+    }
+    if ('sortOrder' in options && options.sortOrder !== this.state.body.state.options.sortOrder) {
+      const $data = sceneGraph.getData(this);
+      const queryRunner =
+        $data instanceof SceneQueryRunner ? $data : sceneGraph.findDescendents($data, SceneQueryRunner)[0];
+      if (queryRunner) {
+        queryRunner.runQueries();
+      }
     }
     this.state.body.onOptionsChange(options);
   }
@@ -127,7 +244,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     return formattedCount !== undefined ? `Logs (${formattedCount.text}${formattedCount.suffix?.trim()})` : 'Logs';
   }
 
-  private getLogsPanel() {
+  private getLogsPanel(options: Partial<Options>) {
     const parentModel = this.getParentScene();
     const visualizationType = parentModel.state.visualizationType;
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
@@ -139,13 +256,21 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         .setOption('onClickFilterOutLabel', this.handleLabelFilterOutClick)
         .setOption('isFilterLabelActive', this.handleIsFilterLabelActive)
         .setOption('onClickFilterString', this.handleFilterStringClick)
+        .setOption('onClickFilterOutString', this.handleFilterOutStringClick)
         .setOption('onClickShowField', this.onClickShowField)
         .setOption('onClickHideField', this.onClickHideField)
         .setOption('displayedFields', parentModel.state.displayedFields)
-        .setOption('sortOrder', getLogsPanelSortOrder())
-        .setOption('wrapLogMessage', Boolean(getLogOption<boolean>('wrapLogMessage', false)))
-        .setOption('prettifyLogMessage', Boolean(getLogOption<boolean>('wrapLogMessage', false)))
-        .setMenu(new PanelMenu({ addExplorationsLink: false }))
+        .setOption('sortOrder', options.sortOrder ?? getLogsPanelSortOrderFromStore())
+        .setOption('wrapLogMessage', options.wrapLogMessage ?? Boolean(getLogOption<boolean>('wrapLogMessage', false)))
+        .setOption(
+          'prettifyLogMessage',
+          options.prettifyLogMessage ?? Boolean(getLogOption<boolean>('wrapLogMessage', false))
+        )
+        .setMenu(
+          new PanelMenu({
+            investigationOptions: { type: 'logs', getLabelName: () => `Logs: ${getPrettyQueryExpr(serviceScene)}` },
+          })
+        )
         .setOption('showLogContextToggle', true)
         // @ts-expect-error Requires Grafana 11.5
         .setOption('enableInfiniteScrolling', true)
@@ -153,6 +278,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
         .setOption('onNewLogsReceived', this.updateVisibleRange)
         // @ts-expect-error Grafana 11.5
         .setOption('logRowMenuIconsAfter', [<CopyLinkButton onClick={this.handleShareLogLineClick} key={0} />])
+
         .setHeaderActions(
           new LogOptionsScene({ visualizationType, onChangeVisualizationType: parentModel.setVisualizationType })
         )
@@ -179,15 +305,12 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     }
 
     const logsVolumeScene = sceneGraph.findByKeyAndType(this, logsVolumePanelKey, LogsVolumePanel);
-    if (logsVolumeScene instanceof LogsVolumePanel) {
-      logsVolumeScene.updateVisibleRange(newLogs);
-    }
+    logsVolumeScene.updateVisibleRange(newLogs);
   };
 
   private handleShareLogLineClick = (event: MouseEvent<HTMLElement>, row?: LogRowModel) => {
     if (row?.rowId && this.state.body) {
       const parent = this.getParentScene();
-      const buttonRef = event.currentTarget instanceof HTMLButtonElement ? event.currentTarget : undefined;
       const timeRange = resolveRowTimeRangeForSharing(row);
       copyText(
         generateLogShortlink(
@@ -196,8 +319,7 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
             logs: { id: row.uid, displayedFields: parent.state.displayedFields },
           },
           timeRange
-        ),
-        buttonRef
+        )
       );
     }
   };
@@ -246,11 +368,44 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
     );
   };
 
+  private handleFilterOutStringClick = (value: string) => {
+    const lineFiltersVar = getLineFiltersVariable(this);
+    if (lineFiltersVar) {
+      lineFiltersVar.setState({
+        filters: [
+          ...lineFiltersVar.state.filters,
+          {
+            operator: LineFilterOp.negativeMatch,
+            value,
+            key: LineFilterCaseSensitive.caseSensitive,
+            keyLabel: lineFiltersVar.state.filters.length.toString(),
+          },
+        ],
+      });
+      reportAppInteraction(
+        USER_EVENTS_PAGES.service_details,
+        USER_EVENTS_ACTIONS.service_details.logs_popover_line_filter,
+        {
+          selectionLength: value.length,
+        }
+      );
+    }
+  };
+
   private handleFilterStringClick = (value: string) => {
-    const parentModel = sceneGraph.getAncestor(this, LogsListScene);
-    const lineFilterScene = parentModel.getLineFilterScene();
-    if (lineFilterScene) {
-      lineFilterScene.updateFilter(value, false);
+    const lineFiltersVar = getLineFiltersVariable(this);
+    if (lineFiltersVar) {
+      lineFiltersVar.setState({
+        filters: [
+          ...lineFiltersVar.state.filters,
+          {
+            operator: LineFilterOp.match,
+            value,
+            key: LineFilterCaseSensitive.caseSensitive,
+            keyLabel: lineFiltersVar.state.filters.length.toString(),
+          },
+        ],
+      });
       reportAppInteraction(
         USER_EVENTS_PAGES.service_details,
         USER_EVENTS_ACTIONS.service_details.logs_popover_line_filter,
@@ -263,7 +418,6 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
 
   private handleLabelFilter(key: string, value: string, frame: DataFrame | undefined, operator: FilterType) {
     const variableType = getVariableForLabel(frame, key, this);
-
     addToFilters(key, value, operator, this, variableType);
 
     reportAppInteraction(
@@ -278,12 +432,13 @@ export class LogsPanelScene extends SceneObjectBase<LogsPanelSceneState> {
   }
 
   public static Component = ({ model }: SceneComponentProps<LogsPanelScene>) => {
-    const { body } = model.useState();
+    const { body, error } = model.useState();
     const styles = useStyles2(getPanelWrapperStyles);
     if (body) {
       return (
         <span className={styles.panelWrapper}>
-          <body.Component model={body} />
+          {!error && <body.Component model={body} />}
+          {error && <LogsPanelError error={error} clearFilters={() => clearVariables(body)} />}
         </span>
       );
     }

@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
+	"github.com/grafana/explore-logs/generator/log"
 	"github.com/grafana/loki-client-go/loki"
 	"github.com/grafana/loki/pkg/push"
 	"github.com/prometheus/common/model"
@@ -16,6 +18,7 @@ import (
 func main() {
 	url := flag.String("url", "http://localhost:3100/loki/api/v1/push", "Loki URL")
 	dry := flag.Bool("dry", false, "Dry run: log to stdout instead of Loki")
+	tenantId := flag.String("tenant-id", "", "Loki tenant ID")
 	flag.Parse()
 
 	cfg, err := loki.NewDefaultConfig(*url)
@@ -25,15 +28,20 @@ func main() {
 	cfg.BackoffConfig.MaxRetries = 1
 	cfg.BackoffConfig.MinBackoff = 100 * time.Millisecond
 	cfg.BackoffConfig.MaxBackoff = 100 * time.Millisecond
+
+	if *tenantId != "" {
+		cfg.TenantID = *tenantId
+	}
+
 	client, err := loki.New(cfg)
 	if err != nil {
 		panic(err)
 	}
 	defer client.Stop()
 
-	var logger Logger = client
+	var logger log.Logger = client
 	if *dry {
-		logger = LoggerFunc(func(labels model.LabelSet, timestamp time.Time, message string, metadata push.LabelsAdapter) error {
+		logger = log.LoggerFunc(func(labels model.LabelSet, timestamp time.Time, message string, metadata push.LabelsAdapter) error {
 			fmt.Println(labels, timestamp, message, metadata)
 			return nil
 		})
@@ -44,12 +52,17 @@ func main() {
 	// Creates and starts all apps.
 	for namespace, apps := range generators {
 		for serviceName, generator := range apps {
-			ForAllClusters(namespace, serviceName, func(labels model.LabelSet, metadata push.LabelsAdapter) {
+			log.ForAllClusters(namespace, serviceName, func(labels model.LabelSet, metadata push.LabelsAdapter) {
 				// Remove `metadata` from nginx logs
 				if serviceName == "nginx" {
 					metadata = push.LabelsAdapter{}
 				}
-				generator(ctx, NewAppLogger(labels, logger), metadata)
+				if strings.Contains(string(serviceName), "-otel") {
+					generator(ctx, log.NewAppLogger(labels, log.NewOtelLogger(string(serviceName))), metadata)
+				} else {
+					generator(ctx, log.NewAppLogger(labels, logger), metadata)
+				}
+
 			})
 		}
 	}

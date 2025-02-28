@@ -97,17 +97,25 @@ export const TableColumnContextProvider = ({
   logsFrame,
   setUrlColumns,
   clearSelectedLine,
+  setUrlTableBodyState,
+  urlTableBodyState,
+  showColumnManagementDrawer,
+  isColumnManagementActive,
 }: {
   children: ReactNode;
   initialColumns: FieldNameMetaStore;
   logsFrame: LogsFrame;
   setUrlColumns: (columns: string[]) => void;
   clearSelectedLine: () => void;
+  setUrlTableBodyState: (logLineState: LogLineState) => void;
+  urlTableBodyState?: LogLineState;
+  showColumnManagementDrawer: (isActive: boolean) => void;
+  isColumnManagementActive: boolean;
 }) => {
   const [columns, setColumns] = useState<FieldNameMetaStore>(removeExtraColumns(initialColumns));
-  const [bodyState, setBodyState] = useState<LogLineState>(LogLineState.auto);
+  const [bodyState, setBodyState] = useState<LogLineState>(urlTableBodyState ?? LogLineState.auto);
   const [filteredColumns, setFilteredColumns] = useState<FieldNameMetaStore | undefined>(undefined);
-  const [visible, setVisible] = useState(false);
+
   const initialColumnWidths = getColumnWidthsFromLocalStorage();
   const [columnWidthMap, setColumnWidthMapState] = useState<Record<string, number>>(initialColumnWidths);
   const setColumnWidthMap = (map: Record<string, number>) => {
@@ -145,13 +153,26 @@ export const TableColumnContextProvider = ({
     [setUrlColumns]
   );
 
+  const handleSetBodyState = useCallback(
+    (logLineState: LogLineState) => {
+      setBodyState(logLineState);
+
+      // Sync change with url state
+      setUrlTableBodyState(logLineState);
+    },
+    [setUrlTableBodyState]
+  );
+
   const handleClearSelectedLine = () => {
     clearSelectedLine();
   };
 
-  const handleSetVisible = useCallback((isVisible: boolean) => {
-    setVisible(isVisible);
-  }, []);
+  const handleSetVisible = useCallback(
+    (isVisible: boolean) => {
+      showColumnManagementDrawer(isVisible);
+    },
+    [showColumnManagementDrawer]
+  );
 
   // When the parent component recalculates new columns on dataframe change, we need to update or the column UI will be stale!
   useEffect(() => {
@@ -182,12 +203,12 @@ export const TableColumnContextProvider = ({
         setColumnWidthMap,
         columnWidthMap,
         bodyState,
-        setBodyState,
+        setBodyState: handleSetBodyState,
         setFilteredColumns,
         filteredColumns,
         columns,
         setColumns: handleSetColumns,
-        visible: visible,
+        visible: isColumnManagementActive,
         setVisible: handleSetVisible,
         clearSelectedLine: handleClearSelectedLine,
       }}

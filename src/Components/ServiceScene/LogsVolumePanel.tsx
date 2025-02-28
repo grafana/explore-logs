@@ -10,7 +10,7 @@ import {
   VizPanel,
 } from '@grafana/scenes';
 import { LegendDisplayMode, PanelContext, SeriesVisibilityChangeMode, useStyles2 } from '@grafana/ui';
-import { getQueryRunner, setLogsVolumeFieldConfigs, syncLogsPanelVisibleSeries } from 'services/panel';
+import { getQueryRunner, setLogsVolumeFieldConfigs, syncLevelsVisibleSeries } from 'services/panel';
 import { buildDataQuery, LINE_LIMIT } from 'services/query';
 import { LEVEL_VARIABLE_VALUE } from 'services/variables';
 import { reportAppInteraction, USER_EVENTS_ACTIONS, USER_EVENTS_PAGES } from 'services/analytics';
@@ -24,6 +24,9 @@ import { ServiceScene } from './ServiceScene';
 import { getSeriesVisibleRange, getVisibleRangeFrame } from 'services/logsFrame';
 import { getLogsVolumeOption, setLogsVolumeOption } from 'services/store';
 import { IndexScene } from '../IndexScene/IndexScene';
+import { LogsVolumeActions } from './LogsVolumeActions';
+import { AddFilterEvent } from './Breakdowns/AddToFiltersButton';
+import { LevelsVariableScene } from '../IndexScene/LevelsVariableScene';
 
 export interface LogsVolumePanelState extends SceneObjectState {
   panel?: VizPanel;
@@ -53,21 +56,40 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
     const labels = getLabelsVariable(this);
     const fields = getFieldsVariable(this);
 
-    labels.subscribeToState((newState, prevState) => {
-      if (!areArraysEqual(newState.filters, prevState.filters)) {
-        this.setState({
-          panel: this.getVizPanel(),
-        });
-      }
-    });
+    // Set panel on labels variable filter update
+    this._subs.add(
+      labels.subscribeToState((newState, prevState) => {
+        if (!areArraysEqual(newState.filters, prevState.filters)) {
+          this.setState({
+            panel: this.getVizPanel(),
+          });
+        }
+      })
+    );
 
-    fields.subscribeToState((newState, prevState) => {
-      if (!areArraysEqual(newState.filters, prevState.filters)) {
-        this.setState({
-          panel: this.getVizPanel(),
-        });
-      }
-    });
+    // Set Panel on fields variable filter update
+    this._subs.add(
+      fields.subscribeToState((newState, prevState) => {
+        if (!areArraysEqual(newState.filters, prevState.filters)) {
+          this.setState({
+            panel: this.getVizPanel(),
+          });
+        }
+      })
+    );
+
+    // trigger variable render on AddFilterEvent, set filter state to trigger logs panel query
+    this._subs.add(
+      this.subscribeToEvent(AddFilterEvent, (event) => {
+        if (event.key === LEVEL_VARIABLE_VALUE) {
+          const levelsVariableScene = sceneGraph.findObject(this, (obj) => obj instanceof LevelsVariableScene);
+          if (levelsVariableScene instanceof LevelsVariableScene) {
+            const levelsVar = getLevelsVariable(this);
+            levelsVar.setState({ filters: levelsVar.state.filters });
+          }
+        }
+      })
+    );
   }
 
   private getTitle(totalLogsCount: number | undefined, logsCount: number | undefined) {
@@ -93,9 +115,10 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
       .setTitle(this.getTitle(serviceScene.state.totalLogsCount, serviceScene.state.logsCount))
       .setOption('legend', { showLegend: true, calcs: ['sum'], displayMode: LegendDisplayMode.List })
       .setUnit('short')
-      .setMenu(new PanelMenu({}))
+      .setMenu(new PanelMenu({ investigationOptions: { labelName: 'level' } }))
       .setCollapsible(true)
-      .setCollapsed(Boolean(getLogsVolumeOption('collapsed')))
+      .setCollapsed(getLogsVolumeOption('collapsed'))
+      .setHeaderActions(new LogsVolumeActions({}))
       // 11.5
       // .setShowMenuAlways(true)
       .setData(
@@ -132,7 +155,7 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
         } else {
           this.displayVisibleRange();
         }
-        syncLogsPanelVisibleSeries(panel, newState.data.series, this);
+        syncLevelsVisibleSeries(panel, newState.data.series, this);
       })
     );
 
@@ -207,23 +230,19 @@ export class LogsVolumePanel extends SceneObjectBase<LogsVolumePanelState> {
           return;
         }
 
-        syncLogsPanelVisibleSeries(panel, panel?.state.$data?.state.data?.series, this);
+        syncLevelsVisibleSeries(panel, panel?.state.$data?.state.data?.series, this);
       })
     );
 
-    context.onToggleSeriesVisibility = (level: string, mode: SeriesVisibilityChangeMode) => {
-      // @TODO. We don't yet support filters with multiple values.
-      if (mode === SeriesVisibilityChangeMode.AppendToSelection) {
-        return;
-      }
-
-      const action = toggleLevelFromFilter(level, this);
+    context.onToggleSeriesVisibility = (label: string, mode: SeriesVisibilityChangeMode) => {
+      const action = toggleLevelFromFilter(label, this);
+      this.publishEvent(new AddFilterEvent('legend', 'include', LEVEL_VARIABLE_VALUE, label), true);
 
       reportAppInteraction(
         USER_EVENTS_PAGES.service_details,
         USER_EVENTS_ACTIONS.service_details.level_in_logs_volume_clicked,
         {
-          level,
+          level: label,
           action,
         }
       );

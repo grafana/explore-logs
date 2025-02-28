@@ -9,6 +9,7 @@ services:
       - GF_LOG_FRONTEND_CUSTOM_ENDPOINT=http://localhost:12347/collect
       - GF_TRACING_OPENTELEMETRY_JAEGER_ADDRESS=http://host.docker.internal:14268/api/traces
       - GF_TRACING_OPENTELEMETRY_JAEGER_PROPAGATION=jaeger,w3c
+      - GF_PLUGINS_PREINSTALL_DISABLED=true
     build:
       context: ./.config
       args:
@@ -22,7 +23,7 @@ services:
     extra_hosts:
       - 'host.docker.internal:host-gateway'
   loki:
-    image: grafana/loki:3.3.0
+    image: grafana/loki:3.3.2
     environment:
       LOG_CLUSTER_DEPTH: '8'
       LOG_SIM_TH: '0.3'

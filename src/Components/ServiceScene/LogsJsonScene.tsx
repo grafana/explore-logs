@@ -1,7 +1,7 @@
 import { SceneComponentProps, SceneDataState, sceneGraph, SceneObjectBase, SceneObjectState } from '@grafana/scenes';
 import React from 'react';
 import { JSONTree, KeyPath } from 'react-json-tree';
-import { getLogsPanelFrame } from './ServiceScene';
+import { getLogsPanelFrame, ServiceScene } from './ServiceScene';
 import {
   AdHocVariableFilter,
   dateTimeFormat,
@@ -18,6 +18,7 @@ import { LogsListScene } from './LogsListScene';
 import { getVariableForLabel } from '../../services/fields';
 import { addAdHocFilter } from './Breakdowns/AddToFiltersButton';
 import { FilterOp } from '../../services/filterTypes';
+import { getPrettyQueryExpr } from '../../services/scenes';
 
 interface LogsJsonSceneState extends SceneObjectState {
   menu?: PanelMenu;
@@ -231,8 +232,12 @@ export class LogsJsonScene extends SceneObjectBase<LogsJsonSceneState> {
   }
 
   public onActivate() {
+    const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
+
     this.setState({
-      menu: new PanelMenu({ addExplorationsLink: false }),
+      menu: new PanelMenu({
+        investigationOptions: { type: 'logs', getLabelName: () => `Logs: ${getPrettyQueryExpr(serviceScene)}` },
+      }),
     });
 
     const $data = sceneGraph.getData(this);

@@ -8,11 +8,20 @@ import {
   VizPanel,
 } from '@grafana/scenes';
 import { getDetectedFieldsFrame, getLogsPanelFrame, ServiceScene } from '../ServiceScene';
-import { navigateToValueBreakdown } from '../../../services/navigate';
+import { getValueBreakdownLink } from '../../../services/navigate';
 import { getPrimaryLabelFromUrl, ValueSlugs } from '../../../services/routing';
-import { Button, ButtonGroup, ButtonSelect, IconButton, Popover, PopoverController, useStyles2 } from '@grafana/ui';
+import {
+  Button,
+  ButtonGroup,
+  ButtonSelect,
+  IconButton,
+  LinkButton,
+  Popover,
+  PopoverController,
+  useStyles2,
+} from '@grafana/ui';
 import React, { useRef } from 'react';
-import { addToFilters, clearFilters, VariableFilterType } from './AddToFiltersButton';
+import { addToFilters, clearFilters, InterpolatedFilterType } from './AddToFiltersButton';
 import { EMPTY_VARIABLE_VALUE, LEVEL_VARIABLE_VALUE, VAR_FIELDS } from '../../../services/variables';
 import { AdHocVariableFilter, Field, GrafanaTheme2, Labels, LoadingState, SelectableValue } from '@grafana/data';
 import {
@@ -31,6 +40,7 @@ import { getDetectedFieldType } from '../../../services/fields';
 import { logger } from '../../../services/logger';
 import { testIds } from '../../../services/testIds';
 import { findObjectOfType } from '../../../services/scenes';
+import { syncLevelsVariable } from '../../IndexScene/LevelsVariableScene';
 
 interface SelectLabelActionSceneState extends SceneObjectState {
   labelName: string;
@@ -55,9 +65,9 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
 
   onChange(value: SelectableValue<string>) {
     const variable = this.getVariable();
-    const variableName = variable.state.name as VariableFilterType;
+    const variableName = variable.state.name as InterpolatedFilterType;
     const existingFilter = this.getExistingFilter(variable);
-    const fieldValue = getValueFromAdHocVariableFilter(variable, existingFilter);
+    const fieldValue = getValueFromAdHocVariableFilter(variableName, existingFilter);
     const isIncluded = existingFilter?.operator === FilterOp.NotEqual && fieldValue.value === EMPTY_VARIABLE_VALUE;
 
     if (isIncluded && value.value === INCLUDE_VALUE) {
@@ -87,13 +97,14 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
       fieldType,
     } = model.useState();
     const variable = model.getVariable();
-    const variableName = variable.useState().name as VariableFilterType;
+    const variableName = variable.useState().name as InterpolatedFilterType;
     const existingFilter = model.getExistingFilter(variable);
-    const fieldValue = getValueFromAdHocVariableFilter(variable, existingFilter);
+    const fieldValue = getValueFromAdHocVariableFilter(variableName, existingFilter);
     const styles = useStyles2(getStyles);
     const popoverRef = useRef<HTMLButtonElement>(null);
     const filterButtonDisabled =
       fieldType === ValueSlugs.label &&
+      variable.state.name === VAR_FIELDS &&
       variable.state.filters.filter((f) => f.key !== labelName && f.operator === FilterOp.Equal).length === 0;
 
     const isIncluded = existingFilter?.operator === FilterOp.NotEqual && fieldValue.value === EMPTY_VARIABLE_VALUE;
@@ -103,7 +114,7 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
       selectedValue?.value ?? (isIncluded ? INCLUDE_VALUE : hasNumericFilters ? NUMERIC_FILTER_VALUE : INCLUDE_VALUE);
 
     const hasExistingNumericFilter = existingFilter?.operator
-      ? [FilterOp.gte, FilterOp.gt, FilterOp.lte, FilterOp.lt].includes(existingFilter.operator as FilterOp)
+      ? [FilterOp.gte, FilterOp.gt, FilterOp.lte, FilterOp.lt].includes(existingFilter.operator)
       : false;
     const numericSelected = selectedOptionValue === NUMERIC_FILTER_VALUE || hasExistingNumericFilter;
     const includeSelected = selectedOptionValue === INCLUDE_VALUE && !numericSelected;
@@ -180,16 +191,16 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
           </>
         )}
         {hideValueDrilldown !== true && (
-          <Button
+          <LinkButton
             title={`View breakdown of values for ${labelName}`}
             variant="primary"
             fill="outline"
             size="sm"
-            onClick={model.onClickViewValues}
             aria-label={`Select ${labelName}`}
+            href={model.getViewValuesLink()}
           >
             Select
-          </Button>
+          </LinkButton>
         )}
 
         {popover && (
@@ -262,7 +273,7 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
     );
   }
 
-  public onClickNumericFilter = (variableType: VariableFilterType) => {
+  public onClickNumericFilter = (variableType: InterpolatedFilterType) => {
     const detectedFieldFrame = getDetectedFieldsFrame(this);
     const fieldType = getDetectedFieldType(this.state.labelName, detectedFieldFrame);
 
@@ -278,26 +289,29 @@ export class SelectLabelActionScene extends SceneObjectBase<SelectLabelActionSce
     this.togglePopover();
   };
 
-  public onClickViewValues = () => {
+  public getViewValuesLink = () => {
     const serviceScene = sceneGraph.getAncestor(this, ServiceScene);
-    navigateToValueBreakdown(this.state.fieldType, this.state.labelName, serviceScene);
+    return getValueBreakdownLink(this.state.fieldType, this.state.labelName, serviceScene);
   };
 
-  public onClickExcludeEmpty = (variableType: VariableFilterType) => {
+  public onClickExcludeEmpty = (variableType: InterpolatedFilterType) => {
     addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'exclude', this, variableType);
   };
 
-  public onClickIncludeEmpty = (variableType: VariableFilterType) => {
+  public onClickIncludeEmpty = (variableType: InterpolatedFilterType) => {
     // If json do we want != '{}'?
     addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'include', this, variableType);
   };
 
-  public clearFilter = (variableType: VariableFilterType) => {
+  public clearFilter = (variableType: InterpolatedFilterType) => {
     addToFilters(this.state.labelName, EMPTY_VARIABLE_VALUE, 'clear', this, variableType);
   };
 
-  public clearFilters = (variableType: VariableFilterType) => {
+  public clearFilters = (variableType: InterpolatedFilterType) => {
     clearFilters(this.state.labelName, this, variableType);
+    if (this.state.labelName === LEVEL_VARIABLE_VALUE) {
+      syncLevelsVariable(this);
+    }
   };
 
   public togglePopover() {

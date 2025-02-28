@@ -10,13 +10,14 @@ import { findObjectOfType, getLokiDatasource } from 'services/scenes';
 import LokiLogo from '../../../img/logo.svg';
 import { LokiDatasource, LokiQuery } from '../../../services/lokiQuery';
 
-export interface AddToExplorationButtonState extends SceneObjectState {
+export interface AddToInvestigationButtonState extends SceneObjectState {
   frame?: DataFrame;
   labelName?: string;
   fieldName?: string;
   ds?: LokiDatasource;
   context?: ExtensionContext;
   queries: LokiQuery[];
+  type?: 'timeseries' | 'logs' | undefined;
 }
 
 type ExtensionContext = {
@@ -33,8 +34,8 @@ type ExtensionContext = {
   drillDownLabel?: string;
 };
 
-export class AddToExplorationButton extends SceneObjectBase<AddToExplorationButtonState> {
-  constructor(state: Omit<AddToExplorationButtonState, 'queries'>) {
+export class AddToInvestigationButton extends SceneObjectBase<AddToInvestigationButtonState> {
+  constructor(state: Omit<AddToInvestigationButtonState, 'queries'>) {
     super({ ...state, queries: [] });
     this.addActivationHandler(this.onActivate);
   }
@@ -74,15 +75,15 @@ export class AddToExplorationButton extends SceneObjectBase<AddToExplorationButt
   };
 
   private getContext = () => {
-    const { queries, ds, labelName, fieldName } = this.state;
+    const { queries, ds, labelName, fieldName, type } = this.state;
     const timeRange = sceneGraph.getTimeRange(this);
 
     if (!timeRange || !queries || !ds?.uid) {
       return;
     }
     const ctx = {
-      origin: 'Explore Logs',
-      type: 'timeseries',
+      origin: 'Grafana Logs Drilldown',
+      type: type ?? 'timeseries',
       queries,
       timeRange: { ...timeRange.state.value },
       datasource: { uid: ds.uid },
@@ -97,14 +98,14 @@ export class AddToExplorationButton extends SceneObjectBase<AddToExplorationButt
     }
   };
 
-  public static Component = ({ model }: SceneComponentProps<AddToExplorationButton>) => {
+  public static Component = ({ model }: SceneComponentProps<AddToInvestigationButton>) => {
     const { context } = model.useState();
-    const { links } = usePluginLinks({ extensionPointId: ExtensionPoints.MetricExploration, context });
+    const { links } = usePluginLinks({ extensionPointId: ExtensionPoints.MetricInvestigation, context });
 
     return (
       <>
         {links
-          .filter((link) => link.pluginId === 'grafana-explorations-app' && link.onClick)
+          .filter((link) => link.pluginId === 'grafana-investigations-app' && link.onClick)
           .map((link) => (
             <IconButton
               tooltip={link.description}
