@@ -1,5 +1,7 @@
 import { FilterOp, FilterOpType } from './filterTypes';
-import { logger } from './logger';
+// Importing the logger here breaks e2e tests as this file is included in the explore.ts
+// I do not know why though
+// import { logger } from './logger';
 
 export function getOperatorDescription(op: FilterOpType): string {
   if (op === FilterOp.NotEqual) {
@@ -28,6 +30,7 @@ export function getOperatorDescription(op: FilterOpType): string {
   }
 
   const error = new Error('Invalid operator!');
-  logger.error(error, { msg: 'Invalid operator', operator: op });
   throw error;
+  // logger.error(error, { msg: 'Invalid operator', operator: op });
+  // throw error;
 }
